@@ -1,41 +1,21 @@
 import 'candidata_clubvision.dart';
 
 class ClubvisionData {
-
   final bool abierta;
 
-  final List<CandidataClubvision>
-      candidatas;
+  final List<CandidataClubvision> candidatas;
 
-  ClubvisionData({
+  ClubvisionData({required this.abierta, required this.candidatas});
 
-    required this.abierta,
-
-    required this.candidatas,
-  });
-
-  factory ClubvisionData.fromJson(
-    Map<String, dynamic> json,
-  ) {
-
+  factory ClubvisionData.fromJson(Map<String, dynamic> json) {
     return ClubvisionData(
-
-      abierta:
-          json['abierta'] ?? false,
+      abierta: json['abierta'] ?? false,
 
       candidatas:
-
-          (json['candidatas']
-                      as List?)
-
-                  ?.map(
-                    (e) =>
-                        CandidataClubvision
-                            .fromJson(e),
-                  )
-                  .toList() ??
-
-              [],
+          (json['candidatas'] as List?)
+              ?.map((e) => CandidataClubvision.fromJson(e))
+              .toList() ??
+          [],
     );
   }
 }

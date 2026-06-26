@@ -1,5 +1,4 @@
 class RankingItem {
-
   final String nombre;
 
   final int total;
@@ -9,7 +8,6 @@ class RankingItem {
   final int votos;
 
   RankingItem({
-
     required this.nombre,
 
     this.total = 0,
@@ -19,29 +17,15 @@ class RankingItem {
     this.votos = 0,
   });
 
-  factory RankingItem.fromJson(
-    Map<String, dynamic> json,
-  ) {
-
+  factory RankingItem.fromJson(Map<String, dynamic> json) {
     return RankingItem(
+      nombre: json['libro'] ?? json['usuario'] ?? '',
 
-      nombre:
+      total: json['total'] ?? 0,
 
-          json['libro'] ??
+      media: (json['media'] ?? 0).toDouble(),
 
-          json['usuario'] ??
-
-          '',
-
-      total:
-          json['total'] ?? 0,
-
-      media:
-          (json['media'] ?? 0)
-              .toDouble(),
-
-      votos:
-          json['votos'] ?? 0,
+      votos: json['votos'] ?? 0,
     );
   }
 }

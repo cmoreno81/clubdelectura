@@ -1,5 +1,4 @@
 class NuevoLibro {
-
   final String usuario;
   final String libro;
   final String genero;
@@ -19,9 +18,7 @@ class NuevoLibro {
   });
 
   Map<String, dynamic> toJson() {
-
     return {
-
       'usuario': usuario,
       'libro': libro,
       'genero': genero,
@@ -29,7 +26,6 @@ class NuevoLibro {
       'numSaga': numSaga,
       'autoconclusivo': autoconclusivo,
       'prioridad': prioridad,
-
     };
   }
 }

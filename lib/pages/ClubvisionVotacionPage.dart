@@ -117,10 +117,7 @@ class _ClubvisionVotacionPageState extends State<ClubvisionVotacionPage> {
     if (interesadas >= 4) {
       return const Text(
         '🔥 Muy popular',
-        style: TextStyle(
-          color: Colors.deepOrange,
-          fontWeight: FontWeight.bold,
-        ),
+        style: TextStyle(color: Colors.deepOrange, fontWeight: FontWeight.bold),
       );
     }
 
@@ -130,22 +127,16 @@ class _ClubvisionVotacionPageState extends State<ClubvisionVotacionPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('🎤 Clubvisión'),
-      ),
+      appBar: AppBar(title: const Text('🎤 Clubvisión')),
       body: FutureBuilder<ClubvisionData>(
         future: future,
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(
-              child: CircularProgressIndicator(),
-            );
+            return const Center(child: CircularProgressIndicator());
           }
 
           if (snapshot.hasError) {
-            return Center(
-              child: Text(snapshot.error.toString()),
-            );
+            return Center(child: Text(snapshot.error.toString()));
           }
 
           final clubvision = snapshot.data!;
@@ -242,10 +233,11 @@ class _ClubvisionVotacionPageState extends State<ClubvisionVotacionPage> {
                     });
                   },
                   child: AnimatedContainer(
-                    duration: const Duration(milliseconds: 200),
+                    duration: const Duration(milliseconds: 180),
                     child: Card(
-                      color:
-                          seleccionada ? Colors.deepPurple.withOpacity(0.06) : null,
+                      color: seleccionada
+                          ? Colors.deepPurple.withOpacity(0.06)
+                          : null,
                       elevation: index < 3 ? 6 : 2,
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(20),

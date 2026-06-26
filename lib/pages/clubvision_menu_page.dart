@@ -4,32 +4,25 @@ import 'ClubVisionVotacionPage.dart';
 import 'clubvision_historial_page.dart';
 
 class ClubvisionMenuPage extends StatelessWidget {
-  const ClubvisionMenuPage({
-    super.key,
-  });
+  const ClubvisionMenuPage({super.key});
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text("🎤 Clubvisión"),
-      ),
+      appBar: AppBar(title: const Text("🎤 Clubvisión")),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
-
           _card(
             context,
             icon: Icons.how_to_vote,
             titulo: "Votación",
-            subtitulo:
-                "Elige la próxima lectura del club",
+            subtitulo: "Elige la próxima lectura del club",
             onTap: () {
               Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder: (_) =>
-                      const ClubvisionVotacionPage(),
+                  builder: (_) => const ClubvisionVotacionPage(),
                 ),
               );
             },
@@ -41,33 +34,26 @@ class ClubvisionMenuPage extends StatelessWidget {
             context,
             icon: Icons.emoji_events,
             titulo: "Resultados",
-            subtitulo:
-                "Consulta la clasificación",
+            subtitulo: "Consulta la clasificación",
             onTap: () {},
           ),
 
           const SizedBox(height: 16),
-        _card(
-        context,
-        icon: Icons.history,
-        titulo: "Historial",
-        subtitulo:
-            "Todas las ediciones",
-        onTap: () {
-
-            Navigator.push(
-
+          _card(
             context,
+            icon: Icons.history,
+            titulo: "Historial",
+            subtitulo: "Todas las ediciones",
+            onTap: () {
+              Navigator.push(
+                context,
 
-            MaterialPageRoute(
-
-                builder: (_) =>
-                    const ClubvisionHistorialPage(),
-
-            ),
-            );
-        },
-        ),
+                MaterialPageRoute(
+                  builder: (_) => const ClubvisionHistorialPage(),
+                ),
+              );
+            },
+          ),
         ],
       ),
     );
@@ -82,22 +68,13 @@ class ClubvisionMenuPage extends StatelessWidget {
   }) {
     return Card(
       child: ListTile(
-        leading: Icon(
-          icon,
-          size: 34,
-          color: Colors.deepPurple,
-        ),
+        leading: Icon(icon, size: 34, color: Colors.deepPurple),
         title: Text(
           titulo,
-          style: const TextStyle(
-            fontSize: 22,
-            fontWeight: FontWeight.bold,
-          ),
+          style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
         ),
         subtitle: Text(subtitulo),
-        trailing: const Icon(
-          Icons.chevron_right,
-        ),
+        trailing: const Icon(Icons.chevron_right),
         onTap: onTap,
       ),
     );

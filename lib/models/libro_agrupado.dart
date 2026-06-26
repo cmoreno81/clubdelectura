@@ -2,7 +2,6 @@ import 'libro.dart';
 import 'libro_finalizado.dart';
 
 class LibroAgrupado {
-
   final String libro;
   final String genero;
 
@@ -17,47 +16,29 @@ class LibroAgrupado {
     required this.finalizados,
   });
 
-  int get total =>
-      registros.length;
+  int get total => registros.length;
 
-  int get totalFinalizados =>
-      finalizados.length;
+  int get totalFinalizados => finalizados.length;
 
   double get mediaValoracion {
-
     if (finalizados.isEmpty) {
       return 0;
     }
 
-    final valores =
-        finalizados
-            .map(
-              (f) => _valorNumerico(
-                f.valoracion,
-              ),
-            )
-            .where(
-              (v) => v > 0,
-            )
-            .toList();
+    final valores = finalizados
+        .map((f) => _valorNumerico(f.valoracion))
+        .where((v) => v > 0)
+        .toList();
 
     if (valores.isEmpty) {
       return 0;
     }
 
-    return valores.reduce(
-          (a, b) => a + b,
-        ) /
-        valores.length;
+    return valores.reduce((a, b) => a + b) / valores.length;
   }
 
-  double _valorNumerico(
-    String valoracion,
-  ) {
-
-    switch (
-        valoracion.trim()) {
-
+  double _valorNumerico(String valoracion) {
+    switch (valoracion.trim()) {
       case '⭐':
       case '⭐️':
         return 1;

@@ -1,5 +1,4 @@
 class CandidataClubvision {
-
   final String libro;
   final String genero;
 
@@ -8,32 +7,21 @@ class CandidataClubvision {
   final List<String> usuarias;
 
   CandidataClubvision({
-
     required this.libro,
     required this.genero,
     required this.interesadas,
     required this.usuarias,
   });
 
-  factory CandidataClubvision.fromJson(
-    Map<String, dynamic> json,
-  ) {
-
+  factory CandidataClubvision.fromJson(Map<String, dynamic> json) {
     return CandidataClubvision(
+      libro: json['libro'] ?? '',
 
-      libro:
-          json['libro'] ?? '',
+      genero: json['genero'] ?? '',
 
-      genero:
-          json['genero'] ?? '',
+      interesadas: json['interesadas'] ?? 0,
 
-      interesadas:
-          json['interesadas'] ?? 0,
-
-      usuarias:
-          (json['usuarias'] as List?)
-                  ?.cast<String>() ??
-              [],
+      usuarias: (json['usuarias'] as List?)?.cast<String>() ?? [],
     );
   }
 }

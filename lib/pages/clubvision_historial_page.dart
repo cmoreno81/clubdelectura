@@ -4,41 +4,28 @@ import '../models/historial_clubvision.dart';
 import '../services/api_service.dart';
 
 class ClubvisionHistorialPage extends StatefulWidget {
-
-  const ClubvisionHistorialPage({
-    super.key,
-  });
+  const ClubvisionHistorialPage({super.key});
 
   @override
   State<ClubvisionHistorialPage> createState() =>
       _ClubvisionHistorialPageState();
 }
 
-class _ClubvisionHistorialPageState
-    extends State<ClubvisionHistorialPage> {
-
-  late Future<List<HistorialClubvision>>
-      future;
+class _ClubvisionHistorialPageState extends State<ClubvisionHistorialPage> {
+  late Future<List<HistorialClubvision>> future;
 
   @override
   void initState() {
-
     super.initState();
 
-    future =
-        ApiService()
-            .getHistorialClubvision();
+    future = ApiService().getHistorialClubvision();
   }
 
   String _mes(String fecha) {
-
     try {
-
-      final d =
-          DateTime.parse(fecha);
+      final d = DateTime.parse(fecha);
 
       const meses = [
-
         "Enero",
         "Febrero",
         "Marzo",
@@ -51,139 +38,72 @@ class _ClubvisionHistorialPageState
         "Octubre",
         "Noviembre",
         "Diciembre",
-
       ];
 
-      return
-          "${meses[d.month - 1]} ${d.year}";
-
+      return "${meses[d.month - 1]} ${d.year}";
     } catch (_) {
-
       return fecha;
     }
   }
 
   @override
   Widget build(BuildContext context) {
-
     return Scaffold(
+      appBar: AppBar(title: const Text("📜 Historial")),
 
-      appBar: AppBar(
-
-        title: const Text(
-          "📜 Historial",
-        ),
-      ),
-
-      body:
-
-          FutureBuilder<
-              List<HistorialClubvision>>(
-
+      body: FutureBuilder<List<HistorialClubvision>>(
         future: future,
 
-        builder: (
-          context,
-          snapshot,
-        ) {
-
-          if (snapshot.connectionState ==
-              ConnectionState.waiting) {
-
-            return const Center(
-
-              child:
-                  CircularProgressIndicator(),
-            );
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(child: CircularProgressIndicator());
           }
 
           if (snapshot.hasError) {
-
-            return Center(
-
-              child: Text(
-                snapshot.error
-                    .toString(),
-              ),
-            );
+            return Center(child: Text(snapshot.error.toString()));
           }
 
-          final historial =
-              snapshot.data!;
+          final historial = snapshot.data!;
 
           return ListView.builder(
+            padding: const EdgeInsets.all(16),
 
-            padding:
-                const EdgeInsets.all(16),
+            itemCount: historial.length,
 
-            itemCount:
-                historial.length,
-
-            itemBuilder:
-                (context, index) {
-
-              final h =
-                  historial[index];
+            itemBuilder: (context, index) {
+              final h = historial[index];
 
               return Card(
-
-                margin:
-                    const EdgeInsets.only(
-                  bottom: 16,
-                ),
+                margin: const EdgeInsets.only(bottom: 16),
 
                 child: Padding(
-
-                  padding:
-                      const EdgeInsets.all(
-                    20,
-                  ),
+                  padding: const EdgeInsets.all(20),
 
                   child: Column(
-
-                    crossAxisAlignment:
-                        CrossAxisAlignment
-                            .start,
+                    crossAxisAlignment: CrossAxisAlignment.start,
 
                     children: [
-
                       Text(
-
                         _mes(h.mes),
 
-                        style:
-                            const TextStyle(
-
+                        style: const TextStyle(
                           fontSize: 22,
 
-                          fontWeight:
-                              FontWeight.bold,
+                          fontWeight: FontWeight.bold,
                         ),
                       ),
 
-                      const SizedBox(
-                        height: 16,
-                      ),
+                      const SizedBox(height: 16),
 
-                      Text(
-                        "🥇 ${h.ganadora}",
-                      ),
+                      Text("🥇 ${h.ganadora}"),
 
-                      Text(
-                        "⭐ ${h.puntos} puntos",
-                      ),
+                      Text("⭐ ${h.puntos} puntos"),
 
-                      const SizedBox(
-                        height: 8,
-                      ),
+                      const SizedBox(height: 8),
 
-                      Text(
-                        "🥈 ${h.segunda}",
-                      ),
+                      Text("🥈 ${h.segunda}"),
 
-                      Text(
-                        "🥉 ${h.tercera}",
-                      ),
+                      Text("🥉 ${h.tercera}"),
                     ],
                   ),
                 ),

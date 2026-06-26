@@ -1,5 +1,4 @@
 class LibroFinalizado {
-
   final String usuario;
   final String libro;
   final String genero;
@@ -18,21 +17,15 @@ class LibroFinalizado {
     required this.valoracion,
   });
 
-  factory LibroFinalizado.fromJson(
-    Map<String, dynamic> json,
-  ) {
+  factory LibroFinalizado.fromJson(Map<String, dynamic> json) {
     return LibroFinalizado(
       usuario: json['usuario'] ?? '',
       libro: json['libro'] ?? '',
       genero: json['genero'] ?? '',
       saga: json['saga'] ?? '',
       numSaga: json['numSaga'] ?? '',
-      autoconclusivo:
-          json['autoconclusivo'] ?? '',
-      valoracion:
-          json['valoracion']
-                  ?.toString() ??
-              '',
+      autoconclusivo: json['autoconclusivo'] ?? '',
+      valoracion: json['valoracion']?.toString() ?? '',
     );
   }
 }

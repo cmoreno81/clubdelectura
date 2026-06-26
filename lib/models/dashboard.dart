@@ -1,5 +1,4 @@
 class Dashboard {
-
   final Resumen resumen;
 
   final Clubvision clubvision;
@@ -21,54 +20,28 @@ class Dashboard {
     required this.leyendoAhora,
   });
 
-  factory Dashboard.fromJson(
-    Map<String, dynamic> json,
-  ) {
+  factory Dashboard.fromJson(Map<String, dynamic> json) {
     return Dashboard(
+      resumen: Resumen.fromJson(json['resumen'] ?? {}),
 
-      resumen: Resumen.fromJson(
-        json['resumen'] ?? {},
-      ),
+      clubvision: Clubvision.fromJson(json['clubvision'] ?? {}),
 
-      clubvision: Clubvision.fromJson(
-        json['clubvision'] ?? {},
-      ),
+      tendencia: json['tendencia'] ?? '',
 
-      tendencia:
-          json['tendencia'] ?? '',
+      mood: json['mood'] ?? '',
 
-      mood:
-          json['mood'] ?? '',
+      libroMes: (json['libroMes'] as List? ?? [])
+          .map((x) => LibroMes.fromJson(x))
+          .toList(),
 
-      libroMes:
-          (json['libroMes']
-                      as List? ??
-                  [])
-              .map(
-                (x) =>
-                    LibroMes.fromJson(
-                  x,
-                ),
-              )
-              .toList(),
-
-      leyendoAhora:
-          (json['leyendoAhora']
-                      as List? ??
-                  [])
-              .map(
-                (x) =>
-                    LeyendoAhora.fromJson(
-                  x,
-                ),
-              )
-              .toList(),
+      leyendoAhora: (json['leyendoAhora'] as List? ?? [])
+          .map((x) => LeyendoAhora.fromJson(x))
+          .toList(),
     );
   }
 }
 
 class Clubvision {
-
   final String estado;
 
   final String titulo;
@@ -87,33 +60,22 @@ class Clubvision {
     required this.lectoras,
   });
 
-  factory Clubvision.fromJson(
-    Map<String, dynamic> json,
-  ) {
+  factory Clubvision.fromJson(Map<String, dynamic> json) {
     return Clubvision(
+      estado: json['estado'] ?? '',
 
-      estado:
-          json['estado'] ?? '',
+      titulo: json['titulo'] ?? '',
 
-      titulo:
-          json['titulo'] ?? '',
+      mensaje: json['mensaje'] ?? '',
 
-      mensaje:
-          json['mensaje'] ?? '',
+      ganador: json['ganador'] ?? '',
 
-      ganador:
-          json['ganador'] ?? '',
-
-      lectoras:
-          List<String>.from(
-        json['lectoras'] ?? [],
-      ),
+      lectoras: List<String>.from(json['lectoras'] ?? []),
     );
   }
 }
 
 class Resumen {
-
   final String usuarioMes;
 
   final int librosUsuarioMes;
@@ -129,55 +91,32 @@ class Resumen {
     required this.valoracionMedia,
   });
 
-  factory Resumen.fromJson(
-    Map<String, dynamic> json,
-  ) {
+  factory Resumen.fromJson(Map<String, dynamic> json) {
     return Resumen(
+      usuarioMes: json['usuarioMes'] ?? '',
 
-      usuarioMes:
-          json['usuarioMes'] ?? '',
+      librosUsuarioMes: json['librosUsuarioMes'] ?? 0,
 
-      librosUsuarioMes:
-          json['librosUsuarioMes'] ?? 0,
+      actividadMes: json['actividadMes'] ?? 0,
 
-      actividadMes:
-          json['actividadMes'] ?? 0,
-
-      valoracionMedia:
-          json['valoracionMedia']
-                  ?.toString() ??
-              '',
+      valoracionMedia: json['valoracionMedia']?.toString() ?? '',
     );
   }
 }
 
 class LibroMes {
-
   final String libro;
 
   final int puntos;
 
-  LibroMes({
-    required this.libro,
-    required this.puntos,
-  });
+  LibroMes({required this.libro, required this.puntos});
 
-  factory LibroMes.fromJson(
-    Map<String, dynamic> json,
-  ) {
-    return LibroMes(
-
-      libro:
-          json['libro'] ?? '',
-
-      puntos:
-          json['puntos'] ?? 0,
-    );
+  factory LibroMes.fromJson(Map<String, dynamic> json) {
+    return LibroMes(libro: json['libro'] ?? '', puntos: json['puntos'] ?? 0);
   }
 }
 
 class LeyendoAhora {
-
   final String usuario;
 
   final List<String> libros;
@@ -190,21 +129,13 @@ class LeyendoAhora {
     required this.total,
   });
 
-  factory LeyendoAhora.fromJson(
-    Map<String, dynamic> json,
-  ) {
+  factory LeyendoAhora.fromJson(Map<String, dynamic> json) {
     return LeyendoAhora(
+      usuario: json['usuario'] ?? '',
 
-      usuario:
-          json['usuario'] ?? '',
+      libros: List<String>.from(json['libros'] ?? []),
 
-      libros:
-          List<String>.from(
-        json['libros'] ?? [],
-      ),
-
-      total:
-          json['total'] ?? 0,
+      total: json['total'] ?? 0,
     );
   }
 }

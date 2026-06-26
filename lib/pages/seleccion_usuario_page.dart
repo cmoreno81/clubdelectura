@@ -6,153 +6,80 @@ import '../services/usuario_service.dart';
 import 'home_page.dart';
 
 class SeleccionUsuarioPage extends StatefulWidget {
-
-  const SeleccionUsuarioPage({
-    super.key,
-  });
+  const SeleccionUsuarioPage({super.key});
 
   @override
-  State<SeleccionUsuarioPage> createState() =>
-      _SeleccionUsuarioPageState();
+  State<SeleccionUsuarioPage> createState() => _SeleccionUsuarioPageState();
 }
 
-class _SeleccionUsuarioPageState
-    extends State<SeleccionUsuarioPage> {
-
-  late Future<List<Usuario>>
-      future;
+class _SeleccionUsuarioPageState extends State<SeleccionUsuarioPage> {
+  late Future<List<Usuario>> future;
 
   @override
   void initState() {
-
     super.initState();
 
-    future =
-        ApiService().getUsuarios();
+    future = ApiService().getUsuarios();
   }
 
   @override
   Widget build(BuildContext context) {
-
     return Scaffold(
-
-      appBar: AppBar(
-
-        title: const Text(
-          '📚 Bienvenida',
-        ),
-      ),
+      appBar: AppBar(title: const Text('📚 Bienvenida')),
 
       body: FutureBuilder<List<Usuario>>(
-
         future: future,
 
-        builder: (
-          context,
-          snapshot,
-        ) {
-
-          if (snapshot.connectionState ==
-              ConnectionState.waiting) {
-
-            return const Center(
-
-              child:
-                  CircularProgressIndicator(),
-            );
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(child: CircularProgressIndicator());
           }
 
           if (snapshot.hasError) {
-
-            return Center(
-
-              child: Text(
-                snapshot.error.toString(),
-              ),
-            );
+            return Center(child: Text(snapshot.error.toString()));
           }
 
-          final usuarios =
-              snapshot.data!;
+          final usuarios = snapshot.data!;
 
           return ListView(
-
-            padding:
-                const EdgeInsets.all(16),
+            padding: const EdgeInsets.all(16),
 
             children: [
-
               const Text(
-
                 '¿Quién eres?',
 
-                style: TextStyle(
-
-                  fontSize: 28,
-
-                  fontWeight:
-                      FontWeight.bold,
-                ),
+                style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
               ),
 
-              const SizedBox(
-                height: 24,
-              ),
+              const SizedBox(height: 24),
 
-              ...usuarios.map(
+              ...usuarios.map((u) {
+                return Card(
+                  child: ListTile(
+                    leading: const CircleAvatar(child: Icon(Icons.person)),
 
-                (u) {
+                    title: Text(u.nombre),
 
-                  return Card(
+                    subtitle: Text(u.email),
 
-                    child: ListTile(
+                    trailing: const Icon(Icons.chevron_right),
 
-                      leading:
-                          const CircleAvatar(
+                    onTap: () async {
+                      await UsuarioService().guardarUsuario(u.nombre);
 
-                        child: Icon(
-                          Icons.person,
-                        ),
-                      ),
+                      if (!mounted) {
+                        return;
+                      }
 
-                      title:
-                          Text(u.nombre),
+                      Navigator.pushReplacement(
+                        context,
 
-                      subtitle:
-                          Text(u.email),
-
-                      trailing:
-                          const Icon(
-                        Icons.chevron_right,
-                      ),
-
-                      onTap: () async {
-
-                        await UsuarioService()
-
-                            .guardarUsuario(
-                              u.nombre,
-                            );
-
-                        if (!mounted) {
-                          return;
-                        }
-
-                        Navigator.pushReplacement(
-
-                          context,
-
-                          MaterialPageRoute(
-
-                            builder: (_) =>
-                                const HomePage(),
-                          ),
-                        );
-                      },
-                    ),
-                  );
-                },
-              ),
+                        MaterialPageRoute(builder: (_) => const HomePage()),
+                      );
+                    },
+                  ),
+                );
+              }),
             ],
           );
         },

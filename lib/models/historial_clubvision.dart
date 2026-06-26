@@ -1,5 +1,4 @@
 class HistorialClubvision {
-
   final String mes;
 
   final String ganadora;
@@ -11,7 +10,6 @@ class HistorialClubvision {
   final String tercera;
 
   HistorialClubvision({
-
     required this.mes,
 
     required this.ganadora,
@@ -23,25 +21,17 @@ class HistorialClubvision {
     required this.tercera,
   });
 
-  factory HistorialClubvision.fromJson(
-    Map<String, dynamic> json,
-  ) {
-
+  factory HistorialClubvision.fromJson(Map<String, dynamic> json) {
     return HistorialClubvision(
-
       mes: json["mes"] ?? "",
 
-      ganadora:
-          json["ganadora"] ?? "",
+      ganadora: json["ganadora"] ?? "",
 
-      puntos:
-          json["puntos"] ?? 0,
+      puntos: json["puntos"] ?? 0,
 
-      segunda:
-          json["segunda"] ?? "",
+      segunda: json["segunda"] ?? "",
 
-      tercera:
-          json["tercera"] ?? "",
+      tercera: json["tercera"] ?? "",
     );
   }
 }
