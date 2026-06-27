@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../models/dashboard.dart';
 import '../services/api_service.dart';
+import '../services/club_narrador.dart';
 import '../widgets/info_card.dart';
 
 class DashboardPage extends StatefulWidget {
@@ -49,7 +50,10 @@ class _DashboardPageState extends State<DashboardPage> {
           }
 
           final data = snapshot.data!;
-
+          print("ESTADO DASHBOARD: '${data.clubvision.estado}'");
+          final estadoClub = ClubNarrador().narrar(
+            estado: data.clubvision.estado,
+          );
           return SingleChildScrollView(
             padding: const EdgeInsets.all(16),
 
@@ -69,7 +73,7 @@ class _DashboardPageState extends State<DashboardPage> {
                 Card(
                   elevation: 4,
 
-                  color: Colors.blue.shade50,
+                  color: estadoClub.color,
 
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(20),
@@ -89,7 +93,7 @@ class _DashboardPageState extends State<DashboardPage> {
                         const SizedBox(height: 12),
 
                         Text(
-                          data.clubvision.titulo,
+                          estadoClub.titulo,
                           textAlign: TextAlign.center,
                           style: const TextStyle(
                             fontSize: 22,
