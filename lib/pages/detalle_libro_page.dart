@@ -231,7 +231,7 @@ class _DetalleLibroPageState extends State<DetalleLibroPage> {
                       padding: const EdgeInsets.symmetric(horizontal: 16),
 
                       child: DropdownButtonFormField<String>(
-                        value: registro.estado,
+                        initialValue: registro.estado,
 
                         decoration: const InputDecoration(labelText: 'Estado'),
 

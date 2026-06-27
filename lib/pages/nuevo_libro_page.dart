@@ -104,7 +104,7 @@ class _NuevoLibroPageState extends State<NuevoLibroPage> {
             const SizedBox(height: 16),
 
             DropdownButtonFormField<String>(
-              value: genero,
+              initialValue: genero,
 
               decoration: const InputDecoration(labelText: 'Género'),
 
@@ -152,7 +152,7 @@ class _NuevoLibroPageState extends State<NuevoLibroPage> {
             const SizedBox(height: 16),
 
             DropdownButtonFormField<String>(
-              value: prioridad,
+              initialValue: prioridad,
 
               decoration: const InputDecoration(labelText: 'Prioridad'),
 
@@ -170,7 +170,7 @@ class _NuevoLibroPageState extends State<NuevoLibroPage> {
             const SizedBox(height: 16),
 
             DropdownButtonFormField<String>(
-              value: autoconclusivo,
+              initialValue: autoconclusivo,
 
               decoration: const InputDecoration(labelText: 'Autoconclusivo'),
 

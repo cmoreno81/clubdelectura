@@ -1,12 +1,10 @@
 import 'package:flutter/material.dart';
 
-import '../models/libro.dart';
 import '../models/libro_agrupado.dart';
 import '../services/api_service.dart';
 import 'detalle_libro_page.dart';
 import 'nuevo_libro_page.dart';
 import '../models/libros_data.dart';
-import '../models/libro_finalizado.dart';
 
 class LibrosPage extends StatefulWidget {
   const LibrosPage({super.key});
@@ -194,7 +192,7 @@ class _LibrosPageState extends State<LibrosPage> {
                 padding: const EdgeInsets.symmetric(horizontal: 16),
 
                 child: DropdownButtonFormField<String>(
-                  value: filtroUsuario,
+                  initialValue: filtroUsuario,
 
                   decoration: const InputDecoration(labelText: 'Usuaria'),
 

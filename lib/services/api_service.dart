@@ -14,12 +14,10 @@ import '../models/usuario.dart';
 
 class ApiService {
   static const String baseUrl =
-      'https://script.google.com/macros/s/AKfycbyig_QGym2sTWmG16Wlw4pgfP57sVz86LuM58s3n84vLAVM6QK-fRrw89wIiyCaS4h0/exec';
+      'https://script.google.com/macros/s/AKfycbxiu96FbM8mT2rY7ZYpU9EgQbqz1xppmBxqatKwotqeLMog28l1-xSGqZDTntmfu0zx/exec';
 
   Future<List<Usuario>> getUsuarios() async {
     final response = await http.get(Uri.parse('$baseUrl?action=usuarios'));
-    print(response.statusCode);
-    print(response.body);
     final List data = jsonDecode(response.body);
 
     return data.map((e) => Usuario.fromJson(e)).toList();
@@ -28,9 +26,6 @@ class ApiService {
   Future<Dashboard> getDashboard() async {
     final response = await http.get(Uri.parse('$baseUrl?action=dashboard'));
 
-    print('Dashboard status: ${response.statusCode}');
-
-    print('Dashboard body: ${response.body}');
     if (response.statusCode == 200) {
       return Dashboard.fromJson(jsonDecode(response.body));
     }
@@ -72,10 +67,6 @@ class ApiService {
 
       body: jsonEncode(libro.toJson()),
     );
-
-    print('STATUS: ${response.statusCode}');
-
-    print('BODY: ${response.body}');
   }
 
   Future<void> actualizarEstado({
@@ -154,5 +145,32 @@ class ApiService {
     final List data = jsonDecode(response.body);
 
     return data.map((e) => HistorialClubvision.fromJson(e)).toList();
+  }
+
+  Future<bool> enviarVotacion({
+    required String usuario,
+    required List<String> votos,
+  }) async {
+    final uri = Uri.parse(baseUrl).replace(
+      queryParameters: {
+        'action': 'enviarVotacion',
+        'usuario': usuario,
+        'v1': votos.length > 0 ? votos[0] : '',
+        'v2': votos.length > 1 ? votos[1] : '',
+        'v3': votos.length > 2 ? votos[2] : '',
+        'v4': votos.length > 3 ? votos[3] : '',
+        'v5': votos.length > 4 ? votos[4] : '',
+      },
+    );
+
+    final response = await http.get(uri);
+
+    if (response.statusCode != 200) {
+      return false;
+    }
+
+    final json = jsonDecode(response.body);
+
+    return json["ok"] == true;
   }
 }

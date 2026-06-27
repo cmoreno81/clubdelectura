@@ -145,6 +145,13 @@ class _ClubvisionVotacionPageState extends State<ClubvisionVotacionPage> {
             (total, candidata) => total + candidata.interesadas,
           );
 
+          final votos = seleccionadas
+              .map(
+                (titulo) =>
+                    clubvision.candidatas.firstWhere((c) => c.libro == titulo),
+              )
+              .toList();
+
           return ListView(
             padding: const EdgeInsets.all(16),
             children: [
@@ -179,6 +186,208 @@ class _ClubvisionVotacionPageState extends State<ClubvisionVotacionPage> {
                         'Elegimos juntas la próxima lectura del club 💜',
                         style: TextStyle(fontSize: 16),
                       ),
+                      const SizedBox(height: 16),
+                      if (votos.isNotEmpty)
+                        Card(
+                          color: Colors.deepPurple.shade50,
+
+                          child: Padding(
+                            padding: const EdgeInsets.all(20),
+
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+
+                              children: [
+                                const Text(
+                                  '🗳️ Tu papeleta',
+
+                                  style: TextStyle(
+                                    fontSize: 24,
+
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+
+                                const SizedBox(height: 16),
+
+                                ...votos.asMap().entries.map((entry) {
+                                  final posicion = entry.key;
+
+                                  final libro = entry.value;
+
+                                  final etiqueta = switch (posicion) {
+                                    0 => '🥇 12',
+
+                                    1 => '🥈 10',
+
+                                    2 => '🥉 8',
+
+                                    3 => '④ 7',
+
+                                    _ => '⑤ 6',
+                                  };
+
+                                  return Padding(
+                                    padding: const EdgeInsets.only(bottom: 10),
+
+                                    child: Text(
+                                      '$etiqueta   ${libro.libro}',
+
+                                      style: const TextStyle(fontSize: 18),
+                                    ),
+                                  );
+                                }),
+                                if (seleccionadas.length == 5) ...[
+                                  const SizedBox(height: 20),
+
+                                  SizedBox(
+                                    width: double.infinity,
+
+                                    child: ElevatedButton.icon(
+                                      onPressed: () {
+                                        showDialog(
+                                          context: context,
+
+                                          builder: (_) {
+                                            return AlertDialog(
+                                              title: const Text(
+                                                '🗳️ Confirmar votación',
+                                              ),
+
+                                              content: Column(
+                                                mainAxisSize: MainAxisSize.min,
+
+                                                crossAxisAlignment:
+                                                    CrossAxisAlignment.start,
+
+                                                children: [
+                                                  const Text(
+                                                    '¿Quieres enviar esta papeleta?',
+                                                  ),
+
+                                                  const SizedBox(height: 16),
+
+                                                  ...votos.asMap().entries.map((
+                                                    entry,
+                                                  ) {
+                                                    final posicion = entry.key;
+
+                                                    final libro = entry.value;
+
+                                                    final puntos =
+                                                        switch (posicion) {
+                                                          0 => '🥇 12',
+
+                                                          1 => '🥈 10',
+
+                                                          2 => '🥉 8',
+
+                                                          3 => '④ 7',
+
+                                                          _ => '⑤ 6',
+                                                        };
+
+                                                    return Padding(
+                                                      padding:
+                                                          const EdgeInsets.only(
+                                                            bottom: 8,
+                                                          ),
+
+                                                      child: Text(
+                                                        '$puntos  ${libro.libro}',
+                                                      ),
+                                                    );
+                                                  }),
+                                                ],
+                                              ),
+
+                                              actions: [
+                                                TextButton(
+                                                  onPressed: () {
+                                                    Navigator.pop(context);
+                                                  },
+
+                                                  child: const Text('Cancelar'),
+                                                ),
+
+                                                ElevatedButton(
+                                                  onPressed: () async {
+                                                    final ok =
+                                                        await ApiService()
+                                                            .enviarVotacion(
+                                                              usuario: usuario,
+
+                                                              votos:
+                                                                  seleccionadas,
+                                                            );
+
+                                                    if (!mounted) return;
+
+                                                    Navigator.pop(context);
+
+                                                    if (ok) {
+                                                      ScaffoldMessenger.of(
+                                                        context,
+                                                      ).showSnackBar(
+                                                        const SnackBar(
+                                                          content: Text(
+                                                            '✅ Votación enviada correctamente',
+                                                          ),
+
+                                                          backgroundColor:
+                                                              Colors.green,
+                                                        ),
+                                                      );
+                                                    }
+                                                  },
+
+                                                  child: const Text(
+                                                    'Enviar votación',
+                                                  ),
+                                                ),
+                                              ],
+                                            );
+                                          },
+                                        );
+                                      },
+
+                                      icon: const Icon(Icons.how_to_vote),
+
+                                      label: const Text(
+                                        'Enviar mi votación',
+
+                                        style: TextStyle(fontSize: 18),
+                                      ),
+
+                                      style: ElevatedButton.styleFrom(
+                                        backgroundColor: Colors.deepPurple,
+
+                                        foregroundColor: Colors.white,
+
+                                        padding: const EdgeInsets.symmetric(
+                                          vertical: 16,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ] else ...[
+                                  const SizedBox(height: 12),
+
+                                  Text(
+                                    'Selecciona ${5 - seleccionadas.length} libros más para completar tu papeleta.',
+
+                                    style: TextStyle(
+                                      color: Colors.grey.shade700,
+
+                                      fontStyle: FontStyle.italic,
+                                    ),
+                                  ),
+                                ],
+                              ],
+                            ),
+                          ),
+                        ),
+
                       const SizedBox(height: 16),
                       Row(
                         children: [
@@ -222,13 +431,17 @@ class _ClubvisionVotacionPageState extends State<ClubvisionVotacionPage> {
                 final candidata = entry.value;
                 final seleccionada = seleccionadas.contains(candidata.libro);
 
+                final posicion = seleccionadas.indexOf(candidata.libro);
+
                 return GestureDetector(
                   onTap: () {
                     setState(() {
                       if (seleccionada) {
                         seleccionadas.remove(candidata.libro);
                       } else {
-                        seleccionadas.add(candidata.libro);
+                        if (seleccionadas.length < 5) {
+                          seleccionadas.add(candidata.libro);
+                        }
                       }
                     });
                   },
@@ -236,7 +449,7 @@ class _ClubvisionVotacionPageState extends State<ClubvisionVotacionPage> {
                     duration: const Duration(milliseconds: 180),
                     child: Card(
                       color: seleccionada
-                          ? Colors.deepPurple.withOpacity(0.06)
+                          ? Colors.deepPurple.withValues(alpha: 0.06)
                           : null,
                       elevation: index < 3 ? 6 : 2,
                       shape: RoundedRectangleBorder(
@@ -251,33 +464,59 @@ class _ClubvisionVotacionPageState extends State<ClubvisionVotacionPage> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(
-                              candidata.libro,
-                              style: const TextStyle(
-                                fontSize: 28,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                            if (seleccionada)
-                              const Padding(
-                                padding: EdgeInsets.only(top: 8),
-                                child: Row(
-                                  children: [
-                                    Icon(
-                                      Icons.check_circle,
-                                      color: Colors.deepPurple,
+                            Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+
+                              children: [
+                                Expanded(
+                                  child: Text(
+                                    candidata.libro,
+
+                                    style: const TextStyle(
+                                      fontSize: 28,
+
+                                      fontWeight: FontWeight.bold,
                                     ),
-                                    SizedBox(width: 8),
-                                    Text(
-                                      'Seleccionado',
-                                      style: TextStyle(
-                                        color: Colors.deepPurple,
+                                  ),
+                                ),
+
+                                if (seleccionada)
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 10,
+
+                                      vertical: 6,
+                                    ),
+
+                                    decoration: BoxDecoration(
+                                      color: Colors.deepPurple,
+
+                                      borderRadius: BorderRadius.circular(20),
+                                    ),
+
+                                    child: Text(
+                                      switch (posicion) {
+                                        0 => '🥇 12',
+
+                                        1 => '🥈 10',
+
+                                        2 => '🥉 8',
+
+                                        3 => '④ 7',
+
+                                        _ => '⑤ 6',
+                                      },
+
+                                      style: const TextStyle(
+                                        color: Colors.white,
+
                                         fontWeight: FontWeight.bold,
                                       ),
                                     ),
-                                  ],
-                                ),
-                              ),
+                                  ),
+                              ],
+                            ),
+
                             const SizedBox(height: 8),
                             Text(
                               '${iconoGenero(candidata.genero)} ${candidata.genero}',
