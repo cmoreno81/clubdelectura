@@ -1,9 +1,11 @@
+import 'package:club_lectura_app/widgets/club/club_card.dart';
 import 'package:flutter/material.dart';
 
 import '../models/dashboard.dart';
 import '../services/api_service.dart';
 import '../services/club_narrador.dart';
 import '../widgets/info_card.dart';
+import '../dev/dev_settings.dart';
 
 class DashboardPage extends StatefulWidget {
   const DashboardPage({super.key});
@@ -50,10 +52,10 @@ class _DashboardPageState extends State<DashboardPage> {
           }
 
           final data = snapshot.data!;
-          print("ESTADO DASHBOARD: '${data.clubvision.estado}'");
           final estadoClub = ClubNarrador().narrar(
-            estado: data.clubvision.estado,
+            estado: DevSettings.estadoForzado ?? data.clubvision.estado,
           );
+
           return SingleChildScrollView(
             padding: const EdgeInsets.all(16),
 
@@ -69,66 +71,7 @@ class _DashboardPageState extends State<DashboardPage> {
 
                 const SizedBox(height: 16),
 
-                // Clubvisión
-                Card(
-                  elevation: 4,
-
-                  color: estadoClub.color,
-
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-
-                  child: Padding(
-                    padding: const EdgeInsets.all(24),
-
-                    child: Column(
-                      children: [
-                        const Icon(
-                          Icons.workspace_premium,
-                          size: 52,
-                          color: Colors.amber,
-                        ),
-
-                        const SizedBox(height: 12),
-
-                        Text(
-                          estadoClub.titulo,
-                          textAlign: TextAlign.center,
-                          style: const TextStyle(
-                            fontSize: 22,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-
-                        const SizedBox(height: 16),
-
-                        Text(
-                          data.clubvision.mensaje,
-                          textAlign: TextAlign.center,
-                          style: const TextStyle(
-                            fontSize: 20,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-
-                        const SizedBox(height: 20),
-
-                        Text(
-                          data.clubvision.lectoras.isEmpty
-                              ? '🌟 Estreno para todo el club'
-                              : '⭐ Ya leído por:\n${data.clubvision.lectoras.join(", ")}',
-
-                          textAlign: TextAlign.center,
-
-                          style: const TextStyle(fontSize: 16),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-
-                const SizedBox(height: 16),
+                ClubCard(dashboard: data, estadoClub: estadoClub),
 
                 // Mood
                 InfoCard(

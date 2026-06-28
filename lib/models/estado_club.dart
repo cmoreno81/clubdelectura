@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+enum ContenidoClub { preparando, candidatas, ganador, lectura }
+
 enum EstadoClubTipo { preparando, votacion, ultimasHoras, gala, lectura }
 
 class EstadoClub {
@@ -7,7 +9,9 @@ class EstadoClub {
 
   final String titulo;
   final String mensaje;
-  final String icono;
+  final IconData icono;
+  final Color iconColor;
+  final ContenidoClub contenido;
 
   final bool permiteVotar;
   final bool mostrarCuentaAtras;
@@ -20,7 +24,9 @@ class EstadoClub {
     required this.titulo,
     required this.mensaje,
     required this.icono,
+    required this.iconColor,
     required this.color,
+    required this.contenido,
     this.permiteVotar = false,
     this.mostrarCuentaAtras = false,
     this.mostrarGanador = false,
