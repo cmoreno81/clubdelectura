@@ -6,6 +6,7 @@ import '../services/api_service.dart';
 import '../services/club_narrador.dart';
 import '../widgets/info_card.dart';
 import '../dev/dev_settings.dart';
+import '../services/votacion_local_service.dart';
 
 class DashboardPage extends StatefulWidget {
   const DashboardPage({super.key});
@@ -16,12 +17,25 @@ class DashboardPage extends StatefulWidget {
 
 class _DashboardPageState extends State<DashboardPage> {
   late Future<Dashboard> dashboardFuture;
+  bool haVotado = false;
 
   @override
   void initState() {
     super.initState();
 
     dashboardFuture = ApiService().getDashboard();
+    //VotacionLocalService().borrar();
+    _cargarEstadoVoto();
+  }
+
+  Future<void> _cargarEstadoVoto() async {
+    final votado = await VotacionLocalService().haVotado("2025-07");
+
+    if (!mounted) return;
+
+    setState(() {
+      haVotado = votado;
+    });
   }
 
   @override
@@ -71,7 +85,12 @@ class _DashboardPageState extends State<DashboardPage> {
 
                 const SizedBox(height: 16),
 
-                ClubCard(dashboard: data, estadoClub: estadoClub),
+                ClubCard(
+                  dashboard: data,
+                  estadoClub: estadoClub,
+                  haVotado: haVotado,
+                  onActualizar: _cargarEstadoVoto,
+                ),
 
                 // Mood
                 InfoCard(

@@ -2,15 +2,21 @@ import 'package:flutter/material.dart';
 import '../../models/dashboard.dart';
 import '../../models/estado_club.dart';
 import 'director_escenas.dart';
+import '../../pages/clubvisionVotacionPage.dart';
+import '../../services/votacion_local_service.dart';
 
 class ClubCard extends StatelessWidget {
   final Dashboard dashboard;
   final EstadoClub estadoClub;
+  final bool haVotado;
+  final Future<void> Function() onActualizar;
 
   const ClubCard({
     super.key,
     required this.dashboard,
     required this.estadoClub,
+    required this.haVotado,
+    required this.onActualizar,
   });
 
   @override
@@ -46,19 +52,47 @@ class ClubCard extends StatelessWidget {
             if (estadoClub.permiteVotar) ...[
               const SizedBox(height: 24),
 
-              SizedBox(
-                width: double.infinity,
-                child: FilledButton.icon(
-                  onPressed: () {
-                    // De momento vacío.
-                  },
-                  icon: const Icon(Icons.how_to_vote),
-                  label: const Text(
-                    "Votar ahora",
-                    style: TextStyle(fontSize: 18),
+              if (!haVotado)
+                SizedBox(
+                  width: double.infinity,
+                  child: FilledButton.icon(
+                    onPressed: () async {
+                      await Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => const ClubvisionVotacionPage(),
+                        ),
+                      );
+                      // aquí avisaremos al Dashboard para que recargue
+                      await onActualizar();
+                    },
+                    icon: const Icon(Icons.how_to_vote),
+                    label: const Text(
+                      "Votar ahora",
+                      style: TextStyle(fontSize: 18),
+                    ),
                   ),
+                )
+              else
+                const Column(
+                  children: [
+                    Icon(Icons.check_circle, color: Colors.green, size: 42),
+                    SizedBox(height: 12),
+                    Text(
+                      "Tu voto ya forma parte de esta historia.",
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    SizedBox(height: 8),
+                    Text(
+                      "Ahora solo queda esperar al desenlace.",
+                      textAlign: TextAlign.center,
+                    ),
+                  ],
                 ),
-              ),
             ],
             if (estadoClub.mostrarGanador) ...[
               const SizedBox(height: 20),

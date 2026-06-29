@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../models/clubvision.dart';
 import '../services/api_service.dart';
 import '../services/usuario_service.dart';
+import '../services/votacion_local_service.dart';
 
 class ClubvisionVotacionPage extends StatefulWidget {
   const ClubvisionVotacionPage({super.key});
@@ -326,6 +327,10 @@ class _ClubvisionVotacionPageState extends State<ClubvisionVotacionPage> {
                                                     Navigator.pop(context);
 
                                                     if (ok) {
+                                                      await VotacionLocalService()
+                                                          .guardarVoto(
+                                                            "2025-07",
+                                                          );
                                                       ScaffoldMessenger.of(
                                                         context,
                                                       ).showSnackBar(
