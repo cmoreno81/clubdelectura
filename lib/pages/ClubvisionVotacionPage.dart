@@ -6,7 +6,9 @@ import '../services/usuario_service.dart';
 import '../services/votacion_local_service.dart';
 
 class ClubvisionVotacionPage extends StatefulWidget {
-  const ClubvisionVotacionPage({super.key});
+  final String idVotacion;
+
+  const ClubvisionVotacionPage({super.key, required this.idVotacion});
 
   @override
   State<ClubvisionVotacionPage> createState() => _ClubvisionVotacionPageState();
@@ -17,6 +19,7 @@ class _ClubvisionVotacionPageState extends State<ClubvisionVotacionPage> {
 
   String usuario = '';
   final List<String> seleccionadas = [];
+  bool haVotado = false;
 
   @override
   void initState() {
@@ -30,6 +33,15 @@ class _ClubvisionVotacionPageState extends State<ClubvisionVotacionPage> {
       setState(() {
         usuario = value ?? '';
       });
+    });
+    VotacionLocalService().haVotado(widget.idVotacion).then((value) {
+      if (!mounted) return;
+
+      setState(() {
+        haVotado = value;
+      });
+      print("HA VOTADO = $value");
+      print("ID = ${widget.idVotacion}");
     });
   }
 
@@ -188,7 +200,7 @@ class _ClubvisionVotacionPageState extends State<ClubvisionVotacionPage> {
                         style: TextStyle(fontSize: 16),
                       ),
                       const SizedBox(height: 16),
-                      if (votos.isNotEmpty)
+                      if (!haVotado && votos.isNotEmpty)
                         Card(
                           color: Colors.deepPurple.shade50,
 
@@ -329,8 +341,11 @@ class _ClubvisionVotacionPageState extends State<ClubvisionVotacionPage> {
                                                     if (ok) {
                                                       await VotacionLocalService()
                                                           .guardarVoto(
-                                                            "2025-07",
+                                                            widget.idVotacion,
                                                           );
+
+                                                      if (!mounted) return;
+
                                                       ScaffoldMessenger.of(
                                                         context,
                                                       ).showSnackBar(
@@ -338,11 +353,12 @@ class _ClubvisionVotacionPageState extends State<ClubvisionVotacionPage> {
                                                           content: Text(
                                                             '✅ Votación enviada correctamente',
                                                           ),
-
                                                           backgroundColor:
                                                               Colors.green,
                                                         ),
                                                       );
+
+                                                      Navigator.pop(context);
                                                     }
                                                   },
 
@@ -431,118 +447,145 @@ class _ClubvisionVotacionPageState extends State<ClubvisionVotacionPage> {
                 ),
               ),
               const SizedBox(height: 16),
-              ...clubvision.candidatas.asMap().entries.map((entry) {
-                final index = entry.key;
-                final candidata = entry.value;
-                final seleccionada = seleccionadas.contains(candidata.libro);
-
-                final posicion = seleccionadas.indexOf(candidata.libro);
-
-                return GestureDetector(
-                  onTap: () {
-                    setState(() {
-                      if (seleccionada) {
-                        seleccionadas.remove(candidata.libro);
-                      } else {
-                        if (seleccionadas.length < 5) {
-                          seleccionadas.add(candidata.libro);
-                        }
-                      }
-                    });
-                  },
-                  child: AnimatedContainer(
-                    duration: const Duration(milliseconds: 180),
-                    child: Card(
-                      color: seleccionada
-                          ? Colors.deepPurple.withValues(alpha: 0.06)
-                          : null,
-                      elevation: index < 3 ? 6 : 2,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(20),
-                        side: BorderSide(
-                          color: bordeCandidata(index, seleccionada),
-                          width: anchoBordeCandidata(index, seleccionada),
+              if (haVotado)
+                Card(
+                  color: Colors.green.shade50,
+                  child: const Padding(
+                    padding: EdgeInsets.all(24),
+                    child: Column(
+                      children: [
+                        Icon(Icons.check_circle, color: Colors.green, size: 56),
+                        SizedBox(height: 16),
+                        Text(
+                          "Tu voto ya forma parte de esta historia.",
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            fontSize: 22,
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
-                      ),
-                      child: Padding(
-                        padding: const EdgeInsets.all(16),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Row(
-                              crossAxisAlignment: CrossAxisAlignment.start,
+                        SizedBox(height: 10),
+                        Text(
+                          "Ahora solo queda esperar al desenlace.",
+                          textAlign: TextAlign.center,
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              if (!haVotado)
+                ...clubvision.candidatas.asMap().entries.map((entry) {
+                  final index = entry.key;
+                  final candidata = entry.value;
+                  final seleccionada = seleccionadas.contains(candidata.libro);
 
-                              children: [
-                                Expanded(
-                                  child: Text(
-                                    candidata.libro,
+                  final posicion = seleccionadas.indexOf(candidata.libro);
 
-                                    style: const TextStyle(
-                                      fontSize: 28,
+                  return GestureDetector(
+                    onTap: () {
+                      setState(() {
+                        if (seleccionada) {
+                          seleccionadas.remove(candidata.libro);
+                        } else {
+                          if (seleccionadas.length < 5) {
+                            seleccionadas.add(candidata.libro);
+                          }
+                        }
+                      });
+                    },
+                    child: AnimatedContainer(
+                      duration: const Duration(milliseconds: 180),
+                      child: Card(
+                        color: seleccionada
+                            ? Colors.deepPurple.withValues(alpha: 0.06)
+                            : null,
+                        elevation: index < 3 ? 6 : 2,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(20),
+                          side: BorderSide(
+                            color: bordeCandidata(index, seleccionada),
+                            width: anchoBordeCandidata(index, seleccionada),
+                          ),
+                        ),
+                        child: Padding(
+                          padding: const EdgeInsets.all(16),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                crossAxisAlignment: CrossAxisAlignment.start,
 
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                ),
-
-                                if (seleccionada)
-                                  Container(
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 10,
-
-                                      vertical: 6,
-                                    ),
-
-                                    decoration: BoxDecoration(
-                                      color: Colors.deepPurple,
-
-                                      borderRadius: BorderRadius.circular(20),
-                                    ),
-
+                                children: [
+                                  Expanded(
                                     child: Text(
-                                      switch (posicion) {
-                                        0 => '🥇 12',
-
-                                        1 => '🥈 10',
-
-                                        2 => '🥉 8',
-
-                                        3 => '④ 7',
-
-                                        _ => '⑤ 6',
-                                      },
+                                      candidata.libro,
 
                                       style: const TextStyle(
-                                        color: Colors.white,
+                                        fontSize: 28,
 
                                         fontWeight: FontWeight.bold,
                                       ),
                                     ),
                                   ),
-                              ],
-                            ),
 
-                            const SizedBox(height: 8),
-                            Text(
-                              '${iconoGenero(candidata.genero)} ${candidata.genero}',
-                            ),
-                            const SizedBox(height: 6),
-                            Text('👥 ${candidata.interesadas} interesadas'),
-                            const SizedBox(height: 4),
-                            LinearProgressIndicator(
-                              value: candidata.interesadas / 9,
-                              minHeight: 5,
-                              borderRadius: BorderRadius.circular(20),
-                            ),
-                            const SizedBox(height: 14),
-                            etiquetaCandidata(index, candidata.interesadas),
-                          ],
+                                  if (seleccionada)
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 10,
+
+                                        vertical: 6,
+                                      ),
+
+                                      decoration: BoxDecoration(
+                                        color: Colors.deepPurple,
+
+                                        borderRadius: BorderRadius.circular(20),
+                                      ),
+
+                                      child: Text(
+                                        switch (posicion) {
+                                          0 => '🥇 12',
+
+                                          1 => '🥈 10',
+
+                                          2 => '🥉 8',
+
+                                          3 => '④ 7',
+
+                                          _ => '⑤ 6',
+                                        },
+
+                                        style: const TextStyle(
+                                          color: Colors.white,
+
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                    ),
+                                ],
+                              ),
+
+                              const SizedBox(height: 8),
+                              Text(
+                                '${iconoGenero(candidata.genero)} ${candidata.genero}',
+                              ),
+                              const SizedBox(height: 6),
+                              Text('👥 ${candidata.interesadas} interesadas'),
+                              const SizedBox(height: 4),
+                              LinearProgressIndicator(
+                                value: candidata.interesadas / 9,
+                                minHeight: 5,
+                                borderRadius: BorderRadius.circular(20),
+                              ),
+                              const SizedBox(height: 14),
+                              etiquetaCandidata(index, candidata.interesadas),
+                            ],
+                          ),
                         ),
                       ),
                     ),
-                  ),
-                );
-              }),
+                  );
+                }),
             ],
           );
         },

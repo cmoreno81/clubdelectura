@@ -1,12 +1,12 @@
 import 'package:club_lectura_app/widgets/club/club_card.dart';
 import 'package:flutter/material.dart';
 
-import '../models/dashboard.dart';
 import '../services/api_service.dart';
 import '../services/club_narrador.dart';
 import '../widgets/info_card.dart';
 import '../dev/dev_settings.dart';
 import '../services/votacion_local_service.dart';
+import '../models/dashboard_view_data.dart';
 
 class DashboardPage extends StatefulWidget {
   const DashboardPage({super.key});
@@ -16,26 +16,23 @@ class DashboardPage extends StatefulWidget {
 }
 
 class _DashboardPageState extends State<DashboardPage> {
-  late Future<Dashboard> dashboardFuture;
-  bool haVotado = false;
+  late Future<DashboardViewData> dashboardFuture;
 
   @override
   void initState() {
     super.initState();
-
-    dashboardFuture = ApiService().getDashboard();
     //VotacionLocalService().borrar();
-    _cargarEstadoVoto();
+    dashboardFuture = _cargarDashboard();
   }
 
-  Future<void> _cargarEstadoVoto() async {
-    final votado = await VotacionLocalService().haVotado("2025-07");
+  Future<DashboardViewData> _cargarDashboard() async {
+    final dashboard = await ApiService().getDashboard();
 
-    if (!mounted) return;
+    final haVotado = await VotacionLocalService().haVotado(
+      dashboard.clubvision.idVotacion,
+    );
 
-    setState(() {
-      haVotado = votado;
-    });
+    return DashboardViewData(dashboard: dashboard, haVotado: haVotado);
   }
 
   @override
@@ -53,7 +50,7 @@ class _DashboardPageState extends State<DashboardPage> {
         ),
       ),
 
-      body: FutureBuilder<Dashboard>(
+      body: FutureBuilder<DashboardViewData>(
         future: dashboardFuture,
 
         builder: (context, snapshot) {
@@ -65,7 +62,9 @@ class _DashboardPageState extends State<DashboardPage> {
             return Center(child: Text('Error: ${snapshot.error}'));
           }
 
-          final data = snapshot.data!;
+          final viewData = snapshot.data!;
+
+          final data = viewData.dashboard;
           final estadoClub = ClubNarrador().narrar(
             estado: DevSettings.estadoForzado ?? data.clubvision.estado,
           );
@@ -88,8 +87,12 @@ class _DashboardPageState extends State<DashboardPage> {
                 ClubCard(
                   dashboard: data,
                   estadoClub: estadoClub,
-                  haVotado: haVotado,
-                  onActualizar: _cargarEstadoVoto,
+                  haVotado: viewData.haVotado,
+                  onActualizar: () async {
+                    setState(() {
+                      dashboardFuture = _cargarDashboard();
+                    });
+                  },
                 ),
 
                 // Mood

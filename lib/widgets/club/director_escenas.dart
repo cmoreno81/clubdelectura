@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import '../../dev/dev_data.dart';
 import '../../models/dashboard.dart';
 import '../../models/estado_club.dart';
 import 'escenas/escena_votacion.dart';
@@ -24,7 +23,9 @@ class DirectorEscenas {
         );
 
       case ContenidoClub.candidatas:
-        return EscenaVotacion(totalCandidatas: DevData.candidatasDemo.length);
+        return EscenaVotacion(
+          totalCandidatas: dashboard.clubvision.totalCandidatas,
+        );
 
       case ContenidoClub.ganador:
         return Text(
@@ -36,13 +37,9 @@ class DirectorEscenas {
       case ContenidoClub.lectura:
         return Column(
           children: [
-            const Text(
-              "Lectura actual",
-              style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
-            ),
             const SizedBox(height: 10),
             Text(
-              dashboard.clubvision.titulo,
+              dashboard.clubvision.mensaje,
               textAlign: TextAlign.center,
               style: const TextStyle(fontSize: 20),
             ),

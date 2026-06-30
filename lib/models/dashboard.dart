@@ -1,3 +1,5 @@
+import 'lectura_actual.dart';
+
 class Dashboard {
   final Resumen resumen;
 
@@ -11,6 +13,8 @@ class Dashboard {
 
   final List<LeyendoAhora> leyendoAhora;
 
+  final LecturaActual lecturaActual;
+
   Dashboard({
     required this.resumen,
     required this.clubvision,
@@ -18,6 +22,7 @@ class Dashboard {
     required this.mood,
     required this.libroMes,
     required this.leyendoAhora,
+    required this.lecturaActual,
   });
 
   factory Dashboard.fromJson(Map<String, dynamic> json) {
@@ -37,6 +42,8 @@ class Dashboard {
       leyendoAhora: (json['leyendoAhora'] as List? ?? [])
           .map((x) => LeyendoAhora.fromJson(x))
           .toList(),
+
+      lecturaActual: LecturaActual.fromJson(json['lecturaActual'] ?? {}),
     );
   }
 }
@@ -50,7 +57,11 @@ class Clubvision {
 
   final String ganador;
 
+  final String idVotacion;
+
   final List<String> lectoras;
+
+  final int totalCandidatas;
 
   Clubvision({
     required this.estado,
@@ -58,6 +69,8 @@ class Clubvision {
     required this.mensaje,
     required this.ganador,
     required this.lectoras,
+    required this.idVotacion,
+    required this.totalCandidatas,
   });
 
   factory Clubvision.fromJson(Map<String, dynamic> json) {
@@ -70,7 +83,11 @@ class Clubvision {
 
       ganador: json['ganador'] ?? '',
 
+      idVotacion: json['idVotacion'] ?? '',
+
       lectoras: List<String>.from(json['lectoras'] ?? []),
+
+      totalCandidatas: json['totalCandidatas'] ?? 0,
     );
   }
 }
