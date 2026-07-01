@@ -1,3 +1,5 @@
+import 'package:club_lectura_app/utils/genero_utils.dart';
+import 'package:club_lectura_app/widgets/error_view.dart';
 import 'package:flutter/material.dart';
 
 import '../models/clubvision.dart';
@@ -43,37 +45,6 @@ class _ClubvisionVotacionPageState extends State<ClubvisionVotacionPage> {
       print("HA VOTADO = $value");
       print("ID = ${widget.idVotacion}");
     });
-  }
-
-  String iconoGenero(String genero) {
-    switch (genero.toLowerCase()) {
-      case 'fantasía':
-        return '🐉';
-      case 'novela negra':
-        return '🔪';
-      case 'romance':
-        return '💕';
-      case 'terror':
-        return '👻';
-      case 'ciencia ficción':
-        return '🚀';
-      case 'novela contemporánea':
-        return '📖';
-      case 'novela histórica':
-        return '🏰';
-      case 'romantasy':
-        return '🦄';
-      case 'thriller':
-        return '🕵️';
-      case 'dark academia':
-        return '🎭';
-      case 'dark romance':
-        return '🖤';
-      case 'drama':
-        return '😭';
-      default:
-        return '📚';
-    }
   }
 
   Color bordeCandidata(int index, bool seleccionada) {
@@ -149,7 +120,13 @@ class _ClubvisionVotacionPageState extends State<ClubvisionVotacionPage> {
           }
 
           if (snapshot.hasError) {
-            return Center(child: Text(snapshot.error.toString()));
+            return ErrorView(
+              onRetry: () {
+                setState(() {
+                  future = ApiService().getClubvision();
+                });
+              },
+            );
           }
 
           final clubvision = snapshot.data!;

@@ -1,4 +1,5 @@
 import 'package:club_lectura_app/widgets/club/club_card.dart';
+import 'package:club_lectura_app/widgets/error_view.dart';
 import 'package:flutter/material.dart';
 
 import '../services/api_service.dart';
@@ -59,7 +60,16 @@ class _DashboardPageState extends State<DashboardPage> {
           }
 
           if (snapshot.hasError) {
-            return Center(child: Text('Error: ${snapshot.error}'));
+            return Scaffold(
+              appBar: AppBar(title: const Text("📚 Club de Lectura")),
+              body: ErrorView(
+                onRetry: () {
+                  setState(() {
+                    dashboardFuture = _cargarDashboard();
+                  });
+                },
+              ),
+            );
           }
 
           final viewData = snapshot.data!;

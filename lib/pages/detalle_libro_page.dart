@@ -1,3 +1,4 @@
+import 'package:club_lectura_app/utils/genero_utils.dart';
 import 'package:flutter/material.dart';
 
 import '../models/libro.dart';
@@ -178,7 +179,9 @@ class _DetalleLibroPageState extends State<DetalleLibroPage> {
 
                   const SizedBox(height: 8),
 
-                  Text('📚 ${widget.libro.genero}'),
+                  Text(
+                    '${iconoGenero(widget.libro.genero)} ${widget.libro.genero}',
+                  ),
 
                   const SizedBox(height: 8),
 

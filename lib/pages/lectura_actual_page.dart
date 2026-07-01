@@ -61,7 +61,7 @@ class _LecturaActualPageState extends State<LecturaActualPage> {
               const SizedBox(height: 12),
 
               if (lectura.leyendo.isEmpty)
-                const Text("Todavía nadie lo está leyendo."),
+                const Text("📖 Nadie lo está leyendo en este momento."),
 
               ...lectura.leyendo.map(
                 (usuario) => ListTile(

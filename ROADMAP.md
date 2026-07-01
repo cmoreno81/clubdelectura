@@ -19,6 +19,7 @@ Si una funcionalidad no aporta a ninguno de ellos, probablemente no sea priorita
 - Lectura actual
 - Historial
 
+**Estado:** Completada.
 ---
 
 # Sprint 1 - Estabilidad
@@ -27,12 +28,14 @@ Si una funcionalidad no aporta a ninguno de ellos, probablemente no sea priorita
 - [X] Sincronizar voto entre dispositivos
 
 ## Flutter
-- [ ] Blindar todos los modelos (`toString()`)
-- [ ] Historial en orden descendente
-- [ ] Mejorar mensajes de error
-- [ ] Cambiar texto "Nadie lo está leyendo en este momento"
+- [X] Blindar todos los modelos (`toString()`)
+- [X] Historial en orden descendente
+- [X] Mejorar mensajes de error
+- [X] Cambiar texto "Nadie lo está leyendo en este momento"
+- [X] Automatización de Clubvisión.
+- [X] Mejoras visuales e iconografía por géneros.
 
----
+**Estado:** Completada.
 
 # Sprint 2 - Rendimiento
 

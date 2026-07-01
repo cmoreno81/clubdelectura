@@ -1,3 +1,4 @@
+import 'package:club_lectura_app/widgets/error_view.dart';
 import 'package:flutter/material.dart';
 
 import '../models/ranking.dart';
@@ -35,7 +36,13 @@ class _RankingPageState extends State<RankingPage> {
           }
 
           if (snapshot.hasError) {
-            return Center(child: Text(snapshot.error.toString()));
+            return ErrorView(
+              onRetry: () {
+                setState(() {
+                  rankingFuture = ApiService().getRanking();
+                });
+              },
+            );
           }
 
           final ranking = snapshot.data!;

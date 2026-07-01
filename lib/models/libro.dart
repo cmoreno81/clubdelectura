@@ -23,14 +23,14 @@ class Libro {
 
   factory Libro.fromJson(Map<String, dynamic> json) {
     return Libro(
-      usuario: json['usuario'] ?? '',
-      libro: json['libro'] ?? '',
-      genero: json['genero'] ?? '',
-      saga: json['saga'] ?? '',
-      numSaga: json['numSaga'] ?? '',
-      autoconclusivo: json['autoconclusivo'] ?? '',
-      prioridad: json['prioridad'] ?? '',
-      estado: json['estado'] ?? '',
+      usuario: json['usuario']?.toString() ?? '',
+      libro: json['libro']?.toString() ?? '',
+      genero: json['genero']?.toString() ?? '',
+      saga: json['saga']?.toString() ?? '',
+      numSaga: json['numSaga']?.toString() ?? '',
+      autoconclusivo: json['autoconclusivo']?.toString() ?? '',
+      prioridad: json['prioridad']?.toString() ?? '',
+      estado: json['estado']?.toString() ?? '',
       valoracion: json['valoracion']?.toString() ?? '',
     );
   }

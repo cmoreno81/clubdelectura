@@ -1,3 +1,5 @@
+import 'package:club_lectura_app/pages/ClubvisionVotacionPage.dart';
+import 'package:club_lectura_app/widgets/error_view.dart';
 import 'package:flutter/material.dart';
 
 import '../models/libro_agrupado.dart';
@@ -5,6 +7,7 @@ import '../services/api_service.dart';
 import 'detalle_libro_page.dart';
 import 'nuevo_libro_page.dart';
 import '../models/libros_data.dart';
+import '../utils/genero_utils.dart';
 
 class LibrosPage extends StatefulWidget {
   const LibrosPage({super.key});
@@ -58,7 +61,13 @@ class _LibrosPageState extends State<LibrosPage> {
           }
 
           if (snapshot.hasError) {
-            return Center(child: Text(snapshot.error.toString()));
+            return ErrorView(
+              onRetry: () {
+                setState(() {
+                  librosFuture = ApiService().getLibrosData();
+                });
+              },
+            );
           }
 
           final data = snapshot.data!;
@@ -279,14 +288,25 @@ class _LibrosPageState extends State<LibrosPage> {
                             crossAxisAlignment: CrossAxisAlignment.start,
 
                             children: [
-                              Text(
-                                libro.libro,
+                              Row(
+                                children: [
+                                  Text(
+                                    iconoGenero(libro.genero),
+                                    style: const TextStyle(fontSize: 28),
+                                  ),
 
-                                style: const TextStyle(
-                                  fontSize: 20,
+                                  const SizedBox(width: 10),
 
-                                  fontWeight: FontWeight.bold,
-                                ),
+                                  Expanded(
+                                    child: Text(
+                                      libro.libro,
+                                      style: const TextStyle(
+                                        fontSize: 20,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                  ),
+                                ],
                               ),
 
                               const SizedBox(height: 12),
@@ -362,8 +382,6 @@ class _LibrosPageState extends State<LibrosPage> {
                                 ),
 
                               const SizedBox(height: 12),
-
-                              Text('📚 ${libro.genero}'),
                             ],
                           ),
                         ),

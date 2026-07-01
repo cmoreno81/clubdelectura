@@ -31,9 +31,9 @@ class Dashboard {
 
       clubvision: Clubvision.fromJson(json['clubvision'] ?? {}),
 
-      tendencia: json['tendencia'] ?? '',
+      tendencia: json['tendencia']?.toString() ?? '',
 
-      mood: json['mood'] ?? '',
+      mood: json['mood']?.toString() ?? '',
 
       libroMes: (json['libroMes'] as List? ?? [])
           .map((x) => LibroMes.fromJson(x))
@@ -75,19 +75,13 @@ class Clubvision {
 
   factory Clubvision.fromJson(Map<String, dynamic> json) {
     return Clubvision(
-      estado: json['estado'] ?? '',
-
-      titulo: json['titulo'] ?? '',
-
-      mensaje: json['mensaje'] ?? '',
-
-      ganador: json['ganador'] ?? '',
-
-      idVotacion: json['idVotacion'] ?? '',
-
+      estado: json['estado']?.toString() ?? '',
+      titulo: json['titulo']?.toString() ?? '',
+      mensaje: json['mensaje']?.toString() ?? '',
+      ganador: json['ganador']?.toString() ?? '',
+      idVotacion: json['idVotacion']?.toString() ?? '',
       lectoras: List<String>.from(json['lectoras'] ?? []),
-
-      totalCandidatas: json['totalCandidatas'] ?? 0,
+      totalCandidatas: (json['totalCandidatas'] as num?)?.toInt() ?? 0,
     );
   }
 }
@@ -110,12 +104,9 @@ class Resumen {
 
   factory Resumen.fromJson(Map<String, dynamic> json) {
     return Resumen(
-      usuarioMes: json['usuarioMes'] ?? '',
-
-      librosUsuarioMes: json['librosUsuarioMes'] ?? 0,
-
-      actividadMes: json['actividadMes'] ?? 0,
-
+      usuarioMes: json['usuarioMes']?.toString() ?? '',
+      librosUsuarioMes: (json['librosUsuarioMes'] as num?)?.toInt() ?? 0,
+      actividadMes: (json['actividadMes'] as num?)?.toInt() ?? 0,
       valoracionMedia: json['valoracionMedia']?.toString() ?? '',
     );
   }
@@ -129,7 +120,10 @@ class LibroMes {
   LibroMes({required this.libro, required this.puntos});
 
   factory LibroMes.fromJson(Map<String, dynamic> json) {
-    return LibroMes(libro: json['libro'] ?? '', puntos: json['puntos'] ?? 0);
+    return LibroMes(
+      libro: json['libro']?.toString() ?? '',
+      puntos: (json['puntos'] as num?)?.toInt() ?? 0,
+    );
   }
 }
 
@@ -148,11 +142,9 @@ class LeyendoAhora {
 
   factory LeyendoAhora.fromJson(Map<String, dynamic> json) {
     return LeyendoAhora(
-      usuario: json['usuario'] ?? '',
-
+      usuario: json['usuario']?.toString() ?? '',
       libros: List<String>.from(json['libros'] ?? []),
-
-      total: json['total'] ?? 0,
+      total: (json['total'] as num?)?.toInt() ?? 0,
     );
   }
 }

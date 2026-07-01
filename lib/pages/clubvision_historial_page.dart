@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../models/historial_clubvision.dart';
 import '../services/api_service.dart';
+import '../widgets/error_view.dart';
 
 class ClubvisionHistorialPage extends StatefulWidget {
   const ClubvisionHistorialPage({super.key});
@@ -23,7 +24,10 @@ class _ClubvisionHistorialPageState extends State<ClubvisionHistorialPage> {
 
   String _mes(String fecha) {
     try {
-      final d = DateTime.parse(fecha);
+      final partes = fecha.split("-");
+
+      final anio = int.parse(partes[0]);
+      final mes = int.parse(partes[1]);
 
       const meses = [
         "Enero",
@@ -40,7 +44,7 @@ class _ClubvisionHistorialPageState extends State<ClubvisionHistorialPage> {
         "Diciembre",
       ];
 
-      return "${meses[d.month - 1]} ${d.year}";
+      return "${meses[mes - 1]} $anio";
     } catch (_) {
       return fecha;
     }
@@ -60,11 +64,19 @@ class _ClubvisionHistorialPageState extends State<ClubvisionHistorialPage> {
           }
 
           if (snapshot.hasError) {
-            return Center(child: Text(snapshot.error.toString()));
+            return ErrorView(
+              onRetry: () {
+                setState(() {
+                  future = ApiService().getHistorialClubvision();
+                });
+              },
+            );
           }
 
           final historial = snapshot.data!;
-
+          for (final h in historial) {
+            debugPrint("MES RECIBIDO: ${h.mes}");
+          }
           return ListView.builder(
             padding: const EdgeInsets.all(16),
 

@@ -1,3 +1,4 @@
+import 'package:club_lectura_app/widgets/error_view.dart';
 import 'package:flutter/material.dart';
 
 import '../models/usuario.dart';
@@ -36,7 +37,20 @@ class _SeleccionUsuarioPageState extends State<SeleccionUsuarioPage> {
           }
 
           if (snapshot.hasError) {
-            return Center(child: Text(snapshot.error.toString()));
+            return Scaffold(
+              appBar: AppBar(title: const Text('📚 Bienvenida')),
+              body: ErrorView(
+                titulo: "No hemos podido entrar al club",
+                mensaje:
+                    "No hemos podido cargar la lista de lectoras.\n\n"
+                    "Comprueba tu conexión e inténtalo de nuevo.",
+                onRetry: () {
+                  setState(() {
+                    future = ApiService().getUsuarios();
+                  });
+                },
+              ),
+            );
           }
 
           final usuarios = snapshot.data!;
