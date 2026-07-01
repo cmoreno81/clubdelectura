@@ -46,10 +46,14 @@ class _ClubvisionMenuPageState extends State<ClubvisionMenuPage> {
               if (estado == "VOTACION")
                 _card(
                   context,
-                  icon: Icons.how_to_vote,
-                  titulo: "Votación",
-                  subtitulo: "Elige la próxima lectura del club",
+                  icon: club.haVotado ? Icons.check_circle : Icons.how_to_vote,
+                  titulo: club.haVotado ? "Ya has votado" : "Votación",
+                  subtitulo: club.haVotado
+                      ? "Tu voto ya ha sido registrado."
+                      : "Elige la próxima lectura del club",
                   onTap: () async {
+                    if (club.haVotado) return;
+
                     await Navigator.push(
                       context,
                       MaterialPageRoute(
@@ -65,7 +69,6 @@ class _ClubvisionMenuPageState extends State<ClubvisionMenuPage> {
                     });
                   },
                 ),
-
               if (estado == "RESULTADOS")
                 _card(
                   context,

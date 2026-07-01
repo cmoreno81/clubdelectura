@@ -11,10 +11,11 @@ import '../models/ranking.dart';
 import '../models/clubvision.dart';
 import '../models/historial_clubvision.dart';
 import '../models/usuario.dart';
+import 'usuario_service.dart';
 
 class ApiService {
   static const String baseUrl =
-      'https://script.google.com/macros/s/AKfycbynkX_Ps5YlBKX8-UaO49dfwNuK-WMXPidb6O7h8pvBdtLwc0gen8Rb5XyV606h1v9J/exec';
+      'https://script.google.com/macros/s/AKfycbwur1I9CBr-hLyKotXeW2EQv7-ASUhphn-funZ68WpsGhPe13nVCp9Cy1PLlKOgSKk8/exec';
 
   Future<List<Usuario>> getUsuarios() async {
     final response = await http.get(Uri.parse('$baseUrl?action=usuarios'));
@@ -128,7 +129,13 @@ class ApiService {
   }
 
   Future<ClubvisionData> getClubvision() async {
-    final response = await http.get(Uri.parse('$baseUrl?action=clubvision'));
+    final usuario = await UsuarioService().obtenerUsuario();
+
+    final response = await http.get(
+      Uri.parse(
+        '$baseUrl?action=clubvision&usuario=${Uri.encodeComponent(usuario ?? "")}',
+      ),
+    );
 
     if (response.statusCode == 200) {
       return ClubvisionData.fromJson(jsonDecode(response.body));

@@ -17,6 +17,8 @@ class ClubvisionData {
 
   final List<CandidataClubvision> candidatas;
 
+  final bool haVotado;
+
   ClubvisionData({
     required this.abierta,
     this.estado,
@@ -26,6 +28,7 @@ class ClubvisionData {
     required this.ganador,
     required this.lectoras,
     required this.candidatas,
+    required this.haVotado,
   });
 
   factory ClubvisionData.fromJson(Map<String, dynamic> json) {
@@ -48,6 +51,7 @@ class ClubvisionData {
               ?.map((e) => CandidataClubvision.fromJson(e))
               .toList() ??
           [],
+      haVotado: json['haVotado'] ?? false,
     );
   }
 }
