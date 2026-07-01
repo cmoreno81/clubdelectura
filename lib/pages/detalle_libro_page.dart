@@ -89,6 +89,8 @@ class _DetalleLibroPageState extends State<DetalleLibroPage> {
           valoracion: nuevoEstado == 'FINALIZADO'
               ? 'Valorado'
               : libro.valoracion,
+
+          yaLoTengo: libro.yaLoTengo,
         );
       });
 

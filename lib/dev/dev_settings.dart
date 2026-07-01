@@ -4,8 +4,8 @@ class DevSettings {
 
   // Ejemplos:
   // static const String? estadoForzado = "PREPARANDO";
-  //tatic const String? estadoForzado = "VOTACION";
+  // static const String? estadoForzado = "VOTACION";
   // static const String? estadoForzado = "ULTIMAS_HORAS";
-  //static const String? estadoForzado = "RESULTADOS";
-  // tatic const String? estadoForzado = "LECTURA";
+  // static const String? estadoForzado = "RESULTADOS";
+  // static const String? estadoForzado = "LECTURA";
 }

@@ -1,4 +1,4 @@
-import 'package:club_lectura_app/pages/ClubvisionVotacionPage.dart';
+import 'package:club_lectura_app/services/usuario_service.dart';
 import 'package:club_lectura_app/widgets/error_view.dart';
 import 'package:flutter/material.dart';
 
@@ -107,15 +107,18 @@ class _LibrosPageState extends State<LibrosPage> {
               if (!agrupados.containsKey(libro.libro)) {
                 agrupados[libro.libro] = LibroAgrupado(
                   libro: libro.libro,
-
                   genero: libro.genero,
-
                   registros: [],
                   finalizados: [],
+                  yaLoTengo: libro.yaLoTengo,
                 );
               }
 
               agrupados[libro.libro]!.registros.add(libro);
+
+              if (libro.yaLoTengo) {
+                agrupados[libro.libro]!.yaLoTengo = true;
+              }
             }
 
             resultado = agrupados.values.toList();
@@ -160,6 +163,8 @@ class _LibrosPageState extends State<LibrosPage> {
                   registros: [],
 
                   finalizados: [],
+
+                  yaLoTengo: false,
                 ),
               );
 
@@ -306,6 +311,26 @@ class _LibrosPageState extends State<LibrosPage> {
                                       ),
                                     ),
                                   ),
+
+                                  libro.yaLoTengo
+                                      ? const Tooltip(
+                                          message: "Ya está en tu lista",
+                                          child: Icon(
+                                            Icons.check_circle,
+                                            color: Colors.green,
+                                            size: 30,
+                                          ),
+                                        )
+                                      : IconButton(
+                                          tooltip: "Añadir a mi lista",
+                                          icon: const Icon(
+                                            Icons.add_circle_outline,
+                                            color: Colors.deepPurple,
+                                          ),
+                                          onPressed: () {
+                                            _confirmarAgregarLibro(libro);
+                                          },
+                                        ),
                                 ],
                               ),
 
@@ -409,5 +434,54 @@ class _LibrosPageState extends State<LibrosPage> {
         });
       },
     );
+  }
+
+  Future<void> _confirmarAgregarLibro(LibroAgrupado libro) async {
+    final confirmar = await showDialog<bool>(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text("📚 Añadir libro"),
+          content: Text(
+            "¿Quieres añadir '${libro.libro}' a tu lista de pendientes?",
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: const Text("Cancelar"),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.pop(context, true),
+              child: const Text("Añadir"),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (confirmar != true) return;
+
+    final usuario = await UsuarioService().obtenerUsuario();
+
+    final respuesta = await ApiService().anadirLibroExistente(
+      usuario: usuario!,
+      libro: libro.libro,
+    );
+
+    if (!mounted) return;
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          respuesta["ok"] ? "✅ Añadido a tu lista" : respuesta["mensaje"],
+        ),
+      ),
+    );
+
+    if (respuesta["ok"]) {
+      setState(() {
+        librosFuture = ApiService().getLibrosData();
+      });
+    }
   }
 }

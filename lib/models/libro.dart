@@ -8,6 +8,7 @@ class Libro {
   final String prioridad;
   final String estado;
   final String valoracion;
+  final bool yaLoTengo;
 
   Libro({
     required this.usuario,
@@ -19,6 +20,7 @@ class Libro {
     required this.prioridad,
     required this.estado,
     required this.valoracion,
+    required this.yaLoTengo,
   });
 
   factory Libro.fromJson(Map<String, dynamic> json) {
@@ -32,6 +34,7 @@ class Libro {
       prioridad: json['prioridad']?.toString() ?? '',
       estado: json['estado']?.toString() ?? '',
       valoracion: json['valoracion']?.toString() ?? '',
+      yaLoTengo: json["yaLoTengo"] ?? false,
     );
   }
 }

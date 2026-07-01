@@ -8,12 +8,14 @@ class LibroAgrupado {
   final List<Libro> registros;
 
   final List<LibroFinalizado> finalizados;
+  bool yaLoTengo;
 
   LibroAgrupado({
     required this.libro,
     required this.genero,
     required this.registros,
     required this.finalizados,
+    required this.yaLoTengo,
   });
 
   int get total => registros.length;
