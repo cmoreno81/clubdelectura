@@ -1,6 +1,6 @@
 import 'package:club_lectura_app/utils/genero_utils.dart';
 import 'package:flutter/material.dart';
-
+import 'package:url_launcher/url_launcher.dart';
 import '../models/libro.dart';
 import '../models/libro_agrupado.dart';
 import '../services/api_service.dart';
@@ -91,6 +91,8 @@ class _DetalleLibroPageState extends State<DetalleLibroPage> {
               : libro.valoracion,
 
           yaLoTengo: libro.yaLoTengo,
+
+          goodreads: libro.goodreads,
         );
       });
 
@@ -138,6 +140,24 @@ class _DetalleLibroPageState extends State<DetalleLibroPage> {
     );
   }
 
+  Future<void> _abrirGoodreads() async {
+    if (widget.libro.registros.isEmpty) {
+      return;
+    }
+
+    final url = widget.libro.registros.first.goodreads;
+
+    if (url.isEmpty) {
+      return;
+    }
+
+    final uri = Uri.parse(url);
+
+    if (!await launchUrl(uri, mode: LaunchMode.externalApplication)) {
+      throw Exception("No se pudo abrir Goodreads");
+    }
+  }
+
   Widget _opcionValoracion(String valor) {
     return ListTile(
       title: Text(
@@ -149,6 +169,41 @@ class _DetalleLibroPageState extends State<DetalleLibroPage> {
       onTap: () {
         Navigator.pop(context, valor);
       },
+    );
+  }
+
+  Widget _estadistica({
+    required IconData icono,
+    required String titulo,
+    required String valor,
+    required Color color,
+  }) {
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 8),
+
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.08),
+        borderRadius: BorderRadius.circular(14),
+      ),
+
+      child: Column(
+        children: [
+          Icon(icono, color: color),
+
+          const SizedBox(height: 8),
+
+          Text(
+            valor,
+            style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+          ),
+
+          Text(
+            titulo,
+            style: TextStyle(color: Colors.grey.shade700, fontSize: 12),
+            textAlign: TextAlign.center,
+          ),
+        ],
+      ),
     );
   }
 
@@ -190,22 +245,133 @@ class _DetalleLibroPageState extends State<DetalleLibroPage> {
                     Text(
                       '${iconoGenero(widget.libro.genero)} ${widget.libro.genero}',
                     ),
+                    const SizedBox(height: 12),
+
+                    if (widget.libro.registros.first.autoconclusivo == "Si")
+                      const Row(
+                        children: [
+                          Icon(Icons.auto_stories_outlined, size: 18),
+                          SizedBox(width: 8),
+                          Text(
+                            "Autoconclusivo",
+                            style: TextStyle(fontWeight: FontWeight.w600),
+                          ),
+                        ],
+                      )
+                    else ...[
+                      Row(
+                        children: [
+                          const Icon(Icons.forest_outlined, size: 18),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              widget.libro.registros.first.saga,
+                              style: const TextStyle(
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+
+                      if (widget.libro.registros.first.numSaga.isNotEmpty)
+                        Padding(
+                          padding: const EdgeInsets.only(left: 26, top: 4),
+                          child: Text(
+                            "Libro ${widget.libro.registros.first.numSaga}",
+                            style: TextStyle(color: Colors.grey.shade700),
+                          ),
+                        ),
+                    ],
+
+                    const SizedBox(height: 16),
 
                     const SizedBox(height: 8),
 
-                    Text('👥 ${widget.libro.total} interesadas'),
-                    const SizedBox(height: 8),
+                    const SizedBox(height: 18),
 
-                    if (widget.libro.totalFinalizados > 0)
-                      Text('🏁 ${widget.libro.totalFinalizados} terminados'),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: _estadistica(
+                            icono: Icons.people,
+                            titulo: "Interesadas",
+                            valor: "${widget.libro.total}",
+                            color: Colors.blue,
+                          ),
+                        ),
 
-                    if (widget.libro.mediaValoracion > 0)
-                      Padding(
-                        padding: const EdgeInsets.only(top: 4),
-                        child: Text(
-                          '⭐ ${widget.libro.mediaValoracion.toStringAsFixed(1)} / 5',
+                        const SizedBox(width: 10),
+
+                        Expanded(
+                          child: _estadistica(
+                            icono: Icons.flag,
+                            titulo: "Leídos",
+                            valor: "${widget.libro.totalFinalizados}",
+                            color: Colors.green,
+                          ),
+                        ),
+
+                        const SizedBox(width: 10),
+
+                        Expanded(
+                          child: _estadistica(
+                            icono: Icons.star,
+                            titulo: "Media",
+                            valor: widget.libro.mediaValoracion > 0
+                                ? widget.libro.mediaValoracion.toStringAsFixed(
+                                    1,
+                                  )
+                                : "-",
+                            color: Colors.amber,
+                          ),
+                        ),
+                      ],
+                    ),
+                    if (widget.libro.registros.first.goodreads.isNotEmpty) ...[
+                      const SizedBox(height: 20),
+
+                      InkWell(
+                        borderRadius: BorderRadius.circular(16),
+                        onTap: _abrirGoodreads,
+                        child: Card(
+                          elevation: 0,
+                          color: Colors.amber.shade50,
+                          child: Padding(
+                            padding: const EdgeInsets.all(16),
+                            child: Row(
+                              children: [
+                                const Icon(
+                                  Icons.menu_book_rounded,
+                                  color: Colors.amber,
+                                ),
+                                const SizedBox(width: 12),
+                                const Expanded(
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        "Ver ficha en Goodreads",
+                                        style: TextStyle(
+                                          fontWeight: FontWeight.bold,
+                                          fontSize: 16,
+                                        ),
+                                      ),
+                                      SizedBox(height: 4),
+                                      Text(
+                                        "Sinopsis, opiniones y valoraciones",
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                const Icon(Icons.open_in_new),
+                              ],
+                            ),
+                          ),
                         ),
                       ),
+                    ],
                   ],
                 ),
               ),
@@ -275,6 +441,11 @@ class _DetalleLibroPageState extends State<DetalleLibroPage> {
                               return;
                             }
 
+                            // Si no ha cambiado el estado, no hacemos nada.
+                            if (value == registro.estado) {
+                              return;
+                            }
+
                             if (value == 'FINALIZADO') {
                               final valoracion = await _pedirValoracion();
 
@@ -284,9 +455,7 @@ class _DetalleLibroPageState extends State<DetalleLibroPage> {
 
                               await ApiService().actualizarValoracion(
                                 usuario: registro.usuario,
-
                                 libro: registro.libro,
-
                                 valoracion: valoracion,
                               );
                             }

@@ -9,6 +9,7 @@ class Libro {
   final String estado;
   final String valoracion;
   final bool yaLoTengo;
+  final String goodreads;
 
   Libro({
     required this.usuario,
@@ -21,6 +22,7 @@ class Libro {
     required this.estado,
     required this.valoracion,
     required this.yaLoTengo,
+    required this.goodreads,
   });
 
   factory Libro.fromJson(Map<String, dynamic> json) {
@@ -35,6 +37,7 @@ class Libro {
       estado: json['estado']?.toString() ?? '',
       valoracion: json['valoracion']?.toString() ?? '',
       yaLoTengo: json["yaLoTengo"] ?? false,
+      goodreads: json['goodreads']?.toString() ?? '',
     );
   }
 }
