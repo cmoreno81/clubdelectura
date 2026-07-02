@@ -29,11 +29,12 @@ class _DashboardPageState extends State<DashboardPage> {
   Future<DashboardViewData> _cargarDashboard() async {
     final dashboard = await ApiService().getDashboard();
 
-    final haVotado = await VotacionLocalService().haVotado(
-      dashboard.clubvision.idVotacion,
-    );
+    final clubvision = await ApiService().getClubvision();
 
-    return DashboardViewData(dashboard: dashboard, haVotado: haVotado);
+    return DashboardViewData(
+      dashboard: dashboard,
+      haVotado: clubvision.haVotado,
+    );
   }
 
   @override

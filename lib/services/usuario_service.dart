@@ -6,13 +6,13 @@ class UsuarioService {
   Future<void> guardarUsuario(String usuario) async {
     final prefs = await SharedPreferences.getInstance();
 
-    await prefs.setString(_claveUsuario, usuario);
+    await prefs.setString(_claveUsuario, usuario.trim());
   }
 
   Future<String?> obtenerUsuario() async {
     final prefs = await SharedPreferences.getInstance();
 
-    return prefs.getString(_claveUsuario);
+    return prefs.getString(_claveUsuario)?.trim();
   }
 
   Future<void> borrarUsuario() async {

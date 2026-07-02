@@ -136,14 +136,12 @@ class ApiService {
   }
 
   Future<ClubvisionData> getClubvision() async {
-    final usuario = await UsuarioService().obtenerUsuario();
-
+    final usuario = (await UsuarioService().obtenerUsuario())?.trim();
     final response = await http.get(
       Uri.parse(
         '$baseUrl?action=clubvision&usuario=${Uri.encodeComponent(usuario ?? "")}',
       ),
     );
-
     if (response.statusCode == 200) {
       return ClubvisionData.fromJson(jsonDecode(response.body));
     }

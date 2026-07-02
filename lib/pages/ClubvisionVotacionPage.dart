@@ -42,8 +42,6 @@ class _ClubvisionVotacionPageState extends State<ClubvisionVotacionPage> {
       setState(() {
         haVotado = value;
       });
-      print("HA VOTADO = $value");
-      print("ID = ${widget.idVotacion}");
     });
   }
 

@@ -157,186 +157,196 @@ class _DetalleLibroPageState extends State<DetalleLibroPage> {
     return Scaffold(
       appBar: AppBar(title: Text(widget.libro.libro)),
 
-      body: ListView(
-        padding: const EdgeInsets.all(16),
-
-        children: [
-          Card(
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-
-                children: [
-                  Text(
-                    widget.libro.libro,
-
-                    style: const TextStyle(
-                      fontSize: 22,
-
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-
-                  const SizedBox(height: 8),
-
-                  Text(
-                    '${iconoGenero(widget.libro.genero)} ${widget.libro.genero}',
-                  ),
-
-                  const SizedBox(height: 8),
-
-                  Text('👥 ${widget.libro.total} interesadas'),
-                  const SizedBox(height: 8),
-
-                  if (widget.libro.totalFinalizados > 0)
-                    Text('🏁 ${widget.libro.totalFinalizados} terminados'),
-
-                  if (widget.libro.mediaValoracion > 0)
-                    Padding(
-                      padding: const EdgeInsets.only(top: 4),
-                      child: Text(
-                        '⭐ ${widget.libro.mediaValoracion.toStringAsFixed(1)} / 5',
-                      ),
-                    ),
-                ],
-              ),
-            ),
+      body: SafeArea(
+        child: ListView(
+          padding: EdgeInsets.fromLTRB(
+            16,
+            16,
+            16,
+            MediaQuery.of(context).padding.bottom + 32,
           ),
 
-          const SizedBox(height: 16),
-
-          const Text(
-            'Interesadas',
-
-            style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-          ),
-
-          const SizedBox(height: 12),
-
-          ...registros.map((registro) {
-            return Card(
+          children: [
+            Card(
               child: Padding(
-                padding: const EdgeInsets.all(8),
+                padding: const EdgeInsets.all(16),
 
                 child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+
                   children: [
-                    ListTile(
-                      leading: Icon(
-                        _iconoEstado(registro.estado),
+                    Text(
+                      widget.libro.libro,
 
-                        color: _colorEstado(registro.estado),
-                      ),
+                      style: const TextStyle(
+                        fontSize: 22,
 
-                      title: Text(registro.usuario),
-                    ),
-
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 16),
-
-                      child: DropdownButtonFormField<String>(
-                        initialValue: registro.estado,
-
-                        decoration: const InputDecoration(labelText: 'Estado'),
-
-                        items: const [
-                          DropdownMenuItem(
-                            value: 'PENDIENTE',
-                            child: Text('PENDIENTE'),
-                          ),
-
-                          DropdownMenuItem(
-                            value: 'LEYENDO',
-                            child: Text('LEYENDO'),
-                          ),
-
-                          DropdownMenuItem(
-                            value: 'RELECTURA',
-                            child: Text('RELECTURA'),
-                          ),
-
-                          DropdownMenuItem(
-                            value: 'FINALIZADO',
-                            child: Text('FINALIZADO'),
-                          ),
-                        ],
-
-                        onChanged: (value) async {
-                          if (value == null) {
-                            return;
-                          }
-
-                          if (value == 'FINALIZADO') {
-                            final valoracion = await _pedirValoracion();
-
-                            if (valoracion == null) {
-                              return;
-                            }
-
-                            await ApiService().actualizarValoracion(
-                              usuario: registro.usuario,
-
-                              libro: registro.libro,
-
-                              valoracion: valoracion,
-                            );
-                          }
-
-                          await _cambiarEstado(registro, value);
-                        },
+                        fontWeight: FontWeight.bold,
                       ),
                     ),
 
-                    if (registro.valoracion.isNotEmpty)
+                    const SizedBox(height: 8),
+
+                    Text(
+                      '${iconoGenero(widget.libro.genero)} ${widget.libro.genero}',
+                    ),
+
+                    const SizedBox(height: 8),
+
+                    Text('👥 ${widget.libro.total} interesadas'),
+                    const SizedBox(height: 8),
+
+                    if (widget.libro.totalFinalizados > 0)
+                      Text('🏁 ${widget.libro.totalFinalizados} terminados'),
+
+                    if (widget.libro.mediaValoracion > 0)
                       Padding(
-                        padding: const EdgeInsets.all(12),
-
+                        padding: const EdgeInsets.only(top: 4),
                         child: Text(
-                          '⭐ ${registro.valoracion}',
-
-                          style: const TextStyle(fontWeight: FontWeight.bold),
+                          '⭐ ${widget.libro.mediaValoracion.toStringAsFixed(1)} / 5',
                         ),
                       ),
                   ],
                 ),
               ),
-            );
-          }),
-          if (widget.libro.finalizados.isNotEmpty) ...[
-            const SizedBox(height: 24),
+            ),
+
+            const SizedBox(height: 16),
 
             const Text(
-              '🏁 Valoraciones',
+              'Interesadas',
 
               style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
             ),
 
             const SizedBox(height: 12),
 
-            ...widget.libro.finalizados.map((finalizado) {
+            ...registros.map((registro) {
               return Card(
-                child: ListTile(
-                  leading: const CircleAvatar(
-                    child: Icon(Icons.person, size: 18),
-                  ),
+                child: Padding(
+                  padding: const EdgeInsets.all(8),
 
-                  title: Text(finalizado.usuario),
+                  child: Column(
+                    children: [
+                      ListTile(
+                        leading: Icon(
+                          _iconoEstado(registro.estado),
 
-                  trailing: Text(
-                    finalizado.valoracion,
+                          color: _colorEstado(registro.estado),
+                        ),
 
-                    style: const TextStyle(
-                      fontSize: 20,
+                        title: Text(registro.usuario),
+                      ),
 
-                      fontWeight: FontWeight.bold,
-                    ),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 16),
+
+                        child: DropdownButtonFormField<String>(
+                          value: registro.estado,
+
+                          decoration: const InputDecoration(
+                            labelText: 'Estado',
+                          ),
+
+                          items: const [
+                            DropdownMenuItem(
+                              value: 'PENDIENTE',
+                              child: Text('PENDIENTE'),
+                            ),
+
+                            DropdownMenuItem(
+                              value: 'LEYENDO',
+                              child: Text('LEYENDO'),
+                            ),
+
+                            DropdownMenuItem(
+                              value: 'RELECTURA',
+                              child: Text('RELECTURA'),
+                            ),
+
+                            DropdownMenuItem(
+                              value: 'FINALIZADO',
+                              child: Text('FINALIZADO'),
+                            ),
+                          ],
+
+                          onChanged: (value) async {
+                            if (value == null) {
+                              return;
+                            }
+
+                            if (value == 'FINALIZADO') {
+                              final valoracion = await _pedirValoracion();
+
+                              if (valoracion == null) {
+                                return;
+                              }
+
+                              await ApiService().actualizarValoracion(
+                                usuario: registro.usuario,
+
+                                libro: registro.libro,
+
+                                valoracion: valoracion,
+                              );
+                            }
+
+                            await _cambiarEstado(registro, value);
+                          },
+                        ),
+                      ),
+
+                      if (registro.valoracion.isNotEmpty)
+                        Padding(
+                          padding: const EdgeInsets.all(12),
+
+                          child: Text(
+                            '⭐ ${registro.valoracion}',
+
+                            style: const TextStyle(fontWeight: FontWeight.bold),
+                          ),
+                        ),
+                    ],
                   ),
                 ),
               );
             }),
+            if (widget.libro.finalizados.isNotEmpty) ...[
+              const SizedBox(height: 24),
+
+              const Text(
+                '🏁 Valoraciones',
+
+                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+              ),
+
+              const SizedBox(height: 12),
+
+              ...widget.libro.finalizados.map((finalizado) {
+                return Card(
+                  child: ListTile(
+                    leading: const CircleAvatar(
+                      child: Icon(Icons.person, size: 18),
+                    ),
+
+                    title: Text(finalizado.usuario),
+
+                    trailing: Text(
+                      finalizado.valoracion,
+
+                      style: const TextStyle(
+                        fontSize: 20,
+
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                );
+              }),
+            ],
+            const SizedBox(height: 80),
           ],
-        ],
+        ),
       ),
     );
   }

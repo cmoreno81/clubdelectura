@@ -74,9 +74,6 @@ class _ClubvisionHistorialPageState extends State<ClubvisionHistorialPage> {
           }
 
           final historial = snapshot.data!;
-          for (final h in historial) {
-            debugPrint("MES RECIBIDO: ${h.mes}");
-          }
           return ListView.builder(
             padding: const EdgeInsets.all(16),
 
