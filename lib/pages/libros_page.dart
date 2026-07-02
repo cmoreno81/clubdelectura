@@ -18,7 +18,7 @@ class LibrosPage extends StatefulWidget {
 
 class _LibrosPageState extends State<LibrosPage> {
   late Future<LibrosData> librosFuture;
-
+  final TextEditingController buscadorController = TextEditingController();
   String filtroBusqueda = '';
   String filtroEstado = 'TODOS';
   String filtroUsuario = 'TODAS';
@@ -28,6 +28,12 @@ class _LibrosPageState extends State<LibrosPage> {
     super.initState();
 
     librosFuture = ApiService().getLibrosData();
+  }
+
+  @override
+  void dispose() {
+    buscadorController.dispose();
+    super.dispose();
   }
 
   @override
@@ -84,9 +90,9 @@ class _LibrosPageState extends State<LibrosPage> {
           final usuariosFiltro = ['TODAS', ...usuarios];
           if (filtroEstado != 'TERMINADOS') {
             final librosFiltrados = libros.where((libro) {
-              final coincideBusqueda = libro.libro.toLowerCase().contains(
-                filtroBusqueda.toLowerCase(),
-              );
+              final coincideBusqueda = normalizar(
+                libro.libro,
+              ).contains(normalizar(filtroBusqueda));
 
               final coincideUsuario =
                   filtroUsuario == 'TODAS' ||
@@ -184,7 +190,20 @@ class _LibrosPageState extends State<LibrosPage> {
                 padding: const EdgeInsets.all(16),
 
                 child: TextField(
+                  controller: buscadorController,
                   decoration: InputDecoration(
+                    suffixIcon: filtroBusqueda.isEmpty
+                        ? null
+                        : IconButton(
+                            icon: const Icon(Icons.clear),
+                            onPressed: () {
+                              buscadorController.clear();
+
+                              setState(() {
+                                filtroBusqueda = '';
+                              });
+                            },
+                          ),
                     hintText: 'Buscar libro...',
 
                     prefixIcon: const Icon(Icons.search),
@@ -206,7 +225,7 @@ class _LibrosPageState extends State<LibrosPage> {
                 padding: const EdgeInsets.symmetric(horizontal: 16),
 
                 child: DropdownButtonFormField<String>(
-                  initialValue: filtroUsuario,
+                  value: filtroUsuario,
 
                   decoration: const InputDecoration(labelText: 'Usuaria'),
 
@@ -483,5 +502,16 @@ class _LibrosPageState extends State<LibrosPage> {
         librosFuture = ApiService().getLibrosData();
       });
     }
+  }
+
+  String normalizar(String texto) {
+    return texto
+        .toLowerCase()
+        .replaceAll('á', 'a')
+        .replaceAll('é', 'e')
+        .replaceAll('í', 'i')
+        .replaceAll('ó', 'o')
+        .replaceAll('ú', 'u')
+        .replaceAll('ü', 'u');
   }
 }

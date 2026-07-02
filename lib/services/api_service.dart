@@ -15,7 +15,7 @@ import 'usuario_service.dart';
 
 class ApiService {
   static const String baseUrl =
-      'https://script.google.com/macros/s/AKfycbyJUNlZv2y7JQdVHen83XBH2UGhGbQkoiqYg_Z-dzxMrvHb7C2kvx5WZurW_PmtdLJ_/exec';
+      'https://script.google.com/macros/s/AKfycby-vv3hiWByr54VyA6xX2ADvz6tANKZ_qNluALe3Ft3zvKAjPbETk8tO7TulTmnV9Ua/exec';
 
   Future<List<Usuario>> getUsuarios() async {
     final response = await http.get(Uri.parse('$baseUrl?action=usuarios'));
@@ -35,7 +35,14 @@ class ApiService {
   }
 
   Future<List<Libro>> getLibros() async {
-    final response = await http.get(Uri.parse('$baseUrl?action=libros'));
+    final usuario = await UsuarioService().obtenerUsuario();
+
+    final response = await http.get(
+      Uri.parse(
+        '$baseUrl?action=libros'
+        '&usuario=${Uri.encodeComponent(usuario ?? "")}',
+      ),
+    );
 
     if (response.statusCode == 200) {
       final List data = jsonDecode(response.body);
@@ -152,6 +159,30 @@ class ApiService {
     final List data = jsonDecode(response.body);
 
     return data.map((e) => HistorialClubvision.fromJson(e)).toList();
+  }
+
+  Future<Map<String, dynamic>> anadirLibroExistente({
+    required String usuario,
+    required String libro,
+  }) async {
+    final response = await http.get(
+      Uri.parse(
+        '$baseUrl?action=anadirLibroExistente'
+        '&usuario=${Uri.encodeComponent(usuario)}'
+        '&libro=${Uri.encodeComponent(libro)}',
+      ),
+    );
+
+    if (response.statusCode != 200) {
+      return {"ok": false, "mensaje": "Error de conexión con el servidor."};
+    }
+
+    final json = jsonDecode(response.body);
+
+    return {
+      "ok": json["ok"] == true,
+      "mensaje": json["mensaje"] ?? "Ha ocurrido un error.",
+    };
   }
 
   Future<bool> enviarVotacion({
