@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-
+import '../services/usuario_service.dart';
 import '../models/nuevo_libro.dart';
 import '../services/api_service.dart';
 
@@ -11,8 +11,6 @@ class NuevoLibroPage extends StatefulWidget {
 }
 
 class _NuevoLibroPageState extends State<NuevoLibroPage> {
-  final usuarioController = TextEditingController();
-
   final libroController = TextEditingController();
 
   final sagaController = TextEditingController();
@@ -27,11 +25,44 @@ class _NuevoLibroPageState extends State<NuevoLibroPage> {
 
   bool guardando = false;
 
+  Widget _tituloSeccion(String texto) {
+    return Align(
+      alignment: Alignment.centerLeft,
+      child: Text(
+        texto,
+        style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+      ),
+    );
+  }
+
+  Widget _chipGenero({
+    required String icono,
+    required String valor,
+    required String texto,
+  }) {
+    return ChoiceChip(
+      label: Text('$icono $texto'),
+      selected: genero == valor,
+      showCheckmark: false,
+      selectedColor: Theme.of(context).colorScheme.primaryContainer,
+      onSelected: (_) {
+        setState(() {
+          genero = valor;
+        });
+      },
+    );
+  }
+
   Future<void> guardarLibro() async {
-    if (usuarioController.text.isEmpty || libroController.text.isEmpty) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('Completa usuario y libro')));
+    final usuario = await UsuarioService().obtenerUsuario();
+
+    if (usuario == null) {
+      throw Exception("No se ha encontrado el usuario");
+    }
+    if (libroController.text.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Completa el nombre del libro')),
+      );
 
       return;
     }
@@ -42,7 +73,7 @@ class _NuevoLibroPageState extends State<NuevoLibroPage> {
 
     try {
       final libro = NuevoLibro(
-        usuario: usuarioController.text,
+        usuario: usuario,
 
         libro: libroController.text,
 
@@ -89,101 +120,206 @@ class _NuevoLibroPageState extends State<NuevoLibroPage> {
 
         child: Column(
           children: [
-            TextField(
-              controller: usuarioController,
-              decoration: const InputDecoration(labelText: 'Usuario'),
-            ),
-
             const SizedBox(height: 16),
 
             TextField(
               controller: libroController,
               decoration: const InputDecoration(labelText: 'Libro'),
             ),
+            const SizedBox(height: 28),
+
+            const Align(
+              alignment: Alignment.centerLeft,
+              child: Text(
+                '📖 ¿Es autoconclusivo?',
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+              ),
+            ),
+
+            Align(
+              alignment: Alignment.centerLeft,
+              child: Wrap(
+                spacing: 12,
+                children: [
+                  ChoiceChip(
+                    showCheckmark: false,
+                    selectedColor: Theme.of(
+                      context,
+                    ).colorScheme.primaryContainer,
+                    label: const Text('Sí'),
+                    selected: autoconclusivo == 'Si',
+                    onSelected: (_) {
+                      setState(() {
+                        autoconclusivo = 'Si';
+                        sagaController.clear();
+                        numSagaController.clear();
+                      });
+                    },
+                  ),
+
+                  ChoiceChip(
+                    showCheckmark: false,
+                    selectedColor: Theme.of(
+                      context,
+                    ).colorScheme.primaryContainer,
+                    label: const Text('No'),
+                    selected: autoconclusivo == 'No',
+                    onSelected: (_) {
+                      setState(() {
+                        autoconclusivo = 'No';
+                      });
+                    },
+                  ),
+                ],
+              ),
+            ),
+            if (autoconclusivo == "No") ...[
+              TextField(
+                controller: sagaController,
+                decoration: const InputDecoration(labelText: 'Saga'),
+              ),
+
+              const SizedBox(height: 16),
+
+              TextField(
+                controller: numSagaController,
+                decoration: const InputDecoration(labelText: 'Nº Saga'),
+              ),
+
+              const SizedBox(height: 16),
+            ],
 
             const SizedBox(height: 16),
 
-            DropdownButtonFormField<String>(
-              initialValue: genero,
+            const SizedBox(height: 24),
 
-              decoration: const InputDecoration(labelText: 'Género'),
+            const Align(
+              alignment: Alignment.centerLeft,
+              child: Text(
+                '🏷️ Género',
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+              ),
+            ),
 
-              items:
-                  [
-                    'Fantasía',
-                    'Romantasy',
-                    'Romance',
-                    'Thriller',
-                    'Dark Romance',
-                    'Dark Academia',
-                    'Drama',
-                    'Clásicos',
-                    'Distopía',
-                    'Novela contemporánea',
-                    'Novela Histórica',
-                    'Ciencia Ficción',
-                    'Terror',
-                    'Novela Negra',
-                  ].map((e) {
-                    return DropdownMenuItem(value: e, child: Text(e));
-                  }).toList(),
+            const SizedBox(height: 12),
 
-              onChanged: (value) {
-                setState(() {
-                  genero = value!;
-                });
-              },
+            Wrap(
+              spacing: 10,
+              runSpacing: 10,
+              children: [
+                _chipGenero(icono: '🐉', valor: 'Fantasía', texto: 'Fantasía'),
+                _chipGenero(
+                  icono: '🌹',
+                  valor: 'Romantasy',
+                  texto: 'Romantasy',
+                ),
+                _chipGenero(icono: '💕', valor: 'Romance', texto: 'Romance'),
+                _chipGenero(icono: '🔪', valor: 'Thriller', texto: 'Thriller'),
+                _chipGenero(
+                  icono: '🖤',
+                  valor: 'Dark Romance',
+                  texto: 'Dark Romance',
+                ),
+                _chipGenero(
+                  icono: '🎓',
+                  valor: 'Dark Academia',
+                  texto: 'Dark Academia',
+                ),
+                _chipGenero(icono: '🎭', valor: 'Drama', texto: 'Drama'),
+                _chipGenero(icono: '📜', valor: 'Clásicos', texto: 'Clásicos'),
+                _chipGenero(icono: '🌇', valor: 'Distopía', texto: 'Distopía'),
+
+                _chipGenero(
+                  icono: '🏙️',
+                  valor: 'Novela contemporánea',
+                  texto: 'Contemporánea',
+                ),
+                _chipGenero(
+                  icono: '🏰',
+                  valor: 'Novela Histórica',
+                  texto: 'Histórica',
+                ),
+                _chipGenero(
+                  icono: '🚀',
+                  valor: 'Ciencia Ficción',
+                  texto: 'Sci-Fi',
+                ),
+                _chipGenero(icono: '👻', valor: 'Terror', texto: 'Terror'),
+                _chipGenero(
+                  icono: '🕵️',
+                  valor: 'Novela Negra',
+                  texto: 'Novela Negra',
+                ),
+              ],
             ),
 
             const SizedBox(height: 16),
 
-            TextField(
-              controller: sagaController,
-              decoration: const InputDecoration(labelText: 'Saga'),
+            const SizedBox(height: 16),
+
+            const SizedBox(height: 24),
+
+            const Align(
+              alignment: Alignment.centerLeft,
+              child: Text(
+                '⭐ Prioridad',
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+              ),
+            ),
+
+            const SizedBox(height: 12),
+
+            Align(
+              alignment: Alignment.centerLeft,
+              child: Wrap(
+                spacing: 12,
+                children: [
+                  ChoiceChip(
+                    label: const Text('🟢 Baja'),
+                    selected: prioridad == 'Baja',
+                    showCheckmark: false,
+                    selectedColor: Theme.of(
+                      context,
+                    ).colorScheme.primaryContainer,
+                    onSelected: (_) {
+                      setState(() {
+                        prioridad = 'Baja';
+                      });
+                    },
+                  ),
+
+                  ChoiceChip(
+                    label: const Text('🟡 Media'),
+                    selected: prioridad == 'Media',
+                    showCheckmark: false,
+                    selectedColor: Theme.of(
+                      context,
+                    ).colorScheme.primaryContainer,
+                    onSelected: (_) {
+                      setState(() {
+                        prioridad = 'Media';
+                      });
+                    },
+                  ),
+
+                  ChoiceChip(
+                    label: const Text('🔴 Alta'),
+                    selected: prioridad == 'Alta',
+                    showCheckmark: false,
+                    selectedColor: Theme.of(
+                      context,
+                    ).colorScheme.primaryContainer,
+                    onSelected: (_) {
+                      setState(() {
+                        prioridad = 'Alta';
+                      });
+                    },
+                  ),
+                ],
+              ),
             ),
 
             const SizedBox(height: 16),
-
-            TextField(
-              controller: numSagaController,
-              decoration: const InputDecoration(labelText: 'Nº Saga'),
-            ),
-
-            const SizedBox(height: 16),
-
-            DropdownButtonFormField<String>(
-              initialValue: prioridad,
-
-              decoration: const InputDecoration(labelText: 'Prioridad'),
-
-              items: ['Alta', 'Media', 'Baja'].map((e) {
-                return DropdownMenuItem(value: e, child: Text(e));
-              }).toList(),
-
-              onChanged: (value) {
-                setState(() {
-                  prioridad = value!;
-                });
-              },
-            ),
-
-            const SizedBox(height: 16),
-
-            DropdownButtonFormField<String>(
-              initialValue: autoconclusivo,
-
-              decoration: const InputDecoration(labelText: 'Autoconclusivo'),
-
-              items: ['Si', 'No'].map((e) {
-                return DropdownMenuItem(value: e, child: Text(e));
-              }).toList(),
-
-              onChanged: (value) {
-                setState(() {
-                  autoconclusivo = value!;
-                });
-              },
-            ),
 
             const SizedBox(height: 32),
 
@@ -196,7 +332,7 @@ class _NuevoLibroPageState extends State<NuevoLibroPage> {
                 child: Padding(
                   padding: const EdgeInsets.all(16),
 
-                  child: Text(guardando ? 'Guardando...' : 'GUARDAR'),
+                  child: Text(guardando ? 'Guardando...' : '➕ Añadir libro'),
                 ),
               ),
             ),
