@@ -6,7 +6,6 @@ import '../services/api_service.dart';
 import '../services/club_narrador.dart';
 import '../widgets/info_card.dart';
 import '../dev/dev_settings.dart';
-import '../services/votacion_local_service.dart';
 import '../models/dashboard_view_data.dart';
 
 class DashboardPage extends StatefulWidget {
@@ -61,15 +60,12 @@ class _DashboardPageState extends State<DashboardPage> {
           }
 
           if (snapshot.hasError) {
-            return Scaffold(
-              appBar: AppBar(title: const Text("📚 Club de Lectura")),
-              body: ErrorView(
-                onRetry: () {
-                  setState(() {
-                    dashboardFuture = _cargarDashboard();
-                  });
-                },
-              ),
+            return ErrorView(
+              onRetry: () {
+                setState(() {
+                  dashboardFuture = _cargarDashboard();
+                });
+              },
             );
           }
 

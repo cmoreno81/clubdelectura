@@ -1,3 +1,4 @@
+import 'package:club_lectura_app/pages/clubvision_mi_voto_page.dart';
 import 'package:flutter/material.dart';
 
 import '../models/clubvision.dart';
@@ -6,6 +7,7 @@ import 'ClubVisionVotacionPage.dart';
 import 'clubvision_historial_page.dart';
 import '../pages/clubvision_gala_page.dart';
 import '../pages/lectura_actual_page.dart';
+import 'clubvision_como_votaron_page.dart';
 
 class ClubvisionMenuPage extends StatefulWidget {
   const ClubvisionMenuPage({super.key});
@@ -35,7 +37,6 @@ class _ClubvisionMenuPageState extends State<ClubvisionMenuPage> {
         }
 
         final club = snapshot.data!;
-        final estado = club.estado;
 
         return Scaffold(
           appBar: AppBar(title: const Text("🎤 Clubvisión")),
@@ -43,63 +44,7 @@ class _ClubvisionMenuPageState extends State<ClubvisionMenuPage> {
           body: ListView(
             padding: const EdgeInsets.all(16),
             children: [
-              if (estado == "VOTACION")
-                _card(
-                  context,
-                  icon: club.haVotado ? Icons.check_circle : Icons.how_to_vote,
-                  titulo: club.haVotado ? "Ya has votado" : "Votación",
-                  subtitulo: club.haVotado
-                      ? "Tu voto ya ha sido registrado."
-                      : "Elige la próxima lectura del club",
-                  onTap: () async {
-                    if (club.haVotado) return;
-
-                    await Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) =>
-                            ClubvisionVotacionPage(idVotacion: club.idVotacion),
-                      ),
-                    );
-
-                    if (!mounted) return;
-
-                    setState(() {
-                      clubvisionFuture = ApiService().getClubvision();
-                    });
-                  },
-                ),
-              if (estado == "RESULTADOS")
-                _card(
-                  context,
-                  icon: Icons.emoji_events,
-                  titulo: "Gala",
-                  subtitulo: "Descubre la próxima lectura",
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => const ClubvisionGalaPage(),
-                      ),
-                    );
-                  },
-                ),
-
-              if (estado == "LECTURA")
-                _card(
-                  context,
-                  icon: Icons.menu_book,
-                  titulo: "Lectura actual",
-                  subtitulo: club.ganador,
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => const LecturaActualPage(),
-                      ),
-                    );
-                  },
-                ),
+              ..._opcionesPrincipales(club),
 
               const SizedBox(height: 16),
 
@@ -122,6 +67,126 @@ class _ClubvisionMenuPageState extends State<ClubvisionMenuPage> {
         );
       },
     );
+  }
+
+  List<Widget> _opcionesPrincipales(ClubvisionData club) {
+    switch (club.estado) {
+      case "VOTACION":
+        return [_opcionVotacion(club)];
+
+      case "RESULTADOS":
+        return _opcionesResultados();
+
+      case "LECTURA":
+        return _opcionesLectura(club);
+
+      default:
+        return [];
+    }
+  }
+
+  Widget _opcionVotacion(ClubvisionData club) {
+    return _card(
+      context,
+      icon: club.haVotado ? Icons.check_circle : Icons.how_to_vote,
+      titulo: club.haVotado ? "Mi voto" : "Votación",
+      subtitulo: club.haVotado
+          ? "Consulta los libros que elegiste."
+          : "Elige la próxima lectura del club",
+      onTap: () async {
+        if (club.haVotado) {
+          await Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => const ClubvisionMiVotoPage()),
+          );
+
+          return;
+        }
+
+        final actualizado = await Navigator.push<bool>(
+          context,
+          MaterialPageRoute(
+            builder: (_) => ClubvisionVotacionPage(idVotacion: club.idVotacion),
+          ),
+        );
+
+        if (!mounted) return;
+
+        if (actualizado == true) {
+          setState(() {
+            clubvisionFuture = ApiService().getClubvision();
+          });
+        }
+      },
+    );
+  }
+
+  List<Widget> _opcionesResultados() {
+    return [
+      _card(
+        context,
+        icon: Icons.emoji_events,
+        titulo: "Gala",
+        subtitulo: "Descubre la próxima lectura",
+        onTap: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => const ClubvisionGalaPage()),
+          );
+        },
+      ),
+
+      const SizedBox(height: 16),
+
+      _card(
+        context,
+        icon: Icons.how_to_vote,
+        titulo: "Cómo votaron",
+        subtitulo: "Descubre las puntuaciones de todas las lectoras",
+        onTap: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (_) => const ClubvisionComoVotaronPage(),
+            ),
+          );
+        },
+      ),
+    ];
+  }
+
+  List<Widget> _opcionesLectura(ClubvisionData club) {
+    return [
+      _card(
+        context,
+        icon: Icons.menu_book,
+        titulo: "Lectura actual",
+        subtitulo: club.ganador,
+        onTap: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => const LecturaActualPage()),
+          );
+        },
+      ),
+
+      const SizedBox(height: 16),
+
+      _card(
+        context,
+        icon: Icons.how_to_vote,
+        titulo: "Cómo votaron",
+        subtitulo: "Consulta todas las puntuaciones",
+        onTap: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (_) => const ClubvisionComoVotaronPage(),
+            ),
+          );
+        },
+      ),
+    ];
   }
 
   Widget _card(

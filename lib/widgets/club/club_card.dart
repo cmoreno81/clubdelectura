@@ -1,9 +1,8 @@
+import 'package:club_lectura_app/pages/clubvision_menu_page.dart';
 import 'package:flutter/material.dart';
-import '../../pages/clubvision_gala_page.dart';
 import '../../models/dashboard.dart';
 import '../../models/estado_club.dart';
 import '../../pages/clubvisionVotacionPage.dart';
-import '../../pages/lectura_actual_page.dart';
 import 'director_escenas.dart';
 
 class ClubCard extends StatelessWidget {
@@ -25,34 +24,12 @@ class ClubCard extends StatelessWidget {
     return InkWell(
       borderRadius: BorderRadius.circular(20),
       onTap: () async {
-        switch (dashboard.clubvision.estado) {
-          case "LECTURA":
-            Navigator.push(
-              context,
-              MaterialPageRoute(builder: (_) => const LecturaActualPage()),
-            );
-            break;
+        await Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => const ClubvisionMenuPage()),
+        );
 
-          case "VOTACION":
-            await Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (_) => ClubvisionVotacionPage(
-                  idVotacion: dashboard.clubvision.idVotacion,
-                ),
-              ),
-            );
-
-            await onActualizar();
-            break;
-
-          case "RESULTADOS":
-            Navigator.push(
-              context,
-              MaterialPageRoute(builder: (_) => const ClubvisionGalaPage()),
-            );
-            break;
-        }
+        await onActualizar();
       },
       child: Card(
         elevation: 4,
@@ -85,6 +62,43 @@ class ClubCard extends StatelessWidget {
                   ),
 
                   if (estadoClub.permiteVotar) ...[
+                    const SizedBox(height: 20),
+
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(12),
+                      child: LinearProgressIndicator(
+                        value: dashboard.clubvision.totalUsuarios == 0
+                            ? 0
+                            : dashboard.clubvision.votosRecibidos /
+                                  dashboard.clubvision.totalUsuarios,
+                        minHeight: 10,
+                        backgroundColor: Colors.white70,
+                        valueColor: AlwaysStoppedAnimation<Color>(
+                          Theme.of(context).colorScheme.primary,
+                        ),
+                      ),
+                    ),
+
+                    const SizedBox(height: 12),
+
+                    Text(
+                      '🗳️ ${dashboard.clubvision.votosRecibidos} de ${dashboard.clubvision.totalUsuarios} lectoras han votado',
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(fontWeight: FontWeight.bold),
+                    ),
+
+                    if (dashboard.clubvision.votosPendientes > 0)
+                      const SizedBox(height: 20),
+
+                    const Divider(),
+                    Padding(
+                      padding: const EdgeInsets.only(top: 6),
+                      child: Text(
+                        'Solo faltan ${dashboard.clubvision.votosPendientes} 💜',
+                        textAlign: TextAlign.center,
+                        style: const TextStyle(color: Colors.black54),
+                      ),
+                    ),
                     const SizedBox(height: 24),
 
                     if (!haVotado)
@@ -92,7 +106,7 @@ class ClubCard extends StatelessWidget {
                         width: double.infinity,
                         child: FilledButton.icon(
                           onPressed: () async {
-                            await Navigator.push(
+                            final actualizado = await Navigator.push<bool>(
                               context,
                               MaterialPageRoute(
                                 builder: (_) => ClubvisionVotacionPage(
@@ -101,7 +115,9 @@ class ClubCard extends StatelessWidget {
                               ),
                             );
 
-                            await onActualizar();
+                            if (actualizado == true) {
+                              await onActualizar();
+                            }
                           },
                           icon: const Icon(Icons.how_to_vote),
                           label: const Text(

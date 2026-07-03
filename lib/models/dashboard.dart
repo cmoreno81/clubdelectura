@@ -63,6 +63,11 @@ class Clubvision {
 
   final int totalCandidatas;
 
+  final int votosRecibidos;
+  final int totalUsuarios;
+  final int votosPendientes;
+  final int porcentaje;
+
   Clubvision({
     required this.estado,
     required this.titulo,
@@ -71,6 +76,10 @@ class Clubvision {
     required this.lectoras,
     required this.idVotacion,
     required this.totalCandidatas,
+    required this.votosRecibidos,
+    required this.totalUsuarios,
+    required this.votosPendientes,
+    required this.porcentaje,
   });
 
   factory Clubvision.fromJson(Map<String, dynamic> json) {
@@ -82,6 +91,13 @@ class Clubvision {
       idVotacion: json['idVotacion']?.toString() ?? '',
       lectoras: List<String>.from(json['lectoras'] ?? []),
       totalCandidatas: (json['totalCandidatas'] as num?)?.toInt() ?? 0,
+      votosRecibidos: (json['votosRecibidos'] as num?)?.toInt() ?? 0,
+
+      totalUsuarios: (json['totalUsuarios'] as num?)?.toInt() ?? 0,
+
+      votosPendientes: (json['votosPendientes'] as num?)?.toInt() ?? 0,
+
+      porcentaje: (json['porcentaje'] as num?)?.toInt() ?? 0,
     );
   }
 }

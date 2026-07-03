@@ -5,7 +5,6 @@ import 'package:flutter/material.dart';
 import '../models/clubvision.dart';
 import '../services/api_service.dart';
 import '../services/usuario_service.dart';
-import '../services/votacion_local_service.dart';
 
 class ClubvisionVotacionPage extends StatefulWidget {
   final String idVotacion;
@@ -21,7 +20,6 @@ class _ClubvisionVotacionPageState extends State<ClubvisionVotacionPage> {
 
   String usuario = '';
   final List<String> seleccionadas = [];
-  bool haVotado = false;
 
   @override
   void initState() {
@@ -34,13 +32,6 @@ class _ClubvisionVotacionPageState extends State<ClubvisionVotacionPage> {
 
       setState(() {
         usuario = value ?? '';
-      });
-    });
-    VotacionLocalService().haVotado(widget.idVotacion).then((value) {
-      if (!mounted) return;
-
-      setState(() {
-        haVotado = value;
       });
     });
   }
@@ -126,8 +117,8 @@ class _ClubvisionVotacionPageState extends State<ClubvisionVotacionPage> {
               },
             );
           }
-
           final clubvision = snapshot.data!;
+          final haVotado = clubvision.haVotado;
           final totalIntereses = clubvision.candidatas.fold<int>(
             0,
             (total, candidata) => total + candidata.interesadas,
@@ -314,11 +305,6 @@ class _ClubvisionVotacionPageState extends State<ClubvisionVotacionPage> {
                                                     Navigator.pop(context);
 
                                                     if (ok) {
-                                                      await VotacionLocalService()
-                                                          .guardarVoto(
-                                                            widget.idVotacion,
-                                                          );
-
                                                       if (!mounted) return;
 
                                                       ScaffoldMessenger.of(
@@ -333,7 +319,10 @@ class _ClubvisionVotacionPageState extends State<ClubvisionVotacionPage> {
                                                         ),
                                                       );
 
-                                                      Navigator.pop(context);
+                                                      Navigator.pop(
+                                                        context,
+                                                        true,
+                                                      );
                                                     }
                                                   },
 

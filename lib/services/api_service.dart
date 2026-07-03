@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:club_lectura_app/models/mi_voto.dart';
 import 'package:http/http.dart' as http;
 
 import '../models/dashboard.dart';
@@ -12,10 +13,11 @@ import '../models/clubvision.dart';
 import '../models/historial_clubvision.dart';
 import '../models/usuario.dart';
 import 'usuario_service.dart';
+import '../models/como_votaron.dart';
 
 class ApiService {
   static const String baseUrl =
-      'https://script.google.com/macros/s/AKfycbyFxHwXC_h8pe6MBoz4eUTGX9tVO7MiNPT5Ts0vXtUslzf509TKvRDBwmoPGnOyQB2i/exec';
+      'https://script.google.com/macros/s/AKfycbz9g5Yp-HoS34Oz-GRca2ianK7eQo0n4ABQtkM8t00T2GqxFcpTroRiHi1C4rKdnZuN/exec';
 
   Future<List<Usuario>> getUsuarios() async {
     final response = await http.get(Uri.parse('$baseUrl?action=usuarios'));
@@ -75,6 +77,18 @@ class ApiService {
 
       body: jsonEncode(libro.toJson()),
     );
+  }
+
+  Future<List<ComoVotaron>> getComoVotaron() async {
+    final response = await http.get(Uri.parse('$baseUrl?action=comoVotaron'));
+
+    if (response.statusCode == 200) {
+      final List<dynamic> json = jsonDecode(response.body);
+
+      return json.map((e) => ComoVotaron.fromJson(e)).toList();
+    }
+
+    throw Exception('Error cargando las votaciones');
   }
 
   Future<void> actualizarEstado({
@@ -142,6 +156,7 @@ class ApiService {
         '$baseUrl?action=clubvision&usuario=${Uri.encodeComponent(usuario ?? "")}',
       ),
     );
+
     if (response.statusCode == 200) {
       return ClubvisionData.fromJson(jsonDecode(response.body));
     }
@@ -181,6 +196,20 @@ class ApiService {
       "ok": json["ok"] == true,
       "mensaje": json["mensaje"] ?? "Ha ocurrido un error.",
     };
+  }
+
+  Future<MiVoto> getMiVoto(String usuario) async {
+    final response = await http.get(
+      Uri.parse(
+        '$baseUrl?action=miVoto&usuario=${Uri.encodeComponent(usuario)}',
+      ),
+    );
+
+    if (response.statusCode == 200) {
+      return MiVoto.fromJson(jsonDecode(response.body));
+    }
+
+    throw Exception('Error cargando mi voto');
   }
 
   Future<bool> enviarVotacion({
