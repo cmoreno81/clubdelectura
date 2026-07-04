@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:club_lectura_app/models/lectura_compartida.dart';
 import 'package:club_lectura_app/models/mi_voto.dart';
 import 'package:http/http.dart' as http;
 
@@ -14,10 +15,11 @@ import '../models/historial_clubvision.dart';
 import '../models/usuario.dart';
 import 'usuario_service.dart';
 import '../models/como_votaron.dart';
+import '../models/comentarios_capitulo.dart';
 
 class ApiService {
   static const String baseUrl =
-      'https://script.google.com/macros/s/AKfycbz9g5Yp-HoS34Oz-GRca2ianK7eQo0n4ABQtkM8t00T2GqxFcpTroRiHi1C4rKdnZuN/exec';
+      'https://script.google.com/macros/s/AKfycbwb53kev-fvNiVpToCrwH45Q9oIjuk2uB5TMzBfwKGWnoZDHVefxptNHQNeYgKUJu_I/exec';
 
   Future<List<Usuario>> getUsuarios() async {
     final response = await http.get(Uri.parse('$baseUrl?action=usuarios'));
@@ -69,6 +71,83 @@ class ApiService {
     throw Exception('Error cargando finalizados');
   }
 
+  Future<bool> iniciarLectura({
+    required String usuario,
+    required String libro,
+  }) async {
+    final uri = Uri.parse(baseUrl).replace(
+      queryParameters: {
+        "action": "iniciarLectura",
+        "usuario": usuario,
+        "libro": libro,
+      },
+    );
+
+    final response = await http.get(uri);
+
+    if (response.statusCode != 200) {
+      return false;
+    }
+
+    final json = jsonDecode(response.body);
+
+    return json["ok"] == true;
+  }
+
+  Future<LecturaCompartida> getLecturaCompartida() async {
+    final response = await http.get(
+      Uri.parse('$baseUrl?action=lecturaCompartida'),
+    );
+
+    if (response.statusCode != 200) {
+      throw Exception("Error cargando lectura compartida");
+    }
+
+    final json = jsonDecode(response.body);
+
+    if (json["ok"] != true) {
+      throw Exception("No existe lectura compartida");
+    }
+
+    return LecturaCompartida.fromJson(json);
+  }
+
+  Future<ComentariosCapitulo> getComentariosCapitulo({
+    required String libro,
+    required String capitulo,
+  }) async {
+    final response = await http.get(
+      Uri.parse(
+        '$baseUrl?action=comentariosLectura'
+        '&libro=${Uri.encodeComponent(libro)}'
+        '&capitulo=${Uri.encodeComponent(capitulo)}',
+      ),
+    );
+
+    if (response.statusCode != 200) {
+      throw Exception("Error cargando comentarios");
+    }
+
+    return ComentariosCapitulo.fromJson(jsonDecode(response.body));
+  }
+
+  Future<void> guardarComentarioLectura({
+    required String libro,
+    required String capitulo,
+    required String usuario,
+    required String comentario,
+  }) async {
+    await http.get(
+      Uri.parse(
+        '$baseUrl?action=guardarComentarioLectura'
+        '&libro=${Uri.encodeComponent(libro)}'
+        '&capitulo=${Uri.encodeComponent(capitulo)}'
+        '&usuario=${Uri.encodeComponent(usuario)}'
+        '&comentario=${Uri.encodeComponent(comentario)}',
+      ),
+    );
+  }
+
   Future<void> crearLibro(NuevoLibro libro) async {
     final response = await http.post(
       Uri.parse('$baseUrl?action=crearLibro'),
@@ -89,6 +168,31 @@ class ApiService {
     }
 
     throw Exception('Error cargando las votaciones');
+  }
+
+  Future<bool> finalizarLibro({
+    required String usuario,
+    required String libro,
+    required String valoracion,
+  }) async {
+    final uri = Uri.parse(baseUrl).replace(
+      queryParameters: {
+        "action": "finalizarLibro",
+        "usuario": usuario,
+        "libro": libro,
+        "valoracion": valoracion,
+      },
+    );
+
+    final response = await http.get(uri);
+
+    if (response.statusCode != 200) {
+      return false;
+    }
+
+    final json = jsonDecode(response.body);
+
+    return json["ok"] == true;
   }
 
   Future<void> actualizarEstado({

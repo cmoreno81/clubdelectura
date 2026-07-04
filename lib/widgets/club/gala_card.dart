@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-
+import '../../services/api_service.dart';
+import '../../services/usuario_service.dart';
 import '../../models/dashboard.dart';
 
 class GalaCard extends StatelessWidget {
@@ -71,8 +72,38 @@ class GalaCard extends StatelessWidget {
             const SizedBox(height: 30),
 
             FilledButton.icon(
-              onPressed: () {
-                Navigator.pop(context);
+              onPressed: () async {
+                final usuario = await UsuarioService().obtenerUsuario();
+
+                if (usuario == null || usuario.isEmpty) {
+                  return;
+                }
+
+                final ok = await ApiService().iniciarLectura(
+                  usuario: usuario,
+                  libro: club.ganador,
+                );
+
+                if (!context.mounted) return;
+
+                if (!ok) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text("No se pudo iniciar la lectura."),
+                    ),
+                  );
+                  return;
+                }
+
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text(
+                      "📖 ${club.ganador} ya forma parte de tu biblioteca.",
+                    ),
+                  ),
+                );
+
+                Navigator.pop(context, true);
               },
               icon: const Icon(Icons.auto_stories),
               label: const Padding(

@@ -1,4 +1,5 @@
 import 'package:club_lectura_app/pages/clubvision_mi_voto_page.dart';
+import 'package:club_lectura_app/pages/lectura_compartida_page.dart';
 import 'package:flutter/material.dart';
 
 import '../models/clubvision.dart';
@@ -161,11 +162,11 @@ class _ClubvisionMenuPageState extends State<ClubvisionMenuPage> {
         context,
         icon: Icons.menu_book,
         titulo: "Lectura actual",
-        subtitulo: club.ganador,
+        subtitulo: "Comenta la lectura en curso",
         onTap: () {
           Navigator.push(
             context,
-            MaterialPageRoute(builder: (_) => const LecturaActualPage()),
+            MaterialPageRoute(builder: (_) => const LecturaCompartidaPage()),
           );
         },
       ),
