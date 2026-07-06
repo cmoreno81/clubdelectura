@@ -67,6 +67,9 @@ class Clubvision {
   final int totalUsuarios;
   final int votosPendientes;
   final int porcentaje;
+  final int comentarios;
+  final int likes;
+  final String ultimaActividad;
 
   Clubvision({
     required this.estado,
@@ -80,6 +83,9 @@ class Clubvision {
     required this.totalUsuarios,
     required this.votosPendientes,
     required this.porcentaje,
+    required this.comentarios,
+    required this.likes,
+    required this.ultimaActividad,
   });
 
   factory Clubvision.fromJson(Map<String, dynamic> json) {
@@ -98,6 +104,12 @@ class Clubvision {
       votosPendientes: (json['votosPendientes'] as num?)?.toInt() ?? 0,
 
       porcentaje: (json['porcentaje'] as num?)?.toInt() ?? 0,
+
+      comentarios: (json['comentarios'] as num?)?.toInt() ?? 0,
+
+      likes: (json['likes'] as num?)?.toInt() ?? 0,
+
+      ultimaActividad: json['ultimaActividad']?.toString() ?? '',
     );
   }
 }

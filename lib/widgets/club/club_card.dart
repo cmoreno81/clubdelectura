@@ -155,6 +155,45 @@ class ClubCard extends StatelessWidget {
                   if (estadoClub.mostrarGanador) ...[
                     const SizedBox(height: 20),
 
+                    if (dashboard.clubvision.estado == "LECTURA") ...[
+                      if (dashboard.clubvision.comentarios > 0)
+                        Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.all(14),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withOpacity(0.45),
+                            borderRadius: BorderRadius.circular(14),
+                          ),
+                          child: Column(
+                            children: [
+                              Text(
+                                "💬 ${dashboard.clubvision.comentarios} comentarios · ❤️ ${dashboard.clubvision.likes}",
+                                textAlign: TextAlign.center,
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 16,
+                                ),
+                              ),
+
+                              if (dashboard
+                                  .clubvision
+                                  .ultimaActividad
+                                  .isNotEmpty) ...[
+                                const SizedBox(height: 6),
+
+                                Text(
+                                  dashboard.clubvision.ultimaActividad,
+                                  textAlign: TextAlign.center,
+                                  style: const TextStyle(color: Colors.black54),
+                                ),
+                              ],
+                            ],
+                          ),
+                        ),
+
+                      const SizedBox(height: 16),
+                    ],
+
                     Text(
                       dashboard.clubvision.lectoras.isEmpty
                           ? '🌟 Estreno para todo el club'

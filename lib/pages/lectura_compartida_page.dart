@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'capitulo_page.dart';
+import 'configurar_lectura_page.dart';
 import '../models/lectura_compartida.dart';
 import '../services/api_service.dart';
 import '../widgets/lectura/capitulo_tile.dart';
@@ -17,6 +18,10 @@ class _LecturaCompartidaPageState extends State<LecturaCompartidaPage> {
   @override
   void initState() {
     super.initState();
+    _recargar();
+  }
+
+  void _recargar() {
     future = ApiService().getLecturaCompartida();
   }
 
@@ -33,12 +38,93 @@ class _LecturaCompartidaPageState extends State<LecturaCompartidaPage> {
 
         final lectura = snapshot.data!;
 
+        // =====================================================
+        // La conversación todavía no existe
+        // =====================================================
+
+        if (!lectura.configurada) {
+          return Scaffold(
+            appBar: AppBar(title: const Text("💬 Lectura compartida")),
+            body: Center(
+              child: Padding(
+                padding: const EdgeInsets.all(28),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Icon(
+                      Icons.menu_book,
+                      size: 80,
+                      color: Colors.deepPurple,
+                    ),
+
+                    const SizedBox(height: 24),
+
+                    Text(
+                      lectura.libro,
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(
+                        fontSize: 28,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+
+                    const SizedBox(height: 24),
+
+                    const Text(
+                      "Todavía no existe una conversación para esta lectura oficial.",
+                      textAlign: TextAlign.center,
+                      style: TextStyle(fontSize: 18),
+                    ),
+
+                    const SizedBox(height: 12),
+
+                    const Text(
+                      "La primera persona que empiece el libro puede configurarla para todo el club.",
+                      textAlign: TextAlign.center,
+                      style: TextStyle(color: Colors.black54),
+                    ),
+
+                    const SizedBox(height: 40),
+
+                    FilledButton.icon(
+                      style: FilledButton.styleFrom(
+                        minimumSize: const Size.fromHeight(56),
+                      ),
+                      icon: const Icon(Icons.auto_stories),
+                      label: const Text("Crear conversación"),
+                      onPressed: () async {
+                        final creada = await Navigator.push<bool>(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => ConfigurarLecturaPage(
+                              libro: lectura.libro,
+                              tipo: "OFICIAL",
+                            ),
+                          ),
+                        );
+
+                        if (creada == true) {
+                          setState(() {
+                            _recargar();
+                          });
+                        }
+                      },
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          );
+        }
+
+        // =====================================================
+        // Conversación existente
+        // =====================================================
+
         return Scaffold(
           appBar: AppBar(title: const Text("💬 Lectura compartida")),
-
           body: ListView(
             padding: const EdgeInsets.all(20),
-
             children: [
               Card(
                 child: Padding(
@@ -128,17 +214,23 @@ class _LecturaCompartidaPageState extends State<LecturaCompartidaPage> {
 
               ...lectura.capitulosDisponibles.map(
                 (capitulo) => CapituloTile(
-                  titulo: capitulo,
-                  onTap: () {
-                    Navigator.push(
+                  capitulo: capitulo,
+                  onTap: () async {
+                    await Navigator.push(
                       context,
                       MaterialPageRoute(
                         builder: (_) => CapituloPage(
                           libro: lectura.libro,
-                          capitulo: capitulo,
+                          capitulo: capitulo.nombre,
                         ),
                       ),
                     );
+
+                    if (!mounted) return;
+
+                    setState(() {
+                      _recargar();
+                    });
                   },
                 ),
               ),

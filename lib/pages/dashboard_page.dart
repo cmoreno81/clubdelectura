@@ -26,9 +26,10 @@ class _DashboardPageState extends State<DashboardPage> {
   }
 
   Future<DashboardViewData> _cargarDashboard() async {
-    final dashboard = await ApiService().getDashboard();
-
-    final clubvision = await ApiService().getClubvision();
+    final dashboardFuture = ApiService().getDashboard();
+    final clubvisionFuture = ApiService().getClubvision();
+    final dashboard = await dashboardFuture;
+    final clubvision = await clubvisionFuture;
 
     return DashboardViewData(
       dashboard: dashboard,

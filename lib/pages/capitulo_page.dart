@@ -32,13 +32,16 @@ class _CapituloPageState extends State<CapituloPage> {
   }
 
   Future<void> _cargarUsuario() async {
-    usuario = await UsuarioService().obtenerUsuario();
+    final u = await UsuarioService().obtenerUsuario();
+
+    if (!mounted) return;
+
+    usuario = u;
   }
 
   void _recargar() {
     future = ApiService().getComentariosCapitulo(
       libro: widget.libro,
-
       capitulo: widget.capitulo,
     );
   }
@@ -56,6 +59,8 @@ class _CapituloPageState extends State<CapituloPage> {
       usuario: usuario ?? "",
       comentario: texto,
     );
+
+    if (!mounted) return;
 
     controller.clear();
 
@@ -134,6 +139,13 @@ class _CapituloPageState extends State<CapituloPage> {
                         itemBuilder: (context, index) {
                           return ComentarioCard(
                             comentario: data.comentarios[index],
+                            onActualizar: () {
+                              if (!mounted) return;
+
+                              setState(() {
+                                _recargar();
+                              });
+                            },
                           );
                         },
                       ),
@@ -147,5 +159,11 @@ class _CapituloPageState extends State<CapituloPage> {
         },
       ),
     );
+  }
+
+  @override
+  void dispose() {
+    controller.dispose();
+    super.dispose();
   }
 }

@@ -35,13 +35,43 @@ class DirectorEscenas {
         );
 
       case ContenidoClub.lectura:
+        final lectura = dashboard.lecturaActual;
+
         return Column(
           children: [
             const SizedBox(height: 10),
+
             Text(
-              dashboard.clubvision.mensaje,
+              lectura.titulo,
               textAlign: TextAlign.center,
-              style: const TextStyle(fontSize: 20),
+              style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+            ),
+
+            const SizedBox(height: 16),
+
+            if (lectura.comentarios > 0) ...[
+              Text(
+                "💬 ${lectura.comentarios} comentarios · ❤️ ${lectura.likes}",
+                textAlign: TextAlign.center,
+                style: const TextStyle(fontWeight: FontWeight.bold),
+              ),
+
+              const SizedBox(height: 6),
+
+              if (lectura.ultimaActividad.isNotEmpty)
+                Text(
+                  lectura.ultimaActividad,
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(color: Colors.black54, fontSize: 13),
+                ),
+
+              const SizedBox(height: 12),
+            ],
+
+            Text(
+              "👥 ${lectura.totalLeyendo} leyendo · ✅ ${lectura.totalFinalizado} finalizaron",
+              textAlign: TextAlign.center,
+              style: const TextStyle(color: Colors.black54),
             ),
           ],
         );

@@ -4,6 +4,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../models/libro.dart';
 import '../models/libro_agrupado.dart';
 import '../services/api_service.dart';
+import '../widgets/libros/conversaciones_libro_card.dart';
 
 class DetalleLibroPage extends StatefulWidget {
   final LibroAgrupado libro;
@@ -56,42 +57,48 @@ class _DetalleLibroPageState extends State<DetalleLibroPage> {
     }
   }
 
-  Future<void> _cambiarEstado(Libro libro, String nuevoEstado) async {
+  Future<void> _cambiarEstado(
+    Libro libro,
+    String nuevoEstado, {
+    String? valoracion,
+  }) async {
     try {
-      await ApiService().actualizarEstado(
-        usuario: libro.usuario,
+      final bool ok;
 
-        libro: libro.libro,
+      if (nuevoEstado == 'LEYENDO') {
+        ok = await ApiService().iniciarLectura(
+          usuario: libro.usuario,
+          libro: libro.libro,
+        );
+      } else {
+        ok = await ApiService().actualizarEstado(
+          usuario: libro.usuario,
+          libro: libro.libro,
+          estado: nuevoEstado,
+          valoracion: valoracion,
+        );
+      }
 
-        estado: nuevoEstado,
-      );
+      if (!ok) {
+        throw Exception('No se ha podido guardar el estado');
+      }
+
+      if (!mounted) return;
 
       final index = registros.indexOf(libro);
 
       setState(() {
         registros[index] = Libro(
           usuario: libro.usuario,
-
           libro: libro.libro,
-
           genero: libro.genero,
-
           saga: libro.saga,
-
           numSaga: libro.numSaga,
-
           autoconclusivo: libro.autoconclusivo,
-
           prioridad: libro.prioridad,
-
           estado: nuevoEstado,
-
-          valoracion: nuevoEstado == 'FINALIZADO'
-              ? 'Valorado'
-              : libro.valoracion,
-
+          valoracion: valoracion ?? libro.valoracion,
           yaLoTengo: libro.yaLoTengo,
-
           goodreads: libro.goodreads,
         );
       });
@@ -104,9 +111,11 @@ class _DetalleLibroPageState extends State<DetalleLibroPage> {
     } catch (e) {
       if (!mounted) return;
 
+      final mensaje = e.toString().replaceFirst('Exception: ', '');
+
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(SnackBar(content: Text('Error: $e')));
+      ).showSnackBar(SnackBar(content: Text('Error: $mensaje')));
     }
   }
 
@@ -428,7 +437,25 @@ class _DetalleLibroPageState extends State<DetalleLibroPage> {
                               ),
                             ],
                             onChanged: (value) async {
-                              // aquí va exactamente el código que ya tienes
+                              if (value == null || value == registro.estado) {
+                                return;
+                              }
+
+                              String? valoracion;
+
+                              if (value == 'FINALIZADO') {
+                                valoracion = await _pedirValoracion();
+
+                                if (!mounted || valoracion == null) {
+                                  return;
+                                }
+                              }
+
+                              await _cambiarEstado(
+                                registro,
+                                value,
+                                valoracion: valoracion,
+                              );
                             },
                           ),
                         ),
@@ -449,6 +476,11 @@ class _DetalleLibroPageState extends State<DetalleLibroPage> {
                 );
               }),
             ],
+            const SizedBox(height: 24),
+
+            ConversacionesLibroCard(libro: widget.libro.libro),
+
+            const SizedBox(height: 8),
 
             if (widget.libro.finalizados.isNotEmpty) ...[
               const SizedBox(height: 24),

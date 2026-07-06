@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:club_lectura_app/models/lectura_activa.dart';
 import 'package:club_lectura_app/models/lectura_compartida.dart';
 import 'package:club_lectura_app/models/mi_voto.dart';
 import 'package:http/http.dart' as http;
@@ -16,24 +17,55 @@ import '../models/usuario.dart';
 import 'usuario_service.dart';
 import '../models/como_votaron.dart';
 import '../models/comentarios_capitulo.dart';
+import '../models/configuracion_lectura.dart';
+import '../models/conversacion_libro.dart';
 
 class ApiService {
   static const String baseUrl =
-      'https://script.google.com/macros/s/AKfycbwb53kev-fvNiVpToCrwH45Q9oIjuk2uB5TMzBfwKGWnoZDHVefxptNHQNeYgKUJu_I/exec';
+      'https://script.google.com/macros/s/AKfycbwh7B2YLDOpxmmnwih4IphkaFun3xFuqp0vkB9vB2vzSJcgpAHlQz7vzY7IDgrt3m4N/exec';
+  static final http.Client _client = http.Client();
+
+  bool _respuestaOk(http.Response response) {
+    if (response.statusCode != 200 && response.statusCode != 302) {
+      return false;
+    }
+
+    final body = response.body.trim();
+
+    if (body.toLowerCase() == 'ok') {
+      return true;
+    }
+
+    dynamic json;
+
+    try {
+      json = jsonDecode(body);
+    } catch (_) {
+      return false;
+    }
+
+    if (json is Map<String, dynamic>) {
+      return json["ok"] == true;
+    }
+
+    return false;
+  }
 
   Future<List<Usuario>> getUsuarios() async {
-    final response = await http.get(Uri.parse('$baseUrl?action=usuarios'));
+    final response = await _client.get(Uri.parse('$baseUrl?action=usuarios'));
     final List data = jsonDecode(response.body);
 
     return data.map((e) => Usuario.fromJson(e)).toList();
   }
 
   Future<Dashboard> getDashboard() async {
-    final response = await http.get(Uri.parse('$baseUrl?action=dashboard'));
+    final response = await _client.get(Uri.parse('$baseUrl?action=dashboard'));
 
     if (response.statusCode == 200) {
       return Dashboard.fromJson(jsonDecode(response.body));
     }
+
+    print(response.body);
 
     throw Exception('Error cargando dashboard');
   }
@@ -41,7 +73,7 @@ class ApiService {
   Future<List<Libro>> getLibros() async {
     final usuario = await UsuarioService().obtenerUsuario();
 
-    final response = await http.get(
+    final response = await _client.get(
       Uri.parse(
         '$baseUrl?action=libros'
         '&usuario=${Uri.encodeComponent(usuario ?? "")}',
@@ -58,7 +90,7 @@ class ApiService {
   }
 
   Future<List<LibroFinalizado>> getLibrosFinalizados() async {
-    final response = await http.get(
+    final response = await _client.get(
       Uri.parse('$baseUrl?action=librosFinalizados'),
     );
 
@@ -83,19 +115,13 @@ class ApiService {
       },
     );
 
-    final response = await http.get(uri);
+    final response = await _client.get(uri);
 
-    if (response.statusCode != 200) {
-      return false;
-    }
-
-    final json = jsonDecode(response.body);
-
-    return json["ok"] == true;
+    return _respuestaOk(response);
   }
 
   Future<LecturaCompartida> getLecturaCompartida() async {
-    final response = await http.get(
+    final response = await _client.get(
       Uri.parse('$baseUrl?action=lecturaCompartida'),
     );
 
@@ -116,11 +142,14 @@ class ApiService {
     required String libro,
     required String capitulo,
   }) async {
-    final response = await http.get(
+    final usuario = await UsuarioService().obtenerUsuario();
+
+    final response = await _client.get(
       Uri.parse(
         '$baseUrl?action=comentariosLectura'
         '&libro=${Uri.encodeComponent(libro)}'
-        '&capitulo=${Uri.encodeComponent(capitulo)}',
+        '&capitulo=${Uri.encodeComponent(capitulo)}'
+        '&usuario=${Uri.encodeComponent(usuario ?? "")}',
       ),
     );
 
@@ -137,7 +166,7 @@ class ApiService {
     required String usuario,
     required String comentario,
   }) async {
-    await http.get(
+    await _client.get(
       Uri.parse(
         '$baseUrl?action=guardarComentarioLectura'
         '&libro=${Uri.encodeComponent(libro)}'
@@ -148,8 +177,144 @@ class ApiService {
     );
   }
 
+  Future<bool> guardarRespuestaComentario({
+    required String comentarioId,
+    required String usuario,
+    required String respuesta,
+  }) async {
+    final uri = Uri.parse(baseUrl).replace(
+      queryParameters: {
+        "action": "responderComentario",
+        "comentarioId": comentarioId,
+        "usuario": usuario,
+        "respuesta": respuesta,
+      },
+    );
+
+    final response = await _client.get(uri);
+
+    return _respuestaOk(response);
+  }
+
+  Future<bool> editarComentario({
+    required String comentarioId,
+    required String comentario,
+  }) async {
+    final uri = Uri.parse(baseUrl).replace(
+      queryParameters: {
+        "action": "editarComentario",
+        "id": comentarioId,
+        "comentario": comentario,
+      },
+    );
+
+    final response = await _client.get(uri);
+
+    return _respuestaOk(response);
+  }
+
+  Future<bool> eliminarComentario({required String comentarioId}) async {
+    final uri = Uri.parse(baseUrl).replace(
+      queryParameters: {"action": "eliminarComentario", "id": comentarioId},
+    );
+
+    final response = await _client.get(uri);
+
+    return _respuestaOk(response);
+  }
+
+  Future<bool> editarRespuesta({
+    required String respuestaId,
+    required String respuesta,
+  }) async {
+    final uri = Uri.parse(baseUrl).replace(
+      queryParameters: {
+        "action": "editarRespuesta",
+        "id": respuestaId,
+        "respuesta": respuesta,
+      },
+    );
+
+    final response = await _client.get(uri);
+
+    return _respuestaOk(response);
+  }
+
+  Future<bool> eliminarRespuesta({required String respuestaId}) async {
+    final uri = Uri.parse(baseUrl).replace(
+      queryParameters: {"action": "eliminarRespuesta", "id": respuestaId},
+    );
+
+    final response = await _client.get(uri);
+
+    return _respuestaOk(response);
+  }
+
+  Future<List<LecturaActiva>> getLecturasActivas() async {
+    final response = await _client.get(
+      Uri.parse('$baseUrl?action=lecturasActivas'),
+    );
+
+    if (response.statusCode != 200) {
+      throw Exception("Error cargando lecturas");
+    }
+
+    final List lista = jsonDecode(response.body);
+
+    return lista.map((e) => LecturaActiva.fromJson(e)).toList();
+  }
+
+  Future<bool> crearLectura({
+    required String libro,
+    required int capitulos,
+    required bool prologo,
+    required bool epilogo,
+    String tipo = "LIBRE",
+  }) async {
+    final response = await _client.get(
+      Uri.parse(
+        '$baseUrl?action=crearLectura'
+        '&libro=${Uri.encodeComponent(libro)}'
+        '&capitulos=$capitulos'
+        '&prologo=${prologo ? 1 : 0}'
+        '&epilogo=${epilogo ? 1 : 0}'
+        '&tipo=$tipo',
+      ),
+    );
+
+    return _respuestaOk(response);
+  }
+
+  Future<ConfiguracionLectura> getConfiguracionLectura({
+    required String libro,
+  }) async {
+    final uri = Uri.parse(baseUrl).replace(
+      queryParameters: {"action": "configuracionLectura", "libro": libro},
+    );
+
+    final response = await http.get(uri);
+
+    final json = jsonDecode(response.body);
+
+    return ConfiguracionLectura.fromJson(json);
+  }
+
+  Future<List<ConversacionLibro>> getConversacionesLibro({
+    required String libro,
+  }) async {
+    final uri = Uri.parse(baseUrl).replace(
+      queryParameters: {"action": "conversacionesLibro", "libro": libro},
+    );
+
+    final response = await http.get(uri);
+
+    final json = jsonDecode(response.body) as List;
+
+    return json.map((e) => ConversacionLibro.fromJson(e)).toList();
+  }
+
   Future<void> crearLibro(NuevoLibro libro) async {
-    final response = await http.post(
+    await _client.post(
       Uri.parse('$baseUrl?action=crearLibro'),
 
       headers: {'Content-Type': 'application/json'},
@@ -159,7 +324,9 @@ class ApiService {
   }
 
   Future<List<ComoVotaron>> getComoVotaron() async {
-    final response = await http.get(Uri.parse('$baseUrl?action=comoVotaron'));
+    final response = await _client.get(
+      Uri.parse('$baseUrl?action=comoVotaron'),
+    );
 
     if (response.statusCode == 200) {
       final List<dynamic> json = jsonDecode(response.body);
@@ -170,59 +337,54 @@ class ApiService {
     throw Exception('Error cargando las votaciones');
   }
 
-  Future<bool> finalizarLibro({
+  Future<bool> actualizarEstado({
+    required String usuario,
+    required String libro,
+    required String estado,
+    String? valoracion,
+  }) async {
+    final response = await _client.post(
+      Uri.parse('$baseUrl?action=actualizarEstado'),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({
+        'usuario': usuario,
+        'libro': libro,
+        'estado': estado,
+        'valoracion': valoracion ?? "",
+      }),
+    );
+
+    if (response.statusCode == 302) {
+      // Apps Script ya ejecutó la operación aunque responda con redirect.
+      return true;
+    }
+
+    return _respuestaOk(response);
+  }
+
+  Future<bool> actualizarValoracion({
     required String usuario,
     required String libro,
     required String valoracion,
   }) async {
     final uri = Uri.parse(baseUrl).replace(
       queryParameters: {
-        "action": "finalizarLibro",
+        "action": "actualizarValoracion",
         "usuario": usuario,
         "libro": libro,
         "valoracion": valoracion,
       },
     );
 
-    final response = await http.get(uri);
+    final response = await _client.get(uri);
 
-    if (response.statusCode != 200) {
-      return false;
+    if (_respuestaOk(response)) {
+      return true;
     }
 
-    final json = jsonDecode(response.body);
-
-    return json["ok"] == true;
-  }
-
-  Future<void> actualizarEstado({
-    required String usuario,
-    required String libro,
-    required String estado,
-  }) async {
-    final response = await http.post(
-      Uri.parse('$baseUrl?action=actualizarEstado'),
-
-      headers: {'Content-Type': 'application/json'},
-
-      body: jsonEncode({'usuario': usuario, 'libro': libro, 'estado': estado}),
-    );
-
-    if (response.statusCode != 200 && response.statusCode != 302) {
-      throw Exception('Error actualizando estado');
-    }
-  }
-
-  Future<void> actualizarValoracion({
-    required String usuario,
-    required String libro,
-    required String valoracion,
-  }) async {
-    final response = await http.post(
+    final postResponse = await _client.post(
       Uri.parse('$baseUrl?action=actualizarValoracion'),
-
       headers: {'Content-Type': 'application/json'},
-
       body: jsonEncode({
         'usuario': usuario,
         'libro': libro,
@@ -230,21 +392,20 @@ class ApiService {
       }),
     );
 
-    if (response.statusCode != 200 && response.statusCode != 302) {
-      throw Exception('Error actualizando valoración');
-    }
+    return _respuestaOk(postResponse);
   }
 
   Future<LibrosData> getLibrosData() async {
-    final libros = await getLibros();
-
-    final finalizados = await getLibrosFinalizados();
+    final librosFuture = getLibros();
+    final finalizadosFuture = getLibrosFinalizados();
+    final libros = await librosFuture;
+    final finalizados = await finalizadosFuture;
 
     return LibrosData(libros: libros, finalizados: finalizados);
   }
 
   Future<Ranking> getRanking() async {
-    final response = await http.get(Uri.parse('$baseUrl?action=ranking'));
+    final response = await _client.get(Uri.parse('$baseUrl?action=ranking'));
 
     if (response.statusCode == 200) {
       return Ranking.fromJson(jsonDecode(response.body));
@@ -255,7 +416,7 @@ class ApiService {
 
   Future<ClubvisionData> getClubvision() async {
     final usuario = (await UsuarioService().obtenerUsuario())?.trim();
-    final response = await http.get(
+    final response = await _client.get(
       Uri.parse(
         '$baseUrl?action=clubvision&usuario=${Uri.encodeComponent(usuario ?? "")}',
       ),
@@ -269,7 +430,7 @@ class ApiService {
   }
 
   Future<List<HistorialClubvision>> getHistorialClubvision() async {
-    final response = await http.get(
+    final response = await _client.get(
       Uri.parse('$baseUrl?action=historialClubvision'),
     );
 
@@ -282,7 +443,7 @@ class ApiService {
     required String usuario,
     required String libro,
   }) async {
-    final response = await http.get(
+    final response = await _client.get(
       Uri.parse(
         '$baseUrl?action=anadirLibroExistente'
         '&usuario=${Uri.encodeComponent(usuario)}'
@@ -303,7 +464,7 @@ class ApiService {
   }
 
   Future<MiVoto> getMiVoto(String usuario) async {
-    final response = await http.get(
+    final response = await _client.get(
       Uri.parse(
         '$baseUrl?action=miVoto&usuario=${Uri.encodeComponent(usuario)}',
       ),
@@ -324,7 +485,7 @@ class ApiService {
       queryParameters: {
         'action': 'enviarVotacion',
         'usuario': usuario,
-        'v1': votos.length > 0 ? votos[0] : '',
+        'v1': votos.isNotEmpty ? votos[0] : '',
         'v2': votos.length > 1 ? votos[1] : '',
         'v3': votos.length > 2 ? votos[2] : '',
         'v4': votos.length > 3 ? votos[3] : '',
@@ -332,7 +493,7 @@ class ApiService {
       },
     );
 
-    final response = await http.get(uri);
+    final response = await _client.get(uri);
 
     if (response.statusCode != 200) {
       return false;
@@ -341,5 +502,25 @@ class ApiService {
     final json = jsonDecode(response.body);
 
     return json["ok"] == true;
+  }
+
+  Future<Map<String, dynamic>> toggleLikeComentario({
+    required String comentarioId,
+  }) async {
+    final usuario = await UsuarioService().obtenerUsuario();
+
+    final response = await _client.get(
+      Uri.parse(
+        '$baseUrl?action=toggleLikeComentario'
+        '&id=${Uri.encodeComponent(comentarioId)}'
+        '&usuario=${Uri.encodeComponent(usuario ?? "")}',
+      ),
+    );
+
+    if (response.statusCode != 200) {
+      throw Exception("Error dando like");
+    }
+
+    return jsonDecode(response.body);
   }
 }

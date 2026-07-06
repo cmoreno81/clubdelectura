@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import 'dashboard_page.dart';
 import 'libros_page.dart';
+import 'lecturas_page.dart';
 import 'ranking_page.dart';
 import 'clubvision_menu_page.dart';
 
@@ -19,6 +20,8 @@ class _HomePageState extends State<HomePage> {
     DashboardPage(),
 
     LibrosPage(),
+
+    LecturasPage(),
 
     RankingPage(),
 
@@ -46,6 +49,11 @@ class _HomePageState extends State<HomePage> {
           ),
 
           NavigationDestination(icon: Icon(Icons.menu_book), label: 'Libros'),
+
+          NavigationDestination(
+            icon: Icon(Icons.auto_stories),
+            label: 'Lecturas',
+          ),
 
           NavigationDestination(
             icon: Icon(Icons.emoji_events),
