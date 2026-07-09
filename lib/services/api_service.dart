@@ -23,7 +23,8 @@ import '../models/mood_club.dart';
 import '../models/tendencias_club.dart';
 
 class ApiService {
-  static const String baseUrl = 'http://localhost:3000/api';
+  static const String baseUrl =
+      'https://clubreads-backend-production.up.railway.app/api';
   static final http.Client _client = http.Client();
 
   bool _respuestaOk(http.Response response) {

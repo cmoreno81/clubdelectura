@@ -1,4 +1,4 @@
-package com.example.club_lectura_app
+package es.clublectura.club
 
 import io.flutter.embedding.android.FlutterActivity
 
