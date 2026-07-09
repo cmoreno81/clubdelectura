@@ -6,6 +6,7 @@ class LibroFinalizado {
   final String numSaga;
   final String autoconclusivo;
   final String valoracion;
+  final String resena;
 
   LibroFinalizado({
     required this.usuario,
@@ -15,6 +16,7 @@ class LibroFinalizado {
     required this.numSaga,
     required this.autoconclusivo,
     required this.valoracion,
+    required this.resena,
   });
 
   factory LibroFinalizado.fromJson(Map<String, dynamic> json) {
@@ -26,6 +28,7 @@ class LibroFinalizado {
       numSaga: json['numSaga'] ?? '',
       autoconclusivo: json['autoconclusivo'] ?? '',
       valoracion: json['valoracion']?.toString() ?? '',
+      resena: json['resena']?.toString() ?? json['review']?.toString() ?? '',
     );
   }
 }

@@ -1,5 +1,5 @@
 import 'package:club_lectura_app/pages/clubvision_mi_voto_page.dart';
-import 'package:club_lectura_app/pages/lectura_compartida_page.dart';
+import 'package:club_lectura_app/pages/lectura_page.dart';
 import 'package:flutter/material.dart';
 
 import '../models/clubvision.dart';
@@ -7,7 +7,6 @@ import '../services/api_service.dart';
 import 'ClubVisionVotacionPage.dart';
 import 'clubvision_historial_page.dart';
 import '../pages/clubvision_gala_page.dart';
-import '../pages/lectura_actual_page.dart';
 import 'clubvision_como_votaron_page.dart';
 
 class ClubvisionMenuPage extends StatefulWidget {
@@ -41,7 +40,6 @@ class _ClubvisionMenuPageState extends State<ClubvisionMenuPage> {
 
         return Scaffold(
           appBar: AppBar(title: const Text("🎤 Clubvisión")),
-
           body: ListView(
             padding: const EdgeInsets.all(16),
             children: [
@@ -100,7 +98,6 @@ class _ClubvisionMenuPageState extends State<ClubvisionMenuPage> {
             context,
             MaterialPageRoute(builder: (_) => const ClubvisionMiVotoPage()),
           );
-
           return;
         }
 
@@ -164,9 +161,18 @@ class _ClubvisionMenuPageState extends State<ClubvisionMenuPage> {
         titulo: "Lectura actual",
         subtitulo: "Comenta la lectura en curso",
         onTap: () {
+          if (club.ganador.isEmpty) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text("Todavía no hay una lectura activa."),
+              ),
+            );
+            return;
+          }
+
           Navigator.push(
             context,
-            MaterialPageRoute(builder: (_) => const LecturaCompartidaPage()),
+            MaterialPageRoute(builder: (_) => LecturaPage(libro: club.ganador)),
           );
         },
       ),

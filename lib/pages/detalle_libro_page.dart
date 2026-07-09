@@ -5,6 +5,7 @@ import '../models/libro.dart';
 import '../models/libro_agrupado.dart';
 import '../services/api_service.dart';
 import '../widgets/libros/conversaciones_libro_card.dart';
+import '../widgets/libros/finalizar_libro_dialog.dart';
 
 class DetalleLibroPage extends StatefulWidget {
   final LibroAgrupado libro;
@@ -61,6 +62,7 @@ class _DetalleLibroPageState extends State<DetalleLibroPage> {
     Libro libro,
     String nuevoEstado, {
     String? valoracion,
+    String? reflexion,
   }) async {
     try {
       final bool ok;
@@ -76,6 +78,7 @@ class _DetalleLibroPageState extends State<DetalleLibroPage> {
           libro: libro.libro,
           estado: nuevoEstado,
           valoracion: valoracion,
+          reflexion: reflexion,
         );
       }
 
@@ -119,66 +122,24 @@ class _DetalleLibroPageState extends State<DetalleLibroPage> {
     }
   }
 
-  Future<String?> _pedirValoracion() async {
-    return showDialog<String>(
-      context: context,
-
-      builder: (context) {
-        return AlertDialog(
-          title: const Text('⭐ Valora el libro'),
-
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-
-            children: [
-              _opcionValoracion('⭐️⭐️⭐️⭐️⭐️'),
-
-              _opcionValoracion('⭐️⭐️⭐️⭐️'),
-
-              _opcionValoracion('⭐️⭐️⭐️'),
-
-              _opcionValoracion('⭐️⭐️'),
-
-              _opcionValoracion('⭐️'),
-
-              _opcionValoracion('😞'),
-            ],
-          ),
-        );
-      },
-    );
-  }
-
   Future<void> _abrirGoodreads() async {
-    if (widget.libro.registros.isEmpty) {
-      return;
-    }
+    if (widget.libro.registros.isEmpty) return;
 
-    final url = widget.libro.registros.first.goodreads;
+    var url = widget.libro.registros.first.goodreads.trim();
 
-    if (url.isEmpty) {
-      return;
+    if (url.isEmpty) return;
+
+    if (!url.startsWith('http://') && !url.startsWith('https://')) {
+      url = 'https://$url';
     }
 
     final uri = Uri.parse(url);
 
-    if (!await launchUrl(uri, mode: LaunchMode.externalApplication)) {
-      throw Exception("No se pudo abrir Goodreads");
+    final ok = await launchUrl(uri, mode: LaunchMode.externalApplication);
+
+    if (!ok) {
+      await launchUrl(uri, mode: LaunchMode.platformDefault);
     }
-  }
-
-  Widget _opcionValoracion(String valor) {
-    return ListTile(
-      title: Text(
-        valor,
-        textAlign: TextAlign.center,
-        style: const TextStyle(fontSize: 22),
-      ),
-
-      onTap: () {
-        Navigator.pop(context, valor);
-      },
-    );
   }
 
   Widget _estadistica({
@@ -441,12 +402,17 @@ class _DetalleLibroPageState extends State<DetalleLibroPage> {
                                 return;
                               }
 
-                              String? valoracion;
+                              Map<String, String>? datosValoracion;
 
                               if (value == 'FINALIZADO') {
-                                valoracion = await _pedirValoracion();
+                                datosValoracion =
+                                    await showDialog<Map<String, String>>(
+                                      context: context,
+                                      builder: (_) =>
+                                          const FinalizarLibroDialog(),
+                                    );
 
-                                if (!mounted || valoracion == null) {
+                                if (!mounted || datosValoracion == null) {
                                   return;
                                 }
                               }
@@ -454,7 +420,8 @@ class _DetalleLibroPageState extends State<DetalleLibroPage> {
                               await _cambiarEstado(
                                 registro,
                                 value,
-                                valoracion: valoracion,
+                                valoracion: datosValoracion?["valoracion"],
+                                reflexion: datosValoracion?["reflexion"],
                               );
                             },
                           ),
@@ -495,21 +462,49 @@ class _DetalleLibroPageState extends State<DetalleLibroPage> {
 
               ...widget.libro.finalizados.map((finalizado) {
                 return Card(
-                  child: ListTile(
-                    leading: const CircleAvatar(
-                      child: Icon(Icons.person, size: 18),
-                    ),
+                  child: Padding(
+                    padding: const EdgeInsets.all(12),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const CircleAvatar(child: Icon(Icons.person, size: 18)),
 
-                    title: Text(finalizado.usuario),
+                        const SizedBox(width: 12),
 
-                    trailing: Text(
-                      finalizado.valoracion,
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                finalizado.usuario,
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
 
-                      style: const TextStyle(
-                        fontSize: 20,
+                              if (finalizado.resena.isNotEmpty) ...[
+                                const SizedBox(height: 6),
+                                Text(
+                                  finalizado.resena,
+                                  style: const TextStyle(
+                                    fontSize: 14,
+                                    color: Colors.black54,
+                                    fontStyle: FontStyle.italic,
+                                  ),
+                                ),
+                              ],
+                            ],
+                          ),
+                        ),
 
-                        fontWeight: FontWeight.bold,
-                      ),
+                        Text(
+                          finalizado.valoracion,
+                          style: const TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                 );

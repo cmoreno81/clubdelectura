@@ -3,11 +3,15 @@ import 'package:flutter/material.dart';
 class ComentarioInput extends StatelessWidget {
   final TextEditingController controller;
   final VoidCallback onEnviar;
+  final bool enviando;
+  final String hintText;
 
   const ComentarioInput({
     super.key,
     required this.controller,
     required this.onEnviar,
+    required this.enviando,
+    required this.hintText,
   });
 
   @override
@@ -20,15 +24,49 @@ class ComentarioInput extends StatelessWidget {
             Expanded(
               child: TextField(
                 controller: controller,
+                enabled: !enviando,
                 maxLines: null,
-                decoration: const InputDecoration(
-                  hintText: "¿Qué te ha parecido este capítulo?",
+                decoration: InputDecoration(
+                  hintText: hintText,
                   border: OutlineInputBorder(),
                 ),
               ),
             ),
+
             const SizedBox(width: 12),
-            FilledButton(onPressed: onEnviar, child: const Icon(Icons.send)),
+
+            FilledButton(
+              onPressed: onEnviar,
+              child: AnimatedSwitcher(
+                duration: const Duration(milliseconds: 200),
+                child: enviando
+                    ? const Row(
+                        key: ValueKey("publicando"),
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          SizedBox(
+                            width: 18,
+                            height: 18,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: Colors.white,
+                            ),
+                          ),
+                          SizedBox(width: 10),
+                          Text("Publicando..."),
+                        ],
+                      )
+                    : const Row(
+                        key: ValueKey("enviar"),
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(Icons.send),
+                          SizedBox(width: 6),
+                          Text("Enviar"),
+                        ],
+                      ),
+              ),
+            ),
           ],
         ),
       ),

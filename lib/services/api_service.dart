@@ -4,7 +4,6 @@ import 'package:club_lectura_app/models/lectura_activa.dart';
 import 'package:club_lectura_app/models/lectura_compartida.dart';
 import 'package:club_lectura_app/models/mi_voto.dart';
 import 'package:http/http.dart' as http;
-
 import '../models/dashboard.dart';
 import '../models/libro.dart';
 import '../models/libro_finalizado.dart';
@@ -19,10 +18,12 @@ import '../models/como_votaron.dart';
 import '../models/comentarios_capitulo.dart';
 import '../models/configuracion_lectura.dart';
 import '../models/conversacion_libro.dart';
+import '../models/perfil_usuario.dart';
+import '../models/mood_club.dart';
+import '../models/tendencias_club.dart';
 
 class ApiService {
-  static const String baseUrl =
-      'https://script.google.com/macros/s/AKfycbwh7B2YLDOpxmmnwih4IphkaFun3xFuqp0vkB9vB2vzSJcgpAHlQz7vzY7IDgrt3m4N/exec';
+  static const String baseUrl = 'http://localhost:3000/api';
   static final http.Client _client = http.Client();
 
   bool _respuestaOk(http.Response response) {
@@ -65,8 +66,6 @@ class ApiService {
       return Dashboard.fromJson(jsonDecode(response.body));
     }
 
-    print(response.body);
-
     throw Exception('Error cargando dashboard');
   }
 
@@ -97,7 +96,9 @@ class ApiService {
     if (response.statusCode == 200) {
       final List data = jsonDecode(response.body);
 
-      return data.map((e) => LibroFinalizado.fromJson(e)).toList();
+      return data
+          .map((e) => LibroFinalizado.fromJson(e as Map<String, dynamic>))
+          .toList();
     }
 
     throw Exception('Error cargando finalizados');
@@ -342,6 +343,7 @@ class ApiService {
     required String libro,
     required String estado,
     String? valoracion,
+    String? reflexion,
   }) async {
     final response = await _client.post(
       Uri.parse('$baseUrl?action=actualizarEstado'),
@@ -351,11 +353,11 @@ class ApiService {
         'libro': libro,
         'estado': estado,
         'valoracion': valoracion ?? "",
+        'reflexion': reflexion ?? "",
       }),
     );
 
     if (response.statusCode == 302) {
-      // Apps Script ya ejecutó la operación aunque responda con redirect.
       return true;
     }
 
@@ -522,5 +524,41 @@ class ApiService {
     }
 
     return jsonDecode(response.body);
+  }
+
+  Future<PerfilUsuario> getPerfilUsuario(String usuario) async {
+    final uri = Uri.parse(
+      baseUrl,
+    ).replace(queryParameters: {"action": "perfilUsuario", "usuario": usuario});
+
+    final response = await _client.get(uri);
+
+    if (response.statusCode != 200) {
+      throw Exception("Error cargando perfil");
+    }
+
+    return PerfilUsuario.fromJson(jsonDecode(response.body));
+  }
+
+  Future<MoodClub> getMoodClub() async {
+    final response = await _client.get(Uri.parse('$baseUrl?action=moodClub'));
+
+    if (response.statusCode == 200) {
+      return MoodClub.fromJson(jsonDecode(response.body));
+    }
+
+    throw Exception('Error cargando el mood del club');
+  }
+
+  Future<TendenciasClub> getTendenciasClub() async {
+    final response = await _client.get(
+      Uri.parse('$baseUrl?action=tendenciasClub'),
+    );
+
+    if (response.statusCode == 200) {
+      return TendenciasClub.fromJson(jsonDecode(response.body));
+    }
+
+    throw Exception('Error cargando tendencias');
   }
 }

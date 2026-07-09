@@ -24,18 +24,47 @@ class _LecturaActualPageState extends State<LecturaActualPage> {
     return FutureBuilder<Dashboard>(
       future: dashboardFuture,
       builder: (context, snapshot) {
-        if (!snapshot.hasData) {
+        if (snapshot.hasError) {
+          return Scaffold(
+            appBar: AppBar(title: const Text("📖 Lectura del club")),
+            body: Center(
+              child: Padding(
+                padding: const EdgeInsets.all(24),
+                child: Text(
+                  'Error cargando lectura actual:\n${snapshot.error}',
+                  textAlign: TextAlign.center,
+                ),
+              ),
+            ),
+          );
+        }
+
+        if (snapshot.connectionState == ConnectionState.waiting) {
           return const Scaffold(
             body: Center(child: CircularProgressIndicator()),
+          );
+        }
+
+        if (!snapshot.hasData) {
+          return const Scaffold(
+            body: Center(child: Text("No hay datos de lectura actual.")),
           );
         }
 
         final dashboard = snapshot.data!;
         final lectura = dashboard.lecturaActual;
 
+        if (lectura.titulo.isEmpty) {
+          return Scaffold(
+            appBar: AppBar(title: const Text("📖 Lectura del club")),
+            body: const Center(
+              child: Text("Todavía no hay lectura actual del club."),
+            ),
+          );
+        }
+
         return Scaffold(
           appBar: AppBar(title: const Text("📖 Lectura del club")),
-
           body: ListView(
             padding: const EdgeInsets.all(20),
             children: [
@@ -47,6 +76,20 @@ class _LecturaActualPageState extends State<LecturaActualPage> {
                   fontWeight: FontWeight.bold,
                 ),
               ),
+
+              const SizedBox(height: 16),
+
+              if (lectura.comentarios > 0 || lectura.likes > 0)
+                Card(
+                  child: ListTile(
+                    leading: const Icon(Icons.forum),
+                    title: Text("💬 ${lectura.comentarios} comentarios"),
+                    subtitle: lectura.ultimaActividad.isNotEmpty
+                        ? Text(lectura.ultimaActividad)
+                        : null,
+                    trailing: Text("❤️ ${lectura.likes}"),
+                  ),
+                ),
 
               const SizedBox(height: 30),
 

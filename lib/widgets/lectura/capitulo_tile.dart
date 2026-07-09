@@ -27,47 +27,47 @@ class CapituloTile extends StatelessWidget {
 
         subtitle: Padding(
           padding: const EdgeInsets.only(top: 8),
-          child: Wrap(
-            spacing: 14,
-            runSpacing: 6,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Row(
-                mainAxisSize: MainAxisSize.min,
                 children: [
                   const Icon(
                     Icons.chat_bubble_outline,
                     size: 16,
                     color: Colors.grey,
                   ),
-
                   const SizedBox(width: 4),
-
                   Text("${capitulo.comentarios}"),
-                ],
-              ),
 
-              Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
+                  const SizedBox(width: 18),
+
                   const Icon(Icons.favorite, size: 16, color: Colors.red),
-
                   const SizedBox(width: 4),
-
                   Text("${capitulo.likes}"),
                 ],
               ),
 
-              if (capitulo.ultimaActividad.isNotEmpty)
+              if (capitulo.ultimaActividad.isNotEmpty) ...[
+                const SizedBox(height: 6),
+
                 Row(
-                  mainAxisSize: MainAxisSize.min,
                   children: [
                     const Icon(Icons.schedule, size: 16, color: Colors.grey),
 
                     const SizedBox(width: 4),
 
-                    Text(FechaRelativa.formato(capitulo.ultimaActividad)),
+                    Expanded(
+                      child: Text(
+                        FechaRelativa.formato(capitulo.ultimaActividad),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(color: Colors.grey),
+                      ),
+                    ),
                   ],
                 ),
+              ],
             ],
           ),
         ),

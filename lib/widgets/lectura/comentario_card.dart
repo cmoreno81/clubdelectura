@@ -8,11 +8,13 @@ import 'fecha_relativa.dart';
 class ComentarioCard extends StatefulWidget {
   final ComentarioLectura comentario;
   final VoidCallback onActualizar;
+  final String usuarioActual;
 
   const ComentarioCard({
     super.key,
     required this.comentario,
     required this.onActualizar,
+    required this.usuarioActual,
   });
 
   @override
@@ -61,7 +63,7 @@ class _ComentarioCardState extends State<ComentarioCard> {
     final ok = await ApiService().guardarRespuestaComentario(
       comentarioId: widget.comentario.id,
 
-      usuario: widget.comentario.usuario,
+      usuario: widget.usuarioActual,
 
       respuesta: texto,
     );

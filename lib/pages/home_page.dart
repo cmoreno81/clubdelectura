@@ -18,13 +18,9 @@ class _HomePageState extends State<HomePage> {
 
   final pages = const [
     DashboardPage(),
-
     LibrosPage(),
-
     LecturasPage(),
-
     RankingPage(),
-
     ClubvisionMenuPage(),
   ];
 
@@ -43,10 +39,7 @@ class _HomePageState extends State<HomePage> {
         },
 
         destinations: const [
-          NavigationDestination(
-            icon: Icon(Icons.dashboard),
-            label: 'Dashboard',
-          ),
+          NavigationDestination(icon: Icon(Icons.dashboard), label: 'El Club'),
 
           NavigationDestination(icon: Icon(Icons.menu_book), label: 'Libros'),
 

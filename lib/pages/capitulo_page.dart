@@ -21,6 +21,7 @@ class _CapituloPageState extends State<CapituloPage> {
   final TextEditingController controller = TextEditingController();
 
   String? usuario;
+  bool enviando = false;
 
   @override
   void initState() {
@@ -49,9 +50,13 @@ class _CapituloPageState extends State<CapituloPage> {
   Future<void> _publicar() async {
     final texto = controller.text.trim();
 
-    if (texto.isEmpty) return;
+    if (texto.isEmpty || enviando) return;
 
     FocusScope.of(context).unfocus();
+
+    setState(() {
+      enviando = true;
+    });
 
     await ApiService().guardarComentarioLectura(
       libro: widget.libro,
@@ -65,6 +70,7 @@ class _CapituloPageState extends State<CapituloPage> {
     controller.clear();
 
     setState(() {
+      enviando = false;
       _recargar();
     });
   }
@@ -114,22 +120,52 @@ class _CapituloPageState extends State<CapituloPage> {
                         color: Colors.black54,
                       ),
                     ),
+                    if (widget.capitulo == "💭 Reflexión final") ...[
+                      const SizedBox(height: 16),
+
+                      Card(
+                        color: Colors.deepPurple.shade50,
+                        elevation: 0,
+                        child: const Padding(
+                          padding: EdgeInsets.all(16),
+                          child: Column(
+                            children: [
+                              Text(
+                                "💭 El gran debate",
+                                style: TextStyle(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.deepPurple,
+                                ),
+                              ),
+
+                              SizedBox(height: 10),
+
+                              Text(
+                                "Este espacio es para compartir tu valoración global, hablar del desenlace y debatir libremente con el resto del club.\n\n⚠️ A partir de aquí puede haber spoilers.",
+                                textAlign: TextAlign.center,
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
                   ],
                 ),
               ),
 
               Expanded(
                 child: data.comentarios.isEmpty
-                    ? const Center(
+                    ? Center(
                         child: Padding(
                           padding: EdgeInsets.all(32),
 
                           child: Text(
-                            "Todavía nadie ha comentado este capítulo.\n\nSé la primera en romper el hielo 💜",
-
+                            widget.capitulo == "💭 Reflexión final"
+                                ? "Todavía nadie ha compartido su reflexión sobre el libro.\n\nSé la primera en abrir el debate 💜"
+                                : "Todavía nadie ha comentado este capítulo.\n\nSé la primera en romper el hielo 💜",
                             textAlign: TextAlign.center,
-
-                            style: TextStyle(fontSize: 18),
+                            style: const TextStyle(fontSize: 18),
                           ),
                         ),
                       )
@@ -139,6 +175,7 @@ class _CapituloPageState extends State<CapituloPage> {
                         itemBuilder: (context, index) {
                           return ComentarioCard(
                             comentario: data.comentarios[index],
+                            usuarioActual: usuario ?? '',
                             onActualizar: () {
                               if (!mounted) return;
 
@@ -153,7 +190,14 @@ class _CapituloPageState extends State<CapituloPage> {
 
               const Divider(height: 1),
 
-              ComentarioInput(controller: controller, onEnviar: _publicar),
+              ComentarioInput(
+                controller: controller,
+                onEnviar: _publicar,
+                enviando: enviando,
+                hintText: widget.capitulo == "💭 Reflexión final"
+                    ? "Comparte tu reflexión sobre el libro..."
+                    : "¿Qué te ha parecido este capítulo?",
+              ),
             ],
           );
         },

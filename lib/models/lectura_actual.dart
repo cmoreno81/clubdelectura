@@ -6,8 +6,8 @@ class LecturaFinalizada {
 
   factory LecturaFinalizada.fromJson(Map<String, dynamic> json) {
     return LecturaFinalizada(
-      usuario: json['usuario'] ?? '',
-      valoracion: json['valoracion'] ?? '',
+      usuario: json['usuario']?.toString() ?? '',
+      valoracion: json['valoracion']?.toString() ?? '',
     );
   }
 }
@@ -44,8 +44,8 @@ class LecturaActual {
 
       leyendo: List<String>.from(json['leyendo'] ?? []),
 
-      finalizado: (json['finalizado'] as List<dynamic>? ?? [])
-          .map((e) => LecturaFinalizada.fromJson(e))
+      finalizado: (json['finalizado'] as List? ?? [])
+          .map((e) => LecturaFinalizada.fromJson(e as Map<String, dynamic>))
           .toList(),
 
       totalLeyendo: json['totalLeyendo'] ?? 0,

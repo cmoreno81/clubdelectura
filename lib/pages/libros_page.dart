@@ -84,10 +84,18 @@ class _LibrosPageState extends State<LibrosPage> {
 
           List<LibroAgrupado> resultado = [];
 
-          final usuarios = libros.map((e) => e.usuario.trim()).toSet().toList()
-            ..sort();
+          final usuarios = {
+            ...libros.map((e) => e.usuario.trim()).where((u) => u.isNotEmpty),
+            ...finalizados
+                .map((e) => e.usuario.trim())
+                .where((u) => u.isNotEmpty),
+          }.toList()..sort();
 
           final usuariosFiltro = ['TODAS', ...usuarios];
+
+          if (!usuariosFiltro.contains(filtroUsuario)) {
+            filtroUsuario = 'TODAS';
+          }
           if (filtroEstado != 'TERMINADOS') {
             final librosFiltrados = libros.where((libro) {
               final coincideBusqueda = normalizar(
