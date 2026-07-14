@@ -9,6 +9,7 @@ class LibroAgrupado {
 
   final List<LibroFinalizado> finalizados;
   bool yaLoTengo;
+  String coverUrl;
 
   LibroAgrupado({
     required this.libro,
@@ -16,6 +17,7 @@ class LibroAgrupado {
     required this.registros,
     required this.finalizados,
     required this.yaLoTengo,
+    required this.coverUrl,
   });
 
   int get total => registros.length;
@@ -64,5 +66,26 @@ class LibroAgrupado {
       default:
         return 0;
     }
+  }
+
+  String get bookId {
+    for (final registro in registros) {
+      if (registro.bookId.trim().isNotEmpty) {
+        return registro.bookId.trim();
+      }
+    }
+
+    for (final finalizado in finalizados) {
+      if (finalizado.bookId.trim().isNotEmpty) {
+        return finalizado.bookId.trim();
+      }
+    }
+
+    return '';
+  }
+
+  Libro? get referencia {
+    if (registros.isEmpty) return null;
+    return registros.first;
   }
 }

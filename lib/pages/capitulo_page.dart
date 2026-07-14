@@ -1,9 +1,17 @@
+import 'dart:async';
+
 import 'package:club_lectura_app/models/comentarios_capitulo.dart';
 import 'package:club_lectura_app/services/usuario_service.dart';
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import '../theme/app_colors.dart';
+import '../theme/app_radius.dart';
+import '../theme/app_spacing.dart';
+import '../theme/app_text_styles.dart';
+import '../widgets/common/club_card.dart';
+import '../services/api_service.dart';
 import '../widgets/lectura/comentario_card.dart';
 import '../widgets/lectura/comentario_input.dart';
-import '../services/api_service.dart';
 
 class CapituloPage extends StatefulWidget {
   final String libro;
@@ -19,25 +27,106 @@ class _CapituloPageState extends State<CapituloPage> {
   late Future<ComentariosCapitulo> future;
 
   final TextEditingController controller = TextEditingController();
+  final ScrollController scrollController = ScrollController();
 
   String? usuario;
   bool enviando = false;
+  Timer? _temporizadorBorrador;
+
+  bool get esReflexion => widget.capitulo.trim() == '💭 Reflexión final';
 
   @override
   void initState() {
     super.initState();
 
-    _cargarUsuario();
-
-    _recargar();
+    controller.addListener(_programarGuardadoBorrador);
+    future = _inicializar();
   }
 
-  Future<void> _cargarUsuario() async {
+  Future<ComentariosCapitulo> _inicializar() async {
     final u = await UsuarioService().obtenerUsuario();
 
-    if (!mounted) return;
-
     usuario = u;
+
+    await _restaurarBorrador();
+
+    if (u != null && u.trim().isNotEmpty) {
+      await ApiService().marcarConversacionVista(
+        libro: widget.libro,
+        capitulo: widget.capitulo,
+        usuario: u,
+      );
+    }
+
+    if (mounted) {
+      setState(() {});
+    }
+
+    return ApiService().getComentariosCapitulo(
+      libro: widget.libro,
+      capitulo: widget.capitulo,
+    );
+  }
+
+  String? get _claveBorrador {
+    final nombreUsuario = usuario?.trim() ?? '';
+
+    if (nombreUsuario.isEmpty) return null;
+
+    return [
+      'borrador_comentario',
+      Uri.encodeComponent(nombreUsuario),
+      Uri.encodeComponent(widget.libro.trim()),
+      Uri.encodeComponent(widget.capitulo.trim()),
+    ].join('_');
+  }
+
+  Future<void> _restaurarBorrador() async {
+    final clave = _claveBorrador;
+
+    if (clave == null) return;
+
+    final prefs = await SharedPreferences.getInstance();
+    final borrador = prefs.getString(clave) ?? '';
+
+    if (!mounted || borrador.isEmpty) return;
+
+    controller.value = TextEditingValue(
+      text: borrador,
+      selection: TextSelection.collapsed(offset: borrador.length),
+    );
+  }
+
+  void _programarGuardadoBorrador() {
+    _temporizadorBorrador?.cancel();
+    _temporizadorBorrador = Timer(const Duration(milliseconds: 300), () {
+      unawaited(_guardarBorrador(controller.text));
+    });
+  }
+
+  Future<void> _guardarBorrador(String texto) async {
+    final clave = _claveBorrador;
+
+    if (clave == null) return;
+
+    final prefs = await SharedPreferences.getInstance();
+
+    if (texto.trim().isEmpty) {
+      await prefs.remove(clave);
+    } else {
+      await prefs.setString(clave, texto);
+    }
+  }
+
+  Future<void> _borrarBorrador() async {
+    _temporizadorBorrador?.cancel();
+
+    final clave = _claveBorrador;
+
+    if (clave == null) return;
+
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove(clave);
   }
 
   void _recargar() {
@@ -52,162 +141,343 @@ class _CapituloPageState extends State<CapituloPage> {
 
     if (texto.isEmpty || enviando) return;
 
-    FocusScope.of(context).unfocus();
+    if (usuario == null || usuario!.trim().isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('No se ha podido identificar a la usuaria.'),
+        ),
+      );
+      return;
+    }
 
     setState(() {
       enviando = true;
     });
 
-    await ApiService().guardarComentarioLectura(
-      libro: widget.libro,
-      capitulo: widget.capitulo,
-      usuario: usuario ?? "",
-      comentario: texto,
+    try {
+      await ApiService().guardarComentarioLectura(
+        libro: widget.libro,
+        capitulo: widget.capitulo,
+        usuario: usuario!,
+        comentario: texto,
+      );
+
+      if (!mounted) return;
+
+      await _borrarBorrador();
+
+      if (!mounted) return;
+
+      controller.clear();
+      FocusScope.of(context).unfocus();
+
+      setState(() {
+        _recargar();
+      });
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            esReflexion ? 'Reflexión publicada 💜' : 'Comentario publicado 💜',
+          ),
+        ),
+      );
+    } catch (_) {
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('No se ha podido publicar. Inténtalo de nuevo.'),
+        ),
+      );
+    } finally {
+      if (mounted) {
+        setState(() {
+          enviando = false;
+        });
+      }
+    }
+  }
+
+  Widget _cabecera() {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(
+        AppSpacing.md,
+        AppSpacing.md,
+        AppSpacing.md,
+        AppSpacing.sm,
+      ),
+      child: ClubCard(
+        elevated: false,
+        padding: const EdgeInsets.all(AppSpacing.lg),
+        gradient: const LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [AppColors.surfaceSoft, Color(0xFFF0E5FF)],
+        ),
+        borderColor: AppColors.primaryLight,
+        child: Column(
+          children: [
+            Container(
+              width: 58,
+              height: 58,
+              decoration: const BoxDecoration(
+                color: AppColors.primaryLight,
+                shape: BoxShape.circle,
+              ),
+              child: Icon(
+                esReflexion
+                    ? Icons.psychology_alt_outlined
+                    : Icons.forum_outlined,
+                color: AppColors.primary,
+                size: 29,
+              ),
+            ),
+
+            const SizedBox(height: AppSpacing.md),
+
+            Text(
+              widget.libro,
+              textAlign: TextAlign.center,
+              style: AppTextStyles.section.copyWith(fontSize: 23, height: 1.2),
+            ),
+
+            const SizedBox(height: AppSpacing.xs),
+
+            Text(
+              widget.capitulo,
+              textAlign: TextAlign.center,
+              style: AppTextStyles.bodySecondary,
+            ),
+
+            if (esReflexion) ...[
+              const SizedBox(height: AppSpacing.lg),
+
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(AppSpacing.md),
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.58),
+                  borderRadius: BorderRadius.circular(18),
+                ),
+                child: Column(
+                  children: [
+                    Text(
+                      'El gran debate',
+                      style: AppTextStyles.subtitle.copyWith(
+                        color: AppColors.primary,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+
+                    const SizedBox(height: AppSpacing.sm),
+
+                    const Text(
+                      'Comparte tu valoración global, '
+                      'habla del desenlace y debate '
+                      'libremente con el resto del club.',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(height: 1.45),
+                    ),
+
+                    const SizedBox(height: AppSpacing.md),
+
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: AppSpacing.sm,
+                        vertical: AppSpacing.xs,
+                      ),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFFFF5E8),
+                        borderRadius: BorderRadius.circular(AppRadius.pill),
+                      ),
+                      child: const Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            Icons.warning_amber_rounded,
+                            size: 18,
+                            color: Color(0xFFB48113),
+                          ),
+                          SizedBox(width: AppSpacing.xs),
+                          Flexible(
+                            child: Text(
+                              'Puede contener spoilers',
+                              style: TextStyle(
+                                color: Color(0xFF8B650F),
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ],
+        ),
+      ),
     );
+  }
 
-    if (!mounted) return;
+  Widget _contenidoComentarios(AsyncSnapshot<ComentariosCapitulo> snapshot) {
+    if (snapshot.connectionState == ConnectionState.waiting) {
+      return CustomScrollView(
+        controller: scrollController,
+        slivers: [
+          SliverToBoxAdapter(child: _cabecera()),
+          const SliverFillRemaining(
+            hasScrollBody: false,
+            child: Center(child: CircularProgressIndicator()),
+          ),
+        ],
+      );
+    }
 
-    controller.clear();
+    if (snapshot.hasError || !snapshot.hasData) {
+      return CustomScrollView(
+        controller: scrollController,
+        slivers: [
+          SliverToBoxAdapter(child: _cabecera()),
+          SliverFillRemaining(
+            hasScrollBody: false,
+            child: Center(
+              child: Padding(
+                padding: const EdgeInsets.all(32),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(
+                      Icons.cloud_off_rounded,
+                      size: 48,
+                      color: Colors.deepPurple,
+                    ),
 
-    setState(() {
-      enviando = false;
-      _recargar();
-    });
+                    const SizedBox(height: 16),
+
+                    const Text(
+                      'No se han podido cargar los comentarios.',
+                      textAlign: TextAlign.center,
+                    ),
+
+                    const SizedBox(height: 16),
+
+                    FilledButton.icon(
+                      onPressed: () {
+                        setState(() {
+                          _recargar();
+                        });
+                      },
+                      icon: const Icon(Icons.refresh),
+                      label: const Text('Reintentar'),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ],
+      );
+    }
+
+    final data = snapshot.data!;
+
+    return CustomScrollView(
+      controller: scrollController,
+      keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+      slivers: [
+        SliverToBoxAdapter(child: _cabecera()),
+
+        if (data.comentarios.isEmpty)
+          SliverFillRemaining(
+            hasScrollBody: false,
+            child: Center(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(32, 24, 32, 80),
+                child: Text(
+                  esReflexion
+                      ? 'Todavía nadie ha compartido su reflexión '
+                            'sobre el libro.\n\n'
+                            'Sé la primera en abrir el debate 💜'
+                      : 'Todavía nadie ha comentado este capítulo.'
+                            '\n\n'
+                            'Sé la primera en romper el hielo 💜',
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(fontSize: 18, height: 1.4),
+                ),
+              ),
+            ),
+          )
+        else
+          SliverPadding(
+            padding: const EdgeInsets.only(bottom: 20),
+            sliver: SliverList(
+              delegate: SliverChildBuilderDelegate((context, index) {
+                return ComentarioCard(
+                  comentario: data.comentarios[index],
+                  usuarioActual: usuario ?? '',
+                  onActualizar: () {
+                    if (!mounted) return;
+
+                    setState(() {
+                      _recargar();
+                    });
+                  },
+                );
+              }, childCount: data.comentarios.length),
+            ),
+          ),
+      ],
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      resizeToAvoidBottomInset: true,
+
       appBar: AppBar(title: Text(widget.capitulo)),
 
-      body: FutureBuilder<ComentariosCapitulo>(
-        future: future,
-
-        builder: (context, snapshot) {
-          if (!snapshot.hasData) {
-            return const Center(child: CircularProgressIndicator());
-          }
-
-          final data = snapshot.data!;
-
-          return Column(
-            children: [
-              Padding(
-                padding: const EdgeInsets.all(20),
-
-                child: Column(
-                  children: [
-                    Text(
-                      widget.libro,
-
-                      textAlign: TextAlign.center,
-
-                      style: const TextStyle(
-                        fontSize: 24,
-
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-
-                    const SizedBox(height: 8),
-
-                    Text(
-                      widget.capitulo,
-
-                      style: const TextStyle(
-                        fontSize: 18,
-
-                        color: Colors.black54,
-                      ),
-                    ),
-                    if (widget.capitulo == "💭 Reflexión final") ...[
-                      const SizedBox(height: 16),
-
-                      Card(
-                        color: Colors.deepPurple.shade50,
-                        elevation: 0,
-                        child: const Padding(
-                          padding: EdgeInsets.all(16),
-                          child: Column(
-                            children: [
-                              Text(
-                                "💭 El gran debate",
-                                style: TextStyle(
-                                  fontSize: 18,
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.deepPurple,
-                                ),
-                              ),
-
-                              SizedBox(height: 10),
-
-                              Text(
-                                "Este espacio es para compartir tu valoración global, hablar del desenlace y debatir libremente con el resto del club.\n\n⚠️ A partir de aquí puede haber spoilers.",
-                                textAlign: TextAlign.center,
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ],
-                  ],
-                ),
+      body: SafeArea(
+        top: false,
+        child: Column(
+          children: [
+            Expanded(
+              child: FutureBuilder<ComentariosCapitulo>(
+                future: future,
+                builder: (context, snapshot) {
+                  return _contenidoComentarios(snapshot);
+                },
               ),
+            ),
 
-              Expanded(
-                child: data.comentarios.isEmpty
-                    ? Center(
-                        child: Padding(
-                          padding: EdgeInsets.all(32),
+            const Divider(height: 1),
 
-                          child: Text(
-                            widget.capitulo == "💭 Reflexión final"
-                                ? "Todavía nadie ha compartido su reflexión sobre el libro.\n\nSé la primera en abrir el debate 💜"
-                                : "Todavía nadie ha comentado este capítulo.\n\nSé la primera en romper el hielo 💜",
-                            textAlign: TextAlign.center,
-                            style: const TextStyle(fontSize: 18),
-                          ),
-                        ),
-                      )
-                    : ListView.builder(
-                        padding: const EdgeInsets.only(bottom: 20),
-                        itemCount: data.comentarios.length,
-                        itemBuilder: (context, index) {
-                          return ComentarioCard(
-                            comentario: data.comentarios[index],
-                            usuarioActual: usuario ?? '',
-                            onActualizar: () {
-                              if (!mounted) return;
-
-                              setState(() {
-                                _recargar();
-                              });
-                            },
-                          );
-                        },
-                      ),
-              ),
-
-              const Divider(height: 1),
-
-              ComentarioInput(
-                controller: controller,
-                onEnviar: _publicar,
-                enviando: enviando,
-                hintText: widget.capitulo == "💭 Reflexión final"
-                    ? "Comparte tu reflexión sobre el libro..."
-                    : "¿Qué te ha parecido este capítulo?",
-              ),
-            ],
-          );
-        },
+            ComentarioInput(
+              controller: controller,
+              onEnviar: _publicar,
+              enviando: enviando,
+              esReflexion: esReflexion,
+              hintText: esReflexion
+                  ? 'Comparte tu reflexión sobre el libro, '
+                        'el desenlace, los personajes...'
+                  : '¿Qué te ha parecido este capítulo?',
+            ),
+          ],
+        ),
       ),
     );
   }
 
   @override
   void dispose() {
+    _temporizadorBorrador?.cancel();
+    controller.removeListener(_programarGuardadoBorrador);
+    unawaited(_guardarBorrador(controller.text));
     controller.dispose();
+    scrollController.dispose();
     super.dispose();
   }
 }

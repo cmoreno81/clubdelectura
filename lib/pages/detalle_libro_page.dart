@@ -1,11 +1,22 @@
-import 'package:club_lectura_app/utils/genero_utils.dart';
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
+
 import '../models/libro.dart';
 import '../models/libro_agrupado.dart';
 import '../services/api_service.dart';
+import '../services/atmosfera_controller.dart';
+import '../services/atmosfera_scope.dart';
+import '../services/kit_lectura_service.dart';
+import '../services/usuario_service.dart';
+import '../theme/app_spacing.dart';
 import '../widgets/libros/conversaciones_libro_card.dart';
 import '../widgets/libros/finalizar_libro_dialog.dart';
+import '../widgets/libros/kit_lectura_card.dart';
+import '../widgets/libros/libro_header.dart';
+import '../widgets/libros/libro_interesadas_section.dart';
+import '../widgets/libros/libro_valoraciones_section.dart';
+import 'kit_lectura_page.dart';
+import 'nuevo_libro_page.dart';
 
 class DetalleLibroPage extends StatefulWidget {
   final LibroAgrupado libro;
@@ -17,45 +28,89 @@ class DetalleLibroPage extends StatefulWidget {
 }
 
 class _DetalleLibroPageState extends State<DetalleLibroPage> {
+  final KitLecturaService _kitService = KitLecturaService();
+
   late List<Libro> registros;
+  late AtmosferaController _atmosferaController;
+
+  String? usuarioActual;
+
+  bool _controllerPreparado = false;
+  bool _atmosferaCerrada = false;
 
   @override
   void initState() {
     super.initState();
 
-    registros = List.from(widget.libro.registros);
+    registros = List<Libro>.from(widget.libro.registros);
+
+    _cargarUsuarioActual();
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+
+      _atmosferaController = AtmosferaScope.of(context);
+      _controllerPreparado = true;
+
+      _cargarAtmosferaDelLibro();
+    });
   }
 
-  IconData _iconoEstado(String estado) {
-    switch (estado) {
-      case 'LEYENDO':
-        return Icons.menu_book;
+  Future<void> _cargarUsuarioActual() async {
+    final usuario = await UsuarioService().obtenerUsuario();
 
-      case 'RELECTURA':
-        return Icons.refresh;
+    if (!mounted) return;
 
-      case 'FINALIZADO':
-        return Icons.check_circle;
+    setState(() {
+      usuarioActual = usuario?.trim();
+    });
+  }
 
-      default:
-        return Icons.schedule;
+  Future<void> _cargarAtmosferaDelLibro() async {
+    if (!_controllerPreparado) return;
+
+    final bookId = widget.libro.bookId.trim();
+
+    if (bookId.isEmpty) {
+      _atmosferaController.usarAtmosferaNeutra();
+      return;
+    }
+
+    try {
+      final seleccion = await _kitService.obtener(bookId);
+
+      if (!mounted || _atmosferaCerrada) return;
+
+      _atmosferaController.entrarEnLibro(
+        bookId: bookId,
+        atmosferaId: seleccion.atmosferaId,
+      );
+    } catch (error) {
+      if (!mounted || _atmosferaCerrada) return;
+
+      _atmosferaController.entrarEnLibro(bookId: bookId, atmosferaId: '');
     }
   }
 
-  Color _colorEstado(String estado) {
-    switch (estado) {
-      case 'LEYENDO':
-        return Colors.blue;
+  /// Cierra la atmósfera del libro de forma segura.
+  ///
+  /// Puede llamarse desde el botón de volver, el gesto de iOS,
+  /// una salida programática o dispose sin aplicar el cierre dos veces.
+  void _cerrarAtmosferaDelLibro() {
+    if (_atmosferaCerrada) return;
 
-      case 'RELECTURA':
-        return Colors.orange;
+    _atmosferaCerrada = true;
 
-      case 'FINALIZADO':
-        return Colors.green;
+    if (!_controllerPreparado) return;
 
-      default:
-        return Colors.grey;
-    }
+    final bookId = widget.libro.bookId.trim();
+
+    _atmosferaController.salirDelLibro(bookId: bookId.isEmpty ? null : bookId);
+  }
+
+  void _volver() {
+    _cerrarAtmosferaDelLibro();
+    Navigator.pop(context);
   }
 
   Future<void> _cambiarEstado(
@@ -90,19 +145,14 @@ class _DetalleLibroPageState extends State<DetalleLibroPage> {
 
       final index = registros.indexOf(libro);
 
+      if (index == -1) {
+        throw Exception('No se ha encontrado el registro del libro');
+      }
+
       setState(() {
-        registros[index] = Libro(
-          usuario: libro.usuario,
-          libro: libro.libro,
-          genero: libro.genero,
-          saga: libro.saga,
-          numSaga: libro.numSaga,
-          autoconclusivo: libro.autoconclusivo,
-          prioridad: libro.prioridad,
+        registros[index] = libro.copyWith(
           estado: nuevoEstado,
           valoracion: valoracion ?? libro.valoracion,
-          yaLoTengo: libro.yaLoTengo,
-          goodreads: libro.goodreads,
         );
       });
 
@@ -111,14 +161,63 @@ class _DetalleLibroPageState extends State<DetalleLibroPage> {
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(const SnackBar(content: Text('Estado actualizado')));
-    } catch (e) {
+    } catch (error) {
       if (!mounted) return;
 
-      final mensaje = e.toString().replaceFirst('Exception: ', '');
+      final mensaje = error.toString().replaceFirst('Exception: ', '');
 
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(SnackBar(content: Text('Error: $mensaje')));
+    }
+  }
+
+  Future<void> _quitarPendientes(Libro libro) async {
+    final confirmar = await showDialog<bool>(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: const Text('🗑️ Quitar libro'),
+        content: Text(
+          "¿Quieres quitar '${libro.libro}' de tus pendientes?\n\n"
+          'Si nadie más lo tiene pendiente y nunca se ha leído, '
+          'desaparecerá del catálogo.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancelar'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Quitar'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmar != true) return;
+
+    final respuesta = await ApiService().quitarLibroPendientes(
+      usuario: libro.usuario,
+      libro: libro.libro,
+    );
+
+    if (!mounted) return;
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          respuesta['mensaje']?.toString() ?? 'Operación realizada',
+        ),
+      ),
+    );
+
+    if (respuesta['ok'] == true) {
+      _cerrarAtmosferaDelLibro();
+
+      if (!mounted) return;
+
+      Navigator.pop(context, true);
     }
   }
 
@@ -135,385 +234,163 @@ class _DetalleLibroPageState extends State<DetalleLibroPage> {
 
     final uri = Uri.parse(url);
 
-    final ok = await launchUrl(uri, mode: LaunchMode.externalApplication);
+    final abierto = await launchUrl(uri, mode: LaunchMode.externalApplication);
 
-    if (!ok) {
+    if (!abierto) {
       await launchUrl(uri, mode: LaunchMode.platformDefault);
     }
   }
 
-  Widget _estadistica({
-    required IconData icono,
-    required String titulo,
-    required String valor,
-    required Color color,
-  }) {
-    return Container(
-      padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 8),
+  Future<void> _editarLibro() async {
+    if (widget.libro.bookId.isEmpty) return;
 
-      decoration: BoxDecoration(
-        color: color.withOpacity(0.08),
-        borderRadius: BorderRadius.circular(14),
-      ),
+    final actualizado = await Navigator.push<bool>(
+      context,
+      MaterialPageRoute(builder: (_) => NuevoLibroPage(libro: widget.libro)),
+    );
 
-      child: Column(
-        children: [
-          Icon(icono, color: color),
+    if (!mounted) return;
 
-          const SizedBox(height: 8),
+    if (actualizado == true) {
+      _cerrarAtmosferaDelLibro();
 
-          Text(
-            valor,
-            style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-          ),
+      if (!mounted) return;
 
-          Text(
-            titulo,
-            style: TextStyle(color: Colors.grey.shade700, fontSize: 12),
-            textAlign: TextAlign.center,
-          ),
-        ],
+      Navigator.pop(context, true);
+    }
+  }
+
+  Future<void> _abrirKitLectura() async {
+    await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => KitLecturaPage(
+          bookId: widget.libro.bookId,
+          libro: widget.libro.libro,
+          coverUrl: widget.libro.coverUrl,
+        ),
       ),
     );
+
+    if (!mounted || !_controllerPreparado || _atmosferaCerrada) {
+      return;
+    }
+
+    /*
+     * Al volver del kit, recargamos la selección porque la lectora
+     * podría haber cambiado la atmósfera del libro.
+     */
+    await _cargarAtmosferaDelLibro();
   }
 
   @override
   Widget build(BuildContext context) {
     final referencia = registros.isNotEmpty ? registros.first : null;
-    return Scaffold(
-      appBar: AppBar(title: Text(widget.libro.libro)),
 
-      body: SafeArea(
-        child: ListView(
-          padding: EdgeInsets.fromLTRB(
-            16,
-            16,
-            16,
-            MediaQuery.of(context).padding.bottom + 32,
+    return PopScope(
+      onPopInvokedWithResult: (didPop, result) {
+        if (didPop) {
+          _cerrarAtmosferaDelLibro();
+        }
+      },
+      child: Scaffold(
+        appBar: AppBar(
+          leading: IconButton(
+            tooltip: 'Volver',
+            icon: const Icon(Icons.arrow_back_ios_new_rounded),
+            onPressed: _volver,
           ),
-
-          children: [
-            Card(
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-
-                  children: [
-                    Text(
-                      widget.libro.libro,
-
-                      style: const TextStyle(
-                        fontSize: 22,
-
-                        fontWeight: FontWeight.bold,
+          title: Text(
+            widget.libro.libro,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+          actions: [
+            if (widget.libro.bookId.isNotEmpty)
+              Padding(
+                padding: const EdgeInsets.only(right: 12),
+                child: Center(
+                  child: OutlinedButton.icon(
+                    style: OutlinedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 8,
+                      ),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(999),
                       ),
                     ),
-
-                    const SizedBox(height: 8),
-
-                    Text(
-                      '${iconoGenero(widget.libro.genero)} ${widget.libro.genero}',
-                    ),
-                    const SizedBox(height: 12),
-
-                    if (referencia?.autoconclusivo == "Si")
-                      const Row(
-                        children: [
-                          Icon(Icons.auto_stories_outlined, size: 18),
-                          SizedBox(width: 8),
-                          Text(
-                            "Autoconclusivo",
-                            style: TextStyle(fontWeight: FontWeight.w600),
-                          ),
-                        ],
-                      )
-                    else ...[
-                      Row(
-                        children: [
-                          const Icon(Icons.forest_outlined, size: 18),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: Text(
-                              referencia?.saga ?? "",
-                              style: const TextStyle(
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-
-                      if ((referencia?.numSaga ?? "").isNotEmpty)
-                        Padding(
-                          padding: const EdgeInsets.only(left: 26, top: 4),
-                          child: Text(
-                            "Libro ${referencia?.numSaga ?? ""}",
-                            style: TextStyle(color: Colors.grey.shade700),
-                          ),
-                        ),
-                    ],
-
-                    const SizedBox(height: 16),
-
-                    const SizedBox(height: 8),
-
-                    const SizedBox(height: 18),
-
-                    Row(
-                      children: [
-                        Expanded(
-                          child: _estadistica(
-                            icono: Icons.people,
-                            titulo: "Interesadas",
-                            valor: "${widget.libro.total}",
-                            color: Colors.blue,
-                          ),
-                        ),
-
-                        const SizedBox(width: 10),
-
-                        Expanded(
-                          child: _estadistica(
-                            icono: Icons.flag,
-                            titulo: "Leídos",
-                            valor: "${widget.libro.totalFinalizados}",
-                            color: Colors.green,
-                          ),
-                        ),
-
-                        const SizedBox(width: 10),
-
-                        Expanded(
-                          child: _estadistica(
-                            icono: Icons.star,
-                            titulo: "Media",
-                            valor: widget.libro.mediaValoracion > 0
-                                ? widget.libro.mediaValoracion.toStringAsFixed(
-                                    1,
-                                  )
-                                : "-",
-                            color: Colors.amber,
-                          ),
-                        ),
-                      ],
-                    ),
-                    if (referencia?.goodreads.isNotEmpty ?? false) ...[
-                      const SizedBox(height: 20),
-
-                      InkWell(
-                        borderRadius: BorderRadius.circular(16),
-                        onTap: _abrirGoodreads,
-                        child: Card(
-                          elevation: 0,
-                          color: Colors.amber.shade50,
-                          child: Padding(
-                            padding: const EdgeInsets.all(16),
-                            child: Row(
-                              children: [
-                                const Icon(
-                                  Icons.menu_book_rounded,
-                                  color: Colors.amber,
-                                ),
-                                const SizedBox(width: 12),
-                                const Expanded(
-                                  child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        "Ver ficha en Goodreads",
-                                        style: TextStyle(
-                                          fontWeight: FontWeight.bold,
-                                          fontSize: 16,
-                                        ),
-                                      ),
-                                      SizedBox(height: 4),
-                                      Text(
-                                        "Sinopsis, opiniones y valoraciones",
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                                const Icon(Icons.open_in_new),
-                              ],
-                            ),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ],
+                    icon: const Icon(Icons.edit_outlined, size: 18),
+                    label: const Text('Editar'),
+                    onPressed: _editarLibro,
+                  ),
                 ),
               ),
-            ),
-
-            const SizedBox(height: 16),
-
-            if (registros.isNotEmpty) ...[
-              const Text(
-                'Interesadas',
-                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-              ),
-
-              const SizedBox(height: 12),
-
-              ...registros.map((registro) {
-                return Card(
-                  child: Padding(
-                    padding: const EdgeInsets.all(8),
-                    child: Column(
-                      children: [
-                        ListTile(
-                          leading: Icon(
-                            _iconoEstado(registro.estado),
-                            color: _colorEstado(registro.estado),
-                          ),
-                          title: Text(registro.usuario),
-                        ),
-
-                        Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 16),
-                          child: DropdownButtonFormField<String>(
-                            value: registro.estado,
-                            decoration: const InputDecoration(
-                              labelText: 'Estado',
-                            ),
-                            items: const [
-                              DropdownMenuItem(
-                                value: 'PENDIENTE',
-                                child: Text('PENDIENTE'),
-                              ),
-                              DropdownMenuItem(
-                                value: 'LEYENDO',
-                                child: Text('LEYENDO'),
-                              ),
-                              DropdownMenuItem(
-                                value: 'RELECTURA',
-                                child: Text('RELECTURA'),
-                              ),
-                              DropdownMenuItem(
-                                value: 'FINALIZADO',
-                                child: Text('FINALIZADO'),
-                              ),
-                            ],
-                            onChanged: (value) async {
-                              if (value == null || value == registro.estado) {
-                                return;
-                              }
-
-                              Map<String, String>? datosValoracion;
-
-                              if (value == 'FINALIZADO') {
-                                datosValoracion =
-                                    await showDialog<Map<String, String>>(
-                                      context: context,
-                                      builder: (_) =>
-                                          const FinalizarLibroDialog(),
-                                    );
-
-                                if (!mounted || datosValoracion == null) {
-                                  return;
-                                }
-                              }
-
-                              await _cambiarEstado(
-                                registro,
-                                value,
-                                valoracion: datosValoracion?["valoracion"],
-                                reflexion: datosValoracion?["reflexion"],
-                              );
-                            },
-                          ),
-                        ),
-
-                        if (registro.valoracion.isNotEmpty)
-                          Padding(
-                            padding: const EdgeInsets.all(12),
-                            child: Text(
-                              '⭐ ${registro.valoracion}',
-                              style: const TextStyle(
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ),
-                      ],
-                    ),
-                  ),
-                );
-              }),
-            ],
-            const SizedBox(height: 24),
-
-            ConversacionesLibroCard(libro: widget.libro.libro),
-
-            const SizedBox(height: 8),
-
-            if (widget.libro.finalizados.isNotEmpty) ...[
-              const SizedBox(height: 24),
-
-              const Text(
-                '🏁 Valoraciones',
-
-                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-              ),
-
-              const SizedBox(height: 12),
-
-              ...widget.libro.finalizados.map((finalizado) {
-                return Card(
-                  child: Padding(
-                    padding: const EdgeInsets.all(12),
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const CircleAvatar(child: Icon(Icons.person, size: 18)),
-
-                        const SizedBox(width: 12),
-
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                finalizado.usuario,
-                                style: const TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-
-                              if (finalizado.resena.isNotEmpty) ...[
-                                const SizedBox(height: 6),
-                                Text(
-                                  finalizado.resena,
-                                  style: const TextStyle(
-                                    fontSize: 14,
-                                    color: Colors.black54,
-                                    fontStyle: FontStyle.italic,
-                                  ),
-                                ),
-                              ],
-                            ],
-                          ),
-                        ),
-
-                        Text(
-                          finalizado.valoracion,
-                          style: const TextStyle(
-                            fontSize: 20,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                );
-              }),
-            ],
-            const SizedBox(height: 80),
           ],
+        ),
+        body: SafeArea(
+          child: ListView(
+            padding: EdgeInsets.fromLTRB(
+              16,
+              16,
+              16,
+              MediaQuery.of(context).padding.bottom + 32,
+            ),
+            children: [
+              LibroHeader(
+                libro: widget.libro,
+                referencia: referencia,
+                onAbrirGoodreads: _abrirGoodreads,
+              ),
+
+              const SizedBox(height: AppSpacing.lg),
+
+              KitLecturaCard(onTap: _abrirKitLectura),
+
+              if (registros.isNotEmpty) ...[
+                const SizedBox(height: AppSpacing.lg),
+
+                LibroInteresadasSection(
+                  registros: registros,
+                  usuarioActual: usuarioActual,
+                  onCambiarEstado: _cambiarEstado,
+                  onQuitarPendientes: _quitarPendientes,
+                  onPedirValoracion: () {
+                    return showDialog<Map<String, String>>(
+                      context: context,
+                      builder: (_) => const FinalizarLibroDialog(),
+                    );
+                  },
+                ),
+              ],
+
+              const SizedBox(height: AppSpacing.lg),
+
+              ConversacionesLibroCard(
+                libro: widget.libro.libro,
+                coverUrl: widget.libro.coverUrl,
+              ),
+
+              if (widget.libro.finalizados.isNotEmpty) ...[
+                const SizedBox(height: AppSpacing.lg),
+
+                LibroValoracionesSection(
+                  valoraciones: widget.libro.finalizados,
+                  mediaValoracion: widget.libro.mediaValoracion,
+                ),
+              ],
+
+              const SizedBox(height: 80),
+            ],
+          ),
         ),
       ),
     );
+  }
+
+  @override
+  void dispose() {
+    _cerrarAtmosferaDelLibro();
+    super.dispose();
   }
 }

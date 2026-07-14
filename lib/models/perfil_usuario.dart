@@ -2,6 +2,7 @@
 
 class PerfilUsuario {
   final String usuario;
+  final String avatarUrl;
   final PerfilResumen resumen;
   final List<PerfilLibro> leyendo;
   final List<PerfilLibroTerminado> terminados;
@@ -11,6 +12,7 @@ class PerfilUsuario {
 
   PerfilUsuario({
     required this.usuario,
+    required this.avatarUrl,
     required this.resumen,
     required this.leyendo,
     required this.terminados,
@@ -22,13 +24,17 @@ class PerfilUsuario {
   factory PerfilUsuario.fromJson(Map<String, dynamic> json) {
     List<T> parseList<T>(String key, T Function(Map<String, dynamic>) mapper) {
       return (json[key] as List? ?? [])
-          .map((e) => mapper(e as Map<String, dynamic>))
+          .whereType<Map<String, dynamic>>()
+          .map(mapper)
           .toList();
     }
 
     return PerfilUsuario(
       usuario: json['usuario']?.toString() ?? '',
-      resumen: PerfilResumen.fromJson(json['resumen'] ?? {}),
+      avatarUrl: json['avatarUrl']?.toString() ?? '',
+      resumen: PerfilResumen.fromJson(
+        json['resumen'] as Map<String, dynamic>? ?? const {},
+      ),
       leyendo: parseList('leyendo', PerfilLibro.fromJson),
       terminados: parseList('terminados', PerfilLibroTerminado.fromJson),
       abandonados: parseList('abandonados', PerfilLibro.fromJson),
@@ -85,27 +91,50 @@ class PerfilLibro {
 }
 
 class PerfilLibroTerminado {
+  final String libraryId;
+  final String bookId;
+
   final String libro;
   final String genero;
-  final String fecha;
+  final String fechaInicio;
+  final String fechaFin;
   final String valoracion;
   final String resena;
+  final String coverUrl;
 
   PerfilLibroTerminado({
+    required this.libraryId,
+    required this.bookId,
     required this.libro,
     required this.genero,
-    required this.fecha,
+    required this.fechaInicio,
+    required this.fechaFin,
     required this.valoracion,
     required this.resena,
+    required this.coverUrl,
   });
+
+  /// Compatibilidad temporal con código antiguo que todavía usa `fecha`.
+  String get fecha => fechaFin;
 
   factory PerfilLibroTerminado.fromJson(Map<String, dynamic> json) {
     return PerfilLibroTerminado(
+      libraryId: json['libraryId']?.toString() ?? json['id']?.toString() ?? '',
+      bookId: json['bookId']?.toString() ?? '',
       libro: json['libro']?.toString() ?? '',
       genero: json['genero']?.toString() ?? '',
-      fecha: json['fecha']?.toString() ?? '',
+      fechaInicio:
+          json['fechaInicio']?.toString() ??
+          json['startedAt']?.toString() ??
+          '',
+      fechaFin:
+          json['fechaFin']?.toString() ??
+          json['finishedAt']?.toString() ??
+          json['fecha']?.toString() ??
+          '',
       valoracion: json['valoracion']?.toString() ?? '',
-      resena: json['resena']?.toString() ?? '',
+      resena: json['resena']?.toString() ?? json['review']?.toString() ?? '',
+      coverUrl: json['coverUrl']?.toString() ?? '',
     );
   }
 }

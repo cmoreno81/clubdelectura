@@ -1,9 +1,13 @@
+import 'package:club_lectura_app/widgets/lectura/fecha_relativa.dart';
 import 'package:flutter/material.dart';
 
 import '../../models/respuesta_comentario.dart';
 import '../../services/api_service.dart';
-import 'avatar_usuario.dart';
-import 'fecha_relativa.dart';
+import '../../theme/app_colors.dart';
+import '../../theme/app_radius.dart';
+import '../../theme/app_spacing.dart';
+import '../../theme/app_text_styles.dart';
+import '../common/club_avatar.dart';
 
 class RespuestaCard extends StatefulWidget {
   final RespuestaComentario respuesta;
@@ -26,26 +30,31 @@ class _RespuestaCardState extends State<RespuestaCard> {
     final nuevo = await showDialog<String>(
       context: context,
       builder: (_) => AlertDialog(
-        title: const Text("Editar respuesta"),
+        title: const Text('Editar respuesta'),
         content: TextField(
           controller: controller,
           maxLines: 5,
           autofocus: true,
+          decoration: const InputDecoration(
+            hintText: 'Escribe tu respuesta...',
+          ),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text("Cancelar"),
+            child: const Text('Cancelar'),
           ),
           FilledButton(
             onPressed: () {
               Navigator.pop(context, controller.text.trim());
             },
-            child: const Text("Guardar"),
+            child: const Text('Guardar'),
           ),
         ],
       ),
     );
+
+    controller.dispose();
 
     if (nuevo == null || nuevo.isEmpty) return;
 
@@ -61,7 +70,7 @@ class _RespuestaCardState extends State<RespuestaCard> {
 
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(const SnackBar(content: Text("Respuesta actualizada 💜")));
+      ).showSnackBar(const SnackBar(content: Text('Respuesta actualizada 💜')));
     }
   }
 
@@ -69,16 +78,16 @@ class _RespuestaCardState extends State<RespuestaCard> {
     final confirmar = await showDialog<bool>(
       context: context,
       builder: (_) => AlertDialog(
-        title: const Text("Eliminar respuesta"),
-        content: const Text("¿Seguro que quieres eliminar esta respuesta?"),
+        title: const Text('Eliminar respuesta'),
+        content: const Text('¿Seguro que quieres eliminar esta respuesta?'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text("Cancelar"),
+            child: const Text('Cancelar'),
           ),
           FilledButton(
             onPressed: () => Navigator.pop(context, true),
-            child: const Text("Eliminar"),
+            child: const Text('Eliminar'),
           ),
         ],
       ),
@@ -97,7 +106,7 @@ class _RespuestaCardState extends State<RespuestaCard> {
 
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(const SnackBar(content: Text("Respuesta eliminada")));
+      ).showSnackBar(const SnackBar(content: Text('Respuesta eliminada')));
     }
   }
 
@@ -109,76 +118,115 @@ class _RespuestaCardState extends State<RespuestaCard> {
       return const SizedBox.shrink();
     }
 
-    return Container(
-      margin: const EdgeInsets.only(left: 48, top: 10),
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: Colors.grey.shade100,
-        borderRadius: BorderRadius.circular(14),
-      ),
+    return Padding(
+      padding: const EdgeInsets.only(top: AppSpacing.sm, left: AppSpacing.sm),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          AvatarUsuario(nombre: respuesta.usuario),
+          Container(
+            width: 3,
+            decoration: BoxDecoration(
+              color: AppColors.primaryLight,
+              borderRadius: BorderRadius.circular(AppRadius.pill),
+            ),
+          ),
 
-          const SizedBox(width: 12),
+          const SizedBox(width: AppSpacing.sm),
 
           Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Expanded(
-                      child: Text(
-                        respuesta.usuario,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(fontWeight: FontWeight.bold),
-                      ),
-                    ),
+            child: Container(
+              padding: const EdgeInsets.all(AppSpacing.md),
+              decoration: BoxDecoration(
+                color: AppColors.surfaceSoft,
+                borderRadius: BorderRadius.circular(AppRadius.lg),
+                border: Border.all(color: AppColors.border),
+              ),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  ClubAvatar(nombre: respuesta.usuario, size: 38),
 
-                    if (respuesta.esMia)
-                      PopupMenuButton<String>(
-                        onSelected: (v) {
-                          if (v == "editar") {
-                            _editarRespuesta();
-                          }
+                  const SizedBox(width: AppSpacing.sm),
 
-                          if (v == "eliminar") {
-                            _eliminarRespuesta();
-                          }
-                        },
-                        itemBuilder: (_) => const [
-                          PopupMenuItem(value: "editar", child: Text("Editar")),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Expanded(
+                              child: Text(
+                                respuesta.usuario,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: AppTextStyles.body.copyWith(
+                                  fontWeight: FontWeight.w800,
+                                  color: AppColors.textPrimary,
+                                ),
+                              ),
+                            ),
 
-                          PopupMenuItem(
-                            value: "eliminar",
-                            child: Text("Eliminar"),
+                            if (respuesta.esMia)
+                              PopupMenuButton<String>(
+                                padding: EdgeInsets.zero,
+                                icon: const Icon(
+                                  Icons.more_horiz_rounded,
+                                  color: AppColors.textMuted,
+                                ),
+                                onSelected: (accion) {
+                                  if (accion == 'editar') {
+                                    _editarRespuesta();
+                                  }
+
+                                  if (accion == 'eliminar') {
+                                    _eliminarRespuesta();
+                                  }
+                                },
+                                itemBuilder: (_) => const [
+                                  PopupMenuItem(
+                                    value: 'editar',
+                                    child: Text('Editar'),
+                                  ),
+                                  PopupMenuItem(
+                                    value: 'eliminar',
+                                    child: Text('Eliminar'),
+                                  ),
+                                ],
+                              ),
+                          ],
+                        ),
+
+                        Text(
+                          FechaRelativa.formato(respuesta.fecha),
+                          style: AppTextStyles.caption.copyWith(
+                            color: AppColors.textMuted,
+                          ),
+                        ),
+
+                        const SizedBox(height: AppSpacing.sm),
+
+                        Text(
+                          respuesta.respuesta,
+                          style: AppTextStyles.body.copyWith(
+                            height: 1.45,
+                            color: AppColors.textPrimary,
+                          ),
+                        ),
+
+                        if (respuesta.editado) ...[
+                          const SizedBox(height: AppSpacing.xs),
+                          Text(
+                            'Editado',
+                            style: AppTextStyles.caption.copyWith(
+                              fontStyle: FontStyle.italic,
+                            ),
                           ),
                         ],
-                      ),
-                  ],
-                ),
-
-                Text(
-                  FechaRelativa.formato(respuesta.fecha),
-                  style: const TextStyle(color: Colors.grey, fontSize: 12),
-                ),
-
-                const SizedBox(height: 8),
-
-                Text(respuesta.respuesta),
-
-                if (respuesta.editado)
-                  const Padding(
-                    padding: EdgeInsets.only(top: 6),
-                    child: Text(
-                      "(editado)",
-                      style: TextStyle(fontSize: 11, color: Colors.grey),
+                      ],
                     ),
                   ),
-              ],
+                ],
+              ),
             ),
           ),
         ],

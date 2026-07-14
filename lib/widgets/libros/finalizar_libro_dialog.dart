@@ -75,13 +75,34 @@ class _FinalizarLibroDialogState extends State<FinalizarLibroDialog> {
 
               TextField(
                 controller: controller,
-                maxLines: 5,
-                maxLength: 300,
+                minLines: 4,
+                maxLines: 9,
+                maxLength: 5000,
+                keyboardType: TextInputType.multiline,
+                textInputAction: TextInputAction.newline,
+                scrollPadding: const EdgeInsets.only(bottom: 140),
 
-                decoration: const InputDecoration(
+                decoration: InputDecoration(
                   hintText:
-                      "¿Qué te ha parecido el libro?\n\nEsta reseña aparecerá en la ficha del libro.",
-                  border: OutlineInputBorder(),
+                      '¿Qué te ha parecido el libro?\n\n'
+                      'Esta reseña aparecerá en la ficha del libro.',
+                  filled: true,
+                  fillColor: const Color(0xFFF7F1FF),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(18),
+                    borderSide: BorderSide.none,
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(18),
+                    borderSide: const BorderSide(color: Color(0xFFE1D4F5)),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(18),
+                    borderSide: const BorderSide(
+                      color: Color(0xFF6F4DBF),
+                      width: 1.5,
+                    ),
+                  ),
                 ),
               ),
             ],

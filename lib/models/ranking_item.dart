@@ -1,31 +1,29 @@
 class RankingItem {
   final String nombre;
-
+  final String avatarUrl;
   final int total;
-
   final double media;
-
   final int votos;
 
-  RankingItem({
+  const RankingItem({
     required this.nombre,
-
+    this.avatarUrl = '',
     this.total = 0,
-
     this.media = 0,
-
     this.votos = 0,
   });
 
   factory RankingItem.fromJson(Map<String, dynamic> json) {
     return RankingItem(
-      nombre: json['libro'] ?? json['usuario'] ?? '',
+      nombre: json['libro']?.toString() ?? json['usuario']?.toString() ?? '',
 
-      total: json['total'] ?? 0,
+      avatarUrl: json['avatarUrl']?.toString() ?? '',
 
-      media: (json['media'] ?? 0).toDouble(),
+      total: (json['total'] as num?)?.toInt() ?? 0,
 
-      votos: json['votos'] ?? 0,
+      media: (json['media'] as num?)?.toDouble() ?? 0,
+
+      votos: (json['votos'] as num?)?.toInt() ?? 0,
     );
   }
 }

@@ -26,6 +26,7 @@ class LecturaActual {
   final int comentarios;
   final int likes;
   final String ultimaActividad;
+  final String coverUrl;
 
   const LecturaActual({
     required this.titulo,
@@ -36,6 +37,7 @@ class LecturaActual {
     required this.comentarios,
     required this.likes,
     required this.ultimaActividad,
+    required this.coverUrl,
   });
 
   factory LecturaActual.fromJson(Map<String, dynamic> json) {
@@ -54,6 +56,7 @@ class LecturaActual {
       comentarios: (json["comentarios"] as num?)?.toInt() ?? 0,
       likes: (json["likes"] as num?)?.toInt() ?? 0,
       ultimaActividad: json["ultimaActividad"] ?? "",
+      coverUrl: json['coverUrl']?.toString() ?? '',
     );
   }
 }

@@ -1,4 +1,5 @@
 class NuevoLibro {
+  final String? bookId;
   final String usuario;
   final String libro;
   final String genero;
@@ -7,7 +8,11 @@ class NuevoLibro {
   final String autoconclusivo;
   final String prioridad;
 
+  final String goodreads;
+  final String coverUrl;
+
   NuevoLibro({
+    this.bookId,
     required this.usuario,
     required this.libro,
     required this.genero,
@@ -15,10 +20,14 @@ class NuevoLibro {
     required this.numSaga,
     required this.autoconclusivo,
     required this.prioridad,
+    this.goodreads = '',
+    this.coverUrl = '',
   });
 
   Map<String, dynamic> toJson() {
     return {
+      if (bookId != null && bookId!.trim().isNotEmpty) 'bookId': bookId!.trim(),
+
       'usuario': usuario,
       'libro': libro,
       'genero': genero,
@@ -26,6 +35,8 @@ class NuevoLibro {
       'numSaga': numSaga,
       'autoconclusivo': autoconclusivo,
       'prioridad': prioridad,
+      'goodreads': goodreads.trim(),
+      'coverUrl': coverUrl.trim(),
     };
   }
 }

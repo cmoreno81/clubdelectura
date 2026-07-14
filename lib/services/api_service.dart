@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:club_lectura_app/models/lectura_activa.dart';
 import 'package:club_lectura_app/models/lectura_compartida.dart';
 import 'package:club_lectura_app/models/mi_voto.dart';
+import 'package:club_lectura_app/utils/app_config.dart';
 import 'package:http/http.dart' as http;
 import '../models/dashboard.dart';
 import '../models/libro.dart';
@@ -10,6 +11,7 @@ import '../models/libro_finalizado.dart';
 import '../models/nuevo_libro.dart';
 import '../models/libros_data.dart';
 import '../models/ranking.dart';
+import '../models/ranking_item.dart';
 import '../models/clubvision.dart';
 import '../models/historial_clubvision.dart';
 import '../models/usuario.dart';
@@ -21,10 +23,10 @@ import '../models/conversacion_libro.dart';
 import '../models/perfil_usuario.dart';
 import '../models/mood_club.dart';
 import '../models/tendencias_club.dart';
+import '../models/atmosfera_club.dart';
 
 class ApiService {
-  static const String baseUrl =
-      'https://clubreads-backend-production.up.railway.app/api';
+  static String get baseUrl => AppConfig.baseUrl;
   static final http.Client _client = http.Client();
 
   bool _respuestaOk(http.Response response) {
@@ -146,20 +148,59 @@ class ApiService {
   }) async {
     final usuario = await UsuarioService().obtenerUsuario();
 
-    final response = await _client.get(
-      Uri.parse(
-        '$baseUrl?action=comentariosLectura'
-        '&libro=${Uri.encodeComponent(libro)}'
-        '&capitulo=${Uri.encodeComponent(capitulo)}'
-        '&usuario=${Uri.encodeComponent(usuario ?? "")}',
-      ),
+    final uri = Uri.parse(baseUrl).replace(
+      queryParameters: {
+        'action': 'comentariosLectura',
+        'libro': libro,
+        'capitulo': capitulo,
+        'usuario': usuario?.trim() ?? '',
+      },
     );
 
+    final response = await _client.get(uri);
+
     if (response.statusCode != 200) {
-      throw Exception("Error cargando comentarios");
+      throw Exception('Error cargando comentarios');
     }
 
-    return ComentariosCapitulo.fromJson(jsonDecode(response.body));
+    final data = jsonDecode(response.body);
+
+    if (data is! Map<String, dynamic>) {
+      throw Exception('Respuesta de comentarios no válida');
+    }
+
+    return ComentariosCapitulo.fromJson(data);
+  }
+
+  Future<bool> marcarConversacionVista({
+    required String libro,
+    required String capitulo,
+    String? usuario,
+  }) async {
+    final usuarioActual =
+        usuario?.trim() ??
+        (await UsuarioService().obtenerUsuario())?.trim() ??
+        '';
+
+    if (usuarioActual.isEmpty) {
+      return false;
+    }
+
+    final uri = Uri.parse(
+      baseUrl,
+    ).replace(queryParameters: {'action': 'marcarConversacionVista'});
+
+    final response = await _client.post(
+      uri,
+      headers: const {'Content-Type': 'application/json'},
+      body: jsonEncode({
+        'libro': libro,
+        'capitulo': capitulo,
+        'usuario': usuarioActual,
+      }),
+    );
+
+    return _respuestaOk(response);
   }
 
   Future<void> guardarComentarioLectura({
@@ -290,15 +331,29 @@ class ApiService {
   Future<ConfiguracionLectura> getConfiguracionLectura({
     required String libro,
   }) async {
+    final usuario = await UsuarioService().obtenerUsuario();
+
     final uri = Uri.parse(baseUrl).replace(
-      queryParameters: {"action": "configuracionLectura", "libro": libro},
+      queryParameters: {
+        'action': 'configuracionLectura',
+        'libro': libro,
+        'usuario': usuario?.trim() ?? '',
+      },
     );
 
-    final response = await http.get(uri);
+    final response = await _client.get(uri);
 
-    final json = jsonDecode(response.body);
+    if (response.statusCode != 200) {
+      throw Exception('Error cargando la configuración de lectura');
+    }
 
-    return ConfiguracionLectura.fromJson(json);
+    final data = jsonDecode(response.body);
+
+    if (data is! Map<String, dynamic>) {
+      throw Exception('Respuesta de configuración no válida');
+    }
+
+    return ConfiguracionLectura.fromJson(data);
   }
 
   Future<List<ConversacionLibro>> getConversacionesLibro({
@@ -315,14 +370,60 @@ class ApiService {
     return json.map((e) => ConversacionLibro.fromJson(e)).toList();
   }
 
-  Future<void> crearLibro(NuevoLibro libro) async {
-    await _client.post(
+  Future<Map<String, dynamic>> crearLibro(NuevoLibro libro) async {
+    final response = await _client.post(
       Uri.parse('$baseUrl?action=crearLibro'),
-
-      headers: {'Content-Type': 'application/json'},
-
+      headers: const {'Content-Type': 'application/json'},
       body: jsonEncode(libro.toJson()),
     );
+
+    if (response.statusCode != 200) {
+      return {
+        'ok': false,
+        'mensaje': 'No se ha podido conectar con el servidor.',
+      };
+    }
+
+    final data = jsonDecode(response.body);
+
+    if (data is! Map<String, dynamic>) {
+      return {
+        'ok': false,
+        'mensaje': 'La respuesta del servidor no es válida.',
+      };
+    }
+
+    return data;
+  }
+
+  Future<Map<String, dynamic>> editarLibro(NuevoLibro libro) async {
+    if (libro.bookId == null || libro.bookId!.trim().isEmpty) {
+      return {'ok': false, 'mensaje': 'Falta el identificador del libro.'};
+    }
+
+    final response = await _client.post(
+      Uri.parse('$baseUrl?action=editarLibro'),
+      headers: const {'Content-Type': 'application/json'},
+      body: jsonEncode(libro.toJson()),
+    );
+
+    if (response.statusCode != 200) {
+      return {
+        'ok': false,
+        'mensaje': 'No se ha podido conectar con el servidor.',
+      };
+    }
+
+    final data = jsonDecode(response.body);
+
+    if (data is! Map<String, dynamic>) {
+      return {
+        'ok': false,
+        'mensaje': 'La respuesta del servidor no es válida.',
+      };
+    }
+
+    return data;
   }
 
   Future<List<ComoVotaron>> getComoVotaron() async {
@@ -415,6 +516,44 @@ class ApiService {
     }
 
     throw Exception('Error cargando ranking');
+  }
+
+  Future<List<RankingItem>> getTopLectorasMes({DateTime? fecha}) async {
+    final mesActual = fecha ?? DateTime.now();
+    final usuarios = await getUsuarios();
+
+    final resultados = await Future.wait(
+      usuarios.map((usuario) async {
+        try {
+          final perfil = await getPerfilUsuario(usuario.nombre);
+          final total = perfil.terminados.where((libro) {
+            final partes = libro.fecha.trim().split('/');
+
+            if (partes.length != 3) return false;
+
+            final mes = int.tryParse(partes[1]);
+            final anio = int.tryParse(partes[2]);
+
+            return mes == mesActual.month && anio == mesActual.year;
+          }).length;
+
+          return RankingItem(nombre: usuario.nombre, total: total);
+        } catch (_) {
+          return RankingItem(nombre: usuario.nombre);
+        }
+      }),
+    );
+
+    final lectoras = resultados.where((item) => item.total > 0).toList()
+      ..sort((a, b) {
+        final porTotal = b.total.compareTo(a.total);
+
+        if (porTotal != 0) return porTotal;
+
+        return a.nombre.toLowerCase().compareTo(b.nombre.toLowerCase());
+      });
+
+    return lectoras.take(3).toList(growable: false);
   }
 
   Future<ClubvisionData> getClubvision() async {
@@ -530,15 +669,92 @@ class ApiService {
   Future<PerfilUsuario> getPerfilUsuario(String usuario) async {
     final uri = Uri.parse(
       baseUrl,
-    ).replace(queryParameters: {"action": "perfilUsuario", "usuario": usuario});
+    ).replace(queryParameters: {'action': 'perfilUsuario', 'usuario': usuario});
 
     final response = await _client.get(uri);
 
     if (response.statusCode != 200) {
-      throw Exception("Error cargando perfil");
+      throw Exception('Error cargando perfil');
     }
 
-    return PerfilUsuario.fromJson(jsonDecode(response.body));
+    final data = jsonDecode(response.body);
+
+    if (data is! Map<String, dynamic>) {
+      throw Exception('Respuesta de perfil no válida');
+    }
+
+    if (data['ok'] == false) {
+      throw Exception(
+        data['mensaje']?.toString() ?? 'No se pudo cargar el perfil',
+      );
+    }
+
+    return PerfilUsuario.fromJson(data);
+  }
+
+  Future<Map<String, dynamic>> actualizarFechasLectura({
+    required String usuario,
+    required String libraryId,
+    required String fechaInicio,
+    required String fechaFin,
+  }) async {
+    final response = await _client.post(
+      Uri.parse('$baseUrl?action=actualizarFechasLectura'),
+      headers: const {'Content-Type': 'application/json'},
+      body: jsonEncode({
+        'usuario': usuario,
+        'libraryId': libraryId,
+        'fechaInicio': fechaInicio,
+        'fechaFin': fechaFin,
+      }),
+    );
+
+    if (response.statusCode != 200) {
+      return {
+        'ok': false,
+        'mensaje': 'No se ha podido conectar con el servidor.',
+      };
+    }
+
+    final data = jsonDecode(response.body);
+
+    if (data is! Map<String, dynamic>) {
+      return {
+        'ok': false,
+        'mensaje': 'La respuesta del servidor no es válida.',
+      };
+    }
+
+    return data;
+  }
+
+  Future<Map<String, dynamic>> actualizarAvatarPerfil({
+    required String usuario,
+    required String avatarUrl,
+  }) async {
+    final response = await _client.post(
+      Uri.parse('$baseUrl?action=actualizarAvatarPerfil'),
+      headers: const {'Content-Type': 'application/json'},
+      body: jsonEncode({'usuario': usuario, 'avatarUrl': avatarUrl}),
+    );
+
+    if (response.statusCode != 200) {
+      return {
+        'ok': false,
+        'mensaje': 'No se ha podido conectar con el servidor.',
+      };
+    }
+
+    final data = jsonDecode(response.body);
+
+    if (data is! Map<String, dynamic>) {
+      return {
+        'ok': false,
+        'mensaje': 'La respuesta del servidor no es válida.',
+      };
+    }
+
+    return data;
   }
 
   Future<MoodClub> getMoodClub() async {
@@ -561,5 +777,50 @@ class ApiService {
     }
 
     throw Exception('Error cargando tendencias');
+  }
+
+  Future<AtmosferaClub> getAtmosferaClub() async {
+    final response = await _client.get(
+      Uri.parse('$baseUrl?action=atmosferaClub'),
+    );
+
+    if (response.statusCode == 200) {
+      return AtmosferaClub.fromJson(jsonDecode(response.body));
+    }
+
+    throw Exception('Error cargando las atmósferas del club');
+  }
+
+  Future<Map<String, dynamic>> quitarLibroPendientes({
+    required String usuario,
+    required String libro,
+  }) async {
+    final uri = Uri.parse(
+      baseUrl,
+    ).replace(queryParameters: {'action': 'quitarLibroPendientes'});
+
+    final response = await _client.post(
+      uri,
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({'usuario': usuario, 'libro': libro}),
+    );
+
+    if (response.statusCode != 200) {
+      return {
+        'ok': false,
+        'mensaje': 'No se ha podido conectar con el servidor.',
+      };
+    }
+
+    final data = jsonDecode(response.body);
+
+    if (data is! Map<String, dynamic>) {
+      return {
+        'ok': false,
+        'mensaje': 'La respuesta del servidor no es válida.',
+      };
+    }
+
+    return data;
   }
 }

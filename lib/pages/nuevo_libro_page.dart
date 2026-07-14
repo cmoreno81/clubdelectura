@@ -1,10 +1,24 @@
 import 'package:flutter/material.dart';
-import '../services/usuario_service.dart';
+
+import '../models/libro.dart';
+import '../models/libro_agrupado.dart';
 import '../models/nuevo_libro.dart';
 import '../services/api_service.dart';
+import '../services/usuario_service.dart';
+import '../theme/app_colors.dart';
+import '../theme/app_radius.dart';
+import '../theme/app_spacing.dart';
+import '../theme/app_text_styles.dart';
+import '../widgets/common/club_button.dart';
+import '../widgets/common/club_card.dart';
+import '../widgets/common/club_chip.dart';
 
 class NuevoLibroPage extends StatefulWidget {
-  const NuevoLibroPage({super.key});
+  final LibroAgrupado? libro;
+
+  const NuevoLibroPage({super.key, this.libro});
+
+  bool get esEdicion => libro != null;
 
   @override
   State<NuevoLibroPage> createState() => _NuevoLibroPageState();
@@ -12,58 +26,136 @@ class NuevoLibroPage extends StatefulWidget {
 
 class _NuevoLibroPageState extends State<NuevoLibroPage> {
   final libroController = TextEditingController();
-
   final sagaController = TextEditingController();
-
   final numSagaController = TextEditingController();
+  final goodreadsController = TextEditingController();
+  final coverUrlController = TextEditingController();
 
   String genero = 'Fantasía';
-
   String prioridad = 'Media';
-
   String autoconclusivo = 'Si';
 
   bool guardando = false;
+  bool mostrarCamposAvanzados = false;
 
-  Widget _tituloSeccion(String texto) {
-    return Align(
-      alignment: Alignment.centerLeft,
-      child: Text(
-        texto,
-        style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-      ),
-    );
+  bool get esEdicion => widget.esEdicion;
+
+  Libro? get referencia => widget.libro?.referencia;
+
+  String get tituloActual => libroController.text.trim();
+
+  String get portadaActual => coverUrlController.text.trim();
+
+  static const List<_GeneroOption> generos = [
+    _GeneroOption('🐉', 'Fantasía', 'Fantasía'),
+    _GeneroOption('🌹', 'Romantasy', 'Romantasy'),
+    _GeneroOption('💕', 'Romance', 'Romance'),
+    _GeneroOption('🔪', 'Thriller', 'Thriller'),
+    _GeneroOption('🖤', 'Dark Romance', 'Dark Romance'),
+    _GeneroOption('🎓', 'Dark Academia', 'Dark Academia'),
+    _GeneroOption('🎭', 'Drama', 'Drama'),
+    _GeneroOption('📜', 'Clásicos', 'Clásicos'),
+    _GeneroOption('🌇', 'Distopía', 'Distopía'),
+    _GeneroOption('🏙️', 'Novela contemporánea', 'Contemporánea'),
+    _GeneroOption('🏰', 'Novela Histórica', 'Histórica'),
+    _GeneroOption('🚀', 'Ciencia Ficción', 'Ciencia ficción'),
+    _GeneroOption('👻', 'Terror', 'Terror'),
+    _GeneroOption('🕵️', 'Novela Negra', 'Novela negra'),
+  ];
+
+  @override
+  void initState() {
+    super.initState();
+    _precargarDatos();
+
+    libroController.addListener(_actualizarVistaPrevia);
+    coverUrlController.addListener(_actualizarVistaPrevia);
   }
 
-  Widget _chipGenero({
-    required String icono,
-    required String valor,
-    required String texto,
-  }) {
-    return ChoiceChip(
-      label: Text('$icono $texto'),
-      selected: genero == valor,
-      showCheckmark: false,
-      selectedColor: Theme.of(context).colorScheme.primaryContainer,
-      onSelected: (_) {
-        setState(() {
-          genero = valor;
-        });
-      },
-    );
+  void _precargarDatos() {
+    if (!esEdicion) return;
+
+    final agrupado = widget.libro!;
+    final registro = referencia;
+    final finalizado = agrupado.finalizados.isNotEmpty
+        ? agrupado.finalizados.first
+        : null;
+
+    libroController.text = agrupado.libro;
+
+    genero = agrupado.genero.trim().isEmpty
+        ? 'Fantasía'
+        : agrupado.genero.trim();
+
+    sagaController.text = registro?.saga ?? finalizado?.saga ?? '';
+
+    numSagaController.text = registro?.numSaga ?? finalizado?.numSaga ?? '';
+
+    autoconclusivo =
+        registro?.autoconclusivo ?? finalizado?.autoconclusivo ?? 'Si';
+
+    prioridad = registro?.prioridad.isNotEmpty == true
+        ? _normalizarPrioridad(registro!.prioridad)
+        : 'Media';
+
+    goodreadsController.text = registro?.goodreads ?? '';
+    coverUrlController.text = agrupado.coverUrl;
+
+    mostrarCamposAvanzados =
+        goodreadsController.text.trim().isNotEmpty ||
+        coverUrlController.text.trim().isNotEmpty;
   }
 
-  Future<void> guardarLibro() async {
+  void _actualizarVistaPrevia() {
+    if (mounted) {
+      setState(() {});
+    }
+  }
+
+  String _normalizarPrioridad(String value) {
+    switch (value.trim().toUpperCase()) {
+      case 'ALTA':
+        return 'Alta';
+      case 'BAJA':
+        return 'Baja';
+      default:
+        return 'Media';
+    }
+  }
+
+  Future<void> _guardarLibro() async {
+    if (guardando) return;
+
     final usuario = await UsuarioService().obtenerUsuario();
 
-    if (usuario == null) {
-      throw Exception("No se ha encontrado el usuario");
-    }
-    if (libroController.text.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Completa el nombre del libro')),
-      );
+    if (!mounted) return;
 
+    if (usuario == null || usuario.trim().isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('No se ha podido identificar a la usuaria.'),
+        ),
+      );
+      return;
+    }
+
+    final titulo = libroController.text.trim();
+
+    if (titulo.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Introduce el título del libro.')),
+      );
+      return;
+    }
+
+    if (autoconclusivo == 'No' && sagaController.text.trim().isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Introduce el nombre de la saga o marca el libro como autoconclusivo.',
+          ),
+        ),
+      );
       return;
     }
 
@@ -73,34 +165,65 @@ class _NuevoLibroPageState extends State<NuevoLibroPage> {
 
     try {
       final libro = NuevoLibro(
-        usuario: usuario,
-
-        libro: libroController.text,
-
+        bookId: esEdicion ? widget.libro!.bookId : null,
+        usuario: usuario.trim(),
+        libro: titulo,
         genero: genero,
-
-        saga: sagaController.text,
-
-        numSaga: numSagaController.text,
-
+        saga: autoconclusivo == 'No' ? sagaController.text.trim() : '',
+        numSaga: autoconclusivo == 'No' ? numSagaController.text.trim() : '',
         autoconclusivo: autoconclusivo,
-
         prioridad: prioridad,
+        goodreads: goodreadsController.text.trim(),
+        coverUrl: coverUrlController.text.trim(),
       );
 
-      await ApiService().crearLibro(libro);
+      final respuesta = esEdicion
+          ? await ApiService().editarLibro(libro)
+          : await ApiService().crearLibro(libro);
 
       if (!mounted) return;
 
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('✅ Libro añadido')));
+      final ok = respuesta['ok'] == true;
+      final mensaje = respuesta['mensaje']?.toString();
 
-      Navigator.pop(context);
-    } catch (e) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Error: $e')));
+      if (!ok) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              mensaje ??
+                  (esEdicion
+                      ? 'No se ha podido actualizar el libro.'
+                      : 'No se ha podido añadir el libro.'),
+            ),
+          ),
+        );
+        return;
+      }
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            mensaje ??
+                (esEdicion
+                    ? 'Libro actualizado correctamente.'
+                    : 'Libro añadido correctamente.'),
+          ),
+          backgroundColor: AppColors.success,
+        ),
+      );
+
+      Navigator.pop(context, true);
+    } catch (error) {
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'Ha ocurrido un error: '
+            '${error.toString().replaceFirst('Exception: ', '')}',
+          ),
+        ),
+      );
     } finally {
       if (mounted) {
         setState(() {
@@ -113,227 +236,720 @@ class _NuevoLibroPageState extends State<NuevoLibroPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('➕ Nuevo libro')),
-
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
-
-        child: Column(
+      appBar: AppBar(title: Text(esEdicion ? 'Editar libro' : 'Nuevo libro')),
+      body: SafeArea(
+        top: false,
+        child: ListView(
+          padding: const EdgeInsets.fromLTRB(
+            AppSpacing.md,
+            AppSpacing.sm,
+            AppSpacing.md,
+            120,
+          ),
           children: [
-            const SizedBox(height: 16),
+            _cabecera(),
 
-            TextField(
-              controller: libroController,
-              decoration: const InputDecoration(labelText: 'Libro'),
-            ),
-            const SizedBox(height: 28),
+            const SizedBox(height: AppSpacing.xl),
 
-            const Align(
-              alignment: Alignment.centerLeft,
-              child: Text(
-                '📖 ¿Es autoconclusivo?',
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-              ),
+            const _SectionHeader(
+              icon: Icons.menu_book_outlined,
+              color: AppColors.primary,
+              title: 'Información básica',
+              subtitle: 'El título y la identidad principal del libro',
             ),
 
-            Align(
-              alignment: Alignment.centerLeft,
-              child: Wrap(
-                spacing: 12,
+            const SizedBox(height: AppSpacing.md),
+
+            ClubCard(
+              elevated: false,
+              padding: const EdgeInsets.all(AppSpacing.lg),
+              child: Column(
                 children: [
-                  ChoiceChip(
-                    showCheckmark: false,
-                    selectedColor: Theme.of(
-                      context,
-                    ).colorScheme.primaryContainer,
-                    label: const Text('Sí'),
-                    selected: autoconclusivo == 'Si',
-                    onSelected: (_) {
-                      setState(() {
-                        autoconclusivo = 'Si';
-                        sagaController.clear();
-                        numSagaController.clear();
-                      });
-                    },
+                  TextField(
+                    controller: libroController,
+                    textCapitalization: TextCapitalization.sentences,
+                    textInputAction: TextInputAction.next,
+                    decoration: const InputDecoration(
+                      labelText: 'Título del libro',
+                      hintText: 'Ej. Hasta que caiga la luna',
+                      prefixIcon: Icon(Icons.title_rounded),
+                    ),
                   ),
 
-                  ChoiceChip(
-                    showCheckmark: false,
-                    selectedColor: Theme.of(
-                      context,
-                    ).colorScheme.primaryContainer,
-                    label: const Text('No'),
-                    selected: autoconclusivo == 'No',
-                    onSelected: (_) {
-                      setState(() {
-                        autoconclusivo = 'No';
-                      });
-                    },
+                  const SizedBox(height: AppSpacing.lg),
+
+                  Align(
+                    alignment: Alignment.centerLeft,
+                    child: Text(
+                      '¿Es autoconclusivo?',
+                      style: AppTextStyles.subtitle.copyWith(
+                        color: AppColors.textPrimary,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
                   ),
+
+                  const SizedBox(height: AppSpacing.sm),
+
+                  Row(
+                    children: [
+                      Expanded(
+                        child: _SelectorOption(
+                          selected: autoconclusivo == 'Si',
+                          icon: Icons.book_outlined,
+                          title: 'Sí',
+                          subtitle: 'Historia cerrada',
+                          onTap: () {
+                            setState(() {
+                              autoconclusivo = 'Si';
+                              sagaController.clear();
+                              numSagaController.clear();
+                            });
+                          },
+                        ),
+                      ),
+
+                      const SizedBox(width: AppSpacing.sm),
+
+                      Expanded(
+                        child: _SelectorOption(
+                          selected: autoconclusivo == 'No',
+                          icon: Icons.collections_bookmark_outlined,
+                          title: 'No',
+                          subtitle: 'Forma parte de una saga',
+                          onTap: () {
+                            setState(() {
+                              autoconclusivo = 'No';
+                            });
+                          },
+                        ),
+                      ),
+                    ],
+                  ),
+
+                  if (autoconclusivo == 'No') ...[
+                    const SizedBox(height: AppSpacing.lg),
+
+                    TextField(
+                      controller: sagaController,
+                      textCapitalization: TextCapitalization.words,
+                      textInputAction: TextInputAction.next,
+                      decoration: const InputDecoration(
+                        labelText: 'Nombre de la saga',
+                        hintText: 'Ej. Empíreo',
+                        prefixIcon: Icon(Icons.collections_bookmark_outlined),
+                      ),
+                    ),
+
+                    const SizedBox(height: AppSpacing.md),
+
+                    TextField(
+                      controller: numSagaController,
+                      textInputAction: TextInputAction.next,
+                      decoration: const InputDecoration(
+                        labelText: 'Número en la saga',
+                        hintText: 'Ej. 2',
+                        prefixIcon: Icon(Icons.format_list_numbered_rounded),
+                      ),
+                    ),
+                  ],
                 ],
               ),
             ),
-            if (autoconclusivo == "No") ...[
-              TextField(
-                controller: sagaController,
-                decoration: const InputDecoration(labelText: 'Saga'),
+
+            const SizedBox(height: AppSpacing.xl),
+
+            const _SectionHeader(
+              icon: Icons.sell_outlined,
+              color: Color(0xFFD75784),
+              title: 'Género',
+              subtitle: 'Elige la categoría que mejor representa la historia',
+            ),
+
+            const SizedBox(height: AppSpacing.md),
+
+            ClubCard(
+              elevated: false,
+              padding: const EdgeInsets.all(AppSpacing.lg),
+              child: Wrap(
+                spacing: AppSpacing.sm,
+                runSpacing: AppSpacing.sm,
+                children: [
+                  for (final option in generos)
+                    ClubChip(
+                      label: '${option.emoji} ${option.label}',
+                      selected: genero == option.value,
+                      variant: genero == option.value
+                          ? ClubChipVariant.primary
+                          : ClubChipVariant.neutral,
+                      onTap: () {
+                        setState(() {
+                          genero = option.value;
+                        });
+                      },
+                    ),
+                ],
+              ),
+            ),
+
+            if (!esEdicion) ...[
+              const SizedBox(height: AppSpacing.xl),
+
+              const _SectionHeader(
+                icon: Icons.flag_outlined,
+                color: Color(0xFFE98325),
+                title: 'Prioridad',
+                subtitle: 'Indica cuánto te apetece empezar esta lectura',
               ),
 
-              const SizedBox(height: 16),
+              const SizedBox(height: AppSpacing.md),
 
-              TextField(
-                controller: numSagaController,
-                decoration: const InputDecoration(labelText: 'Nº Saga'),
+              ClubCard(
+                elevated: false,
+                padding: const EdgeInsets.all(AppSpacing.md),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: _PrioridadOption(
+                        label: 'Baja',
+                        emoji: '🟢',
+                        selected: prioridad == 'Baja',
+                        onTap: () {
+                          setState(() {
+                            prioridad = 'Baja';
+                          });
+                        },
+                      ),
+                    ),
+                    const SizedBox(width: AppSpacing.sm),
+                    Expanded(
+                      child: _PrioridadOption(
+                        label: 'Media',
+                        emoji: '🟡',
+                        selected: prioridad == 'Media',
+                        onTap: () {
+                          setState(() {
+                            prioridad = 'Media';
+                          });
+                        },
+                      ),
+                    ),
+                    const SizedBox(width: AppSpacing.sm),
+                    Expanded(
+                      child: _PrioridadOption(
+                        label: 'Alta',
+                        emoji: '🔴',
+                        selected: prioridad == 'Alta',
+                        onTap: () {
+                          setState(() {
+                            prioridad = 'Alta';
+                          });
+                        },
+                      ),
+                    ),
+                  ],
+                ),
               ),
-
-              const SizedBox(height: 16),
             ],
 
-            const SizedBox(height: 16),
+            const SizedBox(height: AppSpacing.xl),
 
-            const SizedBox(height: 24),
-
-            const Align(
-              alignment: Alignment.centerLeft,
-              child: Text(
-                '🏷️ Género',
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-              ),
+            _SectionHeader(
+              icon: Icons.image_outlined,
+              color: AppColors.info,
+              title: 'Enlaces y portada',
+              subtitle: esEdicion
+                  ? 'Puedes corregir manualmente la portada o Goodreads'
+                  : 'Son opcionales; intentaremos buscar la portada automáticamente',
             ),
 
-            const SizedBox(height: 12),
+            const SizedBox(height: AppSpacing.md),
 
-            Wrap(
-              spacing: 10,
-              runSpacing: 10,
-              children: [
-                _chipGenero(icono: '🐉', valor: 'Fantasía', texto: 'Fantasía'),
-                _chipGenero(
-                  icono: '🌹',
-                  valor: 'Romantasy',
-                  texto: 'Romantasy',
-                ),
-                _chipGenero(icono: '💕', valor: 'Romance', texto: 'Romance'),
-                _chipGenero(icono: '🔪', valor: 'Thriller', texto: 'Thriller'),
-                _chipGenero(
-                  icono: '🖤',
-                  valor: 'Dark Romance',
-                  texto: 'Dark Romance',
-                ),
-                _chipGenero(
-                  icono: '🎓',
-                  valor: 'Dark Academia',
-                  texto: 'Dark Academia',
-                ),
-                _chipGenero(icono: '🎭', valor: 'Drama', texto: 'Drama'),
-                _chipGenero(icono: '📜', valor: 'Clásicos', texto: 'Clásicos'),
-                _chipGenero(icono: '🌇', valor: 'Distopía', texto: 'Distopía'),
-
-                _chipGenero(
-                  icono: '🏙️',
-                  valor: 'Novela contemporánea',
-                  texto: 'Contemporánea',
-                ),
-                _chipGenero(
-                  icono: '🏰',
-                  valor: 'Novela Histórica',
-                  texto: 'Histórica',
-                ),
-                _chipGenero(
-                  icono: '🚀',
-                  valor: 'Ciencia Ficción',
-                  texto: 'Sci-Fi',
-                ),
-                _chipGenero(icono: '👻', valor: 'Terror', texto: 'Terror'),
-                _chipGenero(
-                  icono: '🕵️',
-                  valor: 'Novela Negra',
-                  texto: 'Novela Negra',
-                ),
-              ],
-            ),
-
-            const SizedBox(height: 16),
-
-            const SizedBox(height: 16),
-
-            const SizedBox(height: 24),
-
-            const Align(
-              alignment: Alignment.centerLeft,
-              child: Text(
-                '⭐ Prioridad',
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-              ),
-            ),
-
-            const SizedBox(height: 12),
-
-            Align(
-              alignment: Alignment.centerLeft,
-              child: Wrap(
-                spacing: 12,
+            ClubCard(
+              elevated: false,
+              padding: const EdgeInsets.all(AppSpacing.lg),
+              child: Column(
                 children: [
-                  ChoiceChip(
-                    label: const Text('🟢 Baja'),
-                    selected: prioridad == 'Baja',
-                    showCheckmark: false,
-                    selectedColor: Theme.of(
-                      context,
-                    ).colorScheme.primaryContainer,
-                    onSelected: (_) {
+                  InkWell(
+                    borderRadius: BorderRadius.circular(AppRadius.lg),
+                    onTap: () {
                       setState(() {
-                        prioridad = 'Baja';
+                        mostrarCamposAvanzados = !mostrarCamposAvanzados;
                       });
                     },
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(
+                        vertical: AppSpacing.xs,
+                      ),
+                      child: Row(
+                        children: [
+                          Container(
+                            width: 46,
+                            height: 46,
+                            decoration: BoxDecoration(
+                              color: AppColors.surfaceSoft,
+                              borderRadius: BorderRadius.circular(AppRadius.md),
+                            ),
+                            child: const Icon(
+                              Icons.link_rounded,
+                              color: AppColors.primary,
+                            ),
+                          ),
+
+                          const SizedBox(width: AppSpacing.md),
+
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'Datos opcionales',
+                                  style: AppTextStyles.subtitle.copyWith(
+                                    color: AppColors.textPrimary,
+                                    fontWeight: FontWeight.w800,
+                                  ),
+                                ),
+                                const SizedBox(height: AppSpacing.xs),
+                                Text(
+                                  'Goodreads y portada manual',
+                                  style: AppTextStyles.caption,
+                                ),
+                              ],
+                            ),
+                          ),
+
+                          Icon(
+                            mostrarCamposAvanzados
+                                ? Icons.keyboard_arrow_up_rounded
+                                : Icons.keyboard_arrow_down_rounded,
+                            color: AppColors.textMuted,
+                          ),
+                        ],
+                      ),
+                    ),
                   ),
 
-                  ChoiceChip(
-                    label: const Text('🟡 Media'),
-                    selected: prioridad == 'Media',
-                    showCheckmark: false,
-                    selectedColor: Theme.of(
-                      context,
-                    ).colorScheme.primaryContainer,
-                    onSelected: (_) {
-                      setState(() {
-                        prioridad = 'Media';
-                      });
-                    },
-                  ),
+                  if (mostrarCamposAvanzados) ...[
+                    const SizedBox(height: AppSpacing.lg),
 
-                  ChoiceChip(
-                    label: const Text('🔴 Alta'),
-                    selected: prioridad == 'Alta',
-                    showCheckmark: false,
-                    selectedColor: Theme.of(
-                      context,
-                    ).colorScheme.primaryContainer,
-                    onSelected: (_) {
-                      setState(() {
-                        prioridad = 'Alta';
-                      });
-                    },
-                  ),
+                    TextField(
+                      controller: goodreadsController,
+                      keyboardType: TextInputType.url,
+                      textInputAction: TextInputAction.next,
+                      autocorrect: false,
+                      decoration: const InputDecoration(
+                        labelText: 'URL de Goodreads',
+                        hintText: 'https://www.goodreads.com/...',
+                        prefixIcon: Icon(Icons.language_rounded),
+                      ),
+                    ),
+
+                    const SizedBox(height: AppSpacing.md),
+
+                    TextField(
+                      controller: coverUrlController,
+                      keyboardType: TextInputType.url,
+                      textInputAction: TextInputAction.done,
+                      autocorrect: false,
+                      decoration: InputDecoration(
+                        labelText: 'URL de la portada',
+                        hintText: 'https://.../portada.jpg',
+                        prefixIcon: const Icon(Icons.image_outlined),
+                        suffixIcon: portadaActual.isEmpty
+                            ? null
+                            : IconButton(
+                                tooltip: 'Quitar portada manual',
+                                icon: const Icon(Icons.close_rounded),
+                                onPressed: () {
+                                  coverUrlController.clear();
+                                },
+                              ),
+                      ),
+                    ),
+
+                    const SizedBox(height: AppSpacing.md),
+
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(AppSpacing.md),
+                      decoration: BoxDecoration(
+                        color: AppColors.surfaceSoft,
+                        borderRadius: BorderRadius.circular(AppRadius.md),
+                      ),
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Icon(
+                            Icons.info_outline_rounded,
+                            size: 19,
+                            color: AppColors.info,
+                          ),
+                          const SizedBox(width: AppSpacing.sm),
+                          Expanded(
+                            child: Text(
+                              portadaActual.isEmpty
+                                  ? 'Si la dejas vacía, el servidor intentará encontrar una portada segura automáticamente.'
+                                  : 'La URL manual sustituirá a la portada actual.',
+                              style: AppTextStyles.caption.copyWith(
+                                height: 1.4,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
                 ],
               ),
             ),
 
-            const SizedBox(height: 16),
+            const SizedBox(height: AppSpacing.xl),
 
-            const SizedBox(height: 32),
+            ClubButton(
+              label: guardando
+                  ? esEdicion
+                        ? 'Guardando cambios...'
+                        : 'Añadiendo libro...'
+                  : esEdicion
+                  ? 'Guardar cambios'
+                  : 'Añadir libro',
+              icon: esEdicion ? Icons.save_outlined : Icons.add_rounded,
+              onPressed: guardando ? null : _guardarLibro,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 
-            SizedBox(
-              width: double.infinity,
+  Widget _cabecera() {
+    final colorPrincipal = Theme.of(context).colorScheme.primary;
 
-              child: ElevatedButton(
-                onPressed: guardando ? null : guardarLibro,
+    return ClubCard(
+      elevated: false,
+      padding: const EdgeInsets.all(AppSpacing.xl),
+      gradient: LinearGradient(
+        begin: Alignment.topLeft,
+        end: Alignment.bottomRight,
+        colors: [AppColors.surfaceSoft, colorPrincipal.withOpacity(0.10)],
+      ),
+      borderColor: colorPrincipal.withOpacity(0.18),
+      child: Column(
+        children: [
+          _PortadaPreview(
+            title: tituloActual,
+            imageUrl: portadaActual,
+            color: colorPrincipal,
+          ),
 
-                child: Padding(
-                  padding: const EdgeInsets.all(16),
+          const SizedBox(height: AppSpacing.lg),
 
-                  child: Text(guardando ? 'Guardando...' : '➕ Añadir libro'),
+          Text(
+            tituloActual.isEmpty
+                ? esEdicion
+                      ? 'Edita los datos del libro'
+                      : 'Añade una nueva historia'
+                : tituloActual,
+            textAlign: TextAlign.center,
+            maxLines: 3,
+            overflow: TextOverflow.ellipsis,
+            style: AppTextStyles.title.copyWith(fontSize: 27, height: 1.2),
+          ),
+
+          const SizedBox(height: AppSpacing.sm),
+
+          Text(
+            esEdicion
+                ? 'Corrige el título, género, saga o portada sin perder lecturas, comentarios ni valoraciones.'
+                : 'Completa los datos básicos y el libro se añadirá a tu lista de pendientes.',
+            textAlign: TextAlign.center,
+            style: AppTextStyles.bodySecondary.copyWith(height: 1.45),
+          ),
+
+          const SizedBox(height: AppSpacing.lg),
+
+          ClubChip(
+            label: esEdicion ? 'Editando libro' : 'Nueva incorporación',
+            icon: esEdicion ? Icons.edit_outlined : Icons.auto_stories_outlined,
+            variant: ClubChipVariant.primary,
+          ),
+        ],
+      ),
+    );
+  }
+
+  @override
+  void dispose() {
+    libroController.removeListener(_actualizarVistaPrevia);
+    coverUrlController.removeListener(_actualizarVistaPrevia);
+
+    libroController.dispose();
+    sagaController.dispose();
+    numSagaController.dispose();
+    goodreadsController.dispose();
+    coverUrlController.dispose();
+
+    super.dispose();
+  }
+}
+
+class _SectionHeader extends StatelessWidget {
+  final IconData icon;
+  final Color color;
+  final String title;
+  final String subtitle;
+
+  const _SectionHeader({
+    required this.icon,
+    required this.color,
+    required this.title,
+    required this.subtitle,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Container(
+          width: 54,
+          height: 54,
+          decoration: BoxDecoration(
+            color: color.withOpacity(0.13),
+            borderRadius: BorderRadius.circular(AppRadius.lg),
+          ),
+          child: Icon(icon, color: color, size: 27),
+        ),
+
+        const SizedBox(width: AppSpacing.md),
+
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                title,
+                style: AppTextStyles.section.copyWith(
+                  color: AppColors.textPrimary,
                 ),
+              ),
+              const SizedBox(height: AppSpacing.xs),
+              Text(
+                subtitle,
+                style: AppTextStyles.bodySecondary.copyWith(height: 1.35),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _PortadaPreview extends StatelessWidget {
+  final String title;
+  final String imageUrl;
+  final Color color;
+
+  const _PortadaPreview({
+    required this.title,
+    required this.imageUrl,
+    required this.color,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final url = imageUrl.trim();
+
+    return Container(
+      width: 118,
+      height: 168,
+      clipBehavior: Clip.antiAlias,
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.10),
+        borderRadius: BorderRadius.circular(AppRadius.lg),
+        border: Border.all(color: color.withOpacity(0.18)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.08),
+            blurRadius: 18,
+            offset: const Offset(0, 8),
+          ),
+        ],
+      ),
+      child: url.isEmpty
+          ? _PortadaFallback(title: title, color: color)
+          : Image.network(
+              url,
+              fit: BoxFit.cover,
+              errorBuilder: (_, __, ___) {
+                return _PortadaFallback(
+                  title: title,
+                  color: color,
+                  error: true,
+                );
+              },
+              loadingBuilder: (context, child, progress) {
+                if (progress == null) return child;
+
+                return Center(
+                  child: CircularProgressIndicator(
+                    value: progress.expectedTotalBytes == null
+                        ? null
+                        : progress.cumulativeBytesLoaded /
+                              progress.expectedTotalBytes!,
+                  ),
+                );
+              },
+            ),
+    );
+  }
+}
+
+class _PortadaFallback extends StatelessWidget {
+  final String title;
+  final Color color;
+  final bool error;
+
+  const _PortadaFallback({
+    required this.title,
+    required this.color,
+    this.error = false,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.all(AppSpacing.md),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(
+            error ? Icons.broken_image_outlined : Icons.auto_stories_outlined,
+            color: color,
+            size: 38,
+          ),
+          const SizedBox(height: AppSpacing.sm),
+          Text(
+            error
+                ? 'No se puede cargar'
+                : title.trim().isEmpty
+                ? 'Nueva historia'
+                : title,
+            maxLines: 4,
+            overflow: TextOverflow.ellipsis,
+            textAlign: TextAlign.center,
+            style: AppTextStyles.caption.copyWith(
+              color: AppColors.textPrimary,
+              fontWeight: FontWeight.w800,
+              height: 1.25,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _SelectorOption extends StatelessWidget {
+  final bool selected;
+  final IconData icon;
+  final String title;
+  final String subtitle;
+  final VoidCallback onTap;
+
+  const _SelectorOption({
+    required this.selected,
+    required this.icon,
+    required this.title,
+    required this.subtitle,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final color = Theme.of(context).colorScheme.primary;
+
+    return InkWell(
+      borderRadius: BorderRadius.circular(AppRadius.lg),
+      onTap: onTap,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 180),
+        padding: const EdgeInsets.all(AppSpacing.md),
+        decoration: BoxDecoration(
+          color: selected ? color.withOpacity(0.10) : AppColors.surfaceSoft,
+          borderRadius: BorderRadius.circular(AppRadius.lg),
+          border: Border.all(
+            color: selected ? color.withOpacity(0.38) : AppColors.border,
+          ),
+        ),
+        child: Column(
+          children: [
+            Icon(icon, color: selected ? color : AppColors.textMuted, size: 28),
+            const SizedBox(height: AppSpacing.sm),
+            Text(
+              title,
+              style: AppTextStyles.subtitle.copyWith(
+                color: selected ? color : AppColors.textPrimary,
+                fontWeight: FontWeight.w800,
+              ),
+            ),
+            const SizedBox(height: AppSpacing.xs),
+            Text(
+              subtitle,
+              textAlign: TextAlign.center,
+              maxLines: 2,
+              style: AppTextStyles.caption,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _PrioridadOption extends StatelessWidget {
+  final String label;
+  final String emoji;
+  final bool selected;
+  final VoidCallback onTap;
+
+  const _PrioridadOption({
+    required this.label,
+    required this.emoji,
+    required this.selected,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final color = Theme.of(context).colorScheme.primary;
+
+    return InkWell(
+      borderRadius: BorderRadius.circular(AppRadius.lg),
+      onTap: onTap,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 180),
+        padding: const EdgeInsets.symmetric(
+          horizontal: AppSpacing.sm,
+          vertical: AppSpacing.md,
+        ),
+        decoration: BoxDecoration(
+          color: selected ? color.withOpacity(0.10) : AppColors.surfaceSoft,
+          borderRadius: BorderRadius.circular(AppRadius.lg),
+          border: Border.all(
+            color: selected ? color.withOpacity(0.38) : Colors.transparent,
+          ),
+        ),
+        child: Column(
+          children: [
+            Text(emoji, style: const TextStyle(fontSize: 23)),
+            const SizedBox(height: AppSpacing.xs),
+            Text(
+              label,
+              style: AppTextStyles.body.copyWith(
+                color: selected ? color : AppColors.textSecondary,
+                fontWeight: FontWeight.w800,
               ),
             ),
           ],
@@ -341,4 +957,12 @@ class _NuevoLibroPageState extends State<NuevoLibroPage> {
       ),
     );
   }
+}
+
+class _GeneroOption {
+  final String emoji;
+  final String value;
+  final String label;
+
+  const _GeneroOption(this.emoji, this.value, this.label);
 }

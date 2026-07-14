@@ -1,9 +1,15 @@
 import 'package:flutter/material.dart';
-import 'respuesta_card.dart';
+
 import '../../models/comentario_lectura.dart';
 import '../../services/api_service.dart';
-import 'avatar_usuario.dart';
+import '../../theme/app_colors.dart';
+import '../../theme/app_radius.dart';
+import '../../theme/app_spacing.dart';
+import '../../theme/app_text_styles.dart';
+import '../common/club_avatar.dart';
+import '../common/club_card.dart';
 import 'fecha_relativa.dart';
+import 'respuesta_card.dart';
 
 class ComentarioCard extends StatefulWidget {
   final ComentarioLectura comentario;
@@ -24,11 +30,11 @@ class ComentarioCard extends StatefulWidget {
 class _ComentarioCardState extends State<ComentarioCard> {
   late bool miLike;
   late int likes;
+
   bool respondiendo = false;
+  bool enviando = false;
 
   final TextEditingController respuestaController = TextEditingController();
-
-  bool enviando = false;
 
   @override
   void initState() {
@@ -46,15 +52,15 @@ class _ComentarioCardState extends State<ComentarioCard> {
     if (!mounted) return;
 
     setState(() {
-      miLike = json["miLike"] ?? false;
-      likes = json["likes"] ?? likes;
+      miLike = json['miLike'] ?? false;
+      likes = json['likes'] ?? likes;
     });
   }
 
   Future<void> _enviarRespuesta() async {
     final texto = respuestaController.text.trim();
 
-    if (texto.isEmpty) return;
+    if (texto.isEmpty || enviando) return;
 
     setState(() {
       enviando = true;
@@ -62,9 +68,7 @@ class _ComentarioCardState extends State<ComentarioCard> {
 
     final ok = await ApiService().guardarRespuestaComentario(
       comentarioId: widget.comentario.id,
-
       usuario: widget.usuarioActual,
-
       respuesta: texto,
     );
 
@@ -72,19 +76,27 @@ class _ComentarioCardState extends State<ComentarioCard> {
 
     setState(() {
       enviando = false;
+    });
 
-      respuestaController.clear();
+    if (!ok) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('No se ha podido publicar la respuesta.')),
+      );
+      return;
+    }
 
+    respuestaController.clear();
+    FocusScope.of(context).unfocus();
+
+    setState(() {
       respondiendo = false;
     });
 
     widget.onActualizar();
 
-    if (ok) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text("Respuesta publicada 💜")));
-    }
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(const SnackBar(content: Text('Respuesta publicada 💜')));
   }
 
   Future<void> _editarComentario() async {
@@ -95,30 +107,33 @@ class _ComentarioCardState extends State<ComentarioCard> {
     final nuevo = await showDialog<String>(
       context: context,
       builder: (_) => AlertDialog(
-        title: const Text("Editar comentario"),
+        title: const Text('Editar comentario'),
         content: TextField(
           controller: controller,
           maxLines: 5,
           autofocus: true,
+          decoration: const InputDecoration(
+            hintText: 'Escribe tu comentario...',
+          ),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text("Cancelar"),
+            child: const Text('Cancelar'),
           ),
           FilledButton(
             onPressed: () {
               Navigator.pop(context, controller.text.trim());
             },
-            child: const Text("Guardar"),
+            child: const Text('Guardar'),
           ),
         ],
       ),
     );
 
-    if (nuevo == null) return;
+    controller.dispose();
 
-    if (nuevo.isEmpty) return;
+    if (nuevo == null || nuevo.isEmpty) return;
 
     final ok = await ApiService().editarComentario(
       comentarioId: widget.comentario.id,
@@ -131,7 +146,7 @@ class _ComentarioCardState extends State<ComentarioCard> {
       widget.onActualizar();
 
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Comentario actualizado 💜")),
+        const SnackBar(content: Text('Comentario actualizado 💜')),
       );
     }
   }
@@ -140,16 +155,16 @@ class _ComentarioCardState extends State<ComentarioCard> {
     final confirmar = await showDialog<bool>(
       context: context,
       builder: (_) => AlertDialog(
-        title: const Text("Eliminar comentario"),
-        content: const Text("¿Seguro que quieres eliminar este comentario?"),
+        title: const Text('Eliminar comentario'),
+        content: const Text('¿Seguro que quieres eliminar este comentario?'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text("Cancelar"),
+            child: const Text('Cancelar'),
           ),
           FilledButton(
             onPressed: () => Navigator.pop(context, true),
-            child: const Text("Eliminar"),
+            child: const Text('Eliminar'),
           ),
         ],
       ),
@@ -168,19 +183,17 @@ class _ComentarioCardState extends State<ComentarioCard> {
 
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(const SnackBar(content: Text("Comentario eliminado")));
+      ).showSnackBar(const SnackBar(content: Text('Comentario eliminado')));
     }
   }
 
   void _accion(String accion) {
-    switch (accion) {
-      case "editar":
-        _editarComentario();
-        break;
+    if (accion == 'editar') {
+      _editarComentario();
+    }
 
-      case "eliminar":
-        _eliminarComentario();
-        break;
+    if (accion == 'eliminar') {
+      _eliminarComentario();
     }
   }
 
@@ -189,13 +202,18 @@ class _ComentarioCardState extends State<ComentarioCard> {
     final comentario = widget.comentario;
 
     if (comentario.eliminado) {
-      return Card(
-        margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-        child: ListTile(
-          title: Text(
-            "Este comentario fue eliminado.",
-            style: TextStyle(
-              color: Colors.grey.shade600,
+      return Padding(
+        padding: const EdgeInsets.symmetric(
+          horizontal: AppSpacing.md,
+          vertical: AppSpacing.xs,
+        ),
+        child: ClubCard(
+          elevated: false,
+          padding: const EdgeInsets.all(AppSpacing.md),
+          backgroundColor: AppColors.surfaceSoft,
+          child: Text(
+            'Este comentario fue eliminado.',
+            style: AppTextStyles.bodySecondary.copyWith(
               fontStyle: FontStyle.italic,
             ),
           ),
@@ -203,159 +221,220 @@ class _ComentarioCardState extends State<ComentarioCard> {
       );
     }
 
-    return Card(
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-
-        child: Row(
+    return Padding(
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.md,
+        vertical: AppSpacing.sm,
+      ),
+      child: ClubCard(
+        elevated: false,
+        padding: const EdgeInsets.all(AppSpacing.md),
+        child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
-
           children: [
-            AvatarUsuario(nombre: comentario.usuario),
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                ClubAvatar(nombre: comentario.usuario, size: 48),
 
-            const SizedBox(width: 14),
+                const SizedBox(width: AppSpacing.md),
 
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-
-                children: [
-                  Row(
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Expanded(
-                        child: Text(
-                          comentario.usuario,
-                          style: const TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 17,
-                          ),
+                      Text(
+                        comentario.usuario,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: AppTextStyles.subtitle.copyWith(
+                          color: AppColors.textPrimary,
+                          fontWeight: FontWeight.w800,
                         ),
                       ),
 
-                      PopupMenuButton<String>(
-                        onSelected: _accion,
+                      const SizedBox(height: AppSpacing.xxs),
 
-                        itemBuilder: (_) => [
-                          if (comentario.esMio)
-                            const PopupMenuItem(
-                              value: "editar",
-                              child: Text("Editar"),
-                            ),
+                      Text(
+                        FechaRelativa.formato(comentario.fecha),
+                        style: AppTextStyles.caption.copyWith(
+                          color: AppColors.textMuted,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
 
-                          if (comentario.esMio)
-                            const PopupMenuItem(
-                              value: "eliminar",
-                              child: Text("Eliminar"),
+                if (comentario.esMio)
+                  PopupMenuButton<String>(
+                    padding: EdgeInsets.zero,
+                    icon: const Icon(
+                      Icons.more_horiz_rounded,
+                      color: AppColors.textMuted,
+                    ),
+                    onSelected: _accion,
+                    itemBuilder: (_) => const [
+                      PopupMenuItem(value: 'editar', child: Text('Editar')),
+                      PopupMenuItem(value: 'eliminar', child: Text('Eliminar')),
+                    ],
+                  ),
+              ],
+            ),
+
+            const SizedBox(height: AppSpacing.md),
+
+            Text(
+              comentario.comentario,
+              style: AppTextStyles.body.copyWith(
+                fontSize: 16,
+                height: 1.55,
+                color: AppColors.textPrimary,
+              ),
+            ),
+
+            if (comentario.editado) ...[
+              const SizedBox(height: AppSpacing.xs),
+              Text(
+                'Editado',
+                style: AppTextStyles.caption.copyWith(
+                  fontStyle: FontStyle.italic,
+                ),
+              ),
+            ],
+
+            const SizedBox(height: AppSpacing.md),
+
+            Wrap(
+              spacing: AppSpacing.sm,
+              runSpacing: AppSpacing.xs,
+              children: [
+                Material(
+                  color: Colors.transparent,
+                  child: InkWell(
+                    onTap: _toggleLike,
+                    borderRadius: BorderRadius.circular(AppRadius.pill),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: AppSpacing.sm,
+                        vertical: AppSpacing.xs,
+                      ),
+                      decoration: BoxDecoration(
+                        color: miLike
+                            ? const Color(0xFFFFF1F1)
+                            : AppColors.surfaceSoft,
+                        borderRadius: BorderRadius.circular(AppRadius.pill),
+                        border: Border.all(
+                          color: miLike
+                              ? const Color(0xFFF5C7C7)
+                              : AppColors.border,
+                        ),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            miLike
+                                ? Icons.favorite_rounded
+                                : Icons.favorite_border_rounded,
+                            size: 19,
+                            color: miLike
+                                ? AppColors.danger
+                                : AppColors.textMuted,
+                          ),
+                          const SizedBox(width: AppSpacing.xs),
+                          Text(
+                            '$likes',
+                            style: AppTextStyles.caption.copyWith(
+                              color: miLike
+                                  ? AppColors.danger
+                                  : AppColors.textSecondary,
+                              fontWeight: FontWeight.w800,
                             ),
+                          ),
                         ],
                       ),
-                    ],
-                  ),
-
-                  Text(
-                    FechaRelativa.formato(comentario.fecha),
-                    style: const TextStyle(color: Colors.grey),
-                  ),
-
-                  const SizedBox(height: 14),
-
-                  Text(
-                    comentario.comentario,
-                    style: const TextStyle(fontSize: 16),
-                  ),
-
-                  if (comentario.editado)
-                    const Padding(
-                      padding: EdgeInsets.only(top: 8),
-                      child: Text(
-                        "(editado)",
-                        style: TextStyle(color: Colors.grey, fontSize: 12),
-                      ),
                     ),
-
-                  const SizedBox(height: 16),
-
-                  Row(
-                    children: [
-                      InkWell(
-                        borderRadius: BorderRadius.circular(20),
-
-                        onTap: _toggleLike,
-
-                        child: Row(
-                          children: [
-                            Icon(
-                              miLike ? Icons.favorite : Icons.favorite_border,
-                              color: miLike ? Colors.red : Colors.grey,
-                              size: 20,
-                            ),
-
-                            const SizedBox(width: 6),
-
-                            Text(
-                              "$likes",
-                              style: const TextStyle(
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-
-                      const SizedBox(width: 24),
-
-                      TextButton.icon(
-                        onPressed: () {
-                          setState(() {
-                            respondiendo = !respondiendo;
-                          });
-                        },
-
-                        icon: const Icon(Icons.reply, size: 18),
-
-                        label: const Text("Responder"),
-                      ),
-                    ],
                   ),
-                  if (respondiendo) ...[
-                    const SizedBox(height: 16),
+                ),
 
+                TextButton.icon(
+                  onPressed: () {
+                    setState(() {
+                      respondiendo = !respondiendo;
+                    });
+                  },
+                  icon: Icon(
+                    respondiendo ? Icons.close_rounded : Icons.reply_rounded,
+                    size: 19,
+                  ),
+                  label: Text(respondiendo ? 'Cancelar' : 'Responder'),
+                ),
+              ],
+            ),
+
+            if (respondiendo) ...[
+              const SizedBox(height: AppSpacing.md),
+
+              Container(
+                padding: const EdgeInsets.all(AppSpacing.sm),
+                decoration: BoxDecoration(
+                  color: AppColors.surfaceSoft,
+                  borderRadius: BorderRadius.circular(AppRadius.lg),
+                  border: Border.all(color: AppColors.border),
+                ),
+                child: Column(
+                  children: [
                     TextField(
                       controller: respuestaController,
-                      maxLines: null,
+                      enabled: !enviando,
+                      minLines: 2,
+                      maxLines: 6,
+                      maxLength: 3000,
+                      keyboardType: TextInputType.multiline,
+                      textInputAction: TextInputAction.newline,
+                      scrollPadding: const EdgeInsets.only(bottom: 180),
                       decoration: const InputDecoration(
-                        hintText: "Escribe una respuesta...",
-                        border: OutlineInputBorder(),
+                        hintText: 'Escribe una respuesta...',
+                        filled: false,
+                        border: InputBorder.none,
+                        counterStyle: TextStyle(color: AppColors.textMuted),
                       ),
                     ),
 
-                    const SizedBox(height: 10),
+                    const SizedBox(height: AppSpacing.xs),
 
                     Align(
                       alignment: Alignment.centerRight,
                       child: FilledButton.icon(
                         onPressed: enviando ? null : _enviarRespuesta,
-                        icon: const Icon(Icons.send),
-                        label: const Text("Responder"),
-                      ),
-                    ),
-
-                    const SizedBox(height: 8),
-                  ],
-                  if (comentario.respuestas.isNotEmpty) ...[
-                    const SizedBox(height: 16),
-
-                    ...comentario.respuestas.map(
-                      (respuesta) => RespuestaCard(
-                        respuesta: respuesta,
-                        onActualizar: widget.onActualizar,
+                        icon: enviando
+                            ? const SizedBox(
+                                width: 17,
+                                height: 17,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  color: Colors.white,
+                                ),
+                              )
+                            : const Icon(Icons.send_rounded),
+                        label: Text(enviando ? 'Publicando...' : 'Responder'),
                       ),
                     ),
                   ],
-                ],
+                ),
               ),
-            ),
+            ],
+
+            if (comentario.respuestas.isNotEmpty) ...[
+              const SizedBox(height: AppSpacing.sm),
+
+              ...comentario.respuestas.map(
+                (respuesta) => RespuestaCard(
+                  respuesta: respuesta,
+                  onActualizar: widget.onActualizar,
+                ),
+              ),
+            ],
           ],
         ),
       ),

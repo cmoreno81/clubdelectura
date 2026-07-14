@@ -5,6 +5,7 @@ class ComentarioInput extends StatelessWidget {
   final VoidCallback onEnviar;
   final bool enviando;
   final String hintText;
+  final bool esReflexion;
 
   const ComentarioInput({
     super.key,
@@ -12,62 +13,149 @@ class ComentarioInput extends StatelessWidget {
     required this.onEnviar,
     required this.enviando,
     required this.hintText,
+    this.esReflexion = false,
   });
 
   @override
   Widget build(BuildContext context) {
-    return SafeArea(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Row(
-          children: [
-            Expanded(
-              child: TextField(
+    final tecladoAbierto = MediaQuery.viewInsetsOf(context).bottom > 0;
+
+    return Material(
+      color: Theme.of(context).scaffoldBackgroundColor,
+      elevation: 8,
+      shadowColor: Colors.black12,
+      child: SafeArea(
+        top: false,
+        child: AnimatedPadding(
+          duration: const Duration(milliseconds: 180),
+          curve: Curves.easeOut,
+          padding: EdgeInsets.fromLTRB(
+            16,
+            tecladoAbierto ? 6 : 14,
+            16,
+            tecladoAbierto ? 6 : 12,
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
                 controller: controller,
                 enabled: !enviando,
-                maxLines: null,
+
+                /*
+                 * Con teclado abierto limitamos la altura.
+                 * El texto largo continúa mediante scroll interno.
+                 */
+                minLines: tecladoAbierto
+                    ? 2
+                    : esReflexion
+                    ? 5
+                    : 3,
+
+                maxLines: tecladoAbierto
+                    ? esReflexion
+                          ? 4
+                          : 3
+                    : esReflexion
+                    ? 9
+                    : 6,
+
+                maxLength: 5000,
+                keyboardType: TextInputType.multiline,
+                textInputAction: TextInputAction.newline,
+                scrollPadding: const EdgeInsets.only(bottom: 180),
+
                 decoration: InputDecoration(
                   hintText: hintText,
-                  border: OutlineInputBorder(),
+                  hintStyle: TextStyle(
+                    color: Colors.grey.shade600,
+                    height: 1.4,
+                  ),
+
+                  filled: true,
+                  fillColor: const Color(0xFFF7F1FF),
+                  alignLabelWithHint: true,
+
+                  prefixIcon: Padding(
+                    padding: EdgeInsets.only(
+                      left: 14,
+                      right: 10,
+                      bottom: tecladoAbierto
+                          ? 20
+                          : esReflexion
+                          ? 90
+                          : 35,
+                    ),
+                    child: const Icon(
+                      Icons.edit_note_rounded,
+                      color: Color(0xFF6F4DBF),
+                      size: 26,
+                    ),
+                  ),
+
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(20),
+                    borderSide: BorderSide.none,
+                  ),
+
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(20),
+                    borderSide: const BorderSide(color: Color(0xFFE1D4F5)),
+                  ),
+
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(20),
+                    borderSide: const BorderSide(
+                      color: Color(0xFF6F4DBF),
+                      width: 1.5,
+                    ),
+                  ),
+
+                  contentPadding: const EdgeInsets.fromLTRB(14, 16, 14, 16),
                 ),
               ),
-            ),
 
-            const SizedBox(width: 12),
+              const SizedBox(height: 10),
 
-            FilledButton(
-              onPressed: onEnviar,
-              child: AnimatedSwitcher(
-                duration: const Duration(milliseconds: 200),
-                child: enviando
-                    ? const Row(
-                        key: ValueKey("publicando"),
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          SizedBox(
-                            width: 18,
-                            height: 18,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              color: Colors.white,
-                            ),
+              SizedBox(
+                width: double.infinity,
+                child: FilledButton.icon(
+                  onPressed: enviando ? null : onEnviar,
+
+                  icon: enviando
+                      ? const SizedBox(
+                          width: 19,
+                          height: 19,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: Colors.white,
                           ),
-                          SizedBox(width: 10),
-                          Text("Publicando..."),
-                        ],
-                      )
-                    : const Row(
-                        key: ValueKey("enviar"),
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(Icons.send),
-                          SizedBox(width: 6),
-                          Text("Enviar"),
-                        ],
-                      ),
+                        )
+                      : const Icon(Icons.send_rounded),
+
+                  label: AnimatedSwitcher(
+                    duration: const Duration(milliseconds: 180),
+                    child: Text(
+                      enviando
+                          ? 'Publicando...'
+                          : esReflexion
+                          ? 'Publicar reflexión'
+                          : 'Publicar comentario',
+                      key: ValueKey(enviando),
+                    ),
+                  ),
+
+                  style: FilledButton.styleFrom(
+                    minimumSize: const Size(0, 52),
+                    backgroundColor: const Color(0xFF6F4DBF),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                  ),
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );

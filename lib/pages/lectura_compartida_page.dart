@@ -15,6 +15,8 @@ class LecturaCompartidaPage extends StatefulWidget {
 class _LecturaCompartidaPageState extends State<LecturaCompartidaPage> {
   late Future<LecturaCompartida> future;
 
+  final Set<String> _capitulosPlegados = <String>{};
+
   @override
   void initState() {
     super.initState();
@@ -23,6 +25,16 @@ class _LecturaCompartidaPageState extends State<LecturaCompartidaPage> {
 
   void _recargar() {
     future = ApiService().getLecturaCompartida();
+  }
+
+  void _alternarCapitulo(String nombre) {
+    setState(() {
+      if (_capitulosPlegados.contains(nombre)) {
+        _capitulosPlegados.remove(nombre);
+      } else {
+        _capitulosPlegados.add(nombre);
+      }
+    });
   }
 
   @override
@@ -88,7 +100,7 @@ class _LecturaCompartidaPageState extends State<LecturaCompartidaPage> {
 
                     FilledButton.icon(
                       style: FilledButton.styleFrom(
-                        minimumSize: const Size.fromHeight(56),
+                        minimumSize: const Size(0, 56),
                       ),
                       icon: const Icon(Icons.auto_stories),
                       label: const Text("Crear conversación"),
@@ -215,6 +227,10 @@ class _LecturaCompartidaPageState extends State<LecturaCompartidaPage> {
               ...lectura.capitulosDisponibles.map(
                 (capitulo) => CapituloTile(
                   capitulo: capitulo,
+                  plegado: _capitulosPlegados.contains(capitulo.nombre),
+                  onTogglePlegado: () {
+                    _alternarCapitulo(capitulo.nombre);
+                  },
                   onTap: () async {
                     await Navigator.push(
                       context,

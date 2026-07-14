@@ -1,26 +1,20 @@
 import 'package:flutter/material.dart';
+
 import '../../models/dashboard.dart';
 import '../../models/estado_club.dart';
+import '../../theme/app_colors.dart';
+import '../../theme/app_radius.dart';
+import '../../theme/app_spacing.dart';
+import '../../theme/app_text_styles.dart';
+import '../common/club_book_cover.dart';
+import '../common/club_chip.dart';
 import 'escenas/escena_votacion.dart';
 
 class DirectorEscenas {
   Widget construir({required EstadoClub estado, required Dashboard dashboard}) {
     switch (estado.contenido) {
       case ContenidoClub.preparando:
-        return const Column(
-          children: [
-            Text(
-              "La próxima lectura",
-              textAlign: TextAlign.center,
-              style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
-            ),
-            SizedBox(height: 10),
-            Text(
-              "Muy pronto conoceremos las candidatas.",
-              textAlign: TextAlign.center,
-            ),
-          ],
-        );
+        return _preparando();
 
       case ContenidoClub.candidatas:
         return EscenaVotacion(
@@ -28,53 +22,174 @@ class DirectorEscenas {
         );
 
       case ContenidoClub.ganador:
-        return Text(
-          dashboard.clubvision.mensaje,
-          textAlign: TextAlign.center,
-          style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-        );
+        return _ganador(dashboard);
 
       case ContenidoClub.lectura:
-        final lectura = dashboard.lecturaActual;
+        return _lectura(dashboard);
+    }
+  }
 
-        return Column(
-          children: [
-            const SizedBox(height: 10),
+  Widget _preparando() {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(AppSpacing.lg),
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.58),
+        borderRadius: BorderRadius.circular(AppRadius.lg),
+      ),
+      child: const Column(
+        children: [
+          Icon(Icons.auto_awesome_rounded, color: AppColors.primary, size: 30),
 
-            Text(
-              lectura.titulo,
-              textAlign: TextAlign.center,
-              style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
-            ),
+          SizedBox(height: AppSpacing.sm),
 
-            const SizedBox(height: 16),
+          Text(
+            'La próxima lectura',
+            textAlign: TextAlign.center,
+            style: AppTextStyles.section,
+          ),
 
-            if (lectura.comentarios > 0) ...[
-              Text(
-                "💬 ${lectura.comentarios} comentarios · ❤️ ${lectura.likes}",
-                textAlign: TextAlign.center,
-                style: const TextStyle(fontWeight: FontWeight.bold),
-              ),
+          SizedBox(height: AppSpacing.xs),
 
-              const SizedBox(height: 6),
+          Text(
+            'Muy pronto conoceremos las candidatas.',
+            textAlign: TextAlign.center,
+            style: AppTextStyles.bodySecondary,
+          ),
+        ],
+      ),
+    );
+  }
 
-              if (lectura.ultimaActividad.isNotEmpty)
+  Widget _ganador(Dashboard dashboard) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(AppSpacing.lg),
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.58),
+        borderRadius: BorderRadius.circular(AppRadius.lg),
+      ),
+      child: Column(
+        children: [
+          const Icon(
+            Icons.workspace_premium_rounded,
+            color: AppColors.gold,
+            size: 40,
+          ),
+
+          const SizedBox(height: AppSpacing.md),
+
+          Text(
+            dashboard.clubvision.mensaje,
+            textAlign: TextAlign.center,
+            style: AppTextStyles.section,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _lectura(Dashboard dashboard) {
+    final lectura = dashboard.lecturaActual;
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(AppSpacing.md),
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.58),
+        borderRadius: BorderRadius.circular(AppRadius.xl),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          ClubBookCover(
+            title: lectura.titulo,
+            imageUrl: lectura.coverUrl,
+            width: 105,
+            showShadow: true,
+            heroTag: 'lectura-actual-${lectura.titulo}',
+          ),
+
+          const SizedBox(width: AppSpacing.md),
+
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
                 Text(
-                  lectura.ultimaActividad,
-                  textAlign: TextAlign.center,
-                  style: const TextStyle(color: Colors.black54, fontSize: 13),
+                  lectura.titulo,
+                  maxLines: 3,
+                  overflow: TextOverflow.ellipsis,
+                  style: AppTextStyles.section.copyWith(
+                    fontSize: 20,
+                    height: 1.2,
+                  ),
                 ),
 
-              const SizedBox(height: 12),
-            ],
+                const SizedBox(height: AppSpacing.md),
 
-            Text(
-              "👥 ${lectura.totalLeyendo} leyendo · ✅ ${lectura.totalFinalizado} finalizaron",
-              textAlign: TextAlign.center,
-              style: const TextStyle(color: Colors.black54),
+                Wrap(
+                  spacing: AppSpacing.xs,
+                  runSpacing: AppSpacing.xs,
+                  children: [
+                    if (lectura.comentarios > 0)
+                      ClubChip(
+                        label: '${lectura.comentarios}',
+                        icon: Icons.chat_bubble_outline_rounded,
+                        variant: ClubChipVariant.primary,
+                      ),
+
+                    if (lectura.likes > 0)
+                      ClubChip(
+                        label: '${lectura.likes}',
+                        icon: Icons.favorite_border_rounded,
+                        variant: ClubChipVariant.danger,
+                      ),
+
+                    ClubChip(
+                      label: '${lectura.totalLeyendo} leyendo',
+                      icon: Icons.people_outline_rounded,
+                      variant: ClubChipVariant.info,
+                    ),
+
+                    ClubChip(
+                      label: '${lectura.totalFinalizado} finalizaron',
+                      icon: Icons.check_circle_outline_rounded,
+                      variant: ClubChipVariant.success,
+                    ),
+                  ],
+                ),
+
+                if (lectura.ultimaActividad.isNotEmpty) ...[
+                  const SizedBox(height: AppSpacing.md),
+
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Icon(
+                        Icons.schedule_rounded,
+                        size: 16,
+                        color: AppColors.textMuted,
+                      ),
+
+                      const SizedBox(width: AppSpacing.xs),
+
+                      Expanded(
+                        child: Text(
+                          lectura.ultimaActividad,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          style: AppTextStyles.caption,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ],
             ),
-          ],
-        );
-    }
+          ),
+        ],
+      ),
+    );
   }
 }

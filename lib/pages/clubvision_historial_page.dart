@@ -2,6 +2,12 @@ import 'package:flutter/material.dart';
 
 import '../models/historial_clubvision.dart';
 import '../services/api_service.dart';
+import '../theme/app_colors.dart';
+import '../theme/app_radius.dart';
+import '../theme/app_spacing.dart';
+import '../theme/app_text_styles.dart';
+import '../widgets/common/club_card.dart';
+import '../widgets/common/club_chip.dart';
 import '../widgets/error_view.dart';
 
 class ClubvisionHistorialPage extends StatefulWidget {
@@ -18,33 +24,41 @@ class _ClubvisionHistorialPageState extends State<ClubvisionHistorialPage> {
   @override
   void initState() {
     super.initState();
+    _recargar();
+  }
 
+  void _recargar() {
     future = ApiService().getHistorialClubvision();
+  }
+
+  Future<void> _refrescar() async {
+    setState(_recargar);
+    await future;
   }
 
   String _mes(String fecha) {
     try {
-      final partes = fecha.split("-");
+      final partes = fecha.split('-');
 
       final anio = int.parse(partes[0]);
       final mes = int.parse(partes[1]);
 
       const meses = [
-        "Enero",
-        "Febrero",
-        "Marzo",
-        "Abril",
-        "Mayo",
-        "Junio",
-        "Julio",
-        "Agosto",
-        "Septiembre",
-        "Octubre",
-        "Noviembre",
-        "Diciembre",
+        'Enero',
+        'Febrero',
+        'Marzo',
+        'Abril',
+        'Mayo',
+        'Junio',
+        'Julio',
+        'Agosto',
+        'Septiembre',
+        'Octubre',
+        'Noviembre',
+        'Diciembre',
       ];
 
-      return "${meses[mes - 1]} $anio";
+      return '${meses[mes - 1]} $anio';
     } catch (_) {
       return fecha;
     }
@@ -53,11 +67,9 @@ class _ClubvisionHistorialPageState extends State<ClubvisionHistorialPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text("📜 Historial")),
-
+      appBar: AppBar(title: const Text('Historial')),
       body: FutureBuilder<List<HistorialClubvision>>(
         future: future,
-
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(child: CircularProgressIndicator());
@@ -66,60 +78,428 @@ class _ClubvisionHistorialPageState extends State<ClubvisionHistorialPage> {
           if (snapshot.hasError) {
             return ErrorView(
               onRetry: () {
-                setState(() {
-                  future = ApiService().getHistorialClubvision();
-                });
+                setState(_recargar);
               },
             );
           }
 
-          final historial = snapshot.data!;
-          return ListView.builder(
-            padding: const EdgeInsets.all(16),
+          final historial = snapshot.data ?? const <HistorialClubvision>[];
 
-            itemCount: historial.length,
+          if (historial.isEmpty) {
+            return _HistorialVacio(onRefresh: _refrescar);
+          }
 
-            itemBuilder: (context, index) {
-              final h = historial[index];
+          return RefreshIndicator(
+            onRefresh: _refrescar,
+            child: ListView(
+              physics: const AlwaysScrollableScrollPhysics(),
+              padding: const EdgeInsets.fromLTRB(
+                AppSpacing.md,
+                AppSpacing.sm,
+                AppSpacing.md,
+                110,
+              ),
+              children: [
+                _HistorialHeader(totalEdiciones: historial.length),
 
-              return Card(
-                margin: const EdgeInsets.only(bottom: 16),
+                const SizedBox(height: AppSpacing.xl),
 
-                child: Padding(
-                  padding: const EdgeInsets.all(20),
-
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-
-                    children: [
-                      Text(
-                        _mes(h.mes),
-
-                        style: const TextStyle(
-                          fontSize: 22,
-
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-
-                      const SizedBox(height: 16),
-
-                      Text("🥇 ${h.ganadora}"),
-
-                      Text("⭐ ${h.puntos} puntos"),
-
-                      const SizedBox(height: 8),
-
-                      Text("🥈 ${h.segunda}"),
-
-                      Text("🥉 ${h.tercera}"),
-                    ],
-                  ),
+                const _SectionHeader(
+                  icon: Icons.history_rounded,
+                  color: AppColors.primary,
+                  title: 'Ediciones anteriores',
+                  subtitle: 'Las historias que fueron elegidas por el club',
                 ),
-              );
-            },
+
+                const SizedBox(height: AppSpacing.md),
+
+                for (var index = 0; index < historial.length; index++) ...[
+                  _EdicionCard(
+                    historial: historial[index],
+                    mes: _mes(historial[index].mes),
+                    destacada: index == 0,
+                  ),
+
+                  const SizedBox(height: AppSpacing.md),
+                ],
+              ],
+            ),
           );
         },
+      ),
+    );
+  }
+}
+
+class _HistorialHeader extends StatelessWidget {
+  final int totalEdiciones;
+
+  const _HistorialHeader({required this.totalEdiciones});
+
+  @override
+  Widget build(BuildContext context) {
+    return ClubCard(
+      elevated: false,
+      padding: const EdgeInsets.all(AppSpacing.xl),
+      gradient: const LinearGradient(
+        begin: Alignment.topLeft,
+        end: Alignment.bottomRight,
+        colors: [AppColors.surfaceSoft, Color(0xFFF1E8FF)],
+      ),
+      borderColor: AppColors.primaryLight,
+      child: Column(
+        children: [
+          Container(
+            width: 76,
+            height: 76,
+            decoration: const BoxDecoration(
+              color: AppColors.primaryLight,
+              shape: BoxShape.circle,
+            ),
+            child: const Icon(
+              Icons.auto_stories_rounded,
+              color: AppColors.primary,
+              size: 38,
+            ),
+          ),
+
+          const SizedBox(height: AppSpacing.md),
+
+          Text(
+            'La historia de Clubvisión',
+            textAlign: TextAlign.center,
+            style: AppTextStyles.title.copyWith(fontSize: 29),
+          ),
+
+          const SizedBox(height: AppSpacing.sm),
+
+          Text(
+            totalEdiciones == 1
+                ? 'Una edición forma parte de la historia del club.'
+                : '$totalEdiciones ediciones forman parte de la historia del club.',
+            textAlign: TextAlign.center,
+            style: AppTextStyles.bodySecondary.copyWith(height: 1.45),
+          ),
+
+          const SizedBox(height: AppSpacing.lg),
+
+          ClubChip(
+            label: totalEdiciones == 1
+                ? '1 ganadora'
+                : '$totalEdiciones ganadoras',
+            icon: Icons.emoji_events_outlined,
+            variant: ClubChipVariant.warning,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _SectionHeader extends StatelessWidget {
+  final IconData icon;
+  final Color color;
+  final String title;
+  final String subtitle;
+
+  const _SectionHeader({
+    required this.icon,
+    required this.color,
+    required this.title,
+    required this.subtitle,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Container(
+          width: 54,
+          height: 54,
+          decoration: BoxDecoration(
+            color: color.withOpacity(0.13),
+            borderRadius: BorderRadius.circular(AppRadius.lg),
+          ),
+          child: Icon(icon, color: color, size: 27),
+        ),
+
+        const SizedBox(width: AppSpacing.md),
+
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                title,
+                style: AppTextStyles.section.copyWith(
+                  color: AppColors.textPrimary,
+                ),
+              ),
+
+              const SizedBox(height: AppSpacing.xs),
+
+              Text(
+                subtitle,
+                style: AppTextStyles.bodySecondary.copyWith(height: 1.35),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _EdicionCard extends StatelessWidget {
+  final HistorialClubvision historial;
+  final String mes;
+  final bool destacada;
+
+  const _EdicionCard({
+    required this.historial,
+    required this.mes,
+    required this.destacada,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return ClubCard(
+      elevated: destacada,
+      padding: const EdgeInsets.all(AppSpacing.lg),
+      gradient: destacada
+          ? const LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [Color(0xFFFFFBF0), Color(0xFFFFF4D8)],
+            )
+          : null,
+      backgroundColor: destacada ? null : AppColors.surface,
+      borderColor: destacada ? const Color(0xFFF1E2B3) : AppColors.border,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                width: 58,
+                height: 58,
+                decoration: BoxDecoration(
+                  color: destacada
+                      ? const Color(0xFFFFEDBA)
+                      : AppColors.primaryLight,
+                  borderRadius: BorderRadius.circular(AppRadius.lg),
+                ),
+                child: Icon(
+                  destacada
+                      ? Icons.emoji_events_rounded
+                      : Icons.calendar_month_rounded,
+                  color: destacada
+                      ? const Color(0xFFB48113)
+                      : AppColors.primary,
+                  size: 29,
+                ),
+              ),
+
+              const SizedBox(width: AppSpacing.md),
+
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      mes,
+                      style: AppTextStyles.section.copyWith(
+                        color: AppColors.textPrimary,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+
+                    const SizedBox(height: AppSpacing.xs),
+
+                    Text(
+                      destacada
+                          ? 'Última edición celebrada'
+                          : 'Edición de Clubvisión',
+                      style: AppTextStyles.bodySecondary,
+                    ),
+                  ],
+                ),
+              ),
+
+              if (destacada)
+                const ClubChip(
+                  label: 'Más reciente',
+                  icon: Icons.auto_awesome_rounded,
+                  variant: ClubChipVariant.warning,
+                ),
+            ],
+          ),
+
+          const SizedBox(height: AppSpacing.lg),
+
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(AppSpacing.lg),
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(destacada ? 0.72 : 1),
+              borderRadius: BorderRadius.circular(AppRadius.lg),
+              border: Border.all(color: const Color(0xFFF1E2B3)),
+            ),
+            child: Column(
+              children: [
+                const Icon(
+                  Icons.workspace_premium_rounded,
+                  color: Color(0xFFB48113),
+                  size: 36,
+                ),
+
+                const SizedBox(height: AppSpacing.sm),
+
+                Text(
+                  historial.ganadora,
+                  textAlign: TextAlign.center,
+                  style: AppTextStyles.section.copyWith(
+                    color: AppColors.textPrimary,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+
+                const SizedBox(height: AppSpacing.sm),
+
+                ClubChip(
+                  label: '${historial.puntos} puntos',
+                  icon: Icons.star_outline_rounded,
+                  variant: ClubChipVariant.warning,
+                ),
+              ],
+            ),
+          ),
+
+          const SizedBox(height: AppSpacing.md),
+
+          _PodioItem(posicion: 2, libro: historial.segunda),
+
+          const SizedBox(height: AppSpacing.sm),
+
+          _PodioItem(posicion: 3, libro: historial.tercera),
+        ],
+      ),
+    );
+  }
+}
+
+class _PodioItem extends StatelessWidget {
+  final int posicion;
+  final String libro;
+
+  const _PodioItem({required this.posicion, required this.libro});
+
+  @override
+  Widget build(BuildContext context) {
+    final esSegunda = posicion == 2;
+
+    final color = esSegunda ? const Color(0xFF9AA3AF) : const Color(0xFFB77948);
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(AppSpacing.md),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.08),
+        borderRadius: BorderRadius.circular(AppRadius.md),
+        border: Border.all(color: color.withOpacity(0.18)),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 42,
+            height: 42,
+            decoration: BoxDecoration(
+              color: color.withOpacity(0.14),
+              shape: BoxShape.circle,
+            ),
+            alignment: Alignment.center,
+            child: Text(
+              esSegunda ? '🥈' : '🥉',
+              style: const TextStyle(fontSize: 21),
+            ),
+          ),
+
+          const SizedBox(width: AppSpacing.md),
+
+          Expanded(
+            child: Text(
+              libro.trim().isEmpty ? 'Sin datos' : libro,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style: AppTextStyles.body.copyWith(
+                color: AppColors.textPrimary,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _HistorialVacio extends StatelessWidget {
+  final Future<void> Function() onRefresh;
+
+  const _HistorialVacio({required this.onRefresh});
+
+  @override
+  Widget build(BuildContext context) {
+    return RefreshIndicator(
+      onRefresh: onRefresh,
+      child: ListView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        children: [
+          SizedBox(
+            height: MediaQuery.sizeOf(context).height * 0.68,
+            child: Center(
+              child: Padding(
+                padding: const EdgeInsets.all(AppSpacing.xl),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Container(
+                      width: 74,
+                      height: 74,
+                      decoration: const BoxDecoration(
+                        color: AppColors.primaryLight,
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(
+                        Icons.history_rounded,
+                        color: AppColors.primary,
+                        size: 36,
+                      ),
+                    ),
+
+                    const SizedBox(height: AppSpacing.md),
+
+                    Text(
+                      'Todavía no hay ediciones anteriores',
+                      textAlign: TextAlign.center,
+                      style: AppTextStyles.section,
+                    ),
+
+                    const SizedBox(height: AppSpacing.sm),
+
+                    const Text(
+                      'Las futuras ganadoras de Clubvisión aparecerán aquí.',
+                      textAlign: TextAlign.center,
+                      style: AppTextStyles.bodySecondary,
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
