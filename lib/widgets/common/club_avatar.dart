@@ -32,7 +32,23 @@ class ClubAvatar extends StatelessWidget {
       ),
       child: ClipOval(
         child: imageUrl != null && imageUrl!.isNotEmpty
-            ? Image.network(imageUrl!, fit: BoxFit.cover)
+            ? Image.network(
+                imageUrl!,
+                width: size,
+                height: size,
+                fit: BoxFit.cover,
+                errorBuilder: (_, __, ___) {
+                  return Center(
+                    child: Text(
+                      _iniciales(nombre),
+                      style: AppTextStyles.section.copyWith(
+                        color: AppColors.primary,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  );
+                },
+              )
             : Center(
                 child: Text(
                   _iniciales(nombre),

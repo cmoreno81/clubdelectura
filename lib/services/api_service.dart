@@ -539,9 +539,13 @@ class ApiService {
             return mes == mesActual.month && anio == mesActual.year;
           }).length;
 
-          return RankingItem(nombre: usuario.nombre, total: total);
+          return RankingItem(
+            nombre: usuario.nombre,
+            total: total,
+            avatarUrl: perfil.avatarUrl,
+          );
         } catch (_) {
-          return RankingItem(nombre: usuario.nombre);
+          return RankingItem(nombre: usuario.nombre, avatarUrl: '');
         }
       }),
     );

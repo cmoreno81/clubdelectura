@@ -320,6 +320,7 @@ class _DashboardPageState extends State<DashboardPage> {
                         nombre: usuario.usuario,
                         libros: usuario.libros,
                         total: usuario.total,
+                        avatarUrl: usuario.avatarUrl,
                       ),
                     ),
                 ],
@@ -484,6 +485,7 @@ class _DashboardPageState extends State<DashboardPage> {
     required String nombre,
     required List<String> libros,
     required int total,
+    required String avatarUrl,
   }) {
     return Padding(
       padding: const EdgeInsets.only(bottom: AppSpacing.md),
@@ -496,8 +498,7 @@ class _DashboardPageState extends State<DashboardPage> {
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            ClubAvatar(nombre: nombre, size: 52),
-
+            ClubAvatar(nombre: nombre, imageUrl: avatarUrl, size: 52),
             const SizedBox(width: AppSpacing.md),
 
             Expanded(

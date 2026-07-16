@@ -157,7 +157,7 @@ class LibroMes {
 
 class LeyendoAhora {
   final String usuario;
-
+  final String avatarUrl;
   final List<String> libros;
 
   final int total;
@@ -166,13 +166,14 @@ class LeyendoAhora {
     required this.usuario,
     required this.libros,
     required this.total,
+    required this.avatarUrl,
   });
-
   factory LeyendoAhora.fromJson(Map<String, dynamic> json) {
     return LeyendoAhora(
       usuario: json['usuario']?.toString() ?? '',
       libros: List<String>.from(json['libros'] ?? []),
       total: (json['total'] as num?)?.toInt() ?? 0,
+      avatarUrl: json['avatarUrl']?.toString() ?? '',
     );
   }
 }

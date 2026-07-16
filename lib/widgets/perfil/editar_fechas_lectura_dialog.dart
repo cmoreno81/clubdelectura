@@ -306,7 +306,7 @@ class _EditarFechasLecturaDialogState extends State<EditarFechasLecturaDialog> {
                 textInputAction: TextInputAction.newline,
                 scrollPadding: const EdgeInsets.only(bottom: 140),
                 decoration: InputDecoration(
-                  labelText: 'Sin reseña escrita.',
+                  labelText: 'Aún no has escrito una reseña.',
                   hintText: '¿Quieres añadir o modificar tu reseña?',
                   alignLabelWithHint: true,
                   filled: true,
