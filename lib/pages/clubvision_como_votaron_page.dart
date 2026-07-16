@@ -187,7 +187,7 @@ class _SectionHeader extends StatelessWidget {
           width: 54,
           height: 54,
           decoration: BoxDecoration(
-            color: color.withOpacity(0.13),
+            color: color.withValues(alpha: 0.13),
             borderRadius: BorderRadius.circular(AppRadius.lg),
           ),
           child: Icon(icon, color: color, size: 27),
@@ -313,9 +313,9 @@ class _VotoEmitidoRow extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(AppSpacing.md),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.07),
+        color: color.withValues(alpha: 0.07),
         borderRadius: BorderRadius.circular(AppRadius.lg),
-        border: Border.all(color: color.withOpacity(0.18)),
+        border: Border.all(color: color.withValues(alpha: 0.18)),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.center,
@@ -324,7 +324,7 @@ class _VotoEmitidoRow extends StatelessWidget {
             width: 46,
             height: 46,
             decoration: BoxDecoration(
-              color: color.withOpacity(0.14),
+              color: color.withValues(alpha: 0.14),
               shape: BoxShape.circle,
             ),
             alignment: Alignment.center,

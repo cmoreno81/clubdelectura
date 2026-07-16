@@ -357,7 +357,7 @@ class _AtmosferaHero extends StatelessWidget {
         end: Alignment.bottomRight,
         colors: paleta.heroGradient,
       ),
-      borderColor: paleta.primary.withOpacity(0.28),
+      borderColor: paleta.primary.withValues(alpha: 0.28),
       child: Column(
         children: [
           Stack(
@@ -371,7 +371,7 @@ class _AtmosferaHero extends StatelessWidget {
                   borderRadius: BorderRadius.circular(AppRadius.xl),
                   boxShadow: [
                     BoxShadow(
-                      color: paleta.primary.withOpacity(0.20),
+                      color: paleta.primary.withValues(alpha: 0.20),
                       blurRadius: 32,
                       spreadRadius: 5,
                     ),
@@ -393,12 +393,12 @@ class _AtmosferaHero extends StatelessWidget {
                   width: 67,
                   height: 67,
                   decoration: BoxDecoration(
-                    color: paleta.surface.withOpacity(0.94),
+                    color: paleta.surface.withValues(alpha: 0.94),
                     shape: BoxShape.circle,
-                    border: Border.all(color: paleta.primary.withOpacity(0.20)),
+                    border: Border.all(color: paleta.primary.withValues(alpha: 0.20)),
                     boxShadow: [
                       BoxShadow(
-                        color: paleta.primary.withOpacity(0.16),
+                        color: paleta.primary.withValues(alpha: 0.16),
                         blurRadius: 14,
                         offset: const Offset(0, 6),
                       ),
@@ -419,7 +419,7 @@ class _AtmosferaHero extends StatelessWidget {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
             decoration: BoxDecoration(
-              color: paleta.primary.withOpacity(0.10),
+              color: paleta.primary.withValues(alpha: 0.10),
               borderRadius: BorderRadius.circular(AppRadius.pill),
             ),
             child: Text(
@@ -463,9 +463,9 @@ class _AtmosferaHero extends StatelessWidget {
                   vertical: 7,
                 ),
                 decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.62),
+                  color: Colors.white.withValues(alpha: 0.62),
                   borderRadius: BorderRadius.circular(AppRadius.pill),
-                  border: Border.all(color: paleta.primary.withOpacity(0.14)),
+                  border: Border.all(color: paleta.primary.withValues(alpha: 0.14)),
                 ),
                 child: Text(
                   etiqueta,
@@ -578,7 +578,7 @@ class _ExperienciaRow extends StatelessWidget {
           width: 48,
           height: 48,
           decoration: BoxDecoration(
-            color: color.withOpacity(0.11),
+            color: color.withValues(alpha: 0.11),
             borderRadius: BorderRadius.circular(AppRadius.lg),
           ),
           child: Icon(icon, color: color, size: 23),
@@ -637,10 +637,10 @@ class _AtmosferaOptionCard extends StatelessWidget {
       elevated: seleccionada,
       padding: const EdgeInsets.all(AppSpacing.md),
       backgroundColor: seleccionada
-          ? paleta.primary.withOpacity(0.07)
+          ? paleta.primary.withValues(alpha: 0.07)
           : AppColors.surface,
       borderColor: seleccionada
-          ? paleta.primary.withOpacity(0.42)
+          ? paleta.primary.withValues(alpha: 0.42)
           : paleta.border,
       onTap: onTap,
       child: Row(
@@ -690,7 +690,7 @@ class _AtmosferaOptionCard extends StatelessWidget {
                           vertical: 4,
                         ),
                         decoration: BoxDecoration(
-                          color: paleta.primary.withOpacity(0.10),
+                          color: paleta.primary.withValues(alpha: 0.10),
                           borderRadius: BorderRadius.circular(AppRadius.pill),
                         ),
                         child: Text(
@@ -725,7 +725,7 @@ class _AtmosferaOptionCard extends StatelessWidget {
             decoration: BoxDecoration(
               color: seleccionada
                   ? paleta.primary
-                  : paleta.primary.withOpacity(0.10),
+                  : paleta.primary.withValues(alpha: 0.10),
               shape: BoxShape.circle,
             ),
             child: Icon(
@@ -761,7 +761,7 @@ class _SectionTitle extends StatelessWidget {
           width: 54,
           height: 54,
           decoration: BoxDecoration(
-            color: color.withOpacity(0.12),
+            color: color.withValues(alpha: 0.12),
             borderRadius: BorderRadius.circular(AppRadius.lg),
           ),
           child: Icon(icon, color: color, size: 27),

@@ -41,10 +41,10 @@ class CapituloTile extends StatelessWidget {
       elevated: tieneNovedades,
       padding: EdgeInsets.zero,
       backgroundColor: tieneNovedades
-          ? colorPrincipal.withOpacity(0.045)
+          ? colorPrincipal.withValues(alpha: 0.045)
           : AppColors.surface,
       borderColor: tieneNovedades
-          ? colorPrincipal.withOpacity(0.36)
+          ? colorPrincipal.withValues(alpha: 0.36)
           : AppColors.border,
       child: AnimatedSize(
         duration: const Duration(milliseconds: 220),
@@ -151,7 +151,7 @@ class _CabeceraCapitulo extends StatelessWidget {
                 height: 38,
                 decoration: BoxDecoration(
                   color: tieneNovedades
-                      ? colorPrincipal.withOpacity(0.12)
+                      ? colorPrincipal.withValues(alpha: 0.12)
                       : AppColors.surfaceSoft,
                   shape: BoxShape.circle,
                 ),
@@ -252,7 +252,7 @@ class _ContenidoCapitulo extends StatelessWidget {
               ),
               decoration: BoxDecoration(
                 color: tieneNovedades
-                    ? Colors.white.withOpacity(0.72)
+                    ? Colors.white.withValues(alpha: 0.72)
                     : AppColors.surfaceSoft,
                 borderRadius: BorderRadius.circular(AppRadius.md),
               ),
@@ -347,7 +347,7 @@ class _ChapterIcon extends StatelessWidget {
           height: 50,
           decoration: BoxDecoration(
             color: tieneNovedades
-                ? color.withOpacity(0.14)
+                ? color.withValues(alpha: 0.14)
                 : AppColors.primaryLight,
             borderRadius: BorderRadius.circular(AppRadius.lg),
           ),
@@ -390,9 +390,9 @@ class _NovedadesBadge extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.12),
+        color: color.withValues(alpha: 0.12),
         borderRadius: BorderRadius.circular(AppRadius.pill),
-        border: Border.all(color: color.withOpacity(0.18)),
+        border: Border.all(color: color.withValues(alpha: 0.18)),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,

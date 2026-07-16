@@ -226,7 +226,7 @@ class _CabeceraMiVoto extends StatelessWidget {
             child: LinearProgressIndicator(
               value: progreso.clamp(0.0, 1.0),
               minHeight: 10,
-              backgroundColor: Colors.white.withOpacity(0.75),
+              backgroundColor: Colors.white.withValues(alpha: 0.75),
               valueColor: const AlwaysStoppedAnimation<Color>(
                 AppColors.primary,
               ),
@@ -280,7 +280,7 @@ class _SectionHeader extends StatelessWidget {
           width: 54,
           height: 54,
           decoration: BoxDecoration(
-            color: color.withOpacity(0.13),
+            color: color.withValues(alpha: 0.13),
             borderRadius: BorderRadius.circular(AppRadius.lg),
           ),
           child: Icon(icon, color: color, size: 27),
@@ -348,7 +348,7 @@ class _VotoItem extends StatelessWidget {
             width: 52,
             height: 52,
             decoration: BoxDecoration(
-              color: color.withOpacity(0.14),
+              color: color.withValues(alpha: 0.14),
               shape: BoxShape.circle,
             ),
             alignment: Alignment.center,

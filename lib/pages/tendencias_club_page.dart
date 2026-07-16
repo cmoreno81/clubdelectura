@@ -328,7 +328,7 @@ class _SectionHeader extends StatelessWidget {
           width: 54,
           height: 54,
           decoration: BoxDecoration(
-            color: color.withOpacity(0.13),
+            color: color.withValues(alpha: 0.13),
             borderRadius: BorderRadius.circular(AppRadius.lg),
           ),
           child: Icon(icon, color: color, size: 27),
@@ -449,7 +449,7 @@ class _GeneroItem extends StatelessWidget {
             child: LinearProgressIndicator(
               value: progreso.clamp(0.0, 1.0),
               minHeight: 9,
-              backgroundColor: AppColors.success.withOpacity(0.10),
+              backgroundColor: AppColors.success.withValues(alpha: 0.10),
               valueColor: const AlwaysStoppedAnimation<Color>(
                 AppColors.success,
               ),
@@ -563,7 +563,7 @@ class _LibroTendenciaCard extends StatelessWidget {
             child: LinearProgressIndicator(
               value: progreso.clamp(0.0, 1.0),
               minHeight: 9,
-              backgroundColor: const Color(0xFFE98325).withOpacity(0.10),
+              backgroundColor: const Color(0xFFE98325).withValues(alpha: 0.10),
               valueColor: const AlwaysStoppedAnimation<Color>(
                 Color(0xFFE98325),
               ),
@@ -608,7 +608,7 @@ class _LectoraTendenciaItem extends StatelessWidget {
               width: 44,
               height: 44,
               decoration: BoxDecoration(
-                color: color.withOpacity(0.13),
+                color: color.withValues(alpha: 0.13),
                 shape: BoxShape.circle,
               ),
               alignment: Alignment.center,

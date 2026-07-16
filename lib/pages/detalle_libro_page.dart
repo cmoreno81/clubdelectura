@@ -29,7 +29,7 @@ class DetalleLibroPage extends StatefulWidget {
 
 class _DetalleLibroPageState extends State<DetalleLibroPage> {
   final KitLecturaService _kitService = KitLecturaService();
-
+  late LibroAgrupado libro;
   late List<Libro> registros;
   late AtmosferaController _atmosferaController;
 
@@ -42,7 +42,9 @@ class _DetalleLibroPageState extends State<DetalleLibroPage> {
   void initState() {
     super.initState();
 
-    registros = List<Libro>.from(widget.libro.registros);
+    libro = widget.libro;
+
+    registros = List<Libro>.from(libro.registros);
 
     _cargarUsuarioActual();
 
@@ -69,7 +71,7 @@ class _DetalleLibroPageState extends State<DetalleLibroPage> {
   Future<void> _cargarAtmosferaDelLibro() async {
     if (!_controllerPreparado) return;
 
-    final bookId = widget.libro.bookId.trim();
+    final bookId = libro.bookId.trim();
 
     if (bookId.isEmpty) {
       _atmosferaController.usarAtmosferaNeutra();
@@ -103,7 +105,7 @@ class _DetalleLibroPageState extends State<DetalleLibroPage> {
 
     if (!_controllerPreparado) return;
 
-    final bookId = widget.libro.bookId.trim();
+    final bookId = libro.bookId.trim();
 
     _atmosferaController.salirDelLibro(bookId: bookId.isEmpty ? null : bookId);
   }
@@ -118,6 +120,7 @@ class _DetalleLibroPageState extends State<DetalleLibroPage> {
     String nuevoEstado, {
     String? valoracion,
     String? reflexion,
+    String? motivoPausa,
   }) async {
     try {
       final bool ok;
@@ -134,6 +137,7 @@ class _DetalleLibroPageState extends State<DetalleLibroPage> {
           estado: nuevoEstado,
           valoracion: valoracion,
           reflexion: reflexion,
+          motivoPausa: motivoPausa,
         );
       }
 
@@ -222,9 +226,9 @@ class _DetalleLibroPageState extends State<DetalleLibroPage> {
   }
 
   Future<void> _abrirGoodreads() async {
-    if (widget.libro.registros.isEmpty) return;
+    if (libro.registros.isEmpty) return;
 
-    var url = widget.libro.registros.first.goodreads.trim();
+    var url = libro.registros.first.goodreads.trim();
 
     if (url.isEmpty) return;
 
@@ -242,11 +246,11 @@ class _DetalleLibroPageState extends State<DetalleLibroPage> {
   }
 
   Future<void> _editarLibro() async {
-    if (widget.libro.bookId.isEmpty) return;
+    if (libro.bookId.isEmpty) return;
 
     final actualizado = await Navigator.push<bool>(
       context,
-      MaterialPageRoute(builder: (_) => NuevoLibroPage(libro: widget.libro)),
+      MaterialPageRoute(builder: (_) => NuevoLibroPage(libro: libro)),
     );
 
     if (!mounted) return;
@@ -265,9 +269,9 @@ class _DetalleLibroPageState extends State<DetalleLibroPage> {
       context,
       MaterialPageRoute(
         builder: (_) => KitLecturaPage(
-          bookId: widget.libro.bookId,
-          libro: widget.libro.libro,
-          coverUrl: widget.libro.coverUrl,
+          bookId: libro.bookId,
+          libro: libro.libro,
+          coverUrl: libro.coverUrl,
         ),
       ),
     );
@@ -301,12 +305,12 @@ class _DetalleLibroPageState extends State<DetalleLibroPage> {
             onPressed: _volver,
           ),
           title: Text(
-            widget.libro.libro,
+            libro.libro,
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
           ),
           actions: [
-            if (widget.libro.bookId.isNotEmpty)
+            if (libro.bookId.isNotEmpty)
               Padding(
                 padding: const EdgeInsets.only(right: 12),
                 child: Center(
@@ -338,7 +342,7 @@ class _DetalleLibroPageState extends State<DetalleLibroPage> {
             ),
             children: [
               LibroHeader(
-                libro: widget.libro,
+                libro: libro,
                 referencia: referencia,
                 onAbrirGoodreads: _abrirGoodreads,
               ),
@@ -367,16 +371,16 @@ class _DetalleLibroPageState extends State<DetalleLibroPage> {
               const SizedBox(height: AppSpacing.lg),
 
               ConversacionesLibroCard(
-                libro: widget.libro.libro,
-                coverUrl: widget.libro.coverUrl,
+                libro: libro.libro,
+                coverUrl: libro.coverUrl,
               ),
 
-              if (widget.libro.finalizados.isNotEmpty) ...[
+              if (libro.finalizados.isNotEmpty) ...[
                 const SizedBox(height: AppSpacing.lg),
 
                 LibroValoracionesSection(
-                  valoraciones: widget.libro.finalizados,
-                  mediaValoracion: widget.libro.mediaValoracion,
+                  valoraciones: libro.finalizados,
+                  mediaValoracion: libro.mediaValoracion,
                 ),
               ],
 

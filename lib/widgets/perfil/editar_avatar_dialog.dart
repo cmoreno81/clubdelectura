@@ -146,7 +146,7 @@ class _AvatarPreview extends StatelessWidget {
         shape: BoxShape.circle,
         color: colorScheme.primaryContainer,
         border: Border.all(
-          color: colorScheme.primary.withOpacity(0.22),
+          color: colorScheme.primary.withValues(alpha: 0.22),
           width: 2,
         ),
       ),
@@ -155,7 +155,7 @@ class _AvatarPreview extends StatelessWidget {
             ? Image.network(
                 imageUrl,
                 fit: BoxFit.cover,
-                errorBuilder: (_, __, ___) {
+                errorBuilder: (_, _, _) {
                   return const _AvatarFallback();
                 },
               )

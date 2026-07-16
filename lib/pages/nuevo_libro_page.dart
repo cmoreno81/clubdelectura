@@ -631,9 +631,9 @@ class _NuevoLibroPageState extends State<NuevoLibroPage> {
       gradient: LinearGradient(
         begin: Alignment.topLeft,
         end: Alignment.bottomRight,
-        colors: [AppColors.surfaceSoft, colorPrincipal.withOpacity(0.10)],
+        colors: [AppColors.surfaceSoft, colorPrincipal.withValues(alpha: 0.10)],
       ),
-      borderColor: colorPrincipal.withOpacity(0.18),
+      borderColor: colorPrincipal.withValues(alpha: 0.18),
       child: Column(
         children: [
           _PortadaPreview(
@@ -715,7 +715,7 @@ class _SectionHeader extends StatelessWidget {
           width: 54,
           height: 54,
           decoration: BoxDecoration(
-            color: color.withOpacity(0.13),
+            color: color.withValues(alpha: 0.13),
             borderRadius: BorderRadius.circular(AppRadius.lg),
           ),
           child: Icon(icon, color: color, size: 27),
@@ -766,12 +766,12 @@ class _PortadaPreview extends StatelessWidget {
       height: 168,
       clipBehavior: Clip.antiAlias,
       decoration: BoxDecoration(
-        color: color.withOpacity(0.10),
+        color: color.withValues(alpha: 0.10),
         borderRadius: BorderRadius.circular(AppRadius.lg),
-        border: Border.all(color: color.withOpacity(0.18)),
+        border: Border.all(color: color.withValues(alpha: 0.18)),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.08),
+            color: Colors.black.withValues(alpha: 0.08),
             blurRadius: 18,
             offset: const Offset(0, 8),
           ),
@@ -782,7 +782,7 @@ class _PortadaPreview extends StatelessWidget {
           : Image.network(
               url,
               fit: BoxFit.cover,
-              errorBuilder: (_, __, ___) {
+              errorBuilder: (_, _, _) {
                 return _PortadaFallback(
                   title: title,
                   color: color,
@@ -877,10 +877,10 @@ class _SelectorOption extends StatelessWidget {
         duration: const Duration(milliseconds: 180),
         padding: const EdgeInsets.all(AppSpacing.md),
         decoration: BoxDecoration(
-          color: selected ? color.withOpacity(0.10) : AppColors.surfaceSoft,
+          color: selected ? color.withValues(alpha: 0.10) : AppColors.surfaceSoft,
           borderRadius: BorderRadius.circular(AppRadius.lg),
           border: Border.all(
-            color: selected ? color.withOpacity(0.38) : AppColors.border,
+            color: selected ? color.withValues(alpha: 0.38) : AppColors.border,
           ),
         ),
         child: Column(
@@ -935,10 +935,10 @@ class _PrioridadOption extends StatelessWidget {
           vertical: AppSpacing.md,
         ),
         decoration: BoxDecoration(
-          color: selected ? color.withOpacity(0.10) : AppColors.surfaceSoft,
+          color: selected ? color.withValues(alpha: 0.10) : AppColors.surfaceSoft,
           borderRadius: BorderRadius.circular(AppRadius.lg),
           border: Border.all(
-            color: selected ? color.withOpacity(0.38) : Colors.transparent,
+            color: selected ? color.withValues(alpha: 0.38) : Colors.transparent,
           ),
         ),
         child: Column(

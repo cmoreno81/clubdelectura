@@ -446,16 +446,18 @@ class ApiService {
     required String estado,
     String? valoracion,
     String? reflexion,
+    String? motivoPausa,
   }) async {
     final response = await _client.post(
       Uri.parse('$baseUrl?action=actualizarEstado'),
-      headers: {'Content-Type': 'application/json'},
+      headers: const {'Content-Type': 'application/json'},
       body: jsonEncode({
         'usuario': usuario,
         'libro': libro,
         'estado': estado,
-        'valoracion': valoracion ?? "",
-        'reflexion': reflexion ?? "",
+        'valoracion': valoracion ?? '',
+        'reflexion': reflexion ?? '',
+        'motivoPausa': motivoPausa ?? '',
       }),
     );
 
@@ -697,6 +699,8 @@ class ApiService {
     required String libraryId,
     required String fechaInicio,
     required String fechaFin,
+    String? valoracion,
+    String? resena,
   }) async {
     final response = await _client.post(
       Uri.parse('$baseUrl?action=actualizarFechasLectura'),
@@ -706,6 +710,8 @@ class ApiService {
         'libraryId': libraryId,
         'fechaInicio': fechaInicio,
         'fechaFin': fechaFin,
+        'valoracion': valoracion ?? '',
+        'resena': resena ?? '',
       }),
     );
 

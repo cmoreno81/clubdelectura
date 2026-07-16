@@ -70,35 +70,6 @@ class _ClubvisionVotacionPageState extends State<ClubvisionVotacionPage> {
         .toList();
   }
 
-  String _etiquetaPuntos(int posicion) {
-    return switch (posicion) {
-      0 => '12 puntos',
-      1 => '10 puntos',
-      2 => '8 puntos',
-      3 => '7 puntos',
-      _ => '6 puntos',
-    };
-  }
-
-  String _medalla(int posicion) {
-    return switch (posicion) {
-      0 => '🥇',
-      1 => '🥈',
-      2 => '🥉',
-      3 => '4',
-      _ => '5',
-    };
-  }
-
-  Color _colorPosicion(int posicion) {
-    return switch (posicion) {
-      0 => const Color(0xFFE4B63F),
-      1 => const Color(0xFF9AA3AF),
-      2 => const Color(0xFFB77948),
-      _ => AppColors.primary,
-    };
-  }
-
   void _cambiarSeleccion(CandidataClubvision candidata) {
     setState(() {
       final seleccionada = seleccionadas.contains(candidata.libro);
@@ -428,7 +399,7 @@ class _CabeceraVotacion extends StatelessWidget {
             child: LinearProgressIndicator(
               value: (clubvision.porcentaje / 100).clamp(0.0, 1.0),
               minHeight: 9,
-              backgroundColor: Colors.white.withOpacity(0.75),
+              backgroundColor: Colors.white.withValues(alpha: 0.75),
               valueColor: const AlwaysStoppedAnimation<Color>(
                 AppColors.primary,
               ),
@@ -471,7 +442,7 @@ class _SectionHeader extends StatelessWidget {
           width: 54,
           height: 54,
           decoration: BoxDecoration(
-            color: color.withOpacity(0.13),
+            color: color.withValues(alpha: 0.13),
             borderRadius: BorderRadius.circular(AppRadius.lg),
           ),
           child: Icon(icon, color: color, size: 27),
@@ -555,7 +526,7 @@ class _PapeletaCard extends StatelessWidget {
                   child: LinearProgressIndicator(
                     value: seleccionadas.length / 5,
                     minHeight: 9,
-                    backgroundColor: Colors.white.withOpacity(0.8),
+                    backgroundColor: Colors.white.withValues(alpha: 0.8),
                     valueColor: const AlwaysStoppedAnimation<Color>(
                       AppColors.primary,
                     ),
@@ -608,7 +579,7 @@ class _PapeletaVacia extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(AppSpacing.lg),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.62),
+        color: Colors.white.withValues(alpha: 0.62),
         borderRadius: BorderRadius.circular(AppRadius.lg),
       ),
       child: const Column(
@@ -667,9 +638,9 @@ class _PapeletaItem extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(AppSpacing.md),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.70),
+        color: Colors.white.withValues(alpha: 0.70),
         borderRadius: BorderRadius.circular(AppRadius.lg),
-        border: Border.all(color: color.withOpacity(0.24)),
+        border: Border.all(color: color.withValues(alpha: 0.24)),
       ),
       child: Row(
         children: [
@@ -677,7 +648,7 @@ class _PapeletaItem extends StatelessWidget {
             width: 46,
             height: 46,
             decoration: BoxDecoration(
-              color: color.withOpacity(0.14),
+              color: color.withValues(alpha: 0.14),
               shape: BoxShape.circle,
             ),
             alignment: Alignment.center,
@@ -774,7 +745,7 @@ class _CandidataCard extends StatelessWidget {
             )
           : null,
       backgroundColor: Colors.white,
-      borderColor: color.withOpacity(seleccionada ? 0.55 : 0.22),
+      borderColor: color.withValues(alpha: seleccionada ? 0.55 : 0.22),
       onTap: onTap,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -786,7 +757,7 @@ class _CandidataCard extends StatelessWidget {
                 width: 56,
                 height: 56,
                 decoration: BoxDecoration(
-                  color: color.withOpacity(0.13),
+                  color: color.withValues(alpha: 0.13),
                   borderRadius: BorderRadius.circular(AppRadius.lg),
                 ),
                 alignment: Alignment.center,
@@ -837,7 +808,7 @@ class _CandidataCard extends StatelessWidget {
                 decoration: BoxDecoration(
                   color: seleccionada
                       ? AppColors.primary
-                      : color.withOpacity(0.12),
+                      : color.withValues(alpha: 0.12),
                   shape: BoxShape.circle,
                 ),
                 child: Icon(
@@ -951,7 +922,7 @@ class _VotoRegistrado extends StatelessWidget {
       elevated: false,
       padding: const EdgeInsets.all(AppSpacing.xl),
       backgroundColor: const Color(0xFFF1FAF5),
-      borderColor: AppColors.success.withOpacity(0.24),
+      borderColor: AppColors.success.withValues(alpha: 0.24),
       child: const Column(
         children: [
           Icon(Icons.check_circle_rounded, color: AppColors.success, size: 56),

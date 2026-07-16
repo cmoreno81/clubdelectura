@@ -218,7 +218,7 @@ class _SectionHeader extends StatelessWidget {
           width: 54,
           height: 54,
           decoration: BoxDecoration(
-            color: color.withOpacity(0.13),
+            color: color.withValues(alpha: 0.13),
             borderRadius: BorderRadius.circular(AppRadius.lg),
           ),
           child: Icon(icon, color: color, size: 27),
@@ -343,7 +343,7 @@ class _EdicionCard extends StatelessWidget {
             width: double.infinity,
             padding: const EdgeInsets.all(AppSpacing.lg),
             decoration: BoxDecoration(
-              color: Colors.white.withOpacity(destacada ? 0.72 : 1),
+              color: Colors.white.withValues(alpha: destacada ? 0.72 : 1),
               borderRadius: BorderRadius.circular(AppRadius.lg),
               border: Border.all(color: const Color(0xFFF1E2B3)),
             ),
@@ -406,9 +406,9 @@ class _PodioItem extends StatelessWidget {
       width: double.infinity,
       padding: const EdgeInsets.all(AppSpacing.md),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.08),
+        color: color.withValues(alpha: 0.08),
         borderRadius: BorderRadius.circular(AppRadius.md),
-        border: Border.all(color: color.withOpacity(0.18)),
+        border: Border.all(color: color.withValues(alpha: 0.18)),
       ),
       child: Row(
         children: [
@@ -416,7 +416,7 @@ class _PodioItem extends StatelessWidget {
             width: 42,
             height: 42,
             decoration: BoxDecoration(
-              color: color.withOpacity(0.14),
+              color: color.withValues(alpha: 0.14),
               shape: BoxShape.circle,
             ),
             alignment: Alignment.center,

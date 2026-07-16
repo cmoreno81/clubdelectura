@@ -8,6 +8,7 @@ import '../common/club_avatar.dart';
 import '../common/club_card.dart';
 import '../common/club_chip.dart';
 import 'libro_section.dart';
+import 'pausar_lectura_dialog.dart';
 
 class LibroInteresadasSection extends StatelessWidget {
   final List<Libro> registros;
@@ -17,6 +18,7 @@ class LibroInteresadasSection extends StatelessWidget {
     String nuevoEstado, {
     String? valoracion,
     String? reflexion,
+    String? motivoPausa,
   })
   onCambiarEstado;
   final Future<void> Function(Libro libro) onQuitarPendientes;
@@ -74,6 +76,7 @@ class _LectoraCard extends StatelessWidget {
     String nuevoEstado, {
     String? valoracion,
     String? reflexion,
+    String? motivoPausa,
   })
   onCambiarEstado;
   final Future<void> Function(Libro libro) onQuitarPendientes;
@@ -141,7 +144,7 @@ class _LectoraCard extends StatelessWidget {
             const SizedBox(height: AppSpacing.md),
 
             DropdownButtonFormField<String>(
-              value: registro.estado,
+              initialValue: registro.estado,
               decoration: const InputDecoration(
                 labelText: 'Estado de lectura',
                 prefixIcon: Icon(Icons.swap_horiz_rounded),
@@ -149,6 +152,7 @@ class _LectoraCard extends StatelessWidget {
               items: const [
                 DropdownMenuItem(value: 'PENDIENTE', child: Text('Pendiente')),
                 DropdownMenuItem(value: 'LEYENDO', child: Text('Leyendo')),
+                DropdownMenuItem(value: 'PAUSADO', child: Text('En pausa')),
                 DropdownMenuItem(value: 'RELECTURA', child: Text('Relectura')),
                 DropdownMenuItem(
                   value: 'FINALIZADO',
@@ -161,6 +165,7 @@ class _LectoraCard extends StatelessWidget {
                 }
 
                 Map<String, String>? datosValoracion;
+                String? motivoPausa;
 
                 if (value == 'FINALIZADO') {
                   datosValoracion = await onPedirValoracion();
@@ -170,13 +175,91 @@ class _LectoraCard extends StatelessWidget {
                   }
                 }
 
+                if (value == 'PAUSADO') {
+                  if (!context.mounted) return;
+
+                  motivoPausa = await showDialog<String>(
+                    context: context,
+                    builder: (_) => const PausarLecturaDialog(),
+                  );
+
+                  if (motivoPausa == null) {
+                    return;
+                  }
+                }
+
                 await onCambiarEstado(
                   registro,
                   value,
                   valoracion: datosValoracion?['valoracion'],
                   reflexion: datosValoracion?['reflexion'],
+                  motivoPausa: motivoPausa,
                 );
               },
+            ),
+          ],
+          if (registro.estado == 'PAUSADO') ...[
+            const SizedBox(height: AppSpacing.md),
+
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(AppSpacing.md),
+              decoration: BoxDecoration(
+                color: const Color(0xFFFFF8EA),
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: const Color(0xFFF4E0B0)),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      const Icon(
+                        Icons.pause_circle_outline_rounded,
+                        color: Color(0xFF9A6B10),
+                        size: 20,
+                      ),
+
+                      const SizedBox(width: AppSpacing.xs),
+
+                      Text(
+                        _textoFechaPausa(registro.pausedAt),
+                        style: AppTextStyles.bodySecondary.copyWith(
+                          color: const Color(0xFF7D5C17),
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ],
+                  ),
+
+                  if (registro.pauseReason.trim().isNotEmpty) ...[
+                    const SizedBox(height: AppSpacing.sm),
+
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Icon(
+                          Icons.format_quote_rounded,
+                          color: Color(0xFF9A6B10),
+                          size: 20,
+                        ),
+
+                        const SizedBox(width: AppSpacing.xs),
+
+                        Expanded(
+                          child: Text(
+                            registro.pauseReason.trim(),
+                            style: AppTextStyles.bodySecondary.copyWith(
+                              color: AppColors.textPrimary,
+                              fontStyle: FontStyle.italic,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ],
+              ),
             ),
           ],
 
@@ -224,10 +307,59 @@ class _LectoraCard extends StatelessWidget {
     );
   }
 
+  static String _textoFechaPausa(DateTime? fecha) {
+    if (fecha == null) {
+      return 'Lectura en pausa';
+    }
+
+    final ahora = DateTime.now();
+    final diferencia = ahora.difference(fecha);
+
+    if (diferencia.inDays <= 0) {
+      return 'Pausada hoy';
+    }
+
+    if (diferencia.inDays == 1) {
+      return 'Pausada ayer';
+    }
+
+    if (diferencia.inDays < 7) {
+      return 'En pausa desde hace ${diferencia.inDays} días';
+    }
+
+    if (diferencia.inDays < 30) {
+      final semanas = (diferencia.inDays / 7).floor();
+
+      return semanas == 1
+          ? 'En pausa desde hace 1 semana'
+          : 'En pausa desde hace $semanas semanas';
+    }
+
+    const meses = [
+      'ene',
+      'feb',
+      'mar',
+      'abr',
+      'may',
+      'jun',
+      'jul',
+      'ago',
+      'sep',
+      'oct',
+      'nov',
+      'dic',
+    ];
+
+    return 'En pausa desde el '
+        '${fecha.day} ${meses[fecha.month - 1]}';
+  }
+
   static String _labelEstado(String estado) {
     switch (estado) {
       case 'LEYENDO':
         return 'Leyendo';
+      case 'PAUSADO':
+        return 'En pausa';
       case 'RELECTURA':
         return 'Relectura';
       case 'FINALIZADO':
@@ -241,6 +373,8 @@ class _LectoraCard extends StatelessWidget {
     switch (estado) {
       case 'LEYENDO':
         return Icons.menu_book_rounded;
+      case 'PAUSADO':
+        return Icons.pause_circle_outline_rounded;
       case 'RELECTURA':
         return Icons.refresh_rounded;
       case 'FINALIZADO':
@@ -254,6 +388,8 @@ class _LectoraCard extends StatelessWidget {
     switch (estado) {
       case 'LEYENDO':
         return ClubChipVariant.info;
+      case 'PAUSADO':
+        return ClubChipVariant.warning;
       case 'RELECTURA':
         return ClubChipVariant.primary;
       case 'FINALIZADO':

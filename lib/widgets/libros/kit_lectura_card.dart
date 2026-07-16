@@ -15,7 +15,7 @@ class KitLecturaCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return ClubCard(
       padding: EdgeInsets.zero,
-      borderColor: AppColors.primary.withOpacity(0.22),
+      borderColor: AppColors.primary.withValues(alpha: 0.22),
       gradient: const LinearGradient(
         begin: Alignment.topLeft,
         end: Alignment.bottomRight,
@@ -33,7 +33,7 @@ class KitLecturaCard extends StatelessWidget {
                   width: 58,
                   height: 58,
                   decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.74),
+                    color: Colors.white.withValues(alpha: 0.74),
                     borderRadius: BorderRadius.circular(AppRadius.lg),
                   ),
                   child: const Icon(
@@ -70,7 +70,7 @@ class KitLecturaCard extends StatelessWidget {
                   width: 40,
                   height: 40,
                   decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.75),
+                    color: Colors.white.withValues(alpha: 0.75),
                     shape: BoxShape.circle,
                   ),
                   child: const Icon(
@@ -146,9 +146,9 @@ class _KitPreviewChip extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.7),
+        color: Colors.white.withValues(alpha: 0.7),
         borderRadius: BorderRadius.circular(AppRadius.pill),
-        border: Border.all(color: AppColors.primary.withOpacity(0.12)),
+        border: Border.all(color: AppColors.primary.withValues(alpha: 0.12)),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,

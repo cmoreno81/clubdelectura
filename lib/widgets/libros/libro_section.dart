@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 
 import '../../theme/app_colors.dart';
 import '../../theme/app_spacing.dart';
-import '../../theme/app_text_styles.dart';
 import '../ui/club_section_card.dart';
 import '../ui/club_section_title.dart';
 
@@ -54,7 +53,7 @@ class LibroSection extends StatelessWidget {
 
           const SizedBox(height: AppSpacing.lg),
 
-          Divider(height: 1, color: AppColors.divider.withOpacity(0.8)),
+          Divider(height: 1, color: AppColors.divider.withValues(alpha: 0.8)),
 
           const SizedBox(height: AppSpacing.lg),
 

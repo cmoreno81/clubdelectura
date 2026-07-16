@@ -138,14 +138,14 @@ class _AtmosferaHero extends StatelessWidget {
         end: Alignment.bottomRight,
         colors: estilo.gradient,
       ),
-      borderColor: estilo.color.withOpacity(0.22),
+      borderColor: estilo.color.withValues(alpha: 0.22),
       child: Column(
         children: [
           Container(
             width: 92,
             height: 92,
             decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.48),
+              color: Colors.white.withValues(alpha: 0.48),
               shape: BoxShape.circle,
             ),
             alignment: Alignment.center,
@@ -246,7 +246,7 @@ class _AtmosferaCard extends StatelessWidget {
             )
           : null,
       backgroundColor: posicion == 0 ? null : AppColors.surface,
-      borderColor: estilo.color.withOpacity(0.20),
+      borderColor: estilo.color.withValues(alpha: 0.20),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -257,7 +257,7 @@ class _AtmosferaCard extends StatelessWidget {
                 width: 64,
                 height: 64,
                 decoration: BoxDecoration(
-                  color: estilo.color.withOpacity(0.13),
+                  color: estilo.color.withValues(alpha: 0.13),
                   borderRadius: BorderRadius.circular(AppRadius.lg),
                 ),
                 alignment: Alignment.center,
@@ -358,7 +358,7 @@ class _BarraAtmosfera extends StatelessWidget {
       child: LinearProgressIndicator(
         value: intensidad,
         minHeight: 10,
-        backgroundColor: color.withOpacity(0.10),
+        backgroundColor: color.withValues(alpha: 0.10),
         valueColor: AlwaysStoppedAnimation<Color>(color),
       ),
     );
@@ -387,7 +387,7 @@ class _SectionHeader extends StatelessWidget {
           width: 54,
           height: 54,
           decoration: BoxDecoration(
-            color: color.withOpacity(0.13),
+            color: color.withValues(alpha: 0.13),
             borderRadius: BorderRadius.circular(AppRadius.lg),
           ),
           child: Icon(icon, color: color, size: 27),

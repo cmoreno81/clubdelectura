@@ -132,7 +132,7 @@ class _SeleccionUsuarioPageState extends State<SeleccionUsuarioPage> {
                       ),
                       leading: CircleAvatar(
                         radius: 26,
-                        backgroundColor: color.withOpacity(0.15),
+                        backgroundColor: color.withValues(alpha: 0.15),
                         child: Text(
                           _iniciales(u.nombre),
                           style: TextStyle(

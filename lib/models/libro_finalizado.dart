@@ -10,6 +10,7 @@ class LibroFinalizado {
   final String valoracion;
   final String resena;
   final String coverUrl;
+  final DateTime? fechaAlta;
 
   const LibroFinalizado({
     required this.bookId,
@@ -22,6 +23,7 @@ class LibroFinalizado {
     required this.valoracion,
     required this.resena,
     required this.coverUrl,
+    required this.fechaAlta,
   });
 
   factory LibroFinalizado.fromJson(Map<String, dynamic> json) {
@@ -36,6 +38,7 @@ class LibroFinalizado {
       valoracion: json['valoracion']?.toString() ?? '',
       resena: json['resena']?.toString() ?? json['review']?.toString() ?? '',
       coverUrl: json['coverUrl']?.toString() ?? '',
+      fechaAlta: DateTime.tryParse(json['fechaAlta']?.toString() ?? ''),
     );
   }
 }

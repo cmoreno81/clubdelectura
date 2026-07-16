@@ -48,7 +48,7 @@ class ClubvisionCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return ClubCard(
       padding: EdgeInsets.zero,
-      borderColor: estadoClub.iconColor.withOpacity(0.18),
+      borderColor: estadoClub.iconColor.withValues(alpha: 0.18),
       gradient: LinearGradient(
         begin: Alignment.topLeft,
         end: Alignment.bottomRight,
@@ -95,7 +95,7 @@ class ClubvisionCard extends StatelessWidget {
                 width: 38,
                 height: 38,
                 decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.65),
+                  color: Colors.white.withValues(alpha: 0.65),
                   shape: BoxShape.circle,
                 ),
                 child: const Icon(
@@ -117,7 +117,7 @@ class ClubvisionCard extends StatelessWidget {
           width: 68,
           height: 68,
           decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.72),
+            color: Colors.white.withValues(alpha: 0.72),
             borderRadius: BorderRadius.circular(AppRadius.xl),
           ),
           child: Icon(estadoClub.icono, size: 34, color: estadoClub.iconColor),
@@ -162,7 +162,7 @@ class ClubvisionCard extends StatelessWidget {
           child: LinearProgressIndicator(
             value: progreso.clamp(0.0, 1.0),
             minHeight: 10,
-            backgroundColor: Colors.white.withOpacity(0.7),
+            backgroundColor: Colors.white.withValues(alpha: 0.7),
             valueColor: const AlwaysStoppedAnimation<Color>(AppColors.primary),
           ),
         ),
@@ -213,7 +213,7 @@ class ClubvisionCard extends StatelessWidget {
             width: double.infinity,
             padding: const EdgeInsets.all(AppSpacing.md),
             decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.62),
+              color: Colors.white.withValues(alpha: 0.62),
               borderRadius: BorderRadius.circular(AppRadius.lg),
             ),
             child: const Column(
@@ -251,7 +251,7 @@ class ClubvisionCard extends StatelessWidget {
             width: double.infinity,
             padding: const EdgeInsets.all(AppSpacing.md),
             decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.6),
+              color: Colors.white.withValues(alpha: 0.6),
               borderRadius: BorderRadius.circular(AppRadius.lg),
             ),
             child: Column(

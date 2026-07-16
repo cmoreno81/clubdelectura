@@ -42,30 +42,24 @@ class LibroAgrupado {
   }
 
   double _valorNumerico(String valoracion) {
-    switch (valoracion.trim()) {
-      case '⭐':
-      case '⭐️':
-        return 1;
+    final texto = valoracion.trim().replaceAll('⭐️', '⭐').replaceAll(',', '.');
 
-      case '⭐⭐':
-      case '⭐️⭐️':
-        return 2;
-
-      case '⭐⭐⭐':
-      case '⭐️⭐️⭐️':
-        return 3;
-
-      case '⭐⭐⭐⭐':
-      case '⭐️⭐️⭐️⭐️':
-        return 4;
-
-      case '⭐⭐⭐⭐⭐':
-      case '⭐️⭐️⭐️⭐️⭐️':
-        return 5;
-
-      default:
-        return 0;
+    if (texto.isEmpty || texto == '😞') {
+      return 0;
     }
+
+    final numeroDirecto = double.tryParse(texto);
+
+    if (numeroDirecto != null) {
+      return ((numeroDirecto.clamp(0, 5)).toDouble() * 2).round() / 2;
+    }
+
+    final estrellasCompletas = RegExp('⭐').allMatches(texto).length;
+    final tieneMedia = texto.contains('½');
+
+    final resultado = estrellasCompletas + (tieneMedia ? 0.5 : 0);
+
+    return ((resultado.clamp(0, 5)).toDouble() * 2).round() / 2;
   }
 
   String get bookId {
@@ -82,6 +76,47 @@ class LibroAgrupado {
     }
 
     return '';
+  }
+
+  DateTime? get fechaAlta {
+    final fechas = <DateTime>[];
+
+    for (final registro in registros) {
+      final fecha = registro.fechaAlta;
+
+      if (fecha != null) {
+        fechas.add(fecha);
+      }
+    }
+
+    for (final finalizado in finalizados) {
+      final fecha = finalizado.fechaAlta;
+
+      if (fecha != null) {
+        fechas.add(fecha);
+      }
+    }
+
+    if (fechas.isEmpty) {
+      return null;
+    }
+
+    // Primera incorporación del libro al catálogo.
+    fechas.sort();
+
+    return fechas.first;
+  }
+
+  bool get esReciente {
+    final fecha = fechaAlta;
+
+    if (fecha == null) {
+      return false;
+    }
+
+    final diferencia = DateTime.now().difference(fecha);
+
+    return !diferencia.isNegative && diferencia.inDays <= 14;
   }
 
   Libro? get referencia {

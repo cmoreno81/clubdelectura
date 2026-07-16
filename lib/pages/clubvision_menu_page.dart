@@ -353,7 +353,7 @@ class _ClubvisionHeader extends StatelessWidget {
               child: LinearProgressIndicator(
                 value: (club.porcentaje / 100).clamp(0.0, 1.0),
                 minHeight: 10,
-                backgroundColor: Colors.white.withOpacity(0.72),
+                backgroundColor: Colors.white.withValues(alpha: 0.72),
                 valueColor: const AlwaysStoppedAnimation<Color>(
                   AppColors.primary,
                 ),
@@ -418,7 +418,7 @@ class _SectionHeader extends StatelessWidget {
           width: 54,
           height: 54,
           decoration: BoxDecoration(
-            color: color.withOpacity(0.13),
+            color: color.withValues(alpha: 0.13),
             borderRadius: BorderRadius.circular(AppRadius.lg),
           ),
           child: Icon(icon, color: color, size: 27),
@@ -477,7 +477,7 @@ class _MenuCard extends StatelessWidget {
     return ClubCard(
       elevated: false,
       padding: const EdgeInsets.all(AppSpacing.lg),
-      borderColor: color.withOpacity(0.20),
+      borderColor: color.withValues(alpha: 0.20),
       backgroundColor: Color.lerp(color, Colors.white, 0.94),
       onTap: onTap,
       child: Column(
@@ -490,7 +490,7 @@ class _MenuCard extends StatelessWidget {
                 width: 58,
                 height: 58,
                 decoration: BoxDecoration(
-                  color: color.withOpacity(0.13),
+                  color: color.withValues(alpha: 0.13),
                   borderRadius: BorderRadius.circular(AppRadius.lg),
                 ),
                 child: Icon(icon, color: color, size: 29),

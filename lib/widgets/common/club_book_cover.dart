@@ -70,7 +70,7 @@ class ClubBookCover extends StatelessWidget {
         width: width,
         height: height,
         fit: fit,
-        errorBuilder: (_, __, ___) {
+        errorBuilder: (_, _, _) {
           return _placeholder();
         },
         loadingBuilder: (context, child, progress) {

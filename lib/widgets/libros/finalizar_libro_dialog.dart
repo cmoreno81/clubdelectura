@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../common/club_rating_selector.dart';
 
 class FinalizarLibroDialog extends StatefulWidget {
   const FinalizarLibroDialog({super.key});
@@ -8,66 +9,120 @@ class FinalizarLibroDialog extends StatefulWidget {
 }
 
 class _FinalizarLibroDialogState extends State<FinalizarLibroDialog> {
-  String? valoracion;
+  double? valoracion;
 
-  final controller = TextEditingController();
+  final TextEditingController controller = TextEditingController();
 
-  final valoraciones = const [
-    "⭐️⭐️⭐️⭐️⭐️",
-    "⭐️⭐️⭐️⭐️",
-    "⭐️⭐️⭐️",
-    "⭐️⭐️",
-    "⭐️",
-    "😞",
-  ];
+  bool get esDecepcion => valoracion == 0;
+
+  String get valoracionTexto {
+    final valor = valoracion;
+
+    if (valor == null) {
+      return 'Selecciona una valoración';
+    }
+
+    if (valor == 0) {
+      return 'No era para mí';
+    }
+
+    final texto = valor % 1 == 0
+        ? valor.toInt().toString()
+        : valor.toStringAsFixed(1).replaceAll('.', ',');
+
+    return '$texto de 5';
+  }
+
+  void _seleccionarValoracion(double nuevaValoracion) {
+    setState(() {
+      valoracion = nuevaValoracion;
+    });
+  }
+
+  void _finalizar() {
+    final valor = valoracion;
+
+    if (valor == null) return;
+
+    Navigator.pop<Map<String, String>>(context, {
+      // El backend admite 3, 3.5, 4.5, etc.
+      'valoracion': valor.toString(),
+      'reflexion': controller.text.trim(),
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
-    return AlertDialog(
-      title: const Text("⭐ Finalizar lectura"),
+    final colorScheme = Theme.of(context).colorScheme;
 
+    return AlertDialog(
+      title: const Text('⭐ Finalizar lectura'),
       content: SizedBox(
         width: 420,
-
         child: SingleChildScrollView(
           child: Column(
             mainAxisSize: MainAxisSize.min,
-
             crossAxisAlignment: CrossAxisAlignment.start,
-
             children: [
               const Text(
-                "¿Qué valoración le das al libro?",
+                '¿Qué valoración le das al libro?',
                 style: TextStyle(fontWeight: FontWeight.bold),
               ),
 
-              const SizedBox(height: 12),
+              const SizedBox(height: 8),
 
-              Wrap(
-                spacing: 8,
-                runSpacing: 8,
+              Text(
+                'Puedes seleccionar estrellas completas o medias estrellas.',
+                style: Theme.of(context).textTheme.bodySmall,
+              ),
 
-                children: valoraciones.map((v) {
-                  final seleccionada = valoracion == v;
+              const SizedBox(height: 18),
 
-                  return ChoiceChip(
-                    label: Text(v, style: const TextStyle(fontSize: 18)),
+              Center(
+                child: ClubRatingSelector(
+                  valoracion: valoracion ?? 0,
+                  enabled: !esDecepcion,
+                  onChanged: _seleccionarValoracion,
+                ),
+              ),
 
-                    selected: seleccionada,
+              const SizedBox(height: 10),
 
-                    onSelected: (_) {
-                      setState(() {
-                        valoracion = v;
-                      });
-                    },
-                  );
-                }).toList(),
+              Center(
+                child: AnimatedSwitcher(
+                  duration: const Duration(milliseconds: 180),
+                  child: Text(
+                    valoracionTexto,
+                    key: ValueKey(valoracionTexto),
+                    style: TextStyle(
+                      color: valoracion == null
+                          ? colorScheme.onSurfaceVariant
+                          : colorScheme.primary,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ),
+              ),
+
+              const SizedBox(height: 16),
+
+              Center(
+                child: ChoiceChip(
+                  avatar: const Text('😞', style: TextStyle(fontSize: 18)),
+                  label: const Text('No era para mí'),
+                  selected: esDecepcion,
+                  onSelected: (seleccionado) {
+                    setState(() {
+                      valoracion = seleccionado ? 0 : null;
+                    });
+                  },
+                ),
               ),
 
               const SizedBox(height: 28),
 
               const Text(
-                "💭 Tu reseña (opcional)",
+                '💭 Tu reseña (opcional)',
                 style: TextStyle(fontWeight: FontWeight.bold),
               ),
 
@@ -81,7 +136,6 @@ class _FinalizarLibroDialogState extends State<FinalizarLibroDialog> {
                 keyboardType: TextInputType.multiline,
                 textInputAction: TextInputAction.newline,
                 scrollPadding: const EdgeInsets.only(bottom: 140),
-
                 decoration: InputDecoration(
                   hintText:
                       '¿Qué te ha parecido el libro?\n\n'
@@ -109,29 +163,18 @@ class _FinalizarLibroDialogState extends State<FinalizarLibroDialog> {
           ),
         ),
       ),
-
       actions: [
         TextButton(
           onPressed: () {
             Navigator.pop(context);
           },
-          child: const Text("Cancelar"),
+          child: const Text('Cancelar'),
         ),
-
         FilledButton.icon(
-          onPressed: valoracion == null
-              ? null
-              : () {
-                  Navigator.pop(context, {
-                    "valoracion": valoracion!,
-
-                    "reflexion": controller.text.trim(),
-                  });
-                },
-
+          style: FilledButton.styleFrom(minimumSize: const Size(0, 44)),
+          onPressed: valoracion == null ? null : _finalizar,
           icon: const Icon(Icons.check),
-
-          label: const Text("Finalizar"),
+          label: const Text('Finalizar'),
         ),
       ],
     );

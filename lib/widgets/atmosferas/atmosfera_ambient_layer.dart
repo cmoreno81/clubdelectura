@@ -144,7 +144,7 @@ class _AtmosferaPainter extends CustomPainter {
   }
 
   void _pintarPetalos(Canvas canvas, Size size) {
-    final paint = Paint()..color = color.withOpacity(0.075);
+    final paint = Paint()..color = color.withValues(alpha: 0.075);
 
     for (var i = 0; i < 13; i++) {
       final velocidad = 0.45 + (i % 4) * 0.11;
@@ -179,13 +179,13 @@ class _AtmosferaPainter extends CustomPainter {
 
       final pulso = (math.sin((progreso * math.pi * 2) + i * 0.8) + 1) / 2;
 
-      final paint = Paint()..color = color.withOpacity(0.025 + pulso * 0.09);
+      final paint = Paint()..color = color.withValues(alpha: 0.025 + pulso * 0.09);
 
       canvas.drawCircle(Offset(x, y), 1.5 + pulso * 3.2, paint);
 
       if (i % 4 == 0) {
         final linePaint = Paint()
-          ..color = color.withOpacity(0.025 + pulso * 0.06)
+          ..color = color.withValues(alpha: 0.025 + pulso * 0.06)
           ..strokeWidth = 1;
 
         canvas.drawLine(Offset(x - 6, y), Offset(x + 6, y), linePaint);
@@ -197,7 +197,7 @@ class _AtmosferaPainter extends CustomPainter {
 
   void _pintarOndas(Canvas canvas, Size size) {
     final paint = Paint()
-      ..color = color.withOpacity(0.075)
+      ..color = color.withValues(alpha: 0.075)
       ..style = PaintingStyle.stroke
       ..strokeWidth = 1.4;
 
@@ -222,7 +222,7 @@ class _AtmosferaPainter extends CustomPainter {
   }
 
   void _pintarHojas(Canvas canvas, Size size) {
-    final paint = Paint()..color = color.withOpacity(0.065);
+    final paint = Paint()..color = color.withValues(alpha: 0.065);
 
     for (var i = 0; i < 12; i++) {
       final fase = (progreso * (0.35 + (i % 3) * 0.1) + i * 0.16) % 1;
@@ -253,7 +253,7 @@ class _AtmosferaPainter extends CustomPainter {
       final y = size.height * (0.12 + i * 0.13);
 
       final paint = Paint()
-        ..color = color.withOpacity(0.035 + (i % 3) * 0.012)
+        ..color = color.withValues(alpha: 0.035 + (i % 3) * 0.012)
         ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 30);
 
       canvas.drawOval(
@@ -269,7 +269,7 @@ class _AtmosferaPainter extends CustomPainter {
 
   void _pintarLineas(Canvas canvas, Size size) {
     final paint = Paint()
-      ..color = color.withOpacity(0.085)
+      ..color = color.withValues(alpha: 0.085)
       ..strokeWidth = 1.2;
 
     for (var i = 0; i < 15; i++) {
@@ -291,7 +291,7 @@ class _AtmosferaPainter extends CustomPainter {
       final x = _fraccion(i * 45.73) * size.width;
       final y = size.height + 20 - fase * (size.height + 40);
 
-      final paint = Paint()..color = color.withOpacity(0.045 + fase * 0.11);
+      final paint = Paint()..color = color.withValues(alpha: 0.045 + fase * 0.11);
       canvas.drawCircle(Offset(x, y), 1.5 + (i % 3), paint);
     }
   }
@@ -303,7 +303,7 @@ class _AtmosferaPainter extends CustomPainter {
 
       final pulso = (math.sin(progreso * math.pi * 2 + i * 0.6) + 1) / 2;
 
-      final paint = Paint()..color = color.withOpacity(0.035 + pulso * 0.065);
+      final paint = Paint()..color = color.withValues(alpha: 0.035 + pulso * 0.065);
       canvas.drawCircle(Offset(x, y), 1.3 + pulso * 2.8, paint);
     }
   }

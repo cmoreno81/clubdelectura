@@ -127,7 +127,6 @@ class _ValoracionCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final estrellas = _numeroEstrellas(valoracion.valoracion);
-
     return ClubCard(
       elevated: false,
       padding: const EdgeInsets.all(AppSpacing.md),
@@ -155,7 +154,7 @@ class _ValoracionCard extends StatelessWidget {
 
               const SizedBox(width: AppSpacing.sm),
 
-              _EstrellasCompactas(valoracion: estrellas.toDouble()),
+              _EstrellasCompactas(valoracion: estrellas),
             ],
           ),
 
@@ -207,20 +206,30 @@ class _ValoracionCard extends StatelessWidget {
     );
   }
 
-  static int _numeroEstrellas(String valoracion) {
-    final estrellas = '⭐'.allMatches(valoracion).length;
+  static double _numeroEstrellas(String valoracion) {
+    final texto = valoracion.trim().replaceAll('⭐️', '⭐').replaceAll(',', '.');
 
-    if (estrellas > 0) {
-      return estrellas.clamp(0, 5);
+    if (texto.isEmpty) {
+      return 0;
     }
 
-    final numero = double.tryParse(
-      valoracion.replaceAll(',', '.').replaceAll(RegExp(r'[^0-9.]'), ''),
-    );
+    if (texto == '😞') {
+      return 0;
+    }
 
-    if (numero == null) return 0;
+    final numeroDirecto = double.tryParse(texto);
 
-    return numero.round().clamp(0, 5);
+    if (numeroDirecto != null) {
+      return (numeroDirecto * 2).round() / 2;
+    }
+
+    final estrellasCompletas = RegExp('⭐').allMatches(texto).length;
+
+    final tieneMedia = texto.contains('½');
+
+    final resultado = estrellasCompletas + (tieneMedia ? 0.5 : 0);
+
+    return resultado.clamp(0, 5).toDouble();
   }
 }
 
@@ -231,18 +240,26 @@ class _EstrellasCompactas extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final llenas = valoracion.round().clamp(0, 5);
+    final valor = ((valoracion.clamp(0, 5)).toDouble() * 2).round() / 2;
 
     return Row(
       mainAxisSize: MainAxisSize.min,
-      children: List.generate(
-        5,
-        (index) => Icon(
-          index < llenas ? Icons.star_rounded : Icons.star_border_rounded,
-          size: 19,
-          color: const Color(0xFFB48113),
-        ),
-      ),
+      children: List.generate(5, (index) {
+        final inicioEstrella = index.toDouble();
+        final valorDentro = valor - inicioEstrella;
+
+        final IconData icono;
+
+        if (valorDentro >= 1) {
+          icono = Icons.star_rounded;
+        } else if (valorDentro >= 0.5) {
+          icono = Icons.star_half_rounded;
+        } else {
+          icono = Icons.star_border_rounded;
+        }
+
+        return Icon(icono, size: 19, color: const Color(0xFFB48113));
+      }),
     );
   }
 }

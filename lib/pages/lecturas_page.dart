@@ -285,7 +285,7 @@ class _SectionTitle extends StatelessWidget {
           width: 54,
           height: 54,
           decoration: BoxDecoration(
-            color: color.withOpacity(0.13),
+            color: color.withValues(alpha: 0.13),
             borderRadius: BorderRadius.circular(AppRadius.lg),
           ),
           child: Icon(icon, color: color, size: 27),
@@ -437,7 +437,7 @@ class _LecturaCard extends StatelessWidget {
                 width: 40,
                 height: 40,
                 decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.75),
+                  color: Colors.white.withValues(alpha: 0.75),
                   shape: BoxShape.circle,
                 ),
                 child: Icon(Icons.chevron_right_rounded, color: colorPrincipal),
@@ -479,7 +479,7 @@ class _LecturaCard extends StatelessWidget {
                 vertical: AppSpacing.sm,
               ),
               decoration: BoxDecoration(
-                color: Colors.white.withOpacity(destacada ? 0.68 : 1),
+                color: Colors.white.withValues(alpha: destacada ? 0.68 : 1),
                 borderRadius: BorderRadius.circular(AppRadius.md),
               ),
               child: Row(

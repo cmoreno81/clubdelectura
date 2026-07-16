@@ -34,7 +34,7 @@ class DirectorEscenas {
       width: double.infinity,
       padding: const EdgeInsets.all(AppSpacing.lg),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.58),
+        color: Colors.white.withValues(alpha: 0.58),
         borderRadius: BorderRadius.circular(AppRadius.lg),
       ),
       child: const Column(
@@ -66,7 +66,7 @@ class DirectorEscenas {
       width: double.infinity,
       padding: const EdgeInsets.all(AppSpacing.lg),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.58),
+        color: Colors.white.withValues(alpha: 0.58),
         borderRadius: BorderRadius.circular(AppRadius.lg),
       ),
       child: Column(
@@ -96,7 +96,7 @@ class DirectorEscenas {
       width: double.infinity,
       padding: const EdgeInsets.all(AppSpacing.md),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.58),
+        color: Colors.white.withValues(alpha: 0.58),
         borderRadius: BorderRadius.circular(AppRadius.xl),
       ),
       child: Row(

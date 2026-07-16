@@ -19,6 +19,8 @@ import 'detalle_libro_page.dart';
 import 'nuevo_libro_page.dart';
 import '../services/atmosfera_scope.dart';
 
+enum OrdenLibros { populares, recientes, tituloAsc, tituloDesc, mejorValorados }
+
 class LibrosPage extends StatefulWidget {
   const LibrosPage({super.key});
 
@@ -34,6 +36,7 @@ class _LibrosPageState extends State<LibrosPage> {
   String filtroBusqueda = '';
   String filtroEstado = 'TODOS';
   String filtroUsuario = 'TODAS';
+  OrdenLibros ordenSeleccionado = OrdenLibros.populares;
 
   bool _atmosferaRestaurada = false;
 
@@ -93,14 +96,14 @@ class _LibrosPageState extends State<LibrosPage> {
             Icon(
               Icons.local_library_rounded,
               color: colorScheme.primary,
-              size: 27,
+              size: 24,
             ),
             const SizedBox(width: AppSpacing.xs),
             Text(
               'Biblioteca',
               style: AppTextStyles.title.copyWith(
                 color: colorScheme.onSurface,
-                fontSize: 25,
+                fontSize: 23,
               ),
             ),
           ],
@@ -108,20 +111,15 @@ class _LibrosPageState extends State<LibrosPage> {
         actions: [
           Padding(
             padding: const EdgeInsets.only(right: 12),
-            child: FilledButton.icon(
-              onPressed: _abrirNuevoLibro,
-              icon: const Icon(Icons.add_rounded, size: 20),
-              label: const Text('Añadir'),
-              style: FilledButton.styleFrom(
-                backgroundColor: colorScheme.primary,
-                foregroundColor: colorScheme.onPrimary,
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 14,
-                  vertical: 10,
-                ),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(999),
-                ),
+            child: Material(
+              color: colorScheme.primary,
+              shape: const CircleBorder(),
+              child: IconButton(
+                tooltip: 'Añadir libro',
+                onPressed: _abrirNuevoLibro,
+                icon: const Icon(Icons.add_rounded, color: Colors.white),
+                iconSize: 24,
+                splashRadius: 22,
               ),
             ),
           ),
@@ -163,8 +161,10 @@ class _LibrosPageState extends State<LibrosPage> {
 
           return Column(
             children: [
-              _cabeceraFiltros(usuariosFiltro: usuariosFiltro),
-
+              _cabeceraFiltros(
+                usuariosFiltro: usuariosFiltro,
+                totalResultados: resultado.length,
+              ),
               Expanded(
                 child: resultado.isEmpty
                     ? ClubEmptyState(
@@ -207,7 +207,10 @@ class _LibrosPageState extends State<LibrosPage> {
     );
   }
 
-  Widget _cabeceraFiltros({required List<String> usuariosFiltro}) {
+  Widget _cabeceraFiltros({
+    required List<String> usuariosFiltro,
+    required int totalResultados,
+  }) {
     return Container(
       padding: const EdgeInsets.fromLTRB(
         AppSpacing.md,
@@ -293,6 +296,13 @@ class _LibrosPageState extends State<LibrosPage> {
                   icon: Icons.menu_book_rounded,
                 ),
                 const SizedBox(width: AppSpacing.xs),
+
+                _chip(
+                  estado: 'PAUSADO',
+                  label: 'En pausa',
+                  icon: Icons.pause_circle_outline_rounded,
+                ),
+                const SizedBox(width: AppSpacing.xs),
                 _chip(
                   estado: 'RELECTURA',
                   label: 'Relecturas',
@@ -306,6 +316,38 @@ class _LibrosPageState extends State<LibrosPage> {
                 ),
               ],
             ),
+          ),
+          const SizedBox(height: AppSpacing.sm),
+
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  totalResultados == 1 ? '1 libro' : '$totalResultados libros',
+                  style: AppTextStyles.caption.copyWith(
+                    color: AppColors.textSecondary,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+
+              OutlinedButton.icon(
+                onPressed: _mostrarOpcionesOrden,
+                icon: const Icon(Icons.swap_vert_rounded, size: 19),
+                label: Text('Ordenar · $_labelOrden'),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: Theme.of(context).colorScheme.primary,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 13,
+                    vertical: 9,
+                  ),
+                  visualDensity: VisualDensity.compact,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(999),
+                  ),
+                ),
+              ),
+            ],
           ),
         ],
       ),
@@ -344,6 +386,9 @@ class _LibrosPageState extends State<LibrosPage> {
       case 'TERMINADOS':
         return ClubChipVariant.success;
 
+      case 'PAUSADO':
+        return ClubChipVariant.warning;
+
       default:
         return ClubChipVariant.neutral;
     }
@@ -354,17 +399,18 @@ class _LibrosPageState extends State<LibrosPage> {
       margin: const EdgeInsets.only(bottom: AppSpacing.md),
       padding: const EdgeInsets.all(AppSpacing.md),
       onTap: () async {
-        final refrescar = await Navigator.push<bool>(
+        await Navigator.push<bool>(
           context,
           MaterialPageRoute(builder: (_) => DetalleLibroPage(libro: libro)),
         );
+
         _atmosferaRestaurada = false;
 
         if (!mounted) return;
 
-        if (refrescar == true) {
-          _recargar();
-        }
+        // El estado, la valoración, las fechas o los datos del libro
+        // pueden haber cambiado dentro del detalle.
+        _recargar();
       },
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -450,6 +496,12 @@ class _LibrosPageState extends State<LibrosPage> {
                   spacing: AppSpacing.xs,
                   runSpacing: AppSpacing.xs,
                   children: [
+                    if (libro.esReciente)
+                      const ClubChip(
+                        label: 'Nuevo',
+                        icon: Icons.auto_awesome_rounded,
+                        variant: ClubChipVariant.primary,
+                      ),
                     ClubChip(
                       label: '${libro.total} interesadas',
                       icon: Icons.people_outline_rounded,
@@ -498,6 +550,214 @@ class _LibrosPageState extends State<LibrosPage> {
         ],
       ),
     );
+  }
+
+  String get _labelOrden {
+    switch (ordenSeleccionado) {
+      case OrdenLibros.populares:
+        return 'Más populares';
+
+      case OrdenLibros.recientes:
+        return 'Más recientes';
+
+      case OrdenLibros.tituloAsc:
+        return 'Título A–Z';
+
+      case OrdenLibros.tituloDesc:
+        return 'Título Z–A';
+
+      case OrdenLibros.mejorValorados:
+        return 'Mejor valorados';
+    }
+  }
+
+  Future<void> _mostrarOpcionesOrden() async {
+    final seleccionado = await showModalBottomSheet<OrdenLibros>(
+      context: context,
+      showDragHandle: true,
+      useSafeArea: true,
+      isScrollControlled: true,
+      builder: (sheetContext) {
+        return FractionallySizedBox(
+          heightFactor: 0.72,
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(
+              AppSpacing.md,
+              0,
+              AppSpacing.md,
+              AppSpacing.lg,
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('Ordenar biblioteca', style: AppTextStyles.section),
+
+                const SizedBox(height: AppSpacing.xs),
+
+                Text(
+                  'Elige cómo quieres ver los libros.',
+                  style: AppTextStyles.bodySecondary,
+                ),
+
+                const SizedBox(height: AppSpacing.md),
+
+                Expanded(
+                  child: ListView(
+                    padding: EdgeInsets.zero,
+                    children: [
+                      _opcionOrden(
+                        context: sheetContext,
+                        orden: OrdenLibros.populares,
+                        titulo: 'Más populares',
+                        subtitulo: 'Los que interesan a más lectoras',
+                        icono: Icons.local_fire_department_outlined,
+                      ),
+
+                      _opcionOrden(
+                        context: sheetContext,
+                        orden: OrdenLibros.recientes,
+                        titulo: 'Añadidos recientemente',
+                        subtitulo: 'Las últimas incorporaciones al catálogo',
+                        icono: Icons.schedule_rounded,
+                      ),
+
+                      _opcionOrden(
+                        context: sheetContext,
+                        orden: OrdenLibros.tituloAsc,
+                        titulo: 'Título: A–Z',
+                        subtitulo: 'Orden alfabético ascendente',
+                        icono: Icons.sort_by_alpha_rounded,
+                      ),
+
+                      _opcionOrden(
+                        context: sheetContext,
+                        orden: OrdenLibros.tituloDesc,
+                        titulo: 'Título: Z–A',
+                        subtitulo: 'Orden alfabético descendente',
+                        icono: Icons.sort_by_alpha_rounded,
+                      ),
+
+                      _opcionOrden(
+                        context: sheetContext,
+                        orden: OrdenLibros.mejorValorados,
+                        titulo: 'Mejor valorados',
+                        subtitulo: 'Los favoritos del club primero',
+                        icono: Icons.star_outline_rounded,
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+
+    if (seleccionado == null || !mounted) {
+      return;
+    }
+
+    setState(() {
+      ordenSeleccionado = seleccionado;
+    });
+  }
+
+  Widget _opcionOrden({
+    required BuildContext context,
+    required OrdenLibros orden,
+    required String titulo,
+    required String subtitulo,
+    required IconData icono,
+  }) {
+    final seleccionada = ordenSeleccionado == orden;
+    final color = Theme.of(context).colorScheme.primary;
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: AppSpacing.xs),
+      child: ListTile(
+        selected: seleccionada,
+        selectedTileColor: color.withValues(alpha: 0.08),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        leading: Container(
+          width: 42,
+          height: 42,
+          decoration: BoxDecoration(
+            color: seleccionada
+                ? color.withValues(alpha: 0.12)
+                : AppColors.surfaceSoft,
+            borderRadius: BorderRadius.circular(14),
+          ),
+          child: Icon(
+            icono,
+            color: seleccionada ? color : AppColors.textSecondary,
+          ),
+        ),
+        title: Text(
+          titulo,
+          style: AppTextStyles.body.copyWith(fontWeight: FontWeight.w700),
+        ),
+        subtitle: Text(subtitulo, style: AppTextStyles.caption),
+        trailing: seleccionada
+            ? Icon(Icons.check_circle_rounded, color: color)
+            : const Icon(Icons.circle_outlined, color: AppColors.textMuted),
+        onTap: () {
+          Navigator.pop(context, orden);
+        },
+      ),
+    );
+  }
+
+  void _aplicarOrden(List<LibroAgrupado> resultado) {
+    resultado.sort((a, b) {
+      switch (ordenSeleccionado) {
+        case OrdenLibros.populares:
+          final popularidadA = a.total + a.totalFinalizados;
+          final popularidadB = b.total + b.totalFinalizados;
+
+          final comparacion = popularidadB.compareTo(popularidadA);
+
+          if (comparacion != 0) {
+            return comparacion;
+          }
+
+          return normalizar(a.libro).compareTo(normalizar(b.libro));
+
+        case OrdenLibros.recientes:
+          final fechaA = a.fechaAlta;
+          final fechaB = b.fechaAlta;
+
+          if (fechaA == null && fechaB == null) {
+            return normalizar(a.libro).compareTo(normalizar(b.libro));
+          }
+
+          if (fechaA == null) return 1;
+          if (fechaB == null) return -1;
+
+          final comparacion = fechaB.compareTo(fechaA);
+
+          if (comparacion != 0) {
+            return comparacion;
+          }
+
+          return normalizar(a.libro).compareTo(normalizar(b.libro));
+
+        case OrdenLibros.tituloAsc:
+          return normalizar(a.libro).compareTo(normalizar(b.libro));
+
+        case OrdenLibros.tituloDesc:
+          return normalizar(b.libro).compareTo(normalizar(a.libro));
+
+        case OrdenLibros.mejorValorados:
+          final comparacion = b.mediaValoracion.compareTo(a.mediaValoracion);
+
+          if (comparacion != 0) {
+            return comparacion;
+          }
+
+          return normalizar(a.libro).compareTo(normalizar(b.libro));
+      }
+    });
   }
 
   List<LibroAgrupado> _crearResultado({
@@ -551,7 +811,7 @@ class _LibrosPageState extends State<LibrosPage> {
         );
       }
 
-      resultado.sort((a, b) => b.total.compareTo(a.total));
+      _aplicarOrden(resultado);
 
       return resultado;
     }
@@ -586,8 +846,7 @@ class _LibrosPageState extends State<LibrosPage> {
     }
 
     resultado = agrupados.values.toList();
-
-    resultado.sort((a, b) => b.totalFinalizados.compareTo(a.totalFinalizados));
+    _aplicarOrden(resultado);
 
     return resultado;
   }

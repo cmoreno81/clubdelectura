@@ -23,7 +23,7 @@ class ClubSectionTitle extends StatelessWidget {
           width: 48,
           height: 48,
           decoration: BoxDecoration(
-            color: color.withOpacity(.12),
+            color: color.withValues(alpha: .12),
             borderRadius: BorderRadius.circular(16),
           ),
           child: Icon(icon, color: color, size: 24),

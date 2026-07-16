@@ -14,7 +14,7 @@ class EstadoClubFactory {
           icono: Icons.nights_stay,
           iconColor: Colors.amber,
           contenido: ContenidoClub.preparando,
-          color: const Color(0xFFE8EDF5),
+          color: Color(0xFFE8EDF5),
         );
 
       case 'VOTACION':
@@ -26,7 +26,7 @@ class EstadoClubFactory {
           iconColor: Colors.green,
           contenido: ContenidoClub.candidatas,
           permiteVotar: true,
-          color: const Color(0xFFE6F6EA),
+          color: Color(0xFFE6F6EA),
         );
 
       case 'ULTIMAS_HORAS':
@@ -39,7 +39,7 @@ class EstadoClubFactory {
           contenido: ContenidoClub.candidatas,
           permiteVotar: true,
           mostrarCuentaAtras: true,
-          color: const Color(0xFFFFF3E0),
+          color: Color(0xFFFFF3E0),
         );
       case 'RESULTADOS':
       case 'GALA':
@@ -51,7 +51,7 @@ class EstadoClubFactory {
           iconColor: Colors.amber,
           contenido: ContenidoClub.ganador,
           mostrarGanador: true,
-          color: const Color(0xFFFFF8E1),
+          color: Color(0xFFFFF8E1),
         );
 
       case 'LECTURA':
@@ -73,7 +73,7 @@ class EstadoClubFactory {
           icono: Icons.notification_important,
           iconColor: Colors.amber,
           contenido: ContenidoClub.preparando,
-          color: const Color(0xFFEAF2FF),
+          color: Color(0xFFEAF2FF),
         );
     }
   }

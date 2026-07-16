@@ -18,6 +18,7 @@ import '../widgets/perfil/editar_fechas_lectura_dialog.dart';
 import '../utils/lectura_fecha_utils.dart';
 import '../widgets/perfil/editar_avatar_dialog.dart';
 import '../widgets/perfil/perfil_timeline_lectura.dart';
+import '../widgets/common/club_rating_stars.dart';
 
 class PerfilUsuarioPage extends StatefulWidget {
   final String usuario;
@@ -95,6 +96,8 @@ class _PerfilUsuarioPageState extends State<PerfilUsuarioPage> {
         libraryId: libro.libraryId,
         fechaInicio: resultado['fechaInicio'] ?? '',
         fechaFin: resultado['fechaFin'] ?? '',
+        valoracion: resultado['valoracion'],
+        resena: resultado['resena'],
       );
     } catch (_) {
       respuesta = {
@@ -631,9 +634,12 @@ class _PerfilUsuarioPageState extends State<PerfilUsuarioPage> {
                 if (libro.valoracion.isNotEmpty) ...[
                   const SizedBox(height: AppSpacing.sm),
 
-                  Text(libro.valoracion, style: const TextStyle(fontSize: 15)),
+                  ClubRatingStars(
+                    valoracion: libro.valoracion,
+                    size: 19,
+                    spacing: 1,
+                  ),
                 ],
-
                 if (duracion.isNotEmpty) ...[
                   const SizedBox(height: AppSpacing.sm),
 

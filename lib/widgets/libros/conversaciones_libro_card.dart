@@ -114,7 +114,7 @@ class _ConversacionCard extends StatelessWidget {
       backgroundColor: esOficial
           ? AppColors.surfaceSoft
           : const Color(0xFFF3F7FD),
-      borderColor: colorPrincipal.withOpacity(0.20),
+      borderColor: colorPrincipal.withValues(alpha: 0.20),
       onTap: onTap,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -126,7 +126,7 @@ class _ConversacionCard extends StatelessWidget {
                 width: 52,
                 height: 52,
                 decoration: BoxDecoration(
-                  color: colorPrincipal.withOpacity(0.13),
+                  color: colorPrincipal.withValues(alpha: 0.13),
                   borderRadius: BorderRadius.circular(AppRadius.lg),
                 ),
                 child: Icon(
@@ -159,7 +159,7 @@ class _ConversacionCard extends StatelessWidget {
                 width: 38,
                 height: 38,
                 decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.72),
+                  color: Colors.white.withValues(alpha: 0.72),
                   shape: BoxShape.circle,
                 ),
                 child: Icon(
@@ -224,7 +224,7 @@ class _ConversacionCard extends StatelessWidget {
                 vertical: AppSpacing.sm,
               ),
               decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.62),
+                color: Colors.white.withValues(alpha: 0.62),
                 borderRadius: BorderRadius.circular(AppRadius.md),
               ),
               child: Row(

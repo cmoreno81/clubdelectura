@@ -8,6 +8,7 @@ import '../../theme/app_text_styles.dart';
 import '../../utils/genero_utils.dart';
 import '../../utils/lectura_fecha_utils.dart';
 import '../common/club_card.dart';
+import '../common/club_rating_stars.dart';
 
 class PerfilTimelineLectura extends StatelessWidget {
   final List<PerfilLibroTerminado> libros;
@@ -324,9 +325,10 @@ class _TimelineEntrada extends StatelessWidget {
                         if (libro.valoracion.isNotEmpty) ...[
                           const SizedBox(height: 5),
 
-                          Text(
-                            libro.valoracion,
-                            style: const TextStyle(fontSize: 13),
+                          ClubRatingStars(
+                            valoracion: libro.valoracion,
+                            size: 16,
+                            spacing: 0,
                           ),
                         ],
 

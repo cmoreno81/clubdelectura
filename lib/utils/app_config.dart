@@ -1,5 +1,5 @@
 class AppConfig {
-  static const bool useLocalBackend = false;
+  static const bool useLocalBackend = true;
 
   static String get baseUrl => useLocalBackend
       ? 'http://localhost:3000/api'

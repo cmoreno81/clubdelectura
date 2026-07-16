@@ -55,13 +55,13 @@ class _PaletaLecturaPageState extends State<PaletaLecturaPage> {
       );
 
       final candidatos = <Color>[
-        if (palette.dominantColor?.color case final color?) color,
-        if (palette.vibrantColor?.color case final color?) color,
-        if (palette.darkVibrantColor?.color case final color?) color,
-        if (palette.lightVibrantColor?.color case final color?) color,
-        if (palette.mutedColor?.color case final color?) color,
-        if (palette.darkMutedColor?.color case final color?) color,
-        if (palette.lightMutedColor?.color case final color?) color,
+        ?palette.dominantColor?.color,
+        ?palette.vibrantColor?.color,
+        ?palette.darkVibrantColor?.color,
+        ?palette.lightVibrantColor?.color,
+        ?palette.mutedColor?.color,
+        ?palette.darkMutedColor?.color,
+        ?palette.lightMutedColor?.color,
         ...palette.paletteColors.map((e) => e.color),
       ];
 
@@ -546,11 +546,14 @@ class _HeroPaleta extends StatelessWidget {
 
     return ClubCard(
       padding: const EdgeInsets.all(AppSpacing.lg),
-      borderColor: base.withOpacity(0.25),
+      borderColor: base.withValues(alpha: 0.25),
       gradient: LinearGradient(
         begin: Alignment.topLeft,
         end: Alignment.bottomRight,
-        colors: [base.withOpacity(0.08), colores.last.color.withOpacity(0.12)],
+        colors: [
+          base.withValues(alpha: 0.08),
+          colores.last.color.withValues(alpha: 0.12),
+        ],
       ),
       child: Column(
         children: [
@@ -594,7 +597,7 @@ class _HeroPaleta extends StatelessWidget {
                       borderRadius: BorderRadius.circular(6),
                       boxShadow: [
                         BoxShadow(
-                          color: colores[i].color.withOpacity(0.22),
+                          color: colores[i].color.withValues(alpha: 0.22),
                           blurRadius: 10,
                           offset: const Offset(0, 5),
                         ),
@@ -621,7 +624,7 @@ class _ColorCard extends StatelessWidget {
     return ClubCard(
       elevated: false,
       padding: EdgeInsets.zero,
-      borderColor: item.color.withOpacity(0.24),
+      borderColor: item.color.withValues(alpha: 0.24),
       onTap: onCopiar,
       child: Row(
         children: [
@@ -669,7 +672,7 @@ class _ColorCard extends StatelessWidget {
               width: 40,
               height: 40,
               decoration: BoxDecoration(
-                color: item.color.withOpacity(0.10),
+                color: item.color.withValues(alpha: 0.10),
                 shape: BoxShape.circle,
               ),
               child: Icon(Icons.copy_rounded, color: item.color, size: 19),
@@ -747,7 +750,7 @@ class _PostIt extends StatelessWidget {
         borderRadius: BorderRadius.circular(5),
         boxShadow: [
           BoxShadow(
-            color: color.withOpacity(0.25),
+            color: color.withValues(alpha: 0.25),
             blurRadius: 12,
             offset: const Offset(0, 7),
           ),
@@ -802,7 +805,7 @@ class _LeyendaRow extends StatelessWidget {
           width: 45,
           height: 45,
           decoration: BoxDecoration(
-            color: item.color.withOpacity(0.16),
+            color: item.color.withValues(alpha: 0.16),
             borderRadius: BorderRadius.circular(AppRadius.md),
           ),
           child: Icon(item.uso.icono, color: item.color, size: 22),

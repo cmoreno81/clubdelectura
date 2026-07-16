@@ -13,6 +13,9 @@ class Libro {
   final bool yaLoTengo;
   final String goodreads;
   final String coverUrl;
+  final DateTime? fechaAlta;
+  final DateTime? pausedAt;
+  final String pauseReason;
 
   const Libro({
     required this.bookId,
@@ -28,6 +31,9 @@ class Libro {
     required this.yaLoTengo,
     required this.goodreads,
     required this.coverUrl,
+    required this.fechaAlta,
+    required this.pausedAt,
+    required this.pauseReason,
   });
 
   factory Libro.fromJson(Map<String, dynamic> json) {
@@ -48,6 +54,9 @@ class Libro {
           json['goodreadsUrl']?.toString() ??
           '',
       coverUrl: json['coverUrl']?.toString() ?? '',
+      fechaAlta: DateTime.tryParse(json['fechaAlta']?.toString() ?? ''),
+      pausedAt: DateTime.tryParse(json['pausedAt']?.toString() ?? ''),
+      pauseReason: json['pauseReason']?.toString() ?? '',
     );
   }
 
@@ -65,6 +74,9 @@ class Libro {
     bool? yaLoTengo,
     String? goodreads,
     String? coverUrl,
+    DateTime? fechaAlta,
+    DateTime? pausedAt,
+    String? pauseReason,
   }) {
     return Libro(
       bookId: bookId ?? this.bookId,
@@ -80,6 +92,9 @@ class Libro {
       yaLoTengo: yaLoTengo ?? this.yaLoTengo,
       goodreads: goodreads ?? this.goodreads,
       coverUrl: coverUrl ?? this.coverUrl,
+      fechaAlta: fechaAlta ?? this.fechaAlta,
+      pausedAt: pausedAt ?? this.pausedAt,
+      pauseReason: pauseReason ?? this.pauseReason,
     );
   }
 }
