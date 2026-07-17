@@ -383,8 +383,11 @@ class _LibrosPageState extends State<LibrosPage> {
       case 'RELECTURA':
         return ClubChipVariant.primary;
 
-      case 'TERMINADOS':
+      case 'FINALIZADO':
         return ClubChipVariant.success;
+
+      case 'ABANDONADO':
+        return ClubChipVariant.danger;
 
       case 'PAUSADO':
         return ClubChipVariant.warning;
@@ -760,6 +763,28 @@ class _LibrosPageState extends State<LibrosPage> {
     });
   }
 
+  Libro _registroDesdeFinalizado(LibroFinalizado finalizado) {
+    return Libro(
+      bookId: finalizado.bookId,
+      usuario: finalizado.usuario,
+      libro: finalizado.libro,
+      genero: finalizado.genero,
+      saga: finalizado.saga,
+      numSaga: finalizado.numSaga,
+      autoconclusivo: finalizado.autoconclusivo,
+      prioridad: 'MEDIA',
+      estado: 'FINALIZADO',
+      valoracion: finalizado.valoracion,
+      yaLoTengo: false,
+      goodreads: '',
+      coverUrl: finalizado.coverUrl,
+      fechaAlta: finalizado.fechaAlta,
+      pausedAt: null,
+      pauseReason: '',
+      avatarUrl: finalizado.avatarUrl,
+    );
+  }
+
   List<LibroAgrupado> _crearResultado({
     required List<Libro> libros,
     required List<LibroFinalizado> finalizados,
@@ -825,13 +850,23 @@ class _LibrosPageState extends State<LibrosPage> {
           normalizar(f.libro).contains(normalizar(filtroBusqueda));
 
       return coincideUsuario && coincideBusqueda;
-    });
+    }).toList();
+
+    final titulosFinalizados = finalizadosFiltrados
+        .map((finalizado) => normalizar(finalizado.libro))
+        .toSet();
+
+    final registrosRelacionados = libros.where((libro) {
+      return titulosFinalizados.contains(normalizar(libro.libro));
+    }).toList();
 
     final agrupados = <String, LibroAgrupado>{};
 
     for (final finalizado in finalizadosFiltrados) {
+      final clave = normalizar(finalizado.libro);
+
       agrupados.putIfAbsent(
-        finalizado.libro,
+        clave,
         () => LibroAgrupado(
           libro: finalizado.libro,
           genero: finalizado.genero,
@@ -842,9 +877,30 @@ class _LibrosPageState extends State<LibrosPage> {
         ),
       );
 
-      agrupados[finalizado.libro]!.finalizados.add(finalizado);
+      agrupados[clave]!.finalizados.add(finalizado);
+      agrupados[clave]!.registros.add(_registroDesdeFinalizado(finalizado));
     }
 
+    for (final registro in registrosRelacionados) {
+      final clave = normalizar(registro.libro);
+      final agrupado = agrupados[clave];
+
+      if (agrupado == null) continue;
+
+      final yaExiste = agrupado.registros.any(
+        (existente) =>
+            existente.usuario.trim().toLowerCase() ==
+            registro.usuario.trim().toLowerCase(),
+      );
+
+      if (!yaExiste) {
+        agrupado.registros.add(registro);
+      }
+
+      if (registro.yaLoTengo) {
+        agrupado.yaLoTengo = true;
+      }
+    }
     resultado = agrupados.values.toList();
     _aplicarOrden(resultado);
 

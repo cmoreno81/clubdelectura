@@ -236,7 +236,11 @@ class _VotanteCard extends StatelessWidget {
         children: [
           Row(
             children: [
-              ClubAvatar(nombre: persona.usuaria, size: 56),
+              ClubAvatar(
+                nombre: persona.usuaria,
+                imageUrl: persona.avatarUrl,
+                size: 56,
+              ),
 
               const SizedBox(width: AppSpacing.md),
 

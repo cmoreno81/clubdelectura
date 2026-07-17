@@ -1,3 +1,5 @@
+import 'package:flutter/material.dart';
+
 import 'respuesta_comentario.dart';
 
 class ComentarioLectura {
@@ -7,6 +9,7 @@ class ComentarioLectura {
   final String capitulo;
 
   final String usuario;
+  final String avatarUrl;
   final String fecha;
 
   final String comentario;
@@ -27,6 +30,7 @@ class ComentarioLectura {
     required this.libro,
     required this.capitulo,
     required this.usuario,
+    required this.avatarUrl,
     required this.fecha,
     required this.comentario,
     required this.likes,
@@ -38,29 +42,31 @@ class ComentarioLectura {
   });
 
   factory ComentarioLectura.fromJson(Map<String, dynamic> json) {
+    debugPrint('Comentario JSON: $json');
+
     return ComentarioLectura(
-      id: json["id"] ?? "",
-
-      libro: json["libro"] ?? "",
-      capitulo: json["capitulo"] ?? "",
-
-      usuario: json["usuario"] ?? "",
-      fecha: json["fecha"] ?? "",
-
-      comentario: json["comentario"] ?? "",
-
-      likes: json["likes"] ?? 0,
-
-      miLike: json["miLike"] ?? false,
-
-      editado: json["editado"] ?? false,
-
-      eliminado: json["eliminado"] ?? false,
-
-      esMio: json["esMio"] ?? false,
-
+      id: json["id"]?.toString() ?? "",
+      libro: json["libro"]?.toString() ?? "",
+      capitulo: json["capitulo"]?.toString() ?? "",
+      usuario: json["usuario"]?.toString() ?? "",
+      avatarUrl:
+          json["avatarUrl"]?.toString() ??
+          json["fotoUrl"]?.toString() ??
+          json["photoUrl"]?.toString() ??
+          "",
+      fecha: json["fecha"]?.toString() ?? "",
+      comentario: json["comentario"]?.toString() ?? "",
+      likes: json["likes"] as int? ?? 0,
+      miLike: json["miLike"] as bool? ?? false,
+      editado: json["editado"] as bool? ?? false,
+      eliminado: json["eliminado"] as bool? ?? false,
+      esMio: json["esMio"] as bool? ?? false,
       respuestas: (json["respuestas"] as List? ?? [])
-          .map((e) => RespuestaComentario.fromJson(e))
+          .map(
+            (e) => RespuestaComentario.fromJson(
+              Map<String, dynamic>.from(e as Map),
+            ),
+          )
           .toList(),
     );
   }

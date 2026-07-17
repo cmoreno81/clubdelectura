@@ -156,7 +156,9 @@ class _DetalleLibroPageState extends State<DetalleLibroPage> {
       setState(() {
         registros[index] = libro.copyWith(
           estado: nuevoEstado,
-          valoracion: valoracion ?? libro.valoracion,
+          valoracion: nuevoEstado == 'FINALIZADO'
+              ? (valoracion ?? libro.valoracion)
+              : '',
         );
       });
 

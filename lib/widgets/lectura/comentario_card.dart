@@ -235,7 +235,11 @@ class _ComentarioCardState extends State<ComentarioCard> {
             Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                ClubAvatar(nombre: comentario.usuario, size: 48),
+                ClubAvatar(
+                  nombre: comentario.usuario,
+                  imageUrl: comentario.avatarUrl,
+                  size: 48,
+                ),
 
                 const SizedBox(width: AppSpacing.md),
 

@@ -2,6 +2,7 @@ class RespuestaComentario {
   final String id;
   final String comentarioId;
   final String usuario;
+  final String avatarUrl;
   final String fecha;
   final String respuesta;
   final int likes;
@@ -14,6 +15,7 @@ class RespuestaComentario {
     required this.id,
     required this.comentarioId,
     required this.usuario,
+    required this.avatarUrl,
     required this.fecha,
     required this.respuesta,
     required this.likes,
@@ -25,16 +27,21 @@ class RespuestaComentario {
 
   factory RespuestaComentario.fromJson(Map<String, dynamic> json) {
     return RespuestaComentario(
-      id: json["id"] ?? "",
-      comentarioId: json["comentarioId"] ?? "",
-      usuario: json["usuario"] ?? "",
-      fecha: json["fecha"] ?? "",
-      respuesta: json["respuesta"] ?? "",
-      likes: json["likes"] ?? 0,
-      miLike: json["miLike"] ?? false,
-      editado: json["editado"] ?? false,
-      eliminado: json["eliminado"] ?? false,
-      esMia: json["esMia"] ?? false,
+      id: json["id"]?.toString() ?? "",
+      comentarioId: json["comentarioId"]?.toString() ?? "",
+      usuario: json["usuario"]?.toString() ?? "",
+      avatarUrl:
+          json["avatarUrl"]?.toString() ??
+          json["fotoUrl"]?.toString() ??
+          json["photoUrl"]?.toString() ??
+          "",
+      fecha: json["fecha"]?.toString() ?? "",
+      respuesta: json["respuesta"]?.toString() ?? "",
+      likes: json["likes"] as int? ?? 0,
+      miLike: json["miLike"] as bool? ?? false,
+      editado: json["editado"] as bool? ?? false,
+      eliminado: json["eliminado"] as bool? ?? false,
+      esMia: json["esMia"] as bool? ?? false,
     );
   }
 }

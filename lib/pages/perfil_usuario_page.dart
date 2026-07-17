@@ -258,6 +258,31 @@ class _PerfilUsuarioPageState extends State<PerfilUsuarioPage> {
                       child: _libroTerminado(libro: libro),
                     ),
                   ),
+                const SizedBox(height: AppSpacing.lg),
+
+                ClubSectionTitle(
+                  title: 'Libros abandonados',
+                  subtitle: 'Las lecturas que decidió dejar',
+                  icon: Icons.heart_broken_outlined,
+                  padding: EdgeInsets.zero,
+                ),
+
+                const SizedBox(height: AppSpacing.sm),
+
+                if (perfil.abandonados.isEmpty)
+                  const ClubEmptyState(
+                    icon: Icons.heart_broken_outlined,
+                    title: 'No hay libros abandonados',
+                    message: 'Todas sus lecturas siguen adelante.',
+                    padding: EdgeInsets.symmetric(vertical: AppSpacing.xl),
+                  )
+                else
+                  ...perfil.abandonados.map(
+                    (libro) => Padding(
+                      padding: const EdgeInsets.only(bottom: AppSpacing.md),
+                      child: _libroAbandonado(libro: libro),
+                    ),
+                  ),
 
                 if (perfil.generosFavoritos.isNotEmpty) ...[
                   const SizedBox(height: AppSpacing.lg),
@@ -650,6 +675,111 @@ class _PerfilUsuarioPageState extends State<PerfilUsuarioPage> {
                     ),
                   ),
                 ],
+
+                if (rangoFechas.isNotEmpty) ...[
+                  const SizedBox(height: 4),
+
+                  Text(
+                    rangoFechas,
+                    style: AppTextStyles.caption.copyWith(
+                      color: AppColors.textSecondary,
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ),
+
+          if (esMiPerfil) ...[
+            const SizedBox(width: AppSpacing.xs),
+
+            SizedBox(
+              width: 44,
+              height: 44,
+              child: IconButton(
+                tooltip: 'Editar fechas',
+                padding: EdgeInsets.zero,
+                constraints: const BoxConstraints(
+                  minWidth: 44,
+                  minHeight: 44,
+                  maxWidth: 44,
+                  maxHeight: 44,
+                ),
+                icon: const Icon(Icons.edit_calendar_outlined),
+                onPressed: libro.libraryId.trim().isEmpty
+                    ? null
+                    : () {
+                        _editarFechas(libro);
+                      },
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _libroAbandonado({required PerfilLibroTerminado libro}) {
+    final rangoFechas = LecturaFechaUtils.rango(
+      libro.fechaInicio,
+      libro.fechaFin,
+    );
+
+    return ClubCard(
+      elevated: false,
+      padding: const EdgeInsets.all(AppSpacing.md),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          ClipRRect(
+            borderRadius: BorderRadius.circular(AppRadius.md),
+            child: SizedBox(
+              width: 62,
+              height: 88,
+              child: libro.coverUrl.trim().isNotEmpty
+                  ? Image.network(
+                      libro.coverUrl,
+                      fit: BoxFit.cover,
+                      errorBuilder: (_, _, _) {
+                        return _portadaVacia();
+                      },
+                    )
+                  : _portadaVacia(),
+            ),
+          ),
+
+          const SizedBox(width: AppSpacing.md),
+
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  libro.libro,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: AppTextStyles.subtitle.copyWith(
+                    color: AppColors.textPrimary,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+
+                const SizedBox(height: AppSpacing.xs),
+
+                Text(
+                  '${iconoGenero(libro.genero)} ${libro.genero}',
+                  style: AppTextStyles.bodySecondary,
+                ),
+
+                const SizedBox(height: AppSpacing.sm),
+
+                Text(
+                  '💔 Lectura abandonada',
+                  style: AppTextStyles.body.copyWith(
+                    fontWeight: FontWeight.w700,
+                    color: Colors.redAccent,
+                  ),
+                ),
 
                 if (rangoFechas.isNotEmpty) ...[
                   const SizedBox(height: 4),

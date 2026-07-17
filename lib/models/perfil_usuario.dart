@@ -6,7 +6,7 @@ class PerfilUsuario {
   final PerfilResumen resumen;
   final List<PerfilLibro> leyendo;
   final List<PerfilLibroTerminado> terminados;
-  final List<PerfilLibro> abandonados;
+  final List<PerfilLibroTerminado> abandonados;
   final List<PerfilLibro> pendientes;
   final List<PerfilGenero> generosFavoritos;
 
@@ -37,7 +37,7 @@ class PerfilUsuario {
       ),
       leyendo: parseList('leyendo', PerfilLibro.fromJson),
       terminados: parseList('terminados', PerfilLibroTerminado.fromJson),
-      abandonados: parseList('abandonados', PerfilLibro.fromJson),
+      abandonados: parseList('abandonados', PerfilLibroTerminado.fromJson),
       pendientes: parseList('pendientes', PerfilLibro.fromJson),
       generosFavoritos: parseList('generosFavoritos', PerfilGenero.fromJson),
     );

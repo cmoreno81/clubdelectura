@@ -16,6 +16,7 @@ class Libro {
   final DateTime? fechaAlta;
   final DateTime? pausedAt;
   final String pauseReason;
+  final String avatarUrl;
 
   const Libro({
     required this.bookId,
@@ -34,6 +35,7 @@ class Libro {
     required this.fechaAlta,
     required this.pausedAt,
     required this.pauseReason,
+    required this.avatarUrl,
   });
 
   factory Libro.fromJson(Map<String, dynamic> json) {
@@ -57,6 +59,11 @@ class Libro {
       fechaAlta: DateTime.tryParse(json['fechaAlta']?.toString() ?? ''),
       pausedAt: DateTime.tryParse(json['pausedAt']?.toString() ?? ''),
       pauseReason: json['pauseReason']?.toString() ?? '',
+      avatarUrl:
+          json['avatarUrl']?.toString() ??
+          json['fotoUrl']?.toString() ??
+          json['photoUrl']?.toString() ??
+          '',
     );
   }
 
@@ -77,6 +84,7 @@ class Libro {
     DateTime? fechaAlta,
     DateTime? pausedAt,
     String? pauseReason,
+    String? avatarUrl,
   }) {
     return Libro(
       bookId: bookId ?? this.bookId,
@@ -95,6 +103,7 @@ class Libro {
       fechaAlta: fechaAlta ?? this.fechaAlta,
       pausedAt: pausedAt ?? this.pausedAt,
       pauseReason: pauseReason ?? this.pauseReason,
+      avatarUrl: avatarUrl ?? this.avatarUrl,
     );
   }
 }

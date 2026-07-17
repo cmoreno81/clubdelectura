@@ -144,7 +144,11 @@ class _RespuestaCardState extends State<RespuestaCard> {
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  ClubAvatar(nombre: respuesta.usuario, size: 38),
+                  ClubAvatar(
+                    nombre: respuesta.usuario,
+                    imageUrl: respuesta.avatarUrl,
+                    size: 38,
+                  ),
 
                   const SizedBox(width: AppSpacing.sm),
 

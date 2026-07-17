@@ -13,6 +13,8 @@ class ClubvisionData {
 
   final String ganador;
 
+  final bool lecturaConfigurada;
+
   final List<String> lectoras;
 
   final List<CandidataClubvision> candidatas;
@@ -34,6 +36,7 @@ class ClubvisionData {
     required this.titulo,
     required this.mensaje,
     required this.ganador,
+    required this.lecturaConfigurada,
     required this.lectoras,
     required this.candidatas,
     required this.haVotado,
@@ -55,6 +58,8 @@ class ClubvisionData {
       mensaje: json['mensaje'] ?? '',
 
       ganador: json['ganador'] ?? '',
+
+      lecturaConfigurada: json['lecturaConfigurada'] == true,
 
       lectoras: List<String>.from(json['lectoras'] ?? []),
 

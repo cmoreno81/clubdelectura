@@ -14,6 +14,7 @@ import 'clubvision_como_votaron_page.dart';
 import 'clubvision_gala_page.dart';
 import 'clubvision_historial_page.dart';
 import 'clubvision_mi_voto_page.dart';
+import 'configurar_lectura_page.dart';
 import 'lectura_page.dart';
 
 class ClubvisionMenuPage extends StatefulWidget {
@@ -72,6 +73,20 @@ class _ClubvisionMenuPageState extends State<ClubvisionMenuPage> {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Todavía no hay una lectura activa.')),
       );
+      return;
+    }
+
+    if (!club.lecturaConfigurada) {
+      await Navigator.push<bool>(
+        context,
+        MaterialPageRoute(
+          builder: (_) =>
+              ConfigurarLecturaPage(libro: club.ganador, tipo: 'OFICIAL'),
+        ),
+      );
+
+      if (!mounted) return;
+      setState(_recargar);
       return;
     }
 

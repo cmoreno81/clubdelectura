@@ -104,8 +104,11 @@ class _LectoraCard extends StatelessWidget {
         children: [
           Row(
             children: [
-              ClubAvatar(nombre: registro.usuario, size: 48),
-
+              ClubAvatar(
+                nombre: registro.usuario,
+                imageUrl: registro.avatarUrl,
+                size: 48,
+              ),
               const SizedBox(width: AppSpacing.md),
 
               Expanded(
@@ -154,6 +157,10 @@ class _LectoraCard extends StatelessWidget {
                 DropdownMenuItem(value: 'LEYENDO', child: Text('Leyendo')),
                 DropdownMenuItem(value: 'PAUSADO', child: Text('En pausa')),
                 DropdownMenuItem(value: 'RELECTURA', child: Text('Relectura')),
+                DropdownMenuItem(
+                  value: 'ABANDONADO',
+                  child: Text('Abandonado'),
+                ),
                 DropdownMenuItem(
                   value: 'FINALIZADO',
                   child: Text('Finalizado'),
@@ -364,6 +371,9 @@ class _LectoraCard extends StatelessWidget {
         return 'Relectura';
       case 'FINALIZADO':
         return 'Finalizado';
+      case 'ABANDONADO':
+      case 'ABANDONED':
+        return 'Abandonado';
       default:
         return 'Pendiente';
     }
@@ -379,6 +389,9 @@ class _LectoraCard extends StatelessWidget {
         return Icons.refresh_rounded;
       case 'FINALIZADO':
         return Icons.check_circle_outline_rounded;
+      case 'ABANDONADO':
+      case 'ABANDONED':
+        return Icons.heart_broken_rounded;
       default:
         return Icons.schedule_rounded;
     }
@@ -394,6 +407,9 @@ class _LectoraCard extends StatelessWidget {
         return ClubChipVariant.primary;
       case 'FINALIZADO':
         return ClubChipVariant.success;
+      case 'ABANDONADO':
+      case 'ABANDONED':
+        return ClubChipVariant.danger;
       default:
         return ClubChipVariant.warning;
     }
