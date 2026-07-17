@@ -43,7 +43,8 @@ class _LecturasPageState extends State<LecturasPage> {
       final creado = await Navigator.push<bool>(
         context,
         MaterialPageRoute(
-          builder: (_) => ConfigurarLecturaPage(libro: lectura.libro),
+          builder: (_) =>
+              ConfigurarLecturaPage(libro: lectura.libro, tipo: lectura.tipo),
         ),
       );
 
