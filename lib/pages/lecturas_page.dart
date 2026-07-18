@@ -132,7 +132,7 @@ class _LecturasPageState extends State<LecturasPage> {
               children: [
                 _CabeceraLecturas(total: lecturas.length),
 
-                const SizedBox(height: AppSpacing.xl),
+                const SizedBox(height: AppSpacing.md),
 
                 if (oficiales.isNotEmpty) ...[
                   const _SectionTitle(
@@ -218,18 +218,18 @@ class _CabeceraLecturas extends StatelessWidget {
   Widget build(BuildContext context) {
     return ClubCard(
       elevated: false,
-      padding: const EdgeInsets.all(AppSpacing.xl),
+      padding: const EdgeInsets.all(AppSpacing.md),
       gradient: const LinearGradient(
         begin: Alignment.topLeft,
         end: Alignment.bottomRight,
         colors: [AppColors.surfaceSoft, Color(0xFFF1E8FF)],
       ),
       borderColor: AppColors.primaryLight,
-      child: Column(
+      child: Row(
         children: [
           Container(
-            width: 68,
-            height: 68,
+            width: 46,
+            height: 46,
             decoration: const BoxDecoration(
               color: AppColors.primaryLight,
               shape: BoxShape.circle,
@@ -237,26 +237,25 @@ class _CabeceraLecturas extends StatelessWidget {
             child: const Icon(
               Icons.auto_stories_rounded,
               color: AppColors.primary,
-              size: 34,
+              size: 25,
             ),
           ),
-
-          const SizedBox(height: AppSpacing.md),
-
-          Text(
-            'Lecturas del club',
-            textAlign: TextAlign.center,
-            style: AppTextStyles.title.copyWith(fontSize: 29),
-          ),
-
-          const SizedBox(height: AppSpacing.sm),
-
-          Text(
-            total == 1
-                ? 'Una historia está reuniendo al club alrededor de sus páginas.'
-                : '$total historias están reuniendo al club alrededor de sus páginas.',
-            textAlign: TextAlign.center,
-            style: AppTextStyles.bodySecondary.copyWith(height: 1.45),
+          const SizedBox(width: AppSpacing.md),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Lecturas del club',
+                  style: AppTextStyles.section.copyWith(fontSize: 21),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  total == 1 ? '1 lectura activa' : '$total lecturas activas',
+                  style: AppTextStyles.bodySecondary,
+                ),
+              ],
+            ),
           ),
         ],
       ),

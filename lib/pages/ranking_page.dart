@@ -134,7 +134,7 @@ class _RankingPageState extends State<RankingPage> {
               children: [
                 _RankingHeader(anio: ranking.anio),
 
-                const SizedBox(height: AppSpacing.xl),
+                const SizedBox(height: AppSpacing.md),
 
                 KeyedSubtree(
                   key: _topLectorasKey,
@@ -264,18 +264,18 @@ class _RankingHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     return ClubCard(
       elevated: false,
-      padding: const EdgeInsets.all(AppSpacing.xl),
+      padding: const EdgeInsets.all(AppSpacing.md),
       gradient: const LinearGradient(
         begin: Alignment.topLeft,
         end: Alignment.bottomRight,
         colors: [AppColors.surfaceSoft, Color(0xFFF1E8FF)],
       ),
       borderColor: AppColors.primaryLight,
-      child: Column(
+      child: Row(
         children: [
           Container(
-            width: 72,
-            height: 72,
+            width: 46,
+            height: 46,
             decoration: const BoxDecoration(
               color: AppColors.primaryLight,
               shape: BoxShape.circle,
@@ -283,24 +283,25 @@ class _RankingHeader extends StatelessWidget {
             child: const Icon(
               Icons.emoji_events_rounded,
               color: AppColors.primary,
-              size: 37,
+              size: 25,
             ),
           ),
-
-          const SizedBox(height: AppSpacing.md),
-
-          Text(
-            'El ranking del club',
-            textAlign: TextAlign.center,
-            style: AppTextStyles.title.copyWith(fontSize: 29),
-          ),
-
-          const SizedBox(height: AppSpacing.sm),
-
-          Text(
-            'Lo más leído, valorado y comentado por el club durante $anio.',
-            textAlign: TextAlign.center,
-            style: AppTextStyles.bodySecondary.copyWith(height: 1.45),
+          const SizedBox(width: AppSpacing.md),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'El ranking del club',
+                  style: AppTextStyles.section.copyWith(fontSize: 21),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  'Clasificaciones de $anio',
+                  style: AppTextStyles.bodySecondary,
+                ),
+              ],
+            ),
           ),
         ],
       ),

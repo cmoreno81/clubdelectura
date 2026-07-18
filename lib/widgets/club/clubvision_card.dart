@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 
 import '../../models/dashboard.dart';
 import '../../models/estado_club.dart';
-import '../../pages/clubvisionVotacionPage.dart';
+import '../../pages/clubvision_votacion_page.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_radius.dart';
 import '../../theme/app_spacing.dart';

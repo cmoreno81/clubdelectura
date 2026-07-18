@@ -5,6 +5,7 @@ import '../theme/app_spacing.dart';
 import '../theme/app_text_styles.dart';
 import '../widgets/common/club_book_cover.dart';
 import '../widgets/common/club_card.dart';
+import '../widgets/kit/rotulador_preview.dart';
 
 class SubrayadoresPage extends StatelessWidget {
   final String libro;
@@ -65,19 +66,16 @@ class SubrayadoresPage extends StatelessWidget {
 
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
-                  children: colores
-                      .map(
-                        (c) => Container(
-                          margin: const EdgeInsets.symmetric(horizontal: 6),
-                          width: 28,
-                          height: 90,
-                          decoration: BoxDecoration(
-                            color: c,
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                        ),
-                      )
-                      .toList(),
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: List.generate(colores.length, (index) {
+                    return Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 5),
+                      child: Transform.rotate(
+                        angle: (index - 2) * 0.035,
+                        child: RotuladorPreview(color: colores[index]),
+                      ),
+                    );
+                  }),
                 ),
               ],
             ),
@@ -154,17 +152,13 @@ class _Categoria extends StatelessWidget {
       padding: const EdgeInsets.only(bottom: 14),
       child: ClubCard(
         elevated: false,
-        child: ListTile(
-          leading: Container(
-            width: 28,
-            height: 70,
-            decoration: BoxDecoration(
-              color: color,
-              borderRadius: BorderRadius.circular(8),
-            ),
+        child: Material(
+          type: MaterialType.transparency,
+          child: ListTile(
+            leading: RotuladorPreview(color: color, length: 68, thickness: 23),
+            title: Text(titulo, style: AppTextStyles.subtitle),
+            subtitle: Text(descripcion),
           ),
-          title: Text(titulo, style: AppTextStyles.subtitle),
-          subtitle: Text(descripcion),
         ),
       ),
     );

@@ -143,39 +143,42 @@ class ComentarioInput extends StatelessWidget {
 
               SizedBox(
                 width: double.infinity,
-                child: FilledButton.icon(
-                  onPressed: enviando ? null : onEnviar,
-
-                  icon: enviando
-                      ? const SizedBox(
-                          width: 19,
-                          height: 19,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            color: Colors.white,
-                          ),
-                        )
-                      : const Icon(Icons.send_rounded),
-
-                  label: AnimatedSwitcher(
-                    duration: const Duration(milliseconds: 180),
-                    child: Text(
-                      enviando
-                          ? 'Publicando...'
-                          : esReflexion
-                          ? 'Publicar reflexión'
-                          : 'Publicar comentario',
-                      key: ValueKey(enviando),
-                    ),
-                  ),
-
-                  style: FilledButton.styleFrom(
-                    minimumSize: const Size(0, 52),
-                    backgroundColor: const Color(0xFF6F4DBF),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                  ),
+                child: ValueListenableBuilder<TextEditingValue>(
+                  valueListenable: controller,
+                  builder: (context, value, _) {
+                    final tieneTexto = value.text.trim().isNotEmpty;
+                    return FilledButton.icon(
+                      onPressed: enviando || !tieneTexto ? null : onEnviar,
+                      icon: enviando
+                          ? const SizedBox(
+                              width: 19,
+                              height: 19,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: Colors.white,
+                              ),
+                            )
+                          : const Icon(Icons.send_rounded),
+                      label: AnimatedSwitcher(
+                        duration: const Duration(milliseconds: 180),
+                        child: Text(
+                          enviando
+                              ? 'Publicando...'
+                              : esReflexion
+                              ? 'Publicar reflexión'
+                              : 'Publicar comentario',
+                          key: ValueKey(enviando),
+                        ),
+                      ),
+                      style: FilledButton.styleFrom(
+                        minimumSize: const Size(0, 52),
+                        backgroundColor: const Color(0xFF6F4DBF),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                      ),
+                    );
+                  },
                 ),
               ),
             ],

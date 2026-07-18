@@ -89,7 +89,7 @@ class _LibrosPageState extends State<LibrosPage> {
 
     return Scaffold(
       appBar: AppBar(
-        toolbarHeight: 76,
+        toolbarHeight: 64,
         title: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -214,28 +214,34 @@ class _LibrosPageState extends State<LibrosPage> {
     return Container(
       padding: const EdgeInsets.fromLTRB(
         AppSpacing.md,
+        AppSpacing.xs,
         AppSpacing.md,
-        AppSpacing.md,
-        AppSpacing.sm,
+        AppSpacing.xs,
       ),
       decoration: const BoxDecoration(color: AppColors.background),
       child: Column(
         children: [
           TextField(
             controller: buscadorController,
+            style: AppTextStyles.body,
+            textAlignVertical: TextAlignVertical.center,
             onChanged: (value) {
               setState(() {
                 filtroBusqueda = value;
               });
             },
             decoration: InputDecoration(
+              isDense: true,
+              contentPadding: const EdgeInsets.symmetric(vertical: 10),
               hintText: 'Buscar en la biblioteca...',
-              prefixIcon: const Icon(Icons.search_rounded),
+              prefixIconConstraints: const BoxConstraints(minWidth: 42),
+              prefixIcon: const Icon(Icons.search_rounded, size: 21),
               suffixIcon: filtroBusqueda.isEmpty
                   ? null
                   : IconButton(
                       tooltip: 'Limpiar búsqueda',
-                      icon: const Icon(Icons.close_rounded),
+                      icon: const Icon(Icons.close_rounded, size: 20),
+                      visualDensity: VisualDensity.compact,
                       onPressed: () {
                         buscadorController.clear();
 
@@ -247,13 +253,18 @@ class _LibrosPageState extends State<LibrosPage> {
             ),
           ),
 
-          const SizedBox(height: AppSpacing.sm),
+          const SizedBox(height: AppSpacing.xs),
 
           DropdownButtonFormField<String>(
             initialValue: filtroUsuario,
+            isDense: true,
+            style: AppTextStyles.body.copyWith(color: AppColors.textPrimary),
             decoration: const InputDecoration(
+              isDense: true,
+              contentPadding: EdgeInsets.symmetric(vertical: 10),
               labelText: 'Lectora',
-              prefixIcon: Icon(Icons.person_outline_rounded),
+              prefixIconConstraints: BoxConstraints(minWidth: 42),
+              prefixIcon: Icon(Icons.person_outline_rounded, size: 21),
             ),
             items: usuariosFiltro.map((usuario) {
               return DropdownMenuItem(
@@ -272,7 +283,7 @@ class _LibrosPageState extends State<LibrosPage> {
             },
           ),
 
-          const SizedBox(height: AppSpacing.md),
+          const SizedBox(height: AppSpacing.sm),
 
           SingleChildScrollView(
             scrollDirection: Axis.horizontal,

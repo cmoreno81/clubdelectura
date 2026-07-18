@@ -86,32 +86,37 @@ class _PausarLecturaDialogState extends State<PausarLecturaDialog> {
 
               const SizedBox(height: 16),
 
-              ..._motivos.map((motivo) {
-                final seleccionada = _motivoSeleccionado == motivo.valor;
+              RadioGroup<String>(
+                groupValue: _motivoSeleccionado,
+                onChanged: (value) {
+                  setState(() {
+                    _motivoSeleccionado = value;
+                  });
+                },
+                child: Column(
+                  children: _motivos.map((motivo) {
+                    final seleccionada = _motivoSeleccionado == motivo.valor;
 
-                return Padding(
-                  padding: const EdgeInsets.only(bottom: 8),
-                  child: RadioListTile<String>(
-                    value: motivo.valor,
-                    groupValue: _motivoSeleccionado,
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 10),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                    tileColor: seleccionada
-                        ? Theme.of(
-                            context,
-                          ).colorScheme.primaryContainer.withValues(alpha: 0.45)
-                        : null,
-                    title: Text('${motivo.icono}  ${motivo.titulo}'),
-                    onChanged: (value) {
-                      setState(() {
-                        _motivoSeleccionado = value;
-                      });
-                    },
-                  ),
-                );
-              }),
+                    return Padding(
+                      padding: const EdgeInsets.only(bottom: 8),
+                      child: RadioListTile<String>(
+                        value: motivo.valor,
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 10,
+                        ),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                        tileColor: seleccionada
+                            ? Theme.of(context).colorScheme.primaryContainer
+                                  .withValues(alpha: 0.45)
+                            : null,
+                        title: Text('${motivo.icono}  ${motivo.titulo}'),
+                      ),
+                    );
+                  }).toList(),
+                ),
+              ),
 
               if (_esOtro) ...[
                 const SizedBox(height: 8),

@@ -9,7 +9,7 @@ import '../theme/app_text_styles.dart';
 import '../widgets/common/club_card.dart';
 import '../widgets/common/club_chip.dart';
 import '../widgets/error_view.dart';
-import 'ClubVisionVotacionPage.dart';
+import 'clubvision_votacion_page.dart';
 import 'clubvision_como_votaron_page.dart';
 import 'clubvision_gala_page.dart';
 import 'clubvision_historial_page.dart';
@@ -133,7 +133,7 @@ class _ClubvisionMenuPageState extends State<ClubvisionMenuPage> {
               children: [
                 _ClubvisionHeader(club: club),
 
-                const SizedBox(height: AppSpacing.xl),
+                const SizedBox(height: AppSpacing.md),
 
                 _SectionHeader(
                   icon: _estadoIcono(club.estado),
@@ -323,7 +323,7 @@ class _ClubvisionHeader extends StatelessWidget {
 
     return ClubCard(
       elevated: false,
-      padding: const EdgeInsets.all(AppSpacing.xl),
+      padding: const EdgeInsets.all(AppSpacing.md),
       gradient: const LinearGradient(
         begin: Alignment.topLeft,
         end: Alignment.bottomRight,
@@ -331,37 +331,47 @@ class _ClubvisionHeader extends StatelessWidget {
       ),
       borderColor: AppColors.primaryLight,
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Container(
-            width: 76,
-            height: 76,
-            decoration: const BoxDecoration(
-              color: AppColors.primaryLight,
-              shape: BoxShape.circle,
-            ),
-            child: Icon(icon, color: AppColors.primary, size: 38),
-          ),
-
-          const SizedBox(height: AppSpacing.md),
-
-          Text(
-            club.titulo.trim().isEmpty ? 'Clubvisión' : club.titulo,
-            textAlign: TextAlign.center,
-            style: AppTextStyles.title.copyWith(fontSize: 29),
-          ),
-
-          const SizedBox(height: AppSpacing.sm),
-
-          Text(
-            club.mensaje.trim().isEmpty
-                ? 'Las lectoras deciden juntas la próxima aventura del club.'
-                : club.mensaje,
-            textAlign: TextAlign.center,
-            style: AppTextStyles.bodySecondary.copyWith(height: 1.45),
+          Row(
+            children: [
+              Container(
+                width: 48,
+                height: 48,
+                decoration: const BoxDecoration(
+                  color: AppColors.primaryLight,
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(icon, color: AppColors.primary, size: 26),
+              ),
+              const SizedBox(width: AppSpacing.md),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      club.titulo.trim().isEmpty ? 'Clubvisión' : club.titulo,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: AppTextStyles.section.copyWith(fontSize: 21),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      club.mensaje.trim().isEmpty
+                          ? 'La próxima lectura la decide el club'
+                          : club.mensaje,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: AppTextStyles.bodySecondary.copyWith(height: 1.3),
+                    ),
+                  ],
+                ),
+              ),
+            ],
           ),
 
           if (estado == 'VOTACION') ...[
-            const SizedBox(height: AppSpacing.lg),
+            const SizedBox(height: AppSpacing.md),
 
             ClipRRect(
               borderRadius: BorderRadius.circular(AppRadius.pill),
@@ -397,7 +407,7 @@ class _ClubvisionHeader extends StatelessWidget {
           ],
 
           if (estado == 'LECTURA' && club.ganador.trim().isNotEmpty) ...[
-            const SizedBox(height: AppSpacing.lg),
+            const SizedBox(height: AppSpacing.sm),
 
             ClubChip(
               label: club.ganador,

@@ -7,6 +7,7 @@ import '../widgets/common/club_book_cover.dart';
 import '../widgets/common/club_card.dart';
 import 'paleta_lectura_page.dart';
 import 'subrayadores_page.dart';
+import '../widgets/kit/rotulador_preview.dart';
 import '../models/kit_lectura_seleccion.dart';
 import '../services/kit_lectura_service.dart';
 import 'atmosfera_lectura_page.dart';
@@ -253,6 +254,7 @@ class _KitLecturaPageState extends State<KitLecturaPage> {
           libro: widget.libro,
           coverUrl: widget.coverUrl,
           colores: _seleccion.paleta.map(_colorDesdeHex).toList(),
+          subrayadores: _seleccion.subrayadores.map(_colorDesdeHex).toList(),
           atmosferaTitulo: _seleccion.atmosferaTitulo,
           atmosferaIcono: _seleccion.atmosferaIcono,
         ),
@@ -369,6 +371,7 @@ class _KitLecturaPageState extends State<KitLecturaPage> {
                   previewColors: _tieneSubrayadores
                       ? _seleccion.subrayadores.map(_colorDesdeHex).toList()
                       : const [],
+                  previewSubrayadores: true,
                   onTap: _abrirSubrayadores,
                 ),
 
@@ -472,6 +475,7 @@ class _KitSectionCard extends StatelessWidget {
   final VoidCallback onTap;
   final bool preparada;
   final List<Color> previewColors;
+  final bool previewSubrayadores;
 
   const _KitSectionCard({
     required this.icon,
@@ -481,6 +485,7 @@ class _KitSectionCard extends StatelessWidget {
     required this.onTap,
     this.preparada = false,
     this.previewColors = const [],
+    this.previewSubrayadores = false,
   });
 
   @override
@@ -583,6 +588,17 @@ class _KitSectionCard extends StatelessWidget {
 
                   Row(
                     children: previewColors.map((previewColor) {
+                      if (previewSubrayadores) {
+                        return Padding(
+                          padding: const EdgeInsets.only(right: 4),
+                          child: RotuladorPreview(
+                            color: previewColor,
+                            vertical: false,
+                            length: 34,
+                            thickness: 12,
+                          ),
+                        );
+                      }
                       return Container(
                         width: 23,
                         height: 23,
