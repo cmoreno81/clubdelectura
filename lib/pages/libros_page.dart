@@ -811,8 +811,9 @@ class _LibrosPageState extends State<LibrosPage> {
       final agrupados = <String, LibroAgrupado>{};
 
       for (final libro in librosFiltrados) {
+        final clave = normalizar(libro.libro);
         agrupados.putIfAbsent(
-          libro.libro,
+          clave,
           () => LibroAgrupado(
             libro: libro.libro,
             genero: libro.genero,
@@ -823,19 +824,60 @@ class _LibrosPageState extends State<LibrosPage> {
           ),
         );
 
-        agrupados[libro.libro]!.registros.add(libro);
+        agrupados[clave]!.registros.add(libro);
 
         if (libro.yaLoTengo) {
-          agrupados[libro.libro]!.yaLoTengo = true;
+          agrupados[clave]!.yaLoTengo = true;
+        }
+      }
+
+      if (filtroEstado == 'TODOS') {
+        final finalizadosFiltrados = finalizados.where((finalizado) {
+          final coincideUsuario =
+              filtroUsuario == 'TODAS' ||
+              finalizado.usuario.trim() == filtroUsuario;
+          final coincideBusqueda = normalizar(
+            finalizado.libro,
+          ).contains(normalizar(filtroBusqueda));
+          return coincideUsuario && coincideBusqueda;
+        });
+
+        for (final finalizado in finalizadosFiltrados) {
+          final clave = normalizar(finalizado.libro);
+          final agrupado = agrupados.putIfAbsent(
+            clave,
+            () => LibroAgrupado(
+              libro: finalizado.libro,
+              genero: finalizado.genero,
+              registros: [],
+              finalizados: [],
+              yaLoTengo: false,
+              coverUrl: finalizado.coverUrl,
+            ),
+          );
+
+          agrupado.finalizados.add(finalizado);
+          final yaExiste = agrupado.registros.any(
+            (registro) =>
+                registro.usuario.trim().toLowerCase() ==
+                finalizado.usuario.trim().toLowerCase(),
+          );
+          if (!yaExiste) {
+            agrupado.registros.add(_registroDesdeFinalizado(finalizado));
+          }
         }
       }
 
       resultado = agrupados.values.toList();
 
       for (final agrupado in resultado) {
-        agrupado.finalizados.addAll(
-          finalizados.where((f) => f.libro.trim() == agrupado.libro.trim()),
-        );
+        if (filtroEstado != 'TODOS') {
+          agrupado.finalizados.addAll(
+            finalizados.where(
+              (f) => normalizar(f.libro) == normalizar(agrupado.libro),
+            ),
+          );
+        }
       }
 
       _aplicarOrden(resultado);
