@@ -783,6 +783,7 @@ class _LibrosPageState extends State<LibrosPage> {
       pausedAt: null,
       pauseReason: '',
       avatarUrl: finalizado.avatarUrl,
+      paginas: finalizado.paginas,
     );
   }
 

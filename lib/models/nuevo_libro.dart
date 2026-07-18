@@ -10,6 +10,7 @@ class NuevoLibro {
 
   final String goodreads;
   final String coverUrl;
+  final int? paginas;
 
   NuevoLibro({
     this.bookId,
@@ -22,6 +23,7 @@ class NuevoLibro {
     required this.prioridad,
     this.goodreads = '',
     this.coverUrl = '',
+    this.paginas,
   });
 
   Map<String, dynamic> toJson() {
@@ -37,6 +39,7 @@ class NuevoLibro {
       'prioridad': prioridad,
       'goodreads': goodreads.trim(),
       'coverUrl': coverUrl.trim(),
+      'paginas': paginas,
     };
   }
 }

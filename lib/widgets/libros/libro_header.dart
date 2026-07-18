@@ -72,6 +72,25 @@ class LibroHeader extends StatelessWidget {
 
               _metadatosLibro(),
 
+              if (referencia?.paginas != null) ...[
+                const SizedBox(height: AppSpacing.sm),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Icon(
+                      Icons.description_outlined,
+                      size: 18,
+                      color: AppColors.textSecondary,
+                    ),
+                    const SizedBox(width: AppSpacing.xs),
+                    Text(
+                      '${referencia!.paginas} páginas',
+                      style: AppTextStyles.bodySecondary,
+                    ),
+                  ],
+                ),
+              ],
+
               const SizedBox(height: AppSpacing.lg),
 
               Row(

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import '../dev/dev_settings.dart';
 import '../models/dashboard_view_data.dart';
@@ -546,10 +547,13 @@ class _DashboardPageState extends State<DashboardPage> {
   }
 
   Future<void> _editarProgreso(String usuario, LecturaAhoraItem lectura) async {
-    final resultado = await showDialog<({int progreso, String comentario})>(
-      context: context,
-      builder: (_) => _EditarProgresoDialog(lectura: lectura),
-    );
+    final resultado =
+        await showDialog<
+          ({int progreso, String comentario, int? paginaActual})
+        >(
+          context: context,
+          builder: (_) => _EditarProgresoDialog(lectura: lectura),
+        );
     if (resultado == null) return;
 
     final ok = await ApiService().actualizarProgresoLectura(
@@ -557,6 +561,7 @@ class _DashboardPageState extends State<DashboardPage> {
       libro: lectura.titulo,
       progreso: resultado.progreso,
       comentario: resultado.comentario,
+      paginaActual: resultado.paginaActual,
     );
     if (!mounted) return;
     if (ok) {
@@ -635,7 +640,12 @@ class _LecturaProgresoCard extends StatelessWidget {
                     ),
                     const SizedBox(width: AppSpacing.sm),
                     Text(
-                      '${lectura.progreso}%',
+                      lectura.paginaActual != null &&
+                              lectura.paginasTotales != null
+                          ? 'Pág. ${lectura.paginaActual} de '
+                                '${lectura.paginasTotales} · '
+                                '${lectura.progreso}%'
+                          : '${lectura.progreso}%',
                       style: AppTextStyles.caption.copyWith(
                         fontWeight: FontWeight.w800,
                       ),
@@ -672,14 +682,27 @@ class _EditarProgresoDialog extends StatefulWidget {
   State<_EditarProgresoDialog> createState() => _EditarProgresoDialogState();
 }
 
+enum _ModoProgreso { porcentaje, pagina }
+
 class _EditarProgresoDialogState extends State<_EditarProgresoDialog> {
   late double progreso;
   late final TextEditingController comentarioController;
+  late final TextEditingController paginaController;
+  late _ModoProgreso modo;
+  String? errorPagina;
+
+  bool get tienePaginas => (widget.lectura.paginasTotales ?? 0) > 0;
 
   @override
   void initState() {
     super.initState();
     progreso = widget.lectura.progreso.toDouble();
+    modo = widget.lectura.paginaActual != null && tienePaginas
+        ? _ModoProgreso.pagina
+        : _ModoProgreso.porcentaje;
+    paginaController = TextEditingController(
+      text: widget.lectura.paginaActual?.toString() ?? '',
+    );
     comentarioController = TextEditingController(
       text: widget.lectura.comentario,
     );
@@ -698,20 +721,71 @@ class _EditarProgresoDialogState extends State<_EditarProgresoDialog> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            if (tienePaginas) ...[
+              SizedBox(
+                width: double.infinity,
+                child: SegmentedButton<_ModoProgreso>(
+                  segments: const [
+                    ButtonSegment(
+                      value: _ModoProgreso.porcentaje,
+                      label: Text('Porcentaje'),
+                    ),
+                    ButtonSegment(
+                      value: _ModoProgreso.pagina,
+                      label: Text('Página'),
+                    ),
+                  ],
+                  selected: {modo},
+                  onSelectionChanged: (seleccion) {
+                    setState(() {
+                      modo = seleccion.first;
+                      errorPagina = null;
+                    });
+                  },
+                ),
+              ),
+              const SizedBox(height: AppSpacing.md),
+            ],
             Center(
               child: Text(
-                '${progreso.round()}%',
+                modo == _ModoProgreso.pagina
+                    ? '${progreso.round()}% · ${widget.lectura.paginasTotales} páginas'
+                    : '${progreso.round()}%',
                 style: AppTextStyles.title.copyWith(color: AppColors.primary),
               ),
             ),
-            Slider(
-              value: progreso,
-              min: 0,
-              max: 100,
-              divisions: 20,
-              label: '${progreso.round()}%',
-              onChanged: (value) => setState(() => progreso = value),
-            ),
+            if (modo == _ModoProgreso.porcentaje)
+              Slider(
+                value: progreso,
+                min: 0,
+                max: 100,
+                divisions: 20,
+                label: '${progreso.round()}%',
+                onChanged: (value) => setState(() => progreso = value),
+              )
+            else ...[
+              const SizedBox(height: AppSpacing.sm),
+              TextField(
+                controller: paginaController,
+                keyboardType: TextInputType.number,
+                inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                decoration: InputDecoration(
+                  labelText: 'Página actual',
+                  suffixText: 'de ${widget.lectura.paginasTotales}',
+                  errorText: errorPagina,
+                ),
+                onChanged: (value) {
+                  final pagina = int.tryParse(value);
+                  final total = widget.lectura.paginasTotales!;
+                  setState(() {
+                    errorPagina = null;
+                    if (pagina != null && pagina >= 0 && pagina <= total) {
+                      progreso = pagina / total * 100;
+                    }
+                  });
+                },
+              ),
+            ],
             const SizedBox(height: AppSpacing.md),
             TextField(
               controller: comentarioController,
@@ -732,19 +806,32 @@ class _EditarProgresoDialogState extends State<_EditarProgresoDialog> {
           onPressed: () => Navigator.pop(context),
           child: const Text('Cancelar'),
         ),
-        FilledButton(
-          onPressed: () => Navigator.pop(context, (
-            progreso: progreso.round(),
-            comentario: comentarioController.text.trim(),
-          )),
-          child: const Text('Guardar'),
-        ),
+        FilledButton(onPressed: _guardar, child: const Text('Guardar')),
       ],
     );
   }
 
+  void _guardar() {
+    int? paginaActual;
+    if (modo == _ModoProgreso.pagina) {
+      paginaActual = int.tryParse(paginaController.text);
+      final total = widget.lectura.paginasTotales!;
+      if (paginaActual == null || paginaActual < 0 || paginaActual > total) {
+        setState(() => errorPagina = 'Indica una página entre 0 y $total');
+        return;
+      }
+    }
+
+    Navigator.pop(context, (
+      progreso: progreso.round(),
+      comentario: comentarioController.text.trim(),
+      paginaActual: paginaActual,
+    ));
+  }
+
   @override
   void dispose() {
+    paginaController.dispose();
     comentarioController.dispose();
     super.dispose();
   }

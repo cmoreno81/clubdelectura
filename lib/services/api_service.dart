@@ -129,6 +129,7 @@ class ApiService {
     required String libro,
     required int progreso,
     required String comentario,
+    int? paginaActual,
   }) async {
     final response = await _client.post(
       Uri.parse('$baseUrl?action=actualizarProgresoLectura'),
@@ -138,6 +139,7 @@ class ApiService {
         'libro': libro,
         'progreso': progreso,
         'comentario': comentario,
+        'paginaActual': ?paginaActual,
       }),
     );
     return _respuestaOk(response);

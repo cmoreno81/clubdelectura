@@ -18,6 +18,7 @@ class Libro {
   final DateTime? pausedAt;
   final String pauseReason;
   final String avatarUrl;
+  final int? paginas;
 
   const Libro({
     required this.bookId,
@@ -38,6 +39,7 @@ class Libro {
     required this.pausedAt,
     required this.pauseReason,
     required this.avatarUrl,
+    required this.paginas,
   });
 
   factory Libro.fromJson(Map<String, dynamic> json) {
@@ -69,6 +71,9 @@ class Libro {
           json['fotoUrl']?.toString() ??
           json['photoUrl']?.toString() ??
           '',
+      paginas:
+          (json['paginas'] as num?)?.toInt() ??
+          (json['totalPages'] as num?)?.toInt(),
     );
   }
 
@@ -91,6 +96,7 @@ class Libro {
     DateTime? pausedAt,
     String? pauseReason,
     String? avatarUrl,
+    int? paginas,
   }) {
     return Libro(
       bookId: bookId ?? this.bookId,
@@ -111,6 +117,7 @@ class Libro {
       pausedAt: pausedAt ?? this.pausedAt,
       pauseReason: pauseReason ?? this.pauseReason,
       avatarUrl: avatarUrl ?? this.avatarUrl,
+      paginas: paginas ?? this.paginas,
     );
   }
 }

@@ -12,6 +12,7 @@ class LibroFinalizado {
   final String coverUrl;
   final DateTime? fechaAlta;
   final String avatarUrl;
+  final int? paginas;
 
   const LibroFinalizado({
     required this.bookId,
@@ -26,6 +27,7 @@ class LibroFinalizado {
     required this.coverUrl,
     required this.fechaAlta,
     required this.avatarUrl,
+    required this.paginas,
   });
 
   factory LibroFinalizado.fromJson(Map<String, dynamic> json) {
@@ -46,6 +48,9 @@ class LibroFinalizado {
           json['fotoUrl']?.toString() ??
           json['photoUrl']?.toString() ??
           '',
+      paginas:
+          (json['paginas'] as num?)?.toInt() ??
+          (json['totalPages'] as num?)?.toInt(),
     );
   }
 }

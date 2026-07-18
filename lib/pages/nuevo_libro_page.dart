@@ -30,6 +30,7 @@ class _NuevoLibroPageState extends State<NuevoLibroPage> {
   final numSagaController = TextEditingController();
   final goodreadsController = TextEditingController();
   final coverUrlController = TextEditingController();
+  final paginasController = TextEditingController();
 
   String genero = 'Fantasía';
   String prioridad = 'Media';
@@ -100,6 +101,8 @@ class _NuevoLibroPageState extends State<NuevoLibroPage> {
 
     goodreadsController.text = registro?.goodreads ?? '';
     coverUrlController.text = agrupado.coverUrl;
+    paginasController.text =
+        (registro?.paginas ?? finalizado?.paginas)?.toString() ?? '';
 
     mostrarCamposAvanzados =
         goodreadsController.text.trim().isNotEmpty ||
@@ -140,10 +143,19 @@ class _NuevoLibroPageState extends State<NuevoLibroPage> {
     }
 
     final titulo = libroController.text.trim();
+    final paginasTexto = paginasController.text.trim();
+    final paginas = paginasTexto.isEmpty ? null : int.tryParse(paginasTexto);
 
     if (titulo.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Introduce el título del libro.')),
+      );
+      return;
+    }
+
+    if (paginasTexto.isNotEmpty && (paginas == null || paginas <= 0)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Introduce un número de páginas válido.')),
       );
       return;
     }
@@ -175,6 +187,7 @@ class _NuevoLibroPageState extends State<NuevoLibroPage> {
         prioridad: prioridad,
         goodreads: goodreadsController.text.trim(),
         coverUrl: coverUrlController.text.trim(),
+        paginas: paginas,
       );
 
       final respuesta = esEdicion
@@ -273,6 +286,19 @@ class _NuevoLibroPageState extends State<NuevoLibroPage> {
                       labelText: 'Título del libro',
                       hintText: 'Ej. Hasta que caiga la luna',
                       prefixIcon: Icon(Icons.title_rounded),
+                    ),
+                  ),
+
+                  const SizedBox(height: AppSpacing.lg),
+
+                  TextField(
+                    controller: paginasController,
+                    keyboardType: TextInputType.number,
+                    textInputAction: TextInputAction.next,
+                    decoration: const InputDecoration(
+                      labelText: 'Páginas totales (opcional)',
+                      hintText: 'Ej. 420',
+                      prefixIcon: Icon(Icons.menu_book_outlined),
                     ),
                   ),
 
@@ -688,6 +714,7 @@ class _NuevoLibroPageState extends State<NuevoLibroPage> {
     numSagaController.dispose();
     goodreadsController.dispose();
     coverUrlController.dispose();
+    paginasController.dispose();
 
     super.dispose();
   }
@@ -877,7 +904,9 @@ class _SelectorOption extends StatelessWidget {
         duration: const Duration(milliseconds: 180),
         padding: const EdgeInsets.all(AppSpacing.md),
         decoration: BoxDecoration(
-          color: selected ? color.withValues(alpha: 0.10) : AppColors.surfaceSoft,
+          color: selected
+              ? color.withValues(alpha: 0.10)
+              : AppColors.surfaceSoft,
           borderRadius: BorderRadius.circular(AppRadius.lg),
           border: Border.all(
             color: selected ? color.withValues(alpha: 0.38) : AppColors.border,
@@ -935,10 +964,14 @@ class _PrioridadOption extends StatelessWidget {
           vertical: AppSpacing.md,
         ),
         decoration: BoxDecoration(
-          color: selected ? color.withValues(alpha: 0.10) : AppColors.surfaceSoft,
+          color: selected
+              ? color.withValues(alpha: 0.10)
+              : AppColors.surfaceSoft,
           borderRadius: BorderRadius.circular(AppRadius.lg),
           border: Border.all(
-            color: selected ? color.withValues(alpha: 0.38) : Colors.transparent,
+            color: selected
+                ? color.withValues(alpha: 0.38)
+                : Colors.transparent,
           ),
         ),
         child: Column(

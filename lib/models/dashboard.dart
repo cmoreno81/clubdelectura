@@ -191,6 +191,8 @@ class LeyendoAhora {
                     titulo: titulo,
                     coverUrl: '',
                     progreso: 0,
+                    paginaActual: null,
+                    paginasTotales: null,
                     comentario: '',
                     actualizadoEn: null,
                   ),
@@ -207,6 +209,8 @@ class LecturaAhoraItem {
   final String titulo;
   final String coverUrl;
   final int progreso;
+  final int? paginaActual;
+  final int? paginasTotales;
   final String comentario;
   final DateTime? actualizadoEn;
 
@@ -215,6 +219,8 @@ class LecturaAhoraItem {
     required this.titulo,
     required this.coverUrl,
     required this.progreso,
+    required this.paginaActual,
+    required this.paginasTotales,
     required this.comentario,
     required this.actualizadoEn,
   });
@@ -225,6 +231,8 @@ class LecturaAhoraItem {
         titulo: json['titulo']?.toString() ?? '',
         coverUrl: json['coverUrl']?.toString() ?? '',
         progreso: ((json['progreso'] as num?)?.toInt() ?? 0).clamp(0, 100),
+        paginaActual: (json['paginaActual'] as num?)?.toInt(),
+        paginasTotales: (json['paginasTotales'] as num?)?.toInt(),
         comentario: json['comentario']?.toString() ?? '',
         actualizadoEn: DateTime.tryParse(
           json['actualizadoEn']?.toString() ?? '',
