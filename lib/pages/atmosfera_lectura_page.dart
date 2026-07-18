@@ -355,13 +355,17 @@ class _AtmosferaHero extends StatelessWidget {
       child: AtmosferaAmbientLayer(
         atmosfera: experiencia.tipo,
         color: paleta.primary,
+        accentColor: paleta.secondary,
+        backgroundColor: paleta.background,
         child: ClubCard(
           elevated: true,
           padding: const EdgeInsets.all(AppSpacing.xl),
           gradient: LinearGradient(
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
-            colors: paleta.heroGradient,
+            colors: paleta.heroGradient
+                .map((color) => color.withValues(alpha: 0.84))
+                .toList(),
           ),
           borderColor: paleta.primary.withValues(alpha: 0.36),
           child: Column(

@@ -35,12 +35,12 @@ class AtmosferaAppTheme {
       colorScheme: colorScheme,
       textTheme: textTheme,
 
-      scaffoldBackgroundColor: paleta.background,
+      scaffoldBackgroundColor: Colors.transparent,
 
       iconTheme: IconThemeData(color: paleta.primary),
 
       appBarTheme: base.appBarTheme.copyWith(
-        backgroundColor: paleta.background,
+        backgroundColor: paleta.background.withValues(alpha: 0.94),
         foregroundColor: textoPrincipal,
         surfaceTintColor: Colors.transparent,
         iconTheme: const IconThemeData(color: textoPrincipal),

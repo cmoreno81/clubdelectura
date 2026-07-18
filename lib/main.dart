@@ -71,6 +71,8 @@ class _MyAppState extends State<MyApp> {
                 child: AtmosferaAmbientLayer(
                   atmosfera: atmosferaController.lectura,
                   color: visual.paleta.primary,
+                  accentColor: visual.paleta.secondary,
+                  backgroundColor: visual.paleta.background,
                   enabled:
                       atmosferaController.animacionesActivas &&
                       !reducirMovimiento,

@@ -8,6 +8,8 @@ class AtmosferaAmbientLayer extends StatefulWidget {
   final Widget child;
   final AtmosferaLectura atmosfera;
   final Color color;
+  final Color accentColor;
+  final Color backgroundColor;
   final bool enabled;
 
   const AtmosferaAmbientLayer({
@@ -15,6 +17,8 @@ class AtmosferaAmbientLayer extends StatefulWidget {
     required this.child,
     required this.atmosfera,
     required this.color,
+    required this.accentColor,
+    required this.backgroundColor,
     this.enabled = true,
   });
 
@@ -47,7 +51,9 @@ class _AtmosferaAmbientLayerState extends State<AtmosferaAmbientLayer>
     }
 
     if (oldWidget.atmosfera != widget.atmosfera ||
-        oldWidget.color != widget.color) {
+        oldWidget.color != widget.color ||
+        oldWidget.accentColor != widget.accentColor ||
+        oldWidget.backgroundColor != widget.backgroundColor) {
       setState(() {});
     }
   }
@@ -64,14 +70,29 @@ class _AtmosferaAmbientLayerState extends State<AtmosferaAmbientLayer>
 
   @override
   Widget build(BuildContext context) {
+    final tieneAtmosfera = widget.atmosfera != AtmosferaLectura.neutra;
+
     return Stack(
       children: [
-        widget.child,
+        Positioned.fill(child: ColoredBox(color: widget.backgroundColor)),
 
-        if (widget.enabled)
+        if (tieneAtmosfera)
           Positioned.fill(
             child: IgnorePointer(
-              child: ColoredBox(color: widget.color.withValues(alpha: 0.09)),
+              child: DecoratedBox(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [
+                      widget.color.withValues(alpha: 0.20),
+                      widget.backgroundColor.withValues(alpha: 0.42),
+                      widget.accentColor.withValues(alpha: 0.18),
+                    ],
+                    stops: const [0, 0.52, 1],
+                  ),
+                ),
+              ),
             ),
           ),
 
@@ -94,6 +115,8 @@ class _AtmosferaAmbientLayerState extends State<AtmosferaAmbientLayer>
               ),
             ),
           ),
+
+        widget.child,
       ],
     );
   }
