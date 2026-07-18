@@ -7,6 +7,7 @@ import '../theme/app_spacing.dart';
 import '../theme/app_text_styles.dart';
 import '../widgets/common/club_card.dart';
 import 'politica_privacidad_page.dart';
+import 'tecnologia_creditos_page.dart';
 
 class AcercaDePage extends StatefulWidget {
   const AcercaDePage({super.key});
@@ -97,9 +98,18 @@ class _AcercaDePageState extends State<AcercaDePage> {
             child: Column(
               children: [
                 ListTile(
-                  leading: const Icon(Icons.verified_outlined),
-                  title: const Text('Créditos'),
-                  subtitle: const Text('Creado y cuidado por Cristina Moreno'),
+                  leading: const Icon(Icons.code_rounded),
+                  title: const Text('Tecnología y créditos'),
+                  subtitle: const Text(
+                    'Cómo está construida ClubReads y quién la hace posible',
+                  ),
+                  trailing: const Icon(Icons.chevron_right_rounded),
+                  onTap: () => Navigator.push<void>(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => const TecnologiaCreditosPage(),
+                    ),
+                  ),
                 ),
                 const Divider(height: 1),
                 ListTile(
