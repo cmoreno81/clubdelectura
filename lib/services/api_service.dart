@@ -294,8 +294,16 @@ class ApiService {
   }
 
   Future<List<LecturaActiva>> getLecturasActivas() async {
+    final uri = Uri.parse(baseUrl).replace(
+      queryParameters: {
+        'action': 'lecturasActivas',
+        '_refresh': DateTime.now().millisecondsSinceEpoch.toString(),
+      },
+    );
+
     final response = await _client.get(
-      Uri.parse('$baseUrl?action=lecturasActivas'),
+      uri,
+      headers: const {'Cache-Control': 'no-cache'},
     );
 
     if (response.statusCode != 200) {
@@ -654,6 +662,7 @@ class ApiService {
 
   Future<Map<String, dynamic>> toggleLikeComentario({
     required String comentarioId,
+    String reaccion = 'LIKE',
   }) async {
     final usuario = await UsuarioService().obtenerUsuario();
 
@@ -661,7 +670,8 @@ class ApiService {
       Uri.parse(
         '$baseUrl?action=toggleLikeComentario'
         '&id=${Uri.encodeComponent(comentarioId)}'
-        '&usuario=${Uri.encodeComponent(usuario ?? "")}',
+        '&usuario=${Uri.encodeComponent(usuario ?? "")}'
+        '&reaccion=${Uri.encodeComponent(reaccion)}',
       ),
     );
 
@@ -768,13 +778,33 @@ class ApiService {
   }
 
   Future<MoodClub> getMoodClub() async {
-    final response = await _client.get(Uri.parse('$baseUrl?action=moodClub'));
+    final usuario = await UsuarioService().obtenerUsuario();
+    final uri = Uri.parse(baseUrl).replace(
+      queryParameters: {
+        'action': 'moodClub',
+        'usuario': usuario?.trim() ?? '',
+        '_refresh': DateTime.now().millisecondsSinceEpoch.toString(),
+      },
+    );
+    final response = await _client.get(uri);
 
     if (response.statusCode == 200) {
       return MoodClub.fromJson(jsonDecode(response.body));
     }
 
     throw Exception('Error cargando el mood del club');
+  }
+
+  Future<bool> registrarMoodClub(String mood) async {
+    final usuario = await UsuarioService().obtenerUsuario();
+    final uri = Uri.parse(baseUrl).replace(
+      queryParameters: {
+        'action': 'registrarMoodClub',
+        'usuario': usuario?.trim() ?? '',
+        'mood': mood,
+      },
+    );
+    return _respuestaOk(await _client.get(uri));
   }
 
   Future<TendenciasClub> getTendenciasClub() async {

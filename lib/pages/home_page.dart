@@ -15,6 +15,7 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
   int currentIndex = 0;
+  int pageRevision = 0;
 
   static const List<Widget> pages = [
     DashboardPage(),
@@ -29,19 +30,25 @@ class _HomePageState extends State<HomePage> {
     return Scaffold(
       extendBody: false,
 
-      body: IndexedStack(
-        index: currentIndex,
-        children: List.generate(
-          pages.length,
-          (index) =>
-              HeroMode(enabled: currentIndex == index, child: pages[index]),
+      body: HeroMode(
+        enabled: true,
+        child: KeyedSubtree(
+          key: ValueKey('$currentIndex-$pageRevision'),
+          child: pages[currentIndex],
         ),
       ),
 
       bottomNavigationBar: NavigationBar(
         selectedIndex: currentIndex,
         onDestinationSelected: (index) {
-          if (index == currentIndex) return;
+          FocusManager.instance.primaryFocus?.unfocus();
+
+          if (index == currentIndex) {
+            setState(() {
+              pageRevision++;
+            });
+            return;
+          }
 
           final atmosfera = AtmosferaScope.of(context);
 
@@ -51,6 +58,7 @@ class _HomePageState extends State<HomePage> {
 
           setState(() {
             currentIndex = index;
+            pageRevision++;
           });
         },
         destinations: const [

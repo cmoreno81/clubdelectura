@@ -13,6 +13,9 @@ import 'atmosfera_lectura_page.dart';
 import '../theme/atmosferas/atmosfera_experiencia.dart';
 import '../theme/atmosferas/atmosfera_tipo.dart';
 import '../services/atmosfera_scope.dart';
+import '../models/playlist_lectura_seleccion.dart';
+import 'playlist_lectura_page.dart';
+import 'kit_export_page.dart';
 
 class KitLecturaPage extends StatefulWidget {
   final String bookId;
@@ -213,10 +216,61 @@ class _KitLecturaPageState extends State<KitLecturaPage> {
     return '#${rgb.toRadixString(16).padLeft(6, '0').toUpperCase()}';
   }
 
-  void _mostrarProximamente(String mensaje) {
-    ScaffoldMessenger.of(context)
-      ..hideCurrentSnackBar()
-      ..showSnackBar(SnackBar(content: Text(mensaje)));
+  Future<void> _abrirPlaylist() async {
+    final resultado = await Navigator.push<PlaylistLecturaSeleccion>(
+      context,
+      MaterialPageRoute(
+        builder: (_) => PlaylistLecturaPage(
+          libro: widget.libro,
+          atmosferaId: _seleccion.atmosferaId,
+          musicaSugerida: _seleccion.musica,
+        ),
+      ),
+    );
+
+    if (!mounted || resultado == null) return;
+
+    final nuevaSeleccion = _seleccion.copyWith(
+      playlistTitulo: resultado.titulo,
+      playlistUrl: resultado.url,
+    );
+    await _kitService.guardar(widget.bookId, nuevaSeleccion);
+    if (!mounted) return;
+    setState(() => _seleccion = nuevaSeleccion);
+  }
+
+  Future<void> _abrirExportacion(KitExportTipo tipo) async {
+    if (!_tienePaleta) {
+      await _abrirPaleta();
+      if (!mounted || !_seleccion.tienePaleta) return;
+    }
+
+    final compartida = await Navigator.push<bool>(
+      context,
+      MaterialPageRoute(
+        builder: (_) => KitExportPage(
+          tipo: tipo,
+          libro: widget.libro,
+          coverUrl: widget.coverUrl,
+          colores: _seleccion.paleta.map(_colorDesdeHex).toList(),
+          atmosferaTitulo: _seleccion.atmosferaTitulo,
+          atmosferaIcono: _seleccion.atmosferaIcono,
+        ),
+      ),
+    );
+
+    if (!mounted || compartida != true) return;
+    final nuevaSeleccion = _seleccion.copyWith(
+      wallpaperGenerado: tipo == KitExportTipo.wallpaper
+          ? true
+          : _seleccion.wallpaperGenerado,
+      storyGenerada: tipo == KitExportTipo.story
+          ? true
+          : _seleccion.storyGenerada,
+    );
+    await _kitService.guardar(widget.bookId, nuevaSeleccion);
+    if (!mounted) return;
+    setState(() => _seleccion = nuevaSeleccion);
   }
 
   @override
@@ -336,13 +390,12 @@ class _KitLecturaPageState extends State<KitLecturaPage> {
                 _KitSectionCard(
                   icon: Icons.music_note_rounded,
                   title: 'Playlist',
-                  subtitle: 'Una banda sonora para acompañarte',
+                  subtitle: _seleccion.tienePlaylist
+                      ? _seleccion.playlistTitulo
+                      : 'Una banda sonora para acompañarte',
                   color: const Color(0xFFD85D88),
-                  onTap: () {
-                    _mostrarProximamente(
-                      'La playlist llegará en una fase posterior.',
-                    );
-                  },
+                  preparada: _seleccion.tienePlaylist,
+                  onTap: _abrirPlaylist,
                 ),
 
                 const SizedBox(height: AppSpacing.md),
@@ -354,11 +407,8 @@ class _KitLecturaPageState extends State<KitLecturaPage> {
                       ? 'Diseñado con los colores de tu paleta'
                       : 'Lleva la estética del libro contigo',
                   color: const Color(0xFF5D91CE),
-                  onTap: () {
-                    _mostrarProximamente(
-                      'Próximamente crearemos el fondo de pantalla.',
-                    );
-                  },
+                  preparada: _seleccion.wallpaperGenerado,
+                  onTap: () => _abrirExportacion(KitExportTipo.wallpaper),
                 ),
 
                 const SizedBox(height: AppSpacing.md),
@@ -370,11 +420,8 @@ class _KitLecturaPageState extends State<KitLecturaPage> {
                       ? 'Una tarjeta con la estética elegida'
                       : 'Una tarjeta lista para compartir',
                   color: const Color(0xFF5CA77A),
-                  onTap: () {
-                    _mostrarProximamente(
-                      'Próximamente generaremos la story compartible.',
-                    );
-                  },
+                  preparada: _seleccion.storyGenerada,
+                  onTap: () => _abrirExportacion(KitExportTipo.story),
                 ),
               ],
             ),

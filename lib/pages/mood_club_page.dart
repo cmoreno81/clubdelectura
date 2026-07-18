@@ -7,8 +7,10 @@ import '../theme/app_radius.dart';
 import '../theme/app_spacing.dart';
 import '../theme/app_text_styles.dart';
 import '../widgets/common/club_card.dart';
+import '../widgets/common/club_book_cover.dart';
 import '../widgets/common/club_chip.dart';
 import '../widgets/error_view.dart';
+import 'capitulo_page.dart';
 
 class MoodClubPage extends StatefulWidget {
   const MoodClubPage({super.key});
@@ -19,6 +21,7 @@ class MoodClubPage extends StatefulWidget {
 
 class _MoodClubPageState extends State<MoodClubPage> {
   late Future<MoodClub> future;
+  bool votando = false;
 
   @override
   void initState() {
@@ -35,10 +38,36 @@ class _MoodClubPageState extends State<MoodClubPage> {
     await future;
   }
 
+  Future<void> _votar(String mood) async {
+    if (votando) return;
+    setState(() => votando = true);
+    final ok = await ApiService().registrarMoodClub(mood);
+    if (!mounted) return;
+    if (ok) {
+      setState(_recargar);
+      await future;
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('No se ha podido guardar tu mood.')),
+      );
+    }
+    if (mounted) setState(() => votando = false);
+  }
+
+  void _abrirConversacion(String libro, String capitulo) {
+    if (libro.isEmpty || capitulo.isEmpty) return;
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => CapituloPage(libro: libro, capitulo: capitulo),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Mood del club')),
+      appBar: AppBar(title: const Text('Pulso del club')),
       body: FutureBuilder<MoodClub>(
         future: future,
         builder: (context, snapshot) {
@@ -68,6 +97,34 @@ class _MoodClubPageState extends State<MoodClubPage> {
               ),
               children: [
                 _MoodHeader(titular: mood.titular),
+
+                const SizedBox(height: AppSpacing.xl),
+
+                _MoodVoteCard(
+                  mood: mood.moodSemanal,
+                  enabled: !votando,
+                  onVote: _votar,
+                ),
+
+                const SizedBox(height: AppSpacing.xl),
+
+                _MetricasMood(resumen: mood.resumen),
+
+                if (mood.conversacionDestacada != null) ...[
+                  const SizedBox(height: AppSpacing.xl),
+                  _ConversacionDestacada(
+                    conversacion: mood.conversacionDestacada!,
+                    onTap: () => _abrirConversacion(
+                      mood.conversacionDestacada!.libro,
+                      mood.conversacionDestacada!.capitulo,
+                    ),
+                  ),
+                ],
+
+                if (mood.libroActivo != null) ...[
+                  const SizedBox(height: AppSpacing.md),
+                  _LibroActivo(libro: mood.libroActivo!),
+                ],
 
                 const SizedBox(height: AppSpacing.xl),
 
@@ -143,6 +200,14 @@ class _MoodClubPageState extends State<MoodClubPage> {
                             icono: mood.actividad[index].icono,
                             texto: mood.actividad[index].texto,
                             destacada: index == 0,
+                            onTap:
+                                mood.actividad[index].tipo == 'COMENTARIO' &&
+                                    mood.actividad[index].capitulo.isNotEmpty
+                                ? () => _abrirConversacion(
+                                    mood.actividad[index].libro,
+                                    mood.actividad[index].capitulo,
+                                  )
+                                : null,
                           ),
 
                           if (index < mood.actividad.length - 1)
@@ -284,6 +349,282 @@ class _MoodHeader extends StatelessWidget {
   }
 }
 
+const _moodOpciones = [
+  ('HOOKED', '😍', 'Enganchada'),
+  ('SHOCKED', '🤯', 'En shock'),
+  ('CRYING', '😭', 'Sufriendo'),
+  ('ANGRY', '😡', 'Enfadada'),
+  ('LAUGHING', '😂', 'Divertida'),
+  ('BLOCKED', '😴', 'Bloqueada'),
+];
+
+class _MoodVoteCard extends StatelessWidget {
+  final MoodSemanal mood;
+  final bool enabled;
+  final ValueChanged<String> onVote;
+
+  const _MoodVoteCard({
+    required this.mood,
+    required this.enabled,
+    required this.onVote,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return ClubCard(
+      elevated: false,
+      padding: const EdgeInsets.all(AppSpacing.lg),
+      borderColor: AppColors.primaryLight,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            '¿Cómo estás viviendo tu lectura?',
+            style: AppTextStyles.section,
+          ),
+          const SizedBox(height: AppSpacing.xs),
+          Text(
+            mood.total == 0
+                ? 'Estrena el pulso de esta semana.'
+                : '${mood.total} lectoras han compartido su mood esta semana.',
+            style: AppTextStyles.bodySecondary,
+          ),
+          const SizedBox(height: AppSpacing.lg),
+          Wrap(
+            spacing: AppSpacing.sm,
+            runSpacing: AppSpacing.sm,
+            children: _moodOpciones.map((opcion) {
+              final seleccionada = mood.miMood == opcion.$1;
+              final total = mood.distribucion[opcion.$1] ?? 0;
+              return Tooltip(
+                message: opcion.$3,
+                child: InkWell(
+                  onTap: enabled ? () => onVote(opcion.$1) : null,
+                  borderRadius: BorderRadius.circular(AppRadius.pill),
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 200),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: AppSpacing.sm,
+                      vertical: AppSpacing.xs,
+                    ),
+                    decoration: BoxDecoration(
+                      color: seleccionada
+                          ? AppColors.primaryLight
+                          : AppColors.surfaceSoft,
+                      borderRadius: BorderRadius.circular(AppRadius.pill),
+                      border: Border.all(
+                        color: seleccionada
+                            ? AppColors.primary
+                            : AppColors.border,
+                        width: seleccionada ? 2 : 1,
+                      ),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(opcion.$2, style: const TextStyle(fontSize: 23)),
+                        if (total > 0) ...[
+                          const SizedBox(width: AppSpacing.xs),
+                          Text(
+                            '$total',
+                            style: AppTextStyles.caption.copyWith(
+                              fontWeight: FontWeight.w800,
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
+                ),
+              );
+            }).toList(),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _MetricasMood extends StatelessWidget {
+  final ResumenMood resumen;
+
+  const _MetricasMood({required this.resumen});
+
+  @override
+  Widget build(BuildContext context) {
+    final metricas = [
+      (Icons.people_outline_rounded, resumen.lectorasActivas, 'leyendo'),
+      (Icons.chat_bubble_outline_rounded, resumen.comentarios, 'comentarios'),
+      (Icons.add_reaction_outlined, resumen.reacciones, 'reacciones'),
+      (Icons.task_alt_rounded, resumen.terminados, 'terminados'),
+    ];
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const _SectionHeader(
+          icon: Icons.monitor_heart_outlined,
+          color: AppColors.success,
+          title: 'Esta semana',
+          subtitle: 'El club en cuatro señales',
+        ),
+        const SizedBox(height: AppSpacing.md),
+        GridView.count(
+          crossAxisCount: 2,
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          mainAxisSpacing: AppSpacing.sm,
+          crossAxisSpacing: AppSpacing.sm,
+          childAspectRatio: 1.9,
+          children: metricas
+              .map(
+                (metrica) => DecoratedBox(
+                  decoration: BoxDecoration(
+                    color: AppColors.surfaceSoft,
+                    borderRadius: BorderRadius.circular(AppRadius.md),
+                    border: Border.all(color: AppColors.border),
+                  ),
+                  child: Padding(
+                    padding: const EdgeInsets.all(AppSpacing.sm),
+                    child: Row(
+                      children: [
+                        Icon(metrica.$1, color: AppColors.primary, size: 22),
+                        const SizedBox(width: AppSpacing.sm),
+                        Expanded(
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                '${metrica.$2}',
+                                style: AppTextStyles.section,
+                              ),
+                              Text(
+                                metrica.$3,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: AppTextStyles.caption,
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              )
+              .toList(),
+        ),
+      ],
+    );
+  }
+}
+
+class _ConversacionDestacada extends StatelessWidget {
+  final ConversacionMood conversacion;
+  final VoidCallback onTap;
+
+  const _ConversacionDestacada({
+    required this.conversacion,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return ClubCard(
+      elevated: false,
+      onTap: onTap,
+      padding: const EdgeInsets.all(AppSpacing.lg),
+      backgroundColor: const Color(0xFFFFF5F8),
+      borderColor: const Color(0xFFF4D2DF),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Row(
+            children: [
+              Icon(
+                Icons.local_fire_department_outlined,
+                color: AppColors.danger,
+              ),
+              SizedBox(width: AppSpacing.sm),
+              Text(
+                'La conversación del momento',
+                style: AppTextStyles.subtitle,
+              ),
+              Spacer(),
+              Icon(Icons.arrow_forward_rounded, color: AppColors.textMuted),
+            ],
+          ),
+          const SizedBox(height: AppSpacing.md),
+          Text(
+            '“${conversacion.texto}”',
+            maxLines: 4,
+            overflow: TextOverflow.ellipsis,
+            style: AppTextStyles.body.copyWith(height: 1.45),
+          ),
+          const SizedBox(height: AppSpacing.sm),
+          Text(
+            '${conversacion.usuario} · ${conversacion.libro} · ${conversacion.capitulo}',
+            style: AppTextStyles.caption,
+          ),
+          const SizedBox(height: AppSpacing.sm),
+          Text(
+            '✨ ${conversacion.reacciones}   💬 ${conversacion.respuestas}',
+            style: AppTextStyles.caption.copyWith(fontWeight: FontWeight.w800),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _LibroActivo extends StatelessWidget {
+  final LibroMood libro;
+
+  const _LibroActivo({required this.libro});
+
+  @override
+  Widget build(BuildContext context) {
+    return ClubCard(
+      elevated: false,
+      padding: const EdgeInsets.all(AppSpacing.md),
+      child: Row(
+        children: [
+          ClubBookCover(
+            title: libro.libro,
+            imageUrl: libro.coverUrl,
+            width: 64,
+            showShadow: false,
+          ),
+          const SizedBox(width: AppSpacing.md),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'El libro que mueve el club',
+                  style: AppTextStyles.caption,
+                ),
+                const SizedBox(height: AppSpacing.xs),
+                Text(
+                  libro.libro,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: AppTextStyles.subtitle,
+                ),
+                const SizedBox(height: AppSpacing.xs),
+                Text(
+                  '💬 ${libro.comentarios}   ✨ ${libro.reacciones}',
+                  style: AppTextStyles.caption,
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 class _SectionHeader extends StatelessWidget {
   final IconData icon;
   final Color color;
@@ -398,47 +739,62 @@ class _ActividadItem extends StatelessWidget {
   final String icono;
   final String texto;
   final bool destacada;
+  final VoidCallback? onTap;
 
   const _ActividadItem({
     required this.icono,
     required this.texto,
     required this.destacada,
+    this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.all(AppSpacing.md),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-            width: 48,
-            height: 48,
-            decoration: BoxDecoration(
-              color: destacada ? AppColors.primaryLight : AppColors.surfaceSoft,
-              borderRadius: BorderRadius.circular(AppRadius.md),
-            ),
-            alignment: Alignment.center,
-            child: Text(
-              icono.trim().isEmpty ? '📖' : icono,
-              style: const TextStyle(fontSize: 23),
-            ),
-          ),
-
-          const SizedBox(width: AppSpacing.md),
-
-          Expanded(
-            child: Text(
-              texto,
-              style: AppTextStyles.body.copyWith(
-                color: AppColors.textPrimary,
-                height: 1.4,
-                fontWeight: destacada ? FontWeight.w700 : FontWeight.w500,
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(AppRadius.md),
+      child: Padding(
+        padding: const EdgeInsets.all(AppSpacing.md),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Container(
+              width: 48,
+              height: 48,
+              decoration: BoxDecoration(
+                color: destacada
+                    ? AppColors.primaryLight
+                    : AppColors.surfaceSoft,
+                borderRadius: BorderRadius.circular(AppRadius.md),
+              ),
+              alignment: Alignment.center,
+              child: Text(
+                icono.trim().isEmpty ? '📖' : icono,
+                style: const TextStyle(fontSize: 23),
               ),
             ),
-          ),
-        ],
+
+            const SizedBox(width: AppSpacing.md),
+
+            Expanded(
+              child: Text(
+                texto,
+                style: AppTextStyles.body.copyWith(
+                  color: AppColors.textPrimary,
+                  height: 1.4,
+                  fontWeight: destacada ? FontWeight.w700 : FontWeight.w500,
+                ),
+              ),
+            ),
+            if (onTap != null) ...[
+              const SizedBox(width: AppSpacing.sm),
+              const Icon(
+                Icons.chevron_right_rounded,
+                color: AppColors.textMuted,
+              ),
+            ],
+          ],
+        ),
       ),
     );
   }

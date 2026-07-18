@@ -63,13 +63,19 @@ class _MyAppState extends State<MyApp> {
               final reducirMovimiento =
                   MediaQuery.maybeOf(context)?.disableAnimations ?? false;
 
-              return AtmosferaAmbientLayer(
-                atmosfera: atmosferaController.lectura,
-                color: visual.paleta.primary,
-                enabled:
-                    atmosferaController.animacionesActivas &&
-                    !reducirMovimiento,
-                child: child ?? const SizedBox.shrink(),
+              return Listener(
+                behavior: HitTestBehavior.translucent,
+                onPointerDown: (_) {
+                  FocusManager.instance.primaryFocus?.unfocus();
+                },
+                child: AtmosferaAmbientLayer(
+                  atmosfera: atmosferaController.lectura,
+                  color: visual.paleta.primary,
+                  enabled:
+                      atmosferaController.animacionesActivas &&
+                      !reducirMovimiento,
+                  child: child ?? const SizedBox.shrink(),
+                ),
               );
             },
 

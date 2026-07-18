@@ -41,6 +41,8 @@ dependencies:
   palette_generator_plus: ^1.0.0
   image_picker: ^1.1.2
   image: ^4.5.4
+  share_plus: ^13.2.1
+  path_provider: ^2.1.6
 dev_dependencies:
   flutter_test:
     sdk: flutter

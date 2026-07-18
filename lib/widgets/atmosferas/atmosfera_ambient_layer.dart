@@ -32,7 +32,7 @@ class _AtmosferaAmbientLayerState extends State<AtmosferaAmbientLayer>
 
     _controller = AnimationController(
       vsync: this,
-      duration: const Duration(seconds: 18),
+      duration: const Duration(seconds: 10),
     );
 
     _actualizarAnimacion();
@@ -65,24 +65,32 @@ class _AtmosferaAmbientLayerState extends State<AtmosferaAmbientLayer>
   @override
   Widget build(BuildContext context) {
     return Stack(
-      fit: StackFit.expand,
       children: [
         widget.child,
 
         if (widget.enabled)
-          IgnorePointer(
-            child: RepaintBoundary(
-              child: AnimatedBuilder(
-                animation: _controller,
-                builder: (context, _) {
-                  return CustomPaint(
-                    painter: _AtmosferaPainter(
-                      progreso: _controller.value,
-                      atmosfera: widget.atmosfera,
-                      color: widget.color,
-                    ),
-                  );
-                },
+          Positioned.fill(
+            child: IgnorePointer(
+              child: ColoredBox(color: widget.color.withValues(alpha: 0.09)),
+            ),
+          ),
+
+        if (widget.enabled)
+          Positioned.fill(
+            child: IgnorePointer(
+              child: RepaintBoundary(
+                child: AnimatedBuilder(
+                  animation: _controller,
+                  builder: (context, _) {
+                    return CustomPaint(
+                      painter: _AtmosferaPainter(
+                        progreso: _controller.value,
+                        atmosfera: widget.atmosfera,
+                        color: widget.color,
+                      ),
+                    );
+                  },
+                ),
               ),
             ),
           ),
@@ -113,30 +121,47 @@ class _AtmosferaPainter extends CustomPainter {
     switch (atmosfera) {
       case AtmosferaLectura.romantica:
         _pintarPetalos(canvas, size);
+        _pintarDestellos(canvas, size);
 
       case AtmosferaLectura.magica:
         _pintarDestellos(canvas, size);
+        _pintarConstelacion(canvas, size);
 
       case AtmosferaLectura.marina:
         _pintarOndas(canvas, size);
+        _pintarDestellos(canvas, size);
 
       case AtmosferaLectura.bosque:
         _pintarHojas(canvas, size);
+        _pintarRayosCalidos(canvas, size);
 
       case AtmosferaLectura.oscura:
+        _pintarBruma(canvas, size);
+        _pintarLluvia(canvas, size);
+
       case AtmosferaLectura.gotica:
+        _pintarBruma(canvas, size);
+        _pintarArcos(canvas, size);
+
       case AtmosferaLectura.misteriosa:
         _pintarBruma(canvas, size);
+        _pintarConstelacion(canvas, size);
 
       case AtmosferaLectura.futurista:
         _pintarLineas(canvas, size);
+        _pintarConstelacion(canvas, size);
 
       case AtmosferaLectura.epica:
         _pintarChispas(canvas, size);
+        _pintarRayosCalidos(canvas, size);
 
       case AtmosferaLectura.acogedora:
+        _pintarPolvoCalido(canvas, size);
+        _pintarRayosCalidos(canvas, size);
+
       case AtmosferaLectura.historica:
         _pintarPolvoCalido(canvas, size);
+        _pintarLineasManuscrito(canvas, size);
 
       case AtmosferaLectura.neutra:
         break;
@@ -144,9 +169,9 @@ class _AtmosferaPainter extends CustomPainter {
   }
 
   void _pintarPetalos(Canvas canvas, Size size) {
-    final paint = Paint()..color = color.withValues(alpha: 0.075);
+    final paint = Paint()..color = color.withValues(alpha: 0.22);
 
-    for (var i = 0; i < 13; i++) {
+    for (var i = 0; i < 25; i++) {
       final velocidad = 0.45 + (i % 4) * 0.11;
       final fase = (progreso * velocidad + i * 0.113) % 1;
 
@@ -173,19 +198,20 @@ class _AtmosferaPainter extends CustomPainter {
   }
 
   void _pintarDestellos(Canvas canvas, Size size) {
-    for (var i = 0; i < 22; i++) {
+    for (var i = 0; i < 38; i++) {
       final x = _fraccion(i * 81.41) * size.width;
       final y = _fraccion(i * 39.73) * size.height;
 
       final pulso = (math.sin((progreso * math.pi * 2) + i * 0.8) + 1) / 2;
 
-      final paint = Paint()..color = color.withValues(alpha: 0.025 + pulso * 0.09);
+      final paint = Paint()
+        ..color = color.withValues(alpha: 0.07 + pulso * 0.20);
 
       canvas.drawCircle(Offset(x, y), 1.5 + pulso * 3.2, paint);
 
       if (i % 4 == 0) {
         final linePaint = Paint()
-          ..color = color.withValues(alpha: 0.025 + pulso * 0.06)
+          ..color = color.withValues(alpha: 0.06 + pulso * 0.15)
           ..strokeWidth = 1;
 
         canvas.drawLine(Offset(x - 6, y), Offset(x + 6, y), linePaint);
@@ -197,11 +223,11 @@ class _AtmosferaPainter extends CustomPainter {
 
   void _pintarOndas(Canvas canvas, Size size) {
     final paint = Paint()
-      ..color = color.withValues(alpha: 0.075)
+      ..color = color.withValues(alpha: 0.22)
       ..style = PaintingStyle.stroke
       ..strokeWidth = 1.4;
 
-    for (var fila = 0; fila < 5; fila++) {
+    for (var fila = 0; fila < 8; fila++) {
       final path = Path();
 
       final yBase = size.height * (0.18 + fila * 0.17);
@@ -222,9 +248,9 @@ class _AtmosferaPainter extends CustomPainter {
   }
 
   void _pintarHojas(Canvas canvas, Size size) {
-    final paint = Paint()..color = color.withValues(alpha: 0.065);
+    final paint = Paint()..color = color.withValues(alpha: 0.20);
 
-    for (var i = 0; i < 12; i++) {
+    for (var i = 0; i < 24; i++) {
       final fase = (progreso * (0.35 + (i % 3) * 0.1) + i * 0.16) % 1;
 
       final xBase = _fraccion(i * 67.27) * size.width;
@@ -253,7 +279,7 @@ class _AtmosferaPainter extends CustomPainter {
       final y = size.height * (0.12 + i * 0.13);
 
       final paint = Paint()
-        ..color = color.withValues(alpha: 0.035 + (i % 3) * 0.012)
+        ..color = color.withValues(alpha: 0.10 + (i % 3) * 0.025)
         ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 30);
 
       canvas.drawOval(
@@ -269,10 +295,10 @@ class _AtmosferaPainter extends CustomPainter {
 
   void _pintarLineas(Canvas canvas, Size size) {
     final paint = Paint()
-      ..color = color.withValues(alpha: 0.085)
+      ..color = color.withValues(alpha: 0.24)
       ..strokeWidth = 1.2;
 
-    for (var i = 0; i < 15; i++) {
+    for (var i = 0; i < 28; i++) {
       final x = _fraccion(i * 91.31) * size.width;
       final fase = (progreso * (0.5 + (i % 4) * 0.08) + i * 0.09) % 1;
       final y = fase * size.height;
@@ -286,25 +312,109 @@ class _AtmosferaPainter extends CustomPainter {
   }
 
   void _pintarChispas(Canvas canvas, Size size) {
-    for (var i = 0; i < 18; i++) {
+    for (var i = 0; i < 32; i++) {
       final fase = (progreso * (0.35 + (i % 5) * 0.06) + i * 0.12) % 1;
       final x = _fraccion(i * 45.73) * size.width;
       final y = size.height + 20 - fase * (size.height + 40);
 
-      final paint = Paint()..color = color.withValues(alpha: 0.045 + fase * 0.11);
+      final paint = Paint()
+        ..color = color.withValues(alpha: 0.10 + fase * 0.24);
       canvas.drawCircle(Offset(x, y), 1.5 + (i % 3), paint);
     }
   }
 
   void _pintarPolvoCalido(Canvas canvas, Size size) {
-    for (var i = 0; i < 20; i++) {
+    for (var i = 0; i < 36; i++) {
       final x = _fraccion(i * 71.17) * size.width;
       final y = _fraccion(i * 37.91 + progreso * 20) * size.height;
 
       final pulso = (math.sin(progreso * math.pi * 2 + i * 0.6) + 1) / 2;
 
-      final paint = Paint()..color = color.withValues(alpha: 0.035 + pulso * 0.065);
+      final paint = Paint()
+        ..color = color.withValues(alpha: 0.08 + pulso * 0.18);
       canvas.drawCircle(Offset(x, y), 1.3 + pulso * 2.8, paint);
+    }
+  }
+
+  void _pintarLluvia(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = color.withValues(alpha: 0.28)
+      ..strokeWidth = 1.5;
+    for (var i = 0; i < 42; i++) {
+      final x = _fraccion(i * 57.19) * size.width;
+      final fase = (progreso * (0.7 + (i % 4) * 0.09) + i * 0.08) % 1;
+      final y = fase * size.height;
+      canvas.drawLine(Offset(x, y), Offset(x - 7, y + 30), paint);
+    }
+  }
+
+  void _pintarArcos(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = color.withValues(alpha: 0.22)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1.3;
+    for (var i = 0; i < 4; i++) {
+      final width = size.width * (0.24 + i * 0.08);
+      final center = Offset(size.width * (0.15 + i * 0.25), size.height * 0.28);
+      canvas.drawArc(
+        Rect.fromCenter(center: center, width: width, height: width * 1.8),
+        math.pi,
+        math.pi,
+        false,
+        paint,
+      );
+    }
+  }
+
+  void _pintarConstelacion(Canvas canvas, Size size) {
+    final points = <Offset>[];
+    for (var i = 0; i < 12; i++) {
+      points.add(
+        Offset(
+          _fraccion(i * 43.71) * size.width,
+          _fraccion(i * 77.13) * size.height,
+        ),
+      );
+    }
+    final pulse = 0.15 + (math.sin(progreso * math.pi * 2) + 1) * 0.06;
+    final line = Paint()
+      ..color = color.withValues(alpha: pulse)
+      ..strokeWidth = 0.9;
+    final dot = Paint()..color = color.withValues(alpha: pulse + 0.06);
+    for (var i = 0; i < points.length; i++) {
+      canvas.drawCircle(points[i], 1.8 + (i % 3), dot);
+      if (i > 0 && i % 3 != 0) canvas.drawLine(points[i - 1], points[i], line);
+    }
+  }
+
+  void _pintarRayosCalidos(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = color.withValues(alpha: 0.13)
+      ..style = PaintingStyle.fill;
+    for (var i = 0; i < 4; i++) {
+      final drift = math.sin(progreso * math.pi * 2 + i) * 12;
+      final path = Path()
+        ..moveTo(size.width * (0.12 + i * 0.24) + drift, 0)
+        ..lineTo(size.width * (0.30 + i * 0.24) + drift, 0)
+        ..lineTo(size.width * (0.52 + i * 0.18), size.height)
+        ..lineTo(size.width * (0.34 + i * 0.18), size.height)
+        ..close();
+      canvas.drawPath(path, paint);
+    }
+  }
+
+  void _pintarLineasManuscrito(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = color.withValues(alpha: 0.16)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1;
+    for (var row = 0; row < 12; row++) {
+      final y = size.height * (0.08 + row * 0.075);
+      final path = Path()..moveTo(size.width * 0.08, y);
+      for (double x = size.width * 0.08; x < size.width * 0.92; x += 12) {
+        path.lineTo(x, y + math.sin(x / 24 + row + progreso * 2) * 2);
+      }
+      canvas.drawPath(path, paint);
     }
   }
 

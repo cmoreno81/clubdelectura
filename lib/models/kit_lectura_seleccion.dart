@@ -12,6 +12,10 @@ class KitLecturaSeleccion {
   final String snack;
   final String musica;
   final String momento;
+  final String playlistTitulo;
+  final String playlistUrl;
+  final bool wallpaperGenerado;
+  final bool storyGenerada;
 
   const KitLecturaSeleccion({
     this.paleta = const [],
@@ -25,6 +29,10 @@ class KitLecturaSeleccion {
     this.snack = '',
     this.musica = '',
     this.momento = '',
+    this.playlistTitulo = '',
+    this.playlistUrl = '',
+    this.wallpaperGenerado = false,
+    this.storyGenerada = false,
   });
 
   bool get tienePaleta => paleta.isNotEmpty;
@@ -34,6 +42,8 @@ class KitLecturaSeleccion {
   bool get tieneAtmosfera {
     return atmosferaId.trim().isNotEmpty || atmosferaTitulo.trim().isNotEmpty;
   }
+
+  bool get tienePlaylist => playlistUrl.trim().isNotEmpty;
 
   KitLecturaSeleccion copyWith({
     List<String>? paleta,
@@ -47,6 +57,10 @@ class KitLecturaSeleccion {
     String? snack,
     String? musica,
     String? momento,
+    String? playlistTitulo,
+    String? playlistUrl,
+    bool? wallpaperGenerado,
+    bool? storyGenerada,
   }) {
     return KitLecturaSeleccion(
       paleta: paleta ?? this.paleta,
@@ -60,6 +74,10 @@ class KitLecturaSeleccion {
       snack: snack ?? this.snack,
       musica: musica ?? this.musica,
       momento: momento ?? this.momento,
+      playlistTitulo: playlistTitulo ?? this.playlistTitulo,
+      playlistUrl: playlistUrl ?? this.playlistUrl,
+      wallpaperGenerado: wallpaperGenerado ?? this.wallpaperGenerado,
+      storyGenerada: storyGenerada ?? this.storyGenerada,
     );
   }
 
@@ -76,6 +94,10 @@ class KitLecturaSeleccion {
       'snack': snack,
       'musica': musica,
       'momento': momento,
+      'playlistTitulo': playlistTitulo,
+      'playlistUrl': playlistUrl,
+      'wallpaperGenerado': wallpaperGenerado,
+      'storyGenerada': storyGenerada,
     };
   }
 
@@ -92,6 +114,10 @@ class KitLecturaSeleccion {
       snack: json['snack']?.toString() ?? '',
       musica: json['musica']?.toString() ?? '',
       momento: json['momento']?.toString() ?? '',
+      playlistTitulo: json['playlistTitulo']?.toString() ?? '',
+      playlistUrl: json['playlistUrl']?.toString() ?? '',
+      wallpaperGenerado: json['wallpaperGenerado'] == true,
+      storyGenerada: json['storyGenerada'] == true,
     );
   }
 

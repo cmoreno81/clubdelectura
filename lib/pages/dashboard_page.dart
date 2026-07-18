@@ -246,7 +246,7 @@ class _DashboardPageState extends State<DashboardPage> {
                   const SizedBox(height: AppSpacing.sm),
 
                   InfoCard(
-                    title: 'Mood del club',
+                    title: 'Pulso del club',
                     value: data.mood,
                     icon: Icons.psychology_alt_outlined,
                     variant: InfoCardVariant.blush,

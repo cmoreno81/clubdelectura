@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import 'respuesta_comentario.dart';
+import 'reaccion_comentario.dart';
 
 class ComentarioLectura {
   final String id;
@@ -17,6 +18,8 @@ class ComentarioLectura {
   final int likes;
 
   final bool miLike;
+  final Map<ReaccionComentario, int> reacciones;
+  final ReaccionComentario? miReaccion;
 
   final bool editado;
   final bool eliminado;
@@ -35,6 +38,8 @@ class ComentarioLectura {
     required this.comentario,
     required this.likes,
     required this.miLike,
+    required this.reacciones,
+    required this.miReaccion,
     required this.editado,
     required this.eliminado,
     required this.esMio,
@@ -58,6 +63,11 @@ class ComentarioLectura {
       comentario: json["comentario"]?.toString() ?? "",
       likes: json["likes"] as int? ?? 0,
       miLike: json["miLike"] as bool? ?? false,
+      reacciones: _parseReacciones(json),
+      miReaccion: ReaccionComentarioDatos.fromApi(
+        json["miReaccion"]?.toString() ??
+            ((json["miLike"] as bool? ?? false) ? 'LIKE' : null),
+      ),
       editado: json["editado"] as bool? ?? false,
       eliminado: json["eliminado"] as bool? ?? false,
       esMio: json["esMio"] as bool? ?? false,
@@ -69,5 +79,20 @@ class ComentarioLectura {
           )
           .toList(),
     );
+  }
+
+  static Map<ReaccionComentario, int> _parseReacciones(
+    Map<String, dynamic> json,
+  ) {
+    final raw = json['reacciones'];
+    final values = raw is Map ? raw : const <String, dynamic>{};
+    return {
+      for (final reaccion in ReaccionComentario.values)
+        reaccion:
+            (values[reaccion.apiValue] as num?)?.toInt() ??
+            (reaccion == ReaccionComentario.meGusta
+                ? (json['likes'] as num?)?.toInt() ?? 0
+                : 0),
+    };
   }
 }

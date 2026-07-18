@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../models/comentario_lectura.dart';
+import '../../models/reaccion_comentario.dart';
 import '../../services/api_service.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_radius.dart';
@@ -28,33 +29,122 @@ class ComentarioCard extends StatefulWidget {
 }
 
 class _ComentarioCardState extends State<ComentarioCard> {
-  late bool miLike;
-  late int likes;
+  late ReaccionComentario? miReaccion;
+  late Map<ReaccionComentario, int> reacciones;
 
   bool respondiendo = false;
   bool enviando = false;
 
   final TextEditingController respuestaController = TextEditingController();
+  final GlobalKey _reaccionKey = GlobalKey();
 
   @override
   void initState() {
     super.initState();
 
-    miLike = widget.comentario.miLike;
-    likes = widget.comentario.likes;
+    miReaccion = widget.comentario.miReaccion;
+    reacciones = Map.of(widget.comentario.reacciones);
   }
 
-  Future<void> _toggleLike() async {
+  Future<void> _toggleReaccion(ReaccionComentario reaccion) async {
     final json = await ApiService().toggleLikeComentario(
       comentarioId: widget.comentario.id,
+      reaccion: reaccion.apiValue,
     );
 
     if (!mounted) return;
 
     setState(() {
-      miLike = json['miLike'] ?? false;
-      likes = json['likes'] ?? likes;
+      miReaccion = ReaccionComentarioDatos.fromApi(
+        json['miReaccion']?.toString(),
+      );
+      final raw = json['reacciones'];
+      if (raw is Map) {
+        reacciones = {
+          for (final tipo in ReaccionComentario.values)
+            tipo: (raw[tipo.apiValue] as num?)?.toInt() ?? 0,
+        };
+      }
     });
+  }
+
+  Future<void> _mostrarReacciones() async {
+    final buttonBox =
+        _reaccionKey.currentContext?.findRenderObject() as RenderBox?;
+    final overlayBox =
+        Overlay.of(context).context.findRenderObject() as RenderBox?;
+    if (buttonBox == null || overlayBox == null) return;
+
+    final buttonOffset = buttonBox.localToGlobal(
+      Offset.zero,
+      ancestor: overlayBox,
+    );
+    final buttonRect = buttonOffset & buttonBox.size;
+    final anchor = Rect.fromLTWH(
+      12,
+      buttonRect.top - 62,
+      overlayBox.size.width - 24,
+      1,
+    );
+
+    final seleccion = await showMenu<ReaccionComentario>(
+      context: context,
+      position: RelativeRect.fromRect(anchor, Offset.zero & overlayBox.size),
+      elevation: 10,
+      color: AppColors.surface,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(AppRadius.pill),
+        side: const BorderSide(color: AppColors.border),
+      ),
+      constraints: BoxConstraints.tightFor(
+        width: (overlayBox.size.width - 24).clamp(340, 410).toDouble(),
+      ),
+      menuPadding: EdgeInsets.zero,
+      items: [
+        PopupMenuItem<ReaccionComentario>(
+          height: 48,
+          padding: const EdgeInsets.symmetric(horizontal: 6),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+            children: ReaccionComentario.values.map((reaccion) {
+              final seleccionada = miReaccion == reaccion;
+              return Tooltip(
+                message: reaccion.titulo,
+                child: Semantics(
+                  button: true,
+                  selected: seleccionada,
+                  label: reaccion.titulo,
+                  child: InkWell(
+                    onTap: () => Navigator.pop(context, reaccion),
+                    customBorder: const CircleBorder(),
+                    child: AnimatedContainer(
+                      duration: const Duration(milliseconds: 180),
+                      width: 36,
+                      height: 36,
+                      alignment: Alignment.center,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: seleccionada
+                            ? AppColors.primaryLight
+                            : Colors.transparent,
+                        border: seleccionada
+                            ? Border.all(color: AppColors.primary, width: 2)
+                            : null,
+                      ),
+                      child: Text(
+                        reaccion.emoji,
+                        style: const TextStyle(fontSize: 22),
+                      ),
+                    ),
+                  ),
+                ),
+              );
+            }).toList(),
+          ),
+        ),
+      ],
+    );
+    if (seleccion != null) await _toggleReaccion(seleccion);
   }
 
   Future<void> _enviarRespuesta() async {
@@ -312,52 +402,17 @@ class _ComentarioCardState extends State<ComentarioCard> {
               spacing: AppSpacing.sm,
               runSpacing: AppSpacing.xs,
               children: [
-                Material(
-                  color: Colors.transparent,
-                  child: InkWell(
-                    onTap: _toggleLike,
-                    borderRadius: BorderRadius.circular(AppRadius.pill),
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: AppSpacing.sm,
-                        vertical: AppSpacing.xs,
-                      ),
-                      decoration: BoxDecoration(
-                        color: miLike
-                            ? const Color(0xFFFFF1F1)
-                            : AppColors.surfaceSoft,
-                        borderRadius: BorderRadius.circular(AppRadius.pill),
-                        border: Border.all(
-                          color: miLike
-                              ? const Color(0xFFF5C7C7)
-                              : AppColors.border,
-                        ),
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(
-                            miLike
-                                ? Icons.favorite_rounded
-                                : Icons.favorite_border_rounded,
-                            size: 19,
-                            color: miLike
-                                ? AppColors.danger
-                                : AppColors.textMuted,
+                Tooltip(
+                  message: miReaccion?.titulo ?? 'Reaccionar',
+                  child: IconButton.filledTonal(
+                    key: _reaccionKey,
+                    onPressed: _mostrarReacciones,
+                    icon: miReaccion == null
+                        ? const Icon(Icons.add_reaction_outlined, size: 22)
+                        : Text(
+                            miReaccion!.emoji,
+                            style: const TextStyle(fontSize: 21),
                           ),
-                          const SizedBox(width: AppSpacing.xs),
-                          Text(
-                            '$likes',
-                            style: AppTextStyles.caption.copyWith(
-                              color: miLike
-                                  ? AppColors.danger
-                                  : AppColors.textSecondary,
-                              fontWeight: FontWeight.w800,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
                   ),
                 ),
 
@@ -375,6 +430,38 @@ class _ComentarioCardState extends State<ComentarioCard> {
                 ),
               ],
             ),
+
+            if (reacciones.values.any((total) => total > 0)) ...[
+              const SizedBox(height: AppSpacing.sm),
+              Wrap(
+                spacing: AppSpacing.xs,
+                runSpacing: AppSpacing.xs,
+                children: ReaccionComentario.values
+                    .where((tipo) => (reacciones[tipo] ?? 0) > 0)
+                    .map(
+                      (tipo) => Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: AppSpacing.sm,
+                          vertical: 5,
+                        ),
+                        decoration: BoxDecoration(
+                          color: miReaccion == tipo
+                              ? AppColors.primaryLight
+                              : AppColors.surfaceSoft,
+                          borderRadius: BorderRadius.circular(AppRadius.pill),
+                          border: Border.all(color: AppColors.border),
+                        ),
+                        child: Text(
+                          '${tipo.emoji} ${reacciones[tipo]}',
+                          style: AppTextStyles.caption.copyWith(
+                            fontWeight: FontWeight.w800,
+                          ),
+                        ),
+                      ),
+                    )
+                    .toList(),
+              ),
+            ],
 
             if (respondiendo) ...[
               const SizedBox(height: AppSpacing.md),

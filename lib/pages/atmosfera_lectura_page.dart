@@ -8,6 +8,7 @@ import '../theme/atmosferas/atmosfera_experiencia.dart';
 import '../theme/atmosferas/atmosfera_tipo.dart';
 import '../widgets/common/club_book_cover.dart';
 import '../widgets/common/club_card.dart';
+import '../widgets/atmosferas/atmosfera_ambient_layer.dart';
 
 class AtmosferaLecturaPage extends StatefulWidget {
   final String libro;
@@ -349,135 +350,149 @@ class _AtmosferaHero extends StatelessWidget {
   Widget build(BuildContext context) {
     final paleta = experiencia.paleta;
 
-    return ClubCard(
-      elevated: true,
-      padding: const EdgeInsets.all(AppSpacing.xl),
-      gradient: LinearGradient(
-        begin: Alignment.topLeft,
-        end: Alignment.bottomRight,
-        colors: paleta.heroGradient,
-      ),
-      borderColor: paleta.primary.withValues(alpha: 0.28),
-      child: Column(
-        children: [
-          Stack(
-            clipBehavior: Clip.none,
-            alignment: Alignment.center,
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(AppRadius.lg),
+      child: AtmosferaAmbientLayer(
+        atmosfera: experiencia.tipo,
+        color: paleta.primary,
+        child: ClubCard(
+          elevated: true,
+          padding: const EdgeInsets.all(AppSpacing.xl),
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: paleta.heroGradient,
+          ),
+          borderColor: paleta.primary.withValues(alpha: 0.36),
+          child: Column(
             children: [
-              Container(
-                width: 190,
-                height: 225,
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(AppRadius.xl),
-                  boxShadow: [
-                    BoxShadow(
-                      color: paleta.primary.withValues(alpha: 0.20),
-                      blurRadius: 32,
-                      spreadRadius: 5,
+              Stack(
+                clipBehavior: Clip.none,
+                alignment: Alignment.center,
+                children: [
+                  Container(
+                    width: 190,
+                    height: 225,
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(AppRadius.xl),
+                      boxShadow: [
+                        BoxShadow(
+                          color: paleta.primary.withValues(alpha: 0.20),
+                          blurRadius: 32,
+                          spreadRadius: 5,
+                        ),
+                      ],
                     ),
-                  ],
-                ),
-              ),
+                  ),
 
-              ClubBookCover(
-                title: libro,
-                imageUrl: coverUrl,
-                width: 145,
-                showShadow: true,
-              ),
+                  ClubBookCover(
+                    title: libro,
+                    imageUrl: coverUrl,
+                    width: 145,
+                    showShadow: true,
+                  ),
 
-              Positioned(
-                right: -4,
-                bottom: -10,
-                child: Container(
-                  width: 67,
-                  height: 67,
-                  decoration: BoxDecoration(
-                    color: paleta.surface.withValues(alpha: 0.94),
-                    shape: BoxShape.circle,
-                    border: Border.all(color: paleta.primary.withValues(alpha: 0.20)),
-                    boxShadow: [
-                      BoxShadow(
-                        color: paleta.primary.withValues(alpha: 0.16),
-                        blurRadius: 14,
-                        offset: const Offset(0, 6),
+                  Positioned(
+                    right: -4,
+                    bottom: -10,
+                    child: Container(
+                      width: 67,
+                      height: 67,
+                      decoration: BoxDecoration(
+                        color: paleta.surface.withValues(alpha: 0.94),
+                        shape: BoxShape.circle,
+                        border: Border.all(
+                          color: paleta.primary.withValues(alpha: 0.20),
+                        ),
+                        boxShadow: [
+                          BoxShadow(
+                            color: paleta.primary.withValues(alpha: 0.16),
+                            blurRadius: 14,
+                            offset: const Offset(0, 6),
+                          ),
+                        ],
                       ),
-                    ],
+                      alignment: Alignment.center,
+                      child: Text(
+                        experiencia.icono,
+                        style: const TextStyle(fontSize: 32),
+                      ),
+                    ),
                   ),
-                  alignment: Alignment.center,
-                  child: Text(
-                    experiencia.icono,
-                    style: const TextStyle(fontSize: 32),
+                ],
+              ),
+
+              const SizedBox(height: AppSpacing.xl),
+
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 6,
+                ),
+                decoration: BoxDecoration(
+                  color: paleta.primary.withValues(alpha: 0.10),
+                  borderRadius: BorderRadius.circular(AppRadius.pill),
+                ),
+                child: Text(
+                  '✨ Hemos preparado tu rincón de lectura',
+                  style: AppTextStyles.caption.copyWith(
+                    color: paleta.primary,
+                    fontWeight: FontWeight.w800,
                   ),
                 ),
+              ),
+
+              const SizedBox(height: AppSpacing.md),
+
+              Text(
+                experiencia.titulo,
+                textAlign: TextAlign.center,
+                style: AppTextStyles.title.copyWith(fontSize: 28, height: 1.15),
+              ),
+
+              const SizedBox(height: AppSpacing.sm),
+
+              Text(
+                experiencia.descripcion,
+                textAlign: TextAlign.center,
+                style: AppTextStyles.bodySecondary.copyWith(
+                  fontSize: 16,
+                  height: 1.5,
+                ),
+              ),
+
+              const SizedBox(height: AppSpacing.lg),
+
+              Wrap(
+                alignment: WrapAlignment.center,
+                spacing: AppSpacing.sm,
+                runSpacing: AppSpacing.sm,
+                children: experiencia.etiquetas.map((etiqueta) {
+                  return Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 11,
+                      vertical: 7,
+                    ),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.62),
+                      borderRadius: BorderRadius.circular(AppRadius.pill),
+                      border: Border.all(
+                        color: paleta.primary.withValues(alpha: 0.14),
+                      ),
+                    ),
+                    child: Text(
+                      etiqueta,
+                      style: AppTextStyles.caption.copyWith(
+                        color: paleta.primary,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  );
+                }).toList(),
               ),
             ],
           ),
-
-          const SizedBox(height: AppSpacing.xl),
-
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-            decoration: BoxDecoration(
-              color: paleta.primary.withValues(alpha: 0.10),
-              borderRadius: BorderRadius.circular(AppRadius.pill),
-            ),
-            child: Text(
-              '✨ Hemos preparado tu rincón de lectura',
-              style: AppTextStyles.caption.copyWith(
-                color: paleta.primary,
-                fontWeight: FontWeight.w800,
-              ),
-            ),
-          ),
-
-          const SizedBox(height: AppSpacing.md),
-
-          Text(
-            experiencia.titulo,
-            textAlign: TextAlign.center,
-            style: AppTextStyles.title.copyWith(fontSize: 28, height: 1.15),
-          ),
-
-          const SizedBox(height: AppSpacing.sm),
-
-          Text(
-            experiencia.descripcion,
-            textAlign: TextAlign.center,
-            style: AppTextStyles.bodySecondary.copyWith(
-              fontSize: 16,
-              height: 1.5,
-            ),
-          ),
-
-          const SizedBox(height: AppSpacing.lg),
-
-          Wrap(
-            alignment: WrapAlignment.center,
-            spacing: AppSpacing.sm,
-            runSpacing: AppSpacing.sm,
-            children: experiencia.etiquetas.map((etiqueta) {
-              return Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 11,
-                  vertical: 7,
-                ),
-                decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.62),
-                  borderRadius: BorderRadius.circular(AppRadius.pill),
-                  border: Border.all(color: paleta.primary.withValues(alpha: 0.14)),
-                ),
-                child: Text(
-                  etiqueta,
-                  style: AppTextStyles.caption.copyWith(
-                    color: paleta.primary,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-              );
-            }).toList(),
-          ),
-        ],
+        ),
       ),
     );
   }
