@@ -414,16 +414,21 @@ class _PerfilUsuarioPageState extends State<PerfilUsuarioPage> {
                   ClubCard(
                     elevated: false,
                     padding: EdgeInsets.zero,
-                    child: ListTile(
-                      leading: const Icon(Icons.info_outline_rounded),
-                      title: const Text('Acerca de ClubReads'),
-                      subtitle: const Text(
-                        'Versión, créditos, privacidad y contacto',
-                      ),
-                      trailing: const Icon(Icons.chevron_right_rounded),
-                      onTap: () => Navigator.push<void>(
-                        context,
-                        MaterialPageRoute(builder: (_) => const AcercaDePage()),
+                    child: Material(
+                      type: MaterialType.transparency,
+                      child: ListTile(
+                        leading: const Icon(Icons.info_outline_rounded),
+                        title: const Text('Acerca de ClubReads'),
+                        subtitle: const Text(
+                          'Versión, créditos, privacidad y contacto',
+                        ),
+                        trailing: const Icon(Icons.chevron_right_rounded),
+                        onTap: () => Navigator.push<void>(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => const AcercaDePage(),
+                          ),
+                        ),
                       ),
                     ),
                   ),

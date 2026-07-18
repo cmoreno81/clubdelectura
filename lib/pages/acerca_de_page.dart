@@ -54,84 +54,90 @@ class _AcercaDePageState extends State<AcercaDePage> {
           ClubCard(
             elevated: false,
             padding: const EdgeInsets.all(AppSpacing.lg),
-            child: Column(
-              children: [
-                Container(
-                  width: 72,
-                  height: 72,
-                  decoration: BoxDecoration(
-                    color: AppColors.primary.withValues(alpha: 0.1),
-                    shape: BoxShape.circle,
+            child: Material(
+              type: MaterialType.transparency,
+              child: Column(
+                children: [
+                  Container(
+                    width: 72,
+                    height: 72,
+                    decoration: BoxDecoration(
+                      color: AppColors.primary.withValues(alpha: 0.1),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(
+                      Icons.auto_stories_rounded,
+                      size: 38,
+                      color: AppColors.primary,
+                    ),
                   ),
-                  child: const Icon(
-                    Icons.auto_stories_rounded,
-                    size: 38,
-                    color: AppColors.primary,
+                  const SizedBox(height: AppSpacing.md),
+                  Text('ClubReads', style: AppTextStyles.title),
+                  const SizedBox(height: AppSpacing.xs),
+                  Text(
+                    'Nuestro rincón para compartir cada lectura.',
+                    textAlign: TextAlign.center,
+                    style: AppTextStyles.bodySecondary,
                   ),
-                ),
-                const SizedBox(height: AppSpacing.md),
-                Text('ClubReads', style: AppTextStyles.title),
-                const SizedBox(height: AppSpacing.xs),
-                Text(
-                  'Nuestro rincón para compartir cada lectura.',
-                  textAlign: TextAlign.center,
-                  style: AppTextStyles.bodySecondary,
-                ),
-                const SizedBox(height: AppSpacing.sm),
-                FutureBuilder<PackageInfo>(
-                  future: _packageInfo,
-                  builder: (context, snapshot) {
-                    final info = snapshot.data;
-                    final version = info == null
-                        ? 'Versión…'
-                        : 'Versión ${info.version} (${info.buildNumber})';
-                    return Text(version, style: AppTextStyles.caption);
-                  },
-                ),
-              ],
+                  const SizedBox(height: AppSpacing.sm),
+                  FutureBuilder<PackageInfo>(
+                    future: _packageInfo,
+                    builder: (context, snapshot) {
+                      final info = snapshot.data;
+                      final version = info == null
+                          ? 'Versión…'
+                          : 'Versión ${info.version} (${info.buildNumber})';
+                      return Text(version, style: AppTextStyles.caption);
+                    },
+                  ),
+                ],
+              ),
             ),
           ),
           const SizedBox(height: AppSpacing.md),
           ClubCard(
             elevated: false,
             padding: EdgeInsets.zero,
-            child: Column(
-              children: [
-                ListTile(
-                  leading: const Icon(Icons.code_rounded),
-                  title: const Text('Tecnología y créditos'),
-                  subtitle: const Text(
-                    'Cómo está construida ClubReads y quién la hace posible',
-                  ),
-                  trailing: const Icon(Icons.chevron_right_rounded),
-                  onTap: () => Navigator.push<void>(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => const TecnologiaCreditosPage(),
+            child: Material(
+              type: MaterialType.transparency,
+              child: Column(
+                children: [
+                  ListTile(
+                    leading: const Icon(Icons.code_rounded),
+                    title: const Text('Tecnología y créditos'),
+                    subtitle: const Text(
+                      'Cómo está construida ClubReads y quién la hace posible',
+                    ),
+                    trailing: const Icon(Icons.chevron_right_rounded),
+                    onTap: () => Navigator.push<void>(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => const TecnologiaCreditosPage(),
+                      ),
                     ),
                   ),
-                ),
-                const Divider(height: 1),
-                ListTile(
-                  leading: const Icon(Icons.privacy_tip_outlined),
-                  title: const Text('Política de privacidad'),
-                  trailing: const Icon(Icons.chevron_right_rounded),
-                  onTap: () => Navigator.push<void>(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => const PoliticaPrivacidadPage(),
+                  const Divider(height: 1),
+                  ListTile(
+                    leading: const Icon(Icons.privacy_tip_outlined),
+                    title: const Text('Política de privacidad'),
+                    trailing: const Icon(Icons.chevron_right_rounded),
+                    onTap: () => Navigator.push<void>(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => const PoliticaPrivacidadPage(),
+                      ),
                     ),
                   ),
-                ),
-                const Divider(height: 1),
-                ListTile(
-                  leading: const Icon(Icons.mail_outline_rounded),
-                  title: const Text('Contacto'),
-                  subtitle: const Text('c.moreno.benavente@gmail.com'),
-                  trailing: const Icon(Icons.open_in_new_rounded, size: 20),
-                  onTap: _contactar,
-                ),
-              ],
+                  const Divider(height: 1),
+                  ListTile(
+                    leading: const Icon(Icons.mail_outline_rounded),
+                    title: const Text('Contacto'),
+                    subtitle: const Text('c.moreno.benavente@gmail.com'),
+                    trailing: const Icon(Icons.open_in_new_rounded, size: 20),
+                    onTap: _contactar,
+                  ),
+                ],
+              ),
             ),
           ),
         ],

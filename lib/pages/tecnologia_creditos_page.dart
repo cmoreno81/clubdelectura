@@ -135,33 +135,36 @@ class _GrupoTecnologia extends StatelessWidget {
     return ClubCard(
       elevated: false,
       padding: EdgeInsets.zero,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Padding(
-            padding: const EdgeInsets.fromLTRB(
-              AppSpacing.md,
-              AppSpacing.md,
-              AppSpacing.md,
-              AppSpacing.sm,
+      child: Material(
+        type: MaterialType.transparency,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(
+                AppSpacing.md,
+                AppSpacing.md,
+                AppSpacing.md,
+                AppSpacing.sm,
+              ),
+              child: Row(
+                children: [
+                  Icon(icon, color: AppColors.primary, size: 22),
+                  const SizedBox(width: AppSpacing.sm),
+                  Text(titulo, style: AppTextStyles.subtitle),
+                ],
+              ),
             ),
-            child: Row(
-              children: [
-                Icon(icon, color: AppColors.primary, size: 22),
-                const SizedBox(width: AppSpacing.sm),
-                Text(titulo, style: AppTextStyles.subtitle),
-              ],
-            ),
-          ),
-          for (var index = 0; index < tecnologias.length; index++) ...[
-            if (index > 0) const Divider(height: 1),
-            ListTile(
-              title: Text(tecnologias[index].nombre),
-              subtitle: Text(tecnologias[index].descripcion),
-              dense: true,
-            ),
+            for (var index = 0; index < tecnologias.length; index++) ...[
+              if (index > 0) const Divider(height: 1),
+              ListTile(
+                title: Text(tecnologias[index].nombre),
+                subtitle: Text(tecnologias[index].descripcion),
+                dense: true,
+              ),
+            ],
           ],
-        ],
+        ),
       ),
     );
   }
