@@ -5,7 +5,6 @@ import 'package:club_lectura_app/services/usuario_service.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../theme/app_colors.dart';
-import '../theme/app_radius.dart';
 import '../theme/app_spacing.dart';
 import '../theme/app_text_styles.dart';
 import '../widgets/common/club_card.dart';
@@ -28,9 +27,11 @@ class _CapituloPageState extends State<CapituloPage> {
 
   final TextEditingController controller = TextEditingController();
   final ScrollController scrollController = ScrollController();
+  final FocusNode editorFocusNode = FocusNode();
 
   String? usuario;
   bool enviando = false;
+  bool editorReflexionVisible = false;
   Timer? _temporizadorBorrador;
 
   bool get esReflexion => widget.capitulo.trim() == '💭 Reflexión final';
@@ -172,6 +173,7 @@ class _CapituloPageState extends State<CapituloPage> {
       FocusScope.of(context).unfocus();
 
       setState(() {
+        if (esReflexion) editorReflexionVisible = false;
         _recargar();
       });
 
@@ -199,7 +201,87 @@ class _CapituloPageState extends State<CapituloPage> {
     }
   }
 
+  void _abrirEditorReflexion() {
+    setState(() => editorReflexionVisible = true);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) editorFocusNode.requestFocus();
+    });
+  }
+
+  void _cerrarEditorReflexion() {
+    editorFocusNode.unfocus();
+    setState(() => editorReflexionVisible = false);
+  }
+
   Widget _cabecera() {
+    if (esReflexion) {
+      return Padding(
+        padding: const EdgeInsets.fromLTRB(
+          AppSpacing.md,
+          AppSpacing.sm,
+          AppSpacing.md,
+          AppSpacing.xs,
+        ),
+        child: ClubCard(
+          elevated: false,
+          padding: const EdgeInsets.all(AppSpacing.md),
+          borderColor: AppColors.primaryLight,
+          child: Row(
+            children: [
+              Container(
+                width: 44,
+                height: 44,
+                decoration: const BoxDecoration(
+                  color: AppColors.primaryLight,
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(
+                  Icons.psychology_alt_outlined,
+                  color: AppColors.primary,
+                  size: 24,
+                ),
+              ),
+              const SizedBox(width: AppSpacing.sm),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      widget.libro,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: AppTextStyles.subtitle.copyWith(
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    const Row(
+                      children: [
+                        Icon(
+                          Icons.warning_amber_rounded,
+                          size: 16,
+                          color: Color(0xFFB48113),
+                        ),
+                        SizedBox(width: 4),
+                        Text(
+                          'Reflexiones con spoilers',
+                          style: TextStyle(
+                            color: Color(0xFF8B650F),
+                            fontSize: 13,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
     return Padding(
       padding: const EdgeInsets.fromLTRB(
         AppSpacing.md,
@@ -249,73 +331,6 @@ class _CapituloPageState extends State<CapituloPage> {
               textAlign: TextAlign.center,
               style: AppTextStyles.bodySecondary,
             ),
-
-            if (esReflexion) ...[
-              const SizedBox(height: AppSpacing.lg),
-
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(AppSpacing.md),
-                decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.58),
-                  borderRadius: BorderRadius.circular(18),
-                ),
-                child: Column(
-                  children: [
-                    Text(
-                      'El gran debate',
-                      style: AppTextStyles.subtitle.copyWith(
-                        color: AppColors.primary,
-                        fontWeight: FontWeight.w800,
-                      ),
-                    ),
-
-                    const SizedBox(height: AppSpacing.sm),
-
-                    const Text(
-                      'Comparte tu valoración global, '
-                      'habla del desenlace y debate '
-                      'libremente con el resto del club.',
-                      textAlign: TextAlign.center,
-                      style: TextStyle(height: 1.45),
-                    ),
-
-                    const SizedBox(height: AppSpacing.md),
-
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: AppSpacing.sm,
-                        vertical: AppSpacing.xs,
-                      ),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFFFF5E8),
-                        borderRadius: BorderRadius.circular(AppRadius.pill),
-                      ),
-                      child: const Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(
-                            Icons.warning_amber_rounded,
-                            size: 18,
-                            color: Color(0xFFB48113),
-                          ),
-                          SizedBox(width: AppSpacing.xs),
-                          Flexible(
-                            child: Text(
-                              'Puede contener spoilers',
-                              style: TextStyle(
-                                color: Color(0xFF8B650F),
-                                fontWeight: FontWeight.w700,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
           ],
         ),
       ),
@@ -462,16 +477,43 @@ class _CapituloPageState extends State<CapituloPage> {
 
             const Divider(height: 1),
 
-            ComentarioInput(
-              controller: controller,
-              onEnviar: _publicar,
-              enviando: enviando,
-              esReflexion: esReflexion,
-              hintText: esReflexion
-                  ? 'Comparte tu reflexión sobre el libro, '
-                        'el desenlace, los personajes...'
-                  : '¿Qué te ha parecido este capítulo?',
-            ),
+            if (esReflexion && !editorReflexionVisible)
+              Material(
+                color: Theme.of(context).scaffoldBackgroundColor,
+                elevation: 8,
+                shadowColor: Colors.black12,
+                child: SafeArea(
+                  top: false,
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 10, 16, 10),
+                    child: SizedBox(
+                      width: double.infinity,
+                      child: FilledButton.icon(
+                        onPressed: _abrirEditorReflexion,
+                        icon: const Icon(Icons.edit_note_rounded),
+                        label: Text(
+                          controller.text.trim().isEmpty
+                              ? 'Escribir reflexión'
+                              : 'Continuar reflexión',
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              )
+            else
+              ComentarioInput(
+                controller: controller,
+                onEnviar: _publicar,
+                enviando: enviando,
+                esReflexion: esReflexion,
+                onCerrar: esReflexion ? _cerrarEditorReflexion : null,
+                focusNode: esReflexion ? editorFocusNode : null,
+                hintText: esReflexion
+                    ? 'Comparte tu reflexión sobre el libro, '
+                          'el desenlace, los personajes...'
+                    : '¿Qué te ha parecido este capítulo?',
+              ),
           ],
         ),
       ),
@@ -485,6 +527,7 @@ class _CapituloPageState extends State<CapituloPage> {
     unawaited(_guardarBorrador(controller.text));
     controller.dispose();
     scrollController.dispose();
+    editorFocusNode.dispose();
     super.dispose();
   }
 }

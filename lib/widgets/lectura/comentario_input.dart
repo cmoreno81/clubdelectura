@@ -6,6 +6,8 @@ class ComentarioInput extends StatelessWidget {
   final bool enviando;
   final String hintText;
   final bool esReflexion;
+  final VoidCallback? onCerrar;
+  final FocusNode? focusNode;
 
   const ComentarioInput({
     super.key,
@@ -14,6 +16,8 @@ class ComentarioInput extends StatelessWidget {
     required this.enviando,
     required this.hintText,
     this.esReflexion = false,
+    this.onCerrar,
+    this.focusNode,
   });
 
   @override
@@ -38,8 +42,28 @@ class ComentarioInput extends StatelessWidget {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
+              if (onCerrar != null) ...[
+                Row(
+                  children: [
+                    const Expanded(
+                      child: Text(
+                        'Escribir reflexión',
+                        style: TextStyle(fontWeight: FontWeight.w700),
+                      ),
+                    ),
+                    IconButton(
+                      tooltip: 'Ocultar editor',
+                      visualDensity: VisualDensity.compact,
+                      onPressed: enviando ? null : onCerrar,
+                      icon: const Icon(Icons.close_rounded),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 4),
+              ],
               TextField(
                 controller: controller,
+                focusNode: focusNode,
                 enabled: !enviando,
 
                 /*
@@ -49,7 +73,7 @@ class ComentarioInput extends StatelessWidget {
                 minLines: tecladoAbierto
                     ? 2
                     : esReflexion
-                    ? 5
+                    ? 3
                     : 3,
 
                 maxLines: tecladoAbierto
@@ -57,7 +81,7 @@ class ComentarioInput extends StatelessWidget {
                           ? 4
                           : 3
                     : esReflexion
-                    ? 9
+                    ? 6
                     : 6,
 
                 maxLength: 5000,
