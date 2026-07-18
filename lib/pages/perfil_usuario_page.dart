@@ -21,6 +21,7 @@ import '../widgets/perfil/editar_avatar_dialog.dart';
 import '../widgets/perfil/perfil_timeline_lectura.dart';
 import '../widgets/common/club_rating_stars.dart';
 import 'detalle_libro_page.dart';
+import 'acerca_de_page.dart';
 
 class PerfilUsuarioPage extends StatefulWidget {
   final String usuario;
@@ -399,6 +400,31 @@ class _PerfilUsuarioPageState extends State<PerfilUsuarioPage> {
                             ),
                           )
                           .toList(),
+                    ),
+                  ),
+                ],
+                if (esMiPerfil) ...[
+                  const SizedBox(height: AppSpacing.xl),
+                  const ClubSectionTitle(
+                    title: 'Más',
+                    icon: Icons.settings_outlined,
+                    padding: EdgeInsets.zero,
+                  ),
+                  const SizedBox(height: AppSpacing.sm),
+                  ClubCard(
+                    elevated: false,
+                    padding: EdgeInsets.zero,
+                    child: ListTile(
+                      leading: const Icon(Icons.info_outline_rounded),
+                      title: const Text('Acerca de ClubReads'),
+                      subtitle: const Text(
+                        'Versión, créditos, privacidad y contacto',
+                      ),
+                      trailing: const Icon(Icons.chevron_right_rounded),
+                      onTap: () => Navigator.push<void>(
+                        context,
+                        MaterialPageRoute(builder: (_) => const AcercaDePage()),
+                      ),
                     ),
                   ),
                 ],
