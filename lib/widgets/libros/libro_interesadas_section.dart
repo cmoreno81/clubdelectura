@@ -19,10 +19,11 @@ class LibroInteresadasSection extends StatelessWidget {
     String? valoracion,
     String? reflexion,
     String? motivoPausa,
+    String? fechaInicio,
   })
   onCambiarEstado;
   final Future<void> Function(Libro libro) onQuitarPendientes;
-  final Future<Map<String, String>?> Function() onPedirValoracion;
+  final Future<Map<String, String>?> Function(Libro libro) onPedirValoracion;
 
   const LibroInteresadasSection({
     super.key,
@@ -77,10 +78,11 @@ class _LectoraCard extends StatelessWidget {
     String? valoracion,
     String? reflexion,
     String? motivoPausa,
+    String? fechaInicio,
   })
   onCambiarEstado;
   final Future<void> Function(Libro libro) onQuitarPendientes;
-  final Future<Map<String, String>?> Function() onPedirValoracion;
+  final Future<Map<String, String>?> Function(Libro libro) onPedirValoracion;
 
   const _LectoraCard({
     required this.registro,
@@ -175,7 +177,7 @@ class _LectoraCard extends StatelessWidget {
                 String? motivoPausa;
 
                 if (value == 'FINALIZADO') {
-                  datosValoracion = await onPedirValoracion();
+                  datosValoracion = await onPedirValoracion(registro);
 
                   if (datosValoracion == null) {
                     return;
@@ -200,6 +202,7 @@ class _LectoraCard extends StatelessWidget {
                   value,
                   valoracion: datosValoracion?['valoracion'],
                   reflexion: datosValoracion?['reflexion'],
+                  fechaInicio: datosValoracion?['fechaInicio'],
                   motivoPausa: motivoPausa,
                 );
               },

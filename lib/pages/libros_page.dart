@@ -779,6 +779,7 @@ class _LibrosPageState extends State<LibrosPage> {
       goodreads: '',
       coverUrl: finalizado.coverUrl,
       fechaAlta: finalizado.fechaAlta,
+      startedAt: null,
       pausedAt: null,
       pauseReason: '',
       avatarUrl: finalizado.avatarUrl,

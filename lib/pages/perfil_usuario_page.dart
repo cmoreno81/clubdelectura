@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../models/perfil_usuario.dart';
+import '../models/libro_agrupado.dart';
 import '../services/api_service.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_radius.dart';
@@ -19,6 +20,7 @@ import '../utils/lectura_fecha_utils.dart';
 import '../widgets/perfil/editar_avatar_dialog.dart';
 import '../widgets/perfil/perfil_timeline_lectura.dart';
 import '../widgets/common/club_rating_stars.dart';
+import 'detalle_libro_page.dart';
 
 class PerfilUsuarioPage extends StatefulWidget {
   final String usuario;
@@ -162,6 +164,55 @@ class _PerfilUsuarioPageState extends State<PerfilUsuarioPage> {
       ),
     );
     if (ok) await _recargar();
+  }
+
+  Future<void> _abrirFichaLibro(PerfilLibro libro) async {
+    try {
+      final data = await ApiService().getLibrosData();
+      if (!mounted) return;
+
+      final registros = data.libros
+          .where(
+            (item) =>
+                (libro.bookId.isNotEmpty && item.bookId == libro.bookId) ||
+                item.libro.trim().toLowerCase() ==
+                    libro.libro.trim().toLowerCase(),
+          )
+          .toList();
+      final finalizados = data.finalizados
+          .where(
+            (item) =>
+                (libro.bookId.isNotEmpty && item.bookId == libro.bookId) ||
+                item.libro.trim().toLowerCase() ==
+                    libro.libro.trim().toLowerCase(),
+          )
+          .toList();
+
+      if (registros.isEmpty && finalizados.isEmpty) return;
+
+      final agrupado = LibroAgrupado(
+        libro: libro.libro,
+        genero: libro.genero,
+        registros: registros,
+        finalizados: finalizados,
+        yaLoTengo: registros.any((item) => item.yaLoTengo),
+        coverUrl: libro.coverUrl.isNotEmpty
+            ? libro.coverUrl
+            : registros.isNotEmpty
+            ? registros.first.coverUrl
+            : finalizados.first.coverUrl,
+      );
+
+      await Navigator.push(
+        context,
+        MaterialPageRoute(builder: (_) => DetalleLibroPage(libro: agrupado)),
+      );
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('No se ha podido abrir la ficha.')),
+      );
+    }
   }
 
   Future<void> _cargarUsuarioActual() async {
@@ -584,6 +635,7 @@ class _PerfilUsuarioPageState extends State<PerfilUsuarioPage> {
     return ClubCard(
       elevated: false,
       padding: const EdgeInsets.all(AppSpacing.md),
+      onTap: () => _abrirFichaLibro(libro),
       child: Row(
         children: [
           Container(

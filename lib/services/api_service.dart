@@ -124,6 +124,25 @@ class ApiService {
     return _respuestaOk(response);
   }
 
+  Future<bool> actualizarProgresoLectura({
+    required String usuario,
+    required String libro,
+    required int progreso,
+    required String comentario,
+  }) async {
+    final response = await _client.post(
+      Uri.parse('$baseUrl?action=actualizarProgresoLectura'),
+      headers: const {'Content-Type': 'application/json'},
+      body: jsonEncode({
+        'usuario': usuario,
+        'libro': libro,
+        'progreso': progreso,
+        'comentario': comentario,
+      }),
+    );
+    return _respuestaOk(response);
+  }
+
   Future<LecturaCompartida> getLecturaCompartida() async {
     final response = await _client.get(
       Uri.parse('$baseUrl?action=lecturaCompartida'),
@@ -455,6 +474,7 @@ class ApiService {
     String? valoracion,
     String? reflexion,
     String? motivoPausa,
+    String? fechaInicio,
   }) async {
     final response = await _client.post(
       Uri.parse('$baseUrl?action=actualizarEstado'),
@@ -466,6 +486,7 @@ class ApiService {
         'valoracion': valoracion ?? '',
         'reflexion': reflexion ?? '',
         'motivoPausa': motivoPausa ?? '',
+        'fechaInicio': fechaInicio ?? '',
       }),
     );
 

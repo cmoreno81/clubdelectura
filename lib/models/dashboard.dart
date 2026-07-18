@@ -159,6 +159,7 @@ class LeyendoAhora {
   final String usuario;
   final String avatarUrl;
   final List<String> libros;
+  final List<LecturaAhoraItem> lecturas;
 
   final int total;
 
@@ -167,13 +168,66 @@ class LeyendoAhora {
     required this.libros,
     required this.total,
     required this.avatarUrl,
+    required this.lecturas,
   });
   factory LeyendoAhora.fromJson(Map<String, dynamic> json) {
+    final libros = List<String>.from(json['libros'] ?? []);
+    final lecturasNuevas = (json['lecturas'] as List? ?? const [])
+        .map(
+          (item) =>
+              LecturaAhoraItem.fromJson(Map<String, dynamic>.from(item as Map)),
+        )
+        .toList();
+
     return LeyendoAhora(
       usuario: json['usuario']?.toString() ?? '',
-      libros: List<String>.from(json['libros'] ?? []),
+      libros: libros,
+      lecturas: lecturasNuevas.isNotEmpty
+          ? lecturasNuevas
+          : libros
+                .map(
+                  (titulo) => LecturaAhoraItem(
+                    bookId: '',
+                    titulo: titulo,
+                    coverUrl: '',
+                    progreso: 0,
+                    comentario: '',
+                    actualizadoEn: null,
+                  ),
+                )
+                .toList(),
       total: (json['total'] as num?)?.toInt() ?? 0,
       avatarUrl: json['avatarUrl']?.toString() ?? '',
     );
   }
+}
+
+class LecturaAhoraItem {
+  final String bookId;
+  final String titulo;
+  final String coverUrl;
+  final int progreso;
+  final String comentario;
+  final DateTime? actualizadoEn;
+
+  const LecturaAhoraItem({
+    required this.bookId,
+    required this.titulo,
+    required this.coverUrl,
+    required this.progreso,
+    required this.comentario,
+    required this.actualizadoEn,
+  });
+
+  factory LecturaAhoraItem.fromJson(Map<String, dynamic> json) =>
+      LecturaAhoraItem(
+        bookId: json['bookId']?.toString() ?? '',
+        titulo: json['titulo']?.toString() ?? '',
+        coverUrl: json['coverUrl']?.toString() ?? '',
+        progreso: ((json['progreso'] as num?)?.toInt() ?? 0).clamp(0, 100),
+        comentario: json['comentario']?.toString() ?? '',
+        actualizadoEn: DateTime.tryParse(
+          json['actualizadoEn']?.toString() ?? '',
+        ),
+      );
 }

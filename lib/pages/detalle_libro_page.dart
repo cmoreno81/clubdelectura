@@ -121,6 +121,7 @@ class _DetalleLibroPageState extends State<DetalleLibroPage> {
     String? valoracion,
     String? reflexion,
     String? motivoPausa,
+    String? fechaInicio,
   }) async {
     try {
       final bool ok;
@@ -138,6 +139,7 @@ class _DetalleLibroPageState extends State<DetalleLibroPage> {
           valoracion: valoracion,
           reflexion: reflexion,
           motivoPausa: motivoPausa,
+          fechaInicio: fechaInicio,
         );
       }
 
@@ -361,10 +363,12 @@ class _DetalleLibroPageState extends State<DetalleLibroPage> {
                   usuarioActual: usuarioActual,
                   onCambiarEstado: _cambiarEstado,
                   onQuitarPendientes: _quitarPendientes,
-                  onPedirValoracion: () {
+                  onPedirValoracion: (registro) {
                     return showDialog<Map<String, String>>(
                       context: context,
-                      builder: (_) => const FinalizarLibroDialog(),
+                      builder: (_) => FinalizarLibroDialog(
+                        fechaInicioActual: registro.startedAt,
+                      ),
                     );
                   },
                 ),

@@ -14,6 +14,7 @@ class Libro {
   final String goodreads;
   final String coverUrl;
   final DateTime? fechaAlta;
+  final DateTime? startedAt;
   final DateTime? pausedAt;
   final String pauseReason;
   final String avatarUrl;
@@ -33,6 +34,7 @@ class Libro {
     required this.goodreads,
     required this.coverUrl,
     required this.fechaAlta,
+    required this.startedAt,
     required this.pausedAt,
     required this.pauseReason,
     required this.avatarUrl,
@@ -57,6 +59,9 @@ class Libro {
           '',
       coverUrl: json['coverUrl']?.toString() ?? '',
       fechaAlta: DateTime.tryParse(json['fechaAlta']?.toString() ?? ''),
+      startedAt: DateTime.tryParse(
+        json['startedAt']?.toString() ?? json['fechaInicio']?.toString() ?? '',
+      ),
       pausedAt: DateTime.tryParse(json['pausedAt']?.toString() ?? ''),
       pauseReason: json['pauseReason']?.toString() ?? '',
       avatarUrl:
@@ -82,6 +87,7 @@ class Libro {
     String? goodreads,
     String? coverUrl,
     DateTime? fechaAlta,
+    DateTime? startedAt,
     DateTime? pausedAt,
     String? pauseReason,
     String? avatarUrl,
@@ -101,6 +107,7 @@ class Libro {
       goodreads: goodreads ?? this.goodreads,
       coverUrl: coverUrl ?? this.coverUrl,
       fechaAlta: fechaAlta ?? this.fechaAlta,
+      startedAt: startedAt ?? this.startedAt,
       pausedAt: pausedAt ?? this.pausedAt,
       pauseReason: pauseReason ?? this.pauseReason,
       avatarUrl: avatarUrl ?? this.avatarUrl,

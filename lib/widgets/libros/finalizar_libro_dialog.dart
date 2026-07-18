@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import '../common/club_rating_selector.dart';
 
 class FinalizarLibroDialog extends StatefulWidget {
-  const FinalizarLibroDialog({super.key});
+  final DateTime? fechaInicioActual;
+
+  const FinalizarLibroDialog({super.key, this.fechaInicioActual});
 
   @override
   State<FinalizarLibroDialog> createState() => _FinalizarLibroDialogState();
@@ -10,10 +12,43 @@ class FinalizarLibroDialog extends StatefulWidget {
 
 class _FinalizarLibroDialogState extends State<FinalizarLibroDialog> {
   double? valoracion;
+  late DateTime fechaInicio;
 
   final TextEditingController controller = TextEditingController();
 
   bool get esDecepcion => valoracion == 0;
+
+  @override
+  void initState() {
+    super.initState();
+    final hoy = DateTime.now();
+    final actual = widget.fechaInicioActual;
+    fechaInicio = actual == null || actual.isAfter(hoy) ? hoy : actual;
+  }
+
+  String get fechaInicioTexto {
+    final dia = fechaInicio.day.toString().padLeft(2, '0');
+    final mes = fechaInicio.month.toString().padLeft(2, '0');
+    return '$dia/$mes/${fechaInicio.year}';
+  }
+
+  String get fechaInicioApi {
+    final dia = fechaInicio.day.toString().padLeft(2, '0');
+    final mes = fechaInicio.month.toString().padLeft(2, '0');
+    return '${fechaInicio.year}-$mes-$dia';
+  }
+
+  Future<void> _seleccionarFechaInicio() async {
+    final hoy = DateTime.now();
+    final elegida = await showDatePicker(
+      context: context,
+      initialDate: fechaInicio,
+      firstDate: DateTime(1950),
+      lastDate: hoy,
+      helpText: 'Fecha de inicio de la lectura',
+    );
+    if (elegida != null && mounted) setState(() => fechaInicio = elegida);
+  }
 
   String get valoracionTexto {
     final valor = valoracion;
@@ -48,6 +83,7 @@ class _FinalizarLibroDialogState extends State<FinalizarLibroDialog> {
       // El backend admite 3, 3.5, 4.5, etc.
       'valoracion': valor.toString(),
       'reflexion': controller.text.trim(),
+      'fechaInicio': fechaInicioApi,
     });
   }
 
@@ -64,6 +100,22 @@ class _FinalizarLibroDialogState extends State<FinalizarLibroDialog> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              ListTile(
+                contentPadding: EdgeInsets.zero,
+                leading: const Icon(Icons.edit_calendar_outlined),
+                title: const Text('Fecha de inicio'),
+                subtitle: Text(fechaInicioTexto),
+                trailing: const Icon(Icons.calendar_month_outlined),
+                onTap: _seleccionarFechaInicio,
+              ),
+
+              Text(
+                'La fecha de fin se guardará al confirmar la lectura.',
+                style: Theme.of(context).textTheme.bodySmall,
+              ),
+
+              const SizedBox(height: 24),
+
               const Text(
                 '¿Qué valoración le das al libro?',
                 style: TextStyle(fontWeight: FontWeight.bold),

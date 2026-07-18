@@ -2,12 +2,14 @@ import 'package:flutter/material.dart';
 
 import '../dev/dev_settings.dart';
 import '../models/dashboard_view_data.dart';
+import '../models/dashboard.dart';
 import '../models/ranking_item.dart';
 import '../services/api_service.dart';
 import '../services/club_narrador.dart';
 import '../services/usuario_service.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_spacing.dart';
+import '../theme/app_radius.dart';
 import '../theme/app_text_styles.dart';
 import '../widgets/club/clubvision_card.dart';
 import '../widgets/common/club_avatar.dart';
@@ -15,6 +17,7 @@ import '../widgets/common/club_card.dart';
 import '../widgets/common/club_chip.dart';
 import '../widgets/common/club_empty_state.dart';
 import '../widgets/common/club_section_title.dart';
+import '../widgets/common/club_book_cover.dart';
 import '../widgets/error_view.dart';
 import '../widgets/info_card.dart';
 import 'mood_club_page.dart';
@@ -318,7 +321,7 @@ class _DashboardPageState extends State<DashboardPage> {
                     ...data.leyendoAhora.map(
                       (usuario) => _lectoraLeyendoCard(
                         nombre: usuario.usuario,
-                        libros: usuario.libros,
+                        lecturas: usuario.lecturas,
                         total: usuario.total,
                         avatarUrl: usuario.avatarUrl,
                       ),
@@ -483,7 +486,7 @@ class _DashboardPageState extends State<DashboardPage> {
 
   Widget _lectoraLeyendoCard({
     required String nombre,
-    required List<String> libros,
+    required List<LecturaAhoraItem> lecturas,
     required int total,
     required String avatarUrl,
   }) {
@@ -492,56 +495,258 @@ class _DashboardPageState extends State<DashboardPage> {
       child: ClubCard(
         padding: const EdgeInsets.all(AppSpacing.md),
         elevated: false,
-        onTap: () {
-          _abrirPerfil(nombre);
-        },
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            ClubAvatar(nombre: nombre, imageUrl: avatarUrl, size: 52),
-            const SizedBox(width: AppSpacing.md),
-
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+            InkWell(
+              onTap: () => _abrirPerfil(nombre),
+              borderRadius: BorderRadius.circular(AppRadius.md),
+              child: Row(
                 children: [
-                  Text(
-                    nombre,
-                    style: AppTextStyles.subtitle.copyWith(
-                      color: AppColors.textPrimary,
-                      fontWeight: FontWeight.w700,
+                  ClubAvatar(nombre: nombre, imageUrl: avatarUrl, size: 48),
+                  const SizedBox(width: AppSpacing.md),
+                  Expanded(
+                    child: Text(
+                      nombre,
+                      style: AppTextStyles.subtitle.copyWith(
+                        color: AppColors.textPrimary,
+                        fontWeight: FontWeight.w700,
+                      ),
                     ),
                   ),
-
-                  const SizedBox(height: AppSpacing.xs),
-
-                  Text(
-                    libros.isEmpty
-                        ? 'Ahora mismo no está leyendo ningún libro.'
-                        : libros.join(' · '),
-                    maxLines: 3,
-                    overflow: TextOverflow.ellipsis,
-                    style: AppTextStyles.bodySecondary,
-                  ),
-
-                  const SizedBox(height: AppSpacing.sm),
-
                   ClubChip(
                     label: '$total ${total == 1 ? 'lectura' : 'lecturas'}',
                     icon: Icons.menu_book_outlined,
                     variant: ClubChipVariant.info,
                   ),
+                  const SizedBox(width: AppSpacing.xs),
+                  const Icon(
+                    Icons.chevron_right_rounded,
+                    color: AppColors.textMuted,
+                  ),
                 ],
               ),
             ),
-
-            const SizedBox(width: AppSpacing.xs),
-
-            const Icon(Icons.chevron_right_rounded, color: AppColors.textMuted),
+            const SizedBox(height: AppSpacing.md),
+            for (var index = 0; index < lecturas.length; index++) ...[
+              _LecturaProgresoCard(
+                lectura: lecturas[index],
+                editable:
+                    usuarioActual?.trim().toLowerCase() ==
+                    nombre.trim().toLowerCase(),
+                onEditar: () => _editarProgreso(nombre, lecturas[index]),
+              ),
+              if (index < lecturas.length - 1)
+                const SizedBox(height: AppSpacing.sm),
+            ],
           ],
         ),
       ),
     );
+  }
+
+  Future<void> _editarProgreso(String usuario, LecturaAhoraItem lectura) async {
+    final resultado = await showDialog<({int progreso, String comentario})>(
+      context: context,
+      builder: (_) => _EditarProgresoDialog(lectura: lectura),
+    );
+    if (resultado == null) return;
+
+    final ok = await ApiService().actualizarProgresoLectura(
+      usuario: usuario,
+      libro: lectura.titulo,
+      progreso: resultado.progreso,
+      comentario: resultado.comentario,
+    );
+    if (!mounted) return;
+    if (ok) {
+      await _recargar();
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('No se ha podido guardar el progreso.')),
+      );
+    }
+  }
+}
+
+class _LecturaProgresoCard extends StatelessWidget {
+  final LecturaAhoraItem lectura;
+  final bool editable;
+  final VoidCallback onEditar;
+
+  const _LecturaProgresoCard({
+    required this.lectura,
+    required this.editable,
+    required this.onEditar,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(AppSpacing.sm),
+      decoration: BoxDecoration(
+        color: AppColors.surfaceSoft,
+        borderRadius: BorderRadius.circular(AppRadius.md),
+        border: Border.all(color: AppColors.border),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          ClubBookCover(
+            title: lectura.titulo,
+            imageUrl: lectura.coverUrl,
+            width: 52,
+            showShadow: false,
+          ),
+          const SizedBox(width: AppSpacing.sm),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        lectura.titulo,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: AppTextStyles.body.copyWith(
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
+                    ),
+                    if (editable)
+                      IconButton(
+                        tooltip: 'Actualizar progreso',
+                        visualDensity: VisualDensity.compact,
+                        onPressed: onEditar,
+                        icon: const Icon(Icons.edit_outlined, size: 20),
+                      ),
+                  ],
+                ),
+                Row(
+                  children: [
+                    Expanded(
+                      child: LinearProgressIndicator(
+                        value: lectura.progreso / 100,
+                        minHeight: 7,
+                        borderRadius: BorderRadius.circular(AppRadius.pill),
+                      ),
+                    ),
+                    const SizedBox(width: AppSpacing.sm),
+                    Text(
+                      '${lectura.progreso}%',
+                      style: AppTextStyles.caption.copyWith(
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                  ],
+                ),
+                if (lectura.comentario.trim().isNotEmpty) ...[
+                  const SizedBox(height: AppSpacing.sm),
+                  Text(
+                    '“${lectura.comentario}”',
+                    maxLines: 3,
+                    overflow: TextOverflow.ellipsis,
+                    style: AppTextStyles.bodySecondary.copyWith(
+                      fontStyle: FontStyle.italic,
+                      height: 1.35,
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _EditarProgresoDialog extends StatefulWidget {
+  final LecturaAhoraItem lectura;
+
+  const _EditarProgresoDialog({required this.lectura});
+
+  @override
+  State<_EditarProgresoDialog> createState() => _EditarProgresoDialogState();
+}
+
+class _EditarProgresoDialogState extends State<_EditarProgresoDialog> {
+  late double progreso;
+  late final TextEditingController comentarioController;
+
+  @override
+  void initState() {
+    super.initState();
+    progreso = widget.lectura.progreso.toDouble();
+    comentarioController = TextEditingController(
+      text: widget.lectura.comentario,
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: Text(
+        widget.lectura.titulo,
+        maxLines: 2,
+        overflow: TextOverflow.ellipsis,
+      ),
+      content: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Center(
+              child: Text(
+                '${progreso.round()}%',
+                style: AppTextStyles.title.copyWith(color: AppColors.primary),
+              ),
+            ),
+            Slider(
+              value: progreso,
+              min: 0,
+              max: 100,
+              divisions: 20,
+              label: '${progreso.round()}%',
+              onChanged: (value) => setState(() => progreso = value),
+            ),
+            const SizedBox(height: AppSpacing.md),
+            TextField(
+              controller: comentarioController,
+              minLines: 3,
+              maxLines: 6,
+              maxLength: 500,
+              decoration: const InputDecoration(
+                labelText: 'Impresiones hasta ahora',
+                hintText: '¿Qué te está pareciendo?',
+                alignLabelWithHint: true,
+              ),
+            ),
+          ],
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: const Text('Cancelar'),
+        ),
+        FilledButton(
+          onPressed: () => Navigator.pop(context, (
+            progreso: progreso.round(),
+            comentario: comentarioController.text.trim(),
+          )),
+          child: const Text('Guardar'),
+        ),
+      ],
+    );
+  }
+
+  @override
+  void dispose() {
+    comentarioController.dispose();
+    super.dispose();
   }
 }
 
