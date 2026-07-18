@@ -384,6 +384,17 @@ class _TimelineEntrada extends StatelessWidget {
                           ),
                         ),
 
+                        if (libro.esRelectura) ...[
+                          const SizedBox(height: 4),
+                          Text(
+                            'RELECTURA',
+                            style: AppTextStyles.caption.copyWith(
+                              color: color,
+                              fontWeight: FontWeight.w800,
+                            ),
+                          ),
+                        ],
+
                         if (libro.valoracion.isNotEmpty) ...[
                           const SizedBox(height: 5),
 

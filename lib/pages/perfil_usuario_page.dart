@@ -97,6 +97,7 @@ class _PerfilUsuarioPageState extends State<PerfilUsuarioPage> {
       respuesta = await ApiService().actualizarFechasLectura(
         usuario: widget.usuario,
         libraryId: libro.libraryId,
+        completionId: libro.completionId,
         fechaInicio: resultado['fechaInicio'] ?? '',
         fechaFin: resultado['fechaFin'] ?? '',
         valoracion: resultado['valoracion'],
@@ -609,6 +610,15 @@ class _PerfilUsuarioPageState extends State<PerfilUsuarioPage> {
             ),
           ],
         ),
+        if (perfil.resumen.relecturas > 0) ...[
+          const SizedBox(height: AppSpacing.sm),
+          ClubChip(
+            label:
+                '${perfil.resumen.relecturas} ${perfil.resumen.relecturas == 1 ? 'relectura' : 'relecturas'}',
+            icon: Icons.refresh_rounded,
+            variant: ClubChipVariant.primary,
+          ),
+        ],
       ],
     );
   }
@@ -705,6 +715,14 @@ class _PerfilUsuarioPageState extends State<PerfilUsuarioPage> {
                   label: '${iconoGenero(libro.genero)} ${libro.genero}',
                   variant: ClubChipVariant.primary,
                 ),
+                if (libro.esRelectura) ...[
+                  const SizedBox(height: AppSpacing.xs),
+                  const ClubChip(
+                    label: 'Relectura',
+                    icon: Icons.refresh_rounded,
+                    variant: ClubChipVariant.primary,
+                  ),
+                ],
                 if (libro.fechaInicio.isNotEmpty) ...[
                   const SizedBox(height: AppSpacing.xs),
                   Text(
@@ -787,6 +805,15 @@ class _PerfilUsuarioPageState extends State<PerfilUsuarioPage> {
                   '${iconoGenero(libro.genero)} ${libro.genero}',
                   style: AppTextStyles.bodySecondary,
                 ),
+
+                if (libro.esRelectura) ...[
+                  const SizedBox(height: AppSpacing.xs),
+                  const ClubChip(
+                    label: 'Relectura',
+                    icon: Icons.refresh_rounded,
+                    variant: ClubChipVariant.primary,
+                  ),
+                ],
 
                 if (libro.valoracion.isNotEmpty) ...[
                   const SizedBox(height: AppSpacing.sm),

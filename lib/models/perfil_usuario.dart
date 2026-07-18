@@ -46,6 +46,7 @@ class PerfilUsuario {
 
 class PerfilResumen {
   final int terminados;
+  final int relecturas;
   final int leyendo;
   final int pendientes;
   final int abandonados;
@@ -55,6 +56,7 @@ class PerfilResumen {
 
   PerfilResumen({
     required this.terminados,
+    required this.relecturas,
     required this.leyendo,
     required this.pendientes,
     required this.abandonados,
@@ -66,6 +68,7 @@ class PerfilResumen {
   factory PerfilResumen.fromJson(Map<String, dynamic> json) {
     return PerfilResumen(
       terminados: (json['terminados'] as num?)?.toInt() ?? 0,
+      relecturas: (json['relecturas'] as num?)?.toInt() ?? 0,
       leyendo: (json['leyendo'] as num?)?.toInt() ?? 0,
       pendientes: (json['pendientes'] as num?)?.toInt() ?? 0,
       abandonados: (json['abandonados'] as num?)?.toInt() ?? 0,
@@ -83,6 +86,7 @@ class PerfilLibro {
   final String genero;
   final String fechaInicio;
   final String coverUrl;
+  final bool esRelectura;
 
   PerfilLibro({
     required this.libraryId,
@@ -91,6 +95,7 @@ class PerfilLibro {
     required this.genero,
     required this.fechaInicio,
     required this.coverUrl,
+    required this.esRelectura,
   });
 
   factory PerfilLibro.fromJson(Map<String, dynamic> json) {
@@ -104,11 +109,13 @@ class PerfilLibro {
           json['startedAt']?.toString() ??
           '',
       coverUrl: json['coverUrl']?.toString() ?? '',
+      esRelectura: json['esRelectura'] == true,
     );
   }
 }
 
 class PerfilLibroTerminado {
+  final String completionId;
   final String libraryId;
   final String bookId;
 
@@ -119,8 +126,10 @@ class PerfilLibroTerminado {
   final String valoracion;
   final String resena;
   final String coverUrl;
+  final bool esRelectura;
 
   PerfilLibroTerminado({
+    required this.completionId,
     required this.libraryId,
     required this.bookId,
     required this.libro,
@@ -130,6 +139,7 @@ class PerfilLibroTerminado {
     required this.valoracion,
     required this.resena,
     required this.coverUrl,
+    required this.esRelectura,
   });
 
   /// Compatibilidad temporal con código antiguo que todavía usa `fecha`.
@@ -137,6 +147,7 @@ class PerfilLibroTerminado {
 
   factory PerfilLibroTerminado.fromJson(Map<String, dynamic> json) {
     return PerfilLibroTerminado(
+      completionId: json['completionId']?.toString() ?? '',
       libraryId: json['libraryId']?.toString() ?? json['id']?.toString() ?? '',
       bookId: json['bookId']?.toString() ?? '',
       libro: json['libro']?.toString() ?? '',
@@ -153,6 +164,7 @@ class PerfilLibroTerminado {
       valoracion: json['valoracion']?.toString() ?? '',
       resena: json['resena']?.toString() ?? json['review']?.toString() ?? '',
       coverUrl: json['coverUrl']?.toString() ?? '',
+      esRelectura: json['esRelectura'] == true,
     );
   }
 }

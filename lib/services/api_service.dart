@@ -742,6 +742,7 @@ class ApiService {
   Future<Map<String, dynamic>> actualizarFechasLectura({
     required String usuario,
     required String libraryId,
+    String? completionId,
     required String fechaInicio,
     required String fechaFin,
     String? valoracion,
@@ -753,6 +754,9 @@ class ApiService {
       'fechaInicio': fechaInicio,
       'fechaFin': fechaFin,
     };
+    if (completionId != null && completionId.isNotEmpty) {
+      body['completionId'] = completionId;
+    }
     if (valoracion != null) body['valoracion'] = valoracion;
     if (resena != null) body['resena'] = resena;
 
