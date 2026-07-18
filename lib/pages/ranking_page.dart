@@ -132,7 +132,7 @@ class _RankingPageState extends State<RankingPage> {
                 110,
               ),
               children: [
-                const _RankingHeader(),
+                _RankingHeader(anio: ranking.anio),
 
                 const SizedBox(height: AppSpacing.xl),
 
@@ -146,11 +146,11 @@ class _RankingPageState extends State<RankingPage> {
                 if (libroClub != null || cementerio != null) ...[
                   const SizedBox(height: AppSpacing.xl),
 
-                  const _SectionHeader(
+                  _SectionHeader(
                     icon: Icons.auto_awesome_rounded,
                     color: AppColors.primary,
                     title: 'Lo más destacado',
-                    subtitle: 'Las protagonistas del club ahora mismo',
+                    subtitle: 'Las protagonistas de ${ranking.anio}',
                   ),
 
                   const SizedBox(height: AppSpacing.md),
@@ -185,7 +185,8 @@ class _RankingPageState extends State<RankingPage> {
                     icon: Icons.auto_stories_outlined,
                     color: AppColors.info,
                     title: 'Más leídos',
-                    subtitle: 'Las historias con más lectoras',
+                    subtitle:
+                        'Las historias con más lectoras en ${ranking.anio}',
                     items: ranking.masLeidos,
                     valueBuilder: (item) => '${item.total}',
                     unitBuilder: (item) =>
@@ -201,7 +202,7 @@ class _RankingPageState extends State<RankingPage> {
                     icon: Icons.star_outline_rounded,
                     color: const Color(0xFFB48113),
                     title: 'Mejor valorados',
-                    subtitle: 'Los favoritos del club',
+                    subtitle: 'Los favoritos del club en ${ranking.anio}',
                     items: ranking.mejorValorados,
                     valueBuilder: (item) =>
                         '${item.media.toStringAsFixed(2)} / 5',
@@ -218,7 +219,7 @@ class _RankingPageState extends State<RankingPage> {
                   icon: Icons.heart_broken_outlined,
                   color: AppColors.danger,
                   title: 'Más abandonados',
-                  subtitle: 'Los libros que no lograron conquistar al club',
+                  subtitle: 'Los abandonos registrados en ${ranking.anio}',
                   items: ranking.masAbandonados,
                   valueBuilder: (item) => '${item.total}',
                   unitBuilder: (item) =>
@@ -231,7 +232,7 @@ class _RankingPageState extends State<RankingPage> {
                   icon: Icons.groups_rounded,
                   color: AppColors.primary,
                   title: 'Clasificación de lectoras',
-                  subtitle: 'El recorrido histórico de todas las lectoras',
+                  subtitle: 'Libros finalizados durante ${ranking.anio}',
                   items: ranking.topLectoras,
                   valueBuilder: (item) => '${item.total}',
                   unitBuilder: (item) => item.total == 1
@@ -255,7 +256,9 @@ class _RankingPageState extends State<RankingPage> {
 }
 
 class _RankingHeader extends StatelessWidget {
-  const _RankingHeader();
+  final int anio;
+
+  const _RankingHeader({required this.anio});
 
   @override
   Widget build(BuildContext context) {
@@ -295,7 +298,7 @@ class _RankingHeader extends StatelessWidget {
           const SizedBox(height: AppSpacing.sm),
 
           Text(
-            'Libros favoritos, grandes lectoras y alguna historia que se quedó por el camino.',
+            'Lo más leído, valorado y comentado por el club durante $anio.',
             textAlign: TextAlign.center,
             style: AppTextStyles.bodySecondary.copyWith(height: 1.45),
           ),

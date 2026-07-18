@@ -519,7 +519,7 @@ class _MetricasMood extends StatelessWidget {
   }
 }
 
-class _ConversacionDestacada extends StatelessWidget {
+class _ConversacionDestacada extends StatefulWidget {
   final ConversacionMood conversacion;
   final VoidCallback onTap;
 
@@ -529,10 +529,18 @@ class _ConversacionDestacada extends StatelessWidget {
   });
 
   @override
+  State<_ConversacionDestacada> createState() => _ConversacionDestacadaState();
+}
+
+class _ConversacionDestacadaState extends State<_ConversacionDestacada> {
+  bool spoilerVisible = false;
+
+  @override
   Widget build(BuildContext context) {
+    final conversacion = widget.conversacion;
+
     return ClubCard(
       elevated: false,
-      onTap: onTap,
       padding: const EdgeInsets.all(AppSpacing.lg),
       backgroundColor: const Color(0xFFFFF5F8),
       borderColor: const Color(0xFFF4D2DF),
@@ -546,20 +554,75 @@ class _ConversacionDestacada extends StatelessWidget {
                 color: AppColors.danger,
               ),
               SizedBox(width: AppSpacing.sm),
-              Text(
-                'La conversación del momento',
-                style: AppTextStyles.subtitle,
+              Expanded(
+                child: Text(
+                  'La conversación del momento',
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: AppTextStyles.subtitle,
+                ),
               ),
-              Spacer(),
-              Icon(Icons.arrow_forward_rounded, color: AppColors.textMuted),
             ],
           ),
           const SizedBox(height: AppSpacing.md),
-          Text(
-            '“${conversacion.texto}”',
-            maxLines: 4,
-            overflow: TextOverflow.ellipsis,
-            style: AppTextStyles.body.copyWith(height: 1.45),
+          AnimatedSwitcher(
+            duration: const Duration(milliseconds: 250),
+            child: spoilerVisible
+                ? Container(
+                    key: const ValueKey('spoiler-visible'),
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(AppSpacing.md),
+                    decoration: BoxDecoration(
+                      color: AppColors.surface,
+                      borderRadius: BorderRadius.circular(AppRadius.md),
+                      border: Border.all(color: AppColors.border),
+                    ),
+                    child: Text(
+                      '“${conversacion.texto}”',
+                      maxLines: 6,
+                      overflow: TextOverflow.ellipsis,
+                      style: AppTextStyles.body.copyWith(height: 1.45),
+                    ),
+                  )
+                : InkWell(
+                    key: const ValueKey('spoiler-oculto'),
+                    onTap: () => setState(() => spoilerVisible = true),
+                    borderRadius: BorderRadius.circular(AppRadius.md),
+                    child: Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: AppSpacing.md,
+                        vertical: AppSpacing.lg,
+                      ),
+                      decoration: BoxDecoration(
+                        color: AppColors.midnight,
+                        borderRadius: BorderRadius.circular(AppRadius.md),
+                      ),
+                      child: const Column(
+                        children: [
+                          Icon(
+                            Icons.visibility_off_outlined,
+                            color: Colors.white,
+                            size: 28,
+                          ),
+                          SizedBox(height: AppSpacing.sm),
+                          Text(
+                            'Posible spoiler',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.w800,
+                            ),
+                          ),
+                          SizedBox(height: AppSpacing.xs),
+                          Text(
+                            'Toca para revelar el comentario',
+                            textAlign: TextAlign.center,
+                            style: TextStyle(color: Color(0xFFD9D4E5)),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
           ),
           const SizedBox(height: AppSpacing.sm),
           Text(
@@ -571,6 +634,17 @@ class _ConversacionDestacada extends StatelessWidget {
             '✨ ${conversacion.reacciones}   💬 ${conversacion.respuestas}',
             style: AppTextStyles.caption.copyWith(fontWeight: FontWeight.w800),
           ),
+          if (spoilerVisible) ...[
+            const SizedBox(height: AppSpacing.sm),
+            Align(
+              alignment: Alignment.centerRight,
+              child: TextButton.icon(
+                onPressed: widget.onTap,
+                icon: const Icon(Icons.forum_outlined),
+                label: const Text('Abrir conversación'),
+              ),
+            ),
+          ],
         ],
       ),
     );

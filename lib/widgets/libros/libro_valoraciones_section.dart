@@ -119,13 +119,21 @@ class _ResumenValoraciones extends StatelessWidget {
   }
 }
 
-class _ValoracionCard extends StatelessWidget {
+class _ValoracionCard extends StatefulWidget {
   final LibroFinalizado valoracion;
 
   const _ValoracionCard({required this.valoracion});
 
   @override
+  State<_ValoracionCard> createState() => _ValoracionCardState();
+}
+
+class _ValoracionCardState extends State<_ValoracionCard> {
+  bool resenaVisible = false;
+
+  @override
   Widget build(BuildContext context) {
+    final valoracion = widget.valoracion;
     final estrellas = _numeroEstrellas(valoracion.valoracion);
     return ClubCard(
       elevated: false,
@@ -136,7 +144,11 @@ class _ValoracionCard extends StatelessWidget {
           Row(
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              ClubAvatar(nombre: valoracion.usuario, size: 48),
+              ClubAvatar(
+                nombre: valoracion.usuario,
+                imageUrl: valoracion.avatarUrl,
+                size: 48,
+              ),
 
               const SizedBox(width: AppSpacing.md),
 
@@ -161,35 +173,82 @@ class _ValoracionCard extends StatelessWidget {
           if (valoracion.resena.trim().isNotEmpty) ...[
             const SizedBox(height: AppSpacing.md),
 
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(AppSpacing.md),
-              decoration: BoxDecoration(
-                color: AppColors.surfaceSoft,
-                borderRadius: BorderRadius.circular(16),
-              ),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Icon(
-                    Icons.format_quote_rounded,
-                    color: AppColors.primary,
-                    size: 24,
-                  ),
-
-                  const SizedBox(width: AppSpacing.sm),
-
-                  Expanded(
-                    child: Text(
-                      valoracion.resena,
-                      style: AppTextStyles.body.copyWith(
-                        fontStyle: FontStyle.italic,
-                        height: 1.45,
+            AnimatedSwitcher(
+              duration: const Duration(milliseconds: 250),
+              child: resenaVisible
+                  ? Container(
+                      key: const ValueKey('resena-visible'),
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(AppSpacing.md),
+                      decoration: BoxDecoration(
+                        color: AppColors.surfaceSoft,
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Icon(
+                            Icons.format_quote_rounded,
+                            color: AppColors.primary,
+                            size: 24,
+                          ),
+                          const SizedBox(width: AppSpacing.sm),
+                          Expanded(
+                            child: Text(
+                              valoracion.resena,
+                              style: AppTextStyles.body.copyWith(
+                                fontStyle: FontStyle.italic,
+                                height: 1.45,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    )
+                  : InkWell(
+                      key: const ValueKey('resena-oculta'),
+                      onTap: () => setState(() => resenaVisible = true),
+                      borderRadius: BorderRadius.circular(16),
+                      child: Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: AppSpacing.md,
+                          vertical: AppSpacing.lg,
+                        ),
+                        decoration: BoxDecoration(
+                          color: AppColors.midnight,
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                        child: const Row(
+                          children: [
+                            Icon(
+                              Icons.visibility_off_outlined,
+                              color: Colors.white,
+                            ),
+                            SizedBox(width: AppSpacing.md),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    'Reflexión oculta',
+                                    style: TextStyle(
+                                      color: Colors.white,
+                                      fontWeight: FontWeight.w800,
+                                    ),
+                                  ),
+                                  SizedBox(height: AppSpacing.xs),
+                                  Text(
+                                    'Toca para revelar posibles spoilers.',
+                                    style: TextStyle(color: Color(0xFFD9D4E5)),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
                     ),
-                  ),
-                ],
-              ),
             ),
           ] else ...[
             const SizedBox(height: AppSpacing.md),

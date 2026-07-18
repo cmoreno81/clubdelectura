@@ -518,8 +518,12 @@ class ApiService {
     return LibrosData(libros: libros, finalizados: finalizados);
   }
 
-  Future<Ranking> getRanking() async {
-    final response = await _client.get(Uri.parse('$baseUrl?action=ranking'));
+  Future<Ranking> getRanking({int? anio}) async {
+    final year = anio ?? DateTime.now().year;
+    final uri = Uri.parse(
+      baseUrl,
+    ).replace(queryParameters: {'action': 'ranking', 'anio': '$year'});
+    final response = await _client.get(uri);
 
     if (response.statusCode == 200) {
       return Ranking.fromJson(jsonDecode(response.body));
@@ -716,17 +720,19 @@ class ApiService {
     String? valoracion,
     String? resena,
   }) async {
+    final body = <String, dynamic>{
+      'usuario': usuario,
+      'libraryId': libraryId,
+      'fechaInicio': fechaInicio,
+      'fechaFin': fechaFin,
+    };
+    if (valoracion != null) body['valoracion'] = valoracion;
+    if (resena != null) body['resena'] = resena;
+
     final response = await _client.post(
       Uri.parse('$baseUrl?action=actualizarFechasLectura'),
       headers: const {'Content-Type': 'application/json'},
-      body: jsonEncode({
-        'usuario': usuario,
-        'libraryId': libraryId,
-        'fechaInicio': fechaInicio,
-        'fechaFin': fechaFin,
-        'valoracion': valoracion ?? '',
-        'resena': resena ?? '',
-      }),
+      body: jsonEncode(body),
     );
 
     if (response.statusCode != 200) {

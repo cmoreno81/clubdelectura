@@ -77,15 +77,33 @@ class PerfilResumen {
 }
 
 class PerfilLibro {
+  final String libraryId;
+  final String bookId;
   final String libro;
   final String genero;
+  final String fechaInicio;
+  final String coverUrl;
 
-  PerfilLibro({required this.libro, required this.genero});
+  PerfilLibro({
+    required this.libraryId,
+    required this.bookId,
+    required this.libro,
+    required this.genero,
+    required this.fechaInicio,
+    required this.coverUrl,
+  });
 
   factory PerfilLibro.fromJson(Map<String, dynamic> json) {
     return PerfilLibro(
+      libraryId: json['libraryId']?.toString() ?? json['id']?.toString() ?? '',
+      bookId: json['bookId']?.toString() ?? '',
       libro: json['libro']?.toString() ?? '',
       genero: json['genero']?.toString() ?? '',
+      fechaInicio:
+          json['fechaInicio']?.toString() ??
+          json['startedAt']?.toString() ??
+          '',
+      coverUrl: json['coverUrl']?.toString() ?? '',
     );
   }
 }

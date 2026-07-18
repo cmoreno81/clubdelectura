@@ -41,7 +41,11 @@ class LibroFinalizado {
       resena: json['resena']?.toString() ?? json['review']?.toString() ?? '',
       coverUrl: json['coverUrl']?.toString() ?? '',
       fechaAlta: DateTime.tryParse(json['fechaAlta']?.toString() ?? ''),
-      avatarUrl: json['avatarUrl']?.toString() ?? '',
+      avatarUrl:
+          json['avatarUrl']?.toString() ??
+          json['fotoUrl']?.toString() ??
+          json['photoUrl']?.toString() ??
+          '',
     );
   }
 }

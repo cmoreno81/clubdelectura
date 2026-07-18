@@ -415,7 +415,7 @@ class _CapituloPageState extends State<CapituloPage> {
             padding: const EdgeInsets.only(bottom: 20),
             sliver: SliverList(
               delegate: SliverChildBuilderDelegate((context, index) {
-                return ComentarioCard(
+                final comentarioCard = ComentarioCard(
                   comentario: data.comentarios[index],
                   usuarioActual: usuario ?? '',
                   onActualizar: () {
@@ -425,6 +425,13 @@ class _CapituloPageState extends State<CapituloPage> {
                       _recargar();
                     });
                   },
+                );
+
+                if (!esReflexion) return comentarioCard;
+
+                return _ReflexionProtegida(
+                  key: ValueKey(data.comentarios[index].id),
+                  child: comentarioCard,
                 );
               }, childCount: data.comentarios.length),
             ),
@@ -479,5 +486,62 @@ class _CapituloPageState extends State<CapituloPage> {
     controller.dispose();
     scrollController.dispose();
     super.dispose();
+  }
+}
+
+class _ReflexionProtegida extends StatefulWidget {
+  final Widget child;
+
+  const _ReflexionProtegida({super.key, required this.child});
+
+  @override
+  State<_ReflexionProtegida> createState() => _ReflexionProtegidaState();
+}
+
+class _ReflexionProtegidaState extends State<_ReflexionProtegida> {
+  bool visible = false;
+
+  @override
+  Widget build(BuildContext context) {
+    if (visible) return widget.child;
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      child: ClubCard(
+        elevated: false,
+        padding: EdgeInsets.zero,
+        backgroundColor: AppColors.midnight,
+        borderColor: AppColors.midnight,
+        onTap: () => setState(() => visible = true),
+        child: const Padding(
+          padding: EdgeInsets.symmetric(horizontal: 24, vertical: 28),
+          child: Column(
+            children: [
+              Icon(
+                Icons.visibility_off_outlined,
+                color: Colors.white,
+                size: 32,
+              ),
+              SizedBox(height: 12),
+              Text(
+                'Reflexión oculta',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 17,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+              SizedBox(height: 6),
+              Text(
+                'Puede revelar el final del libro. Toca para leerla.',
+                textAlign: TextAlign.center,
+                style: TextStyle(color: Color(0xFFD9D4E5), height: 1.4),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 }

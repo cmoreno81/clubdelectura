@@ -17,7 +17,7 @@ class PerfilTimelineLectura extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final grupos = _agruparPorMes(libros);
+    final grupos = _agruparPorAnio(libros);
 
     if (grupos.isEmpty) {
       return ClubCard(
@@ -52,16 +52,19 @@ class PerfilTimelineLectura extends StatelessWidget {
     }
 
     return Column(
-      children: grupos.entries.map((grupo) {
-        return Padding(
-          padding: const EdgeInsets.only(bottom: AppSpacing.md),
-          child: _GrupoMesTimeline(titulo: grupo.key, libros: grupo.value),
-        );
-      }).toList(),
+      children: grupos.entries
+          .map(
+            (grupo) => _GrupoAnioTimeline(
+              anio: grupo.key,
+              meses: grupo.value,
+              nombreMes: _nombreMes,
+            ),
+          )
+          .toList(),
     );
   }
 
-  Map<String, List<PerfilLibroTerminado>> _agruparPorMes(
+  Map<int, Map<int, List<PerfilLibroTerminado>>> _agruparPorAnio(
     List<PerfilLibroTerminado> libros,
   ) {
     final conFecha = libros
@@ -74,14 +77,13 @@ class PerfilTimelineLectura extends StatelessWidget {
 
     conFecha.sort((a, b) => b.fecha!.compareTo(a.fecha!));
 
-    final grupos = <String, List<PerfilLibroTerminado>>{};
+    final grupos = <int, Map<int, List<PerfilLibroTerminado>>>{};
 
     for (final item in conFecha) {
       final fecha = item.fecha!;
-      final clave = '${_nombreMes(fecha.month)} ${fecha.year}';
-
-      grupos.putIfAbsent(clave, () => []);
-      grupos[clave]!.add(item.libro);
+      grupos.putIfAbsent(fecha.year, () => {});
+      grupos[fecha.year]!.putIfAbsent(fecha.month, () => []);
+      grupos[fecha.year]![fecha.month]!.add(item.libro);
     }
 
     return grupos;
@@ -108,6 +110,65 @@ class PerfilTimelineLectura extends StatelessWidget {
     }
 
     return meses[mes - 1];
+  }
+}
+
+class _GrupoAnioTimeline extends StatelessWidget {
+  final int anio;
+  final Map<int, List<PerfilLibroTerminado>> meses;
+  final String Function(int mes) nombreMes;
+
+  const _GrupoAnioTimeline({
+    required this.anio,
+    required this.meses,
+    required this.nombreMes,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final color = Theme.of(context).colorScheme.primary;
+    final total = meses.values.fold<int>(
+      0,
+      (suma, libros) => suma + libros.length,
+    );
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: AppSpacing.xl),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xs),
+            child: Row(
+              children: [
+                Text(
+                  '$anio',
+                  style: AppTextStyles.title.copyWith(
+                    color: color,
+                    fontSize: 25,
+                  ),
+                ),
+                const SizedBox(width: AppSpacing.sm),
+                Expanded(child: Divider(color: color.withValues(alpha: 0.25))),
+                const SizedBox(width: AppSpacing.sm),
+                Text(
+                  total == 1 ? '1 libro' : '$total libros',
+                  style: AppTextStyles.caption.copyWith(
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: AppSpacing.md),
+          for (final mes in meses.entries) ...[
+            _GrupoMesTimeline(titulo: nombreMes(mes.key), libros: mes.value),
+            if (mes.key != meses.keys.last)
+              const SizedBox(height: AppSpacing.md),
+          ],
+        ],
+      ),
+    );
   }
 }
 

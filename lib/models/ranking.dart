@@ -1,6 +1,7 @@
 import 'ranking_item.dart';
 
 class Ranking {
+  final int anio;
   final List<RankingItem> masDeseados;
 
   final List<RankingItem> masLeidos;
@@ -12,6 +13,7 @@ class Ranking {
   final List<RankingItem> topLectoras;
 
   Ranking({
+    required this.anio,
     required this.masDeseados,
 
     required this.masLeidos,
@@ -32,6 +34,7 @@ class Ranking {
     }
 
     return Ranking(
+      anio: (json['anio'] as num?)?.toInt() ?? DateTime.now().year,
       masDeseados: parse('masDeseados'),
 
       masLeidos: parse('masLeidos'),

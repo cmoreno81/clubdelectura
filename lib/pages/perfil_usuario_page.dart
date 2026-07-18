@@ -126,6 +126,44 @@ class _PerfilUsuarioPageState extends State<PerfilUsuarioPage> {
     }
   }
 
+  Future<void> _editarFechaInicio(PerfilLibro libro) async {
+    if (!esMiPerfil || libro.libraryId.trim().isEmpty) return;
+
+    final hoy = DateTime.now();
+    final actual = LecturaFechaUtils.parse(libro.fechaInicio) ?? hoy;
+    final elegida = await showDatePicker(
+      context: context,
+      initialDate: actual.isAfter(hoy) ? hoy : actual,
+      firstDate: DateTime(1950),
+      lastDate: hoy,
+      helpText: 'Fecha de inicio de la lectura',
+    );
+    if (elegida == null || !mounted) return;
+
+    final mes = elegida.month.toString().padLeft(2, '0');
+    final dia = elegida.day.toString().padLeft(2, '0');
+    final respuesta = await ApiService().actualizarFechasLectura(
+      usuario: widget.usuario,
+      libraryId: libro.libraryId,
+      fechaInicio: '${elegida.year}-$mes-$dia',
+      fechaFin: '',
+    );
+    if (!mounted) return;
+
+    final ok = respuesta['ok'] == true;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          respuesta['mensaje']?.toString() ??
+              (ok
+                  ? 'Fecha de inicio actualizada'
+                  : 'No se ha podido actualizar la fecha'),
+        ),
+      ),
+    );
+    if (ok) await _recargar();
+  }
+
   Future<void> _cargarUsuarioActual() async {
     final usuario = await UsuarioService().obtenerUsuario();
 
@@ -212,10 +250,7 @@ class _PerfilUsuarioPageState extends State<PerfilUsuarioPage> {
                   ...perfil.leyendo.map(
                     (libro) => Padding(
                       padding: const EdgeInsets.only(bottom: AppSpacing.md),
-                      child: _libroLeyendo(
-                        titulo: libro.libro,
-                        genero: libro.genero,
-                      ),
+                      child: _libroLeyendo(libro: libro),
                     ),
                   ),
 
@@ -545,7 +580,7 @@ class _PerfilUsuarioPageState extends State<PerfilUsuarioPage> {
     );
   }
 
-  Widget _libroLeyendo({required String titulo, required String genero}) {
+  Widget _libroLeyendo({required PerfilLibro libro}) {
     return ClubCard(
       elevated: false,
       padding: const EdgeInsets.all(AppSpacing.md),
@@ -572,7 +607,7 @@ class _PerfilUsuarioPageState extends State<PerfilUsuarioPage> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  titulo,
+                  libro.libro,
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                   style: AppTextStyles.subtitle.copyWith(
@@ -584,16 +619,30 @@ class _PerfilUsuarioPageState extends State<PerfilUsuarioPage> {
                 const SizedBox(height: AppSpacing.xs),
 
                 ClubChip(
-                  label: '${iconoGenero(genero)} $genero',
+                  label: '${iconoGenero(libro.genero)} ${libro.genero}',
                   variant: ClubChipVariant.primary,
                 ),
+                if (libro.fechaInicio.isNotEmpty) ...[
+                  const SizedBox(height: AppSpacing.xs),
+                  Text(
+                    'Desde el ${libro.fechaInicio}',
+                    style: AppTextStyles.caption,
+                  ),
+                ],
               ],
             ),
           ),
 
           const SizedBox(width: AppSpacing.xs),
 
-          const Icon(Icons.auto_stories_rounded, color: AppColors.info),
+          if (esMiPerfil)
+            IconButton(
+              tooltip: 'Editar fecha de inicio',
+              onPressed: () => _editarFechaInicio(libro),
+              icon: const Icon(Icons.edit_calendar_outlined),
+            )
+          else
+            const Icon(Icons.auto_stories_rounded, color: AppColors.info),
         ],
       ),
     );
