@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import '../services/api_service.dart';
 import '../theme/app_colors.dart';
@@ -25,6 +26,7 @@ class ConfigurarLecturaPage extends StatefulWidget {
 
 class _ConfigurarLecturaPageState extends State<ConfigurarLecturaPage> {
   final controllerCapitulos = TextEditingController();
+  final controllerPaginas = TextEditingController();
 
   bool prologo = false;
   bool epilogo = false;
@@ -126,6 +128,51 @@ class _ConfigurarLecturaPageState extends State<ConfigurarLecturaPage> {
                       ),
                     ),
                   ),
+                  const SizedBox(height: AppSpacing.lg),
+                  const Divider(height: 1),
+                  const SizedBox(height: AppSpacing.lg),
+                  Text(
+                    'Número de páginas',
+                    style: AppTextStyles.subtitle.copyWith(
+                      color: AppColors.textPrimary,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                  const SizedBox(height: AppSpacing.xs),
+                  Text(
+                    'Es opcional y permitirá registrar el progreso por página.',
+                    style: AppTextStyles.bodySecondary.copyWith(height: 1.4),
+                  ),
+                  const SizedBox(height: AppSpacing.md),
+                  TextField(
+                    controller: controllerPaginas,
+                    keyboardType: TextInputType.number,
+                    textInputAction: TextInputAction.done,
+                    inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                    decoration: InputDecoration(
+                      labelText: 'Número de páginas',
+                      hintText: 'Ej. 420',
+                      prefixIcon: const Icon(Icons.menu_book_outlined),
+                      suffixText: 'páginas',
+                      filled: true,
+                      fillColor: AppColors.surfaceSoft,
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(AppRadius.lg),
+                        borderSide: BorderSide.none,
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(AppRadius.lg),
+                        borderSide: const BorderSide(color: AppColors.border),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(AppRadius.lg),
+                        borderSide: const BorderSide(
+                          color: AppColors.primary,
+                          width: 1.6,
+                        ),
+                      ),
+                    ),
+                  ),
                 ],
               ),
             ),
@@ -197,12 +244,20 @@ class _ConfigurarLecturaPageState extends State<ConfigurarLecturaPage> {
 
   Future<void> _crearLectura() async {
     final capitulos = int.tryParse(controllerCapitulos.text.trim());
+    final paginasTexto = controllerPaginas.text.trim();
+    final paginas = paginasTexto.isEmpty ? null : int.tryParse(paginasTexto);
 
     if (capitulos == null || capitulos <= 0) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Introduce un número de capítulos válido.'),
         ),
+      );
+      return;
+    }
+    if (paginasTexto.isNotEmpty && (paginas == null || paginas <= 0)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Introduce un número de páginas válido.')),
       );
       return;
     }
@@ -217,6 +272,7 @@ class _ConfigurarLecturaPageState extends State<ConfigurarLecturaPage> {
         capitulos: capitulos,
         prologo: prologo,
         epilogo: epilogo,
+        paginas: paginas,
         tipo: widget.tipo,
       );
 
@@ -263,6 +319,7 @@ class _ConfigurarLecturaPageState extends State<ConfigurarLecturaPage> {
   @override
   void dispose() {
     controllerCapitulos.dispose();
+    controllerPaginas.dispose();
     super.dispose();
   }
 }

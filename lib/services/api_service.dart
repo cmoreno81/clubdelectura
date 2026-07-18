@@ -130,6 +130,7 @@ class ApiService {
     required int progreso,
     required String comentario,
     int? paginaActual,
+    int? paginasTotales,
   }) async {
     final response = await _client.post(
       Uri.parse('$baseUrl?action=actualizarProgresoLectura'),
@@ -140,6 +141,7 @@ class ApiService {
         'progreso': progreso,
         'comentario': comentario,
         'paginaActual': ?paginaActual,
+        'paginasTotales': ?paginasTotales,
       }),
     );
     return _respuestaOk(response);
@@ -341,6 +343,7 @@ class ApiService {
     required int capitulos,
     required bool prologo,
     required bool epilogo,
+    int? paginas,
     String tipo = "LIBRE",
   }) async {
     final response = await _client.get(
@@ -350,6 +353,7 @@ class ApiService {
         '&capitulos=$capitulos'
         '&prologo=${prologo ? 1 : 0}'
         '&epilogo=${epilogo ? 1 : 0}'
+        '${paginas == null ? '' : '&paginas=$paginas'}'
         '&tipo=$tipo',
       ),
     );
