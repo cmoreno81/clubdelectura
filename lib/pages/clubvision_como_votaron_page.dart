@@ -75,7 +75,7 @@ class _ClubvisionComoVotaronPageState extends State<ClubvisionComoVotaronPage> {
               children: [
                 _ComoVotaronHeader(totalLectoras: lista.length),
 
-                const SizedBox(height: AppSpacing.xl),
+                const SizedBox(height: AppSpacing.lg),
 
                 const _SectionHeader(
                   icon: Icons.groups_2_outlined,
@@ -109,18 +109,19 @@ class _ComoVotaronHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     return ClubCard(
       elevated: false,
-      padding: const EdgeInsets.all(AppSpacing.xl),
+      padding: const EdgeInsets.all(AppSpacing.md),
       gradient: const LinearGradient(
         begin: Alignment.topLeft,
         end: Alignment.bottomRight,
         colors: [AppColors.surfaceSoft, Color(0xFFF1E8FF)],
       ),
       borderColor: AppColors.primaryLight,
-      child: Column(
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Container(
-            width: 76,
-            height: 76,
+            width: 48,
+            height: 48,
             decoration: const BoxDecoration(
               color: AppColors.primaryLight,
               shape: BoxShape.circle,
@@ -128,36 +129,35 @@ class _ComoVotaronHeader extends StatelessWidget {
             child: const Icon(
               Icons.ballot_rounded,
               color: AppColors.primary,
-              size: 38,
+              size: 26,
             ),
           ),
-
-          const SizedBox(height: AppSpacing.md),
-
-          Text(
-            'Así votó el club',
-            textAlign: TextAlign.center,
-            style: AppTextStyles.title.copyWith(fontSize: 29),
-          ),
-
-          const SizedBox(height: AppSpacing.sm),
-
-          Text(
-            totalLectoras == 1
-                ? 'Una lectora dejó registrada su clasificación.'
-                : '$totalLectoras lectoras dejaron registrada su clasificación.',
-            textAlign: TextAlign.center,
-            style: AppTextStyles.bodySecondary.copyWith(height: 1.45),
-          ),
-
-          const SizedBox(height: AppSpacing.lg),
-
-          ClubChip(
-            label: totalLectoras == 1
-                ? '1 papeleta'
-                : '$totalLectoras papeletas',
-            icon: Icons.how_to_vote_outlined,
-            variant: ClubChipVariant.primary,
+          const SizedBox(width: AppSpacing.md),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Así votó el club',
+                  style: AppTextStyles.section.copyWith(fontSize: 21),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  totalLectoras == 1
+                      ? 'Una lectora dejó registrada su clasificación.'
+                      : '$totalLectoras lectoras dejaron registrada su clasificación.',
+                  style: AppTextStyles.bodySecondary.copyWith(height: 1.3),
+                ),
+                const SizedBox(height: AppSpacing.sm),
+                ClubChip(
+                  label: totalLectoras == 1
+                      ? '1 papeleta'
+                      : '$totalLectoras papeletas',
+                  icon: Icons.how_to_vote_outlined,
+                  variant: ClubChipVariant.primary,
+                ),
+              ],
+            ),
           ),
         ],
       ),

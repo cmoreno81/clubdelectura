@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import '../models/libro.dart';
 import '../models/libro_agrupado.dart';
@@ -113,6 +114,24 @@ class _NuevoLibroPageState extends State<NuevoLibroPage> {
     if (mounted) {
       setState(() {});
     }
+  }
+
+  Future<void> _pegarUrlPortada() async {
+    final clipboardData = await Clipboard.getData(Clipboard.kTextPlain);
+    if (!mounted) return;
+
+    final url = clipboardData?.text?.trim() ?? '';
+    if (url.isEmpty) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('No hay texto para pegar')));
+      return;
+    }
+
+    coverUrlController.value = TextEditingValue(
+      text: url,
+      selection: TextSelection.collapsed(offset: url.length),
+    );
   }
 
   String _normalizarPrioridad(String value) {
@@ -581,15 +600,24 @@ class _NuevoLibroPageState extends State<NuevoLibroPage> {
                         labelText: 'URL de la portada',
                         hintText: 'https://.../portada.jpg',
                         prefixIcon: const Icon(Icons.image_outlined),
-                        suffixIcon: portadaActual.isEmpty
-                            ? null
-                            : IconButton(
+                        suffixIcon: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            IconButton(
+                              tooltip: 'Pegar URL',
+                              icon: const Icon(Icons.content_paste_rounded),
+                              onPressed: _pegarUrlPortada,
+                            ),
+                            if (portadaActual.isNotEmpty)
+                              IconButton(
                                 tooltip: 'Quitar portada manual',
                                 icon: const Icon(Icons.close_rounded),
                                 onPressed: () {
                                   coverUrlController.clear();
                                 },
                               ),
+                          ],
+                        ),
                       ),
                     ),
 

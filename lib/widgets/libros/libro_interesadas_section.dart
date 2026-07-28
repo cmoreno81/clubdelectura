@@ -12,6 +12,7 @@ import 'pausar_lectura_dialog.dart';
 
 class LibroInteresadasSection extends StatelessWidget {
   final List<Libro> registros;
+  final Set<String> usuariosConFinalizacion;
   final String? usuarioActual;
   final Future<void> Function(
     Libro libro,
@@ -28,6 +29,7 @@ class LibroInteresadasSection extends StatelessWidget {
   const LibroInteresadasSection({
     super.key,
     required this.registros,
+    required this.usuariosConFinalizacion,
     required this.usuarioActual,
     required this.onCambiarEstado,
     required this.onQuitarPendientes,
@@ -48,16 +50,19 @@ class LibroInteresadasSection extends StatelessWidget {
           '${registros.length} lectoras tienen este libro en su biblioteca',
       child: Column(
         children: registros.map((registro) {
+          final usuarioNormalizado = registro.usuario.trim().toLowerCase();
           final esUsuarioActual =
               usuarioActual != null &&
-              registro.usuario.trim().toLowerCase() ==
-                  usuarioActual!.trim().toLowerCase();
+              usuarioNormalizado == usuarioActual!.trim().toLowerCase();
 
           return Padding(
             padding: const EdgeInsets.only(bottom: AppSpacing.md),
             child: _LectoraCard(
               registro: registro,
               esUsuarioActual: esUsuarioActual,
+              tieneFinalizaciones: usuariosConFinalizacion.contains(
+                usuarioNormalizado,
+              ),
               onCambiarEstado: onCambiarEstado,
               onQuitarPendientes: onQuitarPendientes,
               onPedirValoracion: onPedirValoracion,
@@ -72,6 +77,7 @@ class LibroInteresadasSection extends StatelessWidget {
 class _LectoraCard extends StatelessWidget {
   final Libro registro;
   final bool esUsuarioActual;
+  final bool tieneFinalizaciones;
   final Future<void> Function(
     Libro libro,
     String nuevoEstado, {
@@ -87,10 +93,56 @@ class _LectoraCard extends StatelessWidget {
   const _LectoraCard({
     required this.registro,
     required this.esUsuarioActual,
+    required this.tieneFinalizaciones,
     required this.onCambiarEstado,
     required this.onQuitarPendientes,
     required this.onPedirValoracion,
   });
+
+  List<DropdownMenuItem<String>> get _opcionesEstado {
+    if (registro.estado == 'FINALIZADO') {
+      return const [
+        DropdownMenuItem(value: 'FINALIZADO', child: Text('Finalizado')),
+        DropdownMenuItem(value: 'PENDIENTE', child: Text('Pendiente')),
+        DropdownMenuItem(value: 'RELECTURA', child: Text('Relectura')),
+      ];
+    }
+
+    return [
+      const DropdownMenuItem(value: 'PENDIENTE', child: Text('Pendiente')),
+      if (!tieneFinalizaciones || registro.estado == 'LEYENDO')
+        const DropdownMenuItem(value: 'LEYENDO', child: Text('Leyendo')),
+      const DropdownMenuItem(value: 'PAUSADO', child: Text('En pausa')),
+      const DropdownMenuItem(value: 'RELECTURA', child: Text('Relectura')),
+      const DropdownMenuItem(value: 'ABANDONADO', child: Text('Abandonado')),
+      const DropdownMenuItem(value: 'FINALIZADO', child: Text('Finalizado')),
+    ];
+  }
+
+  Future<bool> _confirmarCorreccionFinalizacion(BuildContext context) async {
+    final confirmado = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Corregir finalización'),
+        content: const Text(
+          'El libro volverá a Pendiente y se eliminará del historial la '
+          'última finalización marcada por error.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancelar'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Corregir'),
+          ),
+        ],
+      ),
+    );
+
+    return confirmado ?? false;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -154,23 +206,17 @@ class _LectoraCard extends StatelessWidget {
                 labelText: 'Estado de lectura',
                 prefixIcon: Icon(Icons.swap_horiz_rounded),
               ),
-              items: const [
-                DropdownMenuItem(value: 'PENDIENTE', child: Text('Pendiente')),
-                DropdownMenuItem(value: 'LEYENDO', child: Text('Leyendo')),
-                DropdownMenuItem(value: 'PAUSADO', child: Text('En pausa')),
-                DropdownMenuItem(value: 'RELECTURA', child: Text('Relectura')),
-                DropdownMenuItem(
-                  value: 'ABANDONADO',
-                  child: Text('Abandonado'),
-                ),
-                DropdownMenuItem(
-                  value: 'FINALIZADO',
-                  child: Text('Finalizado'),
-                ),
-              ],
+              items: _opcionesEstado,
               onChanged: (value) async {
                 if (value == null || value == registro.estado) {
                   return;
+                }
+
+                if (registro.estado == 'FINALIZADO' && value == 'PENDIENTE') {
+                  final confirmado = await _confirmarCorreccionFinalizacion(
+                    context,
+                  );
+                  if (!confirmado) return;
                 }
 
                 Map<String, String>? datosValoracion;
