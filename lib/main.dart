@@ -2,20 +2,18 @@ import 'package:club_lectura_app/services/atmosfera_scope.dart';
 import 'package:flutter/material.dart';
 
 import 'pages/splash_page.dart';
+import 'pages/club_gate_page.dart';
+import 'pages/login_page.dart';
+import 'pages/welcome_page.dart';
+import 'services/auth_session_service.dart';
+import 'services/auth_service.dart';
 import 'services/atmosfera_controller.dart';
-import 'services/usuario_service.dart';
 import 'theme/app_theme.dart';
 import 'theme/atmosferas/atmosfera_app_theme.dart';
 import 'widgets/atmosferas/atmosfera_ambient_layer.dart';
 
-const borrarUsuarioAlArrancar = false;
-
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-
-  if (borrarUsuarioAlArrancar) {
-    await UsuarioService().borrarUsuario();
-  }
 
   runApp(const MyApp());
 }
@@ -29,12 +27,23 @@ class MyApp extends StatefulWidget {
 
 class _MyAppState extends State<MyApp> {
   late final AtmosferaController atmosferaController;
+  final authSession = AuthSessionService.instance;
+  final navigatorKey = GlobalKey<NavigatorState>();
 
   @override
   void initState() {
     super.initState();
 
     atmosferaController = AtmosferaController();
+    authSession.addListener(_onAuthChanged);
+    authSession.bootstrap(refreshSession: AuthService().refreshExistingSession);
+  }
+
+  void _onAuthChanged() {
+    if (!authSession.initialized || authSession.isAuthenticated) return;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      navigatorKey.currentState?.popUntil((route) => route.isFirst);
+    });
   }
 
   @override
@@ -52,12 +61,12 @@ class _MyAppState extends State<MyApp> {
         return AtmosferaScope(
           controller: atmosferaController,
           child: MaterialApp(
+            navigatorKey: navigatorKey,
             debugShowCheckedModeBanner: false,
             title: 'ClubReads',
             theme: theme,
 
-            themeAnimationDuration: const Duration(milliseconds: 700),
-            themeAnimationCurve: Curves.easeInOutCubic,
+            themeAnimationDuration: Duration.zero,
 
             builder: (context, child) {
               final reducirMovimiento =
@@ -81,7 +90,17 @@ class _MyAppState extends State<MyApp> {
               );
             },
 
-            home: const SplashPage(),
+            home: AnimatedBuilder(
+              animation: authSession,
+              builder: (context, _) {
+                if (!authSession.initialized) return const SplashPage();
+                return authSession.isAuthenticated
+                    ? const ClubGatePage()
+                    : authSession.sessionExpired
+                    ? const LoginPage()
+                    : const WelcomePage();
+              },
+            ),
           ),
         );
       },
@@ -90,6 +109,7 @@ class _MyAppState extends State<MyApp> {
 
   @override
   void dispose() {
+    authSession.removeListener(_onAuthChanged);
     atmosferaController.dispose();
     super.dispose();
   }

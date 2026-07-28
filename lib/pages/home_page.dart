@@ -4,10 +4,12 @@ import 'dashboard_page.dart';
 import 'lecturas_page.dart';
 import 'libros_page.dart';
 import 'ranking_page.dart';
-import '../services/atmosfera_scope.dart';
+import '../models/club_membership.dart';
 
 class HomePage extends StatefulWidget {
-  const HomePage({super.key});
+  const HomePage({super.key, required this.club});
+
+  final ClubMembership club;
 
   @override
   State<HomePage> createState() => _HomePageState();
@@ -15,51 +17,35 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
   int currentIndex = 0;
-  int pageRevision = 0;
 
-  static const List<Widget> pages = [
-    DashboardPage(),
-    LibrosPage(),
-    LecturasPage(),
-    RankingPage(),
-    ClubvisionMenuPage(),
-  ];
+  late final List<Widget> pages;
+
+  @override
+  void initState() {
+    super.initState();
+    pages = [
+      DashboardPage(clubName: widget.club.nombre),
+      const LibrosPage(),
+      const LecturasPage(),
+      const RankingPage(),
+      const ClubvisionMenuPage(),
+    ];
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       extendBody: false,
 
-      body: HeroMode(
-        enabled: true,
-        child: KeyedSubtree(
-          key: ValueKey('$currentIndex-$pageRevision'),
-          child: pages[currentIndex],
-        ),
-      ),
+      body: IndexedStack(index: currentIndex, children: pages),
 
       bottomNavigationBar: NavigationBar(
         selectedIndex: currentIndex,
         onDestinationSelected: (index) {
           FocusManager.instance.primaryFocus?.unfocus();
 
-          if (index == currentIndex) {
-            setState(() {
-              pageRevision++;
-            });
-            return;
-          }
-
-          final atmosfera = AtmosferaScope.of(context);
-
-          // Si abandonamos la lectura actual,
-          // volvemos a la atmósfera neutra.
-          atmosfera.usarAtmosferaNeutra();
-
-          setState(() {
-            currentIndex = index;
-            pageRevision++;
-          });
+          if (index == currentIndex) return;
+          setState(() => currentIndex = index);
         },
         destinations: const [
           NavigationDestination(

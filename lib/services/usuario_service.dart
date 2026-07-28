@@ -1,28 +1,12 @@
-import 'package:shared_preferences/shared_preferences.dart';
+import 'auth_session_service.dart';
 
 class UsuarioService {
-  static const _claveUsuario = 'usuario_actual';
-  static SharedPreferences? _prefs;
-
-  Future<SharedPreferences> _preferencias() async {
-    return _prefs ??= await SharedPreferences.getInstance();
-  }
-
-  Future<void> guardarUsuario(String usuario) async {
-    final prefs = await _preferencias();
-
-    await prefs.setString(_claveUsuario, usuario.trim());
-  }
-
+  /// Compatibilidad para las vistas antiguas. La identidad procede siempre de
+  /// la sesión autenticada, nunca de un valor elegido o almacenado por la APK.
   Future<String?> obtenerUsuario() async {
-    final prefs = await _preferencias();
-
-    return prefs.getString(_claveUsuario)?.trim();
+    await AuthSessionService.instance.initialize();
+    return AuthSessionService.instance.user?.nombre.trim();
   }
 
-  Future<void> borrarUsuario() async {
-    final prefs = await _preferencias();
-
-    await prefs.remove(_claveUsuario);
-  }
+  Future<void> borrarUsuario() => AuthSessionService.instance.clear();
 }

@@ -41,9 +41,7 @@ class ClubCard extends StatelessWidget {
         theme.dividerTheme.color ??
         colorScheme.outline.withValues(alpha: 0.55);
 
-    final contenido = AnimatedContainer(
-      duration: const Duration(milliseconds: 450),
-      curve: Curves.easeOutCubic,
+    final contenido = Container(
       width: width,
       margin: margin,
       padding: padding ?? const EdgeInsets.all(AppSpacing.lg),

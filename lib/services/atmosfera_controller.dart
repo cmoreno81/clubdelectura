@@ -87,6 +87,11 @@ class AtmosferaController extends ChangeNotifier {
   }
 
   void usarAtmosferaNeutra() {
+    if (_bookIdActivo == null &&
+        _lectura == AtmosferaLectura.neutra &&
+        _fechaForzada == null) {
+      return;
+    }
     _bookIdActivo = null;
     _lectura = AtmosferaLectura.neutra;
     _fechaForzada = null;
