@@ -36,6 +36,7 @@ dependencies:
   cupertino_icons: ^1.0.8
   http: ^1.5.0
   shared_preferences: ^2.2.3
+  flutter_secure_storage: ^10.3.1
   dio: ^5.9.2
   url_launcher: ^6.3.1
   palette_generator_plus: ^1.0.0

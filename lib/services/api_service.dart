@@ -15,7 +15,7 @@ import '../models/ranking_item.dart';
 import '../models/clubvision.dart';
 import '../models/historial_clubvision.dart';
 import '../models/usuario.dart';
-import 'usuario_service.dart';
+import 'authenticated_http_client.dart';
 import '../models/como_votaron.dart';
 import '../models/comentarios_capitulo.dart';
 import '../models/configuracion_lectura.dart';
@@ -27,7 +27,7 @@ import '../models/atmosfera_club.dart';
 
 class ApiService {
   static String get baseUrl => AppConfig.baseUrl;
-  static final http.Client _client = http.Client();
+  static final http.Client _client = AuthenticatedHttpClient();
 
   bool _respuestaOk(http.Response response) {
     if (response.statusCode != 200 && response.statusCode != 302) {
@@ -73,14 +73,7 @@ class ApiService {
   }
 
   Future<List<Libro>> getLibros() async {
-    final usuario = await UsuarioService().obtenerUsuario();
-
-    final response = await _client.get(
-      Uri.parse(
-        '$baseUrl?action=libros'
-        '&usuario=${Uri.encodeComponent(usuario ?? "")}',
-      ),
-    );
+    final response = await _client.get(Uri.parse('$baseUrl?action=libros'));
 
     if (response.statusCode == 200) {
       final List data = jsonDecode(response.body);
@@ -111,13 +104,9 @@ class ApiService {
     required String usuario,
     required String libro,
   }) async {
-    final uri = Uri.parse(baseUrl).replace(
-      queryParameters: {
-        "action": "iniciarLectura",
-        "usuario": usuario,
-        "libro": libro,
-      },
-    );
+    final uri = Uri.parse(
+      baseUrl,
+    ).replace(queryParameters: {"action": "iniciarLectura", "libro": libro});
 
     final response = await _client.get(uri);
 
@@ -136,7 +125,6 @@ class ApiService {
       Uri.parse('$baseUrl?action=actualizarProgresoLectura'),
       headers: const {'Content-Type': 'application/json'},
       body: jsonEncode({
-        'usuario': usuario,
         'libro': libro,
         'progreso': progreso,
         'comentario': comentario,
@@ -169,14 +157,11 @@ class ApiService {
     required String libro,
     required String capitulo,
   }) async {
-    final usuario = await UsuarioService().obtenerUsuario();
-
     final uri = Uri.parse(baseUrl).replace(
       queryParameters: {
         'action': 'comentariosLectura',
         'libro': libro,
         'capitulo': capitulo,
-        'usuario': usuario?.trim() ?? '',
       },
     );
 
@@ -200,15 +185,6 @@ class ApiService {
     required String capitulo,
     String? usuario,
   }) async {
-    final usuarioActual =
-        usuario?.trim() ??
-        (await UsuarioService().obtenerUsuario())?.trim() ??
-        '';
-
-    if (usuarioActual.isEmpty) {
-      return false;
-    }
-
     final uri = Uri.parse(
       baseUrl,
     ).replace(queryParameters: {'action': 'marcarConversacionVista'});
@@ -216,11 +192,7 @@ class ApiService {
     final response = await _client.post(
       uri,
       headers: const {'Content-Type': 'application/json'},
-      body: jsonEncode({
-        'libro': libro,
-        'capitulo': capitulo,
-        'usuario': usuarioActual,
-      }),
+      body: jsonEncode({'libro': libro, 'capitulo': capitulo}),
     );
 
     return _respuestaOk(response);
@@ -237,7 +209,6 @@ class ApiService {
         '$baseUrl?action=guardarComentarioLectura'
         '&libro=${Uri.encodeComponent(libro)}'
         '&capitulo=${Uri.encodeComponent(capitulo)}'
-        '&usuario=${Uri.encodeComponent(usuario)}'
         '&comentario=${Uri.encodeComponent(comentario)}',
       ),
     );
@@ -252,7 +223,6 @@ class ApiService {
       queryParameters: {
         "action": "responderComentario",
         "comentarioId": comentarioId,
-        "usuario": usuario,
         "respuesta": respuesta,
       },
     );
@@ -364,14 +334,8 @@ class ApiService {
   Future<ConfiguracionLectura> getConfiguracionLectura({
     required String libro,
   }) async {
-    final usuario = await UsuarioService().obtenerUsuario();
-
     final uri = Uri.parse(baseUrl).replace(
-      queryParameters: {
-        'action': 'configuracionLectura',
-        'libro': libro,
-        'usuario': usuario?.trim() ?? '',
-      },
+      queryParameters: {'action': 'configuracionLectura', 'libro': libro},
     );
 
     final response = await _client.get(uri);
@@ -396,7 +360,7 @@ class ApiService {
       queryParameters: {"action": "conversacionesLibro", "libro": libro},
     );
 
-    final response = await http.get(uri);
+    final response = await _client.get(uri);
 
     final json = jsonDecode(response.body) as List;
 
@@ -486,7 +450,6 @@ class ApiService {
       Uri.parse('$baseUrl?action=actualizarEstado'),
       headers: const {'Content-Type': 'application/json'},
       body: jsonEncode({
-        'usuario': usuario,
         'libro': libro,
         'estado': estado,
         'valoracion': valoracion ?? '',
@@ -511,7 +474,6 @@ class ApiService {
     final uri = Uri.parse(baseUrl).replace(
       queryParameters: {
         "action": "actualizarValoracion",
-        "usuario": usuario,
         "libro": libro,
         "valoracion": valoracion,
       },
@@ -526,11 +488,7 @@ class ApiService {
     final postResponse = await _client.post(
       Uri.parse('$baseUrl?action=actualizarValoracion'),
       headers: {'Content-Type': 'application/json'},
-      body: jsonEncode({
-        'usuario': usuario,
-        'libro': libro,
-        'valoracion': valoracion,
-      }),
+      body: jsonEncode({'libro': libro, 'valoracion': valoracion}),
     );
 
     return _respuestaOk(postResponse);
@@ -602,12 +560,7 @@ class ApiService {
   }
 
   Future<ClubvisionData> getClubvision() async {
-    final usuario = (await UsuarioService().obtenerUsuario())?.trim();
-    final response = await _client.get(
-      Uri.parse(
-        '$baseUrl?action=clubvision&usuario=${Uri.encodeComponent(usuario ?? "")}',
-      ),
-    );
+    final response = await _client.get(Uri.parse('$baseUrl?action=clubvision'));
 
     if (response.statusCode == 200) {
       return ClubvisionData.fromJson(jsonDecode(response.body));
@@ -633,7 +586,6 @@ class ApiService {
     final response = await _client.get(
       Uri.parse(
         '$baseUrl?action=anadirLibroExistente'
-        '&usuario=${Uri.encodeComponent(usuario)}'
         '&libro=${Uri.encodeComponent(libro)}',
       ),
     );
@@ -651,11 +603,7 @@ class ApiService {
   }
 
   Future<MiVoto> getMiVoto(String usuario) async {
-    final response = await _client.get(
-      Uri.parse(
-        '$baseUrl?action=miVoto&usuario=${Uri.encodeComponent(usuario)}',
-      ),
-    );
+    final response = await _client.get(Uri.parse('$baseUrl?action=miVoto'));
 
     if (response.statusCode == 200) {
       return MiVoto.fromJson(jsonDecode(response.body));
@@ -671,7 +619,6 @@ class ApiService {
     final uri = Uri.parse(baseUrl).replace(
       queryParameters: {
         'action': 'enviarVotacion',
-        'usuario': usuario,
         'v1': votos.isNotEmpty ? votos[0] : '',
         'v2': votos.length > 1 ? votos[1] : '',
         'v3': votos.length > 2 ? votos[2] : '',
@@ -695,13 +642,10 @@ class ApiService {
     required String comentarioId,
     String reaccion = 'LIKE',
   }) async {
-    final usuario = await UsuarioService().obtenerUsuario();
-
     final response = await _client.get(
       Uri.parse(
         '$baseUrl?action=toggleLikeComentario'
         '&id=${Uri.encodeComponent(comentarioId)}'
-        '&usuario=${Uri.encodeComponent(usuario ?? "")}'
         '&reaccion=${Uri.encodeComponent(reaccion)}',
       ),
     );
@@ -716,7 +660,7 @@ class ApiService {
   Future<PerfilUsuario> getPerfilUsuario(String usuario) async {
     final uri = Uri.parse(
       baseUrl,
-    ).replace(queryParameters: {'action': 'perfilUsuario', 'usuario': usuario});
+    ).replace(queryParameters: {'action': 'perfilUsuario', 'perfil': usuario});
 
     final response = await _client.get(uri);
 
@@ -749,7 +693,6 @@ class ApiService {
     String? resena,
   }) async {
     final body = <String, dynamic>{
-      'usuario': usuario,
       'libraryId': libraryId,
       'fechaInicio': fechaInicio,
       'fechaFin': fechaFin,
@@ -792,7 +735,7 @@ class ApiService {
     final response = await _client.post(
       Uri.parse('$baseUrl?action=actualizarAvatarPerfil'),
       headers: const {'Content-Type': 'application/json'},
-      body: jsonEncode({'usuario': usuario, 'avatarUrl': avatarUrl}),
+      body: jsonEncode({'avatarUrl': avatarUrl}),
     );
 
     if (response.statusCode != 200) {
@@ -815,11 +758,9 @@ class ApiService {
   }
 
   Future<MoodClub> getMoodClub() async {
-    final usuario = await UsuarioService().obtenerUsuario();
     final uri = Uri.parse(baseUrl).replace(
       queryParameters: {
         'action': 'moodClub',
-        'usuario': usuario?.trim() ?? '',
         '_refresh': DateTime.now().millisecondsSinceEpoch.toString(),
       },
     );
@@ -833,14 +774,9 @@ class ApiService {
   }
 
   Future<bool> registrarMoodClub(String mood) async {
-    final usuario = await UsuarioService().obtenerUsuario();
-    final uri = Uri.parse(baseUrl).replace(
-      queryParameters: {
-        'action': 'registrarMoodClub',
-        'usuario': usuario?.trim() ?? '',
-        'mood': mood,
-      },
-    );
+    final uri = Uri.parse(
+      baseUrl,
+    ).replace(queryParameters: {'action': 'registrarMoodClub', 'mood': mood});
     return _respuestaOk(await _client.get(uri));
   }
 
@@ -879,7 +815,7 @@ class ApiService {
     final response = await _client.post(
       uri,
       headers: {'Content-Type': 'application/json'},
-      body: jsonEncode({'usuario': usuario, 'libro': libro}),
+      body: jsonEncode({'libro': libro}),
     );
 
     if (response.statusCode != 200) {

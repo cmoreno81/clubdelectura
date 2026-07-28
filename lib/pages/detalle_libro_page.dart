@@ -360,6 +360,12 @@ class _DetalleLibroPageState extends State<DetalleLibroPage> {
 
                 LibroInteresadasSection(
                   registros: registros,
+                  usuariosConFinalizacion: libro.finalizados
+                      .map(
+                        (finalizado) => finalizado.usuario.trim().toLowerCase(),
+                      )
+                      .where((usuario) => usuario.isNotEmpty)
+                      .toSet(),
                   usuarioActual: usuarioActual,
                   onCambiarEstado: _cambiarEstado,
                   onQuitarPendientes: _quitarPendientes,

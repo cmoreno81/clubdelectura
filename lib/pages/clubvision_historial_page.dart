@@ -102,7 +102,7 @@ class _ClubvisionHistorialPageState extends State<ClubvisionHistorialPage> {
               children: [
                 _HistorialHeader(totalEdiciones: historial.length),
 
-                const SizedBox(height: AppSpacing.xl),
+                const SizedBox(height: AppSpacing.lg),
 
                 const _SectionHeader(
                   icon: Icons.history_rounded,
@@ -140,18 +140,19 @@ class _HistorialHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     return ClubCard(
       elevated: false,
-      padding: const EdgeInsets.all(AppSpacing.xl),
+      padding: const EdgeInsets.all(AppSpacing.md),
       gradient: const LinearGradient(
         begin: Alignment.topLeft,
         end: Alignment.bottomRight,
         colors: [AppColors.surfaceSoft, Color(0xFFF1E8FF)],
       ),
       borderColor: AppColors.primaryLight,
-      child: Column(
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Container(
-            width: 76,
-            height: 76,
+            width: 48,
+            height: 48,
             decoration: const BoxDecoration(
               color: AppColors.primaryLight,
               shape: BoxShape.circle,
@@ -159,36 +160,35 @@ class _HistorialHeader extends StatelessWidget {
             child: const Icon(
               Icons.auto_stories_rounded,
               color: AppColors.primary,
-              size: 38,
+              size: 26,
             ),
           ),
-
-          const SizedBox(height: AppSpacing.md),
-
-          Text(
-            'La historia de Clubvisión',
-            textAlign: TextAlign.center,
-            style: AppTextStyles.title.copyWith(fontSize: 29),
-          ),
-
-          const SizedBox(height: AppSpacing.sm),
-
-          Text(
-            totalEdiciones == 1
-                ? 'Una edición forma parte de la historia del club.'
-                : '$totalEdiciones ediciones forman parte de la historia del club.',
-            textAlign: TextAlign.center,
-            style: AppTextStyles.bodySecondary.copyWith(height: 1.45),
-          ),
-
-          const SizedBox(height: AppSpacing.lg),
-
-          ClubChip(
-            label: totalEdiciones == 1
-                ? '1 ganadora'
-                : '$totalEdiciones ganadoras',
-            icon: Icons.emoji_events_outlined,
-            variant: ClubChipVariant.warning,
+          const SizedBox(width: AppSpacing.md),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'La historia de Clubvisión',
+                  style: AppTextStyles.section.copyWith(fontSize: 21),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  totalEdiciones == 1
+                      ? 'Una edición forma parte de la historia del club.'
+                      : '$totalEdiciones ediciones forman parte de la historia del club.',
+                  style: AppTextStyles.bodySecondary.copyWith(height: 1.3),
+                ),
+                const SizedBox(height: AppSpacing.sm),
+                ClubChip(
+                  label: totalEdiciones == 1
+                      ? '1 ganadora'
+                      : '$totalEdiciones ganadoras',
+                  icon: Icons.emoji_events_outlined,
+                  variant: ClubChipVariant.warning,
+                ),
+              ],
+            ),
           ),
         ],
       ),

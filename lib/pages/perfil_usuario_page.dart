@@ -22,6 +22,8 @@ import '../widgets/perfil/perfil_timeline_lectura.dart';
 import '../widgets/common/club_rating_stars.dart';
 import 'detalle_libro_page.dart';
 import 'acerca_de_page.dart';
+import 'change_password_page.dart';
+import '../services/auth_service.dart';
 
 class PerfilUsuarioPage extends StatefulWidget {
   final String usuario;
@@ -433,6 +435,32 @@ class _PerfilUsuarioPageState extends State<PerfilUsuarioPage> {
                       ),
                     ),
                   ),
+                  const SizedBox(height: AppSpacing.sm),
+                  ClubCard(
+                    elevated: false,
+                    padding: EdgeInsets.zero,
+                    child: Column(
+                      children: [
+                        ListTile(
+                          leading: const Icon(Icons.lock_outline_rounded),
+                          title: const Text('Cambiar contraseña'),
+                          trailing: const Icon(Icons.chevron_right_rounded),
+                          onTap: () => Navigator.push<void>(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => const ChangePasswordPage(),
+                            ),
+                          ),
+                        ),
+                        const Divider(height: 1),
+                        ListTile(
+                          leading: const Icon(Icons.logout_rounded),
+                          title: const Text('Cerrar sesión'),
+                          onTap: _cerrarSesion,
+                        ),
+                      ],
+                    ),
+                  ),
                 ],
               ],
             ),
@@ -440,6 +468,11 @@ class _PerfilUsuarioPageState extends State<PerfilUsuarioPage> {
         },
       ),
     );
+  }
+
+  Future<void> _cerrarSesion() async {
+    await AuthService().logout();
+    if (mounted) Navigator.popUntil(context, (route) => route.isFirst);
   }
 
   Widget _cabeceraPerfil(PerfilUsuario perfil) {

@@ -27,7 +27,9 @@ import 'ranking_page.dart';
 import 'tendencias_club_page.dart';
 
 class DashboardPage extends StatefulWidget {
-  const DashboardPage({super.key});
+  const DashboardPage({super.key, required this.clubName});
+
+  final String clubName;
 
   @override
   State<DashboardPage> createState() => _DashboardPageState();
@@ -147,7 +149,6 @@ class _DashboardPageState extends State<DashboardPage> {
       appBar: AppBar(
         toolbarHeight: 76,
         title: Row(
-          mainAxisSize: MainAxisSize.min,
           children: [
             const Icon(
               Icons.auto_stories_rounded,
@@ -157,9 +158,27 @@ class _DashboardPageState extends State<DashboardPage> {
 
             const SizedBox(width: AppSpacing.xs),
 
-            Text(
-              'ClubReads',
-              style: AppTextStyles.title.copyWith(fontSize: 27),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    widget.clubName,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: AppTextStyles.subtitle.copyWith(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                  Text(
+                    'ClubReads',
+                    style: AppTextStyles.caption.copyWith(
+                      color: AppColors.textSecondary,
+                    ),
+                  ),
+                ],
+              ),
             ),
           ],
         ),

@@ -385,6 +385,9 @@ class _LibrosPageState extends State<LibrosPage> {
 
   ClubChipVariant _chipVariant(String estado) {
     switch (estado) {
+      case 'TODOS':
+        return ClubChipVariant.success;
+
       case 'PENDIENTE':
         return ClubChipVariant.warning;
 
@@ -401,7 +404,7 @@ class _LibrosPageState extends State<LibrosPage> {
         return ClubChipVariant.danger;
 
       case 'PAUSADO':
-        return ClubChipVariant.warning;
+        return ClubChipVariant.danger;
 
       default:
         return ClubChipVariant.neutral;
