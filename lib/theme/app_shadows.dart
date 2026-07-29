@@ -3,9 +3,9 @@ import 'package:flutter/material.dart';
 abstract final class AppShadows {
   static const card = [
     BoxShadow(
-      color: Color.fromRGBO(32, 20, 51, 0.08),
-      blurRadius: 22,
-      offset: Offset(0, 10),
+      color: Color.fromRGBO(65, 45, 33, 0.10),
+      blurRadius: 18,
+      offset: Offset(0, 8),
     ),
   ];
 

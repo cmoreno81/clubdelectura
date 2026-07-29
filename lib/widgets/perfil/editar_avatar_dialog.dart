@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../../theme/app_spacing.dart';
+import '../common/url_text_field.dart';
 import 'dart:convert';
 import 'package:image/image.dart' as img;
 import 'package:image_picker/image_picker.dart';
@@ -129,21 +130,6 @@ class _EditarAvatarDialogState extends State<EditarAvatarDialog> {
         uri.host.isNotEmpty;
   }
 
-  Future<void> _pegar() async {
-    final datos = await Clipboard.getData(Clipboard.kTextPlain);
-    final texto = datos?.text?.trim() ?? '';
-
-    setState(() {
-      _imagenSeleccionada = null;
-      _imagenBase64 = null;
-    });
-
-    if (texto.isEmpty) return;
-
-    _controller.text = texto;
-    _controller.selection = TextSelection.collapsed(offset: texto.length);
-  }
-
   void _guardar() {
     if (_procesandoImagen) {
       return;
@@ -221,22 +207,13 @@ class _EditarAvatarDialogState extends State<EditarAvatarDialog> {
             ),
 
             const SizedBox(height: AppSpacing.md),
-            TextField(
+            UrlTextField(
               controller: _controller,
-              keyboardType: TextInputType.url,
-              autocorrect: false,
-              enableSuggestions: false,
-              decoration: InputDecoration(
-                labelText: 'URL de la imagen',
-                hintText: 'https://...',
-                prefixIcon: const Icon(Icons.image_outlined),
-                suffixIcon: IconButton(
-                  tooltip: 'Pegar',
-                  onPressed: _pegar,
-                  icon: const Icon(Icons.content_paste_rounded),
-                ),
-                errorText: urlValida ? null : 'La URL no parece válida',
-              ),
+              labelText: 'Enlace de la imagen',
+              hintText: 'https://...',
+              prefixIcon: Icons.image_outlined,
+              textInputAction: TextInputAction.done,
+              errorText: urlValida ? null : 'El enlace no parece válido',
             ),
 
             const SizedBox(height: AppSpacing.sm),

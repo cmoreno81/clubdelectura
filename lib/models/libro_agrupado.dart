@@ -9,6 +9,7 @@ class LibroAgrupado {
 
   final List<LibroFinalizado> finalizados;
   bool yaLoTengo;
+  bool leidoPorMi;
   String coverUrl;
 
   LibroAgrupado({
@@ -17,6 +18,7 @@ class LibroAgrupado {
     required this.registros,
     required this.finalizados,
     required this.yaLoTengo,
+    this.leidoPorMi = false,
     required this.coverUrl,
   });
 

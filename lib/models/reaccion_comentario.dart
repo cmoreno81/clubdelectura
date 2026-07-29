@@ -36,7 +36,7 @@ extension ReaccionComentarioDatos on ReaccionComentario {
   };
 
   String get titulo => switch (this) {
-    ReaccionComentario.meGusta => 'Me gusta',
+    ReaccionComentario.meGusta => 'Me encanta',
     ReaccionComentario.deAcuerdo => '100% de acuerdo',
     ReaccionComentario.meEnfada => 'Me enfada',
     ReaccionComentario.meHaceReir => 'Me hace reír',

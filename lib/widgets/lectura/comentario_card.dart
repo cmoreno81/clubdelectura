@@ -290,6 +290,7 @@ class _ComentarioCardState extends State<ComentarioCard> {
   @override
   Widget build(BuildContext context) {
     final comentario = widget.comentario;
+    final colorCita = _colorCita(comentario.color);
 
     if (comentario.eliminado) {
       return Padding(
@@ -319,6 +320,15 @@ class _ComentarioCardState extends State<ComentarioCard> {
       child: ClubCard(
         elevated: false,
         padding: const EdgeInsets.all(AppSpacing.md),
+        backgroundColor: comentario.esCita
+            ? Color.alphaBlend(
+                colorCita.withValues(alpha: .18),
+                AppColors.surface,
+              )
+            : null,
+        borderColor: comentario.esCita
+            ? colorCita.withValues(alpha: .55)
+            : null,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -377,14 +387,57 @@ class _ComentarioCardState extends State<ComentarioCard> {
 
             const SizedBox(height: AppSpacing.md),
 
-            Text(
-              comentario.comentario,
-              style: AppTextStyles.body.copyWith(
-                fontSize: 16,
-                height: 1.55,
-                color: AppColors.textPrimary,
+            if (comentario.esCita)
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(AppSpacing.md),
+                decoration: BoxDecoration(
+                  color: colorCita.withValues(alpha: .12),
+                  borderRadius: BorderRadius.circular(AppRadius.md),
+                  border: Border(left: BorderSide(color: colorCita, width: 4)),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Icon(
+                          Icons.format_quote_rounded,
+                          color: colorCita,
+                          size: 22,
+                        ),
+                        const SizedBox(width: AppSpacing.xs),
+                        Text(
+                          'Cita del libro',
+                          style: AppTextStyles.caption.copyWith(
+                            color: colorCita,
+                            fontWeight: FontWeight.w900,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: AppSpacing.sm),
+                    Text(
+                      '“${comentario.comentario}”',
+                      style: AppTextStyles.body.copyWith(
+                        fontSize: 17,
+                        height: 1.55,
+                        color: AppColors.textPrimary,
+                        fontStyle: FontStyle.italic,
+                      ),
+                    ),
+                  ],
+                ),
+              )
+            else
+              Text(
+                comentario.comentario,
+                style: AppTextStyles.body.copyWith(
+                  fontSize: 16,
+                  height: 1.55,
+                  color: AppColors.textPrimary,
+                ),
               ),
-            ),
 
             if (comentario.editado) ...[
               const SizedBox(height: AppSpacing.xs),
@@ -530,6 +583,14 @@ class _ComentarioCardState extends State<ComentarioCard> {
         ),
       ),
     );
+  }
+
+  Color _colorCita(String value) {
+    final limpio = value.trim().replaceFirst('#', '');
+    if (!RegExp(r'^[0-9a-fA-F]{6}$').hasMatch(limpio)) {
+      return AppColors.primary;
+    }
+    return Color(int.parse('FF$limpio', radix: 16));
   }
 
   @override

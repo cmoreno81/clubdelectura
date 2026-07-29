@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../navigation/book_detail_navigation.dart';
 import '../models/ranking.dart';
 import '../models/ranking_item.dart';
 import '../services/api_service.dart';
@@ -8,6 +9,7 @@ import '../theme/app_radius.dart';
 import '../theme/app_spacing.dart';
 import '../theme/app_text_styles.dart';
 import '../widgets/common/club_avatar.dart';
+import '../widgets/common/club_book_cover.dart';
 import '../widgets/common/club_card.dart';
 import '../widgets/common/club_chip.dart';
 import '../widgets/error_view.dart';
@@ -378,18 +380,12 @@ class _LibroClubCard extends StatelessWidget {
       borderColor: const Color(0xFFF1E2B3),
       child: Row(
         children: [
-          Container(
-            width: 64,
-            height: 64,
-            decoration: BoxDecoration(
-              color: const Color(0xFFFFEDBA),
-              borderRadius: BorderRadius.circular(AppRadius.lg),
-            ),
-            child: const Icon(
-              Icons.star_rounded,
-              color: Color(0xFFB48113),
-              size: 32,
-            ),
+          _RankedBookCover(
+            item: item,
+            icon: Icons.star_rounded,
+            color: const Color(0xFFB48113),
+            width: 74,
+            height: 104,
           ),
 
           const SizedBox(width: AppSpacing.md),
@@ -447,18 +443,12 @@ class _CementerioCard extends StatelessWidget {
       borderColor: const Color(0xFFF5CECE),
       child: Row(
         children: [
-          Container(
-            width: 64,
-            height: 64,
-            decoration: BoxDecoration(
-              color: const Color(0xFFFFDDDD),
-              borderRadius: BorderRadius.circular(AppRadius.lg),
-            ),
-            child: const Icon(
-              Icons.heart_broken_rounded,
-              color: AppColors.danger,
-              size: 31,
-            ),
+          _RankedBookCover(
+            item: item,
+            icon: Icons.heart_broken_rounded,
+            color: AppColors.danger,
+            width: 74,
+            height: 104,
           ),
 
           const SizedBox(width: AppSpacing.md),
@@ -923,58 +913,168 @@ class _RankingRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.all(AppSpacing.md),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          _PositionBadge(position: position, color: color),
+    return InkWell(
+      borderRadius: BorderRadius.circular(AppRadius.md),
+      onTap: useAvatar
+          ? null
+          : () => openBookDetail(context, title: item.nombre),
+      child: Padding(
+        padding: const EdgeInsets.all(AppSpacing.md),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            if (useAvatar) ...[
+              _PositionBadge(position: position, color: color),
+              const SizedBox(width: AppSpacing.md),
+              ClubAvatar(
+                nombre: item.nombre,
+                imageUrl: item.avatarUrl,
+                size: 46,
+              ),
+              const SizedBox(width: AppSpacing.md),
+            ] else ...[
+              _RankedBookCover(
+                item: item,
+                position: position,
+                color: color,
+                width: 58,
+                height: 82,
+              ),
+              const SizedBox(width: AppSpacing.md),
+            ],
 
-          const SizedBox(width: AppSpacing.md),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    item.nombre,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: AppTextStyles.body.copyWith(
+                      color: AppColors.textPrimary,
+                      fontWeight: FontWeight.w800,
+                      fontSize: 16,
+                      height: 1.25,
+                    ),
+                  ),
 
-          if (useAvatar) ...[
-            ClubAvatar(nombre: item.nombre, imageUrl: item.avatarUrl, size: 46),
-            const SizedBox(width: AppSpacing.md),
+                  const SizedBox(height: AppSpacing.xs),
+
+                  if (showStars) _CompactStars(value: item.media),
+
+                  Text(
+                    unit,
+                    style: AppTextStyles.caption.copyWith(
+                      color: AppColors.textMuted,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
+            const SizedBox(width: AppSpacing.sm),
+
+            Text(
+              value,
+              textAlign: TextAlign.end,
+              style: AppTextStyles.subtitle.copyWith(
+                color: color,
+                fontWeight: FontWeight.w800,
+              ),
+            ),
           ],
+        ),
+      ),
+    );
+  }
+}
 
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  item.nombre,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                  style: AppTextStyles.body.copyWith(
-                    color: AppColors.textPrimary,
-                    fontWeight: FontWeight.w800,
-                    fontSize: 16,
-                    height: 1.25,
-                  ),
-                ),
+class _RankedBookCover extends StatelessWidget {
+  const _RankedBookCover({
+    required this.item,
+    required this.color,
+    required this.width,
+    required this.height,
+    this.position,
+    this.icon,
+  });
 
-                const SizedBox(height: AppSpacing.xs),
+  final RankingItem item;
+  final Color color;
+  final double width;
+  final double height;
+  final int? position;
+  final IconData? icon;
 
-                if (showStars) _CompactStars(value: item.media),
+  @override
+  Widget build(BuildContext context) {
+    final medalColor = switch (position) {
+      1 => const Color(0xFFE4B63F),
+      2 => const Color(0xFF9AA3AF),
+      3 => const Color(0xFFB77948),
+      _ => color,
+    };
+    final rankIcon = switch (position) {
+      1 => Icons.emoji_events_rounded,
+      2 => Icons.workspace_premium_rounded,
+      3 => Icons.workspace_premium_outlined,
+      _ => null,
+    };
 
-                Text(
-                  unit,
-                  style: AppTextStyles.caption.copyWith(
-                    color: AppColors.textMuted,
-                  ),
-                ),
-              ],
+    return SizedBox(
+      width: width,
+      height: height,
+      child: Stack(
+        clipBehavior: Clip.none,
+        children: [
+          Positioned.fill(
+            child: ClubBookCover(
+              title: item.nombre,
+              imageUrl: item.coverUrl,
+              width: width,
+              height: height,
+              borderRadius: BorderRadius.circular(AppRadius.md),
+              onTap: () => openBookDetail(
+                context,
+                title: item.nombre,
+                coverUrl: item.coverUrl,
+              ),
             ),
           ),
-
-          const SizedBox(width: AppSpacing.sm),
-
-          Text(
-            value,
-            textAlign: TextAlign.end,
-            style: AppTextStyles.subtitle.copyWith(
-              color: color,
-              fontWeight: FontWeight.w800,
+          Positioned(
+            left: -6,
+            top: -6,
+            child: Container(
+              width: icon == null ? 30 : 36,
+              height: icon == null ? 30 : 36,
+              alignment: Alignment.center,
+              decoration: BoxDecoration(
+                color: medalColor,
+                shape: BoxShape.circle,
+                border: Border.all(color: Colors.white, width: 2.5),
+                boxShadow: [
+                  BoxShadow(
+                    color: medalColor.withValues(alpha: .30),
+                    blurRadius: 8,
+                    offset: const Offset(0, 3),
+                  ),
+                ],
+              ),
+              child: icon != null || rankIcon != null
+                  ? Icon(
+                      icon ?? rankIcon,
+                      color: Colors.white,
+                      size: icon == null ? 17 : 21,
+                    )
+                  : Text(
+                      '$position',
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 13,
+                        fontWeight: FontWeight.w900,
+                      ),
+                    ),
             ),
           ),
         ],

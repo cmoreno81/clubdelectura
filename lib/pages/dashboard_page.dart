@@ -1,10 +1,14 @@
 import 'package:flutter/material.dart';
+
+import '../navigation/app_page_route.dart';
+import '../navigation/book_detail_navigation.dart';
 import 'package:flutter/services.dart';
 
 import '../dev/dev_settings.dart';
 import '../models/dashboard_view_data.dart';
 import '../models/dashboard.dart';
 import '../models/ranking_item.dart';
+import '../models/reaccion_comentario.dart';
 import '../services/api_service.dart';
 import '../services/club_narrador.dart';
 import '../services/usuario_service.dart';
@@ -132,14 +136,14 @@ class _DashboardPageState extends State<DashboardPage> {
 
     Navigator.push(
       context,
-      MaterialPageRoute(builder: (_) => PerfilUsuarioPage(usuario: limpio)),
+      AppPageRoute(builder: (_) => PerfilUsuarioPage(usuario: limpio)),
     );
   }
 
   void _abrirRanking({int initialTab = 0}) {
     Navigator.push(
       context,
-      MaterialPageRoute(builder: (_) => RankingPage(initialTab: initialTab)),
+      AppPageRoute(builder: (_) => RankingPage(initialTab: initialTab)),
     );
   }
 
@@ -196,7 +200,7 @@ class _DashboardPageState extends State<DashboardPage> {
 
                 await Navigator.push(
                   context,
-                  MaterialPageRoute(
+                  AppPageRoute(
                     builder: (_) => PerfilUsuarioPage(usuario: nombre),
                   ),
                 );
@@ -276,7 +280,7 @@ class _DashboardPageState extends State<DashboardPage> {
                     onTap: () {
                       Navigator.push(
                         context,
-                        MaterialPageRoute(builder: (_) => const MoodClubPage()),
+                        AppPageRoute(builder: (_) => const MoodClubPage()),
                       );
                     },
                   ),
@@ -291,7 +295,7 @@ class _DashboardPageState extends State<DashboardPage> {
                     onTap: () {
                       Navigator.push(
                         context,
-                        MaterialPageRoute(
+                        AppPageRoute(
                           builder: (_) => const TendenciasClubPage(),
                         ),
                       );
@@ -308,6 +312,10 @@ class _DashboardPageState extends State<DashboardPage> {
                           '${data.libroMes.first.puntos} puntos',
                       icon: Icons.workspace_premium_outlined,
                       variant: InfoCardVariant.primary,
+                      onTap: () => openBookDetail(
+                        context,
+                        title: data.libroMes.first.libro,
+                      ),
                     ),
                   ],
 
@@ -374,9 +382,7 @@ class _DashboardPageState extends State<DashboardPage> {
         colors: [AppColors.surfaceSoft, Color(0xFFF0E5FF)],
       ),
       borderColor: AppColors.primaryLight,
-      onTap: participantes.isNotEmpty
-          ? () => _abrirRanking(initialTab: 1)
-          : null,
+      onTap: () => _abrirRanking(initialTab: 1),
       child: Column(
         children: [
           Row(
@@ -389,7 +395,7 @@ class _DashboardPageState extends State<DashboardPage> {
               ),
               const SizedBox(width: AppSpacing.xs),
               Text(
-                'Lectoras del mes',
+                'Ranking del club',
                 style: AppTextStyles.section.copyWith(fontSize: 20),
               ),
             ],
@@ -399,8 +405,8 @@ class _DashboardPageState extends State<DashboardPage> {
 
           Text(
             participantes.isEmpty
-                ? 'Aún no hay lectoras en el podio'
-                : 'Las que más historias han conquistado',
+                ? 'Descubre las clasificaciones y favoritos del club'
+                : 'El podio lector de este mes',
             style: AppTextStyles.caption,
             textAlign: TextAlign.center,
           ),
@@ -451,17 +457,26 @@ class _DashboardPageState extends State<DashboardPage> {
                 ),
               ],
             ),
-
-            const SizedBox(height: AppSpacing.sm),
-
-            Text(
-              'Ver ranking completo',
-              style: AppTextStyles.caption.copyWith(
-                color: AppColors.primary,
-                fontWeight: FontWeight.w800,
-              ),
-            ),
           ],
+          const SizedBox(height: AppSpacing.sm),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Text(
+                'Abrir ranking completo',
+                style: AppTextStyles.caption.copyWith(
+                  color: AppColors.primary,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+              const SizedBox(width: AppSpacing.xxs),
+              const Icon(
+                Icons.arrow_forward_rounded,
+                size: 17,
+                color: AppColors.primary,
+              ),
+            ],
+          ),
         ],
       ),
     );
@@ -555,6 +570,13 @@ class _DashboardPageState extends State<DashboardPage> {
                     usuarioActual?.trim().toLowerCase() ==
                     nombre.trim().toLowerCase(),
                 onEditar: () => _editarProgreso(nombre, lecturas[index]),
+                onBookTap: () => openBookDetail(
+                  context,
+                  title: lecturas[index].titulo,
+                  bookId: lecturas[index].bookId,
+                  coverUrl: lecturas[index].coverUrl,
+                ),
+                onReact: () => _reaccionarProgreso(lecturas[index]),
               ),
               if (index < lecturas.length - 1)
                 const SizedBox(height: AppSpacing.sm),
@@ -597,17 +619,82 @@ class _DashboardPageState extends State<DashboardPage> {
       );
     }
   }
+
+  Future<void> _reaccionarProgreso(LecturaAhoraItem lectura) async {
+    if (lectura.libraryId.isEmpty) return;
+    final reaccion = await showModalBottomSheet<ReaccionComentario>(
+      context: context,
+      builder: (context) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.all(AppSpacing.lg),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text('Reaccionar a esta impresión', style: AppTextStyles.section),
+              const SizedBox(height: AppSpacing.md),
+              Wrap(
+                alignment: WrapAlignment.center,
+                spacing: AppSpacing.sm,
+                runSpacing: AppSpacing.sm,
+                children: ReaccionComentario.values
+                    .map(
+                      (item) => ActionChip(
+                        materialTapTargetSize: MaterialTapTargetSize.padded,
+                        labelPadding: const EdgeInsets.symmetric(
+                          horizontal: AppSpacing.sm,
+                          vertical: 5,
+                        ),
+                        label: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(
+                              item.emoji,
+                              strutStyle: const StrutStyle(
+                                fontSize: 21,
+                                height: 1.25,
+                                forceStrutHeight: true,
+                              ),
+                              style: const TextStyle(
+                                fontSize: 21,
+                                height: 1.25,
+                              ),
+                            ),
+                            const SizedBox(width: 7),
+                            Text(item.titulo),
+                          ],
+                        ),
+                        onPressed: () => Navigator.pop(context, item),
+                      ),
+                    )
+                    .toList(),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+    if (reaccion == null || !mounted) return;
+    await ApiService().toggleProgressReaction(
+      libraryId: lectura.libraryId,
+      reaccion: reaccion.apiValue,
+    );
+    if (mounted) await _recargar();
+  }
 }
 
 class _LecturaProgresoCard extends StatelessWidget {
   final LecturaAhoraItem lectura;
   final bool editable;
   final VoidCallback onEditar;
+  final VoidCallback onBookTap;
+  final VoidCallback onReact;
 
   const _LecturaProgresoCard({
     required this.lectura,
     required this.editable,
     required this.onEditar,
+    required this.onBookTap,
+    required this.onReact,
   });
 
   @override
@@ -622,11 +709,15 @@ class _LecturaProgresoCard extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          ClubBookCover(
-            title: lectura.titulo,
-            imageUrl: lectura.coverUrl,
-            width: 52,
-            showShadow: false,
+          InkWell(
+            borderRadius: BorderRadius.circular(AppRadius.sm),
+            onTap: onBookTap,
+            child: ClubBookCover(
+              title: lectura.titulo,
+              imageUrl: lectura.coverUrl,
+              width: 52,
+              showShadow: false,
+            ),
           ),
           const SizedBox(width: AppSpacing.sm),
           Expanded(
@@ -636,12 +727,19 @@ class _LecturaProgresoCard extends StatelessWidget {
                 Row(
                   children: [
                     Expanded(
-                      child: Text(
-                        lectura.titulo,
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                        style: AppTextStyles.body.copyWith(
-                          fontWeight: FontWeight.w800,
+                      child: InkWell(
+                        borderRadius: BorderRadius.circular(AppRadius.sm),
+                        onTap: onBookTap,
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 3),
+                          child: Text(
+                            lectura.titulo,
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                            style: AppTextStyles.body.copyWith(
+                              fontWeight: FontWeight.w800,
+                            ),
+                          ),
                         ),
                       ),
                     ),
@@ -681,12 +779,45 @@ class _LecturaProgresoCard extends StatelessWidget {
                   const SizedBox(height: AppSpacing.sm),
                   Text(
                     '“${lectura.comentario}”',
-                    maxLines: 3,
-                    overflow: TextOverflow.ellipsis,
                     style: AppTextStyles.bodySecondary.copyWith(
                       fontStyle: FontStyle.italic,
                       height: 1.35,
                     ),
+                  ),
+                  const SizedBox(height: AppSpacing.xs),
+                  Wrap(
+                    spacing: AppSpacing.xs,
+                    crossAxisAlignment: WrapCrossAlignment.center,
+                    children: [
+                      for (final entry in lectura.reacciones.entries)
+                        if (entry.value > 0)
+                          Chip(
+                            visualDensity: VisualDensity.compact,
+                            padding: const EdgeInsets.symmetric(vertical: 2),
+                            label: Text(
+                              '${entry.key.emoji} ${entry.value}',
+                              style: const TextStyle(height: 1.35),
+                            ),
+                          ),
+                      TextButton.icon(
+                        onPressed: lectura.libraryId.isEmpty ? null : onReact,
+                        icon: lectura.miReaccion == null
+                            ? const Icon(Icons.add_reaction_outlined, size: 19)
+                            : SizedBox.square(
+                                dimension: 24,
+                                child: Center(
+                                  child: Text(
+                                    lectura.miReaccion!.emoji,
+                                    style: const TextStyle(
+                                      fontSize: 18,
+                                      height: 1.25,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                        label: const Text('Reaccionar'),
+                      ),
+                    ],
                   ),
                 ],
               ],
@@ -713,9 +844,11 @@ class _EditarProgresoDialogState extends State<_EditarProgresoDialog> {
   late double progreso;
   late final TextEditingController comentarioController;
   late final TextEditingController paginaController;
+  late final TextEditingController porcentajeController;
   late final TextEditingController totalPaginasController;
   late _ModoProgreso modo;
   String? errorPagina;
+  String? errorPorcentaje;
   String? errorTotalPaginas;
 
   int? get totalPaginas =>
@@ -737,9 +870,10 @@ class _EditarProgresoDialogState extends State<_EditarProgresoDialog> {
     paginaController = TextEditingController(
       text: widget.lectura.paginaActual?.toString() ?? '',
     );
-    comentarioController = TextEditingController(
-      text: widget.lectura.comentario,
+    porcentajeController = TextEditingController(
+      text: widget.lectura.progreso.toString(),
     );
+    comentarioController = TextEditingController();
   }
 
   @override
@@ -796,6 +930,7 @@ class _EditarProgresoDialogState extends State<_EditarProgresoDialog> {
                     setState(() {
                       modo = seleccion.first;
                       errorPagina = null;
+                      errorPorcentaje = null;
                     });
                   },
                 ),
@@ -810,16 +945,47 @@ class _EditarProgresoDialogState extends State<_EditarProgresoDialog> {
                 style: AppTextStyles.title.copyWith(color: AppColors.primary),
               ),
             ),
-            if (modo == _ModoProgreso.porcentaje)
+            if (modo == _ModoProgreso.porcentaje) ...[
               Slider(
                 value: progreso,
                 min: 0,
                 max: 100,
-                divisions: 20,
+                divisions: 100,
                 label: '${progreso.round()}%',
-                onChanged: (value) => setState(() => progreso = value),
-              )
-            else ...[
+                onChanged: (value) {
+                  setState(() {
+                    progreso = value;
+                    porcentajeController.text = value.round().toString();
+                    errorPorcentaje = null;
+                  });
+                },
+              ),
+              TextField(
+                controller: porcentajeController,
+                keyboardType: TextInputType.number,
+                inputFormatters: [
+                  FilteringTextInputFormatter.digitsOnly,
+                  LengthLimitingTextInputFormatter(3),
+                ],
+                decoration: InputDecoration(
+                  labelText: 'Porcentaje exacto',
+                  hintText: 'Ej. 37',
+                  suffixText: '%',
+                  errorText: errorPorcentaje,
+                ),
+                onChanged: (value) {
+                  final porcentaje = int.tryParse(value);
+                  setState(() {
+                    errorPorcentaje = null;
+                    if (porcentaje != null &&
+                        porcentaje >= 0 &&
+                        porcentaje <= 100) {
+                      progreso = porcentaje.toDouble();
+                    }
+                  });
+                },
+              ),
+            ] else ...[
               const SizedBox(height: AppSpacing.sm),
               TextField(
                 controller: paginaController,
@@ -843,14 +1009,31 @@ class _EditarProgresoDialogState extends State<_EditarProgresoDialog> {
               ),
             ],
             const SizedBox(height: AppSpacing.md),
+            if (widget.lectura.comentario.trim().isNotEmpty) ...[
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(AppSpacing.sm),
+                decoration: BoxDecoration(
+                  color: AppColors.surfaceSoft,
+                  borderRadius: BorderRadius.circular(AppRadius.md),
+                ),
+                child: Text(
+                  'Impresión actual:\n“${widget.lectura.comentario}”\n\n'
+                  'Escribe una nueva para sustituirla. Si guardas este '
+                  'campo vacío, se eliminará.',
+                  style: AppTextStyles.caption.copyWith(height: 1.4),
+                ),
+              ),
+              const SizedBox(height: AppSpacing.md),
+            ],
             TextField(
               controller: comentarioController,
               minLines: 3,
               maxLines: 6,
               maxLength: 500,
               decoration: const InputDecoration(
-                labelText: 'Impresiones hasta ahora',
-                hintText: '¿Qué te está pareciendo?',
+                labelText: 'Nueva impresión (opcional)',
+                hintText: '¿Qué te está pareciendo ahora?',
                 alignLabelWithHint: true,
               ),
             ),
@@ -868,6 +1051,15 @@ class _EditarProgresoDialogState extends State<_EditarProgresoDialog> {
   }
 
   void _guardar() {
+    if (modo == _ModoProgreso.porcentaje) {
+      final porcentaje = int.tryParse(porcentajeController.text);
+      if (porcentaje == null || porcentaje < 0 || porcentaje > 100) {
+        setState(() => errorPorcentaje = 'Indica un porcentaje entre 0 y 100');
+        return;
+      }
+      progreso = porcentaje.toDouble();
+    }
+
     int? paginasTotales;
     if (widget.lectura.paginasTotales == null &&
         totalPaginasController.text.isNotEmpty) {
@@ -899,6 +1091,7 @@ class _EditarProgresoDialogState extends State<_EditarProgresoDialog> {
   @override
   void dispose() {
     paginaController.dispose();
+    porcentajeController.dispose();
     totalPaginasController.dispose();
     comentarioController.dispose();
     super.dispose();

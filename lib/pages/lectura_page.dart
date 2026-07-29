@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../navigation/app_page_route.dart';
+
 import '../models/capitulo_lectura.dart';
 import '../models/configuracion_lectura.dart';
 import '../services/api_service.dart';
@@ -107,14 +109,17 @@ class _LecturaPageState extends State<LecturaPage> {
     _restaurarPosicion(posicionActual);
   }
 
-  Future<void> _abrirCapitulo(CapituloLectura capitulo) async {
+  Future<void> _abrirCapitulo(CapituloLectura capitulo, String bookId) async {
     final posicionAntesDeEntrar = _posicionActual();
 
     await Navigator.push(
       context,
-      MaterialPageRoute(
-        builder: (_) =>
-            CapituloPage(libro: widget.libro, capitulo: capitulo.nombre),
+      AppPageRoute(
+        builder: (_) => CapituloPage(
+          libro: widget.libro,
+          capitulo: capitulo.nombre,
+          bookId: bookId,
+        ),
       ),
     );
 
@@ -265,7 +270,7 @@ class _LecturaPageState extends State<LecturaPage> {
                         _alternarCapitulo(capitulo.nombre);
                       },
                       onTap: () {
-                        _abrirCapitulo(capitulo);
+                        _abrirCapitulo(capitulo, config.bookId);
                       },
                     ),
                   ),

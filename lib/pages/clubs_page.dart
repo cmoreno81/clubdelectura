@@ -36,7 +36,9 @@ class _ClubsPageState extends State<ClubsPage> {
   }
 
   void _reload() {
-    setState(() => _future = ClubService().getMyClubs());
+    setState(() {
+      _future = ClubService().getMyClubs();
+    });
   }
 
   Future<void> _select(ClubMembership club) async {
@@ -279,6 +281,22 @@ class _JoinClubDialog extends StatefulWidget {
 
 class _JoinClubDialogState extends State<_JoinClubDialog> {
   final code = TextEditingController();
+  String? pasteMessage;
+
+  Future<void> _pasteCode() async {
+    final data = await Clipboard.getData(Clipboard.kTextPlain);
+    final value = data?.text?.trim() ?? '';
+    if (!mounted) return;
+    if (value.isEmpty) {
+      setState(() => pasteMessage = 'No hay ningún código en el portapapeles');
+      return;
+    }
+    setState(() {
+      code.text = value;
+      code.selection = TextSelection.collapsed(offset: value.length);
+      pasteMessage = 'Código pegado';
+    });
+  }
 
   @override
   void dispose() {
@@ -290,11 +308,38 @@ class _JoinClubDialogState extends State<_JoinClubDialog> {
   Widget build(BuildContext context) {
     return AlertDialog(
       title: const Text('Entrar en un club'),
-      content: TextField(
-        controller: code,
-        autofocus: true,
-        textCapitalization: TextCapitalization.characters,
-        decoration: const InputDecoration(labelText: 'Código de invitación'),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          TextField(
+            controller: code,
+            autofocus: true,
+            textCapitalization: TextCapitalization.characters,
+            autocorrect: false,
+            enableSuggestions: false,
+            decoration: InputDecoration(
+              labelText: 'Código de invitación',
+              suffixIcon: IconButton(
+                tooltip: 'Pegar código',
+                onPressed: _pasteCode,
+                icon: const Icon(Icons.content_paste_rounded),
+              ),
+            ),
+          ),
+          const SizedBox(height: 8),
+          TextButton.icon(
+            onPressed: _pasteCode,
+            icon: const Icon(Icons.content_paste_go_rounded),
+            label: const Text('Pegar código'),
+          ),
+          if (pasteMessage != null)
+            Text(
+              pasteMessage!,
+              textAlign: TextAlign.center,
+              style: Theme.of(context).textTheme.bodySmall,
+            ),
+        ],
       ),
       actions: [
         TextButton(

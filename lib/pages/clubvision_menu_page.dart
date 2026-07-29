@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../navigation/app_page_route.dart';
+
 import '../models/clubvision.dart';
 import '../services/api_service.dart';
 import '../theme/app_colors.dart';
@@ -46,7 +48,7 @@ class _ClubvisionMenuPageState extends State<ClubvisionMenuPage> {
     if (club.haVotado) {
       await Navigator.push(
         context,
-        MaterialPageRoute(builder: (_) => const ClubvisionMiVotoPage()),
+        AppPageRoute(builder: (_) => const ClubvisionMiVotoPage()),
       );
 
       if (!mounted) return;
@@ -56,7 +58,7 @@ class _ClubvisionMenuPageState extends State<ClubvisionMenuPage> {
 
     final actualizado = await Navigator.push<bool>(
       context,
-      MaterialPageRoute(
+      AppPageRoute(
         builder: (_) => ClubvisionVotacionPage(idVotacion: club.idVotacion),
       ),
     );
@@ -79,7 +81,7 @@ class _ClubvisionMenuPageState extends State<ClubvisionMenuPage> {
     if (!club.lecturaConfigurada) {
       await Navigator.push<bool>(
         context,
-        MaterialPageRoute(
+        AppPageRoute(
           builder: (_) =>
               ConfigurarLecturaPage(libro: club.ganador, tipo: 'OFICIAL'),
         ),
@@ -92,7 +94,7 @@ class _ClubvisionMenuPageState extends State<ClubvisionMenuPage> {
 
     await Navigator.push(
       context,
-      MaterialPageRoute(builder: (_) => LecturaPage(libro: club.ganador)),
+      AppPageRoute(builder: (_) => LecturaPage(libro: club.ganador)),
     );
 
     if (!mounted) return;
@@ -166,7 +168,7 @@ class _ClubvisionMenuPageState extends State<ClubvisionMenuPage> {
                   onTap: () {
                     Navigator.push(
                       context,
-                      MaterialPageRoute(
+                      AppPageRoute(
                         builder: (_) => const ClubvisionHistorialPage(),
                       ),
                     );
@@ -186,7 +188,7 @@ class _ClubvisionMenuPageState extends State<ClubvisionMenuPage> {
                     onTap: () {
                       Navigator.push(
                         context,
-                        MaterialPageRoute(
+                        AppPageRoute(
                           builder: (_) => const ClubvisionComoVotaronPage(),
                         ),
                       );
@@ -238,7 +240,7 @@ class _ClubvisionMenuPageState extends State<ClubvisionMenuPage> {
             onTap: () {
               Navigator.push(
                 context,
-                MaterialPageRoute(builder: (_) => const ClubvisionGalaPage()),
+                AppPageRoute(builder: (_) => const ClubvisionGalaPage()),
               );
             },
           ),

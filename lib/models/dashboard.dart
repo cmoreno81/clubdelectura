@@ -1,4 +1,5 @@
 import 'lectura_actual.dart';
+import 'reaccion_comentario.dart';
 
 class Dashboard {
   final Resumen resumen;
@@ -187,6 +188,7 @@ class LeyendoAhora {
           : libros
                 .map(
                   (titulo) => LecturaAhoraItem(
+                    libraryId: '',
                     bookId: '',
                     titulo: titulo,
                     coverUrl: '',
@@ -195,6 +197,8 @@ class LeyendoAhora {
                     paginasTotales: null,
                     comentario: '',
                     actualizadoEn: null,
+                    reacciones: const {},
+                    miReaccion: null,
                   ),
                 )
                 .toList(),
@@ -205,6 +209,7 @@ class LeyendoAhora {
 }
 
 class LecturaAhoraItem {
+  final String libraryId;
   final String bookId;
   final String titulo;
   final String coverUrl;
@@ -213,8 +218,11 @@ class LecturaAhoraItem {
   final int? paginasTotales;
   final String comentario;
   final DateTime? actualizadoEn;
+  final Map<ReaccionComentario, int> reacciones;
+  final ReaccionComentario? miReaccion;
 
   const LecturaAhoraItem({
+    required this.libraryId,
     required this.bookId,
     required this.titulo,
     required this.coverUrl,
@@ -223,19 +231,29 @@ class LecturaAhoraItem {
     required this.paginasTotales,
     required this.comentario,
     required this.actualizadoEn,
+    required this.reacciones,
+    required this.miReaccion,
   });
 
-  factory LecturaAhoraItem.fromJson(Map<String, dynamic> json) =>
-      LecturaAhoraItem(
-        bookId: json['bookId']?.toString() ?? '',
-        titulo: json['titulo']?.toString() ?? '',
-        coverUrl: json['coverUrl']?.toString() ?? '',
-        progreso: ((json['progreso'] as num?)?.toInt() ?? 0).clamp(0, 100),
-        paginaActual: (json['paginaActual'] as num?)?.toInt(),
-        paginasTotales: (json['paginasTotales'] as num?)?.toInt(),
-        comentario: json['comentario']?.toString() ?? '',
-        actualizadoEn: DateTime.tryParse(
-          json['actualizadoEn']?.toString() ?? '',
-        ),
-      );
+  factory LecturaAhoraItem.fromJson(
+    Map<String, dynamic> json,
+  ) => LecturaAhoraItem(
+    libraryId: json['libraryId']?.toString() ?? '',
+    bookId: json['bookId']?.toString() ?? '',
+    titulo: json['titulo']?.toString() ?? '',
+    coverUrl: json['coverUrl']?.toString() ?? '',
+    progreso: ((json['progreso'] as num?)?.toInt() ?? 0).clamp(0, 100),
+    paginaActual: (json['paginaActual'] as num?)?.toInt(),
+    paginasTotales: (json['paginasTotales'] as num?)?.toInt(),
+    comentario: json['comentario']?.toString() ?? '',
+    actualizadoEn: DateTime.tryParse(json['actualizadoEn']?.toString() ?? ''),
+    reacciones: {
+      for (final reaccion in ReaccionComentario.values)
+        reaccion:
+            ((json['reacciones'] as Map?)?[reaccion.apiValue] as num?)
+                ?.toInt() ??
+            0,
+    },
+    miReaccion: ReaccionComentarioDatos.fromApi(json['miReaccion']?.toString()),
+  );
 }

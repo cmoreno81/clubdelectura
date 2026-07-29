@@ -75,6 +75,11 @@ class _AtmosferaAmbientLayerState extends State<AtmosferaAmbientLayer>
     return Stack(
       children: [
         Positioned.fill(child: ColoredBox(color: widget.backgroundColor)),
+        const Positioned.fill(
+          child: IgnorePointer(
+            child: CustomPaint(painter: _EditorialPaperPainter()),
+          ),
+        ),
 
         if (tieneAtmosfera)
           Positioned.fill(
@@ -126,6 +131,114 @@ class _AtmosferaAmbientLayerState extends State<AtmosferaAmbientLayer>
     _controller.dispose();
     super.dispose();
   }
+}
+
+class _EditorialPaperPainter extends CustomPainter {
+  const _EditorialPaperPainter();
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paperRect = Offset.zero & size;
+    canvas.drawRect(
+      paperRect,
+      Paint()
+        ..shader = RadialGradient(
+          center: const Alignment(-0.18, -0.22),
+          radius: 1.22,
+          colors: [
+            const Color(0xFFFFFBF2).withValues(alpha: .05),
+            const Color(0xFF8D654A).withValues(alpha: .075),
+          ],
+          stops: const [.48, 1],
+        ).createShader(paperRect),
+    );
+
+    final warmClouds = [
+      (const Offset(.12, .18), 116.0, .035),
+      (const Offset(.86, .36), 148.0, .028),
+      (const Offset(.28, .78), 176.0, .024),
+      (const Offset(.92, .9), 105.0, .03),
+    ];
+    for (final cloud in warmClouds) {
+      final center = Offset(
+        size.width * cloud.$1.dx,
+        size.height * cloud.$1.dy,
+      );
+      final rect = Rect.fromCircle(center: center, radius: cloud.$2);
+      canvas.drawCircle(
+        center,
+        cloud.$2,
+        Paint()
+          ..shader = RadialGradient(
+            colors: [
+              const Color(0xFFB98762).withValues(alpha: cloud.$3),
+              Colors.transparent,
+            ],
+          ).createShader(rect),
+      );
+    }
+
+    final fiber = Paint()
+      ..color = const Color(0xFF705D4E).withValues(alpha: .065)
+      ..strokeWidth = .65;
+    for (var y = 13.0; y < size.height; y += 23) {
+      final shift = ((y ~/ 23) % 5) * 9.0;
+      canvas.drawLine(
+        Offset(14 + shift, y),
+        Offset(math.min(size.width - 12, 88 + shift), y + .8),
+        fiber,
+      );
+      if (size.width > 220) {
+        canvas.drawLine(
+          Offset(size.width - 112 - shift, y + 9),
+          Offset(size.width - 22 - shift, y + 8.2),
+          fiber,
+        );
+      }
+    }
+
+    final longFiber = Paint()
+      ..color = const Color(0xFF9A7256).withValues(alpha: .038)
+      ..strokeWidth = .45;
+    for (var index = 0; index < 18; index++) {
+      final y = ((index * 83.0) + 41) % math.max(size.height, 1.0);
+      final x = ((index * 47.0) + 19) % math.max(size.width, 1.0);
+      canvas.drawLine(
+        Offset(x, y),
+        Offset(math.min(size.width, x + 104 + (index % 4) * 18), y + 1.4),
+        longFiber,
+      );
+    }
+
+    final speck = Paint()
+      ..color = const Color(0xFF6E513E).withValues(alpha: .075);
+    final speckCount = math.min(210, (size.width * size.height / 3200).round());
+    for (var index = 0; index < speckCount; index++) {
+      final x =
+          ((index * 73.37 + math.sin(index * 1.7) * 31).abs()) %
+          math.max(size.width, 1.0);
+      final y =
+          ((index * 127.19 + math.cos(index * 2.1) * 47).abs()) %
+          math.max(size.height, 1.0);
+      final radius = .3 + (index % 4) * .14;
+      canvas.drawCircle(Offset(x, y), radius, speck);
+    }
+
+    final margin = Paint()
+      ..color = const Color(0xFFC75D4D).withValues(alpha: .2)
+      ..strokeWidth = 1.15;
+    canvas.drawLine(const Offset(22, 0), Offset(22, size.height), margin);
+    canvas.drawLine(
+      const Offset(25, 0),
+      Offset(25, size.height),
+      Paint()
+        ..color = const Color(0xFF603B73).withValues(alpha: .055)
+        ..strokeWidth = .8,
+    );
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }
 
 class _AtmosferaPainter extends CustomPainter {

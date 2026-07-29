@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../navigation/app_page_route.dart';
+
 import '../models/mood_club.dart';
 import '../services/api_service.dart';
 import '../theme/app_colors.dart';
@@ -58,7 +60,7 @@ class _MoodClubPageState extends State<MoodClubPage> {
     if (libro.isEmpty || capitulo.isEmpty) return;
     Navigator.push(
       context,
-      MaterialPageRoute(
+      AppPageRoute(
         builder: (_) => CapituloPage(libro: libro, capitulo: capitulo),
       ),
     );

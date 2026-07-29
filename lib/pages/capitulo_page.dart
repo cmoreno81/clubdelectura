@@ -9,14 +9,21 @@ import '../theme/app_spacing.dart';
 import '../theme/app_text_styles.dart';
 import '../widgets/common/club_card.dart';
 import '../services/api_service.dart';
+import '../services/kit_lectura_service.dart';
 import '../widgets/lectura/comentario_card.dart';
 import '../widgets/lectura/comentario_input.dart';
 
 class CapituloPage extends StatefulWidget {
   final String libro;
   final String capitulo;
+  final String bookId;
 
-  const CapituloPage({super.key, required this.libro, required this.capitulo});
+  const CapituloPage({
+    super.key,
+    required this.libro,
+    required this.capitulo,
+    this.bookId = '',
+  });
 
   @override
   State<CapituloPage> createState() => _CapituloPageState();
@@ -32,6 +39,9 @@ class _CapituloPageState extends State<CapituloPage> {
   String? usuario;
   bool enviando = false;
   bool editorReflexionVisible = false;
+  bool editorEsCita = false;
+  List<Color> coloresCita = const [];
+  Color? colorCita;
   Timer? _temporizadorBorrador;
 
   bool get esReflexion => widget.capitulo.trim() == '💭 Reflexión final';
@@ -42,6 +52,32 @@ class _CapituloPageState extends State<CapituloPage> {
 
     controller.addListener(_programarGuardadoBorrador);
     future = _inicializar();
+    _cargarColoresKit();
+  }
+
+  Future<void> _cargarColoresKit() async {
+    final kit = await KitLecturaService().obtener(widget.bookId);
+    final colores = kit.paleta
+        .map(_colorDesdeHex)
+        .whereType<Color>()
+        .toList(growable: false);
+    if (!mounted) return;
+    setState(() {
+      coloresCita = colores;
+      colorCita = colores.isEmpty ? AppColors.primary : colores.first;
+    });
+  }
+
+  Color? _colorDesdeHex(String value) {
+    final limpio = value.trim().replaceFirst('#', '');
+    if (!RegExp(r'^[0-9a-fA-F]{6}$').hasMatch(limpio)) return null;
+    return Color(int.parse('FF$limpio', radix: 16));
+  }
+
+  String _colorAHex(Color? color) {
+    if (color == null) return '';
+    final value = color.toARGB32() & 0xFFFFFF;
+    return '#${value.toRadixString(16).padLeft(6, '0').toUpperCase()}';
   }
 
   Future<ComentariosCapitulo> _inicializar() async {
@@ -161,6 +197,8 @@ class _CapituloPageState extends State<CapituloPage> {
         capitulo: widget.capitulo,
         usuario: usuario!,
         comentario: texto,
+        tipo: editorEsCita ? 'QUOTE' : 'COMMENT',
+        color: editorEsCita ? _colorAHex(colorCita) : '',
       );
 
       if (!mounted) return;
@@ -509,6 +547,13 @@ class _CapituloPageState extends State<CapituloPage> {
                 esReflexion: esReflexion,
                 onCerrar: esReflexion ? _cerrarEditorReflexion : null,
                 focusNode: esReflexion ? editorFocusNode : null,
+                esCita: editorEsCita,
+                onTipoChanged: esReflexion
+                    ? null
+                    : (value) => setState(() => editorEsCita = value),
+                coloresCita: coloresCita,
+                colorCita: colorCita,
+                onColorChanged: (color) => setState(() => colorCita = color),
                 hintText: esReflexion
                     ? 'Comparte tu reflexión sobre el libro, '
                           'el desenlace, los personajes...'

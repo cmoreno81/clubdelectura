@@ -9,6 +9,7 @@ class PerfilUsuario {
   final List<PerfilLibroTerminado> abandonados;
   final List<PerfilLibro> pendientes;
   final List<PerfilGenero> generosFavoritos;
+  final List<PerfilSaga> sagas;
 
   PerfilUsuario({
     required this.usuario,
@@ -19,6 +20,7 @@ class PerfilUsuario {
     required this.abandonados,
     required this.pendientes,
     required this.generosFavoritos,
+    required this.sagas,
   });
 
   factory PerfilUsuario.fromJson(Map<String, dynamic> json) {
@@ -40,6 +42,7 @@ class PerfilUsuario {
       abandonados: parseList('abandonados', PerfilLibroTerminado.fromJson),
       pendientes: parseList('pendientes', PerfilLibro.fromJson),
       generosFavoritos: parseList('generosFavoritos', PerfilGenero.fromJson),
+      sagas: parseList('sagas', PerfilSaga.fromJson),
     );
   }
 }
@@ -53,6 +56,8 @@ class PerfilResumen {
   final double media;
   final int comentarios;
   final int likesRecibidos;
+  final int clubes;
+  final int sagasAbiertas;
 
   PerfilResumen({
     required this.terminados,
@@ -63,6 +68,8 @@ class PerfilResumen {
     required this.media,
     required this.comentarios,
     required this.likesRecibidos,
+    required this.clubes,
+    required this.sagasAbiertas,
   });
 
   factory PerfilResumen.fromJson(Map<String, dynamic> json) {
@@ -75,6 +82,8 @@ class PerfilResumen {
       media: (json['media'] as num?)?.toDouble() ?? 0,
       comentarios: (json['comentarios'] as num?)?.toInt() ?? 0,
       likesRecibidos: (json['likesRecibidos'] as num?)?.toInt() ?? 0,
+      clubes: (json['clubes'] as num?)?.toInt() ?? 0,
+      sagasAbiertas: (json['sagasAbiertas'] as num?)?.toInt() ?? 0,
     );
   }
 }
@@ -181,4 +190,80 @@ class PerfilGenero {
       total: (json['total'] as num?)?.toInt() ?? 0,
     );
   }
+}
+
+class PerfilSaga {
+  const PerfilSaga({
+    required this.id,
+    required this.nombre,
+    required this.autor,
+    required this.leidos,
+    required this.totalConocidos,
+    required this.totalSaga,
+    required this.estado,
+    required this.volumenes,
+    this.siguiente,
+  });
+
+  final String id;
+  final String nombre;
+  final String autor;
+  final int leidos;
+  final int totalConocidos;
+  final int totalSaga;
+  final String estado;
+  final List<PerfilSagaVolumen> volumenes;
+  final PerfilSagaVolumen? siguiente;
+
+  bool get completada => estado == 'COMPLETADA';
+  bool get alDia => estado == 'AL_DIA';
+  bool get pendiente => estado == 'PENDIENTE';
+
+  factory PerfilSaga.fromJson(Map<String, dynamic> json) {
+    final siguiente = json['siguiente'];
+    return PerfilSaga(
+      id: json['id']?.toString() ?? '',
+      nombre: json['nombre']?.toString() ?? '',
+      autor: json['autor']?.toString() ?? '',
+      leidos: (json['leidos'] as num?)?.toInt() ?? 0,
+      totalConocidos: (json['totalConocidos'] as num?)?.toInt() ?? 0,
+      totalSaga: (json['totalSaga'] as num?)?.toInt() ?? 0,
+      estado: json['estado']?.toString() ?? 'EN_CURSO',
+      volumenes: (json['volumenes'] as List? ?? const [])
+          .whereType<Map<String, dynamic>>()
+          .map(PerfilSagaVolumen.fromJson)
+          .toList(growable: false),
+      siguiente: siguiente is Map<String, dynamic>
+          ? PerfilSagaVolumen.fromJson(siguiente)
+          : null,
+    );
+  }
+}
+
+class PerfilSagaVolumen {
+  const PerfilSagaVolumen({
+    required this.bookId,
+    required this.titulo,
+    required this.numero,
+    required this.posicion,
+    required this.coverUrl,
+    required this.estado,
+  });
+
+  final String bookId;
+  final String titulo;
+  final String numero;
+  final int? posicion;
+  final String coverUrl;
+  final String estado;
+
+  factory PerfilSagaVolumen.fromJson(Map<String, dynamic> json) =>
+      PerfilSagaVolumen(
+        bookId: json['bookId']?.toString() ?? '',
+        titulo: json['titulo']?.toString() ?? '',
+        numero: json['numero']?.toString() ?? '',
+        posicion: (json['posicion'] as num?)?.toInt(),
+        coverUrl: json['coverUrl']?.toString() ?? '',
+        estado: json['estado']?.toString() ?? 'NO_ANADIDO',
+      );
 }

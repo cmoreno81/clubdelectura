@@ -1,5 +1,7 @@
 class RankingItem {
   final String nombre;
+  final String bookId;
+  final String coverUrl;
   final String avatarUrl;
   final int total;
   final double media;
@@ -7,6 +9,8 @@ class RankingItem {
 
   const RankingItem({
     required this.nombre,
+    this.bookId = '',
+    this.coverUrl = '',
     this.avatarUrl = '',
     this.total = 0,
     this.media = 0,
@@ -16,7 +20,8 @@ class RankingItem {
   factory RankingItem.fromJson(Map<String, dynamic> json) {
     return RankingItem(
       nombre: json['libro']?.toString() ?? json['usuario']?.toString() ?? '',
-
+      bookId: json['bookId']?.toString() ?? '',
+      coverUrl: json['coverUrl']?.toString() ?? '',
       avatarUrl: json['avatarUrl']?.toString() ?? '',
 
       total: (json['total'] as num?)?.toInt() ?? 0,

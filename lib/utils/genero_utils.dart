@@ -26,6 +26,9 @@ String iconoGenero(String genero) {
       return '😭';
     case 'clásicos':
       return '📜';
+    case 'comic':
+    case 'cómic':
+      return '💬';
     default:
       return '📚';
   }

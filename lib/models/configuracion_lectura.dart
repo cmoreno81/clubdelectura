@@ -5,6 +5,7 @@ class ConfiguracionLectura {
   final bool prologo;
   final bool epilogo;
   final String coverUrl;
+  final String bookId;
 
   final List<CapituloLectura> capitulosDisponibles;
 
@@ -14,6 +15,7 @@ class ConfiguracionLectura {
     required this.epilogo,
     required this.capitulosDisponibles,
     required this.coverUrl,
+    required this.bookId,
   });
 
   factory ConfiguracionLectura.fromJson(Map<String, dynamic> json) {
@@ -22,6 +24,7 @@ class ConfiguracionLectura {
       prologo: json["prologo"] ?? false,
       epilogo: json["epilogo"] ?? false,
       coverUrl: json['coverUrl']?.toString() ?? '',
+      bookId: json['bookId']?.toString() ?? '',
       capitulosDisponibles: (json["capitulosDisponibles"] as List? ?? [])
           .map((e) => CapituloLectura.fromJson(e))
           .toList(),

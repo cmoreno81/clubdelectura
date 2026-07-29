@@ -4,14 +4,16 @@ import 'app_colors.dart';
 
 abstract final class AppTextStyles {
   static const hero = TextStyle(
+    fontFamily: 'serif',
     fontSize: 34,
-    fontWeight: FontWeight.w700,
+    fontWeight: FontWeight.w800,
     color: AppColors.textPrimary,
     letterSpacing: -0.8,
     height: 1.15,
   );
 
   static const title = TextStyle(
+    fontFamily: 'serif',
     fontSize: 28,
     fontWeight: FontWeight.w700,
     color: AppColors.textPrimary,
@@ -19,8 +21,9 @@ abstract final class AppTextStyles {
   );
 
   static const section = TextStyle(
+    fontFamily: 'serif',
     fontSize: 22,
-    fontWeight: FontWeight.w600,
+    fontWeight: FontWeight.w700,
     color: AppColors.textPrimary,
   );
 

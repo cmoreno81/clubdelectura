@@ -1,0 +1,403 @@
+import 'package:flutter/material.dart';
+
+import '../../models/general_dashboard.dart';
+import '../../theme/app_colors.dart';
+import '../../theme/app_radius.dart';
+import '../common/club_book_cover.dart';
+
+class YearReadingShelf extends StatefulWidget {
+  const YearReadingShelf({
+    super.key,
+    required this.year,
+    required this.books,
+    required this.onBookTap,
+    this.onShare,
+  });
+
+  final int year;
+  final List<YearShelfBook> books;
+  final ValueChanged<YearShelfBook> onBookTap;
+  final VoidCallback? onShare;
+
+  @override
+  State<YearReadingShelf> createState() => _YearReadingShelfState();
+}
+
+class _YearReadingShelfState extends State<YearReadingShelf> {
+  bool _expanded = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final ordered = [...widget.books]
+      ..sort((left, right) => left.finishedAt.compareTo(right.finishedAt));
+    final visible = !_expanded && ordered.length > 12
+        ? ordered.sublist(ordered.length - 12)
+        : ordered;
+
+    return Container(
+      decoration: BoxDecoration(
+        color: const Color(0xFFF4E7D3),
+        borderRadius: BorderRadius.circular(AppRadius.xl),
+        border: Border.all(color: const Color(0xFFD3B58E)),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFF65452F).withValues(alpha: .10),
+            blurRadius: 16,
+            offset: const Offset(0, 7),
+          ),
+        ],
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(18, 15, 18, 11),
+            child: Row(
+              children: [
+                const Icon(
+                  Icons.local_library_outlined,
+                  color: AppColors.primaryDark,
+                  size: 22,
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    'Mi biblioteca ${widget.year}',
+                    style: const TextStyle(
+                      color: AppColors.textPrimary,
+                      fontSize: 18,
+                      fontWeight: FontWeight.w900,
+                    ),
+                  ),
+                ),
+                Text(
+                  '${ordered.length} ${ordered.length == 1 ? 'lectura' : 'lecturas'}',
+                  style: const TextStyle(
+                    color: AppColors.primaryDark,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+                if (widget.onShare != null) ...[
+                  const SizedBox(width: 4),
+                  IconButton(
+                    tooltip: 'Compartir mi año lector',
+                    visualDensity: VisualDensity.compact,
+                    onPressed: widget.onShare,
+                    icon: const Icon(
+                      Icons.ios_share_rounded,
+                      color: AppColors.primaryDark,
+                      size: 20,
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ),
+          for (var start = 0; start < visible.length; start += 4)
+            _YearShelfRow(
+              shelfIndex: start ~/ 4,
+              books: visible.sublist(
+                start,
+                start + 4 < visible.length ? start + 4 : visible.length,
+              ),
+              onBookTap: widget.onBookTap,
+            ),
+          if (ordered.length > 12)
+            SizedBox(
+              width: double.infinity,
+              child: TextButton.icon(
+                onPressed: () => setState(() => _expanded = !_expanded),
+                icon: Icon(
+                  _expanded
+                      ? Icons.keyboard_arrow_up_rounded
+                      : Icons.keyboard_arrow_down_rounded,
+                ),
+                label: Text(
+                  _expanded
+                      ? 'Recoger estantería'
+                      : 'Ver las ${ordered.length} lecturas',
+                ),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+class _YearShelfRow extends StatelessWidget {
+  const _YearShelfRow({
+    required this.shelfIndex,
+    required this.books,
+    required this.onBookTap,
+  });
+
+  final int shelfIndex;
+  final List<YearShelfBook> books;
+  final ValueChanged<YearShelfBook> onBookTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      height: 156,
+      decoration: const BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [Color(0xFFE8D4B7), Color(0xFFF8EEDD)],
+        ),
+      ),
+      child: Stack(
+        children: [
+          Positioned.fill(child: CustomPaint(painter: const _WoodGrain())),
+          Positioned(
+            left: 0,
+            right: 0,
+            bottom: 16,
+            child: Container(
+              height: 17,
+              decoration: const BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [
+                    Color(0xFFB9834F),
+                    Color(0xFF8A5937),
+                    Color(0xFF68422E),
+                  ],
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: Color(0x55351F14),
+                    blurRadius: 7,
+                    offset: Offset(0, 5),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          Positioned.fill(
+            bottom: 28,
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(15, 8, 48, 0),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  for (var index = 0; index < books.length; index++) ...[
+                    if (index > 0)
+                      SizedBox(
+                        width:
+                            5 +
+                            ((books[index].id.hashCode.abs() + index) % 5)
+                                .toDouble(),
+                      ),
+                    _CasualShelfBook(
+                      book: books[index],
+                      index: index,
+                      onTap: () => onBookTap(books[index]),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+          ),
+          Positioned(
+            right: 9,
+            bottom: 34,
+            child: _ShelfDecoration(type: shelfIndex % 3),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _CasualShelfBook extends StatelessWidget {
+  const _CasualShelfBook({
+    required this.book,
+    required this.index,
+    required this.onTap,
+  });
+
+  final YearShelfBook book;
+  final int index;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final seed = book.id.hashCode.abs() + index * 13;
+    final height = 91.0 + (seed % 14);
+    final angle = ((seed % 7) - 3) * .012;
+
+    return Transform.rotate(
+      angle: angle,
+      alignment: Alignment.bottomCenter,
+      child: ClubBookCover(
+        title: book.title,
+        imageUrl: book.coverUrl,
+        width: 60,
+        height: height,
+        borderRadius: BorderRadius.circular(4),
+        onTap: onTap,
+      ),
+    );
+  }
+}
+
+class _ShelfDecoration extends StatelessWidget {
+  const _ShelfDecoration({required this.type});
+
+  final int type;
+
+  @override
+  Widget build(BuildContext context) {
+    return switch (type) {
+      0 => const _ShelfPlant(),
+      1 => const _ShelfCandle(),
+      _ => const _ShelfVase(),
+    };
+  }
+}
+
+class _ShelfPlant extends StatelessWidget {
+  const _ShelfPlant();
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: 40,
+      height: 67,
+      child: Stack(
+        alignment: Alignment.bottomCenter,
+        children: [
+          Positioned(
+            bottom: 20,
+            left: 4,
+            child: Transform.rotate(
+              angle: -.35,
+              child: const Icon(
+                Icons.eco_rounded,
+                color: Color(0xFF769066),
+                size: 29,
+              ),
+            ),
+          ),
+          Positioned(
+            bottom: 25,
+            right: 1,
+            child: Transform.rotate(
+              angle: .42,
+              child: const Icon(
+                Icons.eco_rounded,
+                color: Color(0xFF55764F),
+                size: 26,
+              ),
+            ),
+          ),
+          Container(
+            width: 29,
+            height: 25,
+            decoration: const BoxDecoration(
+              color: Color(0xFFB66F58),
+              borderRadius: BorderRadius.vertical(bottom: Radius.circular(9)),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ShelfCandle extends StatelessWidget {
+  const _ShelfCandle();
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: 38,
+      height: 55,
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.end,
+        children: [
+          const Icon(
+            Icons.local_fire_department_rounded,
+            color: Color(0xFFE7A43D),
+            size: 19,
+          ),
+          Container(
+            width: 30,
+            height: 31,
+            decoration: BoxDecoration(
+              color: const Color(0xFFF3D7A5),
+              borderRadius: BorderRadius.circular(5),
+              border: Border.all(color: const Color(0xFFD1A866)),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ShelfVase extends StatelessWidget {
+  const _ShelfVase();
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: 40,
+      height: 69,
+      child: Stack(
+        alignment: Alignment.bottomCenter,
+        children: [
+          const Positioned(
+            top: 0,
+            child: Icon(
+              Icons.grass_rounded,
+              color: Color(0xFF9B7B68),
+              size: 34,
+            ),
+          ),
+          Container(
+            width: 29,
+            height: 37,
+            decoration: const BoxDecoration(
+              gradient: LinearGradient(
+                colors: [Color(0xFF9D7BC0), Color(0xFF684988)],
+              ),
+              borderRadius: BorderRadius.only(
+                topLeft: Radius.circular(5),
+                topRight: Radius.circular(5),
+                bottomLeft: Radius.circular(13),
+                bottomRight: Radius.circular(13),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _WoodGrain extends CustomPainter {
+  const _WoodGrain();
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = const Color(0xFF7F5839).withValues(alpha: .075)
+      ..strokeWidth = .8;
+    for (double y = 9; y < size.height; y += 15) {
+      final path = Path()..moveTo(0, y);
+      for (double x = 0; x <= size.width; x += 24) {
+        path.quadraticBezierTo(x + 12, y + 3, x + 24, y);
+      }
+      canvas.drawPath(path, paint);
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
+}

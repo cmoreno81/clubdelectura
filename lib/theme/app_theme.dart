@@ -11,10 +11,21 @@ abstract final class AppTheme {
 
       scaffoldBackgroundColor: AppColors.background,
 
+      pageTransitionsTheme: const PageTransitionsTheme(
+        builders: {
+          TargetPlatform.android: _NoPageTransitionsBuilder(),
+          TargetPlatform.iOS: _NoPageTransitionsBuilder(),
+          TargetPlatform.macOS: _NoPageTransitionsBuilder(),
+          TargetPlatform.windows: _NoPageTransitionsBuilder(),
+          TargetPlatform.linux: _NoPageTransitionsBuilder(),
+        },
+      ),
+
       colorScheme: ColorScheme.fromSeed(
         seedColor: AppColors.primary,
         brightness: Brightness.light,
-      ),
+        surface: AppColors.surface,
+      ).copyWith(secondary: AppColors.inkCoral, outline: AppColors.border),
 
       appBarTheme: const AppBarTheme(
         elevation: 0,
@@ -30,7 +41,12 @@ abstract final class AppTheme {
         elevation: 0,
         color: AppColors.surface,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(AppRadius.xl),
+          borderRadius: const BorderRadius.only(
+            topLeft: Radius.circular(24),
+            topRight: Radius.circular(12),
+            bottomRight: Radius.circular(24),
+            bottomLeft: Radius.circular(16),
+          ),
         ),
       ),
 
@@ -96,5 +112,20 @@ abstract final class AppTheme {
         bodySmall: AppTextStyles.caption,
       ),
     );
+  }
+}
+
+class _NoPageTransitionsBuilder extends PageTransitionsBuilder {
+  const _NoPageTransitionsBuilder();
+
+  @override
+  Widget buildTransitions<T>(
+    PageRoute<T> route,
+    BuildContext context,
+    Animation<double> animation,
+    Animation<double> secondaryAnimation,
+    Widget child,
+  ) {
+    return child;
   }
 }

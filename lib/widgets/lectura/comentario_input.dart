@@ -8,6 +8,11 @@ class ComentarioInput extends StatelessWidget {
   final bool esReflexion;
   final VoidCallback? onCerrar;
   final FocusNode? focusNode;
+  final bool esCita;
+  final ValueChanged<bool>? onTipoChanged;
+  final List<Color> coloresCita;
+  final Color? colorCita;
+  final ValueChanged<Color>? onColorChanged;
 
   const ComentarioInput({
     super.key,
@@ -18,30 +23,100 @@ class ComentarioInput extends StatelessWidget {
     this.esReflexion = false,
     this.onCerrar,
     this.focusNode,
+    this.esCita = false,
+    this.onTipoChanged,
+    this.coloresCita = const [],
+    this.colorCita,
+    this.onColorChanged,
   });
 
   @override
   Widget build(BuildContext context) {
-    final tecladoAbierto = MediaQuery.viewInsetsOf(context).bottom > 0;
-
     return Material(
       color: Theme.of(context).scaffoldBackgroundColor,
       elevation: 8,
       shadowColor: Colors.black12,
       child: SafeArea(
         top: false,
-        child: AnimatedPadding(
-          duration: const Duration(milliseconds: 180),
-          curve: Curves.easeOut,
-          padding: EdgeInsets.fromLTRB(
-            16,
-            tecladoAbierto ? 6 : 14,
-            16,
-            tecladoAbierto ? 6 : 12,
-          ),
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
+              if (!esReflexion && onTipoChanged != null) ...[
+                SizedBox(
+                  width: double.infinity,
+                  child: SegmentedButton<bool>(
+                    showSelectedIcon: false,
+                    segments: const [
+                      ButtonSegment(
+                        value: false,
+                        icon: Icon(Icons.chat_bubble_outline_rounded),
+                        label: Text('Comentario'),
+                      ),
+                      ButtonSegment(
+                        value: true,
+                        icon: Icon(Icons.format_quote_rounded),
+                        label: Text('Cita'),
+                      ),
+                    ],
+                    selected: {esCita},
+                    onSelectionChanged: (value) {
+                      onTipoChanged!(value.first);
+                    },
+                  ),
+                ),
+                if (esCita && coloresCita.isNotEmpty) ...[
+                  const SizedBox(height: 8),
+                  Row(
+                    children: [
+                      const Text(
+                        'Color del kit',
+                        style: TextStyle(fontWeight: FontWeight.w700),
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Wrap(
+                          spacing: 8,
+                          children: [
+                            for (final color in coloresCita)
+                              Semantics(
+                                button: true,
+                                selected: colorCita == color,
+                                label: 'Elegir color de cita',
+                                child: InkWell(
+                                  customBorder: const CircleBorder(),
+                                  onTap: () => onColorChanged?.call(color),
+                                  child: Container(
+                                    width: 30,
+                                    height: 30,
+                                    decoration: BoxDecoration(
+                                      color: color,
+                                      shape: BoxShape.circle,
+                                      border: Border.all(
+                                        color: colorCita == color
+                                            ? Colors.black87
+                                            : Colors.white,
+                                        width: colorCita == color ? 3 : 2,
+                                      ),
+                                      boxShadow: const [
+                                        BoxShadow(
+                                          color: Colors.black12,
+                                          blurRadius: 4,
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                              ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+                const SizedBox(height: 8),
+              ],
               if (onCerrar != null) ...[
                 Row(
                   children: [
@@ -65,32 +140,18 @@ class ComentarioInput extends StatelessWidget {
                 controller: controller,
                 focusNode: focusNode,
                 enabled: !enviando,
-
-                /*
-                 * Con teclado abierto limitamos la altura.
-                 * El texto largo continúa mediante scroll interno.
-                 */
-                minLines: tecladoAbierto
-                    ? 2
-                    : esReflexion
-                    ? 3
-                    : 3,
-
-                maxLines: tecladoAbierto
-                    ? esReflexion
-                          ? 4
-                          : 3
-                    : esReflexion
-                    ? 6
-                    : 6,
-
+                minLines: esReflexion ? 4 : 3,
+                maxLines: esReflexion ? 4 : 3,
                 maxLength: 5000,
                 keyboardType: TextInputType.multiline,
                 textInputAction: TextInputAction.newline,
-                scrollPadding: const EdgeInsets.only(bottom: 180),
+                scrollPadding: const EdgeInsets.only(bottom: 24),
+                scrollPhysics: const ClampingScrollPhysics(),
 
                 decoration: InputDecoration(
-                  hintText: hintText,
+                  hintText: esCita
+                      ? 'Escribe aquí la frase del libro…'
+                      : hintText,
                   hintStyle: TextStyle(
                     color: Colors.grey.shade600,
                     height: 1.4,
@@ -100,20 +161,21 @@ class ComentarioInput extends StatelessWidget {
                   fillColor: const Color(0xFFF7F1FF),
                   alignLabelWithHint: true,
 
-                  prefixIcon: Padding(
-                    padding: EdgeInsets.only(
-                      left: 14,
-                      right: 10,
-                      bottom: tecladoAbierto
-                          ? 20
-                          : esReflexion
-                          ? 90
-                          : 35,
-                    ),
-                    child: const Icon(
-                      Icons.edit_note_rounded,
-                      color: Color(0xFF6F4DBF),
-                      size: 26,
+                  prefixIconConstraints: const BoxConstraints(
+                    minWidth: 48,
+                    minHeight: 48,
+                  ),
+                  prefixIcon: const Align(
+                    widthFactor: 1,
+                    heightFactor: 1,
+                    alignment: Alignment.topCenter,
+                    child: Padding(
+                      padding: EdgeInsets.only(top: 14),
+                      child: Icon(
+                        Icons.edit_note_rounded,
+                        color: Color(0xFF6F4DBF),
+                        size: 26,
+                      ),
                     ),
                   ),
 
@@ -166,6 +228,8 @@ class ComentarioInput extends StatelessWidget {
                               ? 'Publicando...'
                               : esReflexion
                               ? 'Publicar reflexión'
+                              : esCita
+                              ? 'Guardar cita'
                               : 'Publicar comentario',
                           key: ValueKey(enviando),
                         ),

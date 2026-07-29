@@ -50,6 +50,15 @@ class ClubSectionTitle extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(title, style: AppTextStyles.section),
+                const SizedBox(height: 5),
+                Container(
+                  width: 34,
+                  height: 3,
+                  decoration: BoxDecoration(
+                    color: AppColors.inkCoral,
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                ),
 
                 if (subtitle != null && subtitle!.trim().isNotEmpty) ...[
                   const SizedBox(height: AppSpacing.xxs),

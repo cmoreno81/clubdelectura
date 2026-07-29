@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../navigation/app_page_route.dart';
+
 import '../services/api_exception.dart';
 import '../services/auth_service.dart';
 import 'code_password_page.dart';
@@ -27,7 +29,7 @@ class _ActivationEmailPageState extends State<ActivationEmailPage> {
       _message(message);
       await Navigator.push<void>(
         context,
-        MaterialPageRoute(
+        AppPageRoute(
           builder: (_) => CodePasswordPage(
             email: _email.text.trim(),
             mode: CodePasswordMode.activation,

@@ -56,15 +56,15 @@ class AtmosferaPaletas {
   static AtmosferaPaleta lectura(AtmosferaLectura atmosfera) {
     return switch (atmosfera) {
       AtmosferaLectura.neutra => const AtmosferaPaleta(
-        primary: Color(0xFF7651A8),
-        secondary: Color(0xFF9A78C5),
-        background: Color(0xFFF7F5FA),
-        surface: Color(0xFFFFFBFF),
-        navigationBackground: Color(0xFFFAF7FC),
-        navigationIndicator: Color(0xFFE9E0F2),
-        border: Color(0xFFE6DFEC),
-        accentSoft: Color(0xFFF1E8FF),
-        heroGradient: [Color(0xFFF8F3FF), Color(0xFFF1E8FF)],
+        primary: Color(0xFF603B73),
+        secondary: Color(0xFFC75D4D),
+        background: Color(0xFFF6F0E5),
+        surface: Color(0xFFFFFCF5),
+        navigationBackground: Color(0xFFF9F2E8),
+        navigationIndicator: Color(0xFFE9DCEE),
+        border: Color(0xFFD9CCBE),
+        accentSoft: Color(0xFFF0E3E5),
+        heroGradient: [Color(0xFFF4E9E0), Color(0xFFE9DCEE)],
       ),
 
       AtmosferaLectura.magica => const AtmosferaPaleta(

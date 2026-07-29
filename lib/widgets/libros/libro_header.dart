@@ -39,14 +39,11 @@ class LibroHeader extends StatelessWidget {
           borderColor: AppColors.primaryLight,
           child: Column(
             children: [
-              Hero(
-                tag: 'book-${libro.libro}',
-                child: ClubBookCover(
-                  title: libro.libro,
-                  imageUrl: libro.coverUrl,
-                  width: 184,
-                  showShadow: true,
-                ),
+              ClubBookCover(
+                title: libro.libro,
+                imageUrl: libro.coverUrl,
+                width: 184,
+                showShadow: true,
               ),
 
               const SizedBox(height: AppSpacing.lg),
@@ -101,6 +98,7 @@ class LibroHeader extends StatelessWidget {
                       value: '${libro.total}',
                       label: 'interesadas',
                       variant: ClubMetricVariant.info,
+                      compact: true,
                     ),
                   ),
 
@@ -112,6 +110,7 @@ class LibroHeader extends StatelessWidget {
                       value: '${libro.totalFinalizados}',
                       label: 'leídos',
                       variant: ClubMetricVariant.success,
+                      compact: true,
                     ),
                   ),
                 ],

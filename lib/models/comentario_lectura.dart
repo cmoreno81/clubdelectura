@@ -1,5 +1,3 @@
-import 'package:flutter/material.dart';
-
 import 'respuesta_comentario.dart';
 import 'reaccion_comentario.dart';
 
@@ -14,6 +12,8 @@ class ComentarioLectura {
   final String fecha;
 
   final String comentario;
+  final String tipo;
+  final String color;
 
   final int likes;
 
@@ -36,6 +36,8 @@ class ComentarioLectura {
     required this.avatarUrl,
     required this.fecha,
     required this.comentario,
+    required this.tipo,
+    required this.color,
     required this.likes,
     required this.miLike,
     required this.reacciones,
@@ -47,8 +49,6 @@ class ComentarioLectura {
   });
 
   factory ComentarioLectura.fromJson(Map<String, dynamic> json) {
-    debugPrint('Comentario JSON: $json');
-
     return ComentarioLectura(
       id: json["id"]?.toString() ?? "",
       libro: json["libro"]?.toString() ?? "",
@@ -61,6 +61,8 @@ class ComentarioLectura {
           "",
       fecha: json["fecha"]?.toString() ?? "",
       comentario: json["comentario"]?.toString() ?? "",
+      tipo: json["tipo"]?.toString().toUpperCase() ?? "COMMENT",
+      color: json["color"]?.toString() ?? "",
       likes: json["likes"] as int? ?? 0,
       miLike: json["miLike"] as bool? ?? false,
       reacciones: _parseReacciones(json),
@@ -80,6 +82,8 @@ class ComentarioLectura {
           .toList(),
     );
   }
+
+  bool get esCita => tipo == 'QUOTE';
 
   static Map<ReaccionComentario, int> _parseReacciones(
     Map<String, dynamic> json,

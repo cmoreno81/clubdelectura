@@ -3,8 +3,13 @@ import '../common/club_rating_selector.dart';
 
 class FinalizarLibroDialog extends StatefulWidget {
   final DateTime? fechaInicioActual;
+  final String formatoActual;
 
-  const FinalizarLibroDialog({super.key, this.fechaInicioActual});
+  const FinalizarLibroDialog({
+    super.key,
+    this.fechaInicioActual,
+    this.formatoActual = '',
+  });
 
   @override
   State<FinalizarLibroDialog> createState() => _FinalizarLibroDialogState();
@@ -12,7 +17,9 @@ class FinalizarLibroDialog extends StatefulWidget {
 
 class _FinalizarLibroDialogState extends State<FinalizarLibroDialog> {
   double? valoracion;
+  late String formato;
   late DateTime fechaInicio;
+  late DateTime fechaFin;
 
   final TextEditingController controller = TextEditingController();
 
@@ -24,6 +31,8 @@ class _FinalizarLibroDialogState extends State<FinalizarLibroDialog> {
     final hoy = DateTime.now();
     final actual = widget.fechaInicioActual;
     fechaInicio = actual == null || actual.isAfter(hoy) ? hoy : actual;
+    fechaFin = hoy;
+    formato = widget.formatoActual;
   }
 
   String get fechaInicioTexto {
@@ -38,6 +47,18 @@ class _FinalizarLibroDialogState extends State<FinalizarLibroDialog> {
     return '${fechaInicio.year}-$mes-$dia';
   }
 
+  String _fechaTexto(DateTime fecha) {
+    final dia = fecha.day.toString().padLeft(2, '0');
+    final mes = fecha.month.toString().padLeft(2, '0');
+    return '$dia/$mes/${fecha.year}';
+  }
+
+  String _fechaApi(DateTime fecha) {
+    final dia = fecha.day.toString().padLeft(2, '0');
+    final mes = fecha.month.toString().padLeft(2, '0');
+    return '${fecha.year}-$mes-$dia';
+  }
+
   Future<void> _seleccionarFechaInicio() async {
     final hoy = DateTime.now();
     final elegida = await showDatePicker(
@@ -47,7 +68,24 @@ class _FinalizarLibroDialogState extends State<FinalizarLibroDialog> {
       lastDate: hoy,
       helpText: 'Fecha de inicio de la lectura',
     );
-    if (elegida != null && mounted) setState(() => fechaInicio = elegida);
+    if (elegida != null && mounted) {
+      setState(() {
+        fechaInicio = elegida;
+        if (fechaFin.isBefore(fechaInicio)) fechaFin = fechaInicio;
+      });
+    }
+  }
+
+  Future<void> _seleccionarFechaFin() async {
+    final hoy = DateTime.now();
+    final elegida = await showDatePicker(
+      context: context,
+      initialDate: fechaFin.isBefore(fechaInicio) ? fechaInicio : fechaFin,
+      firstDate: fechaInicio,
+      lastDate: hoy,
+      helpText: 'Fecha de finalización de la lectura',
+    );
+    if (elegida != null && mounted) setState(() => fechaFin = elegida);
   }
 
   String get valoracionTexto {
@@ -77,13 +115,15 @@ class _FinalizarLibroDialogState extends State<FinalizarLibroDialog> {
   void _finalizar() {
     final valor = valoracion;
 
-    if (valor == null) return;
+    if (valor == null || formato.isEmpty) return;
 
     Navigator.pop<Map<String, String>>(context, {
       // El backend admite 3, 3.5, 4.5, etc.
       'valoracion': valor.toString(),
       'reflexion': controller.text.trim(),
       'fechaInicio': fechaInicioApi,
+      'fechaFin': _fechaApi(fechaFin),
+      'formato': formato,
     });
   }
 
@@ -108,10 +148,36 @@ class _FinalizarLibroDialogState extends State<FinalizarLibroDialog> {
                 trailing: const Icon(Icons.calendar_month_outlined),
                 onTap: _seleccionarFechaInicio,
               ),
+              ListTile(
+                contentPadding: EdgeInsets.zero,
+                leading: const Icon(Icons.event_available_outlined),
+                title: const Text('Fecha de finalización'),
+                subtitle: Text(_fechaTexto(fechaFin)),
+                trailing: const Icon(Icons.calendar_month_outlined),
+                onTap: _seleccionarFechaFin,
+              ),
 
-              Text(
-                'La fecha de fin se guardará al confirmar la lectura.',
-                style: Theme.of(context).textTheme.bodySmall,
+              const SizedBox(height: 24),
+
+              const Text(
+                '¿En qué formato lo has leído?',
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 8),
+              Wrap(
+                spacing: 8,
+                children: [
+                  for (final opcion in const [
+                    ('FISICO', '📖 Físico'),
+                    ('DIGITAL', '📱 Digital'),
+                    ('AUDIOLIBRO', '🎧 Audiolibro'),
+                  ])
+                    ChoiceChip(
+                      label: Text(opcion.$2),
+                      selected: formato == opcion.$1,
+                      onSelected: (_) => setState(() => formato = opcion.$1),
+                    ),
+                ],
               ),
 
               const SizedBox(height: 24),
@@ -224,7 +290,7 @@ class _FinalizarLibroDialogState extends State<FinalizarLibroDialog> {
         ),
         FilledButton.icon(
           style: FilledButton.styleFrom(minimumSize: const Size(0, 44)),
-          onPressed: valoracion == null ? null : _finalizar,
+          onPressed: valoracion == null || formato.isEmpty ? null : _finalizar,
           icon: const Icon(Icons.check),
           label: const Text('Finalizar'),
         ),

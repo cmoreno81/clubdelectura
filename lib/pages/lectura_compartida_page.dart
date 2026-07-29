@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+
+import '../navigation/app_page_route.dart';
 import 'capitulo_page.dart';
 import 'configurar_lectura_page.dart';
 import '../models/lectura_compartida.dart';
@@ -107,7 +109,7 @@ class _LecturaCompartidaPageState extends State<LecturaCompartidaPage> {
                       onPressed: () async {
                         final creada = await Navigator.push<bool>(
                           context,
-                          MaterialPageRoute(
+                          AppPageRoute(
                             builder: (_) => ConfigurarLecturaPage(
                               libro: lectura.libro,
                               tipo: "OFICIAL",
@@ -234,7 +236,7 @@ class _LecturaCompartidaPageState extends State<LecturaCompartidaPage> {
                   onTap: () async {
                     await Navigator.push(
                       context,
-                      MaterialPageRoute(
+                      AppPageRoute(
                         builder: (_) => CapituloPage(
                           libro: lectura.libro,
                           capitulo: capitulo.nombre,

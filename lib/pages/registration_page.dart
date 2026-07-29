@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../navigation/app_page_route.dart';
+
 import '../services/api_exception.dart';
 import '../services/auth_service.dart';
 import 'code_password_page.dart';
@@ -31,7 +33,7 @@ class _RegistrationPageState extends State<RegistrationPage> {
       ).showSnackBar(SnackBar(content: Text(message)));
       await Navigator.push<void>(
         context,
-        MaterialPageRoute(
+        AppPageRoute(
           builder: (_) => CodePasswordPage(
             email: _email.text.trim(),
             mode: CodePasswordMode.registration,

@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../navigation/app_page_route.dart';
+
 import 'activation_email_page.dart';
 import 'login_page.dart';
 import 'registration_page.dart';
@@ -40,7 +42,7 @@ class WelcomePage extends StatelessWidget {
                 child: FilledButton(
                   onPressed: () => Navigator.push<void>(
                     context,
-                    MaterialPageRoute(builder: (_) => const LoginPage()),
+                    AppPageRoute(builder: (_) => const LoginPage()),
                   ),
                   child: const Text('Acceder'),
                 ),
@@ -51,7 +53,7 @@ class WelcomePage extends StatelessWidget {
                 child: OutlinedButton(
                   onPressed: () => Navigator.push<void>(
                     context,
-                    MaterialPageRoute(builder: (_) => const RegistrationPage()),
+                    AppPageRoute(builder: (_) => const RegistrationPage()),
                   ),
                   child: const Text('Crear una cuenta'),
                 ),
@@ -62,9 +64,7 @@ class WelcomePage extends StatelessWidget {
                 child: OutlinedButton(
                   onPressed: () => Navigator.push<void>(
                     context,
-                    MaterialPageRoute(
-                      builder: (_) => const ActivationEmailPage(),
-                    ),
+                    AppPageRoute(builder: (_) => const ActivationEmailPage()),
                   ),
                   child: const Text('Activar mi cuenta'),
                 ),

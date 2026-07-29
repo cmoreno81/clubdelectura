@@ -1,6 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
-
 import '../models/libro.dart';
 import '../models/libro_agrupado.dart';
 import '../models/nuevo_libro.dart';
@@ -13,6 +11,7 @@ import '../theme/app_text_styles.dart';
 import '../widgets/common/club_button.dart';
 import '../widgets/common/club_card.dart';
 import '../widgets/common/club_chip.dart';
+import '../widgets/common/url_text_field.dart';
 
 class NuevoLibroPage extends StatefulWidget {
   final LibroAgrupado? libro;
@@ -35,6 +34,7 @@ class _NuevoLibroPageState extends State<NuevoLibroPage> {
 
   String genero = 'Fantasía';
   String prioridad = 'Media';
+  String formato = '';
   String autoconclusivo = 'Si';
 
   bool guardando = false;
@@ -63,6 +63,7 @@ class _NuevoLibroPageState extends State<NuevoLibroPage> {
     _GeneroOption('🚀', 'Ciencia Ficción', 'Ciencia ficción'),
     _GeneroOption('👻', 'Terror', 'Terror'),
     _GeneroOption('🕵️', 'Novela Negra', 'Novela negra'),
+    _GeneroOption('💬', 'Cómic', 'Cómic'),
   ];
 
   @override
@@ -99,6 +100,7 @@ class _NuevoLibroPageState extends State<NuevoLibroPage> {
     prioridad = registro?.prioridad.isNotEmpty == true
         ? _normalizarPrioridad(registro!.prioridad)
         : 'Media';
+    formato = registro?.formato ?? finalizado?.formato ?? '';
 
     goodreadsController.text = registro?.goodreads ?? '';
     coverUrlController.text = agrupado.coverUrl;
@@ -114,24 +116,6 @@ class _NuevoLibroPageState extends State<NuevoLibroPage> {
     if (mounted) {
       setState(() {});
     }
-  }
-
-  Future<void> _pegarUrlPortada() async {
-    final clipboardData = await Clipboard.getData(Clipboard.kTextPlain);
-    if (!mounted) return;
-
-    final url = clipboardData?.text?.trim() ?? '';
-    if (url.isEmpty) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('No hay texto para pegar')));
-      return;
-    }
-
-    coverUrlController.value = TextEditingValue(
-      text: url,
-      selection: TextSelection.collapsed(offset: url.length),
-    );
   }
 
   String _normalizarPrioridad(String value) {
@@ -190,6 +174,13 @@ class _NuevoLibroPageState extends State<NuevoLibroPage> {
       return;
     }
 
+    if (!esEdicion && formato.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Selecciona el formato del libro.')),
+      );
+      return;
+    }
+
     setState(() {
       guardando = true;
     });
@@ -204,6 +195,7 @@ class _NuevoLibroPageState extends State<NuevoLibroPage> {
         numSaga: autoconclusivo == 'No' ? numSagaController.text.trim() : '',
         autoconclusivo: autoconclusivo,
         prioridad: prioridad,
+        formato: formato,
         goodreads: goodreadsController.text.trim(),
         coverUrl: coverUrlController.text.trim(),
         paginas: paginas,
@@ -281,7 +273,7 @@ class _NuevoLibroPageState extends State<NuevoLibroPage> {
           children: [
             _cabecera(),
 
-            const SizedBox(height: AppSpacing.xl),
+            const SizedBox(height: AppSpacing.lg),
 
             const _SectionHeader(
               icon: Icons.menu_book_outlined,
@@ -495,6 +487,33 @@ class _NuevoLibroPageState extends State<NuevoLibroPage> {
                   ],
                 ),
               ),
+
+              const SizedBox(height: AppSpacing.xl),
+
+              const _SectionHeader(
+                icon: Icons.auto_stories_outlined,
+                color: AppColors.info,
+                title: 'Tu formato',
+                subtitle: 'Puedes cambiarlo más adelante en la ficha',
+              ),
+
+              const SizedBox(height: AppSpacing.md),
+
+              Wrap(
+                spacing: AppSpacing.sm,
+                children: [
+                  for (final opcion in const [
+                    ('FISICO', '📖 Físico'),
+                    ('DIGITAL', '📱 Digital'),
+                    ('AUDIOLIBRO', '🎧 Audiolibro'),
+                  ])
+                    ChoiceChip(
+                      label: Text(opcion.$2),
+                      selected: formato == opcion.$1,
+                      onSelected: (_) => setState(() => formato = opcion.$1),
+                    ),
+                ],
+              ),
             ],
 
             const SizedBox(height: AppSpacing.xl),
@@ -577,48 +596,22 @@ class _NuevoLibroPageState extends State<NuevoLibroPage> {
                   if (mostrarCamposAvanzados) ...[
                     const SizedBox(height: AppSpacing.lg),
 
-                    TextField(
+                    UrlTextField(
                       controller: goodreadsController,
-                      keyboardType: TextInputType.url,
                       textInputAction: TextInputAction.next,
-                      autocorrect: false,
-                      decoration: const InputDecoration(
-                        labelText: 'URL de Goodreads',
-                        hintText: 'https://www.goodreads.com/...',
-                        prefixIcon: Icon(Icons.language_rounded),
-                      ),
+                      labelText: 'Enlace de Goodreads',
+                      hintText: 'https://www.goodreads.com/...',
+                      prefixIcon: Icons.language_rounded,
                     ),
 
                     const SizedBox(height: AppSpacing.md),
 
-                    TextField(
+                    UrlTextField(
                       controller: coverUrlController,
-                      keyboardType: TextInputType.url,
                       textInputAction: TextInputAction.done,
-                      autocorrect: false,
-                      decoration: InputDecoration(
-                        labelText: 'URL de la portada',
-                        hintText: 'https://.../portada.jpg',
-                        prefixIcon: const Icon(Icons.image_outlined),
-                        suffixIcon: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            IconButton(
-                              tooltip: 'Pegar URL',
-                              icon: const Icon(Icons.content_paste_rounded),
-                              onPressed: _pegarUrlPortada,
-                            ),
-                            if (portadaActual.isNotEmpty)
-                              IconButton(
-                                tooltip: 'Quitar portada manual',
-                                icon: const Icon(Icons.close_rounded),
-                                onPressed: () {
-                                  coverUrlController.clear();
-                                },
-                              ),
-                          ],
-                        ),
-                      ),
+                      labelText: 'Enlace de la portada',
+                      hintText: 'https://.../portada.jpg',
+                      prefixIcon: Icons.image_outlined,
                     ),
 
                     const SizedBox(height: AppSpacing.md),
@@ -681,51 +674,64 @@ class _NuevoLibroPageState extends State<NuevoLibroPage> {
 
     return ClubCard(
       elevated: false,
-      padding: const EdgeInsets.all(AppSpacing.xl),
+      padding: const EdgeInsets.all(AppSpacing.md),
       gradient: LinearGradient(
         begin: Alignment.topLeft,
         end: Alignment.bottomRight,
         colors: [AppColors.surfaceSoft, colorPrincipal.withValues(alpha: 0.10)],
       ),
       borderColor: colorPrincipal.withValues(alpha: 0.18),
-      child: Column(
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          _PortadaPreview(
-            title: tituloActual,
-            imageUrl: portadaActual,
-            color: colorPrincipal,
+          SizedBox(
+            width: 72,
+            height: 102,
+            child: FittedBox(
+              fit: BoxFit.fill,
+              child: _PortadaPreview(
+                title: tituloActual,
+                imageUrl: portadaActual,
+                color: colorPrincipal,
+              ),
+            ),
           ),
 
-          const SizedBox(height: AppSpacing.lg),
+          const SizedBox(width: AppSpacing.md),
 
-          Text(
-            tituloActual.isEmpty
-                ? esEdicion
-                      ? 'Edita los datos del libro'
-                      : 'Añade una nueva historia'
-                : tituloActual,
-            textAlign: TextAlign.center,
-            maxLines: 3,
-            overflow: TextOverflow.ellipsis,
-            style: AppTextStyles.title.copyWith(fontSize: 27, height: 1.2),
-          ),
-
-          const SizedBox(height: AppSpacing.sm),
-
-          Text(
-            esEdicion
-                ? 'Corrige el título, género, saga o portada sin perder lecturas, comentarios ni valoraciones.'
-                : 'Completa los datos básicos y el libro se añadirá a tu lista de pendientes.',
-            textAlign: TextAlign.center,
-            style: AppTextStyles.bodySecondary.copyWith(height: 1.45),
-          ),
-
-          const SizedBox(height: AppSpacing.lg),
-
-          ClubChip(
-            label: esEdicion ? 'Editando libro' : 'Nueva incorporación',
-            icon: esEdicion ? Icons.edit_outlined : Icons.auto_stories_outlined,
-            variant: ClubChipVariant.primary,
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                ClubChip(
+                  label: esEdicion ? 'Editando libro' : 'Nueva incorporación',
+                  icon: esEdicion
+                      ? Icons.edit_outlined
+                      : Icons.auto_stories_outlined,
+                  variant: ClubChipVariant.primary,
+                ),
+                const SizedBox(height: AppSpacing.sm),
+                Text(
+                  tituloActual.isEmpty
+                      ? esEdicion
+                            ? 'Edita los datos del libro'
+                            : 'Añade una nueva historia'
+                      : tituloActual,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: AppTextStyles.section.copyWith(height: 1.15),
+                ),
+                const SizedBox(height: AppSpacing.xs),
+                Text(
+                  esEdicion
+                      ? 'Actualiza sus datos sin perder el historial.'
+                      : 'Completa los datos para añadirla a tu biblioteca.',
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: AppTextStyles.bodySecondary.copyWith(height: 1.25),
+                ),
+              ],
+            ),
           ),
         ],
       ),

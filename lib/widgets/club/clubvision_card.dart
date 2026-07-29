@@ -1,6 +1,7 @@
 import 'package:club_lectura_app/pages/clubvision_menu_page.dart';
 import 'package:flutter/material.dart';
 
+import '../../navigation/app_page_route.dart';
 import '../../models/dashboard.dart';
 import '../../models/estado_club.dart';
 import '../../pages/clubvision_votacion_page.dart';
@@ -38,7 +39,7 @@ class ClubvisionCard extends StatelessWidget {
   Future<void> _abrirClubvision(BuildContext context) async {
     await Navigator.push(
       context,
-      MaterialPageRoute(builder: (_) => const ClubvisionMenuPage()),
+      AppPageRoute(builder: (_) => const ClubvisionMenuPage()),
     );
 
     await onActualizar();
@@ -196,7 +197,7 @@ class ClubvisionCard extends StatelessWidget {
             onPressed: () async {
               final actualizado = await Navigator.push<bool>(
                 context,
-                MaterialPageRoute(
+                AppPageRoute(
                   builder: (_) => ClubvisionVotacionPage(
                     idVotacion: dashboard.clubvision.idVotacion,
                   ),

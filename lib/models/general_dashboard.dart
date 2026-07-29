@@ -5,6 +5,9 @@ class GeneralDashboard {
     required this.summary,
     required this.clubs,
     required this.currentBooks,
+    required this.personalLibrary,
+    required this.openSeries,
+    this._yearShelf,
     required this.calendar,
     required this.trending,
     required this.community,
@@ -15,6 +18,10 @@ class GeneralDashboard {
   final GeneralSummary summary;
   final List<GeneralClub> clubs;
   final List<GeneralBook> currentBooks;
+  final List<PersonalLibraryBook> personalLibrary;
+  final List<GeneralOpenSeries> openSeries;
+  final List<YearShelfBook>? _yearShelf;
+  List<YearShelfBook> get yearShelf => _yearShelf ?? const [];
   final ReadingCalendar calendar;
   final List<TrendingBook> trending;
   final CommunitySummary community;
@@ -29,6 +36,12 @@ class GeneralDashboard {
       ),
       clubs: _list(json['clubes'], GeneralClub.fromJson),
       currentBooks: _list(json['leyendoAhora'], GeneralBook.fromJson),
+      personalLibrary: _list(
+        json['miBiblioteca'],
+        PersonalLibraryBook.fromJson,
+      ),
+      openSeries: _list(json['sagasAbiertas'], GeneralOpenSeries.fromJson),
+      yearShelf: _list(json['estanteriaAnual'], YearShelfBook.fromJson),
       calendar: ReadingCalendar.fromJson(
         Map<String, dynamic>.from(json['calendario'] as Map? ?? {}),
       ),
@@ -38,6 +51,119 @@ class GeneralDashboard {
       ),
     );
   }
+}
+
+class YearShelfBook {
+  const YearShelfBook({
+    required this.id,
+    required this.bookId,
+    required this.title,
+    required this.coverUrl,
+    required this.finishedAt,
+  });
+
+  final String id;
+  final String bookId;
+  final String title;
+  final String coverUrl;
+  final String finishedAt;
+
+  factory YearShelfBook.fromJson(Map<String, dynamic> json) => YearShelfBook(
+    id: json['id']?.toString() ?? '',
+    bookId: json['bookId']?.toString() ?? '',
+    title: json['titulo']?.toString() ?? '',
+    coverUrl: json['coverUrl']?.toString() ?? '',
+    finishedAt: json['fechaFin']?.toString() ?? '',
+  );
+}
+
+class PersonalLibraryBook {
+  const PersonalLibraryBook({
+    required this.id,
+    required this.title,
+    required this.genre,
+    required this.coverUrl,
+    required this.priority,
+    required this.status,
+    required this.format,
+  });
+
+  final String id;
+  final String title;
+  final String genre;
+  final String coverUrl;
+  final String priority;
+  final String status;
+  final String format;
+
+  bool get isHighPriority => priority == 'ALTA';
+
+  factory PersonalLibraryBook.fromJson(Map<String, dynamic> json) =>
+      PersonalLibraryBook(
+        id: json['id']?.toString() ?? '',
+        title: json['titulo']?.toString() ?? '',
+        genre: json['genero']?.toString() ?? '',
+        coverUrl: json['coverUrl']?.toString() ?? '',
+        priority: json['prioridad']?.toString() ?? 'MEDIA',
+        status: json['estado']?.toString() ?? 'PENDIENTE',
+        format: json['formato']?.toString() ?? '',
+      );
+}
+
+class GeneralOpenSeries {
+  const GeneralOpenSeries({
+    required this.id,
+    required this.name,
+    required this.read,
+    required this.total,
+    this.coverUrl = '',
+    this.next,
+  });
+
+  final String id;
+  final String name;
+  final int read;
+  final int total;
+  final String coverUrl;
+  final GeneralSeriesNextBook? next;
+
+  double get progress => total <= 0 ? 0 : read / total;
+
+  factory GeneralOpenSeries.fromJson(Map<String, dynamic> json) {
+    final next = json['siguiente'];
+    return GeneralOpenSeries(
+      id: json['id']?.toString() ?? '',
+      name: json['nombre']?.toString() ?? '',
+      read: _integer(json['leidos']),
+      total: _integer(json['total']),
+      coverUrl: json['coverUrl']?.toString() ?? '',
+      next: next is Map
+          ? GeneralSeriesNextBook.fromJson(Map<String, dynamic>.from(next))
+          : null,
+    );
+  }
+}
+
+class GeneralSeriesNextBook {
+  const GeneralSeriesNextBook({
+    required this.id,
+    required this.title,
+    required this.coverUrl,
+    required this.inMyLibrary,
+  });
+
+  final String id;
+  final String title;
+  final String coverUrl;
+  final bool inMyLibrary;
+
+  factory GeneralSeriesNextBook.fromJson(Map<String, dynamic> json) =>
+      GeneralSeriesNextBook(
+        id: json['id']?.toString() ?? '',
+        title: json['titulo']?.toString() ?? '',
+        coverUrl: json['coverUrl']?.toString() ?? '',
+        inMyLibrary: json['enMiBiblioteca'] == true,
+      );
 }
 
 List<T> _list<T>(dynamic value, T Function(Map<String, dynamic>) parser) =>
@@ -140,17 +266,80 @@ class ReadingCalendar {
     required this.year,
     required this.month,
     required this.events,
+    this.finishedBooks = const [],
+    this.readings = const [],
   });
 
   final int year;
   final int month;
   final List<ReadingCalendarEvent> events;
+  final List<MonthlyFinishedBook> finishedBooks;
+  final List<MonthlyReadingSpan> readings;
 
-  factory ReadingCalendar.fromJson(Map<String, dynamic> json) =>
-      ReadingCalendar(
-        year: _integer(json['anio']),
-        month: _integer(json['mes']),
-        events: _list(json['eventos'], ReadingCalendarEvent.fromJson),
+  factory ReadingCalendar.fromJson(
+    Map<String, dynamic> json,
+  ) => ReadingCalendar(
+    year: _integer(json['anio']),
+    month: _integer(json['mes']),
+    events: _list(json['eventos'], ReadingCalendarEvent.fromJson),
+    finishedBooks: _list(json['librosLeidos'], MonthlyFinishedBook.fromJson),
+    readings: _list(json['lecturasCalendario'], MonthlyReadingSpan.fromJson),
+  );
+}
+
+class MonthlyReadingSpan {
+  const MonthlyReadingSpan({
+    required this.id,
+    required this.bookId,
+    required this.title,
+    required this.coverUrl,
+    required this.startedAt,
+    required this.finishedAt,
+  });
+
+  final String id;
+  final String bookId;
+  final String title;
+  final String coverUrl;
+  final String startedAt;
+  final String finishedAt;
+
+  factory MonthlyReadingSpan.fromJson(Map<String, dynamic> json) =>
+      MonthlyReadingSpan(
+        id: json['id']?.toString() ?? '',
+        bookId: json['bookId']?.toString() ?? '',
+        title: json['titulo']?.toString() ?? '',
+        coverUrl: json['coverUrl']?.toString() ?? '',
+        startedAt: json['fechaInicio']?.toString() ?? '',
+        finishedAt: json['fechaFin']?.toString() ?? '',
+      );
+}
+
+class MonthlyFinishedBook {
+  const MonthlyFinishedBook({
+    required this.id,
+    required this.bookId,
+    required this.title,
+    required this.coverUrl,
+    required this.finishedAt,
+    required this.pages,
+  });
+
+  final String id;
+  final String bookId;
+  final String title;
+  final String coverUrl;
+  final String finishedAt;
+  final int pages;
+
+  factory MonthlyFinishedBook.fromJson(Map<String, dynamic> json) =>
+      MonthlyFinishedBook(
+        id: json['id']?.toString() ?? '',
+        bookId: json['bookId']?.toString() ?? '',
+        title: json['titulo']?.toString() ?? '',
+        coverUrl: json['coverUrl']?.toString() ?? '',
+        finishedAt: json['fechaFin']?.toString() ?? '',
+        pages: _integer(json['paginas']),
       );
 }
 
@@ -206,17 +395,44 @@ class CommunitySummary {
     required this.clubs,
     required this.readers,
     required this.activeReadings,
+    required this.formats,
   });
 
   final int clubs;
   final int readers;
   final int activeReadings;
+  final CommunityReadingFormats formats;
 
   factory CommunitySummary.fromJson(Map<String, dynamic> json) =>
       CommunitySummary(
         clubs: _integer(json['clubes']),
         readers: _integer(json['lectoras']),
         activeReadings: _integer(json['lecturasActivas']),
+        formats: CommunityReadingFormats.fromJson(
+          Map<String, dynamic>.from(json['formatos'] as Map? ?? {}),
+        ),
+      );
+}
+
+class CommunityReadingFormats {
+  const CommunityReadingFormats({
+    required this.physical,
+    required this.digital,
+    required this.audiobook,
+    required this.total,
+  });
+
+  final int physical;
+  final int digital;
+  final int audiobook;
+  final int total;
+
+  factory CommunityReadingFormats.fromJson(Map<String, dynamic> json) =>
+      CommunityReadingFormats(
+        physical: _integer(json['fisico']),
+        digital: _integer(json['digital']),
+        audiobook: _integer(json['audiolibro']),
+        total: _integer(json['total']),
       );
 }
 

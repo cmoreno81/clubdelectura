@@ -9,6 +9,8 @@ import 'package:club_lectura_app/widgets/common/club_empty_state.dart';
 import 'package:club_lectura_app/widgets/error_view.dart';
 import 'package:flutter/material.dart';
 
+import '../navigation/app_page_route.dart';
+
 import '../models/libro_agrupado.dart';
 import '../models/libro.dart';
 import '../models/libro_finalizado.dart';
@@ -49,7 +51,7 @@ class _LibrosPageState extends State<LibrosPage> {
   Future<void> _abrirNuevoLibro() async {
     final creado = await Navigator.push<bool>(
       context,
-      MaterialPageRoute(builder: (_) => const NuevoLibroPage()),
+      AppPageRoute(builder: (_) => const NuevoLibroPage()),
     );
 
     if (!mounted) return;
@@ -418,7 +420,7 @@ class _LibrosPageState extends State<LibrosPage> {
       onTap: () async {
         await Navigator.push<bool>(
           context,
-          MaterialPageRoute(builder: (_) => DetalleLibroPage(libro: libro)),
+          AppPageRoute(builder: (_) => DetalleLibroPage(libro: libro)),
         );
 
         _atmosferaRestaurada = false;
@@ -437,7 +439,6 @@ class _LibrosPageState extends State<LibrosPage> {
             imageUrl: libro.coverUrl,
             width: 92,
             showShadow: false,
-            heroTag: 'book-${libro.libro}',
           ),
 
           const SizedBox(width: AppSpacing.md),
@@ -460,7 +461,13 @@ class _LibrosPageState extends State<LibrosPage> {
 
                     const SizedBox(width: AppSpacing.xs),
 
-                    if (libro.yaLoTengo)
+                    if (libro.leidoPorMi)
+                      const ClubChip(
+                        label: 'Leído por ti',
+                        icon: Icons.auto_stories_rounded,
+                        variant: ClubChipVariant.primary,
+                      )
+                    else if (libro.yaLoTengo)
                       const Tooltip(
                         message: 'Ya está en tu lista',
                         child: Icon(
@@ -787,6 +794,7 @@ class _LibrosPageState extends State<LibrosPage> {
       numSaga: finalizado.numSaga,
       autoconclusivo: finalizado.autoconclusivo,
       prioridad: 'MEDIA',
+      formato: finalizado.formato,
       estado: 'FINALIZADO',
       valoracion: finalizado.valoracion,
       yaLoTengo: false,
@@ -871,6 +879,10 @@ class _LibrosPageState extends State<LibrosPage> {
           );
 
           agrupado.finalizados.add(finalizado);
+          if (finalizado.yaLoTengo) {
+            agrupado.leidoPorMi = true;
+            agrupado.yaLoTengo = true;
+          }
           final yaExiste = agrupado.registros.any(
             (registro) =>
                 registro.usuario.trim().toLowerCase() ==
@@ -936,6 +948,10 @@ class _LibrosPageState extends State<LibrosPage> {
       );
 
       agrupados[clave]!.finalizados.add(finalizado);
+      if (finalizado.yaLoTengo) {
+        agrupados[clave]!.leidoPorMi = true;
+        agrupados[clave]!.yaLoTengo = true;
+      }
       agrupados[clave]!.registros.add(_registroDesdeFinalizado(finalizado));
     }
 
@@ -976,34 +992,82 @@ class _LibrosPageState extends State<LibrosPage> {
   }
 
   Future<void> _confirmarAgregarLibro(LibroAgrupado libro) async {
-    final confirmar = await showDialog<bool>(
+    final preferencias = await showDialog<({String prioridad, String formato})>(
       context: context,
       builder: (dialogContext) {
-        return AlertDialog(
-          title: const Text('Añadir libro'),
-          content: Text(
-            '¿Quieres añadir "${libro.libro}" '
-            'a tu lista de pendientes?',
+        var prioridad = 'MEDIA';
+        String? formato;
+        return StatefulBuilder(
+          builder: (context, setDialogState) => AlertDialog(
+            title: const Text('Añadir a mi biblioteca'),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(libro.libro),
+                const SizedBox(height: 20),
+                const Text('¿Qué prioridad tiene para ti?'),
+                const SizedBox(height: 8),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: [
+                    for (final opcion in const [
+                      ('ALTA', '🔴 Alta'),
+                      ('MEDIA', '🟡 Media'),
+                      ('BAJA', '🟢 Baja'),
+                    ])
+                      ChoiceChip(
+                        label: Text(opcion.$2),
+                        selected: prioridad == opcion.$1,
+                        showCheckmark: false,
+                        onSelected: (_) =>
+                            setDialogState(() => prioridad = opcion.$1),
+                      ),
+                  ],
+                ),
+                const SizedBox(height: 20),
+                const Text('¿En qué formato lo tienes?'),
+                const SizedBox(height: 8),
+                Wrap(
+                  spacing: 8,
+                  children: [
+                    for (final opcion in const [
+                      ('FISICO', '📖 Físico'),
+                      ('DIGITAL', '📱 Digital'),
+                      ('AUDIOLIBRO', '🎧 Audio'),
+                    ])
+                      ChoiceChip(
+                        label: Text(opcion.$2),
+                        selected: formato == opcion.$1,
+                        onSelected: (_) =>
+                            setDialogState(() => formato = opcion.$1),
+                      ),
+                  ],
+                ),
+              ],
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(dialogContext),
+                child: const Text('Cancelar'),
+              ),
+              FilledButton(
+                onPressed: formato == null
+                    ? null
+                    : () => Navigator.pop(dialogContext, (
+                        prioridad: prioridad,
+                        formato: formato!,
+                      )),
+                child: const Text('Añadir'),
+              ),
+            ],
           ),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.pop(dialogContext, false);
-              },
-              child: const Text('Cancelar'),
-            ),
-            FilledButton(
-              onPressed: () {
-                Navigator.pop(dialogContext, true);
-              },
-              child: const Text('Añadir'),
-            ),
-          ],
         );
       },
     );
 
-    if (confirmar != true) return;
+    if (preferencias == null) return;
 
     final usuario = await UsuarioService().obtenerUsuario();
 
@@ -1021,6 +1085,8 @@ class _LibrosPageState extends State<LibrosPage> {
     final respuesta = await ApiService().anadirLibroExistente(
       usuario: usuario,
       libro: libro.libro,
+      prioridad: preferencias.prioridad,
+      formato: preferencias.formato,
     );
 
     if (!mounted) return;

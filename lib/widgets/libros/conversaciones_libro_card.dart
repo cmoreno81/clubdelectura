@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../navigation/app_page_route.dart';
 import '../../models/conversacion_libro.dart';
 import '../../pages/lectura_page.dart';
 import '../../services/api_service.dart';
@@ -71,7 +72,7 @@ class ConversacionesLibroCard extends StatelessWidget {
                   onTap: () {
                     Navigator.push(
                       context,
-                      MaterialPageRoute(
+                      AppPageRoute(
                         builder: (_) =>
                             LecturaPage(libro: libro, coverUrl: coverUrl),
                       ),

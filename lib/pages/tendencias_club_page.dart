@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../navigation/app_page_route.dart';
+
 import '../models/tendencias_club.dart';
 import '../services/api_service.dart';
 import '../theme/app_colors.dart';
@@ -44,7 +46,7 @@ class _TendenciasClubPageState extends State<TendenciasClubPage> {
 
     Navigator.push(
       context,
-      MaterialPageRoute(builder: (_) => PerfilUsuarioPage(usuario: nombre)),
+      AppPageRoute(builder: (_) => PerfilUsuarioPage(usuario: nombre)),
     );
   }
 

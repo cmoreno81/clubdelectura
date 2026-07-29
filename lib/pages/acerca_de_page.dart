@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+
+import '../navigation/app_page_route.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -111,7 +113,7 @@ class _AcercaDePageState extends State<AcercaDePage> {
                     trailing: const Icon(Icons.chevron_right_rounded),
                     onTap: () => Navigator.push<void>(
                       context,
-                      MaterialPageRoute(
+                      AppPageRoute(
                         builder: (_) => const TecnologiaCreditosPage(),
                       ),
                     ),
@@ -123,7 +125,7 @@ class _AcercaDePageState extends State<AcercaDePage> {
                     trailing: const Icon(Icons.chevron_right_rounded),
                     onTap: () => Navigator.push<void>(
                       context,
-                      MaterialPageRoute(
+                      AppPageRoute(
                         builder: (_) => const PoliticaPrivacidadPage(),
                       ),
                     ),

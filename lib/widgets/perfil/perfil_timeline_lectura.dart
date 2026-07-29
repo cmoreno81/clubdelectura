@@ -12,8 +12,13 @@ import '../common/club_rating_stars.dart';
 
 class PerfilTimelineLectura extends StatelessWidget {
   final List<PerfilLibroTerminado> libros;
+  final ValueChanged<PerfilLibroTerminado>? onBookTap;
 
-  const PerfilTimelineLectura({super.key, required this.libros});
+  const PerfilTimelineLectura({
+    super.key,
+    required this.libros,
+    this.onBookTap,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -58,6 +63,7 @@ class PerfilTimelineLectura extends StatelessWidget {
               anio: grupo.key,
               meses: grupo.value,
               nombreMes: _nombreMes,
+              onBookTap: onBookTap,
             ),
           )
           .toList(),
@@ -117,11 +123,13 @@ class _GrupoAnioTimeline extends StatelessWidget {
   final int anio;
   final Map<int, List<PerfilLibroTerminado>> meses;
   final String Function(int mes) nombreMes;
+  final ValueChanged<PerfilLibroTerminado>? onBookTap;
 
   const _GrupoAnioTimeline({
     required this.anio,
     required this.meses,
     required this.nombreMes,
+    required this.onBookTap,
   });
 
   @override
@@ -162,7 +170,11 @@ class _GrupoAnioTimeline extends StatelessWidget {
           ),
           children: [
             for (final mes in meses.entries) ...[
-              _GrupoMesTimeline(titulo: nombreMes(mes.key), libros: mes.value),
+              _GrupoMesTimeline(
+                titulo: nombreMes(mes.key),
+                libros: mes.value,
+                onBookTap: onBookTap,
+              ),
               if (mes.key != meses.keys.last)
                 const SizedBox(height: AppSpacing.md),
             ],
@@ -176,8 +188,13 @@ class _GrupoAnioTimeline extends StatelessWidget {
 class _GrupoMesTimeline extends StatelessWidget {
   final String titulo;
   final List<PerfilLibroTerminado> libros;
+  final ValueChanged<PerfilLibroTerminado>? onBookTap;
 
-  const _GrupoMesTimeline({required this.titulo, required this.libros});
+  const _GrupoMesTimeline({
+    required this.titulo,
+    required this.libros,
+    required this.onBookTap,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -245,6 +262,7 @@ class _GrupoMesTimeline extends StatelessWidget {
             return _TimelineEntrada(
               libro: libros[index],
               esUltima: index == libros.length - 1,
+              onTap: onBookTap == null ? null : () => onBookTap!(libros[index]),
             );
           }),
         ],
@@ -256,8 +274,13 @@ class _GrupoMesTimeline extends StatelessWidget {
 class _TimelineEntrada extends StatelessWidget {
   final PerfilLibroTerminado libro;
   final bool esUltima;
+  final VoidCallback? onTap;
 
-  const _TimelineEntrada({required this.libro, required this.esUltima});
+  const _TimelineEntrada({
+    required this.libro,
+    required this.esUltima,
+    this.onTap,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -330,98 +353,102 @@ class _TimelineEntrada extends StatelessWidget {
         Expanded(
           child: Padding(
             padding: EdgeInsets.only(bottom: esUltima ? 0 : AppSpacing.md),
-            child: Container(
-              padding: const EdgeInsets.all(AppSpacing.md),
-              decoration: BoxDecoration(
-                color: AppColors.surfaceSoft.withValues(alpha: 0.58),
-                borderRadius: BorderRadius.circular(AppRadius.lg),
-                border: Border.all(color: color.withValues(alpha: 0.10)),
-              ),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(AppRadius.sm),
-                    child: SizedBox(
-                      width: 48,
-                      height: 68,
-                      child: libro.coverUrl.trim().isNotEmpty
-                          ? Image.network(
-                              libro.coverUrl,
-                              fit: BoxFit.cover,
-                              errorBuilder: (_, _, _) {
-                                return _PortadaFallback(color: color);
-                              },
-                            )
-                          : _PortadaFallback(color: color),
+            child: InkWell(
+              borderRadius: BorderRadius.circular(AppRadius.lg),
+              onTap: onTap,
+              child: Container(
+                padding: const EdgeInsets.all(AppSpacing.md),
+                decoration: BoxDecoration(
+                  color: AppColors.surfaceSoft.withValues(alpha: 0.58),
+                  borderRadius: BorderRadius.circular(AppRadius.lg),
+                  border: Border.all(color: color.withValues(alpha: 0.10)),
+                ),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(AppRadius.sm),
+                      child: SizedBox(
+                        width: 48,
+                        height: 68,
+                        child: libro.coverUrl.trim().isNotEmpty
+                            ? Image.network(
+                                libro.coverUrl,
+                                fit: BoxFit.cover,
+                                errorBuilder: (_, _, _) {
+                                  return _PortadaFallback(color: color);
+                                },
+                              )
+                            : _PortadaFallback(color: color),
+                      ),
                     ),
-                  ),
 
-                  const SizedBox(width: AppSpacing.sm),
+                    const SizedBox(width: AppSpacing.sm),
 
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          libro.libro,
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                          style: AppTextStyles.body.copyWith(
-                            fontWeight: FontWeight.w800,
-                            height: 1.25,
-                          ),
-                        ),
-
-                        const SizedBox(height: 4),
-
-                        Text(
-                          '${iconoGenero(libro.genero)} ${libro.genero}',
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: AppTextStyles.caption.copyWith(
-                            color: AppColors.textSecondary,
-                          ),
-                        ),
-
-                        if (libro.esRelectura) ...[
-                          const SizedBox(height: 4),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
                           Text(
-                            'RELECTURA',
-                            style: AppTextStyles.caption.copyWith(
-                              color: color,
+                            libro.libro,
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                            style: AppTextStyles.body.copyWith(
                               fontWeight: FontWeight.w800,
+                              height: 1.25,
                             ),
                           ),
-                        ],
 
-                        if (libro.valoracion.isNotEmpty) ...[
-                          const SizedBox(height: 5),
-
-                          ClubRatingStars(
-                            valoracion: libro.valoracion,
-                            size: 16,
-                            spacing: 0,
-                          ),
-                        ],
-
-                        if (duracion.isNotEmpty) ...[
-                          const SizedBox(height: 5),
+                          const SizedBox(height: 4),
 
                           Text(
-                            duracion,
+                            '${iconoGenero(libro.genero)} ${libro.genero}',
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                             style: AppTextStyles.caption.copyWith(
-                              color: color,
-                              fontWeight: FontWeight.w700,
+                              color: AppColors.textSecondary,
                             ),
                           ),
+
+                          if (libro.esRelectura) ...[
+                            const SizedBox(height: 4),
+                            Text(
+                              'RELECTURA',
+                              style: AppTextStyles.caption.copyWith(
+                                color: color,
+                                fontWeight: FontWeight.w800,
+                              ),
+                            ),
+                          ],
+
+                          if (libro.valoracion.isNotEmpty) ...[
+                            const SizedBox(height: 5),
+
+                            ClubRatingStars(
+                              valoracion: libro.valoracion,
+                              size: 16,
+                              spacing: 0,
+                            ),
+                          ],
+
+                          if (duracion.isNotEmpty) ...[
+                            const SizedBox(height: 5),
+
+                            Text(
+                              duracion,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: AppTextStyles.caption.copyWith(
+                                color: color,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                          ],
                         ],
-                      ],
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
           ),

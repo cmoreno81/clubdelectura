@@ -1,8 +1,12 @@
 import 'package:flutter/material.dart';
 
+import '../navigation/app_page_route.dart';
+import '../navigation/book_detail_navigation.dart';
+
 import '../models/perfil_usuario.dart';
 import '../models/libro_agrupado.dart';
 import '../services/api_service.dart';
+import '../services/api_exception.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_radius.dart';
 import '../theme/app_spacing.dart';
@@ -19,6 +23,8 @@ import '../widgets/perfil/editar_fechas_lectura_dialog.dart';
 import '../utils/lectura_fecha_utils.dart';
 import '../widgets/perfil/editar_avatar_dialog.dart';
 import '../widgets/perfil/perfil_timeline_lectura.dart';
+import '../widgets/perfil/perfil_saga_card.dart';
+import '../widgets/perfil/perfil_estanteria_mes.dart';
 import '../widgets/common/club_rating_stars.dart';
 import 'detalle_libro_page.dart';
 import 'acerca_de_page.dart';
@@ -27,16 +33,92 @@ import '../services/auth_service.dart';
 
 class PerfilUsuarioPage extends StatefulWidget {
   final String usuario;
+  final bool focusUpToDateSeries;
 
-  const PerfilUsuarioPage({super.key, required this.usuario});
+  const PerfilUsuarioPage({
+    super.key,
+    required this.usuario,
+    this.focusUpToDateSeries = false,
+  });
 
   @override
   State<PerfilUsuarioPage> createState() => _PerfilUsuarioPageState();
 }
 
+class _ProfileMenuOption extends StatelessWidget {
+  const _ProfileMenuOption({
+    required this.icon,
+    required this.title,
+    required this.subtitle,
+    required this.selected,
+  });
+
+  final IconData icon;
+  final String title;
+  final String subtitle;
+  final bool selected;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Container(
+          width: 40,
+          height: 40,
+          decoration: BoxDecoration(
+            color: selected ? AppColors.primaryLight : AppColors.surfaceSoft,
+            borderRadius: BorderRadius.circular(AppRadius.md),
+          ),
+          child: Icon(
+            icon,
+            size: 21,
+            color: selected ? AppColors.primaryDark : AppColors.textSecondary,
+          ),
+        ),
+        const SizedBox(width: AppSpacing.sm),
+        Expanded(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                title,
+                style: TextStyle(
+                  fontWeight: FontWeight.w800,
+                  color: selected
+                      ? AppColors.primaryDark
+                      : AppColors.textPrimary,
+                ),
+              ),
+              const SizedBox(height: 2),
+              Text(
+                subtitle,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: AppTextStyles.caption.copyWith(fontSize: 11),
+              ),
+            ],
+          ),
+        ),
+        if (selected) ...[
+          const SizedBox(width: AppSpacing.xs),
+          const Icon(
+            Icons.check_circle_rounded,
+            size: 19,
+            color: AppColors.primary,
+          ),
+        ],
+      ],
+    );
+  }
+}
+
 class _PerfilUsuarioPageState extends State<PerfilUsuarioPage> {
   late Future<PerfilUsuario> future;
   String? usuarioActual;
+  String _menuPerfil = 'RESUMEN';
+  final GlobalKey _upToDateSeriesKey = GlobalKey();
+  bool _didFocusUpToDateSeries = false;
 
   @override
   void initState() {
@@ -132,45 +214,7 @@ class _PerfilUsuarioPageState extends State<PerfilUsuarioPage> {
     }
   }
 
-  Future<void> _editarFechaInicio(PerfilLibro libro) async {
-    if (!esMiPerfil || libro.libraryId.trim().isEmpty) return;
-
-    final hoy = DateTime.now();
-    final actual = LecturaFechaUtils.parse(libro.fechaInicio) ?? hoy;
-    final elegida = await showDatePicker(
-      context: context,
-      initialDate: actual.isAfter(hoy) ? hoy : actual,
-      firstDate: DateTime(1950),
-      lastDate: hoy,
-      helpText: 'Fecha de inicio de la lectura',
-    );
-    if (elegida == null || !mounted) return;
-
-    final mes = elegida.month.toString().padLeft(2, '0');
-    final dia = elegida.day.toString().padLeft(2, '0');
-    final respuesta = await ApiService().actualizarFechasLectura(
-      usuario: widget.usuario,
-      libraryId: libro.libraryId,
-      fechaInicio: '${elegida.year}-$mes-$dia',
-      fechaFin: '',
-    );
-    if (!mounted) return;
-
-    final ok = respuesta['ok'] == true;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          respuesta['mensaje']?.toString() ??
-              (ok
-                  ? 'Fecha de inicio actualizada'
-                  : 'No se ha podido actualizar la fecha'),
-        ),
-      ),
-    );
-    if (ok) await _recargar();
-  }
-
-  Future<void> _abrirFichaLibro(PerfilLibro libro) async {
+  Future<void> _abrirFichaSaga(PerfilSagaVolumen volumen) async {
     try {
       final data = await ApiService().getLibrosData();
       if (!mounted) return;
@@ -178,44 +222,108 @@ class _PerfilUsuarioPageState extends State<PerfilUsuarioPage> {
       final registros = data.libros
           .where(
             (item) =>
-                (libro.bookId.isNotEmpty && item.bookId == libro.bookId) ||
+                item.bookId == volumen.bookId ||
                 item.libro.trim().toLowerCase() ==
-                    libro.libro.trim().toLowerCase(),
+                    volumen.titulo.trim().toLowerCase(),
           )
           .toList();
       final finalizados = data.finalizados
           .where(
             (item) =>
-                (libro.bookId.isNotEmpty && item.bookId == libro.bookId) ||
+                item.bookId == volumen.bookId ||
                 item.libro.trim().toLowerCase() ==
-                    libro.libro.trim().toLowerCase(),
+                    volumen.titulo.trim().toLowerCase(),
           )
           .toList();
 
-      if (registros.isEmpty && finalizados.isEmpty) return;
+      if (registros.isEmpty && finalizados.isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+              'Este volumen todavía no está disponible en el club activo.',
+            ),
+          ),
+        );
+        return;
+      }
 
       final agrupado = LibroAgrupado(
-        libro: libro.libro,
-        genero: libro.genero,
+        libro: volumen.titulo,
+        genero: registros.isNotEmpty
+            ? registros.first.genero
+            : finalizados.first.genero,
         registros: registros,
         finalizados: finalizados,
         yaLoTengo: registros.any((item) => item.yaLoTengo),
-        coverUrl: libro.coverUrl.isNotEmpty
-            ? libro.coverUrl
+        leidoPorMi: finalizados.any((item) => item.yaLoTengo),
+        coverUrl: volumen.coverUrl.isNotEmpty
+            ? volumen.coverUrl
             : registros.isNotEmpty
             ? registros.first.coverUrl
             : finalizados.first.coverUrl,
       );
 
-      await Navigator.push(
+      await Navigator.push<void>(
         context,
-        MaterialPageRoute(builder: (_) => DetalleLibroPage(libro: agrupado)),
+        AppPageRoute(builder: (_) => DetalleLibroPage(libro: agrupado)),
       );
+      if (mounted) await _recargar();
     } catch (_) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('No se ha podido abrir la ficha.')),
       );
+    }
+  }
+
+  Future<void> _editarNumeroSaga(PerfilSagaVolumen volumen) async {
+    final controller = TextEditingController(text: volumen.numero);
+    final numero = await showDialog<String>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Corregir número'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(volumen.titulo),
+            const SizedBox(height: AppSpacing.md),
+            TextField(
+              controller: controller,
+              autofocus: true,
+              keyboardType: const TextInputType.numberWithOptions(
+                decimal: true,
+              ),
+              decoration: const InputDecoration(labelText: 'Volumen'),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancelar'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(context, controller.text.trim()),
+            child: const Text('Guardar'),
+          ),
+        ],
+      ),
+    );
+    controller.dispose();
+    if (numero == null || numero.isEmpty || !mounted) return;
+    try {
+      await ApiService().actualizarNumeroVolumenSaga(
+        bookId: volumen.bookId,
+        numero: numero,
+      );
+      if (mounted) await _recargar();
+    } on ApiException catch (error) {
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(error.message)));
+      }
     }
   }
 
@@ -250,7 +358,87 @@ class _PerfilUsuarioPageState extends State<PerfilUsuarioPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Perfil lector')),
+      appBar: AppBar(
+        title: const Text('Perfil lector'),
+        actions: [
+          PopupMenuButton<String>(
+            tooltip: 'Secciones del perfil',
+            initialValue: _menuPerfil,
+            position: PopupMenuPosition.under,
+            constraints: const BoxConstraints(minWidth: 250, maxWidth: 290),
+            child: Container(
+              margin: const EdgeInsets.only(right: AppSpacing.sm),
+              padding: const EdgeInsets.symmetric(
+                horizontal: AppSpacing.sm,
+                vertical: 7,
+              ),
+              decoration: BoxDecoration(
+                color: AppColors.primaryLight.withValues(alpha: .65),
+                borderRadius: BorderRadius.circular(AppRadius.pill),
+                border: Border.all(
+                  color: AppColors.primary.withValues(alpha: .22),
+                ),
+              ),
+              child: const Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    Icons.grid_view_rounded,
+                    size: 18,
+                    color: AppColors.primaryDark,
+                  ),
+                  SizedBox(width: 6),
+                  Text(
+                    'Secciones',
+                    style: TextStyle(
+                      color: AppColors.primaryDark,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                  SizedBox(width: 2),
+                  Icon(
+                    Icons.arrow_drop_down_rounded,
+                    color: AppColors.primaryDark,
+                  ),
+                ],
+              ),
+            ),
+            onSelected: (value) => setState(() => _menuPerfil = value),
+            itemBuilder: (_) => [
+              PopupMenuItem(
+                value: 'RESUMEN',
+                height: 70,
+                child: _ProfileMenuOption(
+                  icon: Icons.view_week_outlined,
+                  title: 'Mis sagas',
+                  subtitle: 'Estantería, sagas y preferencias',
+                  selected: _menuPerfil == 'RESUMEN',
+                ),
+              ),
+              PopupMenuItem(
+                value: 'TIMELINE',
+                height: 70,
+                child: _ProfileMenuOption(
+                  icon: Icons.timeline_rounded,
+                  title: 'Timeline',
+                  subtitle: 'Tu historia lectora por fechas',
+                  selected: _menuPerfil == 'TIMELINE',
+                ),
+              ),
+              PopupMenuItem(
+                value: 'LIBROS',
+                height: 70,
+                child: _ProfileMenuOption(
+                  icon: Icons.check_circle_outline_rounded,
+                  title: 'Finalizados',
+                  subtitle: 'Terminados y abandonados',
+                  selected: _menuPerfil == 'LIBROS',
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
       body: FutureBuilder<PerfilUsuario>(
         future: future,
         builder: (context, snapshot) {
@@ -263,6 +451,25 @@ class _PerfilUsuarioPageState extends State<PerfilUsuarioPage> {
           }
 
           final perfil = snapshot.data!;
+          final hasUpToDateSeries = perfil.sagas.any(
+            (saga) => saga.completada || saga.alDia,
+          );
+          if (widget.focusUpToDateSeries &&
+              hasUpToDateSeries &&
+              !_didFocusUpToDateSeries) {
+            _didFocusUpToDateSeries = true;
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              final sectionContext = _upToDateSeriesKey.currentContext;
+              if (sectionContext != null) {
+                Scrollable.ensureVisible(
+                  sectionContext,
+                  duration: const Duration(milliseconds: 280),
+                  curve: Curves.easeOutCubic,
+                  alignment: .08,
+                );
+              }
+            });
+          }
 
           return RefreshIndicator(
             onRefresh: _recargar,
@@ -282,35 +489,51 @@ class _PerfilUsuarioPageState extends State<PerfilUsuarioPage> {
                 _resumenLectura(perfil),
 
                 const SizedBox(height: AppSpacing.xl),
-
-                ClubSectionTitle(
-                  title: 'Leyendo ahora',
-                  subtitle: perfil.leyendo.isEmpty
-                      ? 'Ahora mismo no tiene ninguna lectura activa'
-                      : 'Las historias que tiene entre manos',
-                  icon: Icons.menu_book_rounded,
-                  padding: EdgeInsets.zero,
+                PerfilEstanteriaMes(
+                  usuario: perfil.usuario,
+                  libros: perfil.terminados,
+                  esMiPerfil: esMiPerfil,
+                  onBookTap: (libro) => openBookDetail(
+                    context,
+                    title: libro.libro,
+                    bookId: libro.bookId,
+                    coverUrl: libro.coverUrl,
+                    genre: libro.genero,
+                  ),
                 ),
 
-                const SizedBox(height: AppSpacing.sm),
-
-                if (perfil.leyendo.isEmpty)
-                  const ClubEmptyState(
-                    icon: Icons.auto_stories_outlined,
-                    title: 'Entre lecturas',
-                    message: 'Cuando empiece un nuevo libro, aparecerá aquí.',
-                    padding: EdgeInsets.symmetric(vertical: AppSpacing.xl),
-                  )
-                else
-                  ...perfil.leyendo.map(
-                    (libro) => Padding(
-                      padding: const EdgeInsets.only(bottom: AppSpacing.md),
-                      child: _libroLeyendo(libro: libro),
+                if (_menuPerfil == 'RESUMEN' && hasUpToDateSeries) ...[
+                  const SizedBox(height: AppSpacing.xl),
+                  KeyedSubtree(
+                    key: _upToDateSeriesKey,
+                    child: ClubSectionTitle(
+                      title: 'Sagas al día',
+                      subtitle: esMiPerfil
+                          ? 'Has leído todos los volúmenes publicados'
+                          : 'Ha leído todos los volúmenes publicados',
+                      icon: Icons.view_week_outlined,
+                      padding: EdgeInsets.zero,
                     ),
                   ),
+                  const SizedBox(height: AppSpacing.sm),
+                  ...perfil.sagas
+                      .where((saga) => saga.completada || saga.alDia)
+                      .map(
+                        (saga) => Padding(
+                          padding: const EdgeInsets.only(bottom: AppSpacing.md),
+                          child: PerfilSagaCard(
+                            saga: saga,
+                            onContinue: _abrirFichaSaga,
+                            onCompleteCatalog: null,
+                            onEditVolume: esMiPerfil ? _editarNumeroSaga : null,
+                          ),
+                        ),
+                      ),
+                ],
 
-                const SizedBox(height: AppSpacing.lg),
-                if (perfil.terminados.isNotEmpty) ...[
+                if (_menuPerfil == 'TIMELINE' &&
+                    perfil.terminados.isNotEmpty) ...[
+                  const SizedBox(height: AppSpacing.xl),
                   ClubSectionTitle(
                     title: 'Actividad lectora',
                     subtitle: 'Su recorrido libro a libro',
@@ -320,61 +543,82 @@ class _PerfilUsuarioPageState extends State<PerfilUsuarioPage> {
 
                   const SizedBox(height: AppSpacing.sm),
 
-                  PerfilTimelineLectura(libros: perfil.terminados),
+                  PerfilTimelineLectura(
+                    libros: perfil.terminados,
+                    onBookTap: (libro) => openBookDetail(
+                      context,
+                      title: libro.libro,
+                      bookId: libro.bookId,
+                      coverUrl: libro.coverUrl,
+                      genre: libro.genero,
+                    ),
+                  ),
 
                   const SizedBox(height: AppSpacing.lg),
                 ],
-                ClubSectionTitle(
-                  title: 'Libros terminados',
-                  subtitle: 'Las lecturas más recientes de ${perfil.usuario}',
-                  icon: Icons.check_circle_outline_rounded,
-                  padding: EdgeInsets.zero,
-                ),
-
-                const SizedBox(height: AppSpacing.sm),
-
-                if (perfil.terminados.isEmpty)
+                if (_menuPerfil == 'TIMELINE' && perfil.terminados.isEmpty) ...[
+                  const SizedBox(height: AppSpacing.xl),
                   const ClubEmptyState(
-                    icon: Icons.flag_outlined,
-                    title: 'Todavía no hay libros terminados',
-                    message:
-                        'Las próximas lecturas finalizadas aparecerán aquí.',
-                    padding: EdgeInsets.symmetric(vertical: AppSpacing.xl),
-                  )
-                else
-                  ...perfil.terminados.map(
-                    (libro) => Padding(
-                      padding: const EdgeInsets.only(bottom: AppSpacing.md),
-                      child: _libroTerminado(libro: libro),
-                    ),
+                    icon: Icons.timeline_rounded,
+                    title: 'Todavía no hay actividad',
+                    message: 'El recorrido lector aparecerá aquí.',
                   ),
-                const SizedBox(height: AppSpacing.lg),
+                ],
+                if (_menuPerfil == 'LIBROS') ...[
+                  const SizedBox(height: AppSpacing.xl),
+                  ClubSectionTitle(
+                    title: 'Libros terminados',
+                    subtitle: 'Las lecturas más recientes de ${perfil.usuario}',
+                    icon: Icons.check_circle_outline_rounded,
+                    padding: EdgeInsets.zero,
+                  ),
 
-                ClubSectionTitle(
-                  title: 'Libros abandonados',
-                  subtitle: 'Las lecturas que decidió dejar',
-                  icon: Icons.heart_broken_outlined,
-                  padding: EdgeInsets.zero,
-                ),
+                  const SizedBox(height: AppSpacing.sm),
 
-                const SizedBox(height: AppSpacing.sm),
+                  if (perfil.terminados.isEmpty)
+                    const ClubEmptyState(
+                      icon: Icons.flag_outlined,
+                      title: 'Todavía no hay libros terminados',
+                      message:
+                          'Las próximas lecturas finalizadas aparecerán aquí.',
+                      padding: EdgeInsets.symmetric(vertical: AppSpacing.xl),
+                    )
+                  else
+                    ...perfil.terminados.map(
+                      (libro) => Padding(
+                        padding: const EdgeInsets.only(bottom: AppSpacing.md),
+                        child: _libroTerminado(libro: libro),
+                      ),
+                    ),
+                  const SizedBox(height: AppSpacing.lg),
 
-                if (perfil.abandonados.isEmpty)
-                  const ClubEmptyState(
+                  ClubSectionTitle(
+                    title: 'Libros abandonados',
+                    subtitle: 'Las lecturas que decidió dejar',
                     icon: Icons.heart_broken_outlined,
-                    title: 'No hay libros abandonados',
-                    message: 'Todas sus lecturas siguen adelante.',
-                    padding: EdgeInsets.symmetric(vertical: AppSpacing.xl),
-                  )
-                else
-                  ...perfil.abandonados.map(
-                    (libro) => Padding(
-                      padding: const EdgeInsets.only(bottom: AppSpacing.md),
-                      child: _libroAbandonado(libro: libro),
-                    ),
+                    padding: EdgeInsets.zero,
                   ),
 
-                if (perfil.generosFavoritos.isNotEmpty) ...[
+                  const SizedBox(height: AppSpacing.sm),
+
+                  if (perfil.abandonados.isEmpty)
+                    const ClubEmptyState(
+                      icon: Icons.heart_broken_outlined,
+                      title: 'No hay libros abandonados',
+                      message: 'Todas sus lecturas siguen adelante.',
+                      padding: EdgeInsets.symmetric(vertical: AppSpacing.xl),
+                    )
+                  else
+                    ...perfil.abandonados.map(
+                      (libro) => Padding(
+                        padding: const EdgeInsets.only(bottom: AppSpacing.md),
+                        child: _libroAbandonado(libro: libro),
+                      ),
+                    ),
+                ],
+
+                if (_menuPerfil == 'RESUMEN' &&
+                    perfil.generosFavoritos.isNotEmpty) ...[
                   const SizedBox(height: AppSpacing.lg),
 
                   const ClubSectionTitle(
@@ -406,7 +650,7 @@ class _PerfilUsuarioPageState extends State<PerfilUsuarioPage> {
                     ),
                   ),
                 ],
-                if (esMiPerfil) ...[
+                if (_menuPerfil == 'RESUMEN' && esMiPerfil) ...[
                   const SizedBox(height: AppSpacing.xl),
                   const ClubSectionTitle(
                     title: 'Más',
@@ -428,9 +672,7 @@ class _PerfilUsuarioPageState extends State<PerfilUsuarioPage> {
                         trailing: const Icon(Icons.chevron_right_rounded),
                         onTap: () => Navigator.push<void>(
                           context,
-                          MaterialPageRoute(
-                            builder: (_) => const AcercaDePage(),
-                          ),
+                          AppPageRoute(builder: (_) => const AcercaDePage()),
                         ),
                       ),
                     ),
@@ -439,26 +681,29 @@ class _PerfilUsuarioPageState extends State<PerfilUsuarioPage> {
                   ClubCard(
                     elevated: false,
                     padding: EdgeInsets.zero,
-                    child: Column(
-                      children: [
-                        ListTile(
-                          leading: const Icon(Icons.lock_outline_rounded),
-                          title: const Text('Cambiar contraseña'),
-                          trailing: const Icon(Icons.chevron_right_rounded),
-                          onTap: () => Navigator.push<void>(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) => const ChangePasswordPage(),
+                    child: Material(
+                      type: MaterialType.transparency,
+                      child: Column(
+                        children: [
+                          ListTile(
+                            leading: const Icon(Icons.lock_outline_rounded),
+                            title: const Text('Cambiar contraseña'),
+                            trailing: const Icon(Icons.chevron_right_rounded),
+                            onTap: () => Navigator.push<void>(
+                              context,
+                              AppPageRoute(
+                                builder: (_) => const ChangePasswordPage(),
+                              ),
                             ),
                           ),
-                        ),
-                        const Divider(height: 1),
-                        ListTile(
-                          leading: const Icon(Icons.logout_rounded),
-                          title: const Text('Cerrar sesión'),
-                          onTap: _cerrarSesion,
-                        ),
-                      ],
+                          const Divider(height: 1),
+                          ListTile(
+                            leading: const Icon(Icons.logout_rounded),
+                            title: const Text('Cerrar sesión'),
+                            onTap: _cerrarSesion,
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                 ],
@@ -641,6 +886,22 @@ class _PerfilUsuarioPageState extends State<PerfilUsuarioPage> {
               iconBackground: AppColors.primaryLight,
               foreground: AppColors.primary,
             ),
+            _statCard(
+              titulo: 'Clubes',
+              valor: perfil.resumen.clubes.toString(),
+              icono: Icons.groups_2_outlined,
+              background: const Color(0xFFF4F1FB),
+              iconBackground: const Color(0xFFE5DCF7),
+              foreground: AppColors.primary,
+            ),
+            _statCard(
+              titulo: 'Sagas empezadas',
+              valor: perfil.resumen.sagasAbiertas.toString(),
+              icono: Icons.view_week_outlined,
+              background: const Color(0xFFFFF3F7),
+              iconBackground: const Color(0xFFFFDFEA),
+              foreground: const Color(0xFFD75784),
+            ),
           ],
         ),
         if (perfil.resumen.relecturas > 0) ...[
@@ -705,83 +966,6 @@ class _PerfilUsuarioPageState extends State<PerfilUsuarioPage> {
     );
   }
 
-  Widget _libroLeyendo({required PerfilLibro libro}) {
-    return ClubCard(
-      elevated: false,
-      padding: const EdgeInsets.all(AppSpacing.md),
-      onTap: () => _abrirFichaLibro(libro),
-      child: Row(
-        children: [
-          Container(
-            width: 54,
-            height: 68,
-            decoration: BoxDecoration(
-              color: AppColors.primaryLight,
-              borderRadius: BorderRadius.circular(AppRadius.md),
-            ),
-            child: const Icon(
-              Icons.menu_book_rounded,
-              color: AppColors.primary,
-              size: 27,
-            ),
-          ),
-
-          const SizedBox(width: AppSpacing.md),
-
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  libro.libro,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                  style: AppTextStyles.subtitle.copyWith(
-                    color: AppColors.textPrimary,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-
-                const SizedBox(height: AppSpacing.xs),
-
-                ClubChip(
-                  label: '${iconoGenero(libro.genero)} ${libro.genero}',
-                  variant: ClubChipVariant.primary,
-                ),
-                if (libro.esRelectura) ...[
-                  const SizedBox(height: AppSpacing.xs),
-                  const ClubChip(
-                    label: 'Relectura',
-                    icon: Icons.refresh_rounded,
-                    variant: ClubChipVariant.primary,
-                  ),
-                ],
-                if (libro.fechaInicio.isNotEmpty) ...[
-                  const SizedBox(height: AppSpacing.xs),
-                  Text(
-                    'Desde el ${libro.fechaInicio}',
-                    style: AppTextStyles.caption,
-                  ),
-                ],
-              ],
-            ),
-          ),
-
-          const SizedBox(width: AppSpacing.xs),
-
-          if (esMiPerfil)
-            IconButton(
-              tooltip: 'Editar fecha de inicio',
-              onPressed: () => _editarFechaInicio(libro),
-              icon: const Icon(Icons.edit_calendar_outlined),
-            )
-          else
-            const Icon(Icons.auto_stories_rounded, color: AppColors.info),
-        ],
-      ),
-    );
-  }
-
   Widget _libroTerminado({required PerfilLibroTerminado libro}) {
     final duracion = LecturaFechaUtils.duracion(
       libro.fechaInicio,
@@ -796,6 +980,13 @@ class _PerfilUsuarioPageState extends State<PerfilUsuarioPage> {
     return ClubCard(
       elevated: false,
       padding: const EdgeInsets.all(AppSpacing.md),
+      onTap: () => openBookDetail(
+        context,
+        title: libro.libro,
+        bookId: libro.bookId,
+        coverUrl: libro.coverUrl,
+        genre: libro.genero,
+      ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -920,6 +1111,13 @@ class _PerfilUsuarioPageState extends State<PerfilUsuarioPage> {
     return ClubCard(
       elevated: false,
       padding: const EdgeInsets.all(AppSpacing.md),
+      onTap: () => openBookDetail(
+        context,
+        title: libro.libro,
+        bookId: libro.bookId,
+        coverUrl: libro.coverUrl,
+        genre: libro.genero,
+      ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [

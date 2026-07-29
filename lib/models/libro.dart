@@ -8,6 +8,7 @@ class Libro {
   final String numSaga;
   final String autoconclusivo;
   final String prioridad;
+  final String formato;
   final String estado;
   final String valoracion;
   final bool yaLoTengo;
@@ -29,6 +30,7 @@ class Libro {
     required this.numSaga,
     required this.autoconclusivo,
     required this.prioridad,
+    this.formato = '',
     required this.estado,
     required this.valoracion,
     required this.yaLoTengo,
@@ -52,6 +54,7 @@ class Libro {
       numSaga: json['numSaga']?.toString() ?? '',
       autoconclusivo: json['autoconclusivo']?.toString() ?? '',
       prioridad: json['prioridad']?.toString() ?? '',
+      formato: json['formato']?.toString() ?? '',
       estado: json['estado']?.toString() ?? '',
       valoracion: json['valoracion']?.toString() ?? '',
       yaLoTengo: json['yaLoTengo'] as bool? ?? false,
@@ -86,6 +89,7 @@ class Libro {
     String? numSaga,
     String? autoconclusivo,
     String? prioridad,
+    String? formato,
     String? estado,
     String? valoracion,
     bool? yaLoTengo,
@@ -107,6 +111,7 @@ class Libro {
       numSaga: numSaga ?? this.numSaga,
       autoconclusivo: autoconclusivo ?? this.autoconclusivo,
       prioridad: prioridad ?? this.prioridad,
+      formato: formato ?? this.formato,
       estado: estado ?? this.estado,
       valoracion: valoracion ?? this.valoracion,
       yaLoTengo: yaLoTengo ?? this.yaLoTengo,

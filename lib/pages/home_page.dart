@@ -3,7 +3,7 @@ import 'clubvision_menu_page.dart';
 import 'dashboard_page.dart';
 import 'lecturas_page.dart';
 import 'libros_page.dart';
-import 'ranking_page.dart';
+import 'sagas_page.dart';
 import '../models/club_membership.dart';
 
 class HomePage extends StatefulWidget {
@@ -26,8 +26,8 @@ class _HomePageState extends State<HomePage> {
     pages = [
       DashboardPage(clubName: widget.club.nombre),
       const LibrosPage(),
+      const SagasPage(),
       const LecturasPage(),
-      const RankingPage(),
       const ClubvisionMenuPage(),
     ];
   }
@@ -59,14 +59,14 @@ class _HomePageState extends State<HomePage> {
             label: 'Libros',
           ),
           NavigationDestination(
+            icon: Icon(Icons.view_week_outlined),
+            selectedIcon: Icon(Icons.view_week_rounded),
+            label: 'Sagas',
+          ),
+          NavigationDestination(
             icon: Icon(Icons.auto_stories_outlined),
             selectedIcon: Icon(Icons.auto_stories_rounded),
             label: 'Lecturas',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.emoji_events_outlined),
-            selectedIcon: Icon(Icons.emoji_events_rounded),
-            label: 'Ranking',
           ),
           NavigationDestination(
             icon: Icon(Icons.mic_none_outlined),

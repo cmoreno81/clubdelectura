@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 
+import '../navigation/app_page_route.dart';
+import '../navigation/book_detail_navigation.dart';
+
 import '../models/lectura_activa.dart';
 import '../services/api_service.dart';
 import '../theme/app_colors.dart';
@@ -42,7 +45,7 @@ class _LecturasPageState extends State<LecturasPage> {
     if (!lectura.configurada) {
       final creado = await Navigator.push<bool>(
         context,
-        MaterialPageRoute(
+        AppPageRoute(
           builder: (_) =>
               ConfigurarLecturaPage(libro: lectura.libro, tipo: lectura.tipo),
         ),
@@ -59,7 +62,7 @@ class _LecturasPageState extends State<LecturasPage> {
 
     await Navigator.push(
       context,
-      MaterialPageRoute(
+      AppPageRoute(
         builder: (_) =>
             LecturaPage(libro: lectura.libro, coverUrl: lectura.coverUrl),
       ),
@@ -150,6 +153,11 @@ class _LecturasPageState extends State<LecturasPage> {
                       destacada: true,
                       masComentada: esMasComentada(lectura),
                       onTap: () => _abrirLectura(lectura),
+                      onBookTap: () => openBookDetail(
+                        context,
+                        title: lectura.libro,
+                        coverUrl: lectura.coverUrl,
+                      ),
                     ),
 
                     const SizedBox(height: AppSpacing.md),
@@ -173,6 +181,11 @@ class _LecturasPageState extends State<LecturasPage> {
                       lectura: lectura,
                       masComentada: esMasComentada(lectura),
                       onTap: () => _abrirLectura(lectura),
+                      onBookTap: () => openBookDetail(
+                        context,
+                        title: lectura.libro,
+                        coverUrl: lectura.coverUrl,
+                      ),
                     ),
 
                     const SizedBox(height: AppSpacing.md),
@@ -195,6 +208,11 @@ class _LecturasPageState extends State<LecturasPage> {
                     _LecturaCard(
                       lectura: lectura,
                       onTap: () => _abrirLectura(lectura),
+                      onBookTap: () => openBookDetail(
+                        context,
+                        title: lectura.libro,
+                        coverUrl: lectura.coverUrl,
+                      ),
                     ),
 
                     const SizedBox(height: AppSpacing.md),
@@ -321,12 +339,14 @@ class _SectionTitle extends StatelessWidget {
 class _LecturaCard extends StatelessWidget {
   final LecturaActiva lectura;
   final VoidCallback onTap;
+  final VoidCallback onBookTap;
   final bool destacada;
   final bool masComentada;
 
   const _LecturaCard({
     required this.lectura,
     required this.onTap,
+    required this.onBookTap,
     this.destacada = false,
     this.masComentada = false,
   });
@@ -334,12 +354,6 @@ class _LecturaCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final tieneActividad = lectura.ultimaActividad.trim().isNotEmpty;
-
-    final colorPrincipal = destacada
-        ? AppColors.primary
-        : lectura.configurada
-        ? AppColors.info
-        : const Color(0xFFB48113);
 
     return ClubCard(
       elevated: destacada,
@@ -359,20 +373,23 @@ class _LecturaCard extends StatelessWidget {
       backgroundColor: lectura.configurada
           ? AppColors.surface
           : const Color(0xFFFFFBF0),
-      onTap: onTap,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Hero(
-                tag: 'book-${lectura.libro}',
-                child: ClubBookCover(
-                  title: lectura.libro,
-                  imageUrl: lectura.coverUrl,
-                  width: destacada ? 104 : 92,
-                  showShadow: true,
+              InkWell(
+                borderRadius: BorderRadius.circular(AppRadius.md),
+                onTap: onBookTap,
+                child: Hero(
+                  tag: 'book-${lectura.libro}',
+                  child: ClubBookCover(
+                    title: lectura.libro,
+                    imageUrl: lectura.coverUrl,
+                    width: destacada ? 104 : 92,
+                    showShadow: true,
+                  ),
                 ),
               ),
 
@@ -382,15 +399,22 @@ class _LecturaCard extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      lectura.libro,
-                      maxLines: 3,
-                      overflow: TextOverflow.ellipsis,
-                      style: AppTextStyles.subtitle.copyWith(
-                        color: AppColors.textPrimary,
-                        fontWeight: FontWeight.w800,
-                        fontSize: destacada ? 21 : 20,
-                        height: 1.2,
+                    InkWell(
+                      borderRadius: BorderRadius.circular(AppRadius.sm),
+                      onTap: onBookTap,
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 2),
+                        child: Text(
+                          lectura.libro,
+                          maxLines: 3,
+                          overflow: TextOverflow.ellipsis,
+                          style: AppTextStyles.subtitle.copyWith(
+                            color: AppColors.textPrimary,
+                            fontWeight: FontWeight.w800,
+                            fontSize: destacada ? 21 : 20,
+                            height: 1.2,
+                          ),
+                        ),
                       ),
                     ),
 
@@ -429,18 +453,6 @@ class _LecturaCard extends StatelessWidget {
                     ),
                   ],
                 ),
-              ),
-
-              const SizedBox(width: AppSpacing.sm),
-
-              Container(
-                width: 40,
-                height: 40,
-                decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.75),
-                  shape: BoxShape.circle,
-                ),
-                child: Icon(Icons.chevron_right_rounded, color: colorPrincipal),
               ),
             ],
           ),
@@ -527,27 +539,27 @@ class _LecturaCard extends StatelessWidget {
 
           Row(
             children: [
-              Icon(
-                lectura.configurada
-                    ? Icons.auto_stories_outlined
-                    : Icons.settings_outlined,
-                size: 18,
-                color: colorPrincipal,
-              ),
-
-              const SizedBox(width: AppSpacing.xs),
-
               Expanded(
-                child: Text(
-                  lectura.configurada ? 'Abrir lectura' : 'Configurar lectura',
-                  style: AppTextStyles.body.copyWith(
-                    color: colorPrincipal,
-                    fontWeight: FontWeight.w700,
+                child: OutlinedButton.icon(
+                  onPressed: onBookTap,
+                  icon: const Icon(Icons.info_outline_rounded),
+                  label: const Text('Ver ficha'),
+                ),
+              ),
+              const SizedBox(width: AppSpacing.sm),
+              Expanded(
+                child: FilledButton.icon(
+                  onPressed: onTap,
+                  icon: Icon(
+                    lectura.configurada
+                        ? Icons.auto_stories_outlined
+                        : Icons.settings_outlined,
+                  ),
+                  label: Text(
+                    lectura.configurada ? 'Abrir lectura' : 'Configurar',
                   ),
                 ),
               ),
-
-              Icon(Icons.chevron_right_rounded, color: colorPrincipal),
             ],
           ),
         ],

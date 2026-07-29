@@ -7,6 +7,7 @@ class NuevoLibro {
   final String numSaga;
   final String autoconclusivo;
   final String prioridad;
+  final String formato;
 
   final String goodreads;
   final String coverUrl;
@@ -21,6 +22,7 @@ class NuevoLibro {
     required this.numSaga,
     required this.autoconclusivo,
     required this.prioridad,
+    this.formato = '',
     this.goodreads = '',
     this.coverUrl = '',
     this.paginas,
@@ -37,6 +39,7 @@ class NuevoLibro {
       'numSaga': numSaga,
       'autoconclusivo': autoconclusivo,
       'prioridad': prioridad,
+      'formato': formato,
       'goodreads': goodreads.trim(),
       'coverUrl': coverUrl.trim(),
       'paginas': paginas,

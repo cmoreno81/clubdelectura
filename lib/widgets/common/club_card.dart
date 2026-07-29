@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 
-import '../../theme/app_radius.dart';
 import '../../theme/app_shadows.dart';
 import '../../theme/app_spacing.dart';
 
@@ -41,18 +40,27 @@ class ClubCard extends StatelessWidget {
         theme.dividerTheme.color ??
         colorScheme.outline.withValues(alpha: 0.55);
 
-    final contenido = Container(
-      width: width,
-      margin: margin,
-      padding: padding ?? const EdgeInsets.all(AppSpacing.lg),
-      decoration: BoxDecoration(
-        color: gradient == null ? fondo : null,
-        gradient: gradient,
-        borderRadius: BorderRadius.circular(AppRadius.xl),
-        border: Border.all(color: borde, width: 1),
-        boxShadow: elevated ? AppShadows.card : null,
+    const pageRadius = BorderRadius.only(
+      topLeft: Radius.circular(24),
+      topRight: Radius.circular(12),
+      bottomRight: Radius.circular(24),
+      bottomLeft: Radius.circular(16),
+    );
+    final contenido = CustomPaint(
+      foregroundPainter: gradient == null ? _PageDetailsPainter(borde) : null,
+      child: Container(
+        width: width,
+        margin: margin,
+        padding: padding ?? const EdgeInsets.all(AppSpacing.lg),
+        decoration: BoxDecoration(
+          color: gradient == null ? fondo : null,
+          gradient: gradient,
+          borderRadius: pageRadius,
+          border: Border.all(color: borde, width: 1),
+          boxShadow: elevated ? AppShadows.card : null,
+        ),
+        child: child,
       ),
-      child: child,
     );
 
     if (onTap == null) {
@@ -61,11 +69,40 @@ class ClubCard extends StatelessWidget {
 
     return Material(
       color: Colors.transparent,
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(AppRadius.xl),
-        child: contenido,
-      ),
+      child: InkWell(onTap: onTap, borderRadius: pageRadius, child: contenido),
     );
   }
+}
+
+class _PageDetailsPainter extends CustomPainter {
+  const _PageDetailsPainter(this.borderColor);
+
+  final Color borderColor;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    if (size.width < 48 || size.height < 38) return;
+    final marginPaint = Paint()
+      ..color = const Color(0xFF603B73).withValues(alpha: .16)
+      ..strokeWidth = 1.2;
+    canvas.drawLine(
+      const Offset(12, 16),
+      Offset(12, size.height - 16),
+      marginPaint,
+    );
+
+    final foldPath = Path()
+      ..moveTo(size.width - 17, 0)
+      ..lineTo(size.width, 17)
+      ..lineTo(size.width, 0)
+      ..close();
+    canvas.drawPath(
+      foldPath,
+      Paint()..color = borderColor.withValues(alpha: .42),
+    );
+  }
+
+  @override
+  bool shouldRepaint(covariant _PageDetailsPainter oldDelegate) =>
+      oldDelegate.borderColor != borderColor;
 }

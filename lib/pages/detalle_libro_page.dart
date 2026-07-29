@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+
+import '../navigation/app_page_route.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../models/libro.dart';
@@ -122,6 +124,8 @@ class _DetalleLibroPageState extends State<DetalleLibroPage> {
     String? reflexion,
     String? motivoPausa,
     String? fechaInicio,
+    String? fechaFin,
+    String? formato,
   }) async {
     try {
       final bool ok;
@@ -140,6 +144,8 @@ class _DetalleLibroPageState extends State<DetalleLibroPage> {
           reflexion: reflexion,
           motivoPausa: motivoPausa,
           fechaInicio: fechaInicio,
+          fechaFin: fechaFin,
+          formato: formato,
         );
       }
 
@@ -161,6 +167,7 @@ class _DetalleLibroPageState extends State<DetalleLibroPage> {
           valoracion: nuevoEstado == 'FINALIZADO'
               ? (valoracion ?? libro.valoracion)
               : '',
+          formato: formato ?? libro.formato,
         );
       });
 
@@ -178,6 +185,25 @@ class _DetalleLibroPageState extends State<DetalleLibroPage> {
         context,
       ).showSnackBar(SnackBar(content: Text('Error: $mensaje')));
     }
+  }
+
+  Future<void> _actualizarPreferencias(
+    Libro libro,
+    String prioridad,
+    String formato,
+  ) async {
+    final ok = await ApiService().actualizarPreferenciasLibro(
+      libro: libro.libro,
+      prioridad: prioridad,
+      formato: formato,
+    );
+    if (!ok) throw Exception('No se han podido guardar tus preferencias');
+    if (!mounted) return;
+    final index = registros.indexOf(libro);
+    if (index < 0) return;
+    setState(() {
+      registros[index] = libro.copyWith(prioridad: prioridad, formato: formato);
+    });
   }
 
   Future<void> _quitarPendientes(Libro libro) async {
@@ -254,7 +280,7 @@ class _DetalleLibroPageState extends State<DetalleLibroPage> {
 
     final actualizado = await Navigator.push<bool>(
       context,
-      MaterialPageRoute(builder: (_) => NuevoLibroPage(libro: libro)),
+      AppPageRoute(builder: (_) => NuevoLibroPage(libro: libro)),
     );
 
     if (!mounted) return;
@@ -271,7 +297,7 @@ class _DetalleLibroPageState extends State<DetalleLibroPage> {
   Future<void> _abrirKitLectura() async {
     await Navigator.push(
       context,
-      MaterialPageRoute(
+      AppPageRoute(
         builder: (_) => KitLecturaPage(
           bookId: libro.bookId,
           libro: libro.libro,
@@ -369,11 +395,13 @@ class _DetalleLibroPageState extends State<DetalleLibroPage> {
                   usuarioActual: usuarioActual,
                   onCambiarEstado: _cambiarEstado,
                   onQuitarPendientes: _quitarPendientes,
+                  onActualizarPreferencias: _actualizarPreferencias,
                   onPedirValoracion: (registro) {
                     return showDialog<Map<String, String>>(
                       context: context,
                       builder: (_) => FinalizarLibroDialog(
                         fechaInicioActual: registro.startedAt,
+                        formatoActual: registro.formato,
                       ),
                     );
                   },

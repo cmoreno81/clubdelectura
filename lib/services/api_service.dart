@@ -24,6 +24,8 @@ import '../models/perfil_usuario.dart';
 import '../models/mood_club.dart';
 import '../models/tendencias_club.dart';
 import '../models/atmosfera_club.dart';
+import '../models/catalog_book.dart';
+import 'api_exception.dart';
 
 class ApiService {
   static String get baseUrl => AppConfig.baseUrl;
@@ -84,6 +86,136 @@ class ApiService {
     throw Exception('Error cargando libros');
   }
 
+  Future<List<CatalogBook>> getCatalogoGeneral({String query = ''}) async {
+    final response = await _client.get(
+      Uri.parse(baseUrl).replace(
+        queryParameters: {
+          'action': query.trim().isEmpty
+              ? 'catalogoGeneral'
+              : 'buscarCatalogoGeneral',
+          if (query.trim().isNotEmpty) 'q': query.trim(),
+        },
+      ),
+    );
+    if (response.statusCode != 200) {
+      throw ApiException.fromResponse(response);
+    }
+    final decoded = jsonDecode(response.body);
+    final items = decoded is Map<String, dynamic>
+        ? decoded['libros'] as List<dynamic>? ?? const []
+        : const <dynamic>[];
+    return items
+        .map(
+          (item) =>
+              CatalogBook.fromJson(Map<String, dynamic>.from(item as Map)),
+        )
+        .toList(growable: false);
+  }
+
+  Future<void> importarLibroCatalogo({
+    required CatalogBook book,
+    required String prioridad,
+    required String formato,
+  }) async {
+    final response = await _client.post(
+      Uri.parse('$baseUrl?action=importarLibroCatalogo'),
+      headers: const {'Content-Type': 'application/json'},
+      body: jsonEncode({
+        'id': book.id,
+        'origen': book.source,
+        'titulo': book.title,
+        'autores': book.authors,
+        'coverUrl': book.coverUrl,
+        'genero': book.genre,
+        'isbn': book.isbn,
+        'paginas': book.pages,
+        'anioPublicacion': book.publicationYear,
+        'prioridad': prioridad,
+        'formato': formato,
+      }),
+    );
+    if (response.statusCode != 200) {
+      throw ApiException.fromResponse(response);
+    }
+    final decoded = jsonDecode(response.body);
+    if (decoded is! Map<String, dynamic> || decoded['ok'] != true) {
+      throw ApiException(
+        statusCode: response.statusCode,
+        message: decoded is Map<String, dynamic>
+            ? decoded['mensaje']?.toString() ?? 'No se pudo añadir el libro.'
+            : 'No se pudo añadir el libro.',
+      );
+    }
+  }
+
+  Future<String> vincularVolumenSaga({
+    required String sagaId,
+    required String numero,
+    required CatalogBook book,
+  }) async {
+    final response = await _client.post(
+      Uri.parse('$baseUrl?action=vincularVolumenSaga'),
+      headers: const {'Content-Type': 'application/json'},
+      body: jsonEncode({
+        'sagaId': sagaId,
+        'numero': numero,
+        'id': book.id,
+        'origen': book.source,
+        'titulo': book.title,
+        'autores': book.authors,
+        'coverUrl': book.coverUrl,
+        'genero': book.genre,
+        'isbn': book.isbn,
+        'paginas': book.pages,
+        'anioPublicacion': book.publicationYear,
+      }),
+    );
+    if (response.statusCode != 200) {
+      throw ApiException.fromResponse(response);
+    }
+    final decoded = jsonDecode(response.body);
+    if (decoded is! Map<String, dynamic> || decoded['ok'] != true) {
+      throw ApiException(
+        statusCode: response.statusCode,
+        message: decoded is Map<String, dynamic>
+            ? decoded['mensaje']?.toString() ?? 'No se pudo completar la saga.'
+            : 'No se pudo completar la saga.',
+      );
+    }
+    final linkedBook = decoded['libro'];
+    if (linkedBook is Map &&
+        linkedBook['id']?.toString().trim().isNotEmpty == true) {
+      return linkedBook['id'].toString();
+    }
+    throw const ApiException(
+      statusCode: 500,
+      message: 'El servidor no confirmó el volumen añadido.',
+    );
+  }
+
+  Future<void> actualizarNumeroVolumenSaga({
+    required String bookId,
+    required String numero,
+  }) async {
+    final response = await _client.post(
+      Uri.parse('$baseUrl?action=actualizarNumeroVolumenSaga'),
+      headers: const {'Content-Type': 'application/json'},
+      body: jsonEncode({'bookId': bookId, 'numero': numero}),
+    );
+    if (response.statusCode != 200) {
+      throw ApiException.fromResponse(response);
+    }
+    final decoded = jsonDecode(response.body);
+    if (decoded is! Map<String, dynamic> || decoded['ok'] != true) {
+      throw ApiException(
+        statusCode: response.statusCode,
+        message: decoded is Map<String, dynamic>
+            ? decoded['mensaje']?.toString() ?? 'No se pudo cambiar el número.'
+            : 'No se pudo cambiar el número.',
+      );
+    }
+  }
+
   Future<List<LibroFinalizado>> getLibrosFinalizados() async {
     final response = await _client.get(
       Uri.parse('$baseUrl?action=librosFinalizados'),
@@ -133,6 +265,24 @@ class ApiService {
       }),
     );
     return _respuestaOk(response);
+  }
+
+  Future<Map<String, dynamic>> toggleProgressReaction({
+    required String libraryId,
+    required String reaccion,
+  }) async {
+    final response = await _client.post(
+      Uri.parse(
+        baseUrl,
+      ).replace(queryParameters: {'action': 'toggleProgressReaction'}),
+      headers: const {'Content-Type': 'application/json'},
+      body: jsonEncode({'libraryId': libraryId, 'reaccion': reaccion}),
+    );
+    final data = jsonDecode(response.body);
+    if (data is! Map<String, dynamic>) {
+      return {'ok': false};
+    }
+    return data;
   }
 
   Future<LecturaCompartida> getLecturaCompartida() async {
@@ -203,15 +353,20 @@ class ApiService {
     required String capitulo,
     required String usuario,
     required String comentario,
+    String tipo = 'COMMENT',
+    String color = '',
   }) async {
-    await _client.get(
-      Uri.parse(
-        '$baseUrl?action=guardarComentarioLectura'
-        '&libro=${Uri.encodeComponent(libro)}'
-        '&capitulo=${Uri.encodeComponent(capitulo)}'
-        '&comentario=${Uri.encodeComponent(comentario)}',
-      ),
+    final uri = Uri.parse(baseUrl).replace(
+      queryParameters: {
+        'action': 'guardarComentarioLectura',
+        'libro': libro,
+        'capitulo': capitulo,
+        'comentario': comentario,
+        'tipo': tipo,
+        if (color.trim().isNotEmpty) 'color': color,
+      },
     );
+    await _client.get(uri);
   }
 
   Future<bool> guardarRespuestaComentario({
@@ -445,6 +600,8 @@ class ApiService {
     String? reflexion,
     String? motivoPausa,
     String? fechaInicio,
+    String? fechaFin,
+    String? formato,
   }) async {
     final response = await _client.post(
       Uri.parse('$baseUrl?action=actualizarEstado'),
@@ -456,6 +613,8 @@ class ApiService {
         'reflexion': reflexion ?? '',
         'motivoPausa': motivoPausa ?? '',
         'fechaInicio': fechaInicio ?? '',
+        'fechaFin': fechaFin ?? '',
+        'formato': formato ?? '',
       }),
     );
 
@@ -582,11 +741,17 @@ class ApiService {
   Future<Map<String, dynamic>> anadirLibroExistente({
     required String usuario,
     required String libro,
+    required String prioridad,
+    required String formato,
   }) async {
     final response = await _client.get(
-      Uri.parse(
-        '$baseUrl?action=anadirLibroExistente'
-        '&libro=${Uri.encodeComponent(libro)}',
+      Uri.parse(baseUrl).replace(
+        queryParameters: {
+          'action': 'anadirLibroExistente',
+          'libro': libro,
+          'prioridad': prioridad,
+          'formato': formato,
+        },
       ),
     );
 
@@ -600,6 +765,23 @@ class ApiService {
       "ok": json["ok"] == true,
       "mensaje": json["mensaje"] ?? "Ha ocurrido un error.",
     };
+  }
+
+  Future<bool> actualizarPreferenciasLibro({
+    required String libro,
+    required String prioridad,
+    required String formato,
+  }) async {
+    final response = await _client.post(
+      Uri.parse('$baseUrl?action=actualizarPreferenciasLibro'),
+      headers: const {'Content-Type': 'application/json'},
+      body: jsonEncode({
+        'libro': libro,
+        'prioridad': prioridad,
+        'formato': formato,
+      }),
+    );
+    return _respuestaOk(response);
   }
 
   Future<MiVoto> getMiVoto(String usuario) async {

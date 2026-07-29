@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../navigation/app_page_route.dart';
+
 import '../services/api_exception.dart';
 import '../services/auth_service.dart';
 import 'password_reset_email_page.dart';
@@ -101,7 +103,7 @@ class _LoginPageState extends State<LoginPage> {
                     ? null
                     : () => Navigator.push<void>(
                         context,
-                        MaterialPageRoute(
+                        AppPageRoute(
                           builder: (_) => const PasswordResetEmailPage(),
                         ),
                       ),

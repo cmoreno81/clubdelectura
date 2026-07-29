@@ -21,9 +21,13 @@ class LibroInteresadasSection extends StatelessWidget {
     String? reflexion,
     String? motivoPausa,
     String? fechaInicio,
+    String? fechaFin,
+    String? formato,
   })
   onCambiarEstado;
   final Future<void> Function(Libro libro) onQuitarPendientes;
+  final Future<void> Function(Libro libro, String prioridad, String formato)
+  onActualizarPreferencias;
   final Future<Map<String, String>?> Function(Libro libro) onPedirValoracion;
 
   const LibroInteresadasSection({
@@ -33,6 +37,7 @@ class LibroInteresadasSection extends StatelessWidget {
     required this.usuarioActual,
     required this.onCambiarEstado,
     required this.onQuitarPendientes,
+    required this.onActualizarPreferencias,
     required this.onPedirValoracion,
   });
 
@@ -65,6 +70,7 @@ class LibroInteresadasSection extends StatelessWidget {
               ),
               onCambiarEstado: onCambiarEstado,
               onQuitarPendientes: onQuitarPendientes,
+              onActualizarPreferencias: onActualizarPreferencias,
               onPedirValoracion: onPedirValoracion,
             ),
           );
@@ -85,9 +91,13 @@ class _LectoraCard extends StatelessWidget {
     String? reflexion,
     String? motivoPausa,
     String? fechaInicio,
+    String? fechaFin,
+    String? formato,
   })
   onCambiarEstado;
   final Future<void> Function(Libro libro) onQuitarPendientes;
+  final Future<void> Function(Libro libro, String prioridad, String formato)
+  onActualizarPreferencias;
   final Future<Map<String, String>?> Function(Libro libro) onPedirValoracion;
 
   const _LectoraCard({
@@ -96,6 +106,7 @@ class _LectoraCard extends StatelessWidget {
     required this.tieneFinalizaciones,
     required this.onCambiarEstado,
     required this.onQuitarPendientes,
+    required this.onActualizarPreferencias,
     required this.onPedirValoracion,
   });
 
@@ -200,6 +211,65 @@ class _LectoraCard extends StatelessWidget {
           if (esUsuarioActual) ...[
             const SizedBox(height: AppSpacing.md),
 
+            Column(
+              children: [
+                DropdownButtonFormField<String>(
+                  isExpanded: true,
+                  initialValue: registro.prioridad.isEmpty
+                      ? 'MEDIA'
+                      : registro.prioridad,
+                  decoration: const InputDecoration(labelText: 'Prioridad'),
+                  items: const [
+                    DropdownMenuItem(value: 'ALTA', child: Text('Alta')),
+                    DropdownMenuItem(value: 'MEDIA', child: Text('Media')),
+                    DropdownMenuItem(value: 'BAJA', child: Text('Baja')),
+                  ],
+                  onChanged: (value) {
+                    if (value != null) {
+                      onActualizarPreferencias(
+                        registro,
+                        value,
+                        registro.formato,
+                      );
+                    }
+                  },
+                ),
+                const SizedBox(width: AppSpacing.sm),
+                const SizedBox(height: AppSpacing.sm),
+                DropdownButtonFormField<String>(
+                  isExpanded: true,
+                  initialValue: registro.formato.isEmpty
+                      ? null
+                      : registro.formato,
+                  decoration: const InputDecoration(labelText: 'Formato'),
+                  items: const [
+                    DropdownMenuItem(value: 'FISICO', child: Text('📖 Físico')),
+                    DropdownMenuItem(
+                      value: 'DIGITAL',
+                      child: Text('📱 Digital'),
+                    ),
+                    DropdownMenuItem(
+                      value: 'AUDIOLIBRO',
+                      child: Text('🎧 Audio'),
+                    ),
+                  ],
+                  onChanged: (value) {
+                    if (value != null) {
+                      onActualizarPreferencias(
+                        registro,
+                        registro.prioridad.isEmpty
+                            ? 'MEDIA'
+                            : registro.prioridad,
+                        value,
+                      );
+                    }
+                  },
+                ),
+              ],
+            ),
+
+            const SizedBox(height: AppSpacing.md),
+
             DropdownButtonFormField<String>(
               initialValue: registro.estado,
               decoration: const InputDecoration(
@@ -249,6 +319,8 @@ class _LectoraCard extends StatelessWidget {
                   valoracion: datosValoracion?['valoracion'],
                   reflexion: datosValoracion?['reflexion'],
                   fechaInicio: datosValoracion?['fechaInicio'],
+                  fechaFin: datosValoracion?['fechaFin'],
+                  formato: datosValoracion?['formato'],
                   motivoPausa: motivoPausa,
                 );
               },
@@ -278,11 +350,15 @@ class _LectoraCard extends StatelessWidget {
 
                       const SizedBox(width: AppSpacing.xs),
 
-                      Text(
-                        _textoFechaPausa(registro.pausedAt),
-                        style: AppTextStyles.bodySecondary.copyWith(
-                          color: const Color(0xFF7D5C17),
-                          fontWeight: FontWeight.w700,
+                      Expanded(
+                        child: Text(
+                          _textoFechaPausa(registro.pausedAt),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          style: AppTextStyles.bodySecondary.copyWith(
+                            color: const Color(0xFF7D5C17),
+                            fontWeight: FontWeight.w700,
+                          ),
                         ),
                       ),
                     ],

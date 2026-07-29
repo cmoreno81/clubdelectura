@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../navigation/app_page_route.dart';
+
 import '../theme/app_colors.dart';
 import '../theme/app_spacing.dart';
 import '../theme/app_text_styles.dart';
@@ -65,7 +67,7 @@ class _KitLecturaPageState extends State<KitLecturaPage> {
   Future<void> _abrirPaleta() async {
     final resultado = await Navigator.push<List<String>>(
       context,
-      MaterialPageRoute(
+      AppPageRoute(
         builder: (_) => PaletaLecturaPage(
           bookId: widget.bookId,
           libro: widget.libro,
@@ -119,7 +121,7 @@ class _KitLecturaPageState extends State<KitLecturaPage> {
 
     final resultado = await Navigator.push<List<Color>>(
       context,
-      MaterialPageRoute(
+      AppPageRoute(
         builder: (_) => SubrayadoresPage(
           libro: widget.libro,
           coverUrl: widget.coverUrl,
@@ -160,7 +162,7 @@ class _KitLecturaPageState extends State<KitLecturaPage> {
 
     final resultado = await Navigator.push<AtmosferaExperiencia>(
       context,
-      MaterialPageRoute(
+      AppPageRoute(
         builder: (_) => AtmosferaLecturaPage(
           libro: widget.libro,
           coverUrl: widget.coverUrl,
@@ -220,7 +222,7 @@ class _KitLecturaPageState extends State<KitLecturaPage> {
   Future<void> _abrirPlaylist() async {
     final resultado = await Navigator.push<PlaylistLecturaSeleccion>(
       context,
-      MaterialPageRoute(
+      AppPageRoute(
         builder: (_) => PlaylistLecturaPage(
           libro: widget.libro,
           atmosferaId: _seleccion.atmosferaId,
@@ -248,7 +250,7 @@ class _KitLecturaPageState extends State<KitLecturaPage> {
 
     final compartida = await Navigator.push<bool>(
       context,
-      MaterialPageRoute(
+      AppPageRoute(
         builder: (_) => KitExportPage(
           tipo: tipo,
           libro: widget.libro,
