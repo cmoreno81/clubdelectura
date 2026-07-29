@@ -25,55 +25,72 @@ class _HomePageState extends State<HomePage> {
     super.initState();
     pages = [
       DashboardPage(clubName: widget.club.nombre),
-      const LibrosPage(),
+      LibrosPage(onBackToClub: _volverAlClub),
       const SagasPage(),
-      const LecturasPage(),
-      const ClubvisionMenuPage(),
+      LecturasPage(onBackToClub: _volverAlClub),
+      ClubvisionMenuPage(onBackToClub: _volverAlClub),
     ];
+  }
+
+  void _volverAlClub() {
+    if (currentIndex == 0) return;
+    FocusManager.instance.primaryFocus?.unfocus();
+    setState(() {
+      pages[0] = DashboardPage(key: UniqueKey(), clubName: widget.club.nombre);
+      currentIndex = 0;
+    });
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      extendBody: false,
+    return PopScope(
+      canPop: currentIndex == 0,
+      onPopInvokedWithResult: (didPop, _) {
+        if (!didPop && currentIndex != 0) {
+          _volverAlClub();
+        }
+      },
+      child: Scaffold(
+        extendBody: false,
 
-      body: IndexedStack(index: currentIndex, children: pages),
+        body: IndexedStack(index: currentIndex, children: pages),
 
-      bottomNavigationBar: NavigationBar(
-        selectedIndex: currentIndex,
-        onDestinationSelected: (index) {
-          FocusManager.instance.primaryFocus?.unfocus();
+        bottomNavigationBar: NavigationBar(
+          selectedIndex: currentIndex,
+          onDestinationSelected: (index) {
+            FocusManager.instance.primaryFocus?.unfocus();
 
-          if (index == currentIndex) return;
-          setState(() => currentIndex = index);
-        },
-        destinations: const [
-          NavigationDestination(
-            icon: Icon(Icons.dashboard_outlined),
-            selectedIcon: Icon(Icons.dashboard_rounded),
-            label: 'El Club',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.menu_book_outlined),
-            selectedIcon: Icon(Icons.menu_book_rounded),
-            label: 'Libros',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.view_week_outlined),
-            selectedIcon: Icon(Icons.view_week_rounded),
-            label: 'Sagas',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.auto_stories_outlined),
-            selectedIcon: Icon(Icons.auto_stories_rounded),
-            label: 'Lecturas',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.mic_none_outlined),
-            selectedIcon: Icon(Icons.mic_rounded),
-            label: 'Clubvisión',
-          ),
-        ],
+            if (index == currentIndex) return;
+            setState(() => currentIndex = index);
+          },
+          destinations: const [
+            NavigationDestination(
+              icon: Icon(Icons.dashboard_outlined),
+              selectedIcon: Icon(Icons.dashboard_rounded),
+              label: 'El Club',
+            ),
+            NavigationDestination(
+              icon: Icon(Icons.menu_book_outlined),
+              selectedIcon: Icon(Icons.menu_book_rounded),
+              label: 'Libros',
+            ),
+            NavigationDestination(
+              icon: Icon(Icons.view_week_outlined),
+              selectedIcon: Icon(Icons.view_week_rounded),
+              label: 'Sagas',
+            ),
+            NavigationDestination(
+              icon: Icon(Icons.auto_stories_outlined),
+              selectedIcon: Icon(Icons.auto_stories_rounded),
+              label: 'Lecturas',
+            ),
+            NavigationDestination(
+              icon: Icon(Icons.mic_none_outlined),
+              selectedIcon: Icon(Icons.mic_rounded),
+              label: 'Clubvisión',
+            ),
+          ],
+        ),
       ),
     );
   }

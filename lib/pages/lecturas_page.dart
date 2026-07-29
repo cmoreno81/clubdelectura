@@ -17,7 +17,9 @@ import 'configurar_lectura_page.dart';
 import 'lectura_page.dart';
 
 class LecturasPage extends StatefulWidget {
-  const LecturasPage({super.key});
+  const LecturasPage({super.key, this.onBackToClub});
+
+  final VoidCallback? onBackToClub;
 
   @override
   State<LecturasPage> createState() => _LecturasPageState();
@@ -76,7 +78,17 @@ class _LecturasPageState extends State<LecturasPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Lecturas')),
+      appBar: AppBar(
+        automaticallyImplyLeading: widget.onBackToClub == null,
+        leading: widget.onBackToClub == null
+            ? null
+            : IconButton(
+                tooltip: 'Volver a El Club',
+                onPressed: widget.onBackToClub,
+                icon: const Icon(Icons.arrow_back_ios_new_rounded),
+              ),
+        title: const Text('Lecturas'),
+      ),
       body: FutureBuilder<List<LecturaActiva>>(
         future: future,
         builder: (context, snapshot) {

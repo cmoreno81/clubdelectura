@@ -1,12 +1,14 @@
 import 'package:flutter/material.dart';
 
 import '../models/como_votaron.dart';
+import '../navigation/book_detail_navigation.dart';
 import '../services/api_service.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_radius.dart';
 import '../theme/app_spacing.dart';
 import '../theme/app_text_styles.dart';
 import '../widgets/common/club_avatar.dart';
+import '../widgets/common/awarded_book_cover.dart';
 import '../widgets/common/club_card.dart';
 import '../widgets/common/club_chip.dart';
 import '../widgets/error_view.dart';
@@ -324,24 +326,18 @@ class _VotoEmitidoRow extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          Container(
-            width: 46,
-            height: 46,
-            decoration: BoxDecoration(
-              color: color.withValues(alpha: 0.14),
-              shape: BoxShape.circle,
+          AwardedBookCover(
+            title: voto.libro,
+            imageUrl: voto.coverUrl,
+            position: posicion + 1,
+            width: 54,
+            height: 78,
+            onTap: () => openBookDetail(
+              context,
+              title: voto.libro,
+              bookId: voto.bookId,
+              coverUrl: voto.coverUrl,
             ),
-            alignment: Alignment.center,
-            child: icono != null
-                ? Icon(icono, color: color, size: 25)
-                : Text(
-                    '${posicion + 1}',
-                    style: TextStyle(
-                      color: color,
-                      fontSize: 17,
-                      fontWeight: FontWeight.w800,
-                    ),
-                  ),
           ),
 
           const SizedBox(width: AppSpacing.md),
@@ -364,9 +360,17 @@ class _VotoEmitidoRow extends StatelessWidget {
 
                 const SizedBox(height: AppSpacing.xs),
 
-                Text(
-                  '${posicion + 1}.ª posición',
-                  style: AppTextStyles.caption,
+                Row(
+                  children: [
+                    if (icono != null) ...[
+                      Icon(icono, color: color, size: 16),
+                      const SizedBox(width: AppSpacing.xs),
+                    ],
+                    Text(
+                      '${posicion + 1}.ª posición',
+                      style: AppTextStyles.caption.copyWith(color: color),
+                    ),
+                  ],
                 ),
               ],
             ),

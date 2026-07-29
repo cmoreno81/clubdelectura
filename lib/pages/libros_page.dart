@@ -24,7 +24,9 @@ import '../services/atmosfera_scope.dart';
 enum OrdenLibros { populares, recientes, tituloAsc, tituloDesc, mejorValorados }
 
 class LibrosPage extends StatefulWidget {
-  const LibrosPage({super.key});
+  const LibrosPage({super.key, this.onBackToClub});
+
+  final VoidCallback? onBackToClub;
 
   @override
   State<LibrosPage> createState() => _LibrosPageState();
@@ -92,6 +94,14 @@ class _LibrosPageState extends State<LibrosPage> {
     return Scaffold(
       appBar: AppBar(
         toolbarHeight: 64,
+        automaticallyImplyLeading: widget.onBackToClub == null,
+        leading: widget.onBackToClub == null
+            ? null
+            : IconButton(
+                tooltip: 'Volver a El Club',
+                onPressed: widget.onBackToClub,
+                icon: const Icon(Icons.arrow_back_ios_new_rounded),
+              ),
         title: Row(
           mainAxisSize: MainAxisSize.min,
           children: [

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../models/historial_clubvision.dart';
+import '../navigation/book_detail_navigation.dart';
 import '../services/api_service.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_radius.dart';
@@ -8,6 +9,7 @@ import '../theme/app_spacing.dart';
 import '../theme/app_text_styles.dart';
 import '../widgets/common/club_card.dart';
 import '../widgets/common/club_chip.dart';
+import '../widgets/common/awarded_book_cover.dart';
 import '../widgets/error_view.dart';
 
 class ClubvisionHistorialPage extends StatefulWidget {
@@ -347,31 +349,53 @@ class _EdicionCard extends StatelessWidget {
               borderRadius: BorderRadius.circular(AppRadius.lg),
               border: Border.all(color: const Color(0xFFF1E2B3)),
             ),
-            child: Column(
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-                const Icon(
-                  Icons.workspace_premium_rounded,
-                  color: Color(0xFFB48113),
-                  size: 36,
-                ),
-
-                const SizedBox(height: AppSpacing.sm),
-
-                Text(
-                  historial.ganadora,
-                  textAlign: TextAlign.center,
-                  style: AppTextStyles.section.copyWith(
-                    color: AppColors.textPrimary,
-                    fontWeight: FontWeight.w800,
+                AwardedBookCover(
+                  title: historial.ganadora,
+                  imageUrl: historial.ganadoraCoverUrl,
+                  position: 1,
+                  width: 78,
+                  height: 112,
+                  onTap: () => openBookDetail(
+                    context,
+                    title: historial.ganadora,
+                    bookId: historial.ganadoraBookId,
+                    coverUrl: historial.ganadoraCoverUrl,
                   ),
                 ),
-
-                const SizedBox(height: AppSpacing.sm),
-
-                ClubChip(
-                  label: '${historial.puntos} puntos',
-                  icon: Icons.star_outline_rounded,
-                  variant: ClubChipVariant.warning,
+                const SizedBox(width: AppSpacing.lg),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Ganadora',
+                        style: AppTextStyles.caption.copyWith(
+                          color: const Color(0xFFB48113),
+                          fontWeight: FontWeight.w800,
+                          letterSpacing: .5,
+                        ),
+                      ),
+                      const SizedBox(height: AppSpacing.xs),
+                      Text(
+                        historial.ganadora,
+                        maxLines: 3,
+                        overflow: TextOverflow.ellipsis,
+                        style: AppTextStyles.section.copyWith(
+                          color: AppColors.textPrimary,
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
+                      const SizedBox(height: AppSpacing.sm),
+                      ClubChip(
+                        label: '${historial.puntos} puntos',
+                        icon: Icons.star_outline_rounded,
+                        variant: ClubChipVariant.warning,
+                      ),
+                    ],
+                  ),
                 ),
               ],
             ),
@@ -379,11 +403,21 @@ class _EdicionCard extends StatelessWidget {
 
           const SizedBox(height: AppSpacing.md),
 
-          _PodioItem(posicion: 2, libro: historial.segunda),
+          _PodioItem(
+            posicion: 2,
+            libro: historial.segunda,
+            bookId: historial.segundaBookId,
+            coverUrl: historial.segundaCoverUrl,
+          ),
 
           const SizedBox(height: AppSpacing.sm),
 
-          _PodioItem(posicion: 3, libro: historial.tercera),
+          _PodioItem(
+            posicion: 3,
+            libro: historial.tercera,
+            bookId: historial.terceraBookId,
+            coverUrl: historial.terceraCoverUrl,
+          ),
         ],
       ),
     );
@@ -393,8 +427,15 @@ class _EdicionCard extends StatelessWidget {
 class _PodioItem extends StatelessWidget {
   final int posicion;
   final String libro;
+  final String bookId;
+  final String coverUrl;
 
-  const _PodioItem({required this.posicion, required this.libro});
+  const _PodioItem({
+    required this.posicion,
+    required this.libro,
+    required this.bookId,
+    required this.coverUrl,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -412,17 +453,17 @@ class _PodioItem extends StatelessWidget {
       ),
       child: Row(
         children: [
-          Container(
-            width: 42,
-            height: 42,
-            decoration: BoxDecoration(
-              color: color.withValues(alpha: 0.14),
-              shape: BoxShape.circle,
-            ),
-            alignment: Alignment.center,
-            child: Text(
-              esSegunda ? '🥈' : '🥉',
-              style: const TextStyle(fontSize: 21),
+          AwardedBookCover(
+            title: libro,
+            imageUrl: coverUrl,
+            position: posicion,
+            width: 50,
+            height: 72,
+            onTap: () => openBookDetail(
+              context,
+              title: libro,
+              bookId: bookId,
+              coverUrl: coverUrl,
             ),
           ),
 

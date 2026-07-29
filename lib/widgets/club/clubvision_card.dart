@@ -31,9 +31,7 @@ class ClubvisionCard extends StatelessWidget {
   bool get _mostrarFlecha {
     final estado = dashboard.clubvision.estado.toUpperCase();
 
-    return estado == 'LECTURA' ||
-        estado == 'VOTACION' ||
-        estado == 'RESULTADOS';
+    return estado == 'VOTACION' || estado == 'RESULTADOS';
   }
 
   Future<void> _abrirClubvision(BuildContext context) async {
@@ -112,6 +110,67 @@ class ClubvisionCard extends StatelessWidget {
   }
 
   Widget _cabecera() {
+    if (estadoClub.estado == EstadoClubTipo.lectura) {
+      return Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            width: 48,
+            height: 48,
+            decoration: BoxDecoration(
+              gradient: const LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [AppColors.primary, AppColors.primaryDark],
+              ),
+              borderRadius: BorderRadius.circular(AppRadius.lg),
+              boxShadow: [
+                BoxShadow(
+                  color: AppColors.primary.withValues(alpha: .22),
+                  blurRadius: 12,
+                  offset: const Offset(0, 5),
+                ),
+              ],
+            ),
+            child: const Icon(
+              Icons.auto_stories_rounded,
+              color: Colors.white,
+              size: 25,
+            ),
+          ),
+          const SizedBox(width: AppSpacing.md),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'LECTURA OFICIAL',
+                  style: TextStyle(
+                    color: AppColors.primaryDark,
+                    fontSize: 10,
+                    fontWeight: FontWeight.w900,
+                    letterSpacing: 1.5,
+                  ),
+                ),
+                const SizedBox(height: 3),
+                Text(
+                  estadoClub.titulo,
+                  style: AppTextStyles.section.copyWith(
+                    fontWeight: FontWeight.w900,
+                  ),
+                ),
+                const SizedBox(height: 3),
+                Text(
+                  estadoClub.mensaje,
+                  style: AppTextStyles.bodySecondary.copyWith(height: 1.3),
+                ),
+              ],
+            ),
+          ),
+        ],
+      );
+    }
+
     return Column(
       children: [
         Container(

@@ -4,6 +4,9 @@ import '../navigation/app_page_route.dart';
 
 import '../services/api_exception.dart';
 import '../services/auth_service.dart';
+import '../theme/app_spacing.dart';
+import '../widgets/common/auth_form_header.dart';
+import '../widgets/common/club_card.dart';
 import 'code_password_page.dart';
 
 class RegistrationPage extends StatefulWidget {
@@ -65,43 +68,71 @@ class _RegistrationPageState extends State<RegistrationPage> {
       body: Form(
         key: _formKey,
         child: ListView(
-          padding: const EdgeInsets.all(24),
+          padding: const EdgeInsets.fromLTRB(
+            AppSpacing.md,
+            AppSpacing.sm,
+            AppSpacing.md,
+            48,
+          ),
           children: [
-            const Text(
-              'Crea tu cuenta personal. Después podrás crear un club o entrar con una invitación.',
+            const AuthFormHeader(
+              icon: Icons.person_add_alt_1_rounded,
+              eyebrow: 'Empieza tu historia',
+              title: 'Crea tu cuenta lectora',
+              message:
+                  'Tu biblioteca será personal. Después podrás crear un club o entrar con una invitación.',
             ),
-            const SizedBox(height: 20),
-            TextFormField(
-              controller: _name,
-              textCapitalization: TextCapitalization.words,
-              autofillHints: const [AutofillHints.name],
-              decoration: const InputDecoration(labelText: 'Nombre'),
-              validator: (value) {
-                final length = value?.trim().length ?? 0;
-                return length < 2 || length > 60
-                    ? 'Usa entre 2 y 60 caracteres'
-                    : null;
-              },
-            ),
-            const SizedBox(height: 16),
-            TextFormField(
-              controller: _email,
-              keyboardType: TextInputType.emailAddress,
-              autofillHints: const [AutofillHints.email],
-              autocorrect: false,
-              decoration: const InputDecoration(labelText: 'Correo'),
-              validator: (value) {
-                final email = value?.trim() ?? '';
-                return RegExp(r'^[^\s@]+@[^\s@]+\.[^\s@]+$').hasMatch(email)
-                    ? null
-                    : 'Escribe un correo válido';
-              },
-              onFieldSubmitted: (_) => _submit(),
-            ),
-            const SizedBox(height: 24),
-            FilledButton(
-              onPressed: _busy ? null : _submit,
-              child: Text(_busy ? 'Enviando…' : 'Continuar'),
+            const SizedBox(height: AppSpacing.md),
+            ClubCard(
+              elevated: false,
+              padding: const EdgeInsets.all(AppSpacing.lg),
+              child: Column(
+                children: [
+                  TextFormField(
+                    controller: _name,
+                    textCapitalization: TextCapitalization.words,
+                    autofillHints: const [AutofillHints.name],
+                    decoration: const InputDecoration(
+                      labelText: 'Nombre',
+                      prefixIcon: Icon(Icons.person_outline_rounded),
+                    ),
+                    validator: (value) {
+                      final length = value?.trim().length ?? 0;
+                      return length < 2 || length > 60
+                          ? 'Usa entre 2 y 60 caracteres'
+                          : null;
+                    },
+                  ),
+                  const SizedBox(height: AppSpacing.md),
+                  TextFormField(
+                    controller: _email,
+                    keyboardType: TextInputType.emailAddress,
+                    autofillHints: const [AutofillHints.email],
+                    autocorrect: false,
+                    decoration: const InputDecoration(
+                      labelText: 'Correo',
+                      prefixIcon: Icon(Icons.mail_outline_rounded),
+                    ),
+                    validator: (value) {
+                      final email = value?.trim() ?? '';
+                      return RegExp(
+                            r'^[^\s@]+@[^\s@]+\.[^\s@]+$',
+                          ).hasMatch(email)
+                          ? null
+                          : 'Escribe un correo válido';
+                    },
+                    onFieldSubmitted: (_) => _submit(),
+                  ),
+                  const SizedBox(height: AppSpacing.lg),
+                  SizedBox(
+                    width: double.infinity,
+                    child: FilledButton(
+                      onPressed: _busy ? null : _submit,
+                      child: Text(_busy ? 'Enviando…' : 'Continuar'),
+                    ),
+                  ),
+                ],
+              ),
             ),
           ],
         ),

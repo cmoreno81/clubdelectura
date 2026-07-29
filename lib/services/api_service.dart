@@ -585,8 +585,33 @@ class ApiService {
 
     if (response.statusCode == 200) {
       final List<dynamic> json = jsonDecode(response.body);
+      final votos = json
+          .whereType<Map<String, dynamic>>()
+          .map(ComoVotaron.fromJson)
+          .toList();
 
-      return json.map((e) => ComoVotaron.fromJson(e)).toList();
+      try {
+        final portadas = await _indiceVisualLibros();
+        return votos
+            .map(
+              (persona) => ComoVotaron(
+                usuaria: persona.usuaria,
+                avatarUrl: persona.avatarUrl,
+                votos: persona.votos.map((voto) {
+                  final visual = portadas[_normalizarTitulo(voto.libro)];
+                  return voto.copyWith(
+                    bookId: voto.bookId.isNotEmpty ? voto.bookId : visual?.$1,
+                    coverUrl: voto.coverUrl.isNotEmpty
+                        ? voto.coverUrl
+                        : visual?.$2,
+                  );
+                }).toList(),
+              ),
+            )
+            .toList();
+      } catch (_) {
+        return votos;
+      }
     }
 
     throw Exception('Error cargando las votaciones');
@@ -735,8 +760,65 @@ class ApiService {
 
     final List data = jsonDecode(response.body);
 
-    return data.map((e) => HistorialClubvision.fromJson(e)).toList();
+    final historial = data
+        .whereType<Map<String, dynamic>>()
+        .map(HistorialClubvision.fromJson)
+        .toList();
+
+    try {
+      final portadas = await _indiceVisualLibros();
+      return historial.map((edicion) {
+        final ganadora = portadas[_normalizarTitulo(edicion.ganadora)];
+        final segunda = portadas[_normalizarTitulo(edicion.segunda)];
+        final tercera = portadas[_normalizarTitulo(edicion.tercera)];
+        return edicion.copyWith(
+          ganadoraBookId: edicion.ganadoraBookId.isNotEmpty
+              ? edicion.ganadoraBookId
+              : ganadora?.$1,
+          ganadoraCoverUrl: edicion.ganadoraCoverUrl.isNotEmpty
+              ? edicion.ganadoraCoverUrl
+              : ganadora?.$2,
+          segundaBookId: edicion.segundaBookId.isNotEmpty
+              ? edicion.segundaBookId
+              : segunda?.$1,
+          segundaCoverUrl: edicion.segundaCoverUrl.isNotEmpty
+              ? edicion.segundaCoverUrl
+              : segunda?.$2,
+          terceraBookId: edicion.terceraBookId.isNotEmpty
+              ? edicion.terceraBookId
+              : tercera?.$1,
+          terceraCoverUrl: edicion.terceraCoverUrl.isNotEmpty
+              ? edicion.terceraCoverUrl
+              : tercera?.$2,
+        );
+      }).toList();
+    } catch (_) {
+      return historial;
+    }
   }
+
+  Future<Map<String, (String, String)>> _indiceVisualLibros() async {
+    final data = await getLibrosData();
+    final resultado = <String, (String, String)>{};
+
+    for (final libro in data.libros) {
+      final clave = _normalizarTitulo(libro.libro);
+      if (clave.isNotEmpty &&
+          (!resultado.containsKey(clave) || libro.coverUrl.isNotEmpty)) {
+        resultado[clave] = (libro.bookId, libro.coverUrl);
+      }
+    }
+    for (final libro in data.finalizados) {
+      final clave = _normalizarTitulo(libro.libro);
+      if (clave.isNotEmpty &&
+          (!resultado.containsKey(clave) || libro.coverUrl.isNotEmpty)) {
+        resultado[clave] = (libro.bookId, libro.coverUrl);
+      }
+    }
+    return resultado;
+  }
+
+  String _normalizarTitulo(String value) => value.trim().toLowerCase();
 
   Future<Map<String, dynamic>> anadirLibroExistente({
     required String usuario,

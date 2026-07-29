@@ -28,13 +28,31 @@ class ComoVotaron {
 class VotoEmitido {
   final int puntos;
   final String libro;
+  final String bookId;
+  final String coverUrl;
 
-  VotoEmitido({required this.puntos, required this.libro});
+  const VotoEmitido({
+    required this.puntos,
+    required this.libro,
+    this.bookId = '',
+    this.coverUrl = '',
+  });
 
   factory VotoEmitido.fromJson(Map<String, dynamic> json) {
     return VotoEmitido(
       puntos: (json['puntos'] as num?)?.toInt() ?? 0,
       libro: json['libro']?.toString() ?? '',
+      bookId: json['bookId']?.toString() ?? '',
+      coverUrl: json['coverUrl']?.toString() ?? '',
+    );
+  }
+
+  VotoEmitido copyWith({String? bookId, String? coverUrl}) {
+    return VotoEmitido(
+      puntos: puntos,
+      libro: libro,
+      bookId: bookId ?? this.bookId,
+      coverUrl: coverUrl ?? this.coverUrl,
     );
   }
 }

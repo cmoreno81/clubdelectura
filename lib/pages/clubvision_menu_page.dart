@@ -20,7 +20,9 @@ import 'configurar_lectura_page.dart';
 import 'lectura_page.dart';
 
 class ClubvisionMenuPage extends StatefulWidget {
-  const ClubvisionMenuPage({super.key});
+  const ClubvisionMenuPage({super.key, this.onBackToClub});
+
+  final VoidCallback? onBackToClub;
 
   @override
   State<ClubvisionMenuPage> createState() => _ClubvisionMenuPageState();
@@ -104,7 +106,17 @@ class _ClubvisionMenuPageState extends State<ClubvisionMenuPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Clubvisión')),
+      appBar: AppBar(
+        automaticallyImplyLeading: widget.onBackToClub == null,
+        leading: widget.onBackToClub == null
+            ? null
+            : IconButton(
+                tooltip: 'Volver a El Club',
+                onPressed: widget.onBackToClub,
+                icon: const Icon(Icons.arrow_back_ios_new_rounded),
+              ),
+        title: const Text('Clubvisión'),
+      ),
       body: FutureBuilder<ClubvisionData>(
         future: clubvisionFuture,
         builder: (context, snapshot) {
@@ -316,109 +328,250 @@ class _ClubvisionHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     final estado = club.estado?.trim().toUpperCase() ?? '';
 
-    final icon = switch (estado) {
-      'VOTACION' => Icons.how_to_vote_rounded,
-      'RESULTADOS' => Icons.emoji_events_rounded,
-      'LECTURA' => Icons.auto_stories_rounded,
-      _ => Icons.mic_none_rounded,
-    };
-
     return ClubCard(
-      elevated: false,
-      padding: const EdgeInsets.all(AppSpacing.md),
+      elevated: true,
+      padding: EdgeInsets.zero,
       gradient: const LinearGradient(
         begin: Alignment.topLeft,
         end: Alignment.bottomRight,
-        colors: [AppColors.surfaceSoft, Color(0xFFF1E8FF)],
+        colors: [Color(0xFF25162F), Color(0xFF5E347C), Color(0xFF8C527E)],
       ),
-      borderColor: AppColors.primaryLight,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      borderColor: const Color(0xFFD9B56D),
+      child: Stack(
         children: [
-          Row(
-            children: [
-              Container(
-                width: 48,
-                height: 48,
-                decoration: const BoxDecoration(
-                  color: AppColors.primaryLight,
-                  shape: BoxShape.circle,
+          Positioned(
+            top: -38,
+            right: -24,
+            child: Transform.rotate(
+              angle: -.18,
+              child: Container(
+                width: 132,
+                height: 190,
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    colors: [
+                      Colors.white.withValues(alpha: .18),
+                      Colors.white.withValues(alpha: 0),
+                    ],
+                  ),
+                  borderRadius: const BorderRadius.vertical(
+                    bottom: Radius.elliptical(80, 25),
+                  ),
                 ),
-                child: Icon(icon, color: AppColors.primary, size: 26),
               ),
-              const SizedBox(width: AppSpacing.md),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+            ),
+          ),
+          Positioned(
+            right: 18,
+            bottom: 16,
+            child: Icon(
+              Icons.mic_rounded,
+              size: 88,
+              color: Colors.white.withValues(alpha: .08),
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.all(AppSpacing.lg),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Row(
                   children: [
-                    Text(
-                      club.titulo.trim().isEmpty ? 'Clubvisión' : club.titulo,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: AppTextStyles.section.copyWith(fontSize: 21),
+                    Icon(
+                      Icons.auto_awesome_rounded,
+                      color: Color(0xFFF0CE82),
+                      size: 17,
                     ),
-                    const SizedBox(height: 2),
+                    SizedBox(width: 7),
                     Text(
-                      club.mensaje.trim().isEmpty
-                          ? 'La próxima lectura la decide el club'
-                          : club.mensaje,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                      style: AppTextStyles.bodySecondary.copyWith(height: 1.3),
+                      'CLUBVISIÓN · GALA LITERARIA',
+                      style: TextStyle(
+                        color: Color(0xFFF0CE82),
+                        fontSize: 10,
+                        fontWeight: FontWeight.w900,
+                        letterSpacing: 1.45,
+                      ),
                     ),
                   ],
                 ),
-              ),
-            ],
-          ),
-
-          if (estado == 'VOTACION') ...[
-            const SizedBox(height: AppSpacing.md),
-
-            ClipRRect(
-              borderRadius: BorderRadius.circular(AppRadius.pill),
-              child: LinearProgressIndicator(
-                value: (club.porcentaje / 100).clamp(0.0, 1.0),
-                minHeight: 10,
-                backgroundColor: Colors.white.withValues(alpha: 0.72),
-                valueColor: const AlwaysStoppedAnimation<Color>(
-                  AppColors.primary,
+                const SizedBox(height: AppSpacing.md),
+                Text(
+                  club.titulo.trim().isEmpty ? 'Clubvisión' : club.titulo,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 27,
+                    height: 1.05,
+                    fontWeight: FontWeight.w900,
+                    letterSpacing: -.7,
+                  ),
                 ),
-              ),
+                const SizedBox(height: 7),
+                Text(
+                  club.mensaje.trim().isEmpty
+                      ? 'La próxima lectura la decide el club'
+                      : club.mensaje,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    color: Colors.white.withValues(alpha: .78),
+                    fontSize: 14,
+                    height: 1.35,
+                  ),
+                ),
+                const SizedBox(height: AppSpacing.lg),
+                _ClubvisionCycle(estado: estado),
+                if (estado == 'VOTACION') ...[
+                  const SizedBox(height: AppSpacing.lg),
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(AppRadius.pill),
+                    child: LinearProgressIndicator(
+                      value: (club.porcentaje / 100).clamp(0.0, 1.0),
+                      minHeight: 9,
+                      backgroundColor: Colors.white.withValues(alpha: .18),
+                      valueColor: const AlwaysStoppedAnimation<Color>(
+                        Color(0xFFF0CE82),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: AppSpacing.sm),
+                  Text(
+                    '${club.votosRecibidos} votos dentro · '
+                    '${club.votosPendientes} pendientes',
+                    style: TextStyle(
+                      color: Colors.white.withValues(alpha: .82),
+                      fontSize: 12,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ],
+                if (estado == 'LECTURA' && club.ganador.trim().isNotEmpty) ...[
+                  const SizedBox(height: AppSpacing.md),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: AppSpacing.sm,
+                      vertical: AppSpacing.xs,
+                    ),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: .12),
+                      borderRadius: BorderRadius.circular(AppRadius.pill),
+                      border: Border.all(
+                        color: Colors.white.withValues(alpha: .18),
+                      ),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(
+                          Icons.menu_book_rounded,
+                          color: Colors.white,
+                          size: 16,
+                        ),
+                        const SizedBox(width: 6),
+                        Flexible(
+                          child: Text(
+                            club.ganador,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 12,
+                              fontWeight: FontWeight.w800,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ],
             ),
+          ),
+        ],
+      ),
+    );
+  }
+}
 
-            const SizedBox(height: AppSpacing.sm),
+class _ClubvisionCycle extends StatelessWidget {
+  const _ClubvisionCycle({required this.estado});
 
-            Wrap(
-              alignment: WrapAlignment.center,
-              spacing: AppSpacing.xs,
-              runSpacing: AppSpacing.xs,
+  final String estado;
+
+  @override
+  Widget build(BuildContext context) {
+    final activeIndex = switch (estado) {
+      'VOTACION' => 0,
+      'RESULTADOS' => 1,
+      'LECTURA' => 2,
+      _ => -1,
+    };
+    const steps = [
+      (Icons.how_to_vote_outlined, 'Votación'),
+      (Icons.emoji_events_outlined, 'Gala'),
+      (Icons.auto_stories_outlined, 'Lectura'),
+    ];
+
+    return Row(
+      children: [
+        for (var index = 0; index < steps.length; index++) ...[
+          Expanded(
+            child: Column(
               children: [
-                ClubChip(
-                  label: '${club.votosRecibidos} votos',
-                  icon: Icons.how_to_vote_outlined,
-                  variant: ClubChipVariant.primary,
+                AnimatedContainer(
+                  duration: const Duration(milliseconds: 220),
+                  width: 34,
+                  height: 34,
+                  decoration: BoxDecoration(
+                    color: index <= activeIndex
+                        ? const Color(0xFFF0CE82)
+                        : Colors.white.withValues(alpha: .12),
+                    shape: BoxShape.circle,
+                    border: Border.all(
+                      color: index <= activeIndex
+                          ? const Color(0xFFF0CE82)
+                          : Colors.white.withValues(alpha: .28),
+                    ),
+                  ),
+                  child: Icon(
+                    steps[index].$1,
+                    size: 17,
+                    color: index <= activeIndex
+                        ? const Color(0xFF432552)
+                        : Colors.white.withValues(alpha: .72),
+                  ),
                 ),
-                ClubChip(
-                  label: '${club.votosPendientes} pendientes',
-                  icon: Icons.schedule_rounded,
-                  variant: ClubChipVariant.warning,
+                const SizedBox(height: 5),
+                Text(
+                  steps[index].$2,
+                  style: TextStyle(
+                    color: index == activeIndex
+                        ? Colors.white
+                        : Colors.white.withValues(alpha: .62),
+                    fontSize: 10,
+                    fontWeight: index == activeIndex
+                        ? FontWeight.w900
+                        : FontWeight.w600,
+                  ),
                 ),
               ],
             ),
-          ],
-
-          if (estado == 'LECTURA' && club.ganador.trim().isNotEmpty) ...[
-            const SizedBox(height: AppSpacing.sm),
-
-            ClubChip(
-              label: club.ganador,
-              icon: Icons.menu_book_outlined,
-              variant: ClubChipVariant.primary,
+          ),
+          if (index < steps.length - 1)
+            Expanded(
+              child: Container(
+                height: 2,
+                margin: const EdgeInsets.only(bottom: 19),
+                color: index < activeIndex
+                    ? const Color(0xFFF0CE82)
+                    : Colors.white.withValues(alpha: .18),
+              ),
             ),
-          ],
         ],
-      ),
+      ],
     );
   }
 }
@@ -502,10 +655,17 @@ class _MenuCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ClubCard(
-      elevated: false,
+      elevated: true,
       padding: const EdgeInsets.all(AppSpacing.lg),
       borderColor: color.withValues(alpha: 0.20),
-      backgroundColor: Color.lerp(color, Colors.white, 0.94),
+      gradient: LinearGradient(
+        begin: Alignment.topLeft,
+        end: Alignment.bottomRight,
+        colors: [
+          Colors.white,
+          Color.lerp(color, Colors.white, .9) ?? Colors.white,
+        ],
+      ),
       onTap: onTap,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -517,8 +677,16 @@ class _MenuCard extends StatelessWidget {
                 width: 58,
                 height: 58,
                 decoration: BoxDecoration(
-                  color: color.withValues(alpha: 0.13),
+                  gradient: LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [
+                      color.withValues(alpha: .22),
+                      color.withValues(alpha: .08),
+                    ],
+                  ),
                   borderRadius: BorderRadius.circular(AppRadius.lg),
+                  border: Border.all(color: color.withValues(alpha: .16)),
                 ),
                 child: Icon(icon, color: color, size: 29),
               ),
@@ -556,45 +724,37 @@ class _MenuCard extends StatelessWidget {
                   ],
                 ),
               ),
-
-              const SizedBox(width: AppSpacing.sm),
-
-              Container(
-                width: 40,
-                height: 40,
-                decoration: const BoxDecoration(
-                  color: Colors.white,
-                  shape: BoxShape.circle,
-                ),
-                child: Icon(
-                  Icons.arrow_forward_rounded,
-                  color: color,
-                  size: 21,
-                ),
-              ),
             ],
           ),
 
           const SizedBox(height: AppSpacing.lg),
 
-          Row(
-            children: [
-              Icon(icon, size: 18, color: color),
-
-              const SizedBox(width: AppSpacing.xs),
-
-              Expanded(
-                child: Text(
-                  actionLabel,
-                  style: AppTextStyles.body.copyWith(
-                    color: color,
-                    fontWeight: FontWeight.w700,
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(
+              horizontal: AppSpacing.md,
+              vertical: AppSpacing.sm,
+            ),
+            decoration: BoxDecoration(
+              color: color.withValues(alpha: .1),
+              borderRadius: BorderRadius.circular(AppRadius.pill),
+            ),
+            child: Row(
+              children: [
+                Icon(icon, size: 18, color: color),
+                const SizedBox(width: AppSpacing.xs),
+                Expanded(
+                  child: Text(
+                    actionLabel,
+                    style: AppTextStyles.body.copyWith(
+                      color: color,
+                      fontWeight: FontWeight.w800,
+                    ),
                   ),
                 ),
-              ),
-
-              Icon(Icons.chevron_right_rounded, color: color),
-            ],
+                Icon(Icons.arrow_forward_rounded, color: color, size: 19),
+              ],
+            ),
           ),
         ],
       ),

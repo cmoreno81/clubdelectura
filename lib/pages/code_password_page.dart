@@ -3,6 +3,9 @@ import 'package:flutter/services.dart';
 
 import '../services/api_exception.dart';
 import '../services/auth_service.dart';
+import '../theme/app_spacing.dart';
+import '../widgets/common/auth_form_header.dart';
+import '../widgets/common/club_card.dart';
 
 enum CodePasswordMode { activation, registration, passwordReset }
 
@@ -83,63 +86,92 @@ class _CodePasswordPageState extends State<CodePasswordPage> {
         key: _formKey,
         autovalidateMode: AutovalidateMode.onUserInteraction,
         child: ListView(
-          padding: const EdgeInsets.all(24),
+          padding: const EdgeInsets.fromLTRB(
+            AppSpacing.md,
+            AppSpacing.sm,
+            AppSpacing.md,
+            48,
+          ),
           children: [
-            Text('Código enviado a ${widget.email}'),
-            const SizedBox(height: 20),
-            TextFormField(
-              key: const ValueKey('auth-code-field'),
-              controller: _code,
-              keyboardType: TextInputType.number,
-              autofillHints: const [AutofillHints.oneTimeCode],
-              inputFormatters: [
-                FilteringTextInputFormatter.digitsOnly,
-                LengthLimitingTextInputFormatter(6),
-              ],
-              decoration: const InputDecoration(
-                labelText: 'Código de 6 dígitos',
-              ),
-              validator: (value) =>
-                  value?.length == 6 ? null : 'Escribe los seis dígitos',
+            AuthFormHeader(
+              icon: Icons.mark_email_read_outlined,
+              eyebrow: 'Último paso',
+              title: activation || registration
+                  ? 'Crea tu contraseña'
+                  : 'Renueva tu contraseña',
+              message:
+                  'Hemos enviado un código de seis dígitos a ${widget.email}.',
             ),
-            const SizedBox(height: 16),
-            TextFormField(
-              key: const ValueKey('new-password-field'),
-              controller: _password,
-              obscureText: _hidden,
-              autofillHints: const [AutofillHints.newPassword],
-              enableSuggestions: false,
-              autocorrect: false,
-              decoration: InputDecoration(
-                labelText: 'Contraseña nueva',
-                suffixIcon: IconButton(
-                  onPressed: () => setState(() => _hidden = !_hidden),
-                  icon: Icon(_hidden ? Icons.visibility : Icons.visibility_off),
-                ),
+            const SizedBox(height: AppSpacing.md),
+            ClubCard(
+              elevated: false,
+              padding: const EdgeInsets.all(AppSpacing.lg),
+              child: Column(
+                children: [
+                  TextFormField(
+                    key: const ValueKey('auth-code-field'),
+                    controller: _code,
+                    keyboardType: TextInputType.number,
+                    autofillHints: const [AutofillHints.oneTimeCode],
+                    inputFormatters: [
+                      FilteringTextInputFormatter.digitsOnly,
+                      LengthLimitingTextInputFormatter(6),
+                    ],
+                    decoration: const InputDecoration(
+                      labelText: 'Código de 6 dígitos',
+                      prefixIcon: Icon(Icons.pin_outlined),
+                    ),
+                    validator: (value) =>
+                        value?.length == 6 ? null : 'Escribe los seis dígitos',
+                  ),
+                  const SizedBox(height: AppSpacing.md),
+                  TextFormField(
+                    key: const ValueKey('new-password-field'),
+                    controller: _password,
+                    obscureText: _hidden,
+                    autofillHints: const [AutofillHints.newPassword],
+                    enableSuggestions: false,
+                    autocorrect: false,
+                    decoration: InputDecoration(
+                      labelText: 'Contraseña nueva',
+                      prefixIcon: const Icon(Icons.key_rounded),
+                      suffixIcon: IconButton(
+                        onPressed: () => setState(() => _hidden = !_hidden),
+                        icon: Icon(
+                          _hidden ? Icons.visibility : Icons.visibility_off,
+                        ),
+                      ),
+                    ),
+                    validator: (value) => (value?.length ?? 0) < 10
+                        ? 'Usa al menos 10 caracteres'
+                        : null,
+                  ),
+                  const SizedBox(height: AppSpacing.md),
+                  TextFormField(
+                    key: const ValueKey('confirm-password-field'),
+                    controller: _confirmation,
+                    obscureText: true,
+                    enableSuggestions: false,
+                    autocorrect: false,
+                    decoration: const InputDecoration(
+                      labelText: 'Repite la contraseña',
+                      prefixIcon: Icon(Icons.key_rounded),
+                    ),
+                    validator: (value) => value != _password.text
+                        ? 'Las contraseñas no coinciden'
+                        : null,
+                    onFieldSubmitted: (_) => _submit(),
+                  ),
+                  const SizedBox(height: AppSpacing.lg),
+                  SizedBox(
+                    width: double.infinity,
+                    child: FilledButton(
+                      onPressed: _busy ? null : _submit,
+                      child: Text(_busy ? 'Guardando…' : 'Continuar'),
+                    ),
+                  ),
+                ],
               ),
-              validator: (value) => (value?.length ?? 0) < 10
-                  ? 'Usa al menos 10 caracteres'
-                  : null,
-            ),
-            const SizedBox(height: 16),
-            TextFormField(
-              key: const ValueKey('confirm-password-field'),
-              controller: _confirmation,
-              obscureText: true,
-              enableSuggestions: false,
-              autocorrect: false,
-              decoration: const InputDecoration(
-                labelText: 'Repite la contraseña',
-              ),
-              validator: (value) => value != _password.text
-                  ? 'Las contraseñas no coinciden'
-                  : null,
-              onFieldSubmitted: (_) => _submit(),
-            ),
-            const SizedBox(height: 24),
-            FilledButton(
-              onPressed: _busy ? null : _submit,
-              child: Text(_busy ? 'Guardando…' : 'Continuar'),
             ),
           ],
         ),

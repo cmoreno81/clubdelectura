@@ -4,6 +4,9 @@ import '../navigation/app_page_route.dart';
 
 import '../services/api_exception.dart';
 import '../services/auth_service.dart';
+import '../theme/app_spacing.dart';
+import '../widgets/common/auth_form_header.dart';
+import '../widgets/common/club_card.dart';
 import 'code_password_page.dart';
 
 class PasswordResetEmailPage extends StatefulWidget {
@@ -59,24 +62,47 @@ class _PasswordResetEmailPageState extends State<PasswordResetEmailPage> {
     return Scaffold(
       appBar: AppBar(title: const Text('Recuperar contraseña')),
       body: ListView(
-        padding: const EdgeInsets.all(24),
+        padding: const EdgeInsets.fromLTRB(
+          AppSpacing.md,
+          AppSpacing.sm,
+          AppSpacing.md,
+          48,
+        ),
         children: [
-          const Text(
-            'Te enviaremos un código para crear una contraseña nueva.',
+          const AuthFormHeader(
+            icon: Icons.key_rounded,
+            eyebrow: 'Recupera tu acceso',
+            title: 'Crea una contraseña nueva',
+            message:
+                'Te enviaremos un código de seguridad al correo de tu cuenta.',
           ),
-          const SizedBox(height: 20),
-          TextField(
-            controller: _email,
-            keyboardType: TextInputType.emailAddress,
-            autofillHints: const [AutofillHints.email],
-            autocorrect: false,
-            decoration: const InputDecoration(labelText: 'Correo'),
-            onSubmitted: (_) => _submit(),
-          ),
-          const SizedBox(height: 24),
-          FilledButton(
-            onPressed: _busy ? null : _submit,
-            child: Text(_busy ? 'Enviando…' : 'Enviar código'),
+          const SizedBox(height: AppSpacing.md),
+          ClubCard(
+            elevated: false,
+            padding: const EdgeInsets.all(AppSpacing.lg),
+            child: Column(
+              children: [
+                TextField(
+                  controller: _email,
+                  keyboardType: TextInputType.emailAddress,
+                  autofillHints: const [AutofillHints.email],
+                  autocorrect: false,
+                  decoration: const InputDecoration(
+                    labelText: 'Correo',
+                    prefixIcon: Icon(Icons.mail_outline_rounded),
+                  ),
+                  onSubmitted: (_) => _submit(),
+                ),
+                const SizedBox(height: AppSpacing.lg),
+                SizedBox(
+                  width: double.infinity,
+                  child: FilledButton(
+                    onPressed: _busy ? null : _submit,
+                    child: Text(_busy ? 'Enviando…' : 'Enviar código'),
+                  ),
+                ),
+              ],
+            ),
           ),
         ],
       ),

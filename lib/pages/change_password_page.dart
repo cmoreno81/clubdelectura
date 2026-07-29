@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 
 import '../services/api_exception.dart';
 import '../services/auth_service.dart';
+import '../theme/app_spacing.dart';
+import '../widgets/common/auth_form_header.dart';
+import '../widgets/common/club_card.dart';
 
 class ChangePasswordPage extends StatefulWidget {
   const ChangePasswordPage({super.key});
@@ -57,27 +60,52 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
         key: _formKey,
         autovalidateMode: AutovalidateMode.onUserInteraction,
         child: ListView(
-          padding: const EdgeInsets.all(24),
+          padding: const EdgeInsets.fromLTRB(
+            AppSpacing.md,
+            AppSpacing.sm,
+            AppSpacing.md,
+            48,
+          ),
           children: [
-            _passwordField(_current, 'Contraseña actual'),
-            const SizedBox(height: 16),
-            _passwordField(
-              _next,
-              'Contraseña nueva',
-              validator: (value) =>
-                  (value?.length ?? 0) < 10 ? 'Mínimo 10 caracteres' : null,
+            const AuthFormHeader(
+              icon: Icons.security_rounded,
+              eyebrow: 'Seguridad',
+              title: 'Protege tu cuenta',
+              message: 'La contraseña nueva debe tener al menos 10 caracteres.',
             ),
-            const SizedBox(height: 16),
-            _passwordField(
-              _confirmation,
-              'Repite la contraseña nueva',
-              validator: (value) =>
-                  value != _next.text ? 'Las contraseñas no coinciden' : null,
-            ),
-            const SizedBox(height: 24),
-            FilledButton(
-              onPressed: _busy ? null : _submit,
-              child: Text(_busy ? 'Guardando…' : 'Guardar contraseña'),
+            const SizedBox(height: AppSpacing.md),
+            ClubCard(
+              elevated: false,
+              padding: const EdgeInsets.all(AppSpacing.lg),
+              child: Column(
+                children: [
+                  _passwordField(_current, 'Contraseña actual'),
+                  const SizedBox(height: AppSpacing.md),
+                  _passwordField(
+                    _next,
+                    'Contraseña nueva',
+                    validator: (value) => (value?.length ?? 0) < 10
+                        ? 'Mínimo 10 caracteres'
+                        : null,
+                  ),
+                  const SizedBox(height: AppSpacing.md),
+                  _passwordField(
+                    _confirmation,
+                    'Repite la contraseña nueva',
+                    validator: (value) => value != _next.text
+                        ? 'Las contraseñas no coinciden'
+                        : null,
+                  ),
+                  const SizedBox(height: AppSpacing.lg),
+                  SizedBox(
+                    width: double.infinity,
+                    child: FilledButton(
+                      onPressed: _busy ? null : _submit,
+                      child: Text(_busy ? 'Guardando…' : 'Guardar contraseña'),
+                    ),
+                  ),
+                ],
+              ),
             ),
           ],
         ),
@@ -95,7 +123,10 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
       obscureText: true,
       enableSuggestions: false,
       autocorrect: false,
-      decoration: InputDecoration(labelText: label),
+      decoration: InputDecoration(
+        labelText: label,
+        prefixIcon: const Icon(Icons.key_rounded),
+      ),
       validator:
           validator ??
           (value) =>

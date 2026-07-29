@@ -390,44 +390,61 @@ class _PosterShelf extends StatelessWidget {
           bottom: 9,
           child: Padding(
             padding: const EdgeInsets.fromLTRB(8, 5, 8, 0),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: [
-                for (var index = 0; index < books.length; index++) ...[
-                  if (index > 0) const SizedBox(width: 3),
-                  Expanded(
-                    child: Transform.rotate(
-                      angle:
-                          ((books[index].id.hashCode.abs() + index) % 5 - 2) *
-                          .012,
-                      alignment: Alignment.bottomCenter,
-                      child: LayoutBuilder(
-                        builder: (context, constraints) => ClubBookCover(
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                final slots = books.length < 5 ? 5 : books.length;
+                final maxBookWidth =
+                    (constraints.maxWidth - 50 - (slots - 1) * 7) / slots;
+                final bookWidth = (constraints.maxHeight / 1.5).clamp(
+                  26.0,
+                  maxBookWidth,
+                );
+                final bookHeight = bookWidth * 1.5;
+                return Row(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    for (var index = 0; index < books.length; index++) ...[
+                      if (index > 0)
+                        SizedBox(
+                          width:
+                              3 +
+                              ((books[index].id.hashCode.abs() + index) % 5),
+                        ),
+                      Transform.rotate(
+                        angle:
+                            ((books[index].id.hashCode.abs() + index) % 5 - 2) *
+                            .012,
+                        alignment: Alignment.bottomCenter,
+                        child: ClubBookCover(
                           title: books[index].title,
                           imageUrl: books[index].coverUrl,
-                          width: constraints.maxWidth,
-                          height: constraints.maxHeight,
+                          width: bookWidth,
+                          height: bookHeight,
                           borderRadius: BorderRadius.circular(3),
                           showShadow: false,
                         ),
                       ),
-                    ),
-                  ),
-                ],
-                if (books.length < 5) ...[
-                  const Spacer(),
-                  Icon(
-                    shelfIndex.isEven
-                        ? Icons.local_florist_rounded
-                        : Icons.light_rounded,
-                    size: 24,
-                    color: shelfIndex.isEven
-                        ? const Color(0xFF5D7954)
-                        : const Color(0xFFD49A3A),
-                  ),
-                  const SizedBox(width: 7),
-                ],
-              ],
+                    ],
+                    const Spacer(),
+                    if (shelfIndex.isEven || books.length < 5) ...[
+                      Icon(
+                        shelfIndex % 3 == 0
+                            ? Icons.local_florist_rounded
+                            : shelfIndex % 3 == 1
+                            ? Icons.light_rounded
+                            : Icons.auto_awesome_rounded,
+                        size: 22,
+                        color: shelfIndex % 3 == 0
+                            ? const Color(0xFF5D7954)
+                            : shelfIndex % 3 == 1
+                            ? const Color(0xFFD49A3A)
+                            : const Color(0xFF8C659C),
+                      ),
+                      const SizedBox(width: 5),
+                    ],
+                  ],
+                );
+              },
             ),
           ),
         ),

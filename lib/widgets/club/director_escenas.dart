@@ -96,95 +96,153 @@ class DirectorEscenas {
       width: double.infinity,
       padding: const EdgeInsets.all(AppSpacing.md),
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.58),
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            Colors.white.withValues(alpha: .88),
+            const Color(0xFFEDE3FF).withValues(alpha: .82),
+          ],
+        ),
         borderRadius: BorderRadius.circular(AppRadius.xl),
+        border: Border.all(color: AppColors.primary.withValues(alpha: .14)),
       ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      child: Column(
         children: [
-          ClubBookCover(
-            title: lectura.titulo,
-            imageUrl: lectura.coverUrl,
-            width: 105,
-            showShadow: true,
-            heroTag: 'lectura-actual-${lectura.titulo}',
-          ),
-
-          const SizedBox(width: AppSpacing.md),
-
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  lectura.titulo,
-                  maxLines: 3,
-                  overflow: TextOverflow.ellipsis,
-                  style: AppTextStyles.section.copyWith(
-                    fontSize: 20,
-                    height: 1.2,
-                  ),
-                ),
-
-                const SizedBox(height: AppSpacing.md),
-
-                Wrap(
-                  spacing: AppSpacing.xs,
-                  runSpacing: AppSpacing.xs,
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              ClubBookCover(
+                title: lectura.titulo,
+                imageUrl: lectura.coverUrl,
+                width: 105,
+                showShadow: true,
+                heroTag: 'lectura-actual-${lectura.titulo}',
+              ),
+              const SizedBox(width: AppSpacing.md),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    if (lectura.comentarios > 0)
-                      ClubChip(
-                        label: '${lectura.comentarios}',
-                        icon: Icons.chat_bubble_outline_rounded,
-                        variant: ClubChipVariant.primary,
+                    const Text(
+                      'EL LIBRO DEL CLUB',
+                      style: TextStyle(
+                        color: AppColors.inkCoral,
+                        fontSize: 9,
+                        fontWeight: FontWeight.w900,
+                        letterSpacing: 1.2,
                       ),
-
-                    if (lectura.likes > 0)
-                      ClubChip(
-                        label: '${lectura.likes}',
-                        icon: Icons.favorite_border_rounded,
-                        variant: ClubChipVariant.danger,
-                      ),
-
-                    ClubChip(
-                      label: '${lectura.totalLeyendo} leyendo',
-                      icon: Icons.people_outline_rounded,
-                      variant: ClubChipVariant.info,
                     ),
-
-                    ClubChip(
-                      label: '${lectura.totalFinalizado} finalizaron',
-                      icon: Icons.check_circle_outline_rounded,
-                      variant: ClubChipVariant.success,
+                    const SizedBox(height: 5),
+                    Text(
+                      lectura.titulo,
+                      maxLines: 3,
+                      overflow: TextOverflow.ellipsis,
+                      style: AppTextStyles.section.copyWith(
+                        fontSize: 20,
+                        height: 1.12,
+                        fontWeight: FontWeight.w900,
+                      ),
+                    ),
+                    const SizedBox(height: AppSpacing.md),
+                    Wrap(
+                      spacing: AppSpacing.xs,
+                      runSpacing: AppSpacing.xs,
+                      children: [
+                        ClubChip(
+                          label: '${lectura.totalLeyendo} leyendo',
+                          icon: Icons.people_outline_rounded,
+                          variant: ClubChipVariant.info,
+                        ),
+                        ClubChip(
+                          label: '${lectura.totalFinalizado} terminaron',
+                          icon: Icons.check_circle_outline_rounded,
+                          variant: ClubChipVariant.success,
+                        ),
+                        if (lectura.comentarios > 0)
+                          ClubChip(
+                            label: '${lectura.comentarios} comentarios',
+                            icon: Icons.chat_bubble_outline_rounded,
+                            variant: ClubChipVariant.primary,
+                          ),
+                        if (lectura.likes > 0)
+                          ClubChip(
+                            label: '${lectura.likes} reacciones',
+                            icon: Icons.favorite_border_rounded,
+                            variant: ClubChipVariant.danger,
+                          ),
+                      ],
                     ),
                   ],
                 ),
-
-                if (lectura.ultimaActividad.isNotEmpty) ...[
-                  const SizedBox(height: AppSpacing.md),
-
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Icon(
-                        Icons.schedule_rounded,
-                        size: 16,
-                        color: AppColors.textMuted,
-                      ),
-
-                      const SizedBox(width: AppSpacing.xs),
-
-                      Expanded(
-                        child: Text(
-                          lectura.ultimaActividad,
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                          style: AppTextStyles.caption,
-                        ),
-                      ),
-                    ],
+              ),
+            ],
+          ),
+          if (lectura.ultimaActividad.isNotEmpty) ...[
+            const SizedBox(height: AppSpacing.md),
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(
+                horizontal: AppSpacing.sm,
+                vertical: AppSpacing.xs,
+              ),
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: .64),
+                borderRadius: BorderRadius.circular(AppRadius.md),
+              ),
+              child: Row(
+                children: [
+                  const Icon(
+                    Icons.schedule_rounded,
+                    size: 16,
+                    color: AppColors.textMuted,
+                  ),
+                  const SizedBox(width: AppSpacing.xs),
+                  Expanded(
+                    child: Text(
+                      lectura.ultimaActividad,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: AppTextStyles.caption.copyWith(height: 1.3),
+                    ),
                   ),
                 ],
+              ),
+            ),
+          ],
+          const SizedBox(height: AppSpacing.md),
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(
+              horizontal: AppSpacing.md,
+              vertical: AppSpacing.sm,
+            ),
+            decoration: BoxDecoration(
+              color: AppColors.primaryDark,
+              borderRadius: BorderRadius.circular(AppRadius.pill),
+            ),
+            child: const Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(Icons.forum_outlined, size: 18, color: Colors.white),
+                SizedBox(width: AppSpacing.xs),
+                Flexible(
+                  child: Text(
+                    'Entrar al rincón de lectura',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                ),
+                SizedBox(width: AppSpacing.xs),
+                Icon(
+                  Icons.arrow_forward_rounded,
+                  size: 18,
+                  color: Colors.white,
+                ),
               ],
             ),
           ),

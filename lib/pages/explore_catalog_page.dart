@@ -299,6 +299,16 @@ class _AddBookSheetState extends State<_AddBookSheet> {
                     (value) => ChoiceChip(
                       label: Text(value[0] + value.substring(1).toLowerCase()),
                       selected: _priority == value,
+                      selectedColor: AppColors.primaryDark,
+                      checkmarkColor: Colors.white,
+                      labelStyle: TextStyle(
+                        color: _priority == value
+                            ? Colors.white
+                            : AppColors.textPrimary,
+                        fontWeight: _priority == value
+                            ? FontWeight.w800
+                            : FontWeight.w500,
+                      ),
                       onSelected: (_) => setState(() => _priority = value),
                     ),
                   )
@@ -320,6 +330,16 @@ class _AddBookSheetState extends State<_AddBookSheet> {
                         (entry) => ChoiceChip(
                           label: Text(entry.value),
                           selected: _format == entry.key,
+                          selectedColor: AppColors.primaryDark,
+                          checkmarkColor: Colors.white,
+                          labelStyle: TextStyle(
+                            color: _format == entry.key
+                                ? Colors.white
+                                : AppColors.textPrimary,
+                            fontWeight: _format == entry.key
+                                ? FontWeight.w800
+                                : FontWeight.w500,
+                          ),
                           onSelected: (_) =>
                               setState(() => _format = entry.key),
                         ),
