@@ -29,10 +29,15 @@ abstract final class AppTheme {
 
       appBarTheme: const AppBarTheme(
         elevation: 0,
+        scrolledUnderElevation: 0,
         centerTitle: true,
         backgroundColor: AppColors.background,
         foregroundColor: AppColors.textPrimary,
+        surfaceTintColor: Colors.transparent,
         titleTextStyle: AppTextStyles.section,
+        shape: Border(
+          bottom: BorderSide(color: AppColors.paperLine, width: .7),
+        ),
       ),
 
       dividerColor: AppColors.divider,

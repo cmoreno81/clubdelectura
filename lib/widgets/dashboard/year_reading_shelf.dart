@@ -214,7 +214,7 @@ class _YearShelfRow extends StatelessWidget {
   }
 }
 
-class _CasualShelfBook extends StatelessWidget {
+class _CasualShelfBook extends StatefulWidget {
   const _CasualShelfBook({
     required this.book,
     required this.index,
@@ -226,21 +226,49 @@ class _CasualShelfBook extends StatelessWidget {
   final VoidCallback onTap;
 
   @override
+  State<_CasualShelfBook> createState() => _CasualShelfBookState();
+}
+
+class _CasualShelfBookState extends State<_CasualShelfBook> {
+  bool _lifted = false;
+
+  @override
   Widget build(BuildContext context) {
-    final seed = book.id.hashCode.abs() + index * 13;
+    final seed = widget.book.id.hashCode.abs() + widget.index * 13;
     final height = 91.0 + (seed % 14);
     final angle = ((seed % 7) - 3) * .012;
+    final reduceMotion =
+        MediaQuery.maybeOf(context)?.disableAnimations ?? false;
 
     return Transform.rotate(
       angle: angle,
       alignment: Alignment.bottomCenter,
-      child: ClubBookCover(
-        title: book.title,
-        imageUrl: book.coverUrl,
-        width: 60,
-        height: height,
-        borderRadius: BorderRadius.circular(4),
-        onTap: onTap,
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTapDown: (_) {
+          if (!reduceMotion) setState(() => _lifted = true);
+        },
+        onTapCancel: () {
+          if (_lifted) setState(() => _lifted = false);
+        },
+        onTapUp: (_) {
+          if (_lifted) setState(() => _lifted = false);
+          widget.onTap();
+        },
+        child: AnimatedContainer(
+          duration: reduceMotion
+              ? Duration.zero
+              : const Duration(milliseconds: 130),
+          curve: Curves.easeOutCubic,
+          transform: Matrix4.translationValues(0, _lifted ? -9 : 0, 0),
+          child: ClubBookCover(
+            title: widget.book.title,
+            imageUrl: widget.book.coverUrl,
+            width: 60,
+            height: height,
+            borderRadius: BorderRadius.circular(4),
+          ),
+        ),
       ),
     );
   }

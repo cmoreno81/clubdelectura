@@ -4,6 +4,7 @@ import '../../models/libro.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_spacing.dart';
 import '../../theme/app_text_styles.dart';
+import '../../utils/reading_status_copy.dart';
 import '../common/club_avatar.dart';
 import '../common/club_card.dart';
 import '../common/club_chip.dart';
@@ -112,21 +113,48 @@ class _LectoraCard extends StatelessWidget {
 
   List<DropdownMenuItem<String>> get _opcionesEstado {
     if (registro.estado == 'FINALIZADO') {
-      return const [
-        DropdownMenuItem(value: 'FINALIZADO', child: Text('Finalizado')),
-        DropdownMenuItem(value: 'PENDIENTE', child: Text('Pendiente')),
-        DropdownMenuItem(value: 'RELECTURA', child: Text('Relectura')),
+      return [
+        DropdownMenuItem(
+          value: 'FINALIZADO',
+          child: Text(ReadingStatusCopy.label('FINALIZADO')),
+        ),
+        DropdownMenuItem(
+          value: 'PENDIENTE',
+          child: Text(ReadingStatusCopy.label('PENDIENTE')),
+        ),
+        DropdownMenuItem(
+          value: 'RELECTURA',
+          child: Text(ReadingStatusCopy.label('RELECTURA')),
+        ),
       ];
     }
 
     return [
-      const DropdownMenuItem(value: 'PENDIENTE', child: Text('Pendiente')),
+      DropdownMenuItem(
+        value: 'PENDIENTE',
+        child: Text(ReadingStatusCopy.label('PENDIENTE')),
+      ),
       if (!tieneFinalizaciones || registro.estado == 'LEYENDO')
-        const DropdownMenuItem(value: 'LEYENDO', child: Text('Leyendo')),
-      const DropdownMenuItem(value: 'PAUSADO', child: Text('En pausa')),
-      const DropdownMenuItem(value: 'RELECTURA', child: Text('Relectura')),
-      const DropdownMenuItem(value: 'ABANDONADO', child: Text('Abandonado')),
-      const DropdownMenuItem(value: 'FINALIZADO', child: Text('Finalizado')),
+        DropdownMenuItem(
+          value: 'LEYENDO',
+          child: Text(ReadingStatusCopy.label('LEYENDO')),
+        ),
+      DropdownMenuItem(
+        value: 'PAUSADO',
+        child: Text(ReadingStatusCopy.label('PAUSADO')),
+      ),
+      DropdownMenuItem(
+        value: 'RELECTURA',
+        child: Text(ReadingStatusCopy.label('RELECTURA')),
+      ),
+      DropdownMenuItem(
+        value: 'ABANDONADO',
+        child: Text(ReadingStatusCopy.label('ABANDONADO')),
+      ),
+      DropdownMenuItem(
+        value: 'FINALIZADO',
+        child: Text(ReadingStatusCopy.label('FINALIZADO')),
+      ),
     ];
   }
 
@@ -487,39 +515,11 @@ class _LectoraCard extends StatelessWidget {
   }
 
   static String _labelEstado(String estado) {
-    switch (estado) {
-      case 'LEYENDO':
-        return 'Leyendo';
-      case 'PAUSADO':
-        return 'En pausa';
-      case 'RELECTURA':
-        return 'Relectura';
-      case 'FINALIZADO':
-        return 'Finalizado';
-      case 'ABANDONADO':
-      case 'ABANDONED':
-        return 'Abandonado';
-      default:
-        return 'Pendiente';
-    }
+    return ReadingStatusCopy.label(estado);
   }
 
   static IconData _iconoEstado(String estado) {
-    switch (estado) {
-      case 'LEYENDO':
-        return Icons.menu_book_rounded;
-      case 'PAUSADO':
-        return Icons.pause_circle_outline_rounded;
-      case 'RELECTURA':
-        return Icons.refresh_rounded;
-      case 'FINALIZADO':
-        return Icons.check_circle_outline_rounded;
-      case 'ABANDONADO':
-      case 'ABANDONED':
-        return Icons.heart_broken_rounded;
-      default:
-        return Icons.schedule_rounded;
-    }
+    return ReadingStatusCopy.icon(estado);
   }
 
   static ClubChipVariant _varianteEstado(String estado) {

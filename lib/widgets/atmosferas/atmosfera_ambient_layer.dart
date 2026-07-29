@@ -197,6 +197,13 @@ class _EditorialPaperPainter extends CustomPainter {
       }
     }
 
+    final ruledLine = Paint()
+      ..color = const Color(0xFF7C6B88).withValues(alpha: .032)
+      ..strokeWidth = .7;
+    for (var y = 31.0; y < size.height; y += 34) {
+      canvas.drawLine(Offset(26, y), Offset(size.width, y), ruledLine);
+    }
+
     final longFiber = Paint()
       ..color = const Color(0xFF9A7256).withValues(alpha: .038)
       ..strokeWidth = .45;
@@ -235,6 +242,16 @@ class _EditorialPaperPainter extends CustomPainter {
         ..color = const Color(0xFF603B73).withValues(alpha: .055)
         ..strokeWidth = .8,
     );
+
+    final wornEdge = Paint()
+      ..shader = LinearGradient(
+        colors: [
+          const Color(0xFF8D654A).withValues(alpha: .045),
+          Colors.transparent,
+          const Color(0xFF8D654A).withValues(alpha: .035),
+        ],
+      ).createShader(Rect.fromLTWH(0, 0, size.width, size.height));
+    canvas.drawRect(Offset.zero & size, wornEdge);
   }
 
   @override

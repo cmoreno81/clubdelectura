@@ -50,6 +50,15 @@ class ClubSectionCard extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(title!, style: AppTextStyles.section),
+                      const SizedBox(height: 5),
+                      Container(
+                        width: 34,
+                        height: 3,
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFC75D4D),
+                          borderRadius: BorderRadius.circular(999),
+                        ),
+                      ),
                       if (subtitle != null && subtitle!.trim().isNotEmpty) ...[
                         const SizedBox(height: AppSpacing.xs),
                         Text(subtitle!, style: AppTextStyles.bodySecondary),

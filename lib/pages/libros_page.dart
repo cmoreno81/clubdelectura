@@ -17,6 +17,7 @@ import '../models/libro_finalizado.dart';
 import '../models/libros_data.dart';
 import '../services/api_service.dart';
 import '../utils/genero_utils.dart';
+import '../utils/reading_status_copy.dart';
 import 'detalle_libro_page.dart';
 import 'nuevo_libro_page.dart';
 import '../services/atmosfera_scope.dart';
@@ -309,33 +310,33 @@ class _LibrosPageState extends State<LibrosPage> {
                 const SizedBox(width: AppSpacing.xs),
                 _chip(
                   estado: 'PENDIENTE',
-                  label: 'Pendientes',
-                  icon: Icons.schedule_rounded,
+                  label: ReadingStatusCopy.label('PENDIENTE', plural: true),
+                  icon: ReadingStatusCopy.icon('PENDIENTE'),
                 ),
                 const SizedBox(width: AppSpacing.xs),
                 _chip(
                   estado: 'LEYENDO',
-                  label: 'Leyendo',
-                  icon: Icons.menu_book_rounded,
+                  label: ReadingStatusCopy.label('LEYENDO', plural: true),
+                  icon: ReadingStatusCopy.icon('LEYENDO'),
                 ),
                 const SizedBox(width: AppSpacing.xs),
 
                 _chip(
                   estado: 'PAUSADO',
-                  label: 'En pausa',
-                  icon: Icons.pause_circle_outline_rounded,
+                  label: ReadingStatusCopy.label('PAUSADO', plural: true),
+                  icon: ReadingStatusCopy.icon('PAUSADO'),
                 ),
                 const SizedBox(width: AppSpacing.xs),
                 _chip(
                   estado: 'RELECTURA',
-                  label: 'Relecturas',
-                  icon: Icons.refresh_rounded,
+                  label: ReadingStatusCopy.label('RELECTURA', plural: true),
+                  icon: ReadingStatusCopy.icon('RELECTURA'),
                 ),
                 const SizedBox(width: AppSpacing.xs),
                 _chip(
                   estado: 'TERMINADOS',
-                  label: 'Terminados',
-                  icon: Icons.check_circle_outline_rounded,
+                  label: ReadingStatusCopy.label('TERMINADOS', plural: true),
+                  icon: ReadingStatusCopy.icon('TERMINADOS'),
                 ),
               ],
             ),
