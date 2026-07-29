@@ -145,7 +145,7 @@ class _GeneralDashboardPageState extends State<GeneralDashboardPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: Colors.transparent,
       body: FutureBuilder<GeneralDashboard>(
         future: _future,
         builder: (context, snapshot) {
@@ -163,7 +163,7 @@ class _GeneralDashboardPageState extends State<GeneralDashboardPage> {
               slivers: [
                 SliverAppBar(
                   pinned: true,
-                  backgroundColor: AppColors.background,
+                  backgroundColor: Colors.transparent,
                   title: const Text('Mi universo lector'),
                   actions: [
                     IconButton(

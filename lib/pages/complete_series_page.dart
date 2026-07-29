@@ -148,7 +148,7 @@ class _CompleteSeriesPageState extends State<CompleteSeriesPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: Colors.transparent,
       appBar: AppBar(title: Text('Completar ${widget.series.nombre}')),
       body: Column(
         children: [

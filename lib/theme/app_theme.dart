@@ -9,7 +9,7 @@ abstract final class AppTheme {
     return ThemeData(
       useMaterial3: true,
 
-      scaffoldBackgroundColor: AppColors.background,
+      scaffoldBackgroundColor: Colors.transparent,
 
       pageTransitionsTheme: const PageTransitionsTheme(
         builders: {
@@ -31,7 +31,7 @@ abstract final class AppTheme {
         elevation: 0,
         scrolledUnderElevation: 0,
         centerTitle: true,
-        backgroundColor: AppColors.background,
+        backgroundColor: Colors.transparent,
         foregroundColor: AppColors.textPrimary,
         surfaceTintColor: Colors.transparent,
         titleTextStyle: AppTextStyles.section,

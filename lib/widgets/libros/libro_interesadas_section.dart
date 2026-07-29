@@ -208,31 +208,47 @@ class _LectoraCard extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      registro.usuario,
-                      style: AppTextStyles.subtitle.copyWith(
-                        color: AppColors.textPrimary,
-                        fontWeight: FontWeight.w700,
-                      ),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            registro.usuario,
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                            style: AppTextStyles.subtitle.copyWith(
+                              color: AppColors.textPrimary,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                        ),
+                        if (esUsuarioActual) ...[
+                          const SizedBox(width: AppSpacing.xs),
+                          const ClubChip(
+                            label: 'Tú',
+                            icon: Icons.person_rounded,
+                            variant: ClubChipVariant.primary,
+                            padding: EdgeInsets.symmetric(
+                              horizontal: AppSpacing.sm,
+                              vertical: AppSpacing.xs,
+                            ),
+                          ),
+                        ],
+                      ],
                     ),
 
                     const SizedBox(height: AppSpacing.xs),
 
-                    ClubChip(
-                      label: _labelEstado(registro.estado),
-                      icon: _iconoEstado(registro.estado),
-                      variant: _varianteEstado(registro.estado),
+                    Align(
+                      alignment: Alignment.centerLeft,
+                      child: ClubChip(
+                        label: _labelEstado(registro.estado),
+                        icon: _iconoEstado(registro.estado),
+                        variant: _varianteEstado(registro.estado),
+                      ),
                     ),
                   ],
                 ),
               ),
-
-              if (esUsuarioActual)
-                const ClubChip(
-                  label: 'Tú',
-                  icon: Icons.person_rounded,
-                  variant: ClubChipVariant.primary,
-                ),
             ],
           ),
 

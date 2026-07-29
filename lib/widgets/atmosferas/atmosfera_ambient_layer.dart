@@ -146,18 +146,18 @@ class _EditorialPaperPainter extends CustomPainter {
           center: const Alignment(-0.18, -0.22),
           radius: 1.22,
           colors: [
-            const Color(0xFFFFFBF2).withValues(alpha: .05),
-            const Color(0xFF8D654A).withValues(alpha: .075),
+            const Color(0xFFFFFBF2).withValues(alpha: .16),
+            const Color(0xFF8D654A).withValues(alpha: .13),
           ],
           stops: const [.48, 1],
         ).createShader(paperRect),
     );
 
     final warmClouds = [
-      (const Offset(.12, .18), 116.0, .035),
-      (const Offset(.86, .36), 148.0, .028),
-      (const Offset(.28, .78), 176.0, .024),
-      (const Offset(.92, .9), 105.0, .03),
+      (const Offset(.12, .18), 116.0, .065),
+      (const Offset(.86, .36), 148.0, .05),
+      (const Offset(.28, .78), 176.0, .046),
+      (const Offset(.92, .9), 105.0, .055),
     ];
     for (final cloud in warmClouds) {
       final center = Offset(
@@ -179,8 +179,8 @@ class _EditorialPaperPainter extends CustomPainter {
     }
 
     final fiber = Paint()
-      ..color = const Color(0xFF705D4E).withValues(alpha: .065)
-      ..strokeWidth = .65;
+      ..color = const Color(0xFF705D4E).withValues(alpha: .1)
+      ..strokeWidth = .72;
     for (var y = 13.0; y < size.height; y += 23) {
       final shift = ((y ~/ 23) % 5) * 9.0;
       canvas.drawLine(
@@ -198,15 +198,15 @@ class _EditorialPaperPainter extends CustomPainter {
     }
 
     final ruledLine = Paint()
-      ..color = const Color(0xFF7C6B88).withValues(alpha: .032)
-      ..strokeWidth = .7;
+      ..color = const Color(0xFF7C6B88).withValues(alpha: .072)
+      ..strokeWidth = .78;
     for (var y = 31.0; y < size.height; y += 34) {
       canvas.drawLine(Offset(26, y), Offset(size.width, y), ruledLine);
     }
 
     final longFiber = Paint()
-      ..color = const Color(0xFF9A7256).withValues(alpha: .038)
-      ..strokeWidth = .45;
+      ..color = const Color(0xFF9A7256).withValues(alpha: .065)
+      ..strokeWidth = .52;
     for (var index = 0; index < 18; index++) {
       final y = ((index * 83.0) + 41) % math.max(size.height, 1.0);
       final x = ((index * 47.0) + 19) % math.max(size.width, 1.0);
@@ -218,7 +218,7 @@ class _EditorialPaperPainter extends CustomPainter {
     }
 
     final speck = Paint()
-      ..color = const Color(0xFF6E513E).withValues(alpha: .075);
+      ..color = const Color(0xFF6E513E).withValues(alpha: .12);
     final speckCount = math.min(210, (size.width * size.height / 3200).round());
     for (var index = 0; index < speckCount; index++) {
       final x =
@@ -232,26 +232,25 @@ class _EditorialPaperPainter extends CustomPainter {
     }
 
     final margin = Paint()
-      ..color = const Color(0xFFC75D4D).withValues(alpha: .2)
-      ..strokeWidth = 1.15;
-    canvas.drawLine(const Offset(22, 0), Offset(22, size.height), margin);
+      ..color = const Color(0xFFC75D4D).withValues(alpha: .34)
+      ..strokeWidth = 1.25;
+    canvas.drawLine(const Offset(11, 0), Offset(11, size.height), margin);
     canvas.drawLine(
-      const Offset(25, 0),
-      Offset(25, size.height),
+      const Offset(14, 0),
+      Offset(14, size.height),
       Paint()
-        ..color = const Color(0xFF603B73).withValues(alpha: .055)
-        ..strokeWidth = .8,
+        ..color = const Color(0xFF603B73).withValues(alpha: .1)
+        ..strokeWidth = .9,
     );
 
-    final wornEdge = Paint()
-      ..shader = LinearGradient(
-        colors: [
-          const Color(0xFF8D654A).withValues(alpha: .045),
-          Colors.transparent,
-          const Color(0xFF8D654A).withValues(alpha: .035),
-        ],
-      ).createShader(Rect.fromLTWH(0, 0, size.width, size.height));
-    canvas.drawRect(Offset.zero & size, wornEdge);
+    final edgePaint = Paint()
+      ..color = const Color(0xFF74523E).withValues(alpha: .075)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 5;
+    canvas.drawRect(
+      Rect.fromLTWH(1.5, 1.5, size.width - 3, size.height - 3),
+      edgePaint,
+    );
   }
 
   @override
