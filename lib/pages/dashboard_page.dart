@@ -41,6 +41,8 @@ class DashboardPage extends StatefulWidget {
 
 class _DashboardPageState extends State<DashboardPage> {
   late Future<DashboardViewData> dashboardFuture;
+  final Map<String, LecturaAhoraItem> _reactionOverrides = {};
+  final Set<String> _reactingProgressIds = {};
 
   String? usuarioActual;
   String avatarUrlActual = '';
@@ -123,6 +125,7 @@ class _DashboardPageState extends State<DashboardPage> {
 
   Future<void> _recargar() async {
     setState(() {
+      _reactionOverrides.clear();
       dashboardFuture = _cargarDashboard();
     });
 
@@ -565,18 +568,20 @@ class _DashboardPageState extends State<DashboardPage> {
             const SizedBox(height: AppSpacing.md),
             for (var index = 0; index < lecturas.length; index++) ...[
               _LecturaProgresoCard(
-                lectura: lecturas[index],
+                lectura: _effectiveReading(lecturas[index]),
                 editable:
                     usuarioActual?.trim().toLowerCase() ==
                     nombre.trim().toLowerCase(),
-                onEditar: () => _editarProgreso(nombre, lecturas[index]),
+                onEditar: () =>
+                    _editarProgreso(nombre, _effectiveReading(lecturas[index])),
                 onBookTap: () => openBookDetail(
                   context,
                   title: lecturas[index].titulo,
                   bookId: lecturas[index].bookId,
                   coverUrl: lecturas[index].coverUrl,
                 ),
-                onReact: () => _reaccionarProgreso(lecturas[index]),
+                onReact: () =>
+                    _reaccionarProgreso(_effectiveReading(lecturas[index])),
               ),
               if (index < lecturas.length - 1)
                 const SizedBox(height: AppSpacing.sm),
@@ -621,7 +626,10 @@ class _DashboardPageState extends State<DashboardPage> {
   }
 
   Future<void> _reaccionarProgreso(LecturaAhoraItem lectura) async {
-    if (lectura.libraryId.isEmpty) return;
+    if (lectura.libraryId.isEmpty ||
+        _reactingProgressIds.contains(lectura.libraryId)) {
+      return;
+    }
     final reaccion = await showModalBottomSheet<ReaccionComentario>(
       context: context,
       builder: (context) => SafeArea(
@@ -674,11 +682,84 @@ class _DashboardPageState extends State<DashboardPage> {
       ),
     );
     if (reaccion == null || !mounted) return;
-    await ApiService().toggleProgressReaction(
-      libraryId: lectura.libraryId,
-      reaccion: reaccion.apiValue,
+    final previous = _effectiveReading(lectura);
+    final optimistic = _toggleLocalReaction(previous, reaccion);
+    setState(() {
+      _reactingProgressIds.add(lectura.libraryId);
+      _reactionOverrides[lectura.libraryId] = optimistic;
+    });
+    try {
+      final result = await ApiService().toggleProgressReaction(
+        libraryId: lectura.libraryId,
+        reaccion: reaccion.apiValue,
+      );
+      if (!mounted) return;
+      if (result['ok'] != true) {
+        throw StateError('No se ha podido guardar la reacción');
+      }
+      final rawReactions = result['reacciones'] as Map? ?? const {};
+      setState(() {
+        _reactionOverrides[lectura.libraryId] = _withReactionState(
+          previous,
+          reactions: {
+            for (final item in ReaccionComentario.values)
+              item: (rawReactions[item.apiValue] as num?)?.toInt() ?? 0,
+          },
+          myReaction: ReaccionComentarioDatos.fromApi(
+            result['miReaccion']?.toString(),
+          ),
+        );
+      });
+    } catch (_) {
+      if (!mounted) return;
+      setState(() => _reactionOverrides[lectura.libraryId] = previous);
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('No se ha podido guardar la reacción.')),
+      );
+    } finally {
+      if (mounted) {
+        setState(() => _reactingProgressIds.remove(lectura.libraryId));
+      }
+    }
+  }
+
+  LecturaAhoraItem _effectiveReading(LecturaAhoraItem reading) =>
+      _reactionOverrides[reading.libraryId] ?? reading;
+
+  LecturaAhoraItem _toggleLocalReaction(
+    LecturaAhoraItem reading,
+    ReaccionComentario selected,
+  ) {
+    final reactions = Map<ReaccionComentario, int>.from(reading.reacciones);
+    final current = reading.miReaccion;
+    if (current != null) {
+      reactions[current] = ((reactions[current] ?? 0) - 1).clamp(0, 1 << 31);
+    }
+    final next = current == selected ? null : selected;
+    if (next != null) {
+      reactions[next] = (reactions[next] ?? 0) + 1;
+    }
+    return _withReactionState(reading, reactions: reactions, myReaction: next);
+  }
+
+  LecturaAhoraItem _withReactionState(
+    LecturaAhoraItem reading, {
+    required Map<ReaccionComentario, int> reactions,
+    required ReaccionComentario? myReaction,
+  }) {
+    return LecturaAhoraItem(
+      libraryId: reading.libraryId,
+      bookId: reading.bookId,
+      titulo: reading.titulo,
+      coverUrl: reading.coverUrl,
+      progreso: reading.progreso,
+      paginaActual: reading.paginaActual,
+      paginasTotales: reading.paginasTotales,
+      comentario: reading.comentario,
+      actualizadoEn: reading.actualizadoEn,
+      reacciones: reactions,
+      miReaccion: myReaction,
     );
-    if (mounted) await _recargar();
   }
 }
 

@@ -821,6 +821,7 @@ class _LibrosPageState extends State<LibrosPage> {
       bookId: finalizado.bookId,
       usuario: finalizado.usuario,
       libro: finalizado.libro,
+      autor: finalizado.autor,
       genero: finalizado.genero,
       saga: finalizado.saga,
       numSaga: finalizado.numSaga,

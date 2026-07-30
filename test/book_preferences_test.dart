@@ -23,6 +23,7 @@ void main() {
     final json = NuevoLibro(
       usuario: 'Ana',
       libro: 'Persépolis',
+      autor: 'Marjane Satrapi',
       genero: 'Cómic',
       saga: '',
       numSaga: '',
@@ -32,6 +33,7 @@ void main() {
     ).toJson();
 
     expect(json['genero'], 'Cómic');
+    expect(json['autor'], 'Marjane Satrapi');
     expect(json['prioridad'], 'Alta');
     expect(json['formato'], 'FISICO');
   });

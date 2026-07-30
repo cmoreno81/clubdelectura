@@ -26,6 +26,7 @@ void main() {
               'leyendo': 2,
               'terminados': 14,
               'terminadosMes': 1,
+              'paginasMes': 384,
               'paginasLeidas': 4200,
               'rachaMeses': 3,
             },
@@ -144,6 +145,8 @@ void main() {
 
     expect(dashboard.userName, 'Cristina');
     expect(dashboard.summary.monthStreak, 3);
+    expect(dashboard.summary.pagesReadThisMonth, 384);
+    expect(dashboard.summary.pagesRead, 4200);
     expect(dashboard.clubs.single.name, 'Nuestros gustos son clichés');
     expect(dashboard.personalLibrary.single.title, 'Próxima lectura');
     expect(dashboard.personalLibrary.single.isHighPriority, isTrue);

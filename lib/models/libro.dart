@@ -3,6 +3,7 @@ class Libro {
 
   final String usuario;
   final String libro;
+  final String autor;
   final String genero;
   final String saga;
   final String numSaga;
@@ -25,6 +26,7 @@ class Libro {
     required this.bookId,
     required this.usuario,
     required this.libro,
+    this.autor = '',
     required this.genero,
     required this.saga,
     required this.numSaga,
@@ -49,6 +51,7 @@ class Libro {
       bookId: json['bookId']?.toString() ?? json['id']?.toString() ?? '',
       usuario: json['usuario']?.toString() ?? '',
       libro: json['libro']?.toString() ?? '',
+      autor: json['autor']?.toString() ?? json['author']?.toString() ?? '',
       genero: json['genero']?.toString() ?? '',
       saga: json['saga']?.toString() ?? '',
       numSaga: json['numSaga']?.toString() ?? '',
@@ -84,6 +87,7 @@ class Libro {
     String? bookId,
     String? usuario,
     String? libro,
+    String? autor,
     String? genero,
     String? saga,
     String? numSaga,
@@ -106,6 +110,7 @@ class Libro {
       bookId: bookId ?? this.bookId,
       usuario: usuario ?? this.usuario,
       libro: libro ?? this.libro,
+      autor: autor ?? this.autor,
       genero: genero ?? this.genero,
       saga: saga ?? this.saga,
       numSaga: numSaga ?? this.numSaga,

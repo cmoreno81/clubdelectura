@@ -136,49 +136,54 @@ class _FinalizadosYearGroup extends StatelessWidget {
         padding: EdgeInsets.zero,
         child: Theme(
           data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
-          child: ExpansionTile(
-            key: PageStorageKey('finalizados-${year ?? 'sin-fecha'}'),
-            initiallyExpanded: false,
-            tilePadding: const EdgeInsets.symmetric(
-              horizontal: AppSpacing.md,
-              vertical: AppSpacing.xs,
-            ),
-            childrenPadding: const EdgeInsets.fromLTRB(
-              AppSpacing.sm,
-              0,
-              AppSpacing.sm,
-              AppSpacing.sm,
-            ),
-            iconColor: color,
-            collapsedIconColor: AppColors.textMuted,
-            title: Row(
-              children: [
-                Text(
-                  label,
-                  style: AppTextStyles.title.copyWith(
-                    color: color,
-                    fontSize: 22,
+          child: Material(
+            color: Colors.transparent,
+            borderRadius: BorderRadius.circular(AppRadius.lg),
+            clipBehavior: Clip.antiAlias,
+            child: ExpansionTile(
+              key: PageStorageKey('finalizados-${year ?? 'sin-fecha'}'),
+              initiallyExpanded: false,
+              tilePadding: const EdgeInsets.symmetric(
+                horizontal: AppSpacing.md,
+                vertical: AppSpacing.xs,
+              ),
+              childrenPadding: const EdgeInsets.fromLTRB(
+                AppSpacing.sm,
+                0,
+                AppSpacing.sm,
+                AppSpacing.sm,
+              ),
+              iconColor: color,
+              collapsedIconColor: AppColors.textMuted,
+              title: Row(
+                children: [
+                  Text(
+                    label,
+                    style: AppTextStyles.title.copyWith(
+                      color: color,
+                      fontSize: 22,
+                    ),
                   ),
-                ),
-                const SizedBox(width: AppSpacing.sm),
-                Expanded(child: Divider(color: color.withValues(alpha: .22))),
-                const SizedBox(width: AppSpacing.sm),
-                Text(
-                  books.length == 1 ? '1 libro' : '${books.length} libros',
-                  style: AppTextStyles.caption.copyWith(
-                    fontWeight: FontWeight.w800,
+                  const SizedBox(width: AppSpacing.sm),
+                  Expanded(child: Divider(color: color.withValues(alpha: .22))),
+                  const SizedBox(width: AppSpacing.sm),
+                  Text(
+                    books.length == 1 ? '1 libro' : '${books.length} libros',
+                    style: AppTextStyles.caption.copyWith(
+                      fontWeight: FontWeight.w800,
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
+              children: books
+                  .map(
+                    (book) => Padding(
+                      padding: const EdgeInsets.only(bottom: AppSpacing.sm),
+                      child: itemBuilder(book),
+                    ),
+                  )
+                  .toList(growable: false),
             ),
-            children: books
-                .map(
-                  (book) => Padding(
-                    padding: const EdgeInsets.only(bottom: AppSpacing.sm),
-                    child: itemBuilder(book),
-                  ),
-                )
-                .toList(growable: false),
           ),
         ),
       ),
@@ -916,6 +921,35 @@ class _PerfilUsuarioPageState extends State<PerfilUsuarioPage> {
                     child: Material(
                       color: Colors.transparent,
                       child: ListTile(
+                        leading: const Icon(Icons.auto_stories_outlined),
+                        title: const Text('Importar desde Bookmory'),
+                        subtitle: const Text(
+                          'Trae tus lecturas terminadas y valoradas',
+                        ),
+                        trailing: const Icon(Icons.chevron_right_rounded),
+                        onTap: () async {
+                          final imported = await Navigator.push<bool>(
+                            context,
+                            AppPageRoute(
+                              builder: (_) => const GoodreadsImportPage(
+                                source: ReadingImportSource.bookmory,
+                              ),
+                            ),
+                          );
+                          if (imported == true && mounted) {
+                            await _recargar();
+                          }
+                        },
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: AppSpacing.sm),
+                  ClubCard(
+                    elevated: false,
+                    padding: EdgeInsets.zero,
+                    child: Material(
+                      color: Colors.transparent,
+                      child: ListTile(
                         leading: const Icon(Icons.import_export_rounded),
                         title: const Text('Importar desde Goodreads'),
                         subtitle: const Text(
@@ -1158,7 +1192,7 @@ class _PerfilUsuarioPageState extends State<PerfilUsuarioPage> {
           physics: const NeverScrollableScrollPhysics(),
           crossAxisSpacing: AppSpacing.md,
           mainAxisSpacing: AppSpacing.md,
-          childAspectRatio: 1.12,
+          childAspectRatio: 1.32,
           children: [
             _statCard(
               titulo: 'Terminados',
@@ -1235,39 +1269,96 @@ class _PerfilUsuarioPageState extends State<PerfilUsuarioPage> {
   }) {
     return ClubCard(
       elevated: false,
-      padding: const EdgeInsets.all(AppSpacing.md),
+      padding: EdgeInsets.zero,
       backgroundColor: background,
       borderColor: foreground.withValues(alpha: 0.18),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisAlignment: MainAxisAlignment.start,
+      child: Stack(
+        fit: StackFit.expand,
         children: [
-          Container(
-            width: 38,
-            height: 38,
-            decoration: BoxDecoration(
-              color: iconBackground,
-              borderRadius: BorderRadius.circular(AppRadius.md),
+          Positioned(
+            right: -13,
+            top: -11,
+            child: Icon(
+              icono,
+              size: 82,
+              color: foreground.withValues(alpha: .075),
             ),
-            child: Icon(icono, color: foreground, size: 21),
           ),
-
-          const SizedBox(height: AppSpacing.sm),
-          const SizedBox(height: AppSpacing.md),
-          Text(
-            valor,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: AppTextStyles.section.copyWith(fontSize: 20),
+          Positioned(
+            left: 0,
+            top: AppSpacing.md,
+            bottom: AppSpacing.md,
+            child: Container(
+              width: 3,
+              decoration: BoxDecoration(
+                color: foreground.withValues(alpha: .42),
+                borderRadius: BorderRadius.circular(AppRadius.pill),
+              ),
+            ),
           ),
-
-          const SizedBox(height: AppSpacing.xxs),
-
-          Text(
-            titulo,
-            maxLines: 2,
-            overflow: TextOverflow.ellipsis,
-            style: AppTextStyles.caption.copyWith(fontWeight: FontWeight.w600),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(
+              AppSpacing.md,
+              AppSpacing.sm,
+              AppSpacing.sm,
+              AppSpacing.sm,
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Container(
+                      width: 34,
+                      height: 34,
+                      decoration: BoxDecoration(
+                        color: iconBackground,
+                        borderRadius: BorderRadius.circular(AppRadius.md),
+                      ),
+                      child: Icon(icono, color: foreground, size: 19),
+                    ),
+                    const Spacer(),
+                    Row(
+                      children: List.generate(
+                        3,
+                        (index) => Container(
+                          width: index == 1 ? 12 : 5,
+                          height: 5,
+                          margin: const EdgeInsets.only(left: 3),
+                          decoration: BoxDecoration(
+                            color: foreground.withValues(
+                              alpha: index == 1 ? .48 : .2,
+                            ),
+                            borderRadius: BorderRadius.circular(AppRadius.pill),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const Spacer(),
+                Text(
+                  valor,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: AppTextStyles.section.copyWith(
+                    fontSize: 23,
+                    color: AppColors.textPrimary,
+                    height: 1,
+                  ),
+                ),
+                const SizedBox(height: 5),
+                Text(
+                  titulo,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: AppTextStyles.caption.copyWith(
+                    color: foreground.withValues(alpha: .88),
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+              ],
+            ),
           ),
         ],
       ),

@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../models/goodreads_import.dart';
+import '../services/bookmory_xlsx_parser.dart';
 import '../services/api_exception.dart';
 import '../services/api_service.dart';
 import '../services/goodreads_csv_parser.dart';
@@ -12,8 +13,15 @@ import '../theme/app_spacing.dart';
 import '../widgets/common/club_card.dart';
 import '../widgets/common/club_section_title.dart';
 
+enum ReadingImportSource { goodreads, bookmory }
+
 class GoodreadsImportPage extends StatefulWidget {
-  const GoodreadsImportPage({super.key});
+  const GoodreadsImportPage({
+    super.key,
+    this.source = ReadingImportSource.goodreads,
+  });
+
+  final ReadingImportSource source;
 
   @override
   State<GoodreadsImportPage> createState() => _GoodreadsImportPageState();
@@ -21,7 +29,6 @@ class GoodreadsImportPage extends StatefulWidget {
 
 class _GoodreadsImportPageState extends State<GoodreadsImportPage> {
   final _api = ApiService();
-  final _parser = const GoodreadsCsvParser();
 
   List<GoodreadsImportRow> _rows = const [];
   GoodreadsImportPreview? _preview;
@@ -31,6 +38,10 @@ class _GoodreadsImportPageState extends State<GoodreadsImportPage> {
   bool _loading = false;
   bool _showAll = false;
   Set<int> _selectedRows = <int>{};
+
+  bool get _isBookmory => widget.source == ReadingImportSource.bookmory;
+
+  String get _sourceName => _isBookmory ? 'Bookmory' : 'Goodreads';
 
   Future<void> _selectFile() async {
     if (_loading) return;
@@ -43,17 +54,24 @@ class _GoodreadsImportPageState extends State<GoodreadsImportPage> {
       _showAll = false;
     });
     try {
-      const typeGroup = XTypeGroup(
-        label: 'Archivos CSV',
-        uniformTypeIdentifiers: ['public.comma-separated-values-text'],
+      final typeGroup = XTypeGroup(
+        label: _isBookmory ? 'Archivos Excel' : 'Archivos CSV',
+        extensions: [_isBookmory ? 'xlsx' : 'csv'],
+        uniformTypeIdentifiers: [
+          _isBookmory
+              ? 'org.openxmlformats.spreadsheetml.sheet'
+              : 'public.comma-separated-values-text',
+        ],
       );
-      final file = await openFile(acceptedTypeGroups: const [typeGroup]);
+      final file = await openFile(acceptedTypeGroups: [typeGroup]);
       if (file == null || !mounted) return;
       final bytes = await file.readAsBytes();
       if (!mounted) return;
       setState(() => _fileName = file.name);
 
-      final rows = _parser.parse(bytes);
+      final rows = _isBookmory
+          ? const BookmoryXlsxParser().parse(bytes)
+          : const GoodreadsCsvParser().parse(bytes);
       if (rows.isEmpty) {
         throw const FormatException('El archivo no contiene ningún libro.');
       }
@@ -129,7 +147,7 @@ class _GoodreadsImportPageState extends State<GoodreadsImportPage> {
     final preview = _preview;
     final result = _result;
     return Scaffold(
-      appBar: AppBar(title: const Text('Importar desde Goodreads')),
+      appBar: AppBar(title: Text('Importar desde $_sourceName')),
       body: ListView(
         padding: const EdgeInsets.fromLTRB(
           AppSpacing.md,
@@ -145,7 +163,7 @@ class _GoodreadsImportPageState extends State<GoodreadsImportPage> {
             padding: EdgeInsets.zero,
           ),
           const SizedBox(height: AppSpacing.md),
-          _ProtectionCard(fileName: _fileName),
+          _ProtectionCard(fileName: _fileName, sourceName: _sourceName),
           const SizedBox(height: AppSpacing.md),
           if (_error.isNotEmpty) ...[
             ClubCard(
@@ -238,7 +256,11 @@ class _GoodreadsImportPageState extends State<GoodreadsImportPage> {
                 ),
               ),
           ] else
-            _Instructions(onSelect: _selectFile),
+            _Instructions(
+              onSelect: _selectFile,
+              sourceName: _sourceName,
+              isBookmory: _isBookmory,
+            ),
         ],
       ),
       bottomNavigationBar: SafeArea(
@@ -272,7 +294,11 @@ class _GoodreadsImportPageState extends State<GoodreadsImportPage> {
             : FilledButton.icon(
                 onPressed: _loading ? null : _selectFile,
                 icon: const Icon(Icons.upload_file_rounded),
-                label: const Text('Seleccionar CSV de Goodreads'),
+                label: Text(
+                  _isBookmory
+                      ? 'Seleccionar Excel de Bookmory'
+                      : 'Seleccionar CSV de Goodreads',
+                ),
               ),
       ),
     );
@@ -280,9 +306,10 @@ class _GoodreadsImportPageState extends State<GoodreadsImportPage> {
 }
 
 class _ProtectionCard extends StatelessWidget {
-  const _ProtectionCard({required this.fileName});
+  const _ProtectionCard({required this.fileName, required this.sourceName});
 
   final String fileName;
+  final String sourceName;
 
   @override
   Widget build(BuildContext context) {
@@ -321,7 +348,8 @@ class _ProtectionCard extends StatelessWidget {
           ),
           const SizedBox(height: AppSpacing.sm),
           Text(
-            'Solo importaremos libros finalizados y valorados. Los pendientes '
+            'De $sourceName solo importaremos libros finalizados y valorados. '
+            'Los pendientes '
             'y los que estás leyendo se quedarán fuera.',
             style: TextStyle(
               color: Colors.white70,
@@ -348,9 +376,15 @@ class _ProtectionCard extends StatelessWidget {
 }
 
 class _Instructions extends StatelessWidget {
-  const _Instructions({required this.onSelect});
+  const _Instructions({
+    required this.onSelect,
+    required this.sourceName,
+    required this.isBookmory,
+  });
 
   final VoidCallback onSelect;
+  final String sourceName;
+  final bool isBookmory;
 
   @override
   Widget build(BuildContext context) {
@@ -364,13 +398,11 @@ class _Instructions extends StatelessWidget {
             style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800),
           ),
           const SizedBox(height: AppSpacing.md),
-          const _Step(
-            number: '1',
-            text: 'Exporta tu biblioteca desde Goodreads.',
-          ),
-          const _Step(
+          _Step(number: '1', text: 'Exporta tu biblioteca desde $sourceName.'),
+          _Step(
             number: '2',
-            text: 'Selecciona aquí el archivo CSV descargado.',
+            text:
+                'Selecciona aquí el archivo ${isBookmory ? 'Excel' : 'CSV'} descargado.',
           ),
           const _Step(
             number: '3',

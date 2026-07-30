@@ -46,6 +46,8 @@ dependencies:
   path_provider: ^2.1.6
   package_info_plus: ^10.2.1
   file_selector: ^1.0.4
+  archive: ^4.0.9
+  xml: ^7.0.1
 dev_dependencies:
   flutter_test:
     sdk: flutter

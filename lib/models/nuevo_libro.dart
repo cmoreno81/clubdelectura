@@ -2,6 +2,7 @@ class NuevoLibro {
   final String? bookId;
   final String usuario;
   final String libro;
+  final String autor;
   final String genero;
   final String saga;
   final String numSaga;
@@ -17,6 +18,7 @@ class NuevoLibro {
     this.bookId,
     required this.usuario,
     required this.libro,
+    this.autor = '',
     required this.genero,
     required this.saga,
     required this.numSaga,
@@ -34,6 +36,7 @@ class NuevoLibro {
 
       'usuario': usuario,
       'libro': libro,
+      'autor': autor.trim(),
       'genero': genero,
       'saga': saga,
       'numSaga': numSaga,

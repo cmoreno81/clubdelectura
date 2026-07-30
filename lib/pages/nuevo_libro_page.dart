@@ -26,6 +26,7 @@ class NuevoLibroPage extends StatefulWidget {
 
 class _NuevoLibroPageState extends State<NuevoLibroPage> {
   final libroController = TextEditingController();
+  final autorController = TextEditingController();
   final sagaController = TextEditingController();
   final numSagaController = TextEditingController();
   final goodreadsController = TextEditingController();
@@ -85,6 +86,7 @@ class _NuevoLibroPageState extends State<NuevoLibroPage> {
         : null;
 
     libroController.text = agrupado.libro;
+    autorController.text = registro?.autor ?? finalizado?.autor ?? '';
 
     genero = agrupado.genero.trim().isEmpty
         ? 'Fantasía'
@@ -190,6 +192,7 @@ class _NuevoLibroPageState extends State<NuevoLibroPage> {
         bookId: esEdicion ? widget.libro!.bookId : null,
         usuario: usuario.trim(),
         libro: titulo,
+        autor: autorController.text.trim(),
         genero: genero,
         saga: autoconclusivo == 'No' ? sagaController.text.trim() : '',
         numSaga: autoconclusivo == 'No' ? numSagaController.text.trim() : '',
@@ -297,6 +300,19 @@ class _NuevoLibroPageState extends State<NuevoLibroPage> {
                       labelText: 'Título del libro',
                       hintText: 'Ej. Hasta que caiga la luna',
                       prefixIcon: Icon(Icons.title_rounded),
+                    ),
+                  ),
+
+                  const SizedBox(height: AppSpacing.lg),
+
+                  TextField(
+                    controller: autorController,
+                    textCapitalization: TextCapitalization.words,
+                    textInputAction: TextInputAction.next,
+                    decoration: const InputDecoration(
+                      labelText: 'Autor/a (opcional)',
+                      hintText: 'Ej. Sarah A. Parker',
+                      prefixIcon: Icon(Icons.person_outline_rounded),
                     ),
                   ),
 
@@ -754,6 +770,7 @@ class _NuevoLibroPageState extends State<NuevoLibroPage> {
     coverUrlController.removeListener(_actualizarVistaPrevia);
 
     libroController.dispose();
+    autorController.dispose();
     sagaController.dispose();
     numSagaController.dispose();
     goodreadsController.dispose();

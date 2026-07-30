@@ -156,7 +156,7 @@ class _SagasPageState extends State<SagasPage> {
   }
 
   Future<void> _editVolume(PerfilSagaVolumen volumen) async {
-    final controller = TextEditingController(text: volumen.numero);
+    var numeroEditado = volumen.numero;
     final numero = await showDialog<String>(
       context: context,
       builder: (context) => AlertDialog(
@@ -167,12 +167,13 @@ class _SagasPageState extends State<SagasPage> {
           children: [
             Text(volumen.titulo),
             const SizedBox(height: AppSpacing.md),
-            TextField(
-              controller: controller,
+            TextFormField(
+              initialValue: volumen.numero,
               autofocus: true,
               keyboardType: const TextInputType.numberWithOptions(
                 decimal: true,
               ),
+              onChanged: (value) => numeroEditado = value,
               decoration: const InputDecoration(labelText: 'Volumen'),
             ),
           ],
@@ -183,13 +184,12 @@ class _SagasPageState extends State<SagasPage> {
             child: const Text('Cancelar'),
           ),
           FilledButton(
-            onPressed: () => Navigator.pop(context, controller.text.trim()),
+            onPressed: () => Navigator.pop(context, numeroEditado.trim()),
             child: const Text('Guardar'),
           ),
         ],
       ),
     );
-    controller.dispose();
     if (numero == null || numero.isEmpty || !mounted) return;
 
     try {
@@ -208,9 +208,7 @@ class _SagasPageState extends State<SagasPage> {
 
   Future<void> _editSeries(PerfilSaga saga) async {
     var status = saga.estadoEditorial;
-    final totalController = TextEditingController(
-      text: saga.totalSaga > 0 ? '${saga.totalSaga}' : '',
-    );
+    var totalText = saga.totalSaga > 0 ? '${saga.totalSaga}' : '';
     final result = await showDialog<(String, int?)>(
       context: context,
       builder: (context) => StatefulBuilder(
@@ -243,9 +241,10 @@ class _SagasPageState extends State<SagasPage> {
                     setDialogState(() => status = value ?? 'UNKNOWN'),
               ),
               const SizedBox(height: AppSpacing.md),
-              TextField(
-                controller: totalController,
+              TextFormField(
+                initialValue: totalText,
                 keyboardType: TextInputType.number,
+                onChanged: (value) => totalText = value,
                 decoration: const InputDecoration(
                   labelText: 'Total previsto de libros',
                   helperText: 'Déjalo vacío si todavía no se conoce.',
@@ -260,11 +259,11 @@ class _SagasPageState extends State<SagasPage> {
             ),
             FilledButton(
               onPressed: () {
-                final text = totalController.text.trim();
-                Navigator.pop(
-                  context,
-                  (status, text.isEmpty ? null : int.tryParse(text)),
-                );
+                final text = totalText.trim();
+                Navigator.pop(context, (
+                  status,
+                  text.isEmpty ? null : int.tryParse(text),
+                ));
               },
               child: const Text('Guardar'),
             ),
@@ -272,7 +271,6 @@ class _SagasPageState extends State<SagasPage> {
         ),
       ),
     );
-    totalController.dispose();
     if (result == null || !mounted) return;
     try {
       await ApiService().actualizarEstadoEditorialSaga(

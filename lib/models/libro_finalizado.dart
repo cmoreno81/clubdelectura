@@ -3,6 +3,7 @@ class LibroFinalizado {
 
   final String usuario;
   final String libro;
+  final String autor;
   final String genero;
   final String saga;
   final String numSaga;
@@ -20,6 +21,7 @@ class LibroFinalizado {
     required this.bookId,
     required this.usuario,
     required this.libro,
+    this.autor = '',
     required this.genero,
     required this.saga,
     required this.numSaga,
@@ -39,6 +41,7 @@ class LibroFinalizado {
       bookId: json['bookId']?.toString() ?? json['id']?.toString() ?? '',
       usuario: json['usuario']?.toString() ?? '',
       libro: json['libro']?.toString() ?? '',
+      autor: json['autor']?.toString() ?? json['author']?.toString() ?? '',
       genero: json['genero']?.toString() ?? '',
       saga: json['saga']?.toString() ?? '',
       numSaga: json['numSaga']?.toString() ?? '',

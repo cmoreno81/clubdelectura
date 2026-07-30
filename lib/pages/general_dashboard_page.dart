@@ -402,19 +402,27 @@ class _GeneralDashboardPageState extends State<GeneralDashboardPage> {
 
   Widget _metrics(GeneralSummary summary) {
     final metrics = [
-      ('Leyendo', summary.reading, Icons.menu_book_rounded, AppColors.info),
-      ('Terminados', summary.finished, Icons.check_rounded, AppColors.success),
+      ('Leyendo', summary.reading, Icons.menu_book_rounded, AppColors.info, ''),
       (
-        'Este mes',
+        'Terminados',
+        summary.finished,
+        Icons.check_rounded,
+        AppColors.success,
+        'en total',
+      ),
+      (
+        'Libros este mes',
         summary.finishedThisMonth,
         Icons.bolt_rounded,
         AppColors.warning,
+        '${summary.pagesReadThisMonth} páginas',
       ),
       (
-        'Páginas leídas',
+        'Páginas totales',
         summary.pagesRead,
         Icons.bookmark_rounded,
         AppColors.primary,
+        'histórico completo',
       ),
     ];
     return GridView.count(
@@ -437,18 +445,36 @@ class _GeneralDashboardPageState extends State<GeneralDashboardPage> {
                     child: Icon(metric.$3, color: metric.$4),
                   ),
                   const SizedBox(width: AppSpacing.sm),
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Text(
-                        '${metric.$2}',
-                        style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                          fontWeight: FontWeight.w800,
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Text(
+                          '${metric.$2}',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: Theme.of(context).textTheme.titleLarge
+                              ?.copyWith(fontWeight: FontWeight.w800),
                         ),
-                      ),
-                      Text(metric.$1, style: const TextStyle(fontSize: 12)),
-                    ],
+                        Text(
+                          metric.$1,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(fontSize: 12),
+                        ),
+                        if (metric.$5.isNotEmpty)
+                          Text(
+                            metric.$5,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                              fontSize: 10,
+                              color: AppColors.textSecondary,
+                            ),
+                          ),
+                      ],
+                    ),
                   ),
                 ],
               ),

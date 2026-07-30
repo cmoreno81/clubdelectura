@@ -144,41 +144,47 @@ class _GrupoAnioTimeline extends StatelessWidget {
       padding: const EdgeInsets.only(bottom: AppSpacing.xl),
       child: Theme(
         data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
-        child: ExpansionTile(
-          key: PageStorageKey('timeline-$anio'),
-          initiallyExpanded: anio == DateTime.now().year,
-          tilePadding: const EdgeInsets.symmetric(horizontal: AppSpacing.xs),
-          childrenPadding: const EdgeInsets.only(top: AppSpacing.sm),
-          iconColor: color,
-          collapsedIconColor: AppColors.textMuted,
-          title: Row(
-            children: [
-              Text(
-                '$anio',
-                style: AppTextStyles.title.copyWith(color: color, fontSize: 25),
-              ),
-              const SizedBox(width: AppSpacing.sm),
-              Expanded(child: Divider(color: color.withValues(alpha: 0.25))),
-              const SizedBox(width: AppSpacing.sm),
-              Text(
-                total == 1 ? '1 libro' : '$total libros',
-                style: AppTextStyles.caption.copyWith(
-                  fontWeight: FontWeight.w700,
+        child: Material(
+          color: Colors.transparent,
+          child: ExpansionTile(
+            key: PageStorageKey('timeline-$anio'),
+            initiallyExpanded: anio == DateTime.now().year,
+            tilePadding: const EdgeInsets.symmetric(horizontal: AppSpacing.xs),
+            childrenPadding: const EdgeInsets.only(top: AppSpacing.sm),
+            iconColor: color,
+            collapsedIconColor: AppColors.textMuted,
+            title: Row(
+              children: [
+                Text(
+                  '$anio',
+                  style: AppTextStyles.title.copyWith(
+                    color: color,
+                    fontSize: 25,
+                  ),
                 ),
-              ),
+                const SizedBox(width: AppSpacing.sm),
+                Expanded(child: Divider(color: color.withValues(alpha: 0.25))),
+                const SizedBox(width: AppSpacing.sm),
+                Text(
+                  total == 1 ? '1 libro' : '$total libros',
+                  style: AppTextStyles.caption.copyWith(
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ],
+            ),
+            children: [
+              for (final mes in meses.entries) ...[
+                _GrupoMesTimeline(
+                  titulo: nombreMes(mes.key),
+                  libros: mes.value,
+                  onBookTap: onBookTap,
+                ),
+                if (mes.key != meses.keys.last)
+                  const SizedBox(height: AppSpacing.md),
+              ],
             ],
           ),
-          children: [
-            for (final mes in meses.entries) ...[
-              _GrupoMesTimeline(
-                titulo: nombreMes(mes.key),
-                libros: mes.value,
-                onBookTap: onBookTap,
-              ),
-              if (mes.key != meses.keys.last)
-                const SizedBox(height: AppSpacing.md),
-            ],
-          ],
         ),
       ),
     );

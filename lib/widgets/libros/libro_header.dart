@@ -54,6 +54,18 @@ class LibroHeader extends StatelessWidget {
                 style: AppTextStyles.title.copyWith(fontSize: 28, height: 1.15),
               ),
 
+              if (referencia?.autor.trim().isNotEmpty ?? false) ...[
+                const SizedBox(height: AppSpacing.xs),
+                Text(
+                  referencia!.autor.trim(),
+                  textAlign: TextAlign.center,
+                  style: AppTextStyles.bodySecondary.copyWith(
+                    color: AppColors.textSecondary,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+
               const SizedBox(height: AppSpacing.sm),
 
               Text(

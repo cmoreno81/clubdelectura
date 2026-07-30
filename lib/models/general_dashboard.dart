@@ -177,6 +177,7 @@ class GeneralSummary {
     required this.reading,
     required this.finished,
     required this.finishedThisMonth,
+    required this.pagesReadThisMonth,
     required this.pagesRead,
     required this.monthStreak,
   });
@@ -185,6 +186,7 @@ class GeneralSummary {
   final int reading;
   final int finished;
   final int finishedThisMonth;
+  final int pagesReadThisMonth;
   final int pagesRead;
   final int monthStreak;
 
@@ -193,6 +195,7 @@ class GeneralSummary {
     reading: _integer(json['leyendo']),
     finished: _integer(json['terminados']),
     finishedThisMonth: _integer(json['terminadosMes']),
+    pagesReadThisMonth: _integer(json['paginasMes']),
     pagesRead: _integer(json['paginasLeidas']),
     monthStreak: _integer(json['rachaMeses']),
   );
