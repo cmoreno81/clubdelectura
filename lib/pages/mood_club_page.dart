@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../navigation/app_page_route.dart';
+import '../navigation/book_detail_navigation.dart';
 
 import '../models/mood_club.dart';
 import '../services/api_service.dart';
@@ -63,6 +64,16 @@ class _MoodClubPageState extends State<MoodClubPage> {
       AppPageRoute(
         builder: (_) => CapituloPage(libro: libro, capitulo: capitulo),
       ),
+    );
+  }
+
+  Future<void> _abrirLibro(ActividadClub actividad) async {
+    if (actividad.libro.trim().isEmpty) return;
+    await openBookDetail(
+      context,
+      title: actividad.libro,
+      bookId: actividad.bookId,
+      coverUrl: actividad.coverUrl,
     );
   }
 
@@ -209,6 +220,9 @@ class _MoodClubPageState extends State<MoodClubPage> {
                                     mood.actividad[index].libro,
                                     mood.actividad[index].capitulo,
                                   )
+                                : mood.actividad[index].tipo == 'LIBRO' &&
+                                      mood.actividad[index].libro.isNotEmpty
+                                ? () => _abrirLibro(mood.actividad[index])
                                 : null,
                           ),
 

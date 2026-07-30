@@ -143,14 +143,18 @@ class ActividadClub {
   final String icono;
   final String texto;
   final String tipo;
+  final String bookId;
   final String libro;
+  final String coverUrl;
   final String capitulo;
 
   const ActividadClub({
     required this.icono,
     required this.texto,
     required this.tipo,
+    required this.bookId,
     required this.libro,
+    required this.coverUrl,
     required this.capitulo,
   });
 
@@ -158,7 +162,9 @@ class ActividadClub {
     icono: json['icono']?.toString() ?? '',
     texto: json['texto']?.toString() ?? '',
     tipo: json['tipo']?.toString() ?? '',
+    bookId: json['bookId']?.toString() ?? '',
     libro: json['libro']?.toString() ?? '',
+    coverUrl: json['coverUrl']?.toString() ?? '',
     capitulo: json['capitulo']?.toString() ?? '',
   );
 }
