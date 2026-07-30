@@ -16,6 +16,8 @@ import '../models/libro.dart';
 import '../models/libro_finalizado.dart';
 import '../models/libros_data.dart';
 import '../services/api_service.dart';
+import '../services/auth_session_service.dart';
+import '../services/library_order_preferences.dart';
 import '../utils/genero_utils.dart';
 import '../utils/reading_status_copy.dart';
 import 'detalle_libro_page.dart';
@@ -35,6 +37,7 @@ class LibrosPage extends StatefulWidget {
 
 class _LibrosPageState extends State<LibrosPage> {
   late Future<LibrosData> librosFuture;
+  final _orderPreferences = const LibraryOrderPreferences();
 
   final TextEditingController buscadorController = TextEditingController();
 
@@ -42,6 +45,7 @@ class _LibrosPageState extends State<LibrosPage> {
   String filtroEstado = 'TODOS';
   String filtroUsuario = 'TODAS';
   OrdenLibros ordenSeleccionado = OrdenLibros.populares;
+  bool _orderChangedInThisVisit = false;
 
   bool _atmosferaRestaurada = false;
 
@@ -49,6 +53,18 @@ class _LibrosPageState extends State<LibrosPage> {
   void initState() {
     super.initState();
     librosFuture = ApiService().getLibrosData();
+    _restoreOrder();
+  }
+
+  Future<void> _restoreOrder() async {
+    await AuthSessionService.instance.initialize();
+    final userId = AuthSessionService.instance.user?.id.trim() ?? '';
+    if (userId.isEmpty) return;
+    final stored = await _orderPreferences.read(userId);
+    if (!mounted || stored == null || _orderChangedInThisVisit) return;
+    final restored = OrdenLibros.values.where((order) => order.name == stored);
+    if (restored.isEmpty) return;
+    setState(() => ordenSeleccionado = restored.first);
   }
 
   Future<void> _abrirNuevoLibro() async {
@@ -694,8 +710,13 @@ class _LibrosPageState extends State<LibrosPage> {
     }
 
     setState(() {
+      _orderChangedInThisVisit = true;
       ordenSeleccionado = seleccionado;
     });
+    final userId = AuthSessionService.instance.user?.id.trim() ?? '';
+    if (userId.isNotEmpty) {
+      await _orderPreferences.write(userId, seleccionado.name);
+    }
   }
 
   Widget _opcionOrden({

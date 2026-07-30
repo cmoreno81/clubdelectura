@@ -178,7 +178,7 @@ class _TendenciasClubPageState extends State<TendenciasClubPage> {
                   const SizedBox(height: AppSpacing.md),
 
                   SizedBox(
-                    height: 188,
+                    height: 204,
                     child: ListView.separated(
                       scrollDirection: Axis.horizontal,
                       clipBehavior: Clip.none,
