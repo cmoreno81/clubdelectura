@@ -319,6 +319,16 @@ class _ProtectionCard extends StatelessWidget {
             'prioridades, formatos, sagas ni historial que ya hayas guardado.',
             style: TextStyle(color: Colors.white, height: 1.4),
           ),
+          const SizedBox(height: AppSpacing.sm),
+          Text(
+            'Solo importaremos libros finalizados y valorados. Los pendientes '
+            'y los que estás leyendo se quedarán fuera.',
+            style: TextStyle(
+              color: Colors.white70,
+              height: 1.4,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
           if (fileName.isNotEmpty) ...[
             const SizedBox(height: AppSpacing.sm),
             Text(
@@ -364,7 +374,8 @@ class _Instructions extends StatelessWidget {
           ),
           const _Step(
             number: '3',
-            text: 'Revisa qué libros son nuevos y cuáles ya están protegidos.',
+            text:
+                'Revisa tus libros finalizados y valorados; los pendientes no aparecerán.',
           ),
           const _Step(number: '4', text: 'Confirma la importación.'),
           const SizedBox(height: AppSpacing.sm),
@@ -447,7 +458,7 @@ class _PreviewSummary extends StatelessWidget {
           if (summary.skipped > 0)
             _SummaryChip(
               icon: Icons.remove_circle_outline_rounded,
-              label: '${summary.skipped} omitidos',
+              label: '${summary.skipped} pendientes o sin valorar',
               color: AppColors.textMuted,
             ),
         ],
@@ -652,8 +663,8 @@ class _ImportFinished extends StatelessWidget {
           ),
           const SizedBox(height: AppSpacing.sm),
           const Text(
-            'Buscaremos automáticamente las portadas que falten. '
-            'Pueden aparecer poco a poco en tu biblioteca.',
+            'Los pendientes de Goodreads no se han importado. Buscaremos '
+            'automáticamente las portadas que falten en el historial añadido.',
             textAlign: TextAlign.center,
             style: TextStyle(color: AppColors.textSecondary),
           ),
