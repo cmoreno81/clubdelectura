@@ -206,6 +206,89 @@ class _SagasPageState extends State<SagasPage> {
     }
   }
 
+  Future<void> _editSeries(PerfilSaga saga) async {
+    var status = saga.estadoEditorial;
+    final totalController = TextEditingController(
+      text: saga.totalSaga > 0 ? '${saga.totalSaga}' : '',
+    );
+    final result = await showDialog<(String, int?)>(
+      context: context,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setDialogState) => AlertDialog(
+          title: Text('Editar ${saga.nombre}'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              DropdownButtonFormField<String>(
+                initialValue: status,
+                decoration: const InputDecoration(
+                  labelText: 'Estado editorial',
+                ),
+                items: const [
+                  DropdownMenuItem(
+                    value: 'UNKNOWN',
+                    child: Text('Sin confirmar'),
+                  ),
+                  DropdownMenuItem(
+                    value: 'ONGOING',
+                    child: Text('En publicación'),
+                  ),
+                  DropdownMenuItem(
+                    value: 'COMPLETED',
+                    child: Text('Saga finalizada'),
+                  ),
+                ],
+                onChanged: (value) =>
+                    setDialogState(() => status = value ?? 'UNKNOWN'),
+              ),
+              const SizedBox(height: AppSpacing.md),
+              TextField(
+                controller: totalController,
+                keyboardType: TextInputType.number,
+                decoration: const InputDecoration(
+                  labelText: 'Total previsto de libros',
+                  helperText: 'Déjalo vacío si todavía no se conoce.',
+                ),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Cancelar'),
+            ),
+            FilledButton(
+              onPressed: () {
+                final text = totalController.text.trim();
+                Navigator.pop(
+                  context,
+                  (status, text.isEmpty ? null : int.tryParse(text)),
+                );
+              },
+              child: const Text('Guardar'),
+            ),
+          ],
+        ),
+      ),
+    );
+    totalController.dispose();
+    if (result == null || !mounted) return;
+    try {
+      await ApiService().actualizarEstadoEditorialSaga(
+        sagaId: saga.id,
+        estadoEditorial: result.$1,
+        totalPrevisto: result.$2,
+      );
+      if (mounted) await _reload();
+    } on ApiException catch (error) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(error.message)));
+    }
+  }
+
   Future<void> _openUpToDateProfile() async {
     final userName = (await UsuarioService().obtenerUsuario())?.trim() ?? '';
     if (!mounted || userName.isEmpty) return;
@@ -339,6 +422,7 @@ class _SagasPageState extends State<SagasPage> {
                 onContinue: _openBook,
                 onCompleteCatalog: () => _completeSeries(saga),
                 onEditVolume: _editVolume,
+                onEditSeries: () => _editSeries(saga),
               ),
             ),
         ],

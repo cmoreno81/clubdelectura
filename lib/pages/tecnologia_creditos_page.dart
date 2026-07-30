@@ -136,7 +136,7 @@ class _GrupoTecnologia extends StatelessWidget {
       elevated: false,
       padding: EdgeInsets.zero,
       child: Material(
-        type: MaterialType.transparency,
+        color: Colors.transparent,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [

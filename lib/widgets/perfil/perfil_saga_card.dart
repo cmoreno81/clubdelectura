@@ -14,12 +14,14 @@ class PerfilSagaCard extends StatelessWidget {
     this.onContinue,
     this.onCompleteCatalog,
     this.onEditVolume,
+    this.onEditSeries,
   });
 
   final PerfilSaga saga;
   final ValueChanged<PerfilSagaVolumen>? onContinue;
   final VoidCallback? onCompleteCatalog;
   final ValueChanged<PerfilSagaVolumen>? onEditVolume;
+  final VoidCallback? onEditSeries;
 
   @override
   Widget build(BuildContext context) {
@@ -64,29 +66,44 @@ class PerfilSagaCard extends StatelessWidget {
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      '${saga.leidos} de ${saga.totalSaga} leídos',
+                      saga.totalSaga > saga.totalConocidos
+                          ? '${saga.leidos} de ${saga.totalConocidos} publicados'
+                            ' · ${saga.totalSaga} previstos'
+                          : '${saga.leidos} de ${saga.totalConocidos} publicados',
                       style: const TextStyle(color: AppColors.textSecondary),
                     ),
                   ],
                 ),
               ),
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 10,
-                  vertical: 6,
-                ),
-                decoration: BoxDecoration(
-                  color: accent.withValues(alpha: .13),
-                  borderRadius: BorderRadius.circular(AppRadius.pill),
-                ),
-                child: Text(
-                  estado,
-                  style: TextStyle(
-                    color: accent,
-                    fontSize: 12,
-                    fontWeight: FontWeight.w900,
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 10,
+                      vertical: 6,
+                    ),
+                    decoration: BoxDecoration(
+                      color: accent.withValues(alpha: .13),
+                      borderRadius: BorderRadius.circular(AppRadius.pill),
+                    ),
+                    child: Text(
+                      estado,
+                      style: TextStyle(
+                        color: accent,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w900,
+                      ),
+                    ),
                   ),
-                ),
+                  if (onEditSeries != null)
+                    IconButton(
+                      tooltip: 'Editar datos de la saga',
+                      visualDensity: VisualDensity.compact,
+                      onPressed: onEditSeries,
+                      icon: const Icon(Icons.edit_outlined, size: 19),
+                    ),
+                ],
               ),
             ],
           ),

@@ -57,7 +57,7 @@ class _AcercaDePageState extends State<AcercaDePage> {
             elevated: false,
             padding: const EdgeInsets.all(AppSpacing.lg),
             child: Material(
-              type: MaterialType.transparency,
+              color: Colors.transparent,
               child: Column(
                 children: [
                   Container(
@@ -101,7 +101,7 @@ class _AcercaDePageState extends State<AcercaDePage> {
             elevated: false,
             padding: EdgeInsets.zero,
             child: Material(
-              type: MaterialType.transparency,
+              color: Colors.transparent,
               child: Column(
                 children: [
                   ListTile(

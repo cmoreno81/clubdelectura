@@ -153,7 +153,7 @@ class _Categoria extends StatelessWidget {
       child: ClubCard(
         elevated: false,
         child: Material(
-          type: MaterialType.transparency,
+          color: Colors.transparent,
           child: ListTile(
             leading: RotuladorPreview(color: color, length: 68, thickness: 23),
             title: Text(titulo, style: AppTextStyles.subtitle),

@@ -60,6 +60,7 @@ void main() {
           'totalConocidos': 3,
           'totalSaga': 3,
           'estado': 'EN_CURSO',
+          'estadoEditorial': 'ONGOING',
           'volumenes': [
             {
               'bookId': 'book-1',
@@ -96,8 +97,24 @@ void main() {
     expect(perfil.sagas.single.nombre, 'Los habitantes del aire');
     expect(perfil.sagas.single.leidos, 2);
     expect(perfil.sagas.single.siguiente?.titulo, 'La reina de nada');
+    expect(perfil.sagas.single.estadoEditorial, 'ONGOING');
     expect(perfil.resumen.clubes, 2);
     expect(perfil.resumen.sagasAbiertas, 1);
+  });
+
+  test('una saga antigua conserva un estado editorial seguro', () {
+    final saga = PerfilSaga.fromJson({
+      'id': 'saga-antigua',
+      'nombre': 'Saga sin metadatos',
+      'leidos': 1,
+      'totalConocidos': 1,
+      'totalSaga': 1,
+      'estado': 'AL_DIA',
+    });
+
+    expect(saga.estadoEditorial, 'UNKNOWN');
+    expect(saga.alDia, isTrue);
+    expect(saga.completada, isFalse);
   });
 
   test('una saga sin libros leídos se muestra como pendiente', () {

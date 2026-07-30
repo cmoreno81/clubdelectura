@@ -72,9 +72,9 @@ class _MyAppState extends State<MyApp> {
               final reducirMovimiento =
                   MediaQuery.maybeOf(context)?.disableAnimations ?? false;
 
-              return Listener(
+              return GestureDetector(
                 behavior: HitTestBehavior.translucent,
-                onPointerDown: (_) {
+                onTap: () {
                   FocusManager.instance.primaryFocus?.unfocus();
                 },
                 child: AtmosferaAmbientLayer(

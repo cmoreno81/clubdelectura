@@ -25,6 +25,7 @@ import '../models/mood_club.dart';
 import '../models/tendencias_club.dart';
 import '../models/atmosfera_club.dart';
 import '../models/catalog_book.dart';
+import '../models/goodreads_import.dart';
 import 'api_exception.dart';
 
 class ApiService {
@@ -148,6 +149,56 @@ class ApiService {
     }
   }
 
+  Future<GoodreadsImportPreview> previsualizarImportacionGoodreads(
+    List<GoodreadsImportRow> books,
+  ) async {
+    final response = await _client.post(
+      Uri.parse('$baseUrl?action=previsualizarImportacionGoodreads'),
+      headers: const {'Content-Type': 'application/json'},
+      body: jsonEncode({'libros': books.map((book) => book.toJson()).toList()}),
+    );
+    if (response.statusCode != 200) {
+      throw ApiException.fromResponse(response);
+    }
+    final decoded = jsonDecode(response.body);
+    if (decoded is! Map<String, dynamic> || decoded['ok'] != true) {
+      throw ApiException(
+        statusCode: response.statusCode,
+        message: decoded is Map<String, dynamic>
+            ? decoded['mensaje']?.toString() ?? 'No se pudo revisar el archivo.'
+            : 'No se pudo revisar el archivo.',
+      );
+    }
+    return GoodreadsImportPreview.fromJson(decoded);
+  }
+
+  Future<GoodreadsImportSummary> confirmarImportacionGoodreads(
+    List<GoodreadsImportRow> books,
+  ) async {
+    final response = await _client.post(
+      Uri.parse('$baseUrl?action=confirmarImportacionGoodreads'),
+      headers: const {'Content-Type': 'application/json'},
+      body: jsonEncode({'libros': books.map((book) => book.toJson()).toList()}),
+    );
+    if (response.statusCode != 200) {
+      throw ApiException.fromResponse(response);
+    }
+    final decoded = jsonDecode(response.body);
+    if (decoded is! Map<String, dynamic> || decoded['ok'] != true) {
+      throw ApiException(
+        statusCode: response.statusCode,
+        message: decoded is Map<String, dynamic>
+            ? decoded['mensaje']?.toString() ??
+                  'No se pudo importar el archivo.'
+            : 'No se pudo importar el archivo.',
+      );
+    }
+    final summary = decoded['resumen'];
+    return GoodreadsImportSummary.fromJson(
+      summary is Map<String, dynamic> ? summary : const {},
+    );
+  }
+
   Future<String> vincularVolumenSaga({
     required String sagaId,
     required String numero,
@@ -212,6 +263,35 @@ class ApiService {
         message: decoded is Map<String, dynamic>
             ? decoded['mensaje']?.toString() ?? 'No se pudo cambiar el número.'
             : 'No se pudo cambiar el número.',
+      );
+    }
+  }
+
+  Future<void> actualizarEstadoEditorialSaga({
+    required String sagaId,
+    required String estadoEditorial,
+    int? totalPrevisto,
+  }) async {
+    final response = await _client.post(
+      Uri.parse('$baseUrl?action=actualizarEstadoEditorialSaga'),
+      headers: const {'Content-Type': 'application/json'},
+      body: jsonEncode({
+        'sagaId': sagaId,
+        'estadoEditorial': estadoEditorial,
+        'totalPrevisto': totalPrevisto,
+      }),
+    );
+    if (response.statusCode != 200) {
+      throw ApiException.fromResponse(response);
+    }
+    final decoded = jsonDecode(response.body);
+    if (decoded is! Map<String, dynamic> || decoded['ok'] != true) {
+      throw ApiException(
+        statusCode: response.statusCode,
+        message: decoded is Map<String, dynamic>
+            ? decoded['mensaje']?.toString() ??
+                  'No se pudo actualizar la saga.'
+            : 'No se pudo actualizar la saga.',
       );
     }
   }

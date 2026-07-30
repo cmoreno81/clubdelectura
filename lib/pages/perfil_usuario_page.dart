@@ -29,6 +29,7 @@ import '../widgets/common/club_rating_stars.dart';
 import 'detalle_libro_page.dart';
 import 'acerca_de_page.dart';
 import 'change_password_page.dart';
+import 'goodreads_import_page.dart';
 import '../services/auth_service.dart';
 
 class PerfilUsuarioPage extends StatefulWidget {
@@ -113,10 +114,83 @@ class _ProfileMenuOption extends StatelessWidget {
   }
 }
 
+class _FinalizadosYearGroup extends StatelessWidget {
+  const _FinalizadosYearGroup({
+    required this.year,
+    required this.books,
+    required this.itemBuilder,
+  });
+
+  final int? year;
+  final List<PerfilLibroTerminado> books;
+  final Widget Function(PerfilLibroTerminado book) itemBuilder;
+
+  @override
+  Widget build(BuildContext context) {
+    final color = Theme.of(context).colorScheme.primary;
+    final label = year?.toString() ?? 'Sin fecha';
+    return Padding(
+      padding: const EdgeInsets.only(bottom: AppSpacing.sm),
+      child: ClubCard(
+        elevated: false,
+        padding: EdgeInsets.zero,
+        child: Theme(
+          data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
+          child: ExpansionTile(
+            key: PageStorageKey('finalizados-${year ?? 'sin-fecha'}'),
+            initiallyExpanded: false,
+            tilePadding: const EdgeInsets.symmetric(
+              horizontal: AppSpacing.md,
+              vertical: AppSpacing.xs,
+            ),
+            childrenPadding: const EdgeInsets.fromLTRB(
+              AppSpacing.sm,
+              0,
+              AppSpacing.sm,
+              AppSpacing.sm,
+            ),
+            iconColor: color,
+            collapsedIconColor: AppColors.textMuted,
+            title: Row(
+              children: [
+                Text(
+                  label,
+                  style: AppTextStyles.title.copyWith(
+                    color: color,
+                    fontSize: 22,
+                  ),
+                ),
+                const SizedBox(width: AppSpacing.sm),
+                Expanded(child: Divider(color: color.withValues(alpha: .22))),
+                const SizedBox(width: AppSpacing.sm),
+                Text(
+                  books.length == 1 ? '1 libro' : '${books.length} libros',
+                  style: AppTextStyles.caption.copyWith(
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+              ],
+            ),
+            children: books
+                .map(
+                  (book) => Padding(
+                    padding: const EdgeInsets.only(bottom: AppSpacing.sm),
+                    child: itemBuilder(book),
+                  ),
+                )
+                .toList(growable: false),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 class _SagaProfileTabs extends StatelessWidget {
   const _SagaProfileTabs({
     required this.selected,
     required this.upToDate,
+    required this.completed,
     required this.active,
     required this.pending,
     required this.onSelected,
@@ -124,6 +198,7 @@ class _SagaProfileTabs extends StatelessWidget {
 
   final String selected;
   final int upToDate;
+  final int completed;
   final int active;
   final int pending;
   final ValueChanged<String> onSelected;
@@ -132,6 +207,7 @@ class _SagaProfileTabs extends StatelessWidget {
   Widget build(BuildContext context) {
     final options = [
       ('AL_DIA', 'Al día', upToDate),
+      ('COMPLETADA', 'Finalizadas', completed),
       ('EN_CURSO', 'En curso', active),
       ('PENDIENTE', 'Pendientes', pending),
     ];
@@ -560,7 +636,10 @@ class _PerfilUsuarioPageState extends State<PerfilUsuarioPage> {
 
           final perfil = snapshot.data!;
           final upToDateSeries = perfil.sagas
-              .where((saga) => saga.completada || saga.alDia)
+              .where((saga) => saga.alDia)
+              .toList(growable: false);
+          final completedSeries = perfil.sagas
+              .where((saga) => saga.completada)
               .toList(growable: false);
           final activeSeries = perfil.sagas
               .where((saga) => saga.estado == 'EN_CURSO')
@@ -569,6 +648,7 @@ class _PerfilUsuarioPageState extends State<PerfilUsuarioPage> {
               .where((saga) => saga.pendiente)
               .toList(growable: false);
           final selectedSeries = switch (_sagaFilter) {
+            'COMPLETADA' => completedSeries,
             'EN_CURSO' => activeSeries,
             'PENDIENTE' => pendingSeries,
             _ => upToDateSeries,
@@ -640,6 +720,7 @@ class _PerfilUsuarioPageState extends State<PerfilUsuarioPage> {
                   _SagaProfileTabs(
                     selected: _sagaFilter,
                     upToDate: upToDateSeries.length,
+                    completed: completedSeries.length,
                     active: activeSeries.length,
                     pending: pendingSeries.length,
                     onSelected: (value) {
@@ -652,11 +733,15 @@ class _PerfilUsuarioPageState extends State<PerfilUsuarioPage> {
                     ClubEmptyState(
                       icon: _sagaFilter == 'AL_DIA'
                           ? Icons.update_rounded
+                          : _sagaFilter == 'COMPLETADA'
+                          ? Icons.workspace_premium_outlined
                           : _sagaFilter == 'EN_CURSO'
                           ? Icons.auto_stories_rounded
                           : Icons.bookmark_border_rounded,
                       title: _sagaFilter == 'AL_DIA'
                           ? 'Todavía no hay sagas al día'
+                          : _sagaFilter == 'COMPLETADA'
+                          ? 'Todavía no hay sagas finalizadas'
                           : _sagaFilter == 'EN_CURSO'
                           ? 'No hay sagas en curso'
                           : 'No hay sagas pendientes',
@@ -731,12 +816,7 @@ class _PerfilUsuarioPageState extends State<PerfilUsuarioPage> {
                       padding: EdgeInsets.symmetric(vertical: AppSpacing.xl),
                     )
                   else
-                    ...perfil.terminados.map(
-                      (libro) => Padding(
-                        padding: const EdgeInsets.only(bottom: AppSpacing.md),
-                        child: _libroTerminado(libro: libro),
-                      ),
-                    ),
+                    _finalizadosAgrupados(perfil.terminados),
                   const SizedBox(height: AppSpacing.lg),
 
                   ClubSectionTitle(
@@ -764,8 +844,7 @@ class _PerfilUsuarioPageState extends State<PerfilUsuarioPage> {
                     ),
                 ],
 
-                if (_menuPerfil == 'RESUMEN' &&
-                    perfil.generosFavoritos.isNotEmpty) ...[
+                if (perfil.generosFavoritos.isNotEmpty) ...[
                   const SizedBox(height: AppSpacing.lg),
 
                   const ClubSectionTitle(
@@ -797,7 +876,7 @@ class _PerfilUsuarioPageState extends State<PerfilUsuarioPage> {
                     ),
                   ),
                 ],
-                if (_menuPerfil == 'RESUMEN' && esMiPerfil) ...[
+                if (esMiPerfil) ...[
                   const SizedBox(height: AppSpacing.xl),
                   const ClubSectionTitle(
                     title: 'Más',
@@ -809,7 +888,34 @@ class _PerfilUsuarioPageState extends State<PerfilUsuarioPage> {
                     elevated: false,
                     padding: EdgeInsets.zero,
                     child: Material(
-                      type: MaterialType.transparency,
+                      color: Colors.transparent,
+                      child: ListTile(
+                        leading: const Icon(Icons.import_export_rounded),
+                        title: const Text('Importar desde Goodreads'),
+                        subtitle: const Text(
+                          'Trae tus libros sin sobrescribir ClubReads',
+                        ),
+                        trailing: const Icon(Icons.chevron_right_rounded),
+                        onTap: () async {
+                          final imported = await Navigator.push<bool>(
+                            context,
+                            AppPageRoute(
+                              builder: (_) => const GoodreadsImportPage(),
+                            ),
+                          );
+                          if (imported == true && mounted) {
+                            await _recargar();
+                          }
+                        },
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: AppSpacing.sm),
+                  ClubCard(
+                    elevated: false,
+                    padding: EdgeInsets.zero,
+                    child: Material(
+                      color: Colors.transparent,
                       child: ListTile(
                         leading: const Icon(Icons.info_outline_rounded),
                         title: const Text('Acerca de ClubReads'),
@@ -829,7 +935,7 @@ class _PerfilUsuarioPageState extends State<PerfilUsuarioPage> {
                     elevated: false,
                     padding: EdgeInsets.zero,
                     child: Material(
-                      type: MaterialType.transparency,
+                      color: Colors.transparent,
                       child: Column(
                         children: [
                           ListTile(
@@ -865,6 +971,35 @@ class _PerfilUsuarioPageState extends State<PerfilUsuarioPage> {
   Future<void> _cerrarSesion() async {
     await AuthService().logout();
     if (mounted) Navigator.popUntil(context, (route) => route.isFirst);
+  }
+
+  Widget _finalizadosAgrupados(List<PerfilLibroTerminado> libros) {
+    final ordenados = [...libros]
+      ..sort((left, right) {
+        final leftDate = LecturaFechaUtils.parse(left.fechaFin);
+        final rightDate = LecturaFechaUtils.parse(right.fechaFin);
+        if (leftDate == null && rightDate == null) return 0;
+        if (leftDate == null) return 1;
+        if (rightDate == null) return -1;
+        return rightDate.compareTo(leftDate);
+      });
+    final grupos = <int?, List<PerfilLibroTerminado>>{};
+    for (final libro in ordenados) {
+      final year = LecturaFechaUtils.parse(libro.fechaFin)?.year;
+      grupos.putIfAbsent(year, () => []).add(libro);
+    }
+
+    return Column(
+      children: grupos.entries
+          .map(
+            (entry) => _FinalizadosYearGroup(
+              year: entry.key,
+              books: entry.value,
+              itemBuilder: (book) => _libroTerminado(libro: book),
+            ),
+          )
+          .toList(growable: false),
+    );
   }
 
   Widget _cabeceraPerfil(PerfilUsuario perfil) {

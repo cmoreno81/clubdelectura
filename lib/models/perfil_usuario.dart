@@ -201,6 +201,7 @@ class PerfilSaga {
     required this.totalConocidos,
     required this.totalSaga,
     required this.estado,
+    required this.estadoEditorial,
     required this.volumenes,
     this.siguiente,
   });
@@ -212,6 +213,7 @@ class PerfilSaga {
   final int totalConocidos;
   final int totalSaga;
   final String estado;
+  final String estadoEditorial;
   final List<PerfilSagaVolumen> volumenes;
   final PerfilSagaVolumen? siguiente;
 
@@ -229,6 +231,8 @@ class PerfilSaga {
       totalConocidos: (json['totalConocidos'] as num?)?.toInt() ?? 0,
       totalSaga: (json['totalSaga'] as num?)?.toInt() ?? 0,
       estado: json['estado']?.toString() ?? 'EN_CURSO',
+      estadoEditorial:
+          json['estadoEditorial']?.toString() ?? 'UNKNOWN',
       volumenes: (json['volumenes'] as List? ?? const [])
           .whereType<Map<String, dynamic>>()
           .map(PerfilSagaVolumen.fromJson)
