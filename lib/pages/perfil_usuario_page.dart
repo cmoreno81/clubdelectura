@@ -113,10 +113,118 @@ class _ProfileMenuOption extends StatelessWidget {
   }
 }
 
+class _SagaProfileTabs extends StatelessWidget {
+  const _SagaProfileTabs({
+    required this.selected,
+    required this.upToDate,
+    required this.active,
+    required this.pending,
+    required this.onSelected,
+  });
+
+  final String selected;
+  final int upToDate;
+  final int active;
+  final int pending;
+  final ValueChanged<String> onSelected;
+
+  @override
+  Widget build(BuildContext context) {
+    final options = [
+      ('AL_DIA', 'Al día', upToDate),
+      ('EN_CURSO', 'En curso', active),
+      ('PENDIENTE', 'Pendientes', pending),
+    ];
+
+    return Container(
+      padding: const EdgeInsets.all(4),
+      decoration: BoxDecoration(
+        color: AppColors.surfaceSoft,
+        borderRadius: BorderRadius.circular(AppRadius.pill),
+        border: Border.all(color: AppColors.border),
+      ),
+      child: Row(
+        children: [
+          for (final option in options)
+            Expanded(
+              child: Semantics(
+                button: true,
+                selected: selected == option.$1,
+                label: '${option.$2}, ${option.$3} sagas',
+                child: InkWell(
+                  borderRadius: BorderRadius.circular(AppRadius.pill),
+                  onTap: () => onSelected(option.$1),
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 160),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 5,
+                      vertical: 9,
+                    ),
+                    decoration: BoxDecoration(
+                      color: selected == option.$1
+                          ? AppColors.primary
+                          : Colors.transparent,
+                      borderRadius: BorderRadius.circular(AppRadius.pill),
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Flexible(
+                          child: Text(
+                            option.$2,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              color: selected == option.$1
+                                  ? Colors.white
+                                  : AppColors.textSecondary,
+                              fontSize: 12,
+                              fontWeight: FontWeight.w800,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 5),
+                        Container(
+                          constraints: const BoxConstraints(minWidth: 20),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 5,
+                            vertical: 2,
+                          ),
+                          decoration: BoxDecoration(
+                            color: selected == option.$1
+                                ? Colors.white.withValues(alpha: .18)
+                                : AppColors.primaryLight,
+                            borderRadius: BorderRadius.circular(AppRadius.pill),
+                          ),
+                          child: Text(
+                            '${option.$3}',
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                              color: selected == option.$1
+                                  ? Colors.white
+                                  : AppColors.primaryDark,
+                              fontSize: 11,
+                              fontWeight: FontWeight.w900,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
 class _PerfilUsuarioPageState extends State<PerfilUsuarioPage> {
   late Future<PerfilUsuario> future;
   String? usuarioActual;
   String _menuPerfil = 'RESUMEN';
+  String _sagaFilter = 'AL_DIA';
   final GlobalKey _upToDateSeriesKey = GlobalKey();
   bool _didFocusUpToDateSeries = false;
 
@@ -451,9 +559,22 @@ class _PerfilUsuarioPageState extends State<PerfilUsuarioPage> {
           }
 
           final perfil = snapshot.data!;
-          final hasUpToDateSeries = perfil.sagas.any(
-            (saga) => saga.completada || saga.alDia,
-          );
+          final upToDateSeries = perfil.sagas
+              .where((saga) => saga.completada || saga.alDia)
+              .toList(growable: false);
+          final activeSeries = perfil.sagas
+              .where((saga) => saga.estado == 'EN_CURSO')
+              .toList(growable: false);
+          final pendingSeries = perfil.sagas
+              .where((saga) => saga.pendiente)
+              .toList(growable: false);
+          final selectedSeries = switch (_sagaFilter) {
+            'EN_CURSO' => activeSeries,
+            'PENDIENTE' => pendingSeries,
+            _ => upToDateSeries,
+          };
+          final hasUpToDateSeries = upToDateSeries.isNotEmpty;
+          final hasSeries = perfil.sagas.isNotEmpty;
           if (widget.focusUpToDateSeries &&
               hasUpToDateSeries &&
               !_didFocusUpToDateSeries) {
@@ -502,33 +623,59 @@ class _PerfilUsuarioPageState extends State<PerfilUsuarioPage> {
                   ),
                 ),
 
-                if (_menuPerfil == 'RESUMEN' && hasUpToDateSeries) ...[
+                if (_menuPerfil == 'RESUMEN' && hasSeries) ...[
                   const SizedBox(height: AppSpacing.xl),
                   KeyedSubtree(
                     key: _upToDateSeriesKey,
                     child: ClubSectionTitle(
-                      title: 'Sagas al día',
+                      title: 'Mis sagas',
                       subtitle: esMiPerfil
-                          ? 'Has leído todos los volúmenes publicados'
-                          : 'Ha leído todos los volúmenes publicados',
+                          ? 'Tu recorrido por cada universo'
+                          : 'Su recorrido por cada universo',
                       icon: Icons.view_week_outlined,
                       padding: EdgeInsets.zero,
                     ),
                   ),
                   const SizedBox(height: AppSpacing.sm),
-                  ...perfil.sagas
-                      .where((saga) => saga.completada || saga.alDia)
-                      .map(
-                        (saga) => Padding(
-                          padding: const EdgeInsets.only(bottom: AppSpacing.md),
-                          child: PerfilSagaCard(
-                            saga: saga,
-                            onContinue: _abrirFichaSaga,
-                            onCompleteCatalog: null,
-                            onEditVolume: esMiPerfil ? _editarNumeroSaga : null,
-                          ),
+                  _SagaProfileTabs(
+                    selected: _sagaFilter,
+                    upToDate: upToDateSeries.length,
+                    active: activeSeries.length,
+                    pending: pendingSeries.length,
+                    onSelected: (value) {
+                      if (_sagaFilter == value) return;
+                      setState(() => _sagaFilter = value);
+                    },
+                  ),
+                  const SizedBox(height: AppSpacing.md),
+                  if (selectedSeries.isEmpty)
+                    ClubEmptyState(
+                      icon: _sagaFilter == 'AL_DIA'
+                          ? Icons.update_rounded
+                          : _sagaFilter == 'EN_CURSO'
+                          ? Icons.auto_stories_rounded
+                          : Icons.bookmark_border_rounded,
+                      title: _sagaFilter == 'AL_DIA'
+                          ? 'Todavía no hay sagas al día'
+                          : _sagaFilter == 'EN_CURSO'
+                          ? 'No hay sagas en curso'
+                          : 'No hay sagas pendientes',
+                      message: _sagaFilter == 'EN_CURSO'
+                          ? 'Las sagas con alguna lectura empezada aparecerán aquí.'
+                          : 'Esta sección se actualizará con su biblioteca.',
+                    )
+                  else
+                    ...selectedSeries.map(
+                      (saga) => Padding(
+                        padding: const EdgeInsets.only(bottom: AppSpacing.md),
+                        child: PerfilSagaCard(
+                          saga: saga,
+                          onContinue: _abrirFichaSaga,
+                          onCompleteCatalog: null,
+                          onEditVolume: esMiPerfil ? _editarNumeroSaga : null,
                         ),
                       ),
+                    ),
                 ],
 
                 if (_menuPerfil == 'TIMELINE' &&

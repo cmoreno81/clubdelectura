@@ -163,7 +163,12 @@ class _GeneralDashboardPageState extends State<GeneralDashboardPage> {
               slivers: [
                 SliverAppBar(
                   pinned: true,
-                  backgroundColor: Colors.transparent,
+                  backgroundColor: AppColors.background,
+                  surfaceTintColor: Colors.transparent,
+                  scrolledUnderElevation: 0,
+                  shape: const Border(
+                    bottom: BorderSide(color: AppColors.paperLine, width: .8),
+                  ),
                   title: const Text('Mi universo lector'),
                   actions: [
                     IconButton(

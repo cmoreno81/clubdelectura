@@ -409,19 +409,21 @@ class _ClubvisionHeader extends StatelessWidget {
                     letterSpacing: -.7,
                   ),
                 ),
-                const SizedBox(height: 7),
-                Text(
-                  club.mensaje.trim().isEmpty
-                      ? 'La próxima lectura la decide el club'
-                      : club.mensaje,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    color: Colors.white.withValues(alpha: .78),
-                    fontSize: 14,
-                    height: 1.35,
+                if (estado != 'LECTURA') ...[
+                  const SizedBox(height: 7),
+                  Text(
+                    club.mensaje.trim().isEmpty
+                        ? 'La próxima lectura la decide el club'
+                        : club.mensaje,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      color: Colors.white.withValues(alpha: .78),
+                      fontSize: 14,
+                      height: 1.35,
+                    ),
                   ),
-                ),
+                ],
                 const SizedBox(height: AppSpacing.lg),
                 _ClubvisionCycle(estado: estado),
                 if (estado == 'VOTACION') ...[
@@ -450,40 +452,44 @@ class _ClubvisionHeader extends StatelessWidget {
                 ],
                 if (estado == 'LECTURA' && club.ganador.trim().isNotEmpty) ...[
                   const SizedBox(height: AppSpacing.md),
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: AppSpacing.sm,
-                      vertical: AppSpacing.xs,
-                    ),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: .12),
-                      borderRadius: BorderRadius.circular(AppRadius.pill),
-                      border: Border.all(
-                        color: Colors.white.withValues(alpha: .18),
+                  Align(
+                    alignment: Alignment.center,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: AppSpacing.md,
+                        vertical: AppSpacing.xs,
                       ),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        const Icon(
-                          Icons.menu_book_rounded,
-                          color: Colors.white,
-                          size: 16,
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: .12),
+                        borderRadius: BorderRadius.circular(AppRadius.pill),
+                        border: Border.all(
+                          color: Colors.white.withValues(alpha: .18),
                         ),
-                        const SizedBox(width: 6),
-                        Flexible(
-                          child: Text(
-                            club.ganador,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 12,
-                              fontWeight: FontWeight.w800,
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Icon(
+                            Icons.menu_book_rounded,
+                            color: Colors.white,
+                            size: 16,
+                          ),
+                          const SizedBox(width: 6),
+                          Flexible(
+                            child: Text(
+                              club.ganador,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              textAlign: TextAlign.center,
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 12,
+                                fontWeight: FontWeight.w800,
+                              ),
                             ),
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
                   ),
                 ],
@@ -516,58 +522,114 @@ class _ClubvisionCycle extends StatelessWidget {
     ];
 
     return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         for (var index = 0; index < steps.length; index++) ...[
           Expanded(
             child: Column(
               children: [
-                AnimatedContainer(
-                  duration: const Duration(milliseconds: 220),
-                  width: 34,
-                  height: 34,
-                  decoration: BoxDecoration(
-                    color: index <= activeIndex
-                        ? const Color(0xFFF0CE82)
-                        : Colors.white.withValues(alpha: .12),
-                    shape: BoxShape.circle,
-                    border: Border.all(
-                      color: index <= activeIndex
-                          ? const Color(0xFFF0CE82)
-                          : Colors.white.withValues(alpha: .28),
+                SizedBox(
+                  height: 58,
+                  child: Center(
+                    child: AnimatedContainer(
+                      duration: const Duration(milliseconds: 260),
+                      curve: Curves.easeOutBack,
+                      width: index == activeIndex ? 52 : 34,
+                      height: index == activeIndex ? 52 : 34,
+                      decoration: BoxDecoration(
+                        color: index <= activeIndex
+                            ? const Color(0xFFF0CE82)
+                            : Colors.white.withValues(alpha: .10),
+                        shape: BoxShape.circle,
+                        border: Border.all(
+                          color: index == activeIndex
+                              ? Colors.white
+                              : index < activeIndex
+                              ? const Color(0xFFF0CE82)
+                              : Colors.white.withValues(alpha: .28),
+                          width: index == activeIndex ? 3 : 1,
+                        ),
+                        boxShadow: index == activeIndex
+                            ? [
+                                BoxShadow(
+                                  color: const Color(
+                                    0xFFF0CE82,
+                                  ).withValues(alpha: .48),
+                                  blurRadius: 18,
+                                  spreadRadius: 3,
+                                ),
+                                BoxShadow(
+                                  color: Colors.white.withValues(alpha: .20),
+                                  blurRadius: 5,
+                                  spreadRadius: 1,
+                                ),
+                              ]
+                            : null,
+                      ),
+                      child: Icon(
+                        steps[index].$1,
+                        size: index == activeIndex ? 26 : 17,
+                        color: index <= activeIndex
+                            ? const Color(0xFF432552)
+                            : Colors.white.withValues(alpha: .62),
+                      ),
                     ),
                   ),
-                  child: Icon(
-                    steps[index].$1,
-                    size: 17,
-                    color: index <= activeIndex
-                        ? const Color(0xFF432552)
-                        : Colors.white.withValues(alpha: .72),
-                  ),
                 ),
-                const SizedBox(height: 5),
-                Text(
-                  steps[index].$2,
-                  style: TextStyle(
+                const SizedBox(height: 4),
+                AnimatedContainer(
+                  duration: const Duration(milliseconds: 220),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 7,
+                    vertical: 4,
+                  ),
+                  decoration: BoxDecoration(
                     color: index == activeIndex
-                        ? Colors.white
-                        : Colors.white.withValues(alpha: .62),
-                    fontSize: 10,
-                    fontWeight: index == activeIndex
-                        ? FontWeight.w900
-                        : FontWeight.w600,
+                        ? const Color(0xFFF0CE82)
+                        : Colors.transparent,
+                    borderRadius: BorderRadius.circular(AppRadius.pill),
+                  ),
+                  child: Text(
+                    steps[index].$2,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      color: index == activeIndex
+                          ? const Color(0xFF432552)
+                          : Colors.white.withValues(alpha: .62),
+                      fontSize: index == activeIndex ? 11 : 10,
+                      fontWeight: index == activeIndex
+                          ? FontWeight.w900
+                          : FontWeight.w600,
+                    ),
                   ),
                 ),
+                if (index == activeIndex) ...[
+                  const SizedBox(height: 4),
+                  Text(
+                    'AHORA',
+                    style: TextStyle(
+                      color: Colors.white.withValues(alpha: .86),
+                      fontSize: 8,
+                      fontWeight: FontWeight.w900,
+                      letterSpacing: 1.25,
+                    ),
+                  ),
+                ],
               ],
             ),
           ),
           if (index < steps.length - 1)
-            Expanded(
-              child: Container(
-                height: 2,
-                margin: const EdgeInsets.only(bottom: 19),
-                color: index < activeIndex
-                    ? const Color(0xFFF0CE82)
-                    : Colors.white.withValues(alpha: .18),
+            SizedBox(
+              width: 28,
+              height: 58,
+              child: Center(
+                child: Container(
+                  height: 2,
+                  color: index < activeIndex
+                      ? const Color(0xFFF0CE82)
+                      : Colors.white.withValues(alpha: .28),
+                ),
               ),
             ),
         ],

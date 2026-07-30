@@ -32,6 +32,10 @@ class ComentarioInput extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final quoteColor = _readableQuoteColor(
+      colorCita ?? Theme.of(context).colorScheme.primary,
+    );
+
     return Material(
       color: Theme.of(context).scaffoldBackgroundColor,
       elevation: 8,
@@ -140,6 +144,16 @@ class ComentarioInput extends StatelessWidget {
                 controller: controller,
                 focusNode: focusNode,
                 enabled: !enviando,
+                style: esCita
+                    ? TextStyle(
+                        color: quoteColor,
+                        fontFamily: 'serif',
+                        fontSize: 18,
+                        fontStyle: FontStyle.italic,
+                        fontWeight: FontWeight.w600,
+                        height: 1.5,
+                      )
+                    : null,
                 minLines: esReflexion ? 4 : 3,
                 maxLines: esReflexion ? 4 : 3,
                 maxLength: 5000,
@@ -250,5 +264,10 @@ class ComentarioInput extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  Color _readableQuoteColor(Color color) {
+    if (color.computeLuminance() <= .52) return color;
+    return Color.lerp(color, Colors.black, .38)!;
   }
 }

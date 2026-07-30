@@ -173,8 +173,20 @@ class _FinalizarLibroDialogState extends State<FinalizarLibroDialog> {
                     ('AUDIOLIBRO', '🎧 Audiolibro'),
                   ])
                     ChoiceChip(
-                      label: Text(opcion.$2),
+                      label: Text(
+                        opcion.$2,
+                        style: TextStyle(
+                          color: formato == opcion.$1
+                              ? colorScheme.onPrimary
+                              : colorScheme.onSurface,
+                          fontWeight: formato == opcion.$1
+                              ? FontWeight.w800
+                              : FontWeight.w500,
+                        ),
+                      ),
                       selected: formato == opcion.$1,
+                      selectedColor: colorScheme.primary,
+                      checkmarkColor: colorScheme.onPrimary,
                       onSelected: (_) => setState(() => formato = opcion.$1),
                     ),
                 ],

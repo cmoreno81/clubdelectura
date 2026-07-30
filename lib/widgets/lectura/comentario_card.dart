@@ -291,6 +291,7 @@ class _ComentarioCardState extends State<ComentarioCard> {
   Widget build(BuildContext context) {
     final comentario = widget.comentario;
     final colorCita = _colorCita(comentario.color);
+    final colorTextoCita = _colorTextoCita(colorCita);
 
     if (comentario.eliminado) {
       return Padding(
@@ -420,10 +421,13 @@ class _ComentarioCardState extends State<ComentarioCard> {
                     Text(
                       '“${comentario.comentario}”',
                       style: AppTextStyles.body.copyWith(
-                        fontSize: 17,
+                        fontFamily: 'serif',
+                        fontSize: 18,
                         height: 1.55,
-                        color: AppColors.textPrimary,
+                        color: colorTextoCita,
                         fontStyle: FontStyle.italic,
+                        fontWeight: FontWeight.w600,
+                        letterSpacing: .1,
                       ),
                     ),
                   ],
@@ -591,6 +595,11 @@ class _ComentarioCardState extends State<ComentarioCard> {
       return AppColors.primary;
     }
     return Color(int.parse('FF$limpio', radix: 16));
+  }
+
+  Color _colorTextoCita(Color color) {
+    if (color.computeLuminance() <= .52) return color;
+    return Color.lerp(color, Colors.black, .38)!;
   }
 
   @override
