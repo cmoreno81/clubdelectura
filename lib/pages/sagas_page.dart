@@ -17,7 +17,6 @@ import '../widgets/perfil/perfil_saga_card.dart';
 import 'complete_series_page.dart';
 import 'detalle_libro_page.dart';
 import 'explore_catalog_page.dart';
-import 'perfil_usuario_page.dart';
 
 class SagasPage extends StatefulWidget {
   const SagasPage({super.key, this.showBackButton = false});
@@ -30,11 +29,20 @@ class SagasPage extends StatefulWidget {
 
 class _SagasPageState extends State<SagasPage> {
   late Future<PerfilUsuario> _future;
+  final _searchController = TextEditingController();
+  String _query = '';
+  String _filter = 'TODAS';
 
   @override
   void initState() {
     super.initState();
     _future = _load();
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
   }
 
   Future<PerfilUsuario> _load() async {
@@ -287,19 +295,6 @@ class _SagasPageState extends State<SagasPage> {
     }
   }
 
-  Future<void> _openUpToDateProfile() async {
-    final userName = (await UsuarioService().obtenerUsuario())?.trim() ?? '';
-    if (!mounted || userName.isEmpty) return;
-    await Navigator.push<void>(
-      context,
-      AppPageRoute(
-        builder: (_) =>
-            PerfilUsuarioPage(usuario: userName, focusUpToDateSeries: true),
-      ),
-    );
-    if (mounted) await _reload();
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -340,6 +335,11 @@ class _SagasPageState extends State<SagasPage> {
           final active = _byState(sagas, 'EN_CURSO');
           final upToDate = _byState(sagas, 'AL_DIA');
           final completed = _byState(sagas, 'COMPLETADA');
+          final visibleSagas = _visibleSagas(sagas);
+          final visiblePending = _byState(visibleSagas, 'PENDIENTE');
+          final visibleActive = _byState(visibleSagas, 'EN_CURSO');
+          final visibleUpToDate = _byState(visibleSagas, 'AL_DIA');
+          final visibleCompleted = _byState(visibleSagas, 'COMPLETADA');
 
           return RefreshIndicator(
             onRefresh: _reload,
@@ -356,32 +356,73 @@ class _SagasPageState extends State<SagasPage> {
                   total: sagas.length,
                   active: active.length,
                   upToDate: upToDate.length + completed.length,
-                  onUpToDateTap: _openUpToDateProfile,
                 ),
-                _section(
-                  title: 'En curso',
-                  subtitle: 'Universos que ya has empezado',
-                  icon: Icons.auto_stories_rounded,
-                  sagas: active,
+                const SizedBox(height: AppSpacing.md),
+                TextField(
+                  controller: _searchController,
+                  onChanged: (value) => setState(() => _query = value),
+                  textInputAction: TextInputAction.search,
+                  decoration: InputDecoration(
+                    hintText: 'Buscar una saga',
+                    prefixIcon: const Icon(Icons.search_rounded),
+                    suffixIcon: _query.isEmpty
+                        ? null
+                        : IconButton(
+                            tooltip: 'Borrar búsqueda',
+                            onPressed: () {
+                              _searchController.clear();
+                              setState(() => _query = '');
+                            },
+                            icon: const Icon(Icons.close_rounded),
+                          ),
+                  ),
                 ),
-                _section(
-                  title: 'Pendientes',
-                  subtitle: 'Sagas guardadas para cuando llegue su momento',
-                  icon: Icons.bookmark_border_rounded,
-                  sagas: pending,
+                const SizedBox(height: AppSpacing.sm),
+                _SagaFilters(
+                  selected: _filter,
+                  total: sagas.length,
+                  active: active.length,
+                  pending: pending.length,
+                  upToDate: upToDate.length,
+                  completed: completed.length,
+                  onSelected: (value) => setState(() => _filter = value),
                 ),
-                _section(
-                  title: 'Al día',
-                  subtitle: 'Has leído todo lo publicado hasta ahora',
-                  icon: Icons.update_rounded,
-                  sagas: upToDate,
-                ),
-                _section(
-                  title: 'Completadas',
-                  subtitle: 'Historias que ya forman parte de ti',
-                  icon: Icons.workspace_premium_outlined,
-                  sagas: completed,
-                ),
+                if (visibleSagas.isEmpty)
+                  const Padding(
+                    padding: EdgeInsets.only(top: AppSpacing.xl),
+                    child: ClubEmptyState(
+                      icon: Icons.search_off_rounded,
+                      title: 'No encontramos esa saga',
+                      message:
+                          'Prueba con otro nombre o cambia el filtro seleccionado.',
+                    ),
+                  )
+                else ...[
+                  _section(
+                    title: 'En curso',
+                    subtitle: 'Universos que ya has empezado',
+                    icon: Icons.auto_stories_rounded,
+                    sagas: visibleActive,
+                  ),
+                  _section(
+                    title: 'Pendientes',
+                    subtitle: 'Sagas guardadas para cuando llegue su momento',
+                    icon: Icons.bookmark_border_rounded,
+                    sagas: visiblePending,
+                  ),
+                  _section(
+                    title: 'Al día',
+                    subtitle: 'Has leído todo lo publicado hasta ahora',
+                    icon: Icons.update_rounded,
+                    sagas: visibleUpToDate,
+                  ),
+                  _section(
+                    title: 'Completadas',
+                    subtitle: 'Historias que ya forman parte de ti',
+                    icon: Icons.workspace_premium_outlined,
+                    sagas: visibleCompleted,
+                  ),
+                ],
               ],
             ),
           );
@@ -392,6 +433,21 @@ class _SagasPageState extends State<SagasPage> {
 
   List<PerfilSaga> _byState(List<PerfilSaga> sagas, String state) =>
       sagas.where((saga) => saga.estado == state).toList(growable: false);
+
+  List<PerfilSaga> _visibleSagas(List<PerfilSaga> sagas) {
+    final query = _query.trim().toLowerCase();
+    return sagas
+        .where((saga) {
+          final matchesFilter = _filter == 'TODAS' || saga.estado == _filter;
+          if (!matchesFilter) return false;
+          if (query.isEmpty) return true;
+          return saga.nombre.toLowerCase().contains(query) ||
+              saga.volumenes.any(
+                (volume) => volume.titulo.toLowerCase().contains(query),
+              );
+        })
+        .toList(growable: false);
+  }
 
   Widget _section({
     required String title,
@@ -434,13 +490,11 @@ class _SagaOverview extends StatelessWidget {
     required this.total,
     required this.active,
     required this.upToDate,
-    required this.onUpToDateTap,
   });
 
   final int total;
   final int active;
   final int upToDate;
-  final VoidCallback onUpToDateTap;
 
   @override
   Widget build(BuildContext context) {
@@ -479,36 +533,86 @@ class _SagaOverview extends StatelessWidget {
                   style: AppTextStyles.bodySecondary,
                 ),
                 const SizedBox(height: 5),
-                InkWell(
-                  borderRadius: BorderRadius.circular(8),
-                  onTap: onUpToDateTap,
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 2),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Text(
-                          '$upToDate ${upToDate == 1 ? 'saga al día' : 'sagas al día'}',
-                          style: const TextStyle(
-                            color: AppColors.primaryDark,
-                            fontWeight: FontWeight.w800,
-                            decoration: TextDecoration.underline,
-                          ),
-                        ),
-                        const SizedBox(width: 3),
-                        const Icon(
-                          Icons.arrow_forward_rounded,
-                          size: 16,
-                          color: AppColors.primaryDark,
-                        ),
-                      ],
-                    ),
+                Text(
+                  '$upToDate ${upToDate == 1 ? 'saga al día' : 'sagas al día'}',
+                  style: const TextStyle(
+                    color: AppColors.primaryDark,
+                    fontWeight: FontWeight.w800,
                   ),
                 ),
               ],
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _SagaFilters extends StatelessWidget {
+  const _SagaFilters({
+    required this.selected,
+    required this.total,
+    required this.active,
+    required this.pending,
+    required this.upToDate,
+    required this.completed,
+    required this.onSelected,
+  });
+
+  final String selected;
+  final int total;
+  final int active;
+  final int pending;
+  final int upToDate;
+  final int completed;
+  final ValueChanged<String> onSelected;
+
+  @override
+  Widget build(BuildContext context) {
+    final options = [
+      ('TODAS', 'Todas', total, Icons.view_week_outlined),
+      ('EN_CURSO', 'En curso', active, Icons.auto_stories_outlined),
+      ('PENDIENTE', 'Pendientes', pending, Icons.bookmark_border_rounded),
+      ('AL_DIA', 'Al día', upToDate, Icons.update_rounded),
+      (
+        'COMPLETADA',
+        'Completadas',
+        completed,
+        Icons.workspace_premium_outlined,
+      ),
+    ];
+
+    return SizedBox(
+      height: 40,
+      child: ListView.separated(
+        scrollDirection: Axis.horizontal,
+        itemCount: options.length,
+        separatorBuilder: (_, _) => const SizedBox(width: 7),
+        itemBuilder: (context, index) {
+          final option = options[index];
+          final isSelected = selected == option.$1;
+          return ChoiceChip(
+            selected: isSelected,
+            onSelected: (_) => onSelected(option.$1),
+            avatar: Icon(
+              option.$4,
+              size: 16,
+              color: isSelected ? Colors.white : AppColors.primary,
+            ),
+            label: Text('${option.$2}  ${option.$3}'),
+            labelStyle: TextStyle(
+              color: isSelected ? Colors.white : AppColors.textPrimary,
+              fontWeight: FontWeight.w700,
+            ),
+            selectedColor: AppColors.primary,
+            backgroundColor: AppColors.surfaceSoft,
+            side: BorderSide(
+              color: isSelected ? AppColors.primary : AppColors.border,
+            ),
+            showCheckmark: false,
+          );
+        },
       ),
     );
   }

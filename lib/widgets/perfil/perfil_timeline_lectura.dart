@@ -12,19 +12,24 @@ import '../common/club_rating_stars.dart';
 
 class PerfilTimelineLectura extends StatelessWidget {
   final List<PerfilLibroTerminado> libros;
+  final List<PerfilSaga> sagas;
   final ValueChanged<PerfilLibroTerminado>? onBookTap;
 
   const PerfilTimelineLectura({
     super.key,
     required this.libros,
+    required this.sagas,
     this.onBookTap,
   });
 
   @override
   Widget build(BuildContext context) {
     final grupos = _agruparPorAnio(libros);
+    final sagasPorAnio = _agruparSagasCompletadasPorAnio();
+    final years = {...grupos.keys, ...sagasPorAnio.keys}.toList()
+      ..sort((left, right) => right.compareTo(left));
 
-    if (grupos.isEmpty) {
+    if (years.isEmpty) {
       return ClubCard(
         elevated: false,
         padding: const EdgeInsets.all(AppSpacing.lg),
@@ -57,11 +62,12 @@ class PerfilTimelineLectura extends StatelessWidget {
     }
 
     return Column(
-      children: grupos.entries
+      children: years
           .map(
-            (grupo) => _GrupoAnioTimeline(
-              anio: grupo.key,
-              meses: grupo.value,
+            (year) => _GrupoAnioTimeline(
+              anio: year,
+              meses: grupos[year] ?? const {},
+              sagasCompletadas: sagasPorAnio[year] ?? const [],
               nombreMes: _nombreMes,
               onBookTap: onBookTap,
             ),
@@ -95,6 +101,44 @@ class PerfilTimelineLectura extends StatelessWidget {
     return grupos;
   }
 
+  Map<int, List<PerfilSaga>> _agruparSagasCompletadasPorAnio() {
+    final result = <int, List<PerfilSaga>>{};
+
+    for (final saga in sagas.where((item) => item.completada)) {
+      final volumeIds = saga.volumenes
+          .map((volume) => volume.bookId.trim())
+          .where((id) => id.isNotEmpty)
+          .toSet();
+      final volumeTitles = saga.volumenes
+          .map((volume) => volume.titulo.trim().toLowerCase())
+          .where((title) => title.isNotEmpty)
+          .toSet();
+
+      final completionDates = libros
+          .where(
+            (book) =>
+                volumeIds.contains(book.bookId.trim()) ||
+                volumeTitles.contains(book.libro.trim().toLowerCase()),
+          )
+          .map((book) => LecturaFechaUtils.parse(book.fechaFin))
+          .whereType<DateTime>()
+          .toList();
+
+      if (completionDates.isEmpty) continue;
+      completionDates.sort();
+      final year = completionDates.last.year;
+      result.putIfAbsent(year, () => []).add(saga);
+    }
+
+    for (final yearSagas in result.values) {
+      yearSagas.sort(
+        (left, right) =>
+            left.nombre.toLowerCase().compareTo(right.nombre.toLowerCase()),
+      );
+    }
+    return result;
+  }
+
   String _nombreMes(int mes) {
     const meses = [
       'ENERO',
@@ -122,12 +166,14 @@ class PerfilTimelineLectura extends StatelessWidget {
 class _GrupoAnioTimeline extends StatelessWidget {
   final int anio;
   final Map<int, List<PerfilLibroTerminado>> meses;
+  final List<PerfilSaga> sagasCompletadas;
   final String Function(int mes) nombreMes;
   final ValueChanged<PerfilLibroTerminado>? onBookTap;
 
   const _GrupoAnioTimeline({
     required this.anio,
     required this.meses,
+    required this.sagasCompletadas,
     required this.nombreMes,
     required this.onBookTap,
   });
@@ -165,15 +211,34 @@ class _GrupoAnioTimeline extends StatelessWidget {
                 const SizedBox(width: AppSpacing.sm),
                 Expanded(child: Divider(color: color.withValues(alpha: 0.25))),
                 const SizedBox(width: AppSpacing.sm),
-                Text(
-                  total == 1 ? '1 libro' : '$total libros',
-                  style: AppTextStyles.caption.copyWith(
-                    fontWeight: FontWeight.w700,
-                  ),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    Text(
+                      total == 1 ? '1 libro' : '$total libros',
+                      style: AppTextStyles.caption.copyWith(
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    if (sagasCompletadas.isNotEmpty)
+                      Text(
+                        sagasCompletadas.length == 1
+                            ? '1 saga completada'
+                            : '${sagasCompletadas.length} sagas completadas',
+                        style: AppTextStyles.caption.copyWith(
+                          color: const Color(0xFFB48113),
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
+                  ],
                 ),
               ],
             ),
             children: [
+              if (sagasCompletadas.isNotEmpty) ...[
+                _SagasCompletadasHito(sagas: sagasCompletadas),
+                const SizedBox(height: AppSpacing.md),
+              ],
               for (final mes in meses.entries) ...[
                 _GrupoMesTimeline(
                   titulo: nombreMes(mes.key),
@@ -186,6 +251,109 @@ class _GrupoAnioTimeline extends StatelessWidget {
             ],
           ),
         ),
+      ),
+    );
+  }
+}
+
+class _SagasCompletadasHito extends StatelessWidget {
+  const _SagasCompletadasHito({required this.sagas});
+
+  final List<PerfilSaga> sagas;
+
+  @override
+  Widget build(BuildContext context) {
+    const accent = Color(0xFFB48113);
+    return ClubCard(
+      elevated: false,
+      borderColor: const Color(0xFFE8C76E),
+      gradient: const LinearGradient(
+        begin: Alignment.topLeft,
+        end: Alignment.bottomRight,
+        colors: [Color(0xFFFFF9E9), Color(0xFFFFEBC0)],
+      ),
+      padding: const EdgeInsets.all(AppSpacing.md),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                width: 38,
+                height: 38,
+                decoration: const BoxDecoration(
+                  color: Color(0xFFFFE3A0),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(
+                  Icons.emoji_events_rounded,
+                  color: accent,
+                  size: 22,
+                ),
+              ),
+              const SizedBox(width: AppSpacing.sm),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      sagas.length == 1
+                          ? '¡Saga completada!'
+                          : '¡${sagas.length} sagas completadas!',
+                      style: AppTextStyles.subtitle.copyWith(
+                        color: accent,
+                        fontWeight: FontWeight.w900,
+                      ),
+                    ),
+                    Text(
+                      'Un universo más que ya forma parte de su historia.',
+                      style: AppTextStyles.caption,
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: AppSpacing.sm),
+          Wrap(
+            spacing: AppSpacing.xs,
+            runSpacing: AppSpacing.xs,
+            children: sagas
+                .map(
+                  (saga) => Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 11,
+                      vertical: 7,
+                    ),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: .72),
+                      borderRadius: BorderRadius.circular(AppRadius.pill),
+                      border: Border.all(color: accent.withValues(alpha: .22)),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(
+                          Icons.workspace_premium_rounded,
+                          color: accent,
+                          size: 16,
+                        ),
+                        const SizedBox(width: 5),
+                        Text(
+                          saga.nombre,
+                          style: const TextStyle(
+                            color: AppColors.textPrimary,
+                            fontWeight: FontWeight.w800,
+                            fontSize: 12,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                )
+                .toList(growable: false),
+          ),
+        ],
       ),
     );
   }

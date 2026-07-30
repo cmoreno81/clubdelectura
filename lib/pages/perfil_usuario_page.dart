@@ -4,9 +4,7 @@ import '../navigation/app_page_route.dart';
 import '../navigation/book_detail_navigation.dart';
 
 import '../models/perfil_usuario.dart';
-import '../models/libro_agrupado.dart';
 import '../services/api_service.dart';
-import '../services/api_exception.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_radius.dart';
 import '../theme/app_spacing.dart';
@@ -23,10 +21,8 @@ import '../widgets/perfil/editar_fechas_lectura_dialog.dart';
 import '../utils/lectura_fecha_utils.dart';
 import '../widgets/perfil/editar_avatar_dialog.dart';
 import '../widgets/perfil/perfil_timeline_lectura.dart';
-import '../widgets/perfil/perfil_saga_card.dart';
 import '../widgets/perfil/perfil_estanteria_mes.dart';
 import '../widgets/common/club_rating_stars.dart';
-import 'detalle_libro_page.dart';
 import 'acerca_de_page.dart';
 import 'change_password_page.dart';
 import 'goodreads_import_page.dart';
@@ -34,13 +30,8 @@ import '../services/auth_service.dart';
 
 class PerfilUsuarioPage extends StatefulWidget {
   final String usuario;
-  final bool focusUpToDateSeries;
 
-  const PerfilUsuarioPage({
-    super.key,
-    required this.usuario,
-    this.focusUpToDateSeries = false,
-  });
+  const PerfilUsuarioPage({super.key, required this.usuario});
 
   @override
   State<PerfilUsuarioPage> createState() => _PerfilUsuarioPageState();
@@ -191,149 +182,10 @@ class _FinalizadosYearGroup extends StatelessWidget {
   }
 }
 
-class _SagaProfileTabs extends StatelessWidget {
-  const _SagaProfileTabs({
-    required this.selected,
-    required this.upToDate,
-    required this.completed,
-    required this.active,
-    required this.pending,
-    required this.onSelected,
-  });
-
-  final String selected;
-  final int upToDate;
-  final int completed;
-  final int active;
-  final int pending;
-  final ValueChanged<String> onSelected;
-
-  @override
-  Widget build(BuildContext context) {
-    final options = [
-      ('AL_DIA', 'Al día', upToDate, Icons.update_rounded),
-      (
-        'COMPLETADA',
-        'Finalizadas',
-        completed,
-        Icons.workspace_premium_outlined,
-      ),
-      ('EN_CURSO', 'En curso', active, Icons.auto_stories_outlined),
-      ('PENDIENTE', 'Pendientes', pending, Icons.bookmark_border_rounded),
-    ];
-
-    return Container(
-      padding: const EdgeInsets.all(5),
-      decoration: BoxDecoration(
-        color: AppColors.surfaceSoft,
-        borderRadius: BorderRadius.circular(AppRadius.md),
-        border: Border.all(color: AppColors.border),
-      ),
-      child: LayoutBuilder(
-        builder: (context, constraints) {
-          final itemWidth = (constraints.maxWidth - 5) / 2;
-          return Wrap(
-            spacing: 5,
-            runSpacing: 5,
-            children: [
-              for (final option in options)
-                SizedBox(
-                  width: itemWidth,
-                  height: 41,
-                  child: Semantics(
-                    button: true,
-                    selected: selected == option.$1,
-                    label: '${option.$2}, ${option.$3} sagas',
-                    child: Material(
-                      color: Colors.transparent,
-                      child: InkWell(
-                        borderRadius: BorderRadius.circular(AppRadius.sm),
-                        onTap: () => onSelected(option.$1),
-                        child: AnimatedContainer(
-                          duration: const Duration(milliseconds: 160),
-                          padding: const EdgeInsets.symmetric(horizontal: 9),
-                          decoration: BoxDecoration(
-                            color: selected == option.$1
-                                ? AppColors.primary
-                                : Colors.white.withValues(alpha: .58),
-                            borderRadius: BorderRadius.circular(AppRadius.sm),
-                            border: Border.all(
-                              color: selected == option.$1
-                                  ? AppColors.primary
-                                  : AppColors.border.withValues(alpha: .75),
-                            ),
-                          ),
-                          child: Row(
-                            children: [
-                              Icon(
-                                option.$4,
-                                size: 17,
-                                color: selected == option.$1
-                                    ? Colors.white
-                                    : AppColors.primary,
-                              ),
-                              const SizedBox(width: 6),
-                              Expanded(
-                                child: Text(
-                                  option.$2,
-                                  maxLines: 1,
-                                  style: TextStyle(
-                                    color: selected == option.$1
-                                        ? Colors.white
-                                        : AppColors.textPrimary,
-                                    fontSize: 12,
-                                    fontWeight: FontWeight.w800,
-                                  ),
-                                ),
-                              ),
-                              Container(
-                                constraints: const BoxConstraints(minWidth: 22),
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 5,
-                                  vertical: 2,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: selected == option.$1
-                                      ? Colors.white.withValues(alpha: .18)
-                                      : AppColors.primaryLight,
-                                  borderRadius: BorderRadius.circular(
-                                    AppRadius.pill,
-                                  ),
-                                ),
-                                child: Text(
-                                  '${option.$3}',
-                                  textAlign: TextAlign.center,
-                                  style: TextStyle(
-                                    color: selected == option.$1
-                                        ? Colors.white
-                                        : AppColors.primaryDark,
-                                    fontSize: 11,
-                                    fontWeight: FontWeight.w900,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-            ],
-          );
-        },
-      ),
-    );
-  }
-}
-
 class _PerfilUsuarioPageState extends State<PerfilUsuarioPage> {
   late Future<PerfilUsuario> future;
   String? usuarioActual;
   String _menuPerfil = 'RESUMEN';
-  String _sagaFilter = 'AL_DIA';
-  final GlobalKey _upToDateSeriesKey = GlobalKey();
-  bool _didFocusUpToDateSeries = false;
 
   @override
   void initState() {
@@ -429,119 +281,6 @@ class _PerfilUsuarioPageState extends State<PerfilUsuarioPage> {
     }
   }
 
-  Future<void> _abrirFichaSaga(PerfilSagaVolumen volumen) async {
-    try {
-      final data = await ApiService().getLibrosData();
-      if (!mounted) return;
-
-      final registros = data.libros
-          .where(
-            (item) =>
-                item.bookId == volumen.bookId ||
-                item.libro.trim().toLowerCase() ==
-                    volumen.titulo.trim().toLowerCase(),
-          )
-          .toList();
-      final finalizados = data.finalizados
-          .where(
-            (item) =>
-                item.bookId == volumen.bookId ||
-                item.libro.trim().toLowerCase() ==
-                    volumen.titulo.trim().toLowerCase(),
-          )
-          .toList();
-
-      if (registros.isEmpty && finalizados.isEmpty) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text(
-              'Este volumen todavía no está disponible en el club activo.',
-            ),
-          ),
-        );
-        return;
-      }
-
-      final agrupado = LibroAgrupado(
-        libro: volumen.titulo,
-        genero: registros.isNotEmpty
-            ? registros.first.genero
-            : finalizados.first.genero,
-        registros: registros,
-        finalizados: finalizados,
-        yaLoTengo: registros.any((item) => item.yaLoTengo),
-        leidoPorMi: finalizados.any((item) => item.yaLoTengo),
-        coverUrl: volumen.coverUrl.isNotEmpty
-            ? volumen.coverUrl
-            : registros.isNotEmpty
-            ? registros.first.coverUrl
-            : finalizados.first.coverUrl,
-      );
-
-      await Navigator.push<void>(
-        context,
-        AppPageRoute(builder: (_) => DetalleLibroPage(libro: agrupado)),
-      );
-      if (mounted) await _recargar();
-    } catch (_) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('No se ha podido abrir la ficha.')),
-      );
-    }
-  }
-
-  Future<void> _editarNumeroSaga(PerfilSagaVolumen volumen) async {
-    final controller = TextEditingController(text: volumen.numero);
-    final numero = await showDialog<String>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Corregir número'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(volumen.titulo),
-            const SizedBox(height: AppSpacing.md),
-            TextField(
-              controller: controller,
-              autofocus: true,
-              keyboardType: const TextInputType.numberWithOptions(
-                decimal: true,
-              ),
-              decoration: const InputDecoration(labelText: 'Volumen'),
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancelar'),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.pop(context, controller.text.trim()),
-            child: const Text('Guardar'),
-          ),
-        ],
-      ),
-    );
-    controller.dispose();
-    if (numero == null || numero.isEmpty || !mounted) return;
-    try {
-      await ApiService().actualizarNumeroVolumenSaga(
-        bookId: volumen.bookId,
-        numero: numero,
-      );
-      if (mounted) await _recargar();
-    } on ApiException catch (error) {
-      if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text(error.message)));
-      }
-    }
-  }
-
   Future<void> _cargarUsuarioActual() async {
     final usuario = await UsuarioService().obtenerUsuario();
 
@@ -624,9 +363,9 @@ class _PerfilUsuarioPageState extends State<PerfilUsuarioPage> {
                 value: 'RESUMEN',
                 height: 70,
                 child: _ProfileMenuOption(
-                  icon: Icons.view_week_outlined,
-                  title: 'Mis sagas',
-                  subtitle: 'Estantería, sagas y preferencias',
+                  icon: Icons.person_outline_rounded,
+                  title: 'Resumen',
+                  subtitle: 'Tu identidad y cifras lectoras',
                   selected: _menuPerfil == 'RESUMEN',
                 ),
               ),
@@ -666,42 +405,6 @@ class _PerfilUsuarioPageState extends State<PerfilUsuarioPage> {
           }
 
           final perfil = snapshot.data!;
-          final upToDateSeries = perfil.sagas
-              .where((saga) => saga.alDia)
-              .toList(growable: false);
-          final completedSeries = perfil.sagas
-              .where((saga) => saga.completada)
-              .toList(growable: false);
-          final activeSeries = perfil.sagas
-              .where((saga) => saga.estado == 'EN_CURSO')
-              .toList(growable: false);
-          final pendingSeries = perfil.sagas
-              .where((saga) => saga.pendiente)
-              .toList(growable: false);
-          final selectedSeries = switch (_sagaFilter) {
-            'COMPLETADA' => completedSeries,
-            'EN_CURSO' => activeSeries,
-            'PENDIENTE' => pendingSeries,
-            _ => upToDateSeries,
-          };
-          final hasUpToDateSeries = upToDateSeries.isNotEmpty;
-          final hasSeries = perfil.sagas.isNotEmpty;
-          if (widget.focusUpToDateSeries &&
-              hasUpToDateSeries &&
-              !_didFocusUpToDateSeries) {
-            _didFocusUpToDateSeries = true;
-            WidgetsBinding.instance.addPostFrameCallback((_) {
-              final sectionContext = _upToDateSeriesKey.currentContext;
-              if (sectionContext != null) {
-                Scrollable.ensureVisible(
-                  sectionContext,
-                  duration: const Duration(milliseconds: 280),
-                  curve: Curves.easeOutCubic,
-                  alignment: .08,
-                );
-              }
-            });
-          }
 
           return RefreshIndicator(
             onRefresh: _recargar,
@@ -734,66 +437,6 @@ class _PerfilUsuarioPageState extends State<PerfilUsuarioPage> {
                   ),
                 ),
 
-                if (_menuPerfil == 'RESUMEN' && hasSeries) ...[
-                  const SizedBox(height: AppSpacing.xl),
-                  KeyedSubtree(
-                    key: _upToDateSeriesKey,
-                    child: ClubSectionTitle(
-                      title: 'Mis sagas',
-                      subtitle: esMiPerfil
-                          ? 'Tu recorrido por cada universo'
-                          : 'Su recorrido por cada universo',
-                      icon: Icons.view_week_outlined,
-                      padding: EdgeInsets.zero,
-                    ),
-                  ),
-                  const SizedBox(height: AppSpacing.sm),
-                  _SagaProfileTabs(
-                    selected: _sagaFilter,
-                    upToDate: upToDateSeries.length,
-                    completed: completedSeries.length,
-                    active: activeSeries.length,
-                    pending: pendingSeries.length,
-                    onSelected: (value) {
-                      if (_sagaFilter == value) return;
-                      setState(() => _sagaFilter = value);
-                    },
-                  ),
-                  const SizedBox(height: AppSpacing.md),
-                  if (selectedSeries.isEmpty)
-                    ClubEmptyState(
-                      icon: _sagaFilter == 'AL_DIA'
-                          ? Icons.update_rounded
-                          : _sagaFilter == 'COMPLETADA'
-                          ? Icons.workspace_premium_outlined
-                          : _sagaFilter == 'EN_CURSO'
-                          ? Icons.auto_stories_rounded
-                          : Icons.bookmark_border_rounded,
-                      title: _sagaFilter == 'AL_DIA'
-                          ? 'Todavía no hay sagas al día'
-                          : _sagaFilter == 'COMPLETADA'
-                          ? 'Todavía no hay sagas finalizadas'
-                          : _sagaFilter == 'EN_CURSO'
-                          ? 'No hay sagas en curso'
-                          : 'No hay sagas pendientes',
-                      message: _sagaFilter == 'EN_CURSO'
-                          ? 'Las sagas con alguna lectura empezada aparecerán aquí.'
-                          : 'Esta sección se actualizará con su biblioteca.',
-                    )
-                  else
-                    ...selectedSeries.map(
-                      (saga) => Padding(
-                        padding: const EdgeInsets.only(bottom: AppSpacing.md),
-                        child: PerfilSagaCard(
-                          saga: saga,
-                          onContinue: _abrirFichaSaga,
-                          onCompleteCatalog: null,
-                          onEditVolume: esMiPerfil ? _editarNumeroSaga : null,
-                        ),
-                      ),
-                    ),
-                ],
-
                 if (_menuPerfil == 'TIMELINE' &&
                     perfil.terminados.isNotEmpty) ...[
                   const SizedBox(height: AppSpacing.xl),
@@ -808,6 +451,7 @@ class _PerfilUsuarioPageState extends State<PerfilUsuarioPage> {
 
                   PerfilTimelineLectura(
                     libros: perfil.terminados,
+                    sagas: perfil.sagas,
                     onBookTap: (libro) => openBookDetail(
                       context,
                       title: libro.libro,
