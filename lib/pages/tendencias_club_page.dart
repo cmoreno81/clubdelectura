@@ -1,6 +1,9 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 
 import '../navigation/app_page_route.dart';
+import '../navigation/book_detail_navigation.dart';
 
 import '../models/tendencias_club.dart';
 import '../services/api_service.dart';
@@ -9,6 +12,7 @@ import '../theme/app_radius.dart';
 import '../theme/app_spacing.dart';
 import '../theme/app_text_styles.dart';
 import '../widgets/common/club_avatar.dart';
+import '../widgets/common/club_book_cover.dart';
 import '../widgets/common/club_card.dart';
 import '../widgets/common/club_chip.dart';
 import '../widgets/error_view.dart';
@@ -72,8 +76,6 @@ class _TendenciasClubPageState extends State<TendenciasClubPage> {
           final data = snapshot.data!;
 
           final maxGenero = _max(data.generos);
-          final maxLibro = _max(data.libros);
-
           return RefreshIndicator(
             onRefresh: _refrescar,
             child: ListView(
@@ -104,6 +106,8 @@ class _TendenciasClubPageState extends State<TendenciasClubPage> {
                     padding: const EdgeInsets.all(AppSpacing.sm),
                     child: Column(
                       children: [
+                        _GenreDistribution(items: data.generos),
+                        const SizedBox(height: AppSpacing.sm),
                         for (
                           var index = 0;
                           index < data.generos.length;
@@ -134,20 +138,31 @@ class _TendenciasClubPageState extends State<TendenciasClubPage> {
                     icon: Icons.local_fire_department_outlined,
                     color: Color(0xFFE98325),
                     title: 'Libros que están ardiendo',
-                    subtitle: 'Las lecturas que más coinciden entre lectoras',
+                    subtitle: 'Las lecturas que más coinciden entre lectores',
                   ),
 
                   const SizedBox(height: AppSpacing.md),
 
-                  for (var index = 0; index < data.libros.length; index++) ...[
-                    _LibroTendenciaCard(
-                      posicion: index,
-                      item: data.libros[index],
-                      maximo: maxLibro,
+                  SizedBox(
+                    height: 254,
+                    child: ListView.separated(
+                      scrollDirection: Axis.horizontal,
+                      clipBehavior: Clip.none,
+                      itemCount: data.libros.length,
+                      separatorBuilder: (_, _) =>
+                          const SizedBox(width: AppSpacing.md),
+                      itemBuilder: (context, index) => _LibroTendenciaCard(
+                        posicion: index,
+                        item: data.libros[index],
+                        onTap: () => openBookDetail(
+                          context,
+                          title: data.libros[index].nombre,
+                          bookId: data.libros[index].id,
+                          coverUrl: data.libros[index].coverUrl,
+                        ),
+                      ),
                     ),
-
-                    const SizedBox(height: AppSpacing.md),
-                  ],
+                  ),
                 ],
 
                 if (data.lectoras.isNotEmpty) ...[
@@ -157,37 +172,25 @@ class _TendenciasClubPageState extends State<TendenciasClubPage> {
                     icon: Icons.auto_awesome_rounded,
                     color: AppColors.primary,
                     title: 'Quién marca tendencia',
-                    subtitle: 'Las lectoras con más historias entre manos',
+                    subtitle: 'Los lectores con más historias entre manos',
                   ),
 
                   const SizedBox(height: AppSpacing.md),
 
-                  ClubCard(
-                    elevated: false,
-                    padding: const EdgeInsets.all(AppSpacing.sm),
-                    child: Column(
-                      children: [
-                        for (
-                          var index = 0;
-                          index < data.lectoras.length;
-                          index++
-                        ) ...[
-                          _LectoraTendenciaItem(
-                            posicion: index,
-                            nombre: data.lectoras[index].nombre,
-                            total: data.lectoras[index].total,
-                            onTap: () =>
-                                _abrirPerfil(data.lectoras[index].nombre),
-                          ),
-
-                          if (index < data.lectoras.length - 1)
-                            const Divider(
-                              height: 1,
-                              indent: AppSpacing.md,
-                              endIndent: AppSpacing.md,
-                            ),
-                        ],
-                      ],
+                  SizedBox(
+                    height: 188,
+                    child: ListView.separated(
+                      scrollDirection: Axis.horizontal,
+                      clipBehavior: Clip.none,
+                      itemCount: data.lectoras.length,
+                      separatorBuilder: (_, _) =>
+                          const SizedBox(width: AppSpacing.md),
+                      itemBuilder: (context, index) => _LectoraTendenciaItem(
+                        posicion: index,
+                        item: data.lectoras[index],
+                        maximo: _max(data.lectoras),
+                        onTap: () => _abrirPerfil(data.lectoras[index].nombre),
+                      ),
                     ),
                   ),
                 ],
@@ -230,51 +233,58 @@ class _TendenciasHeader extends StatelessWidget {
       ),
       borderColor: const Color(0xFFCDE8D5),
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Container(
-            width: 78,
-            height: 78,
-            decoration: const BoxDecoration(
-              color: Color(0xFFDDF2E4),
-              shape: BoxShape.circle,
-            ),
-            child: const Icon(
-              Icons.trending_up_rounded,
-              color: AppColors.success,
-              size: 40,
-            ),
-          ),
-
-          const SizedBox(height: AppSpacing.md),
-
-          Text(
-            'Lo que está pasando',
-            textAlign: TextAlign.center,
-            style: AppTextStyles.title.copyWith(fontSize: 29),
-          ),
-
-          const SizedBox(height: AppSpacing.sm),
-
-          Text(
-            data.titular.trim().isEmpty
-                ? 'El club está repartido entre muchas historias.'
-                : data.titular,
-            textAlign: TextAlign.center,
-            style: AppTextStyles.section.copyWith(
-              color: AppColors.textPrimary,
-              height: 1.3,
-            ),
+          Row(
+            children: [
+              _TrendDonut(data: data),
+              const SizedBox(width: AppSpacing.lg),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'El pulso del club',
+                      style: AppTextStyles.caption.copyWith(
+                        color: AppColors.success,
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: .8,
+                      ),
+                    ),
+                    const SizedBox(height: AppSpacing.xs),
+                    Text(
+                      data.titular.trim().isEmpty
+                          ? 'Muchas historias, un mismo momento lector.'
+                          : data.titular,
+                      style: AppTextStyles.section.copyWith(
+                        color: AppColors.textPrimary,
+                        height: 1.2,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
           ),
 
           if (data.narrador.trim().isNotEmpty) ...[
-            const SizedBox(height: AppSpacing.md),
-
-            Text(
-              data.narrador,
-              textAlign: TextAlign.center,
-              style: AppTextStyles.bodySecondary.copyWith(
-                height: 1.5,
-                fontStyle: FontStyle.italic,
+            const SizedBox(height: AppSpacing.lg),
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(AppSpacing.md),
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: .70),
+                borderRadius: BorderRadius.circular(AppRadius.lg),
+                border: Border.all(
+                  color: AppColors.success.withValues(alpha: .15),
+                ),
+              ),
+              child: Text(
+                data.narrador,
+                style: AppTextStyles.bodySecondary.copyWith(
+                  height: 1.45,
+                  fontStyle: FontStyle.italic,
+                ),
               ),
             ),
           ],
@@ -282,7 +292,7 @@ class _TendenciasHeader extends StatelessWidget {
           const SizedBox(height: AppSpacing.lg),
 
           Wrap(
-            alignment: WrapAlignment.center,
+            alignment: WrapAlignment.start,
             spacing: AppSpacing.sm,
             runSpacing: AppSpacing.sm,
             children: [
@@ -299,6 +309,178 @@ class _TendenciasHeader extends StatelessWidget {
                       '${data.generos.length} ${data.generos.length == 1 ? 'género' : 'géneros'}',
                   icon: Icons.sell_outlined,
                   variant: ClubChipVariant.info,
+                ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+const _trendColors = [
+  Color(0xFF6D4590),
+  Color(0xFFE56F61),
+  Color(0xFFE4A927),
+  Color(0xFF58A486),
+  Color(0xFF6D8FD6),
+];
+
+class _TrendDonut extends StatelessWidget {
+  const _TrendDonut({required this.data});
+
+  final TendenciasClub data;
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: 106,
+      height: 106,
+      child: Stack(
+        alignment: Alignment.center,
+        children: [
+          CustomPaint(
+            size: const Size.square(106),
+            painter: _DonutPainter(
+              values: data.generos.map((item) => item.total).toList(),
+            ),
+          ),
+          Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                '${data.totalLeyendo}',
+                style: AppTextStyles.title.copyWith(
+                  color: AppColors.primary,
+                  fontSize: 27,
+                ),
+              ),
+              Text(
+                'leyendo',
+                style: AppTextStyles.caption.copyWith(
+                  color: AppColors.textMuted,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _DonutPainter extends CustomPainter {
+  const _DonutPainter({required this.values});
+
+  final List<int> values;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final rect = Offset.zero & size;
+    final stroke = size.width * .12;
+    final paint = Paint()
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = stroke
+      ..strokeCap = StrokeCap.round;
+    final total = values.fold<int>(0, (sum, value) => sum + value);
+
+    if (total == 0) {
+      paint.color = AppColors.border;
+      canvas.drawArc(rect.deflate(stroke / 2), 0, math.pi * 2, false, paint);
+      return;
+    }
+
+    var start = -math.pi / 2;
+    const gap = .07;
+    for (var index = 0; index < values.length; index++) {
+      final sweep = (values[index] / total) * math.pi * 2;
+      paint.color = _trendColors[index % _trendColors.length];
+      canvas.drawArc(
+        rect.deflate(stroke / 2),
+        start + gap / 2,
+        math.max(0, sweep - gap),
+        false,
+        paint,
+      );
+      start += sweep;
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant _DonutPainter oldDelegate) {
+    return oldDelegate.values.join(',') != values.join(',');
+  }
+}
+
+class _GenreDistribution extends StatelessWidget {
+  const _GenreDistribution({required this.items});
+
+  final List<TendenciaItem> items;
+
+  @override
+  Widget build(BuildContext context) {
+    final total = items.fold<int>(0, (sum, item) => sum + item.total);
+    if (total == 0) return const SizedBox.shrink();
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(
+        AppSpacing.md,
+        AppSpacing.md,
+        AppSpacing.md,
+        0,
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Mapa de gustos ahora',
+            style: AppTextStyles.caption.copyWith(
+              color: AppColors.textMuted,
+              fontWeight: FontWeight.w800,
+            ),
+          ),
+          const SizedBox(height: AppSpacing.sm),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(AppRadius.pill),
+            child: SizedBox(
+              height: 18,
+              child: Row(
+                children: [
+                  for (var index = 0; index < items.length; index++)
+                    Expanded(
+                      flex: items[index].total,
+                      child: ColoredBox(
+                        color: _trendColors[index % _trendColors.length],
+                      ),
+                    ),
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(height: AppSpacing.sm),
+          Wrap(
+            spacing: AppSpacing.md,
+            runSpacing: AppSpacing.xs,
+            children: [
+              for (var index = 0; index < items.length; index++)
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Container(
+                      width: 8,
+                      height: 8,
+                      decoration: BoxDecoration(
+                        color: _trendColors[index % _trendColors.length],
+                        shape: BoxShape.circle,
+                      ),
+                    ),
+                    const SizedBox(width: 5),
+                    Text(
+                      '${items[index].nombre} ${(items[index].total / total * 100).round()}%',
+                      style: AppTextStyles.caption,
+                    ),
+                  ],
                 ),
             ],
           ),
@@ -427,7 +609,7 @@ class _GeneroItem extends StatelessWidget {
                     const SizedBox(height: AppSpacing.xs),
 
                     Text(
-                      item.total == 1 ? '1 lectora' : '${item.total} lectoras',
+                      item.total == 1 ? '1 lector' : '${item.total} lectores',
                       style: AppTextStyles.caption,
                     ),
                   ],
@@ -466,112 +648,124 @@ class _GeneroItem extends StatelessWidget {
 class _LibroTendenciaCard extends StatelessWidget {
   final int posicion;
   final TendenciaItem item;
-  final int maximo;
+  final VoidCallback onTap;
 
   const _LibroTendenciaCard({
     required this.posicion,
     required this.item,
-    required this.maximo,
+    required this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
-    final progreso = maximo == 0 ? 0.0 : item.total / maximo;
-
     final primero = posicion == 0;
+    final color = switch (posicion) {
+      0 => const Color(0xFFE4A927),
+      1 => const Color(0xFF9AA3AF),
+      2 => const Color(0xFFB77948),
+      _ => const Color(0xFFE98325),
+    };
 
-    return ClubCard(
-      elevated: primero,
-      padding: const EdgeInsets.all(AppSpacing.lg),
-      gradient: primero
-          ? const LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [Color(0xFFFFF8EC), Color(0xFFFFF0D8)],
-            )
-          : null,
-      backgroundColor: primero ? null : AppColors.surface,
-      borderColor: primero ? const Color(0xFFF1D7A8) : AppColors.border,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Container(
-                width: 56,
-                height: 56,
-                decoration: BoxDecoration(
-                  color: primero
-                      ? const Color(0xFFFFE6BD)
-                      : const Color(0xFFFFF2E3),
-                  borderRadius: BorderRadius.circular(AppRadius.lg),
+    return SizedBox(
+      width: 154,
+      child: ClubCard(
+        elevated: primero,
+        padding: const EdgeInsets.all(AppSpacing.sm),
+        gradient: primero
+            ? const LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [Color(0xFFFFF8EC), Color(0xFFFFE9C8)],
+              )
+            : null,
+        backgroundColor: primero ? null : AppColors.surface,
+        borderColor: color.withValues(alpha: .35),
+        onTap: onTap,
+        child: Column(
+          children: [
+            Stack(
+              clipBehavior: Clip.none,
+              children: [
+                ClubBookCover(
+                  title: item.nombre,
+                  imageUrl: item.coverUrl,
+                  width: 94,
+                  height: 138,
+                  borderRadius: BorderRadius.circular(AppRadius.md),
                 ),
-                child: Icon(
-                  primero
-                      ? Icons.local_fire_department_rounded
-                      : Icons.auto_stories_outlined,
-                  color: const Color(0xFFE98325),
-                  size: 29,
-                ),
-              ),
-
-              const SizedBox(width: AppSpacing.md),
-
-              Expanded(
-                child: Text(
-                  item.nombre,
-                  maxLines: 3,
-                  overflow: TextOverflow.ellipsis,
-                  style: AppTextStyles.section.copyWith(
-                    color: AppColors.textPrimary,
-                    fontWeight: FontWeight.w800,
-                    height: 1.2,
+                Positioned(
+                  top: -7,
+                  left: -7,
+                  child: Container(
+                    width: 34,
+                    height: 34,
+                    alignment: Alignment.center,
+                    decoration: BoxDecoration(
+                      color: color,
+                      shape: BoxShape.circle,
+                      border: Border.all(color: Colors.white, width: 2.5),
+                      boxShadow: [
+                        BoxShadow(
+                          color: color.withValues(alpha: .30),
+                          blurRadius: 8,
+                          offset: const Offset(0, 3),
+                        ),
+                      ],
+                    ),
+                    child: Icon(
+                      posicion == 0
+                          ? Icons.local_fire_department_rounded
+                          : posicion < 3
+                          ? Icons.workspace_premium_rounded
+                          : Icons.trending_up_rounded,
+                      color: Colors.white,
+                      size: 19,
+                    ),
                   ),
                 ),
-              ),
-
-              if (primero)
-                const ClubChip(
-                  label: 'En llamas',
-                  icon: Icons.local_fire_department_rounded,
-                  variant: ClubChipVariant.warning,
-                )
-              else
-                Text(
-                  '#${posicion + 1}',
-                  style: AppTextStyles.subtitle.copyWith(
-                    color: AppColors.textMuted,
+                Positioned(
+                  bottom: -5,
+                  right: -7,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 4,
+                    ),
+                    decoration: BoxDecoration(
+                      color: AppColors.primary,
+                      borderRadius: BorderRadius.circular(AppRadius.pill),
+                      border: Border.all(color: Colors.white, width: 2),
+                    ),
+                    child: Text(
+                      '#${posicion + 1}',
+                      style: AppTextStyles.caption.copyWith(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w900,
+                      ),
+                    ),
                   ),
                 ),
-            ],
-          ),
-
-          const SizedBox(height: AppSpacing.md),
-
-          Row(
-            children: [
-              ClubChip(
-                label: item.total == 1 ? '1 lectora' : '${item.total} lectoras',
-                icon: Icons.groups_2_outlined,
-                variant: ClubChipVariant.info,
-              ),
-            ],
-          ),
-
-          const SizedBox(height: AppSpacing.md),
-
-          ClipRRect(
-            borderRadius: BorderRadius.circular(AppRadius.pill),
-            child: LinearProgressIndicator(
-              value: progreso.clamp(0.0, 1.0),
-              minHeight: 9,
-              backgroundColor: const Color(0xFFE98325).withValues(alpha: 0.10),
-              valueColor: const AlwaysStoppedAnimation<Color>(
-                Color(0xFFE98325),
+              ],
+            ),
+            const SizedBox(height: AppSpacing.md),
+            Text(
+              item.nombre,
+              maxLines: 2,
+              textAlign: TextAlign.center,
+              overflow: TextOverflow.ellipsis,
+              style: AppTextStyles.body.copyWith(
+                color: AppColors.textPrimary,
+                fontWeight: FontWeight.w800,
+                height: 1.15,
               ),
             ),
-          ),
-        ],
+            const SizedBox(height: AppSpacing.xs),
+            Text(
+              item.total == 1 ? '1 lector' : '${item.total} lectores',
+              style: AppTextStyles.caption.copyWith(color: color),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -579,14 +773,14 @@ class _LibroTendenciaCard extends StatelessWidget {
 
 class _LectoraTendenciaItem extends StatelessWidget {
   final int posicion;
-  final String nombre;
-  final int total;
+  final TendenciaItem item;
+  final int maximo;
   final VoidCallback onTap;
 
   const _LectoraTendenciaItem({
     required this.posicion,
-    required this.nombre,
-    required this.total,
+    required this.item,
+    required this.maximo,
     required this.onTap,
   });
 
@@ -599,77 +793,75 @@ class _LectoraTendenciaItem extends StatelessWidget {
       _ => AppColors.primary,
     };
 
-    return InkWell(
-      borderRadius: BorderRadius.circular(AppRadius.lg),
-      onTap: onTap,
-      child: Padding(
+    final progreso = maximo == 0 ? 0.0 : item.total / maximo;
+
+    return SizedBox(
+      width: 142,
+      child: ClubCard(
+        elevated: posicion == 0,
         padding: const EdgeInsets.all(AppSpacing.md),
-        child: Row(
+        onTap: onTap,
+        borderColor: color.withValues(alpha: .30),
+        child: Column(
           children: [
-            Container(
-              width: 44,
-              height: 44,
-              decoration: BoxDecoration(
-                color: color.withValues(alpha: 0.13),
-                shape: BoxShape.circle,
-              ),
-              alignment: Alignment.center,
-              child: posicion < 3
-                  ? Text(switch (posicion) {
-                      0 => '🥇',
-                      1 => '🥈',
-                      _ => '🥉',
-                    }, style: const TextStyle(fontSize: 21))
-                  : Text(
+            Stack(
+              clipBehavior: Clip.none,
+              children: [
+                ClubAvatar(
+                  nombre: item.nombre,
+                  imageUrl: item.avatarUrl,
+                  size: 70,
+                ),
+                Positioned(
+                  left: -10,
+                  top: -6,
+                  child: Container(
+                    width: 30,
+                    height: 30,
+                    alignment: Alignment.center,
+                    decoration: BoxDecoration(
+                      color: color,
+                      shape: BoxShape.circle,
+                      border: Border.all(color: Colors.white, width: 2),
+                    ),
+                    child: Text(
                       '${posicion + 1}',
-                      style: TextStyle(
-                        color: color,
-                        fontWeight: FontWeight.w800,
+                      style: AppTextStyles.caption.copyWith(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w900,
                       ),
                     ),
-            ),
-
-            const SizedBox(width: AppSpacing.sm),
-
-            ClubAvatar(nombre: nombre, size: 50),
-
-            const SizedBox(width: AppSpacing.md),
-
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    nombre,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                    style: AppTextStyles.subtitle.copyWith(
-                      color: AppColors.textPrimary,
-                      fontWeight: FontWeight.w800,
-                    ),
                   ),
-
-                  const SizedBox(height: AppSpacing.xs),
-
-                  Text(
-                    total == 1 ? '1 lectura activa' : '$total lecturas activas',
-                    style: AppTextStyles.caption,
-                  ),
-                ],
-              ),
+                ),
+              ],
             ),
-
+            const SizedBox(height: AppSpacing.sm),
             Text(
-              '$total',
-              style: AppTextStyles.section.copyWith(
-                color: AppColors.primary,
+              item.nombre,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: AppTextStyles.body.copyWith(
+                color: AppColors.textPrimary,
                 fontWeight: FontWeight.w800,
               ),
             ),
-
-            const SizedBox(width: AppSpacing.xs),
-
-            const Icon(Icons.chevron_right_rounded, color: AppColors.textMuted),
+            const SizedBox(height: AppSpacing.xs),
+            Text(
+              item.total == 1
+                  ? '1 lectura activa'
+                  : '${item.total} lecturas activas',
+              style: AppTextStyles.caption,
+            ),
+            const Spacer(),
+            ClipRRect(
+              borderRadius: BorderRadius.circular(AppRadius.pill),
+              child: LinearProgressIndicator(
+                value: progreso.clamp(0.0, 1.0),
+                minHeight: 6,
+                backgroundColor: color.withValues(alpha: .12),
+                valueColor: AlwaysStoppedAnimation<Color>(color),
+              ),
+            ),
           ],
         ),
       ),
@@ -705,7 +897,7 @@ class _TendenciasVacias extends StatelessWidget {
           SizedBox(height: AppSpacing.sm),
 
           Text(
-            'Cuando el club empiece nuevas lecturas, aparecerán aquí los géneros, libros y lectoras más activos.',
+            'Cuando el club empiece nuevas lecturas, aparecerán aquí los géneros, libros y lectores más activos.',
             textAlign: TextAlign.center,
             style: AppTextStyles.bodySecondary,
           ),

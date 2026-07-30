@@ -24,6 +24,7 @@ import 'home_page.dart';
 import 'explore_catalog_page.dart';
 import 'detalle_libro_page.dart';
 import 'monthly_reading_share_page.dart';
+import 'perfil_usuario_page.dart';
 import 'sagas_page.dart';
 import 'year_reading_share_page.dart';
 
@@ -104,6 +105,14 @@ class _GeneralDashboardPageState extends State<GeneralDashboardPage> {
     await Navigator.push<void>(
       context,
       AppPageRoute(builder: (_) => const SagasPage(showBackButton: true)),
+    );
+    if (mounted) await _reload();
+  }
+
+  Future<void> _openMyProfile(String userName) async {
+    await Navigator.push<void>(
+      context,
+      AppPageRoute(builder: (_) => PerfilUsuarioPage(usuario: userName)),
     );
     if (mounted) await _reload();
   }
@@ -347,6 +356,7 @@ class _GeneralDashboardPageState extends State<GeneralDashboardPage> {
 
   Widget _hero(GeneralDashboard data) {
     return ClubCard(
+      onTap: () => _openMyProfile(data.userName),
       gradient: const LinearGradient(
         begin: Alignment.topLeft,
         end: Alignment.bottomRight,
@@ -378,6 +388,12 @@ class _GeneralDashboardPageState extends State<GeneralDashboardPage> {
                 ),
               ],
             ),
+          ),
+          const SizedBox(width: AppSpacing.sm),
+          const Icon(
+            Icons.chevron_right_rounded,
+            color: Colors.white,
+            size: 25,
           ),
         ],
       ),

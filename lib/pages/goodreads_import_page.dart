@@ -29,6 +29,8 @@ class _GoodreadsImportPageState extends State<GoodreadsImportPage> {
   String _fileName = '';
   String _error = '';
   bool _loading = false;
+  bool _showAll = false;
+  Set<int> _selectedRows = <int>{};
 
   Future<void> _selectFile() async {
     if (_loading) return;
@@ -37,6 +39,8 @@ class _GoodreadsImportPageState extends State<GoodreadsImportPage> {
       _error = '';
       _preview = null;
       _result = null;
+      _selectedRows = <int>{};
+      _showAll = false;
     });
     try {
       const typeGroup = XTypeGroup(
@@ -58,6 +62,10 @@ class _GoodreadsImportPageState extends State<GoodreadsImportPage> {
       setState(() {
         _rows = rows;
         _preview = preview;
+        _selectedRows = preview.books
+            .where((book) => book.canImport)
+            .map((book) => book.index)
+            .toSet();
       });
     } on FormatException catch (error) {
       if (mounted) setState(() => _error = error.message);
@@ -90,13 +98,19 @@ class _GoodreadsImportPageState extends State<GoodreadsImportPage> {
 
   Future<void> _confirm() async {
     final preview = _preview;
-    if (_loading || preview == null || preview.summary.imported == 0) return;
+    if (_loading || preview == null || _selectedRows.isEmpty) return;
     setState(() {
       _loading = true;
       _error = '';
     });
     try {
-      final result = await _api.confirmarImportacionGoodreads(_rows);
+      final selectedRows = _rows
+          .asMap()
+          .entries
+          .where((entry) => _selectedRows.contains(entry.key))
+          .map((entry) => entry.value)
+          .toList(growable: false);
+      final result = await _api.confirmarImportacionGoodreads(selectedRows);
       if (!mounted) return;
       setState(() => _result = result);
     } on ApiException catch (error) {
@@ -162,28 +176,65 @@ class _GoodreadsImportPageState extends State<GoodreadsImportPage> {
           else if (preview != null) ...[
             _PreviewSummary(summary: preview.summary),
             const SizedBox(height: AppSpacing.lg),
-            const ClubSectionTitle(
+            ClubSectionTitle(
               title: 'Revisión previa',
-              subtitle: 'Nada se guardará hasta que confirmes',
+              subtitle:
+                  '${_selectedRows.length} seleccionados · Nada se guardará hasta que confirmes',
               icon: Icons.fact_check_outlined,
               padding: EdgeInsets.zero,
             ),
             const SizedBox(height: AppSpacing.sm),
+            _SelectionControls(
+              selected: _selectedRows.length,
+              total: preview.books.where((book) => book.canImport).length,
+              onSelectAll: () {
+                setState(() {
+                  _selectedRows = preview.books
+                      .where((book) => book.canImport)
+                      .map((book) => book.index)
+                      .toSet();
+                });
+              },
+              onClear: () => setState(_selectedRows.clear),
+            ),
+            const SizedBox(height: AppSpacing.sm),
             ...preview.books
-                .take(60)
+                .take(_showAll ? preview.books.length : 60)
                 .map(
                   (book) => Padding(
                     padding: const EdgeInsets.only(bottom: AppSpacing.xs),
-                    child: _PreviewBookTile(book: book),
+                    child: _PreviewBookTile(
+                      book: book,
+                      selected: _selectedRows.contains(book.index),
+                      onChanged: book.canImport
+                          ? (selected) {
+                              setState(() {
+                                if (selected) {
+                                  _selectedRows.add(book.index);
+                                } else {
+                                  _selectedRows.remove(book.index);
+                                }
+                              });
+                            }
+                          : null,
+                    ),
                   ),
                 ),
             if (preview.books.length > 60)
               Padding(
                 padding: const EdgeInsets.all(AppSpacing.sm),
-                child: Text(
-                  'Y ${preview.books.length - 60} libros más.',
-                  textAlign: TextAlign.center,
-                  style: const TextStyle(color: AppColors.textSecondary),
+                child: TextButton.icon(
+                  onPressed: () => setState(() => _showAll = !_showAll),
+                  icon: Icon(
+                    _showAll
+                        ? Icons.expand_less_rounded
+                        : Icons.expand_more_rounded,
+                  ),
+                  label: Text(
+                    _showAll
+                        ? 'Mostrar menos'
+                        : 'Revisar los ${preview.books.length} libros',
+                  ),
                 ),
               ),
           ] else
@@ -209,11 +260,11 @@ class _GoodreadsImportPageState extends State<GoodreadsImportPage> {
                   const SizedBox(width: AppSpacing.sm),
                   Expanded(
                     child: FilledButton.icon(
-                      onPressed: _loading || preview.summary.imported == 0
+                      onPressed: _loading || _selectedRows.isEmpty
                           ? null
                           : _confirm,
                       icon: const Icon(Icons.download_done_rounded),
-                      label: Text('Importar ${preview.summary.imported}'),
+                      label: Text('Importar ${_selectedRows.length}'),
                     ),
                   ),
                 ],
@@ -440,10 +491,60 @@ class _SummaryChip extends StatelessWidget {
   }
 }
 
+class _SelectionControls extends StatelessWidget {
+  const _SelectionControls({
+    required this.selected,
+    required this.total,
+    required this.onSelectAll,
+    required this.onClear,
+  });
+
+  final int selected;
+  final int total;
+  final VoidCallback onSelectAll;
+  final VoidCallback onClear;
+
+  @override
+  Widget build(BuildContext context) {
+    return ClubCard(
+      elevated: false,
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.md,
+        vertical: AppSpacing.sm,
+      ),
+      backgroundColor: AppColors.primaryLight.withValues(alpha: .42),
+      child: Row(
+        children: [
+          Expanded(
+            child: Text(
+              '$selected de $total para importar',
+              style: const TextStyle(fontWeight: FontWeight.w800),
+            ),
+          ),
+          TextButton(
+            onPressed: selected == total ? null : onSelectAll,
+            child: const Text('Todos'),
+          ),
+          TextButton(
+            onPressed: selected == 0 ? null : onClear,
+            child: const Text('Ninguno'),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 class _PreviewBookTile extends StatelessWidget {
-  const _PreviewBookTile({required this.book});
+  const _PreviewBookTile({
+    required this.book,
+    required this.selected,
+    required this.onChanged,
+  });
 
   final GoodreadsImportPreviewBook book;
+  final bool selected;
+  final ValueChanged<bool>? onChanged;
 
   @override
   Widget build(BuildContext context) {
@@ -457,17 +558,28 @@ class _PreviewBookTile extends StatelessWidget {
     return ClubCard(
       elevated: false,
       padding: const EdgeInsets.all(AppSpacing.sm),
+      backgroundColor: onChanged != null && !selected
+          ? AppColors.surfaceSoft.withValues(alpha: .62)
+          : null,
+      onTap: onChanged == null ? null : () => onChanged!(!selected),
       child: Row(
         children: [
-          Container(
-            width: 40,
-            height: 40,
-            decoration: BoxDecoration(
-              color: color.withValues(alpha: .1),
-              borderRadius: BorderRadius.circular(AppRadius.md),
+          if (onChanged != null)
+            Checkbox(
+              value: selected,
+              onChanged: (value) => onChanged!(value ?? false),
+              activeColor: AppColors.primary,
+            )
+          else
+            Container(
+              width: 40,
+              height: 40,
+              decoration: BoxDecoration(
+                color: color.withValues(alpha: .1),
+                borderRadius: BorderRadius.circular(AppRadius.md),
+              ),
+              child: Icon(icon, color: color),
             ),
-            child: Icon(icon, color: color),
-          ),
           const SizedBox(width: AppSpacing.sm),
           Expanded(
             child: Column(
@@ -487,8 +599,15 @@ class _PreviewBookTile extends StatelessWidget {
                     style: const TextStyle(color: AppColors.textSecondary),
                   ),
                 Text(
-                  book.message,
-                  style: TextStyle(color: color, fontSize: 12),
+                  onChanged != null && !selected
+                      ? 'No se importará'
+                      : book.message,
+                  style: TextStyle(
+                    color: onChanged != null && !selected
+                        ? AppColors.textMuted
+                        : color,
+                    fontSize: 12,
+                  ),
                 ),
               ],
             ),

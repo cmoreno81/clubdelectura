@@ -1031,6 +1031,15 @@ class _LibrosPageState extends State<LibrosPage> {
                       ChoiceChip(
                         label: Text(opcion.$2),
                         selected: prioridad == opcion.$1,
+                        selectedColor: AppColors.primary,
+                        labelStyle: TextStyle(
+                          color: prioridad == opcion.$1
+                              ? Colors.white
+                              : AppColors.textPrimary,
+                          fontWeight: prioridad == opcion.$1
+                              ? FontWeight.w800
+                              : FontWeight.w500,
+                        ),
                         showCheckmark: false,
                         onSelected: (_) =>
                             setDialogState(() => prioridad = opcion.$1),
@@ -1051,6 +1060,16 @@ class _LibrosPageState extends State<LibrosPage> {
                       ChoiceChip(
                         label: Text(opcion.$2),
                         selected: formato == opcion.$1,
+                        selectedColor: AppColors.primary,
+                        checkmarkColor: Colors.white,
+                        labelStyle: TextStyle(
+                          color: formato == opcion.$1
+                              ? Colors.white
+                              : AppColors.textPrimary,
+                          fontWeight: formato == opcion.$1
+                              ? FontWeight.w800
+                              : FontWeight.w500,
+                        ),
                         onSelected: (_) =>
                             setDialogState(() => formato = opcion.$1),
                       ),

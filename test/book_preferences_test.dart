@@ -137,4 +137,32 @@ void main() {
     expect(saga.totalSaga, 3);
     expect(saga.volumenes, hasLength(3));
   });
+
+  test(
+    'una saga editorialmente cerrada no está finalizada si faltan libros',
+    () {
+      final incompleta = PerfilSaga.fromJson({
+        'id': 'crimson-moth',
+        'nombre': 'Crimson Moth',
+        'leidos': 1,
+        'totalConocidos': 1,
+        'totalSaga': 2,
+        'estado': 'COMPLETADA',
+        'estadoEditorial': 'COMPLETED',
+      });
+      final completa = PerfilSaga.fromJson({
+        'id': 'rey-pastor',
+        'nombre': 'El rey pastor',
+        'leidos': 2,
+        'totalConocidos': 2,
+        'totalSaga': 2,
+        'estado': 'COMPLETADA',
+        'estadoEditorial': 'COMPLETED',
+      });
+
+      expect(incompleta.completada, isFalse);
+      expect(incompleta.estado, 'EN_CURSO');
+      expect(completa.completada, isTrue);
+    },
+  );
 }

@@ -102,19 +102,23 @@ class GoodreadsImportSummary {
 
 class GoodreadsImportPreviewBook {
   const GoodreadsImportPreviewBook({
+    required this.index,
     required this.title,
     required this.author,
     required this.action,
     required this.message,
   });
 
+  final int index;
   final String title;
   final String author;
   final String action;
   final String message;
+  bool get canImport => action == 'NUEVO' || action == 'ANADIR';
 
   factory GoodreadsImportPreviewBook.fromJson(Map<String, dynamic> json) =>
       GoodreadsImportPreviewBook(
+        index: (json['index'] as num?)?.toInt() ?? -1,
         title: json['titulo']?.toString() ?? '',
         author: json['autor']?.toString() ?? '',
         action: json['accion']?.toString() ?? 'OMITIR',

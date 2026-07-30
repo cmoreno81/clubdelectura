@@ -206,91 +206,117 @@ class _SagaProfileTabs extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final options = [
-      ('AL_DIA', 'Al día', upToDate),
-      ('COMPLETADA', 'Finalizadas', completed),
-      ('EN_CURSO', 'En curso', active),
-      ('PENDIENTE', 'Pendientes', pending),
+      ('AL_DIA', 'Al día', upToDate, Icons.update_rounded),
+      (
+        'COMPLETADA',
+        'Finalizadas',
+        completed,
+        Icons.workspace_premium_outlined,
+      ),
+      ('EN_CURSO', 'En curso', active, Icons.auto_stories_outlined),
+      ('PENDIENTE', 'Pendientes', pending, Icons.bookmark_border_rounded),
     ];
 
     return Container(
-      padding: const EdgeInsets.all(4),
+      padding: const EdgeInsets.all(5),
       decoration: BoxDecoration(
         color: AppColors.surfaceSoft,
-        borderRadius: BorderRadius.circular(AppRadius.pill),
+        borderRadius: BorderRadius.circular(AppRadius.md),
         border: Border.all(color: AppColors.border),
       ),
-      child: Row(
-        children: [
-          for (final option in options)
-            Expanded(
-              child: Semantics(
-                button: true,
-                selected: selected == option.$1,
-                label: '${option.$2}, ${option.$3} sagas',
-                child: InkWell(
-                  borderRadius: BorderRadius.circular(AppRadius.pill),
-                  onTap: () => onSelected(option.$1),
-                  child: AnimatedContainer(
-                    duration: const Duration(milliseconds: 160),
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 5,
-                      vertical: 9,
-                    ),
-                    decoration: BoxDecoration(
-                      color: selected == option.$1
-                          ? AppColors.primary
-                          : Colors.transparent,
-                      borderRadius: BorderRadius.circular(AppRadius.pill),
-                    ),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Flexible(
-                          child: Text(
-                            option.$2,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: TextStyle(
-                              color: selected == option.$1
-                                  ? Colors.white
-                                  : AppColors.textSecondary,
-                              fontSize: 12,
-                              fontWeight: FontWeight.w800,
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 5),
-                        Container(
-                          constraints: const BoxConstraints(minWidth: 20),
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 5,
-                            vertical: 2,
-                          ),
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final itemWidth = (constraints.maxWidth - 5) / 2;
+          return Wrap(
+            spacing: 5,
+            runSpacing: 5,
+            children: [
+              for (final option in options)
+                SizedBox(
+                  width: itemWidth,
+                  height: 41,
+                  child: Semantics(
+                    button: true,
+                    selected: selected == option.$1,
+                    label: '${option.$2}, ${option.$3} sagas',
+                    child: Material(
+                      color: Colors.transparent,
+                      child: InkWell(
+                        borderRadius: BorderRadius.circular(AppRadius.sm),
+                        onTap: () => onSelected(option.$1),
+                        child: AnimatedContainer(
+                          duration: const Duration(milliseconds: 160),
+                          padding: const EdgeInsets.symmetric(horizontal: 9),
                           decoration: BoxDecoration(
                             color: selected == option.$1
-                                ? Colors.white.withValues(alpha: .18)
-                                : AppColors.primaryLight,
-                            borderRadius: BorderRadius.circular(AppRadius.pill),
-                          ),
-                          child: Text(
-                            '${option.$3}',
-                            textAlign: TextAlign.center,
-                            style: TextStyle(
+                                ? AppColors.primary
+                                : Colors.white.withValues(alpha: .58),
+                            borderRadius: BorderRadius.circular(AppRadius.sm),
+                            border: Border.all(
                               color: selected == option.$1
-                                  ? Colors.white
-                                  : AppColors.primaryDark,
-                              fontSize: 11,
-                              fontWeight: FontWeight.w900,
+                                  ? AppColors.primary
+                                  : AppColors.border.withValues(alpha: .75),
                             ),
                           ),
+                          child: Row(
+                            children: [
+                              Icon(
+                                option.$4,
+                                size: 17,
+                                color: selected == option.$1
+                                    ? Colors.white
+                                    : AppColors.primary,
+                              ),
+                              const SizedBox(width: 6),
+                              Expanded(
+                                child: Text(
+                                  option.$2,
+                                  maxLines: 1,
+                                  style: TextStyle(
+                                    color: selected == option.$1
+                                        ? Colors.white
+                                        : AppColors.textPrimary,
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w800,
+                                  ),
+                                ),
+                              ),
+                              Container(
+                                constraints: const BoxConstraints(minWidth: 22),
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 5,
+                                  vertical: 2,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: selected == option.$1
+                                      ? Colors.white.withValues(alpha: .18)
+                                      : AppColors.primaryLight,
+                                  borderRadius: BorderRadius.circular(
+                                    AppRadius.pill,
+                                  ),
+                                ),
+                                child: Text(
+                                  '${option.$3}',
+                                  textAlign: TextAlign.center,
+                                  style: TextStyle(
+                                    color: selected == option.$1
+                                        ? Colors.white
+                                        : AppColors.primaryDark,
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.w900,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
-                      ],
+                      ),
                     ),
                   ),
                 ),
-              ),
-            ),
-        ],
+            ],
+          );
+        },
       ),
     );
   }

@@ -241,6 +241,14 @@ class _FinalizarLibroDialogState extends State<FinalizarLibroDialog> {
                   avatar: const Text('😞', style: TextStyle(fontSize: 18)),
                   label: const Text('No era para mí'),
                   selected: esDecepcion,
+                  selectedColor: colorScheme.primary,
+                  checkmarkColor: colorScheme.onPrimary,
+                  labelStyle: TextStyle(
+                    color: esDecepcion
+                        ? colorScheme.onPrimary
+                        : colorScheme.onSurface,
+                    fontWeight: esDecepcion ? FontWeight.w800 : FontWeight.w500,
+                  ),
                   onSelected: (seleccionado) {
                     setState(() {
                       valoracion = seleccionado ? 0 : null;

@@ -36,15 +36,27 @@ class TendenciasClub {
 }
 
 class TendenciaItem {
+  final String id;
   final String nombre;
   final int total;
+  final String coverUrl;
+  final String avatarUrl;
 
-  TendenciaItem({required this.nombre, required this.total});
+  TendenciaItem({
+    this.id = '',
+    required this.nombre,
+    required this.total,
+    this.coverUrl = '',
+    this.avatarUrl = '',
+  });
 
   factory TendenciaItem.fromJson(Map<String, dynamic> json) {
     return TendenciaItem(
+      id: json['id']?.toString() ?? '',
       nombre: json['nombre']?.toString() ?? '',
       total: (json['total'] as num?)?.toInt() ?? 0,
+      coverUrl: json['coverUrl']?.toString() ?? '',
+      avatarUrl: json['avatarUrl']?.toString() ?? '',
     );
   }
 }

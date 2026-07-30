@@ -223,16 +223,30 @@ class PerfilSaga {
 
   factory PerfilSaga.fromJson(Map<String, dynamic> json) {
     final siguiente = json['siguiente'];
+    final leidos = (json['leidos'] as num?)?.toInt() ?? 0;
+    final totalConocidos = (json['totalConocidos'] as num?)?.toInt() ?? 0;
+    final totalSaga = (json['totalSaga'] as num?)?.toInt() ?? 0;
+    final totalNecesario = totalSaga > totalConocidos
+        ? totalSaga
+        : totalConocidos;
+    final estadoRecibido = json['estado']?.toString() ?? 'EN_CURSO';
+    final estado =
+        estadoRecibido == 'COMPLETADA' &&
+            (totalNecesario <= 0 || leidos < totalNecesario)
+        ? leidos > 0
+              ? 'EN_CURSO'
+              : 'PENDIENTE'
+        : estadoRecibido;
+
     return PerfilSaga(
       id: json['id']?.toString() ?? '',
       nombre: json['nombre']?.toString() ?? '',
       autor: json['autor']?.toString() ?? '',
-      leidos: (json['leidos'] as num?)?.toInt() ?? 0,
-      totalConocidos: (json['totalConocidos'] as num?)?.toInt() ?? 0,
-      totalSaga: (json['totalSaga'] as num?)?.toInt() ?? 0,
-      estado: json['estado']?.toString() ?? 'EN_CURSO',
-      estadoEditorial:
-          json['estadoEditorial']?.toString() ?? 'UNKNOWN',
+      leidos: leidos,
+      totalConocidos: totalConocidos,
+      totalSaga: totalSaga,
+      estado: estado,
+      estadoEditorial: json['estadoEditorial']?.toString() ?? 'UNKNOWN',
       volumenes: (json['volumenes'] as List? ?? const [])
           .whereType<Map<String, dynamic>>()
           .map(PerfilSagaVolumen.fromJson)

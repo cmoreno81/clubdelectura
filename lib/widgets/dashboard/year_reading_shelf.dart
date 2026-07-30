@@ -62,21 +62,28 @@ class _YearReadingShelfState extends State<YearReadingShelf> {
                 ),
                 const SizedBox(width: 8),
                 Expanded(
-                  child: Text(
-                    'Mi biblioteca ${widget.year}',
-                    style: const TextStyle(
-                      color: AppColors.textPrimary,
-                      fontSize: 18,
-                      fontWeight: FontWeight.w900,
-                    ),
-                  ),
-                ),
-                Text(
-                  '${ordered.length} ${ordered.length == 1 ? 'lectura' : 'lecturas'}',
-                  style: const TextStyle(
-                    color: AppColors.primaryDark,
-                    fontSize: 12,
-                    fontWeight: FontWeight.w800,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Mi biblioteca ${widget.year}',
+                        style: const TextStyle(
+                          color: AppColors.textPrimary,
+                          fontSize: 18,
+                          fontWeight: FontWeight.w900,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        '${ordered.length} '
+                        '${ordered.length == 1 ? 'lectura' : 'lecturas'}',
+                        style: const TextStyle(
+                          color: AppColors.primaryDark,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
                 if (widget.onShare != null) ...[

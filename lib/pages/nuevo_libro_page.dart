@@ -510,6 +510,16 @@ class _NuevoLibroPageState extends State<NuevoLibroPage> {
                     ChoiceChip(
                       label: Text(opcion.$2),
                       selected: formato == opcion.$1,
+                      selectedColor: AppColors.primary,
+                      checkmarkColor: Colors.white,
+                      labelStyle: TextStyle(
+                        color: formato == opcion.$1
+                            ? Colors.white
+                            : AppColors.textPrimary,
+                        fontWeight: formato == opcion.$1
+                            ? FontWeight.w800
+                            : FontWeight.w500,
+                      ),
                       onSelected: (_) => setState(() => formato = opcion.$1),
                     ),
                 ],

@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:typed_data';
 
+import 'package:club_lectura_app/models/goodreads_import.dart';
 import 'package:club_lectura_app/services/goodreads_csv_parser.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -47,5 +48,18 @@ void main() {
       () => parser.parse(csv('name,value\none,two\n')),
       throwsFormatException,
     );
+  });
+
+  test('la revisión identifica cada fila seleccionable', () {
+    final book = GoodreadsImportPreviewBook.fromJson({
+      'index': 12,
+      'titulo': 'Magnolia Parks',
+      'autor': 'Jessa Hastings',
+      'accion': 'ANADIR',
+      'mensaje': 'Ya existe en ClubReads.',
+    });
+
+    expect(book.index, 12);
+    expect(book.canImport, isTrue);
   });
 }

@@ -67,9 +67,11 @@ class PerfilSagaCard extends StatelessWidget {
                     const SizedBox(height: 4),
                     Text(
                       saga.totalSaga > saga.totalConocidos
-                          ? '${saga.leidos} de ${saga.totalConocidos} publicados'
-                            ' · ${saga.totalSaga} previstos'
-                          : '${saga.leidos} de ${saga.totalConocidos} publicados',
+                          ? '${saga.totalConocidos} publicados'
+                                ' · ${saga.leidos} leídos'
+                                ' · ${saga.totalSaga} previstos'
+                          : '${saga.totalConocidos} publicados'
+                                ' · ${saga.leidos} leídos',
                       style: const TextStyle(color: AppColors.textSecondary),
                     ),
                   ],
