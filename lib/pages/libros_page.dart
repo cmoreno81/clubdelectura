@@ -441,6 +441,20 @@ class _LibrosPageState extends State<LibrosPage> {
   }
 
   Widget _libroCard(LibroAgrupado libro) {
+    final formatosPropios = libro.registros
+        .where((registro) => registro.yaLoTengo)
+        .map((registro) => registro.formato.trim().toUpperCase())
+        .where((formato) => formato.isNotEmpty);
+    final formatoPropio = formatosPropios.isEmpty
+        ? ''
+        : formatosPropios.first;
+    final iconoPropio = switch (formatoPropio) {
+      'FISICO' || 'FÍSICO' => Icons.menu_book_rounded,
+      'DIGITAL' => Icons.tablet_mac_rounded,
+      'AUDIOLIBRO' => Icons.headphones_rounded,
+      _ => Icons.auto_stories_rounded,
+    };
+
     return ClubCard(
       margin: const EdgeInsets.only(bottom: AppSpacing.md),
       padding: const EdgeInsets.all(AppSpacing.md),
@@ -488,13 +502,7 @@ class _LibrosPageState extends State<LibrosPage> {
 
                     const SizedBox(width: AppSpacing.xs),
 
-                    if (libro.leidoPorMi)
-                      const ClubChip(
-                        label: 'Leído por ti',
-                        icon: Icons.auto_stories_rounded,
-                        variant: ClubChipVariant.primary,
-                      )
-                    else if (libro.yaLoTengo)
+                    if (!libro.leidoPorMi && libro.yaLoTengo)
                       const Tooltip(
                         message: 'Ya está en tu lista',
                         child: Icon(
@@ -503,7 +511,7 @@ class _LibrosPageState extends State<LibrosPage> {
                           size: 27,
                         ),
                       )
-                    else
+                    else if (!libro.leidoPorMi)
                       IconButton(
                         tooltip: 'Añadir a mi lista',
                         visualDensity: VisualDensity.compact,
@@ -547,6 +555,12 @@ class _LibrosPageState extends State<LibrosPage> {
                   spacing: AppSpacing.xs,
                   runSpacing: AppSpacing.xs,
                   children: [
+                    if (libro.leidoPorMi)
+                      ClubChip(
+                        label: 'Leído por ti',
+                        icon: iconoPropio,
+                        variant: ClubChipVariant.primary,
+                      ),
                     if (libro.esReciente)
                       const ClubChip(
                         label: 'Nuevo',

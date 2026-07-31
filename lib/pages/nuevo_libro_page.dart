@@ -65,6 +65,7 @@ class _NuevoLibroPageState extends State<NuevoLibroPage> {
     _GeneroOption('👻', 'Terror', 'Terror'),
     _GeneroOption('🕵️', 'Novela Negra', 'Novela negra'),
     _GeneroOption('💬', 'Cómic', 'Cómic'),
+    _GeneroOption('🧠', 'No ficción', 'No ficción'),
   ];
 
   @override

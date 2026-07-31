@@ -203,7 +203,7 @@ class _GeneralDashboardPageState extends State<GeneralDashboardPage> {
                     children: [
                       _hero(data),
                       const SizedBox(height: AppSpacing.sm),
-                      _metrics(data.summary),
+                      _metrics(data),
                       const SizedBox(height: AppSpacing.md),
                       Card(
                         child: ListTile(
@@ -221,6 +221,20 @@ class _GeneralDashboardPageState extends State<GeneralDashboardPage> {
                           trailing: const Icon(Icons.arrow_forward_ios_rounded),
                         ),
                       ),
+                      if (data.latestAdditions.isNotEmpty) ...[
+                        const SizedBox(height: AppSpacing.xl),
+                        _sectionTitle(
+                          'Últimas incorporaciones',
+                          'Lo nuevo que acaba de llegar a ClubReads',
+                          Icons.new_releases_outlined,
+                          action: TextButton(
+                            onPressed: _exploreBooks,
+                            child: const Text('Ver biblioteca'),
+                          ),
+                        ),
+                        const SizedBox(height: AppSpacing.sm),
+                        _latestAdditions(data.latestAdditions),
+                      ],
                       const SizedBox(height: AppSpacing.xl),
                       _sectionTitle(
                         'Tus clubes',
@@ -355,6 +369,7 @@ class _GeneralDashboardPageState extends State<GeneralDashboardPage> {
   }
 
   Widget _hero(GeneralDashboard data) {
+    final clubvisionReminder = data.clubvisionNotice?.message;
     return ClubCard(
       onTap: () => _openMyProfile(data.userName),
       gradient: const LinearGradient(
@@ -386,6 +401,44 @@ class _GeneralDashboardPageState extends State<GeneralDashboardPage> {
                       : 'Tu próxima lectura empieza hoy',
                   style: const TextStyle(color: Colors.white70),
                 ),
+                if (clubvisionReminder != null &&
+                    clubvisionReminder.isNotEmpty) ...[
+                  const SizedBox(height: AppSpacing.sm),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: AppSpacing.sm,
+                      vertical: 7,
+                    ),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: .14),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(
+                        color: Colors.white.withValues(alpha: .24),
+                      ),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(
+                          Icons.mic_rounded,
+                          color: Color(0xFFFFD979),
+                          size: 17,
+                        ),
+                        const SizedBox(width: 6),
+                        Flexible(
+                          child: Text(
+                            clubvisionReminder,
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 12,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
               ],
             ),
           ),
@@ -400,7 +453,8 @@ class _GeneralDashboardPageState extends State<GeneralDashboardPage> {
     );
   }
 
-  Widget _metrics(GeneralSummary summary) {
+  Widget _metrics(GeneralDashboard data) {
+    final summary = data.summary;
     final metrics = [
       ('Leyendo', summary.reading, Icons.menu_book_rounded, AppColors.info, ''),
       (
@@ -411,11 +465,12 @@ class _GeneralDashboardPageState extends State<GeneralDashboardPage> {
         'en total',
       ),
       (
-        'Libros este mes',
+        'Este mes',
         summary.finishedThisMonth,
         Icons.bolt_rounded,
         AppColors.warning,
-        '${summary.pagesReadThisMonth} páginas',
+        '${data.pagesReadThisMonth} páginas · ${summary.finishedThisMonth} '
+            '${summary.finishedThisMonth == 1 ? 'libro' : 'libros'}',
       ),
       (
         'Páginas totales',
@@ -430,7 +485,7 @@ class _GeneralDashboardPageState extends State<GeneralDashboardPage> {
       shrinkWrap: true,
       padding: EdgeInsets.zero,
       physics: const NeverScrollableScrollPhysics(),
-      childAspectRatio: 1.65,
+      childAspectRatio: 1.5,
       crossAxisSpacing: AppSpacing.sm,
       mainAxisSpacing: AppSpacing.sm,
       children: metrics
@@ -689,6 +744,97 @@ class _GeneralDashboardPageState extends State<GeneralDashboardPage> {
                     overflow: TextOverflow.ellipsis,
                     style: const TextStyle(fontWeight: FontWeight.w700),
                   ),
+                ],
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _latestAdditions(List<GeneralLatestBook> books) {
+    return SizedBox(
+      height: 218,
+      child: ListView.separated(
+        scrollDirection: Axis.horizontal,
+        padding: const EdgeInsets.symmetric(horizontal: 2),
+        itemCount: books.length,
+        separatorBuilder: (_, _) => const SizedBox(width: AppSpacing.md),
+        itemBuilder: (context, index) {
+          final book = books[index];
+          return SizedBox(
+            width: 112,
+            child: InkWell(
+              borderRadius: BorderRadius.circular(18),
+              onTap: () => openBookDetail(
+                context,
+                title: book.title,
+                bookId: book.id,
+                coverUrl: book.coverUrl,
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Stack(
+                    clipBehavior: Clip.none,
+                    children: [
+                      ClubBookCover(
+                        title: book.title,
+                        imageUrl: book.coverUrl,
+                        width: 108,
+                        height: 158,
+                      ),
+                      Positioned(
+                        right: -2,
+                        top: 8,
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 5,
+                          ),
+                          decoration: BoxDecoration(
+                            color: AppColors.inkCoral,
+                            borderRadius: BorderRadius.circular(10),
+                            boxShadow: const [
+                              BoxShadow(
+                                color: Color(0x33000000),
+                                blurRadius: 6,
+                                offset: Offset(0, 2),
+                              ),
+                            ],
+                          ),
+                          child: const Text(
+                            'NUEVO',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 9,
+                              fontWeight: FontWeight.w900,
+                              letterSpacing: .6,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 9),
+                  Text(
+                    book.title,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w800,
+                      height: 1.15,
+                    ),
+                  ),
+                  if (book.author.isNotEmpty)
+                    Text(
+                      book.author,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: AppTextStyles.caption,
+                    ),
                 ],
               ),
             ),

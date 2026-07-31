@@ -11,6 +11,31 @@ import '../common/club_chip.dart';
 import 'libro_section.dart';
 import 'pausar_lectura_dialog.dart';
 
+InputDecoration _selectorDecoration({
+  required String label,
+  required IconData icon,
+  required Color color,
+}) {
+  return InputDecoration(
+    labelText: label,
+    prefixIcon: Icon(icon, color: color),
+    filled: true,
+    fillColor: color.withValues(alpha: .07),
+    contentPadding: const EdgeInsets.symmetric(
+      horizontal: AppSpacing.md,
+      vertical: AppSpacing.md,
+    ),
+    enabledBorder: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(18),
+      borderSide: BorderSide(color: color.withValues(alpha: .32)),
+    ),
+    focusedBorder: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(18),
+      borderSide: BorderSide(color: color, width: 1.6),
+    ),
+  );
+}
+
 class LibroInteresadasSection extends StatelessWidget {
   final List<Libro> registros;
   final Set<String> usuariosConFinalizacion;
@@ -262,11 +287,24 @@ class _LectoraCard extends StatelessWidget {
                   initialValue: registro.prioridad.isEmpty
                       ? 'MEDIA'
                       : registro.prioridad,
-                  decoration: const InputDecoration(labelText: 'Prioridad'),
+                  decoration: _selectorDecoration(
+                    label: 'Prioridad personal',
+                    icon: Icons.flag_rounded,
+                    color: AppColors.warning,
+                  ),
                   items: const [
-                    DropdownMenuItem(value: 'ALTA', child: Text('Alta')),
-                    DropdownMenuItem(value: 'MEDIA', child: Text('Media')),
-                    DropdownMenuItem(value: 'BAJA', child: Text('Baja')),
+                    DropdownMenuItem(
+                      value: 'ALTA',
+                      child: Text('🔴  Alta'),
+                    ),
+                    DropdownMenuItem(
+                      value: 'MEDIA',
+                      child: Text('🟡  Media'),
+                    ),
+                    DropdownMenuItem(
+                      value: 'BAJA',
+                      child: Text('🟢  Baja'),
+                    ),
                   ],
                   onChanged: (value) {
                     if (value != null) {
@@ -285,7 +323,11 @@ class _LectoraCard extends StatelessWidget {
                   initialValue: registro.formato.isEmpty
                       ? null
                       : registro.formato,
-                  decoration: const InputDecoration(labelText: 'Formato'),
+                  decoration: _selectorDecoration(
+                    label: 'Mi formato',
+                    icon: Icons.library_books_rounded,
+                    color: AppColors.info,
+                  ),
                   items: const [
                     DropdownMenuItem(value: 'FISICO', child: Text('📖 Físico')),
                     DropdownMenuItem(
@@ -315,10 +357,12 @@ class _LectoraCard extends StatelessWidget {
             const SizedBox(height: AppSpacing.md),
 
             DropdownButtonFormField<String>(
+              isExpanded: true,
               initialValue: registro.estado,
-              decoration: const InputDecoration(
-                labelText: 'Estado de lectura',
-                prefixIcon: Icon(Icons.swap_horiz_rounded),
+              decoration: _selectorDecoration(
+                label: 'Estado de lectura',
+                icon: Icons.swap_horiz_rounded,
+                color: AppColors.primary,
               ),
               items: _opcionesEstado,
               onChanged: (value) async {

@@ -6,6 +6,8 @@ class GeneralDashboard {
     required this.clubs,
     required this.currentBooks,
     required this.personalLibrary,
+    required this.latestAdditions,
+    required this.clubvisionNotice,
     required this.openSeries,
     this._yearShelf,
     required this.calendar,
@@ -19,12 +21,19 @@ class GeneralDashboard {
   final List<GeneralClub> clubs;
   final List<GeneralBook> currentBooks;
   final List<PersonalLibraryBook> personalLibrary;
+  final List<GeneralLatestBook> latestAdditions;
+  final GeneralClubvisionNotice? clubvisionNotice;
   final List<GeneralOpenSeries> openSeries;
   final List<YearShelfBook>? _yearShelf;
   List<YearShelfBook> get yearShelf => _yearShelf ?? const [];
   final ReadingCalendar calendar;
   final List<TrendingBook> trending;
   final CommunitySummary community;
+
+  int get pagesReadThisMonth {
+    if (summary.pagesReadThisMonth > 0) return summary.pagesReadThisMonth;
+    return calendar.finishedBooks.fold(0, (total, book) => total + book.pages);
+  }
 
   factory GeneralDashboard.fromJson(Map<String, dynamic> json) {
     final user = Map<String, dynamic>.from(json['usuario'] as Map? ?? {});
@@ -40,6 +49,15 @@ class GeneralDashboard {
         json['miBiblioteca'],
         PersonalLibraryBook.fromJson,
       ),
+      latestAdditions: _list(
+        json['ultimasIncorporaciones'],
+        GeneralLatestBook.fromJson,
+      ),
+      clubvisionNotice: json['clubvisionAviso'] is Map
+          ? GeneralClubvisionNotice.fromJson(
+              Map<String, dynamic>.from(json['clubvisionAviso'] as Map),
+            )
+          : null,
       openSeries: _list(json['sagasAbiertas'], GeneralOpenSeries.fromJson),
       yearShelf: _list(json['estanteriaAnual'], YearShelfBook.fromJson),
       calendar: ReadingCalendar.fromJson(
@@ -51,6 +69,94 @@ class GeneralDashboard {
       ),
     );
   }
+}
+
+class GeneralClubvisionNotice {
+  const GeneralClubvisionNotice({
+    required this.type,
+    required this.edition,
+    required this.readyClubs,
+    required this.clubs,
+  });
+
+  final String type;
+  final String edition;
+  final int readyClubs;
+  final List<GeneralClubvisionNoticeClub> clubs;
+
+  String get message {
+    final clubName = clubs.length == 1 ? clubs.first.name : '';
+    final destination = clubName.isNotEmpty
+        ? ' en $clubName'
+        : readyClubs > 1
+        ? ' en $readyClubs clubes'
+        : '';
+    switch (type) {
+      case 'APERTURA':
+        return 'Esta noche abre una nueva edición de Clubvisión$destination';
+      case 'VOTACION':
+        return 'Clubvisión está abierto$destination: ya puedes votar';
+      case 'GALA':
+        return 'Hoy llega la gala de Clubvisión$destination';
+      default:
+        return '';
+    }
+  }
+
+  factory GeneralClubvisionNotice.fromJson(Map<String, dynamic> json) =>
+      GeneralClubvisionNotice(
+        type: json['tipo']?.toString() ?? '',
+        edition: json['edicion']?.toString() ?? '',
+        readyClubs: _integer(json['clubesPreparados']),
+        clubs: _list(json['clubes'], GeneralClubvisionNoticeClub.fromJson),
+      );
+}
+
+class GeneralClubvisionNoticeClub {
+  const GeneralClubvisionNoticeClub({
+    required this.id,
+    required this.name,
+    required this.candidates,
+  });
+
+  final String id;
+  final String name;
+  final int candidates;
+
+  factory GeneralClubvisionNoticeClub.fromJson(Map<String, dynamic> json) =>
+      GeneralClubvisionNoticeClub(
+        id: json['id']?.toString() ?? '',
+        name: json['nombre']?.toString() ?? '',
+        candidates: _integer(json['candidatas']),
+      );
+}
+
+class GeneralLatestBook {
+  const GeneralLatestBook({
+    required this.id,
+    required this.title,
+    required this.author,
+    required this.genre,
+    required this.coverUrl,
+    required this.addedAt,
+  });
+
+  final String id;
+  final String title;
+  final String author;
+  final String genre;
+  final String coverUrl;
+  final String addedAt;
+
+  factory GeneralLatestBook.fromJson(Map<String, dynamic> json) =>
+      GeneralLatestBook(
+        id: json['id']?.toString() ?? '',
+        title: json['titulo']?.toString() ?? '',
+        author: json['autor']?.toString() ?? '',
+        genre: json['genero']?.toString() ?? '',
+        coverUrl: json['coverUrl']?.toString() ?? '',
+        addedAt: json['fechaAlta']?.toString() ?? '',
+      );
 }
 
 class YearShelfBook {
@@ -116,6 +222,7 @@ class GeneralOpenSeries {
     required this.name,
     required this.read,
     required this.total,
+    this.status = 'EN_CURSO',
     this.coverUrl = '',
     this.next,
   });
@@ -124,6 +231,7 @@ class GeneralOpenSeries {
   final String name;
   final int read;
   final int total;
+  final String status;
   final String coverUrl;
   final GeneralSeriesNextBook? next;
 
@@ -136,6 +244,7 @@ class GeneralOpenSeries {
       name: json['nombre']?.toString() ?? '',
       read: _integer(json['leidos']),
       total: _integer(json['total']),
+      status: json['estado']?.toString() ?? 'EN_CURSO',
       coverUrl: json['coverUrl']?.toString() ?? '',
       next: next is Map
           ? GeneralSeriesNextBook.fromJson(Map<String, dynamic>.from(next))

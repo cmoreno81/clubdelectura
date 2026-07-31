@@ -31,7 +31,7 @@ class _SagasPageState extends State<SagasPage> {
   late Future<PerfilUsuario> _future;
   final _searchController = TextEditingController();
   String _query = '';
-  String _filter = 'TODAS';
+  String _filter = 'EN_CURSO';
 
   @override
   void initState() {
@@ -380,7 +380,6 @@ class _SagasPageState extends State<SagasPage> {
                 const SizedBox(height: AppSpacing.sm),
                 _SagaFilters(
                   selected: _filter,
-                  total: sagas.length,
                   active: active.length,
                   pending: pending.length,
                   upToDate: upToDate.length,
@@ -438,7 +437,7 @@ class _SagasPageState extends State<SagasPage> {
     final query = _query.trim().toLowerCase();
     return sagas
         .where((saga) {
-          final matchesFilter = _filter == 'TODAS' || saga.estado == _filter;
+          final matchesFilter = saga.estado == _filter;
           if (!matchesFilter) return false;
           if (query.isEmpty) return true;
           return saga.nombre.toLowerCase().contains(query) ||
@@ -535,10 +534,7 @@ class _SagaOverview extends StatelessWidget {
                 const SizedBox(height: 5),
                 Text(
                   '$upToDate ${upToDate == 1 ? 'saga al día' : 'sagas al día'}',
-                  style: const TextStyle(
-                    color: AppColors.primaryDark,
-                    fontWeight: FontWeight.w800,
-                  ),
+                  style: AppTextStyles.bodySecondary,
                 ),
               ],
             ),
@@ -552,7 +548,6 @@ class _SagaOverview extends StatelessWidget {
 class _SagaFilters extends StatelessWidget {
   const _SagaFilters({
     required this.selected,
-    required this.total,
     required this.active,
     required this.pending,
     required this.upToDate,
@@ -561,7 +556,6 @@ class _SagaFilters extends StatelessWidget {
   });
 
   final String selected;
-  final int total;
   final int active;
   final int pending;
   final int upToDate;
@@ -571,7 +565,6 @@ class _SagaFilters extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final options = [
-      ('TODAS', 'Todas', total, Icons.view_week_outlined),
       ('EN_CURSO', 'En curso', active, Icons.auto_stories_outlined),
       ('PENDIENTE', 'Pendientes', pending, Icons.bookmark_border_rounded),
       ('AL_DIA', 'Al día', upToDate, Icons.update_rounded),

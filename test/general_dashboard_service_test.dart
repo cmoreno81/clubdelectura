@@ -60,6 +60,28 @@ void main() {
                 'formato': 'DIGITAL',
               },
             ],
+            'ultimasIncorporaciones': [
+              {
+                'id': 'book-new',
+                'titulo': 'La recién llegada',
+                'autor': 'Autora',
+                'genero': 'Fantasía',
+                'coverUrl': 'https://example.com/new.jpg',
+                'fechaAlta': '2026-07-31T10:00:00.000Z',
+              },
+            ],
+            'clubvisionAviso': {
+              'tipo': 'APERTURA',
+              'edicion': '2026-08',
+              'clubesPreparados': 1,
+              'clubes': [
+                {
+                  'id': 'club-1',
+                  'nombre': 'Nuestros gustos son clichés',
+                  'candidatas': 5,
+                },
+              ],
+            },
             'sagasAbiertas': [
               {
                 'id': 'saga-1',
@@ -146,11 +168,19 @@ void main() {
     expect(dashboard.userName, 'Cristina');
     expect(dashboard.summary.monthStreak, 3);
     expect(dashboard.summary.pagesReadThisMonth, 384);
+    expect(dashboard.pagesReadThisMonth, 384);
     expect(dashboard.summary.pagesRead, 4200);
     expect(dashboard.clubs.single.name, 'Nuestros gustos son clichés');
     expect(dashboard.personalLibrary.single.title, 'Próxima lectura');
     expect(dashboard.personalLibrary.single.isHighPriority, isTrue);
     expect(dashboard.personalLibrary.single.format, 'DIGITAL');
+    expect(dashboard.latestAdditions.single.title, 'La recién llegada');
+    expect(dashboard.latestAdditions.single.author, 'Autora');
+    expect(dashboard.clubvisionNotice?.readyClubs, 1);
+    expect(
+      dashboard.clubvisionNotice?.message,
+      contains('Nuestros gustos son clichés'),
+    );
     expect(dashboard.openSeries.single.read, 2);
     expect(dashboard.openSeries.single.total, 5);
     expect(
@@ -167,5 +197,105 @@ void main() {
     expect(dashboard.community.formats.physical, 6);
     expect(dashboard.community.formats.audiobook, 1);
     expect(dashboard.community.formats.total, 10);
+  });
+
+  test('recupera las páginas mensuales desde el calendario', () {
+    final dashboard = GeneralDashboard.fromJson({
+      'resumen': {'paginasMes': 0},
+      'calendario': {
+        'librosLeidos': [
+          {'paginas': 320},
+          {'paginas': 184},
+        ],
+      },
+    });
+
+    expect(dashboard.pagesReadThisMonth, 504);
+  });
+
+  test('un backend anterior sin aviso de Clubvisión sigue siendo válido', () {
+    final dashboard = GeneralDashboard.fromJson(const {});
+
+    expect(dashboard.clubvisionNotice, isNull);
+  });
+
+  test('prioriza sagas en curso y completa con pendientes', () async {
+    final service = GeneralDashboardService(
+      client: MockClient((request) async {
+        if (request.url.queryParameters['action'] == 'perfilUsuario') {
+          return http.Response(
+            jsonEncode({
+              'sagas': [
+                {
+                  'id': 'up-to-date',
+                  'nombre': 'Al día',
+                  'estado': 'AL_DIA',
+                  'leidos': 3,
+                  'totalConocidos': 3,
+                },
+                {
+                  'id': 'pending',
+                  'nombre': 'Pendiente',
+                  'estado': 'PENDIENTE',
+                  'leidos': 0,
+                  'totalConocidos': 2,
+                  'totalSaga': 4,
+                  'volumenes': [
+                    {
+                      'bookId': 'pending-1',
+                      'titulo': 'Primero',
+                      'coverUrl': 'https://example.com/pending.jpg',
+                    },
+                  ],
+                  'siguiente': {
+                    'bookId': 'pending-1',
+                    'titulo': 'Primero',
+                    'coverUrl': 'https://example.com/pending.jpg',
+                    'estado': 'PENDIENTE',
+                  },
+                },
+                {
+                  'id': 'active',
+                  'nombre': 'En curso',
+                  'estado': 'EN_CURSO',
+                  'leidos': 1,
+                  'totalConocidos': 2,
+                  'totalSaga': 3,
+                },
+              ],
+            }),
+            200,
+          );
+        }
+        return http.Response(
+          jsonEncode({
+            'usuario': {'nombre': 'Cristina'},
+            'sagasAbiertas': [
+              {
+                'id': 'old',
+                'nombre': 'Dato anterior',
+                'estado': 'AL_DIA',
+                'leidos': 2,
+                'total': 2,
+              },
+            ],
+          }),
+          200,
+        );
+      }),
+    );
+
+    final dashboard = await service.load();
+
+    expect(dashboard.openSeries.map((series) => series.status), [
+      'EN_CURSO',
+      'PENDIENTE',
+    ]);
+    expect(dashboard.openSeries.map((series) => series.name), [
+      'En curso',
+      'Pendiente',
+    ]);
+    expect(dashboard.openSeries.last.total, 4);
+    expect(dashboard.openSeries.last.next?.id, 'pending-1');
   });
 }
