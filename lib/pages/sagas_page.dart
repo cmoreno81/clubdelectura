@@ -58,7 +58,13 @@ class _SagasPageState extends State<SagasPage> {
 
   Future<void> _reload() async {
     final next = _load();
-    setState(() => _future = next);
+
+    if (!mounted) return;
+
+    setState(() {
+      _future = next;
+    });
+
     await next;
   }
 
@@ -128,39 +134,52 @@ class _SagasPageState extends State<SagasPage> {
       context,
       AppPageRoute(builder: (_) => CompleteSeriesPage(series: saga)),
     );
+
     if (linkedBookId == null || !mounted) return;
 
     PerfilUsuario? latest;
+
     for (var attempt = 0; attempt < 3; attempt++) {
       if (attempt > 0) {
         await Future<void>.delayed(Duration(milliseconds: 180 * attempt));
       }
+
       latest = await _load();
+
       final linked = latest.sagas.any(
         (item) =>
             item.id == saga.id &&
             item.volumenes.any((volume) => volume.bookId == linkedBookId),
       );
+
       if (linked) break;
     }
+
     if (!mounted || latest == null) return;
-    setState(() => _future = Future.value(latest));
 
     final linked = latest.sagas.any(
       (item) =>
           item.id == saga.id &&
           item.volumenes.any((volume) => volume.bookId == linkedBookId),
     );
-    if (!linked) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text(
-            'El libro se guardó, pero la saga todavía no se ha actualizado. '
-            'Desliza hacia abajo para volver a cargarla.',
-          ),
-        ),
-      );
+
+    if (linked) {
+      setState(() {
+        _future = Future.value(latest);
+      });
+
+      return;
     }
+
+    await _reload();
+
+    if (!mounted) return;
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('El libro se guardó y hemos actualizado la saga.'),
+      ),
+    );
   }
 
   Future<void> _editVolume(PerfilSagaVolumen volumen) async {

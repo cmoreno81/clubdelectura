@@ -68,11 +68,11 @@ class _CompleteSeriesPageState extends State<CompleteSeriesPage> {
   }
 
   Future<void> _select(CatalogBook book) async {
-    final suggested = _suggestedOrder();
-    final controller = TextEditingController(text: suggested.toString());
+    var orderText = _suggestedOrder().toString();
+
     final order = await showDialog<String>(
       context: context,
-      builder: (context) => AlertDialog(
+      builder: (dialogContext) => AlertDialog(
         title: const Text('Número en la saga'),
         content: Column(
           mainAxisSize: MainAxisSize.min,
@@ -80,12 +80,15 @@ class _CompleteSeriesPageState extends State<CompleteSeriesPage> {
           children: [
             Text(book.title),
             const SizedBox(height: AppSpacing.md),
-            TextField(
-              controller: controller,
+            TextFormField(
+              initialValue: orderText,
               autofocus: true,
               keyboardType: const TextInputType.numberWithOptions(
                 decimal: true,
               ),
+              onChanged: (value) {
+                orderText = value;
+              },
               decoration: const InputDecoration(
                 labelText: 'Volumen',
                 hintText: '1, 2, 2.5…',
@@ -95,30 +98,54 @@ class _CompleteSeriesPageState extends State<CompleteSeriesPage> {
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(context),
+            onPressed: () => Navigator.pop(dialogContext),
             child: const Text('Cancelar'),
           ),
           FilledButton(
-            onPressed: () => Navigator.pop(context, controller.text.trim()),
+            onPressed: () {
+              Navigator.pop(dialogContext, orderText.trim());
+            },
             child: const Text('Confirmar'),
           ),
         ],
       ),
     );
-    controller.dispose();
-    if (order == null || order.isEmpty || !mounted) return;
 
-    setState(() => _linkingId = book.id);
+    if (order == null || order.isEmpty || !mounted) return;
+    final normalizedOrder = order.trim().replaceAll(',', '.');
+
+    final orderAlreadyExists = widget.series.volumenes.any(
+      (volume) => volume.numero.trim().replaceAll(',', '.') == normalizedOrder,
+    );
+
+    if (orderAlreadyExists) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'El volumen $order ya existe en ${widget.series.nombre}.',
+          ),
+        ),
+      );
+      return;
+    }
+
+    setState(() {
+      _linkingId = book.id;
+    });
+
     try {
       final linkedBookId = await ApiService().vincularVolumenSaga(
         sagaId: widget.series.id,
         numero: order,
         book: book,
       );
+
       if (!mounted) return;
+
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('${book.title} añadido a la saga')),
       );
+
       Navigator.pop(context, linkedBookId);
     } on ApiException catch (error) {
       if (mounted) {
@@ -127,7 +154,11 @@ class _CompleteSeriesPageState extends State<CompleteSeriesPage> {
         ).showSnackBar(SnackBar(content: Text(error.message)));
       }
     } finally {
-      if (mounted) setState(() => _linkingId = null);
+      if (mounted) {
+        setState(() {
+          _linkingId = null;
+        });
+      }
     }
   }
 
