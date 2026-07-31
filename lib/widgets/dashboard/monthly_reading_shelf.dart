@@ -2,6 +2,7 @@ import 'dart:math' show pi;
 
 import 'package:flutter/material.dart';
 
+import '../../main.dart' show routeObserver;
 import '../../models/general_dashboard.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_radius.dart';
@@ -11,9 +12,18 @@ import '../common/club_book_cover.dart';
 // Nombres de meses en español
 // ─────────────────────────────────────────────
 const _months = [
-  'Enero', 'Febrero', 'Marzo', 'Abril',
-  'Mayo', 'Junio', 'Julio', 'Agosto',
-  'Septiembre', 'Octubre', 'Noviembre', 'Diciembre',
+  'Enero',
+  'Febrero',
+  'Marzo',
+  'Abril',
+  'Mayo',
+  'Junio',
+  'Julio',
+  'Agosto',
+  'Septiembre',
+  'Octubre',
+  'Noviembre',
+  'Diciembre',
 ];
 
 // ─────────────────────────────────────────────
@@ -39,7 +49,8 @@ class MonthlyReadingShelf extends StatefulWidget {
 }
 
 class _MonthlyReadingShelfState extends State<MonthlyReadingShelf>
-    with SingleTickerProviderStateMixin {
+    with SingleTickerProviderStateMixin
+    implements RouteAware {
   late final AnimationController _ctrl;
 
   @override
@@ -49,15 +60,32 @@ class _MonthlyReadingShelfState extends State<MonthlyReadingShelf>
       vsync: this,
       duration: Duration(milliseconds: 380 + widget.books.length * 95),
     );
-    // initState se llama cada vez que Flutter crea un nuevo State,
-    // lo que ocurre cuando el widget recibe una key diferente.
-    // El GeneralDashboardPage renueva _shelfKey en cada load/reload,
-    // garantizando que la animación arranca de cero al entrar a la pantalla.
     _ctrl.forward(from: 0);
   }
 
   @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final route = ModalRoute.of(context);
+    if (route != null) routeObserver.subscribe(this, route);
+  }
+
+  // RouteAware: la ruta vuelve al frente (pop de una ruta encima)
+  @override
+  void didPopNext() {
+    _ctrl.forward(from: 0);
+  }
+
+  @override
+  void didPush() {}
+  @override
+  void didPop() {}
+  @override
+  void didPushNext() {}
+
+  @override
   void dispose() {
+    routeObserver.unsubscribe(this);
     _ctrl.dispose();
     super.dispose();
   }
@@ -215,7 +243,8 @@ class _MonthlyShelfRow extends StatelessWidget {
                   for (var i = 0; i < books.length; i++) ...[
                     if (i > 0)
                       SizedBox(
-                        width: 5 +
+                        width:
+                            5 +
                             ((books[i].id.hashCode.abs() + i) % 5).toDouble(),
                       ),
                     _AnimatedMonthlyBook(
@@ -304,10 +333,7 @@ class _AnimatedMonthlyBookState extends State<_AnimatedMonthlyBook> {
           final opacity = reduceMotion ? 1.0 : t.clamp(0.0, 1.0);
           return Opacity(
             opacity: opacity,
-            child: Transform.translate(
-              offset: Offset(0, dy),
-              child: child,
-            ),
+            child: Transform.translate(offset: Offset(0, dy), child: child),
           );
         },
         child: GestureDetector(
@@ -323,8 +349,9 @@ class _AnimatedMonthlyBookState extends State<_AnimatedMonthlyBook> {
             widget.onTap();
           },
           child: AnimatedContainer(
-            duration:
-                reduceMotion ? Duration.zero : const Duration(milliseconds: 130),
+            duration: reduceMotion
+                ? Duration.zero
+                : const Duration(milliseconds: 130),
             curve: Curves.easeOutCubic,
             transform: Matrix4.translationValues(0, _lifted ? -9 : 0, 0),
             child: Stack(
@@ -406,10 +433,10 @@ class _ShelfDecoration extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => switch (type) {
-        0 => const _ShelfPlant(),
-        1 => const _ShelfCandle(),
-        _ => const _ShelfVase(),
-      };
+    0 => const _ShelfPlant(),
+    1 => const _ShelfCandle(),
+    _ => const _ShelfVase(),
+  };
 }
 
 class _ShelfPlant extends StatelessWidget {
@@ -427,8 +454,11 @@ class _ShelfPlant extends StatelessWidget {
             left: 4,
             child: Transform.rotate(
               angle: -.35,
-              child: const Icon(Icons.eco_rounded,
-                  color: Color(0xFF769066), size: 29),
+              child: const Icon(
+                Icons.eco_rounded,
+                color: Color(0xFF769066),
+                size: 29,
+              ),
             ),
           ),
           Positioned(
@@ -436,8 +466,11 @@ class _ShelfPlant extends StatelessWidget {
             right: 1,
             child: Transform.rotate(
               angle: .42,
-              child: const Icon(Icons.eco_rounded,
-                  color: Color(0xFF55764F), size: 26),
+              child: const Icon(
+                Icons.eco_rounded,
+                color: Color(0xFF55764F),
+                size: 26,
+              ),
             ),
           ),
           Container(
@@ -445,8 +478,7 @@ class _ShelfPlant extends StatelessWidget {
             height: 25,
             decoration: const BoxDecoration(
               color: Color(0xFFB66F58),
-              borderRadius:
-                  BorderRadius.vertical(bottom: Radius.circular(9)),
+              borderRadius: BorderRadius.vertical(bottom: Radius.circular(9)),
             ),
           ),
         ],
@@ -465,8 +497,11 @@ class _ShelfCandle extends StatelessWidget {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.end,
         children: [
-          const Icon(Icons.local_fire_department_rounded,
-              color: Color(0xFFE7A43D), size: 19),
+          const Icon(
+            Icons.local_fire_department_rounded,
+            color: Color(0xFFE7A43D),
+            size: 19,
+          ),
           Container(
             width: 30,
             height: 31,
@@ -494,8 +529,11 @@ class _ShelfVase extends StatelessWidget {
         children: [
           const Positioned(
             top: 0,
-            child: Icon(Icons.grass_rounded,
-                color: Color(0xFF9B7B68), size: 34),
+            child: Icon(
+              Icons.grass_rounded,
+              color: Color(0xFF9B7B68),
+              size: 34,
+            ),
           ),
           Container(
             width: 29,

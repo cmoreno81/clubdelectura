@@ -12,6 +12,10 @@ import 'theme/app_theme.dart';
 import 'theme/atmosferas/atmosfera_app_theme.dart';
 import 'widgets/atmosferas/atmosfera_ambient_layer.dart';
 
+/// Observer global para que los widgets con RouteAware
+/// sepan cuándo su ruta vuelve al frente (didPopNext).
+final routeObserver = RouteObserver<ModalRoute<void>>();
+
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
@@ -62,6 +66,7 @@ class _MyAppState extends State<MyApp> {
           controller: atmosferaController,
           child: MaterialApp(
             navigatorKey: navigatorKey,
+            navigatorObservers: [routeObserver],
             debugShowCheckedModeBanner: false,
             title: 'ClubReads',
             theme: theme,

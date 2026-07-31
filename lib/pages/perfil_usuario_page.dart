@@ -351,86 +351,86 @@ class _PerfilUsuarioPageState extends State<PerfilUsuarioPage> {
         title: const Text('Perfil lector'),
         actions: [
           FeatureTooltip(
-              featureKey: 'ft_perfil_secciones',
-              message: 'Cambia entre Resumen, Timeline y Finalizados',
-              icon: Icons.grid_view_rounded,
-              position: FeatureTooltipPosition.below,
+            featureKey: 'ft_perfil_secciones',
+            message: 'Cambia entre Resumen, Timeline y Finalizados',
+            icon: Icons.grid_view_rounded,
+            position: FeatureTooltipPosition.below,
             child: PopupMenuButton<String>(
-            tooltip: 'Secciones del perfil',
-            initialValue: _menuPerfil,
-            position: PopupMenuPosition.under,
-            constraints: const BoxConstraints(minWidth: 250, maxWidth: 290),
-            child: Container(
-              margin: const EdgeInsets.only(right: AppSpacing.sm),
-              padding: const EdgeInsets.symmetric(
-                horizontal: AppSpacing.sm,
-                vertical: 7,
-              ),
-              decoration: BoxDecoration(
-                color: AppColors.primaryLight.withValues(alpha: .65),
-                borderRadius: BorderRadius.circular(AppRadius.pill),
-                border: Border.all(
-                  color: AppColors.primary.withValues(alpha: .22),
+              tooltip: 'Secciones del perfil',
+              initialValue: _menuPerfil,
+              position: PopupMenuPosition.under,
+              constraints: const BoxConstraints(minWidth: 250, maxWidth: 290),
+              child: Container(
+                margin: const EdgeInsets.only(right: AppSpacing.sm),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: AppSpacing.sm,
+                  vertical: 7,
                 ),
-              ),
-              child: const Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(
-                    Icons.grid_view_rounded,
-                    size: 18,
-                    color: AppColors.primaryDark,
+                decoration: BoxDecoration(
+                  color: AppColors.primaryLight.withValues(alpha: .65),
+                  borderRadius: BorderRadius.circular(AppRadius.pill),
+                  border: Border.all(
+                    color: AppColors.primary.withValues(alpha: .22),
                   ),
-                  SizedBox(width: 6),
-                  Text(
-                    'Secciones',
-                    style: TextStyle(
+                ),
+                child: const Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      Icons.grid_view_rounded,
+                      size: 18,
                       color: AppColors.primaryDark,
-                      fontWeight: FontWeight.w800,
                     ),
-                  ),
-                  SizedBox(width: 2),
-                  Icon(
-                    Icons.arrow_drop_down_rounded,
-                    color: AppColors.primaryDark,
-                  ),
-                ],
+                    SizedBox(width: 6),
+                    Text(
+                      'Secciones',
+                      style: TextStyle(
+                        color: AppColors.primaryDark,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                    SizedBox(width: 2),
+                    Icon(
+                      Icons.arrow_drop_down_rounded,
+                      color: AppColors.primaryDark,
+                    ),
+                  ],
+                ),
               ),
+              onSelected: _seleccionarSeccion,
+              itemBuilder: (_) => [
+                PopupMenuItem(
+                  value: 'RESUMEN',
+                  height: 70,
+                  child: _ProfileMenuOption(
+                    icon: Icons.person_outline_rounded,
+                    title: 'Resumen',
+                    subtitle: 'Tu identidad y cifras lectoras',
+                    selected: _menuPerfil == 'RESUMEN',
+                  ),
+                ),
+                PopupMenuItem(
+                  value: 'TIMELINE',
+                  height: 70,
+                  child: _ProfileMenuOption(
+                    icon: Icons.timeline_rounded,
+                    title: 'Timeline',
+                    subtitle: 'Tu historia lectora por fechas',
+                    selected: _menuPerfil == 'TIMELINE',
+                  ),
+                ),
+                PopupMenuItem(
+                  value: 'LIBROS',
+                  height: 70,
+                  child: _ProfileMenuOption(
+                    icon: Icons.check_circle_outline_rounded,
+                    title: 'Finalizados',
+                    subtitle: 'Terminados y abandonados',
+                    selected: _menuPerfil == 'LIBROS',
+                  ),
+                ),
+              ],
             ),
-            onSelected: _seleccionarSeccion,
-            itemBuilder: (_) => [
-              PopupMenuItem(
-                value: 'RESUMEN',
-                height: 70,
-                child: _ProfileMenuOption(
-                  icon: Icons.person_outline_rounded,
-                  title: 'Resumen',
-                  subtitle: 'Tu identidad y cifras lectoras',
-                  selected: _menuPerfil == 'RESUMEN',
-                ),
-              ),
-              PopupMenuItem(
-                value: 'TIMELINE',
-                height: 70,
-                child: _ProfileMenuOption(
-                  icon: Icons.timeline_rounded,
-                  title: 'Timeline',
-                  subtitle: 'Tu historia lectora por fechas',
-                  selected: _menuPerfil == 'TIMELINE',
-                ),
-              ),
-              PopupMenuItem(
-                value: 'LIBROS',
-                height: 70,
-                child: _ProfileMenuOption(
-                  icon: Icons.check_circle_outline_rounded,
-                  title: 'Finalizados',
-                  subtitle: 'Terminados y abandonados',
-                  selected: _menuPerfil == 'LIBROS',
-                ),
-              ),
-            ],
-          ),
           ), // FeatureTooltip
         ],
       ),
@@ -471,7 +471,7 @@ class _PerfilUsuarioPageState extends State<PerfilUsuarioPage> {
                     final now = DateTime.now();
                     final yearBooks = perfil.terminados
                         .where((libro) {
-                          final date = DateTime.tryParse(libro.fechaFin);
+                          final date = _parseFecha(libro.fechaFin);
                           return date != null && date.year == now.year;
                         })
                         .map(
@@ -495,15 +495,15 @@ class _PerfilUsuarioPageState extends State<PerfilUsuarioPage> {
                           books: yearBooks,
                           onShare: esMiPerfil
                               ? () => Navigator.push<void>(
-                                    context,
-                                    AppPageRoute(
-                                      builder: (_) => YearReadingSharePage(
-                                        year: now.year,
-                                        books: yearBooks,
-                                        userName: perfil.usuario,
-                                      ),
+                                  context,
+                                  AppPageRoute(
+                                    builder: (_) => YearReadingSharePage(
+                                      year: now.year,
+                                      books: yearBooks,
+                                      userName: perfil.usuario,
                                     ),
-                                  )
+                                  ),
+                                )
                               : null,
                           onBookTap: (book) => openBookDetail(
                             context,
@@ -775,6 +775,25 @@ class _PerfilUsuarioPageState extends State<PerfilUsuarioPage> {
   Future<void> _cerrarSesion() async {
     await AuthService().logout();
     if (mounted) Navigator.popUntil(context, (route) => route.isFirst);
+  }
+
+  /// Parsea fechas en formato 'dd/mm/yyyy' (backend español) o ISO 8601.
+  DateTime? _parseFecha(String fecha) {
+    if (fecha.isEmpty) return null;
+    // Intenta ISO primero (yyyy-mm-dd o full ISO)
+    final iso = DateTime.tryParse(fecha);
+    if (iso != null) return iso;
+    // Formato español dd/mm/yyyy
+    final parts = fecha.split('/');
+    if (parts.length == 3) {
+      final day = int.tryParse(parts[0]);
+      final month = int.tryParse(parts[1]);
+      final year = int.tryParse(parts[2]);
+      if (day != null && month != null && year != null) {
+        return DateTime(year, month, day);
+      }
+    }
+    return null;
   }
 
   Widget _finalizadosAgrupados(List<PerfilLibroTerminado> libros) {

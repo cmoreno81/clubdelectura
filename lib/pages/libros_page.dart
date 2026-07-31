@@ -451,9 +451,7 @@ class _LibrosPageState extends State<LibrosPage> {
         .where((registro) => registro.yaLoTengo)
         .map((registro) => registro.formato.trim().toUpperCase())
         .where((formato) => formato.isNotEmpty);
-    final formatoPropio = formatosPropios.isEmpty
-        ? ''
-        : formatosPropios.first;
+    final formatoPropio = formatosPropios.isEmpty ? '' : formatosPropios.first;
     final iconoPropio = switch (formatoPropio) {
       'FISICO' || 'FÍSICO' => Icons.menu_book_rounded,
       'DIGITAL' => Icons.tablet_mac_rounded,
@@ -481,11 +479,55 @@ class _LibrosPageState extends State<LibrosPage> {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          ClubBookCover(
-            title: libro.libro,
-            imageUrl: libro.coverUrl,
-            width: 92,
-            showShadow: false,
+          Stack(
+            clipBehavior: Clip.none,
+            children: [
+              ClubBookCover(
+                title: libro.libro,
+                imageUrl: libro.coverUrl,
+                width: 92,
+                showShadow: false,
+              ),
+              // Badge "Leído por ti" en esquina superior derecha de la portada
+              if (libro.leidoPorMi)
+                Positioned(
+                  top: -6,
+                  right: -6,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 6,
+                      vertical: 4,
+                    ),
+                    decoration: BoxDecoration(
+                      color: AppColors.primary,
+                      borderRadius: BorderRadius.circular(10),
+                      boxShadow: [
+                        BoxShadow(
+                          color: AppColors.primary.withValues(alpha: .35),
+                          blurRadius: 6,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(iconoPropio, size: 11, color: Colors.white),
+                        const SizedBox(width: 3),
+                        const Text(
+                          'Leído',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 10,
+                            fontWeight: FontWeight.w800,
+                            height: 1,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+            ],
           ),
 
           const SizedBox(width: AppSpacing.md),
@@ -561,12 +603,7 @@ class _LibrosPageState extends State<LibrosPage> {
                   spacing: AppSpacing.xs,
                   runSpacing: AppSpacing.xs,
                   children: [
-                    if (libro.leidoPorMi)
-                      ClubChip(
-                        label: 'Leído por ti',
-                        icon: iconoPropio,
-                        variant: ClubChipVariant.primary,
-                      ),
+                    // "Leído por ti" se muestra sobre la portada (badge)
                     if (libro.esReciente)
                       const ClubChip(
                         label: 'Nuevo',

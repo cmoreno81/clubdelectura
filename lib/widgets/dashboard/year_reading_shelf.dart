@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../main.dart' show routeObserver;
 import '../../models/general_dashboard.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_radius.dart';
@@ -24,7 +25,8 @@ class YearReadingShelf extends StatefulWidget {
 }
 
 class _YearReadingShelfState extends State<YearReadingShelf>
-    with SingleTickerProviderStateMixin {
+    with SingleTickerProviderStateMixin
+    implements RouteAware {
   bool _expanded = false;
   late final AnimationController _ctrl;
 
@@ -42,7 +44,27 @@ class _YearReadingShelfState extends State<YearReadingShelf>
   }
 
   @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final route = ModalRoute.of(context);
+    if (route != null) routeObserver.subscribe(this, route);
+  }
+
+  @override
+  void didPopNext() {
+    _ctrl.forward(from: 0);
+  }
+
+  @override
+  void didPush() {}
+  @override
+  void didPop() {}
+  @override
+  void didPushNext() {}
+
+  @override
   void dispose() {
+    routeObserver.unsubscribe(this);
     _ctrl.dispose();
     super.dispose();
   }
@@ -307,10 +329,7 @@ class _CasualShelfBookState extends State<_CasualShelfBook> {
           final opacity = reduceMotion ? 1.0 : t.clamp(0.0, 1.0);
           return Opacity(
             opacity: opacity,
-            child: Transform.translate(
-              offset: Offset(0, dy),
-              child: child,
-            ),
+            child: Transform.translate(offset: Offset(0, dy), child: child),
           );
         },
         child: GestureDetector(

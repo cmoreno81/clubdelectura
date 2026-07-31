@@ -479,8 +479,9 @@ class _GeneralDashboardPageState extends State<GeneralDashboardPage> {
         summary.finishedThisMonth,
         Icons.bolt_rounded,
         AppColors.warning,
-        '${data.pagesReadThisMonth} páginas · ${summary.finishedThisMonth} '
-            '${summary.finishedThisMonth == 1 ? 'libro' : 'libros'}',
+        data.pagesReadThisMonth > 0
+            ? '${data.pagesReadThisMonth} páginas leídas'
+            : '${summary.finishedThisMonth == 1 ? 'libro terminado' : 'libros terminados'}',
       ),
       (
         'Páginas totales',

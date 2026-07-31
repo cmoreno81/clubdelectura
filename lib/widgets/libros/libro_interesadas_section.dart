@@ -11,29 +11,110 @@ import '../common/club_chip.dart';
 import 'libro_section.dart';
 import 'pausar_lectura_dialog.dart';
 
-InputDecoration _selectorDecoration({
-  required String label,
-  required IconData icon,
-  required Color color,
-}) {
-  return InputDecoration(
-    labelText: label,
-    prefixIcon: Icon(icon, color: color),
-    filled: true,
-    fillColor: color.withValues(alpha: .07),
-    contentPadding: const EdgeInsets.symmetric(
-      horizontal: AppSpacing.md,
-      vertical: AppSpacing.md,
-    ),
-    enabledBorder: OutlineInputBorder(
-      borderRadius: BorderRadius.circular(18),
-      borderSide: BorderSide(color: color.withValues(alpha: .32)),
-    ),
-    focusedBorder: OutlineInputBorder(
-      borderRadius: BorderRadius.circular(18),
-      borderSide: BorderSide(color: color, width: 1.6),
-    ),
-  );
+/// Selector de opción estilo "pill" — siempre muestra label + valor,
+/// nunca tapa el título con el valor seleccionado.
+class _OptionSelector<T> extends StatelessWidget {
+  const _OptionSelector({
+    super.key,
+    required this.label,
+    required this.icon,
+    required this.color,
+    required this.value,
+    required this.options,
+    required this.onChanged,
+  });
+
+  final String label;
+  final IconData icon;
+  final Color color;
+  final T value;
+  final List<({T value, String label, String? emoji})> options;
+  final ValueChanged<T> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Label siempre visible arriba
+        Row(
+          children: [
+            Icon(icon, size: 14, color: color),
+            const SizedBox(width: 5),
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 11,
+                fontWeight: FontWeight.w700,
+                color: color,
+                letterSpacing: .3,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 7),
+        // Chips horizontales
+        Wrap(
+          spacing: 7,
+          runSpacing: 7,
+          children: options.map((opt) {
+            final selected = opt.value == value;
+            return GestureDetector(
+              onTap: () => onChanged(opt.value),
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 180),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 8,
+                ),
+                decoration: BoxDecoration(
+                  color: selected ? color : color.withValues(alpha: .08),
+                  borderRadius: BorderRadius.circular(30),
+                  border: Border.all(
+                    color: selected ? color : color.withValues(alpha: .28),
+                  ),
+                  boxShadow: selected
+                      ? [
+                          BoxShadow(
+                            color: color.withValues(alpha: .25),
+                            blurRadius: 6,
+                            offset: const Offset(0, 2),
+                          ),
+                        ]
+                      : null,
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    if (opt.emoji != null) ...[
+                      Text(opt.emoji!, style: const TextStyle(fontSize: 13)),
+                      const SizedBox(width: 5),
+                    ],
+                    Text(
+                      opt.label,
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w700,
+                        color: selected ? Colors.white : color,
+                      ),
+                    ),
+                    if (selected) ...[
+                      const SizedBox(width: 4),
+                      Icon(
+                        Icons.check_rounded,
+                        size: 13,
+                        color: Colors.white.withValues(alpha: .9),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+            );
+          }).toList(),
+        ),
+      ],
+    );
+  }
 }
 
 class LibroInteresadasSection extends StatelessWidget {
@@ -136,49 +217,58 @@ class _LectoraCard extends StatelessWidget {
     required this.onPedirValoracion,
   });
 
-  List<DropdownMenuItem<String>> get _opcionesEstado {
+  /// Opciones de estado como datos planos para el _EstadoSelector
+  List<({String value, String label, String? emoji})> get _opcionesEstadoData {
     if (registro.estado == 'FINALIZADO') {
       return [
-        DropdownMenuItem(
+        (
           value: 'FINALIZADO',
-          child: Text(ReadingStatusCopy.label('FINALIZADO')),
+          label: ReadingStatusCopy.label('FINALIZADO'),
+          emoji: '✅',
         ),
-        DropdownMenuItem(
+        (
           value: 'PENDIENTE',
-          child: Text(ReadingStatusCopy.label('PENDIENTE')),
+          label: ReadingStatusCopy.label('PENDIENTE'),
+          emoji: '📚',
         ),
-        DropdownMenuItem(
+        (
           value: 'RELECTURA',
-          child: Text(ReadingStatusCopy.label('RELECTURA')),
+          label: ReadingStatusCopy.label('RELECTURA'),
+          emoji: '🔁',
         ),
       ];
     }
-
     return [
-      DropdownMenuItem(
+      (
         value: 'PENDIENTE',
-        child: Text(ReadingStatusCopy.label('PENDIENTE')),
+        label: ReadingStatusCopy.label('PENDIENTE'),
+        emoji: '📚',
       ),
       if (!tieneFinalizaciones || registro.estado == 'LEYENDO')
-        DropdownMenuItem(
+        (
           value: 'LEYENDO',
-          child: Text(ReadingStatusCopy.label('LEYENDO')),
+          label: ReadingStatusCopy.label('LEYENDO'),
+          emoji: '📖',
         ),
-      DropdownMenuItem(
+      (
         value: 'PAUSADO',
-        child: Text(ReadingStatusCopy.label('PAUSADO')),
+        label: ReadingStatusCopy.label('PAUSADO'),
+        emoji: '😮‍💨',
       ),
-      DropdownMenuItem(
+      (
         value: 'RELECTURA',
-        child: Text(ReadingStatusCopy.label('RELECTURA')),
+        label: ReadingStatusCopy.label('RELECTURA'),
+        emoji: '🔁',
       ),
-      DropdownMenuItem(
+      (
         value: 'ABANDONADO',
-        child: Text(ReadingStatusCopy.label('ABANDONADO')),
+        label: ReadingStatusCopy.label('ABANDONADO'),
+        emoji: '💔',
       ),
-      DropdownMenuItem(
+      (
         value: 'FINALIZADO',
-        child: Text(ReadingStatusCopy.label('FINALIZADO')),
+        label: ReadingStatusCopy.label('FINALIZADO'),
+        emoji: '✅',
       ),
     ];
   }
@@ -280,91 +370,44 @@ class _LectoraCard extends StatelessWidget {
           if (esUsuarioActual) ...[
             const SizedBox(height: AppSpacing.md),
 
-            Column(
-              children: [
-                DropdownButtonFormField<String>(
-                  isExpanded: true,
-                  initialValue: registro.prioridad.isEmpty
-                      ? 'MEDIA'
-                      : registro.prioridad,
-                  decoration: _selectorDecoration(
-                    label: 'Prioridad personal',
-                    icon: Icons.flag_rounded,
-                    color: AppColors.warning,
-                  ),
-                  items: const [
-                    DropdownMenuItem(
-                      value: 'ALTA',
-                      child: Text('🔴  Alta'),
-                    ),
-                    DropdownMenuItem(
-                      value: 'MEDIA',
-                      child: Text('🟡  Media'),
-                    ),
-                    DropdownMenuItem(
-                      value: 'BAJA',
-                      child: Text('🟢  Baja'),
-                    ),
-                  ],
-                  onChanged: (value) {
-                    if (value != null) {
-                      onActualizarPreferencias(
-                        registro,
-                        value,
-                        registro.formato,
-                      );
-                    }
-                  },
-                ),
-                const SizedBox(width: AppSpacing.sm),
-                const SizedBox(height: AppSpacing.sm),
-                DropdownButtonFormField<String>(
-                  isExpanded: true,
-                  initialValue: registro.formato.isEmpty
-                      ? null
-                      : registro.formato,
-                  decoration: _selectorDecoration(
-                    label: 'Mi formato',
-                    icon: Icons.library_books_rounded,
-                    color: AppColors.info,
-                  ),
-                  items: const [
-                    DropdownMenuItem(value: 'FISICO', child: Text('📖 Físico')),
-                    DropdownMenuItem(
-                      value: 'DIGITAL',
-                      child: Text('📱 Digital'),
-                    ),
-                    DropdownMenuItem(
-                      value: 'AUDIOLIBRO',
-                      child: Text('🎧 Audio'),
-                    ),
-                  ],
-                  onChanged: (value) {
-                    if (value != null) {
-                      onActualizarPreferencias(
-                        registro,
-                        registro.prioridad.isEmpty
-                            ? 'MEDIA'
-                            : registro.prioridad,
-                        value,
-                      );
-                    }
-                  },
-                ),
+            _OptionSelector<String>(
+              label: 'Prioridad personal',
+              icon: Icons.flag_rounded,
+              color: AppColors.warning,
+              value: registro.prioridad.isEmpty ? 'MEDIA' : registro.prioridad,
+              options: const [
+                (value: 'ALTA', label: 'Alta', emoji: '🔴'),
+                (value: 'MEDIA', label: 'Media', emoji: '🟡'),
+                (value: 'BAJA', label: 'Baja', emoji: '🟢'),
               ],
+              onChanged: (value) =>
+                  onActualizarPreferencias(registro, value, registro.formato),
             ),
 
             const SizedBox(height: AppSpacing.md),
 
-            DropdownButtonFormField<String>(
-              isExpanded: true,
-              initialValue: registro.estado,
-              decoration: _selectorDecoration(
-                label: 'Estado de lectura',
-                icon: Icons.swap_horiz_rounded,
-                color: AppColors.primary,
+            _OptionSelector<String>(
+              label: 'Mi formato',
+              icon: Icons.library_books_rounded,
+              color: AppColors.info,
+              value: registro.formato.isEmpty ? '' : registro.formato,
+              options: const [
+                (value: 'FISICO', label: 'Físico', emoji: '📖'),
+                (value: 'DIGITAL', label: 'Digital', emoji: '📱'),
+                (value: 'AUDIOLIBRO', label: 'Audio', emoji: '🎧'),
+              ],
+              onChanged: (value) => onActualizarPreferencias(
+                registro,
+                registro.prioridad.isEmpty ? 'MEDIA' : registro.prioridad,
+                value,
               ),
-              items: _opcionesEstado,
+            ),
+
+            const SizedBox(height: AppSpacing.md),
+
+            _EstadoSelector(
+              estado: registro.estado,
+              opciones: _opcionesEstadoData,
               onChanged: (value) async {
                 if (value == null || value == registro.estado) {
                   return;
@@ -598,5 +641,31 @@ class _LectoraCard extends StatelessWidget {
       default:
         return ClubChipVariant.warning;
     }
+  }
+}
+
+/// Selector de estado de lectura — versión async-aware que envuelve _OptionSelector.
+/// Muestra el label "Estado de lectura" siempre visible sobre los chips.
+class _EstadoSelector extends StatelessWidget {
+  const _EstadoSelector({
+    required this.estado,
+    required this.opciones,
+    required this.onChanged,
+  });
+
+  final String estado;
+  final List<({String value, String label, String? emoji})> opciones;
+  final Future<void> Function(String?) onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    return _OptionSelector<String>(
+      label: 'Estado de lectura',
+      icon: Icons.swap_horiz_rounded,
+      color: AppColors.primary,
+      value: estado,
+      options: opciones,
+      onChanged: onChanged,
+    );
   }
 }
