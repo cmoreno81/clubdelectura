@@ -49,21 +49,11 @@ class _MonthlyReadingShelfState extends State<MonthlyReadingShelf>
       vsync: this,
       duration: Duration(milliseconds: 380 + widget.books.length * 95),
     );
-    // Arrancamos la animación cada vez que se entra a la pantalla.
-    // Como el widget vive dentro de un SliverList que se rebuilda al
-    // navegar de vuelta, initState se llama de nuevo → animación se reinicia.
+    // initState se llama cada vez que Flutter crea un nuevo State,
+    // lo que ocurre cuando el widget recibe una key diferente.
+    // El GeneralDashboardPage renueva _shelfKey en cada load/reload,
+    // garantizando que la animación arranca de cero al entrar a la pantalla.
     _ctrl.forward(from: 0);
-  }
-
-  @override
-  void didUpdateWidget(MonthlyReadingShelf old) {
-    super.didUpdateWidget(old);
-    // Si cambian los libros (reload), relanzamos
-    if (old.books != widget.books) {
-      _ctrl.duration =
-          Duration(milliseconds: 380 + widget.books.length * 95);
-      _ctrl.forward(from: 0);
-    }
   }
 
   @override

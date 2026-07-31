@@ -21,7 +21,6 @@ import '../widgets/perfil/editar_fechas_lectura_dialog.dart';
 import '../utils/lectura_fecha_utils.dart';
 import '../widgets/perfil/editar_avatar_dialog.dart';
 import '../widgets/perfil/perfil_timeline_lectura.dart';
-import '../widgets/perfil/perfil_estanteria_mes.dart';
 import '../widgets/common/club_rating_stars.dart';
 import 'acerca_de_page.dart';
 import 'ayuda_page.dart';
@@ -195,6 +194,9 @@ class _PerfilUsuarioPageState extends State<PerfilUsuarioPage> {
   final _scrollController = ScrollController();
   // GlobalKey adjunta al widget de inicio de la sección (timeline / finalizados)
   final _sectionKey = GlobalKey();
+  // Key que cambia al recargar el perfil → fuerza recrear YearReadingShelf
+  // y relanza la animación de colocación de libros.
+  Key _shelfKey = UniqueKey();
 
   @override
   void initState() {
@@ -336,6 +338,7 @@ class _PerfilUsuarioPageState extends State<PerfilUsuarioPage> {
   Future<void> _recargar() async {
     setState(() {
       future = _cargarPerfil();
+      _shelfKey = UniqueKey();
     });
 
     await future;
@@ -462,21 +465,7 @@ class _PerfilUsuarioPageState extends State<PerfilUsuarioPage> {
 
                 _resumenLectura(perfil),
 
-                const SizedBox(height: AppSpacing.xl),
-                PerfilEstanteriaMes(
-                  usuario: perfil.usuario,
-                  libros: perfil.terminados,
-                  esMiPerfil: esMiPerfil,
-                  onBookTap: (libro) => openBookDetail(
-                    context,
-                    title: libro.libro,
-                    bookId: libro.bookId,
-                    coverUrl: libro.coverUrl,
-                    genre: libro.genero,
-                  ),
-                ),
-
-                // ── Biblioteca del año (antes estaba en el dashboard) ──
+                // ── Biblioteca del año ──
                 Builder(
                   builder: (context) {
                     final now = DateTime.now();
@@ -501,6 +490,7 @@ class _PerfilUsuarioPageState extends State<PerfilUsuarioPage> {
                       children: [
                         const SizedBox(height: AppSpacing.xl),
                         YearReadingShelf(
+                          key: _shelfKey,
                           year: now.year,
                           books: yearBooks,
                           onShare: esMiPerfil

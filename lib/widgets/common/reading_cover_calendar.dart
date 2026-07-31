@@ -18,18 +18,9 @@ class ReadingCoverCalendar extends StatelessWidget {
   final double cellAspectRatio;
 
   static const _months = [
-    'Enero',
-    'Febrero',
-    'Marzo',
-    'Abril',
-    'Mayo',
-    'Junio',
-    'Julio',
-    'Agosto',
-    'Septiembre',
-    'Octubre',
-    'Noviembre',
-    'Diciembre',
+    'Enero', 'Febrero', 'Marzo', 'Abril',
+    'Mayo', 'Junio', 'Julio', 'Agosto',
+    'Septiembre', 'Octubre', 'Noviembre', 'Diciembre',
   ];
 
   @override
@@ -38,6 +29,25 @@ class ReadingCoverCalendar extends StatelessWidget {
     final days = DateTime(calendar.year, calendar.month + 1, 0).day;
     final offset = first.weekday - 1;
     final cells = ((offset + days + 6) ~/ 7) * 7;
+
+    // Mapa de fecha → rating para los libros terminados ese día
+    // Solo marcamos el ÚLTIMO día de lectura (fechaFin) de cada libro.
+    final ratingsByFinishDate = <DateTime, double>{};
+    for (final book in calendar.finishedBooks) {
+      final finish = DateTime.tryParse(book.finishedAt)?.toLocal();
+      if (finish == null) continue;
+      final day = DateTime(finish.year, finish.month, finish.day);
+      if (book.rating != null && book.rating! > 0) {
+        // Si hay más de un libro terminado el mismo día, guardamos el mayor
+        final existing = ratingsByFinishDate[day];
+        if (existing == null || book.rating! > existing) {
+          ratingsByFinishDate[day] = book.rating!;
+        }
+      } else {
+        // Sin rating pero sí terminado → marcamos con 0 para poner la estrella vacía
+        ratingsByFinishDate.putIfAbsent(day, () => 0);
+      }
+    }
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -89,9 +99,14 @@ class ReadingCoverCalendar extends StatelessWidget {
               final readings = calendar.readings
                   .where((reading) => _contains(reading, date))
                   .toList(growable: false);
+
+              // ¿Hay algún libro terminado exactamente este día?
+              final finishRating = ratingsByFinishDate[date];
+
               return _ReadingDayCell(
                 day: day,
                 readings: readings,
+                finishRating: finishRating,
                 onBookTap: onBookTap,
               );
             },
@@ -117,11 +132,14 @@ class _ReadingDayCell extends StatelessWidget {
     required this.day,
     required this.readings,
     required this.onBookTap,
+    this.finishRating,
   });
 
   final int day;
   final List<MonthlyReadingSpan> readings;
   final ValueChanged<MonthlyReadingSpan>? onBookTap;
+  /// Rating del libro terminado este día exacto (null = no termina ninguno hoy).
+  final double? finishRating;
 
   @override
   Widget build(BuildContext context) {
@@ -148,6 +166,8 @@ class _ReadingDayCell extends StatelessWidget {
                   ),
               ],
             ),
+
+          // Número del día (círculo superior izquierdo)
           Positioned(
             left: 3,
             top: 3,
@@ -173,6 +193,8 @@ class _ReadingDayCell extends StatelessWidget {
               ),
             ),
           ),
+
+          // Contador si hay más de 2 libros simultáneos
           if (readings.length > 2)
             Positioned(
               right: 2,
@@ -193,6 +215,59 @@ class _ReadingDayCell extends StatelessWidget {
                 ),
               ),
             ),
+
+          // ⭐ Badge de finalización en esquina inferior derecha
+          if (finishRating != null)
+            Positioned(
+              right: 2,
+              bottom: 2,
+              child: _FinishBadge(rating: finishRating!),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Badge compacto que aparece en el último día de lectura de un libro.
+/// Muestra la valoración con media estrella si la hay, o solo un trofeo si no.
+class _FinishBadge extends StatelessWidget {
+  const _FinishBadge({required this.rating});
+
+  final double rating;
+
+  @override
+  Widget build(BuildContext context) {
+    final hasRating = rating > 0;
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 3, vertical: 2),
+      decoration: BoxDecoration(
+        color: Colors.black.withValues(alpha: .70),
+        borderRadius: BorderRadius.circular(5),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            hasRating ? Icons.star_rounded : Icons.emoji_events_rounded,
+            color: const Color(0xFFFFD700),
+            size: 8,
+          ),
+          if (hasRating) ...[
+            const SizedBox(width: 1),
+            Text(
+              // Muestra "4" o "4.5" sin decimales innecesarios
+              rating == rating.roundToDouble()
+                  ? rating.toInt().toString()
+                  : rating.toStringAsFixed(1),
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 7,
+                fontWeight: FontWeight.w900,
+                height: 1,
+              ),
+            ),
+          ],
         ],
       ),
     );

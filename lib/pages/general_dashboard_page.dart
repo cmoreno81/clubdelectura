@@ -40,6 +40,9 @@ class GeneralDashboardPage extends StatefulWidget {
 class _GeneralDashboardPageState extends State<GeneralDashboardPage> {
   late Future<GeneralDashboard> _future;
   String? _openingClubId;
+  // Clave que cambia con cada reload → fuerza recrear el State del shelf
+  // y relanzar la animación de colocación de libros.
+  Key _shelfKey = UniqueKey();
 
   @override
   void initState() {
@@ -49,7 +52,7 @@ class _GeneralDashboardPageState extends State<GeneralDashboardPage> {
   }
 
   Future<void> _checkOnboarding() async {
-    final mostrar = await deberiaMostrarOnboarding();
+    final mostrar = await deberíaMostrarOnboarding();
     if (!mostrar || !mounted) return;
     // Pequeño delay para que la pantalla termine de renderizarse
     await Future<void>.delayed(const Duration(milliseconds: 600));
@@ -60,6 +63,7 @@ class _GeneralDashboardPageState extends State<GeneralDashboardPage> {
   Future<void> _reload() async {
     setState(() {
       _future = GeneralDashboardService().load();
+      _shelfKey = UniqueKey(); // nuevo key → la estantería anima desde cero
     });
     await _future;
   }
@@ -269,6 +273,7 @@ class _GeneralDashboardPageState extends State<GeneralDashboardPage> {
                       if (data.calendar.finishedBooks.isNotEmpty) ...[
                         const SizedBox(height: AppSpacing.xl),
                         MonthlyReadingShelf(
+                          key: _shelfKey,
                           year: data.calendar.year,
                           month: data.calendar.month,
                           books: data.calendar.finishedBooks,

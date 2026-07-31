@@ -965,12 +965,9 @@ class _SelectorOption extends StatelessWidget {
       onTap: onTap,
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
-        padding: const EdgeInsets.symmetric(
-          horizontal: AppSpacing.md,
-          vertical: AppSpacing.md,
-        ),
+        // Altura fija: el tick se superpone, no empuja el layout
+        height: 118,
         decoration: BoxDecoration(
-          // Fondo sólido cuando está seleccionado para contraste claro
           color: selected ? color : AppColors.surfaceSoft,
           borderRadius: BorderRadius.circular(AppRadius.lg),
           border: Border.all(
@@ -987,42 +984,57 @@ class _SelectorOption extends StatelessWidget {
                 ]
               : null,
         ),
-        child: Column(
+        child: Stack(
           children: [
-            // Icono blanco sobre fondo primario cuando seleccionado
-            Icon(
-              icon,
-              color: selected ? Colors.white : AppColors.textMuted,
-              size: 28,
-            ),
-            const SizedBox(height: AppSpacing.sm),
-            Text(
-              title,
-              style: AppTextStyles.subtitle.copyWith(
-                color: selected ? Colors.white : AppColors.textPrimary,
-                fontWeight: FontWeight.w800,
+            // Contenido centrado
+            Padding(
+              padding: const EdgeInsets.fromLTRB(
+                AppSpacing.sm, AppSpacing.md, AppSpacing.sm, AppSpacing.sm,
+              ),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    icon,
+                    color: selected ? Colors.white : AppColors.textMuted,
+                    size: 26,
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    title,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: AppTextStyles.subtitle.copyWith(
+                      color: selected ? Colors.white : AppColors.textPrimary,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                  const SizedBox(height: 3),
+                  Text(
+                    subtitle,
+                    textAlign: TextAlign.center,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: AppTextStyles.caption.copyWith(
+                      color: selected
+                          ? Colors.white.withValues(alpha: .80)
+                          : AppColors.textMuted,
+                    ),
+                  ),
+                ],
               ),
             ),
-            const SizedBox(height: AppSpacing.xs),
-            Text(
-              subtitle,
-              textAlign: TextAlign.center,
-              maxLines: 2,
-              style: AppTextStyles.caption.copyWith(
-                color: selected
-                    ? Colors.white.withValues(alpha: .80)
-                    : AppColors.textMuted,
+            // Tick superpuesto en esquina inferior derecha — no afecta al tamaño
+            if (selected)
+              const Positioned(
+                right: 8,
+                bottom: 8,
+                child: Icon(
+                  Icons.check_circle_rounded,
+                  color: Colors.white,
+                  size: 16,
+                ),
               ),
-            ),
-            // Tick visible solo cuando está seleccionado
-            if (selected) ...[
-              const SizedBox(height: AppSpacing.xs),
-              const Icon(
-                Icons.check_circle_rounded,
-                color: Colors.white,
-                size: 16,
-              ),
-            ],
           ],
         ),
       ),

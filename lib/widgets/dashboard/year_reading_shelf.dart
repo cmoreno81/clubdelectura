@@ -23,8 +23,29 @@ class YearReadingShelf extends StatefulWidget {
   State<YearReadingShelf> createState() => _YearReadingShelfState();
 }
 
-class _YearReadingShelfState extends State<YearReadingShelf> {
+class _YearReadingShelfState extends State<YearReadingShelf>
+    with SingleTickerProviderStateMixin {
   bool _expanded = false;
+  late final AnimationController _ctrl;
+
+  @override
+  void initState() {
+    super.initState();
+    _ctrl = AnimationController(
+      vsync: this,
+      // Duración escalonada según número de libros visibles (máx 12)
+      duration: Duration(
+        milliseconds: 400 + widget.books.length.clamp(0, 12) * 85,
+      ),
+    );
+    _ctrl.forward(from: 0);
+  }
+
+  @override
+  void dispose() {
+    _ctrl.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -109,6 +130,9 @@ class _YearReadingShelfState extends State<YearReadingShelf> {
                 start,
                 start + 4 < visible.length ? start + 4 : visible.length,
               ),
+              globalOffset: start,
+              totalBooks: visible.length,
+              controller: _ctrl,
               onBookTap: widget.onBookTap,
             ),
           if (ordered.length > 12)
@@ -138,11 +162,17 @@ class _YearShelfRow extends StatelessWidget {
   const _YearShelfRow({
     required this.shelfIndex,
     required this.books,
+    required this.globalOffset,
+    required this.totalBooks,
+    required this.controller,
     required this.onBookTap,
   });
 
   final int shelfIndex;
   final List<YearShelfBook> books;
+  final int globalOffset;
+  final int totalBooks;
+  final AnimationController controller;
   final ValueChanged<YearShelfBook> onBookTap;
 
   @override
@@ -203,6 +233,9 @@ class _YearShelfRow extends StatelessWidget {
                     _CasualShelfBook(
                       book: books[index],
                       index: index,
+                      globalIndex: globalOffset + index,
+                      totalBooks: totalBooks,
+                      controller: controller,
                       onTap: () => onBookTap(books[index]),
                     ),
                   ],
@@ -225,11 +258,17 @@ class _CasualShelfBook extends StatefulWidget {
   const _CasualShelfBook({
     required this.book,
     required this.index,
+    required this.globalIndex,
+    required this.totalBooks,
+    required this.controller,
     required this.onTap,
   });
 
   final YearShelfBook book;
   final int index;
+  final int globalIndex;
+  final int totalBooks;
+  final AnimationController controller;
   final VoidCallback onTap;
 
   @override
@@ -247,33 +286,58 @@ class _CasualShelfBookState extends State<_CasualShelfBook> {
     final reduceMotion =
         MediaQuery.maybeOf(context)?.disableAnimations ?? false;
 
+    // Animación de caída escalonada: cada libro cae en su momento
+    final total = widget.totalBooks.clamp(1, 9999);
+    final stagger = widget.globalIndex / total.toDouble();
+    final start = (stagger * 0.55).clamp(0.0, 0.6);
+    final end = (start + 0.4).clamp(0.0, 1.0);
+    final anim = CurvedAnimation(
+      parent: widget.controller,
+      curve: Interval(start, end, curve: Curves.easeOutBack),
+    );
+
     return Transform.rotate(
       angle: angle,
       alignment: Alignment.bottomCenter,
-      child: GestureDetector(
-        behavior: HitTestBehavior.opaque,
-        onTapDown: (_) {
-          if (!reduceMotion) setState(() => _lifted = true);
+      child: AnimatedBuilder(
+        animation: anim,
+        builder: (context, child) {
+          final t = anim.value;
+          final dy = reduceMotion ? 0.0 : (1 - t) * -62.0;
+          final opacity = reduceMotion ? 1.0 : t.clamp(0.0, 1.0);
+          return Opacity(
+            opacity: opacity,
+            child: Transform.translate(
+              offset: Offset(0, dy),
+              child: child,
+            ),
+          );
         },
-        onTapCancel: () {
-          if (_lifted) setState(() => _lifted = false);
-        },
-        onTapUp: (_) {
-          if (_lifted) setState(() => _lifted = false);
-          widget.onTap();
-        },
-        child: AnimatedContainer(
-          duration: reduceMotion
-              ? Duration.zero
-              : const Duration(milliseconds: 130),
-          curve: Curves.easeOutCubic,
-          transform: Matrix4.translationValues(0, _lifted ? -9 : 0, 0),
-          child: ClubBookCover(
-            title: widget.book.title,
-            imageUrl: widget.book.coverUrl,
-            width: 60,
-            height: height,
-            borderRadius: BorderRadius.circular(4),
+        child: GestureDetector(
+          behavior: HitTestBehavior.opaque,
+          onTapDown: (_) {
+            if (!reduceMotion) setState(() => _lifted = true);
+          },
+          onTapCancel: () {
+            if (_lifted) setState(() => _lifted = false);
+          },
+          onTapUp: (_) {
+            if (_lifted) setState(() => _lifted = false);
+            widget.onTap();
+          },
+          child: AnimatedContainer(
+            duration: reduceMotion
+                ? Duration.zero
+                : const Duration(milliseconds: 130),
+            curve: Curves.easeOutCubic,
+            transform: Matrix4.translationValues(0, _lifted ? -9 : 0, 0),
+            child: ClubBookCover(
+              title: widget.book.title,
+              imageUrl: widget.book.coverUrl,
+              width: 60,
+              height: height,
+              borderRadius: BorderRadius.circular(4),
+            ),
           ),
         ),
       ),
