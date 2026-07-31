@@ -53,66 +53,71 @@ class _OptionSelector<T> extends StatelessWidget {
           ],
         ),
         const SizedBox(height: 7),
-        // Chips horizontales
-        Wrap(
-          spacing: 7,
-          runSpacing: 7,
-          children: options.map((opt) {
-            final selected = opt.value == value;
-            return GestureDetector(
-              onTap: () => onChanged(opt.value),
-              child: AnimatedContainer(
-                duration: const Duration(milliseconds: 180),
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 12,
-                  vertical: 8,
-                ),
-                decoration: BoxDecoration(
-                  color: selected ? color : color.withValues(alpha: .08),
-                  borderRadius: BorderRadius.circular(30),
-                  border: Border.all(
-                    color: selected ? color : color.withValues(alpha: .28),
-                  ),
-                  boxShadow: selected
-                      ? [
-                          BoxShadow(
-                            color: color.withValues(alpha: .25),
-                            blurRadius: 6,
-                            offset: const Offset(0, 2),
-                          ),
-                        ]
-                      : null,
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    if (opt.emoji != null) ...[
-                      Text(opt.emoji!, style: const TextStyle(fontSize: 13)),
-                      const SizedBox(width: 5),
-                    ],
-                    Text(
-                      opt.label,
-                      style: TextStyle(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w700,
-                        color: selected ? Colors.white : color,
-                      ),
-                    ),
-                    if (selected) ...[
-                      const SizedBox(width: 4),
-                      Icon(
-                        Icons.check_rounded,
-                        size: 13,
-                        color: Colors.white.withValues(alpha: .9),
-                      ),
-                    ],
-                  ],
-                ),
-              ),
-            );
-          }).toList(),
+        // Chips en fila única con scroll horizontal si hacen falta
+        SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          child: Row(
+            children: [
+              for (var i = 0; i < options.length; i++) ...[
+                _buildChip(options[i], i),
+                if (i < options.length - 1) const SizedBox(width: 7),
+              ],
+            ],
+          ),
         ),
       ],
+    );
+  }
+
+  Widget _buildChip(({T value, String label, String? emoji}) opt, int index) {
+    final selected = opt.value == value;
+    return GestureDetector(
+      onTap: () => onChanged(opt.value),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 180),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        decoration: BoxDecoration(
+          // Sin seleccionar: fondo gris neutro para máximo contraste del texto
+          color: selected ? color : AppColors.surfaceSoft,
+          borderRadius: BorderRadius.circular(30),
+          border: Border.all(color: selected ? color : AppColors.border),
+          boxShadow: selected
+              ? [
+                  BoxShadow(
+                    color: color.withValues(alpha: .25),
+                    blurRadius: 6,
+                    offset: const Offset(0, 2),
+                  ),
+                ]
+              : null,
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (opt.emoji != null) ...[
+              Text(opt.emoji!, style: const TextStyle(fontSize: 13)),
+              const SizedBox(width: 5),
+            ],
+            Text(
+              opt.label,
+              style: TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w700,
+                // Seleccionado → blanco; sin seleccionar → texto oscuro
+                color: selected ? Colors.white : AppColors.textPrimary,
+              ),
+            ),
+            if (selected) ...[
+              const SizedBox(width: 4),
+              Icon(
+                Icons.check_rounded,
+                size: 13,
+                color: Colors.white.withValues(alpha: .9),
+              ),
+            ],
+          ],
+        ),
+      ),
     );
   }
 }
@@ -659,13 +664,87 @@ class _EstadoSelector extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return _OptionSelector<String>(
-      label: 'Estado de lectura',
-      icon: Icons.swap_horiz_rounded,
-      color: AppColors.primary,
-      value: estado,
-      options: opciones,
-      onChanged: onChanged,
+    const color = AppColors.primary;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Label
+        const Row(
+          children: [
+            Icon(Icons.swap_horiz_rounded, size: 14, color: color),
+            SizedBox(width: 5),
+            Text(
+              'Estado de lectura',
+              style: TextStyle(
+                fontSize: 11,
+                fontWeight: FontWeight.w700,
+                color: color,
+                letterSpacing: .3,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 7),
+        // Wrap para que todas las opciones sean visibles (pueden ser hasta 6)
+        Wrap(
+          spacing: 7,
+          runSpacing: 7,
+          children: opciones.map((opt) {
+            final selected = opt.value == estado;
+            return GestureDetector(
+              onTap: () => onChanged(opt.value),
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 180),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 8,
+                ),
+                decoration: BoxDecoration(
+                  color: selected ? color : AppColors.surfaceSoft,
+                  borderRadius: BorderRadius.circular(30),
+                  border: Border.all(
+                    color: selected ? color : AppColors.border,
+                  ),
+                  boxShadow: selected
+                      ? [
+                          BoxShadow(
+                            color: color.withValues(alpha: .25),
+                            blurRadius: 6,
+                            offset: const Offset(0, 2),
+                          ),
+                        ]
+                      : null,
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    if (opt.emoji != null) ...[
+                      Text(opt.emoji!, style: const TextStyle(fontSize: 13)),
+                      const SizedBox(width: 5),
+                    ],
+                    Text(
+                      opt.label,
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w700,
+                        color: selected ? Colors.white : AppColors.textPrimary,
+                      ),
+                    ),
+                    if (selected) ...[
+                      const SizedBox(width: 4),
+                      Icon(
+                        Icons.check_rounded,
+                        size: 13,
+                        color: Colors.white.withValues(alpha: .9),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+            );
+          }).toList(),
+        ),
+      ],
     );
   }
 }

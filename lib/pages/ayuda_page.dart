@@ -5,10 +5,6 @@ import '../theme/app_text_styles.dart';
 import '../widgets/common/club_card.dart';
 import '../widgets/common/onboarding_tutorial.dart';
 
-// ─────────────────────────────────────────────
-// Datos de la ayuda organizada por secciones
-// ─────────────────────────────────────────────
-
 class _HelpSection {
   const _HelpSection({
     required this.icono,
@@ -43,15 +39,24 @@ const List<_HelpSection> _secciones = [
       _HelpItem(
         pregunta: '¿Cómo invito a alguien a mi club?',
         respuesta:
-            'Entra en "Mis clubes", pulsa el icono de invitación (sobre) '
-            'del club que administras y comparte el código que aparece. '
-            'Quien lo reciba puede unirse desde la misma pantalla.',
+            'Entra en "Mis clubes", pulsa el icono de invitación del club '
+            'que administras y comparte el código que aparece. '
+            'Quien lo reciba puede unirse desde la misma pantalla pulsando '
+            '"Entrar con invitación" e introduciendo el código.',
       ),
       _HelpItem(
         pregunta: '¿Puedo pertenecer a varios clubes?',
         respuesta:
             'Sí. Puedes estar en tantos clubes como quieras, aunque solo '
             'uno estará activo a la vez. Cambia el activo desde "Mis clubes".',
+      ),
+      _HelpItem(
+        pregunta: '¿Qué diferencia hay entre administradora y miembro?',
+        respuesta:
+            'La administradora puede abrir y cerrar votaciones de Clubvisión, '
+            'gestionar la lectura activa del club y obtener el código de invitación. '
+            'Los miembros pueden votar, comentar y proponer libros según las '
+            'reglas de cada sección.',
       ),
     ],
   ),
@@ -62,10 +67,11 @@ const List<_HelpSection> _secciones = [
       _HelpItem(
         pregunta: '¿Cómo añado un libro?',
         respuesta:
-            'Ve a la pestaña "Libros" y pulsa el botón + (añadir). Rellena '
-            'el título, el autor, el género y si pertenece a una saga. '
-            'Puedes indicar también el formato (papel, digital, audio) '
-            'y la prioridad de lectura.',
+            'Hay dos formas. La primera: en la pestaña "Libros" pulsa el botón + '
+            'y rellena los datos manualmente (título, autor, género, saga, formato '
+            'y prioridad). La segunda: explora la biblioteca global desde "Mi universo '
+            'lector" → "Explorar la biblioteca", busca el libro y añádelo desde ahí '
+            'sin tener que introducir los datos a mano.',
       ),
       _HelpItem(
         pregunta: '¿Qué significa "autoconclusivo"?',
@@ -77,9 +83,17 @@ const List<_HelpSection> _secciones = [
       _HelpItem(
         pregunta: '¿Cómo marco un libro como terminado?',
         respuesta:
-            'Abre el detalle del libro (pulsa sobre él) y busca la opción '
-            '"Finalizar lectura". Podrás añadir tu valoración, fechas '
-            'y notas personales.',
+            'Abre el detalle del libro y cambia su estado a "Historia terminada" '
+            'en el selector de estado. Podrás añadir tu valoración, '
+            'las fechas de lectura y una reseña personal.',
+      ),
+      _HelpItem(
+        pregunta: '¿Qué estados puede tener un libro?',
+        respuesta:
+            '"En mi estantería" (pendiente), "Leyendo" (en curso), '
+            '"Necesito un respiro" (pausado), "Otra vuelta" (relectura), '
+            '"No era para mí" (abandonado) e "Historia terminada" (finalizado). '
+            'Puedes cambiar el estado en cualquier momento desde la ficha del libro.',
       ),
       _HelpItem(
         pregunta: '¿Puedo importar mis libros de Goodreads o Bookmory?',
@@ -87,6 +101,14 @@ const List<_HelpSection> _secciones = [
             'Sí. En Perfil → sección "Más" encontrarás las opciones '
             '"Importar desde Bookmory" e "Importar desde Goodreads". '
             'La importación no sobreescribe los datos que ya tengas en ClubReads.',
+      ),
+      _HelpItem(
+        pregunta: '¿Qué es la biblioteca global?',
+        respuesta:
+            'Es el catálogo compartido de todos los libros que existen en ClubReads. '
+            'Puedes explorarla desde "Mi universo lector" usando el icono de búsqueda. '
+            'Desde ahí puedes añadir cualquier libro directamente a tu biblioteca '
+            'personal sin introducir los datos manualmente.',
       ),
     ],
   ),
@@ -104,7 +126,7 @@ const List<_HelpSection> _secciones = [
       _HelpItem(
         pregunta: '¿Qué es "Completar saga"?',
         respuesta:
-            'Es una herramienta que busca en el catálogo los volúmenes '
+            'Es una herramienta que busca en el catálogo global los volúmenes '
             'que te faltan. Pulsa en una saga y luego en "Completar saga" '
             'para encontrarlos y añadirlos con el orden correcto.',
       ),
@@ -113,6 +135,14 @@ const List<_HelpSection> _secciones = [
         respuesta:
             'Sí. Entra en el detalle de la saga, pulsa sobre el tomo '
             'que quieras editar y cambia el número de orden.',
+      ),
+      _HelpItem(
+        pregunta: '¿Qué significa que una saga esté "abandonada"?',
+        respuesta:
+            'Si marcas algún libro de la saga como "No era para mí" (abandonado), '
+            'la saga completa pasa automáticamente al estado Abandonada. '
+            'En la pestaña "Sagas" aparece un filtro específico para verlas. '
+            'Siempre puedes retomarla cambiando el estado del libro.',
       ),
     ],
   ),
@@ -123,42 +153,76 @@ const List<_HelpSection> _secciones = [
       _HelpItem(
         pregunta: '¿Qué es Clubvisión?',
         respuesta:
-            'Es el sistema de votación del club. Los miembros proponen '
-            'libros candidatos y votan cuál será la próxima lectura grupal. '
-            'La moderadora abre y cierra la votación.',
+            'Es el sistema de votación del club para elegir el próximo libro '
+            'de lectura grupal. Funciona por ediciones: se abre una votación, '
+            'las miembros votan entre las candidatas y la ganadora se convierte '
+            'en la siguiente lectura del club.',
       ),
       _HelpItem(
-        pregunta: '¿Cómo propongo un libro candidato?',
+        pregunta: '¿Cómo se eligen las candidatas?',
         respuesta:
-            'En Clubvisión → pestaña "Candidatas", pulsa el botón + '
-            'y busca el libro que quieres proponer. Cada miembro puede '
-            'proponer mientras la votación esté abierta.',
+            'Las candidatas se generan automáticamente. Para que un libro '
+            'aparezca como candidata tiene que cumplir tres condiciones: '
+            'que al menos 2 miembros del club lo tengan en su biblioteca personal, '
+            'que no haya sido ya leído por el club, y que no haya ganado '
+            'una edición anterior de Clubvisión.',
+      ),
+      _HelpItem(
+        pregunta: '¿Cómo voto?',
+        respuesta:
+            'Cuando la administradora abre la votación, entra en Clubvisión '
+            'y ordena las candidatas según tus preferencias. '
+            'Tu voto se guarda al confirmar. Solo puedes votar una vez por edición.',
       ),
       _HelpItem(
         pregunta: '¿Puedo ver cómo ha votado cada persona?',
         respuesta:
-            'Una vez cerrada la votación, la moderadora puede ver el '
-            'desglose de votos en "Cómo votaron". El resto de miembros '
-            've el resultado final pero no el voto individual.',
+            'Sí, pero solo una vez cerrada la votación. Cuando la administradora '
+            'cierra la edición, cualquier miembro puede ver el desglose completo '
+            'de votos en "Cómo votaron" — quién votó qué y en qué orden. '
+            'Durante la votación activa, los votos son privados.',
+      ),
+      _HelpItem(
+        pregunta: '¿Quién abre y cierra la votación?',
+        respuesta:
+            'Solo la administradora del club puede abrir y cerrar cada edición '
+            'de Clubvisión. El resto de miembros solo pueden votar mientras '
+            'la votación esté abierta.',
       ),
     ],
   ),
   _HelpSection(
-    icono: '🎭',
-    titulo: 'Lecturas y capítulos',
+    icono: '📚',
+    titulo: 'Lecturas y citas',
     items: [
+      _HelpItem(
+        pregunta: '¿Cómo sigo la lectura activa del club?',
+        respuesta:
+            'En la pestaña "Lecturas" encontrarás el libro actual del club '
+            'dividido por capítulos. Pulsa en un capítulo para leer los '
+            'comentarios de las demás miembros y añadir el tuyo.',
+      ),
       _HelpItem(
         pregunta: '¿Cómo comento en un capítulo?',
         respuesta:
-            'Entra en la lectura activa del club, selecciona el capítulo '
-            'y pulsa el campo de comentario al final. Puedes marcar '
-            'spoilers para que otros decidan si los leen.',
+            'Entra en la lectura activa, selecciona el capítulo '
+            'y pulsa el campo de comentario al final. '
+            'Puedes responder a comentarios de otras miembros '
+            'y reaccionar con emojis.',
       ),
       _HelpItem(
-        pregunta: '¿Qué son los subrayadores?',
+        pregunta: '¿Qué son las citas?',
         respuesta:
-            'Son frases o citas que destacas mientras lees. Guárdalas en '
-            '"Subrayadores" para no perderlas y compartirlas con el club.',
+            'Las citas son frases o fragmentos que destacas mientras lees. '
+            'Puedes guardarlas en la sección "Citas" para no perderlas '
+            'y compartirlas con el club. Son tu cuaderno de frases favoritas.',
+      ),
+      _HelpItem(
+        pregunta: '¿Qué es el Kit de lectura?',
+        respuesta:
+            'El Kit de lectura es una selección de recursos para preparar '
+            'la lectura del club: playlist musical, paleta de colores '
+            'y otros elementos ambientales para enriquecer la experiencia lectora.',
       ),
     ],
   ),
@@ -170,14 +234,58 @@ const List<_HelpSection> _secciones = [
         pregunta: '¿Qué son las atmósferas?',
         respuesta:
             'Son temas visuales que cambian los colores y el ambiente de '
-            'la app según el libro que estás leyendo. La moderadora '
-            'puede activar una atmósfera para todo el club.',
+            'la app según el libro que está leyendo el club. La administradora '
+            'puede activar una atmósfera para toda la comunidad desde '
+            'la sección Atmósferas dentro de la lectura activa.',
       ),
       _HelpItem(
         pregunta: '¿Cómo cambio mi avatar?',
         respuesta:
             'Ve a tu perfil y pulsa sobre tu avatar. Podrás elegir '
             'un color y un icono, o subir una foto desde tu galería.',
+      ),
+      _HelpItem(
+        pregunta: '¿Puedo personalizar mi perfil?',
+        respuesta:
+            'Sí. En tu perfil puedes editar tu avatar, ver tus estadísticas '
+            'lectoras, tu timeline de lecturas, los géneros favoritos '
+            'y todos los libros que has terminado o abandonado.',
+      ),
+    ],
+  ),
+  _HelpSection(
+    icono: '📊',
+    titulo: 'Estadísticas y perfil',
+    items: [
+      _HelpItem(
+        pregunta: '¿Qué muestra "Mi universo lector"?',
+        respuesta:
+            'Es tu pantalla principal con un resumen de todo: libros que estás '
+            'leyendo, sagas en curso, la estantería del mes, tu calendario '
+            'de lectura, las tendencias de la comunidad y el acceso a tus clubes.',
+      ),
+      _HelpItem(
+        pregunta: '¿Qué es la estantería del mes?',
+        respuesta:
+            'Una representación visual en forma de librería de madera con todos '
+            'los libros que has terminado durante el mes actual. Los libros '
+            'caen y se colocan animados cada vez que entras en la pantalla. '
+            'Si el libro tiene valoración, aparece una estrella sobre la portada.',
+      ),
+      _HelpItem(
+        pregunta: '¿Qué es la biblioteca 2026?',
+        respuesta:
+            'La estantería anual con todos los libros que has terminado en '
+            'el año en curso. La encontrarás en tu perfil lector, '
+            'en la sección Resumen. También se anima al entrar.',
+      ),
+      _HelpItem(
+        pregunta: '¿Qué son las secciones del perfil?',
+        respuesta:
+            '"Resumen" muestra tus métricas, la biblioteca anual y tus géneros favoritos. '
+            '"Timeline" muestra tu historial de lecturas ordenado por fecha. '
+            '"Finalizados" lista todos los libros terminados y abandonados '
+            'agrupados por año.',
       ),
     ],
   ),
@@ -280,7 +388,6 @@ class AyudaPage extends StatelessWidget {
 
           const SizedBox(height: AppSpacing.lg),
 
-          // ── Secciones de ayuda ──
           ..._secciones.map((seccion) => _SeccionAyuda(seccion: seccion)),
 
           const SizedBox(height: AppSpacing.xl),
@@ -291,7 +398,7 @@ class AyudaPage extends StatelessWidget {
 }
 
 // ─────────────────────────────────────────────
-// Widget de sección expandible
+// Sección expandible
 // ─────────────────────────────────────────────
 
 class _SeccionAyuda extends StatelessWidget {
@@ -354,7 +461,7 @@ class _SeccionAyuda extends StatelessWidget {
 }
 
 // ─────────────────────────────────────────────
-// Widget de pregunta / respuesta
+// Pregunta / respuesta
 // ─────────────────────────────────────────────
 
 class _PreguntaRespuesta extends StatelessWidget {

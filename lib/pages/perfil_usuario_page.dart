@@ -192,11 +192,9 @@ class _PerfilUsuarioPageState extends State<PerfilUsuarioPage> {
   String _menuPerfil = 'RESUMEN';
 
   final _scrollController = ScrollController();
-  // GlobalKey adjunta al widget de inicio de la sección (timeline / finalizados)
-  final _sectionKey = GlobalKey();
-  // Key que cambia al recargar el perfil → fuerza recrear YearReadingShelf
-  // y relanza la animación de colocación de libros.
   Key _shelfKey = UniqueKey();
+  // Offset del ancla calculado y guardado cuando el layout está estable
+  double? _anchorOffset;
 
   @override
   void initState() {
@@ -204,29 +202,54 @@ class _PerfilUsuarioPageState extends State<PerfilUsuarioPage> {
 
     future = _cargarPerfil();
     _cargarUsuarioActual();
+    // Recalcular el offset del ancla cuando el scroll se detiene
+    // (el YearReadingShelf puede cambiar altura durante su animación)
+    _scrollController.addListener(_onScroll);
+  }
+
+  bool _scrolling = false;
+  void _onScroll() {
+    if (!_scrollController.position.isScrollingNotifier.value && _scrolling) {
+      _scrolling = false;
+    }
+    if (_scrollController.position.isScrollingNotifier.value) {
+      _scrolling = true;
+    }
   }
 
   @override
   void dispose() {
+    _scrollController.removeListener(_onScroll);
     _scrollController.dispose();
     super.dispose();
   }
 
-  /// Selecciona una sección del perfil y hace scroll hasta su encabezado.
+  // offset calculado en cada build por _MeasuredBox
+
   void _seleccionarSeccion(String seccion) {
     setState(() => _menuPerfil = seccion);
-    if (seccion == 'RESUMEN') return;
-    // Esperamos un frame para que Flutter construya la sección antes de scrollar
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      final ctx = _sectionKey.currentContext;
-      if (ctx == null) return;
-      Scrollable.ensureVisible(
-        ctx,
-        duration: const Duration(milliseconds: 420),
-        curve: Curves.easeInOut,
-        alignment: 0.05, // deja un pequeño margen arriba
-      );
-    });
+    if (seccion == 'RESUMEN') {
+      if (_scrollController.hasClients) {
+        _scrollController.animateTo(
+          0,
+          duration: const Duration(milliseconds: 350),
+          curve: Curves.easeInOut,
+        );
+      }
+      return;
+    }
+    // Usamos el offset precalculado cuando el layout estaba estable
+    final target = _anchorOffset;
+    if (target != null && _scrollController.hasClients) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        _scrollController.animateTo(
+          target,
+          duration: const Duration(milliseconds: 450),
+          curve: Curves.easeInOut,
+        );
+      });
+    }
   }
 
   Future<void> _editarAvatar(PerfilUsuario perfil) async {
@@ -517,51 +540,52 @@ class _PerfilUsuarioPageState extends State<PerfilUsuarioPage> {
                   },
                 ),
 
-                if (_menuPerfil == 'TIMELINE' &&
-                    perfil.terminados.isNotEmpty) ...[
-                  SizedBox(key: _sectionKey, height: AppSpacing.xl),
+                // ── Sección intermedia ──
+                // _MeasuredBox reporta su posición en el scroll después
+                // de cada build, sin depender de GlobalKey.currentContext.
+                _MeasuredBox(
+                  scrollController: _scrollController,
+                  onOffset: (offset) => _anchorOffset = offset,
+                  child: const SizedBox(height: AppSpacing.xl),
+                ),
+
+                if (_menuPerfil == 'TIMELINE') ...[
                   ClubSectionTitle(
                     title: 'Actividad lectora',
                     subtitle: 'Su recorrido libro a libro',
                     icon: Icons.timeline_rounded,
                     padding: EdgeInsets.zero,
                   ),
-
                   const SizedBox(height: AppSpacing.sm),
-
-                  PerfilTimelineLectura(
-                    libros: perfil.terminados,
-                    sagas: perfil.sagas,
-                    onBookTap: (libro) => openBookDetail(
-                      context,
-                      title: libro.libro,
-                      bookId: libro.bookId,
-                      coverUrl: libro.coverUrl,
-                      genre: libro.genero,
+                  if (perfil.terminados.isEmpty)
+                    const ClubEmptyState(
+                      icon: Icons.timeline_rounded,
+                      title: 'Todavía no hay actividad',
+                      message: 'El recorrido lector aparecerá aquí.',
+                    )
+                  else
+                    PerfilTimelineLectura(
+                      libros: perfil.terminados,
+                      sagas: perfil.sagas,
+                      onBookTap: (libro) => openBookDetail(
+                        context,
+                        title: libro.libro,
+                        bookId: libro.bookId,
+                        coverUrl: libro.coverUrl,
+                        genre: libro.genero,
+                      ),
                     ),
-                  ),
-
                   const SizedBox(height: AppSpacing.lg),
                 ],
-                if (_menuPerfil == 'TIMELINE' && perfil.terminados.isEmpty) ...[
-                  const SizedBox(height: AppSpacing.xl),
-                  const ClubEmptyState(
-                    icon: Icons.timeline_rounded,
-                    title: 'Todavía no hay actividad',
-                    message: 'El recorrido lector aparecerá aquí.',
-                  ),
-                ],
+
                 if (_menuPerfil == 'LIBROS') ...[
-                  SizedBox(key: _sectionKey, height: AppSpacing.xl),
                   ClubSectionTitle(
                     title: 'Libros terminados',
                     subtitle: 'Las lecturas más recientes de ${perfil.usuario}',
                     icon: Icons.check_circle_outline_rounded,
                     padding: EdgeInsets.zero,
                   ),
-
                   const SizedBox(height: AppSpacing.sm),
-
                   if (perfil.terminados.isEmpty)
                     const ClubEmptyState(
                       icon: Icons.flag_outlined,
@@ -573,16 +597,13 @@ class _PerfilUsuarioPageState extends State<PerfilUsuarioPage> {
                   else
                     _finalizadosAgrupados(perfil.terminados),
                   const SizedBox(height: AppSpacing.lg),
-
                   ClubSectionTitle(
                     title: 'Libros abandonados',
                     subtitle: 'Las lecturas que decidió dejar',
                     icon: Icons.heart_broken_outlined,
                     padding: EdgeInsets.zero,
                   ),
-
                   const SizedBox(height: AppSpacing.sm),
-
                   if (perfil.abandonados.isEmpty)
                     const ClubEmptyState(
                       icon: Icons.heart_broken_outlined,
@@ -597,6 +618,7 @@ class _PerfilUsuarioPageState extends State<PerfilUsuarioPage> {
                         child: _libroAbandonado(libro: libro),
                       ),
                     ),
+                  const SizedBox(height: AppSpacing.lg),
                 ],
 
                 if (perfil.generosFavoritos.isNotEmpty) ...[
@@ -1387,4 +1409,58 @@ class _PerfilUsuarioPageState extends State<PerfilUsuarioPage> {
       ),
     );
   }
+}
+
+/// Widget que mide su propia posición dentro del ScrollController
+/// y la notifica via callback después de cada build.
+/// No usa GlobalKey — usa su propio BuildContext directamente.
+class _MeasuredBox extends StatefulWidget {
+  const _MeasuredBox({
+    required this.scrollController,
+    required this.onOffset,
+    required this.child,
+  });
+
+  final ScrollController scrollController;
+  final ValueChanged<double> onOffset;
+  final Widget child;
+
+  @override
+  State<_MeasuredBox> createState() => _MeasuredBoxState();
+}
+
+class _MeasuredBoxState extends State<_MeasuredBox> {
+  @override
+  void initState() {
+    super.initState();
+    _measure();
+  }
+
+  @override
+  void didUpdateWidget(_MeasuredBox old) {
+    super.didUpdateWidget(old);
+    _measure();
+  }
+
+  void _measure() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      if (!widget.scrollController.hasClients) return;
+      // context aquí es el BuildContext de ESTE widget, siempre válido
+      // mientras el widget esté montado — no depende de GlobalKey.
+      final box = context.findRenderObject() as RenderBox?;
+      if (box == null || !box.attached) return;
+      // Posición en coordenadas de pantalla
+      final globalPos = box.localToGlobal(Offset.zero);
+      // Offset dentro del scroll = posición en pantalla + scroll actual
+      final offset = (widget.scrollController.offset + globalPos.dy).clamp(
+        0.0,
+        widget.scrollController.position.maxScrollExtent,
+      );
+      widget.onOffset(offset);
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) => widget.child;
 }

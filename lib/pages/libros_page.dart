@@ -479,55 +479,49 @@ class _LibrosPageState extends State<LibrosPage> {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Stack(
-            clipBehavior: Clip.none,
-            children: [
-              ClubBookCover(
-                title: libro.libro,
-                imageUrl: libro.coverUrl,
-                width: 92,
-                showShadow: false,
-              ),
-              // Badge "Leído por ti" en esquina superior derecha de la portada
-              if (libro.leidoPorMi)
-                Positioned(
-                  top: -6,
-                  right: -6,
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 6,
-                      vertical: 4,
-                    ),
-                    decoration: BoxDecoration(
-                      color: AppColors.primary,
-                      borderRadius: BorderRadius.circular(10),
-                      boxShadow: [
-                        BoxShadow(
-                          color: AppColors.primary.withValues(alpha: .35),
-                          blurRadius: 6,
-                          offset: const Offset(0, 2),
-                        ),
-                      ],
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(iconoPropio, size: 11, color: Colors.white),
-                        const SizedBox(width: 3),
-                        const Text(
-                          'Leído',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 10,
-                            fontWeight: FontWeight.w800,
-                            height: 1,
-                          ),
-                        ),
-                      ],
-                    ),
+          Builder(
+            builder: (context) {
+              // Estado propio: registro del usuario actual (yaLoTengo)
+              final propioEstado =
+                  libro.registros
+                      .where((r) => r.yaLoTengo)
+                      .map((r) => r.estado.toUpperCase())
+                      .firstOrNull ??
+                  '';
+              final esPausado = propioEstado == 'PAUSADO';
+              final esAbandonado = propioEstado == 'ABANDONADO';
+
+              return Stack(
+                clipBehavior: Clip.none,
+                children: [
+                  ClubBookCover(
+                    title: libro.libro,
+                    imageUrl: libro.coverUrl,
+                    width: 92,
+                    showShadow: false,
                   ),
-                ),
-            ],
+                  // Badge en esquina superior derecha de la portada
+                  if (libro.leidoPorMi)
+                    _CoverBadge(
+                      label: 'Leído',
+                      icon: iconoPropio,
+                      color: AppColors.primary,
+                    )
+                  else if (esPausado)
+                    const _CoverBadge(
+                      label: 'Pausa',
+                      icon: Icons.nights_stay_outlined,
+                      color: Color(0xFFE8A020),
+                    )
+                  else if (esAbandonado)
+                    const _CoverBadge(
+                      label: 'Dejado',
+                      icon: Icons.heart_broken_rounded,
+                      color: AppColors.danger,
+                    ),
+                ],
+              );
+            },
           ),
 
           const SizedBox(width: AppSpacing.md),
@@ -1227,5 +1221,56 @@ class _LibrosPageState extends State<LibrosPage> {
         .replaceAll('ó', 'o')
         .replaceAll('ú', 'u')
         .replaceAll('ü', 'u');
+  }
+}
+
+/// Badge compacto para mostrar sobre la portada del libro.
+class _CoverBadge extends StatelessWidget {
+  const _CoverBadge({
+    required this.label,
+    required this.icon,
+    required this.color,
+  });
+
+  final String label;
+  final IconData icon;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    return Positioned(
+      top: -6,
+      right: -6,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+        decoration: BoxDecoration(
+          color: color,
+          borderRadius: BorderRadius.circular(10),
+          boxShadow: [
+            BoxShadow(
+              color: color.withValues(alpha: .35),
+              blurRadius: 6,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon, size: 11, color: Colors.white),
+            const SizedBox(width: 3),
+            Text(
+              label,
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 10,
+                fontWeight: FontWeight.w800,
+                height: 1,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }

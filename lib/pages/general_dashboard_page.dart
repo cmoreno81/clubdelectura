@@ -18,7 +18,6 @@ import '../widgets/common/club_avatar.dart';
 import '../widgets/common/club_book_cover.dart';
 import '../widgets/common/club_card.dart';
 import '../widgets/common/reading_cover_calendar.dart';
-import '../widgets/dashboard/year_reading_shelf.dart';
 import '../widgets/dashboard/monthly_reading_shelf.dart';
 import 'clubs_page.dart';
 import 'home_page.dart';
@@ -40,15 +39,20 @@ class GeneralDashboardPage extends StatefulWidget {
 class _GeneralDashboardPageState extends State<GeneralDashboardPage> {
   late Future<GeneralDashboard> _future;
   String? _openingClubId;
-  // Clave que cambia con cada reload → fuerza recrear el State del shelf
-  // y relanzar la animación de colocación de libros.
   Key _shelfKey = UniqueKey();
+  final _scrollController = ScrollController();
 
   @override
   void initState() {
     super.initState();
     _future = GeneralDashboardService().load();
     _checkOnboarding();
+  }
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
   }
 
   Future<void> _checkOnboarding() async {
@@ -63,7 +67,7 @@ class _GeneralDashboardPageState extends State<GeneralDashboardPage> {
   Future<void> _reload() async {
     setState(() {
       _future = GeneralDashboardService().load();
-      _shelfKey = UniqueKey(); // nuevo key → la estantería anima desde cero
+      _shelfKey = UniqueKey();
     });
     await _future;
   }
@@ -184,6 +188,7 @@ class _GeneralDashboardPageState extends State<GeneralDashboardPage> {
           return RefreshIndicator(
             onRefresh: _reload,
             child: CustomScrollView(
+              controller: _scrollController,
               physics: const AlwaysScrollableScrollPhysics(),
               slivers: [
                 SliverAppBar(
@@ -277,6 +282,7 @@ class _GeneralDashboardPageState extends State<GeneralDashboardPage> {
                           year: data.calendar.year,
                           month: data.calendar.month,
                           books: data.calendar.finishedBooks,
+                          scrollController: _scrollController,
                           onBookTap: (book) => openBookDetail(
                             context,
                             title: book.title,

@@ -1,5 +1,3 @@
-import 'dart:math' show pi;
-
 import 'package:flutter/material.dart';
 
 import '../../main.dart' show routeObserver;
@@ -37,12 +35,16 @@ class MonthlyReadingShelf extends StatefulWidget {
     required this.month,
     required this.books,
     required this.onBookTap,
+    this.scrollController,
   });
 
   final int year;
   final int month;
   final List<MonthlyFinishedBook> books;
   final ValueChanged<MonthlyFinishedBook> onBookTap;
+
+  /// ScrollController del ancestro — permite detectar visibilidad al hacer scroll.
+  final ScrollController? scrollController;
 
   @override
   State<MonthlyReadingShelf> createState() => _MonthlyReadingShelfState();
@@ -52,6 +54,8 @@ class _MonthlyReadingShelfState extends State<MonthlyReadingShelf>
     with SingleTickerProviderStateMixin
     implements RouteAware {
   late final AnimationController _ctrl;
+  final _selfKey = GlobalKey();
+  bool _hasPlayed = false;
 
   @override
   void initState() {
@@ -60,7 +64,11 @@ class _MonthlyReadingShelfState extends State<MonthlyReadingShelf>
       vsync: this,
       duration: Duration(milliseconds: 380 + widget.books.length * 95),
     );
-    _ctrl.forward(from: 0);
+    // Suscribimos al ScrollController del padre en el siguiente frame
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      widget.scrollController?.addListener(_onScroll);
+      _checkVisibility(); // por si ya es visible sin scroll
+    });
   }
 
   @override
@@ -70,10 +78,28 @@ class _MonthlyReadingShelfState extends State<MonthlyReadingShelf>
     if (route != null) routeObserver.subscribe(this, route);
   }
 
-  // RouteAware: la ruta vuelve al frente (pop de una ruta encima)
+  void _onScroll() => _checkVisibility();
+
+  /// Comprueba si el widget está en el viewport y lanza la animación.
+  void _checkVisibility() {
+    if (!mounted || _hasPlayed) return;
+    final box = _selfKey.currentContext?.findRenderObject() as RenderBox?;
+    if (box == null || !box.attached) return;
+    final screenHeight = MediaQuery.of(context).size.height;
+    final pos = box.localToGlobal(Offset.zero);
+    // Visible si el widget empieza antes del borde inferior de la pantalla
+    // y su borde superior está por encima del borde inferior
+    if (pos.dy < screenHeight && pos.dy + box.size.height > 0) {
+      _hasPlayed = true;
+      _ctrl.forward(from: 0);
+    }
+  }
+
+  // RouteAware: al volver de otra pantalla relanzamos siempre
   @override
   void didPopNext() {
-    _ctrl.forward(from: 0);
+    _hasPlayed = false;
+    WidgetsBinding.instance.addPostFrameCallback((_) => _checkVisibility());
   }
 
   @override
@@ -85,6 +111,7 @@ class _MonthlyReadingShelfState extends State<MonthlyReadingShelf>
 
   @override
   void dispose() {
+    widget.scrollController?.removeListener(_onScroll);
     routeObserver.unsubscribe(this);
     _ctrl.dispose();
     super.dispose();
@@ -95,6 +122,7 @@ class _MonthlyReadingShelfState extends State<MonthlyReadingShelf>
     final monthLabel = _months[(widget.month - 1).clamp(0, 11)];
 
     return Container(
+      key: _selfKey,
       decoration: BoxDecoration(
         color: const Color(0xFFF4E7D3),
         borderRadius: BorderRadius.circular(AppRadius.xl),
@@ -165,8 +193,8 @@ class _MonthlyReadingShelfState extends State<MonthlyReadingShelf>
               onBookTap: widget.onBookTap,
             ),
         ],
-      ),
-    );
+      ), // closes Column
+    ); // closes Container
   }
 }
 
