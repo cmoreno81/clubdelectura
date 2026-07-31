@@ -52,7 +52,7 @@ class _GeneralDashboardPageState extends State<GeneralDashboardPage> {
   }
 
   Future<void> _checkOnboarding() async {
-    final mostrar = await deberíaMostrarOnboarding();
+    final mostrar = await deberiaMostrarOnboarding();
     if (!mostrar || !mounted) return;
     // Pequeño delay para que la pantalla termine de renderizarse
     await Future<void>.delayed(const Duration(milliseconds: 600));
