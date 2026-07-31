@@ -23,6 +23,7 @@ import '../utils/reading_status_copy.dart';
 import 'detalle_libro_page.dart';
 import 'nuevo_libro_page.dart';
 import '../services/atmosfera_scope.dart';
+import '../widgets/common/onboarding_tutorial.dart';
 
 enum OrdenLibros { populares, recientes, tituloAsc, tituloDesc, mejorValorados }
 
@@ -140,15 +141,20 @@ class _LibrosPageState extends State<LibrosPage> {
         actions: [
           Padding(
             padding: const EdgeInsets.only(right: 12),
-            child: Material(
-              color: colorScheme.primary,
-              shape: const CircleBorder(),
-              child: IconButton(
-                tooltip: 'Añadir libro',
-                onPressed: _abrirNuevoLibro,
-                icon: const Icon(Icons.add_rounded, color: Colors.white),
-                iconSize: 24,
-                splashRadius: 22,
+            child: FeatureTooltip(
+              featureKey: 'ft_add_book',
+              message: '¡Pulsa aquí para añadir tu primer libro!',
+              icon: Icons.menu_book_outlined,
+              child: Material(
+                color: colorScheme.primary,
+                shape: const CircleBorder(),
+                child: IconButton(
+                  tooltip: 'Añadir libro',
+                  onPressed: _abrirNuevoLibro,
+                  icon: const Icon(Icons.add_rounded, color: Colors.white),
+                  iconSize: 24,
+                  splashRadius: 22,
+                ),
               ),
             ),
           ),

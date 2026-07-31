@@ -24,9 +24,14 @@ import '../widgets/perfil/perfil_timeline_lectura.dart';
 import '../widgets/perfil/perfil_estanteria_mes.dart';
 import '../widgets/common/club_rating_stars.dart';
 import 'acerca_de_page.dart';
+import 'ayuda_page.dart';
 import 'change_password_page.dart';
 import 'goodreads_import_page.dart';
 import '../services/auth_service.dart';
+import '../widgets/common/onboarding_tutorial.dart';
+import '../widgets/dashboard/year_reading_shelf.dart';
+import '../models/general_dashboard.dart' show YearShelfBook;
+import 'year_reading_share_page.dart';
 
 class PerfilUsuarioPage extends StatefulWidget {
   final String usuario;
@@ -187,12 +192,39 @@ class _PerfilUsuarioPageState extends State<PerfilUsuarioPage> {
   String? usuarioActual;
   String _menuPerfil = 'RESUMEN';
 
+  final _scrollController = ScrollController();
+  // GlobalKey adjunta al widget de inicio de la sección (timeline / finalizados)
+  final _sectionKey = GlobalKey();
+
   @override
   void initState() {
     super.initState();
 
     future = _cargarPerfil();
     _cargarUsuarioActual();
+  }
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  /// Selecciona una sección del perfil y hace scroll hasta su encabezado.
+  void _seleccionarSeccion(String seccion) {
+    setState(() => _menuPerfil = seccion);
+    if (seccion == 'RESUMEN') return;
+    // Esperamos un frame para que Flutter construya la sección antes de scrollar
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final ctx = _sectionKey.currentContext;
+      if (ctx == null) return;
+      Scrollable.ensureVisible(
+        ctx,
+        duration: const Duration(milliseconds: 420),
+        curve: Curves.easeInOut,
+        alignment: 0.05, // deja un pequeño margen arriba
+      );
+    });
   }
 
   Future<void> _editarAvatar(PerfilUsuario perfil) async {
@@ -315,7 +347,12 @@ class _PerfilUsuarioPageState extends State<PerfilUsuarioPage> {
       appBar: AppBar(
         title: const Text('Perfil lector'),
         actions: [
-          PopupMenuButton<String>(
+          FeatureTooltip(
+              featureKey: 'ft_perfil_secciones',
+              message: 'Cambia entre Resumen, Timeline y Finalizados',
+              icon: Icons.grid_view_rounded,
+              position: FeatureTooltipPosition.below,
+            child: PopupMenuButton<String>(
             tooltip: 'Secciones del perfil',
             initialValue: _menuPerfil,
             position: PopupMenuPosition.under,
@@ -357,7 +394,7 @@ class _PerfilUsuarioPageState extends State<PerfilUsuarioPage> {
                 ],
               ),
             ),
-            onSelected: (value) => setState(() => _menuPerfil = value),
+            onSelected: _seleccionarSeccion,
             itemBuilder: (_) => [
               PopupMenuItem(
                 value: 'RESUMEN',
@@ -391,6 +428,7 @@ class _PerfilUsuarioPageState extends State<PerfilUsuarioPage> {
               ),
             ],
           ),
+          ), // FeatureTooltip
         ],
       ),
       body: FutureBuilder<PerfilUsuario>(
@@ -409,6 +447,7 @@ class _PerfilUsuarioPageState extends State<PerfilUsuarioPage> {
           return RefreshIndicator(
             onRefresh: _recargar,
             child: ListView(
+              controller: _scrollController,
               physics: const AlwaysScrollableScrollPhysics(),
               padding: const EdgeInsets.fromLTRB(
                 AppSpacing.md,
@@ -437,9 +476,60 @@ class _PerfilUsuarioPageState extends State<PerfilUsuarioPage> {
                   ),
                 ),
 
+                // ── Biblioteca del año (antes estaba en el dashboard) ──
+                Builder(
+                  builder: (context) {
+                    final now = DateTime.now();
+                    final yearBooks = perfil.terminados
+                        .where((libro) {
+                          final date = DateTime.tryParse(libro.fechaFin);
+                          return date != null && date.year == now.year;
+                        })
+                        .map(
+                          (libro) => YearShelfBook(
+                            id: libro.completionId,
+                            bookId: libro.bookId,
+                            title: libro.libro,
+                            coverUrl: libro.coverUrl,
+                            finishedAt: libro.fechaFin,
+                          ),
+                        )
+                        .toList(growable: false);
+                    if (yearBooks.isEmpty) return const SizedBox.shrink();
+                    return Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        const SizedBox(height: AppSpacing.xl),
+                        YearReadingShelf(
+                          year: now.year,
+                          books: yearBooks,
+                          onShare: esMiPerfil
+                              ? () => Navigator.push<void>(
+                                    context,
+                                    AppPageRoute(
+                                      builder: (_) => YearReadingSharePage(
+                                        year: now.year,
+                                        books: yearBooks,
+                                        userName: perfil.usuario,
+                                      ),
+                                    ),
+                                  )
+                              : null,
+                          onBookTap: (book) => openBookDetail(
+                            context,
+                            title: book.title,
+                            bookId: book.bookId,
+                            coverUrl: book.coverUrl,
+                          ),
+                        ),
+                      ],
+                    );
+                  },
+                ),
+
                 if (_menuPerfil == 'TIMELINE' &&
                     perfil.terminados.isNotEmpty) ...[
-                  const SizedBox(height: AppSpacing.xl),
+                  SizedBox(key: _sectionKey, height: AppSpacing.xl),
                   ClubSectionTitle(
                     title: 'Actividad lectora',
                     subtitle: 'Su recorrido libro a libro',
@@ -472,7 +562,7 @@ class _PerfilUsuarioPageState extends State<PerfilUsuarioPage> {
                   ),
                 ],
                 if (_menuPerfil == 'LIBROS') ...[
-                  const SizedBox(height: AppSpacing.xl),
+                  SizedBox(key: _sectionKey, height: AppSpacing.xl),
                   ClubSectionTitle(
                     title: 'Libros terminados',
                     subtitle: 'Las lecturas más recientes de ${perfil.usuario}',
@@ -611,6 +701,26 @@ class _PerfilUsuarioPageState extends State<PerfilUsuarioPage> {
                             await _recargar();
                           }
                         },
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: AppSpacing.sm),
+                  ClubCard(
+                    elevated: false,
+                    padding: EdgeInsets.zero,
+                    child: Material(
+                      color: Colors.transparent,
+                      child: ListTile(
+                        leading: const Icon(Icons.help_outline_rounded),
+                        title: const Text('Ayuda'),
+                        subtitle: const Text(
+                          'Guía completa de todas las funciones de la app',
+                        ),
+                        trailing: const Icon(Icons.chevron_right_rounded),
+                        onTap: () => Navigator.push<void>(
+                          context,
+                          AppPageRoute(builder: (_) => const AyudaPage()),
+                        ),
                       ),
                     ),
                   ),

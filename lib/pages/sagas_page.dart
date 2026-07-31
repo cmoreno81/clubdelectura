@@ -14,6 +14,7 @@ import '../widgets/common/club_empty_state.dart';
 import '../widgets/common/club_section_title.dart';
 import '../widgets/error_view.dart';
 import '../widgets/perfil/perfil_saga_card.dart';
+import '../widgets/common/onboarding_tutorial.dart';
 import 'complete_series_page.dart';
 import 'detalle_libro_page.dart';
 import 'explore_catalog_page.dart';
@@ -354,11 +355,15 @@ class _SagasPageState extends State<SagasPage> {
           final active = _byState(sagas, 'EN_CURSO');
           final upToDate = _byState(sagas, 'AL_DIA');
           final completed = _byState(sagas, 'COMPLETADA');
+          final abandoned = _byState(sagas, 'ABANDONADA');
           final visibleSagas = _visibleSagas(sagas);
+          // Cuando hay búsqueda, visibleSagas ya contiene todas las categorías
+          final hayBusqueda = _query.trim().isNotEmpty;
           final visiblePending = _byState(visibleSagas, 'PENDIENTE');
           final visibleActive = _byState(visibleSagas, 'EN_CURSO');
           final visibleUpToDate = _byState(visibleSagas, 'AL_DIA');
           final visibleCompleted = _byState(visibleSagas, 'COMPLETADA');
+          final visibleAbandoned = _byState(visibleSagas, 'ABANDONADA');
 
           return RefreshIndicator(
             onRefresh: _reload,
@@ -377,23 +382,28 @@ class _SagasPageState extends State<SagasPage> {
                   upToDate: upToDate.length + completed.length,
                 ),
                 const SizedBox(height: AppSpacing.md),
-                TextField(
-                  controller: _searchController,
-                  onChanged: (value) => setState(() => _query = value),
-                  textInputAction: TextInputAction.search,
-                  decoration: InputDecoration(
-                    hintText: 'Buscar una saga',
-                    prefixIcon: const Icon(Icons.search_rounded),
-                    suffixIcon: _query.isEmpty
-                        ? null
-                        : IconButton(
-                            tooltip: 'Borrar búsqueda',
-                            onPressed: () {
-                              _searchController.clear();
-                              setState(() => _query = '');
-                            },
-                            icon: const Icon(Icons.close_rounded),
-                          ),
+                FeatureTooltip(
+                  featureKey: 'ft_saga_search',
+                  message: 'Busca en todas tus sagas, sin importar el filtro',
+                  icon: Icons.search_rounded,
+                  child: TextField(
+                    controller: _searchController,
+                    onChanged: (value) => setState(() => _query = value),
+                    textInputAction: TextInputAction.search,
+                    decoration: InputDecoration(
+                      hintText: 'Buscar una saga',
+                      prefixIcon: const Icon(Icons.search_rounded),
+                      suffixIcon: _query.isEmpty
+                          ? null
+                          : IconButton(
+                              tooltip: 'Borrar búsqueda',
+                              onPressed: () {
+                                _searchController.clear();
+                                setState(() => _query = '');
+                              },
+                              icon: const Icon(Icons.close_rounded),
+                            ),
+                    ),
                   ),
                 ),
                 const SizedBox(height: AppSpacing.sm),
@@ -403,43 +413,62 @@ class _SagasPageState extends State<SagasPage> {
                   pending: pending.length,
                   upToDate: upToDate.length,
                   completed: completed.length,
+                  abandoned: abandoned.length,
                   onSelected: (value) => setState(() => _filter = value),
                 ),
                 if (visibleSagas.isEmpty)
-                  const Padding(
-                    padding: EdgeInsets.only(top: AppSpacing.xl),
+                  Padding(
+                    padding: const EdgeInsets.only(top: AppSpacing.xl),
                     child: ClubEmptyState(
                       icon: Icons.search_off_rounded,
                       title: 'No encontramos esa saga',
-                      message:
-                          'Prueba con otro nombre o cambia el filtro seleccionado.',
+                      message: hayBusqueda
+                          ? 'No hay sagas que coincidan con tu búsqueda.'
+                          : 'Prueba con otro nombre o cambia el filtro.',
                     ),
                   )
                 else ...[
-                  _section(
-                    title: 'En curso',
-                    subtitle: 'Universos que ya has empezado',
-                    icon: Icons.auto_stories_rounded,
-                    sagas: visibleActive,
-                  ),
-                  _section(
-                    title: 'Pendientes',
-                    subtitle: 'Sagas guardadas para cuando llegue su momento',
-                    icon: Icons.bookmark_border_rounded,
-                    sagas: visiblePending,
-                  ),
-                  _section(
-                    title: 'Al día',
-                    subtitle: 'Has leído todo lo publicado hasta ahora',
-                    icon: Icons.update_rounded,
-                    sagas: visibleUpToDate,
-                  ),
-                  _section(
-                    title: 'Completadas',
-                    subtitle: 'Historias que ya forman parte de ti',
-                    icon: Icons.workspace_premium_outlined,
-                    sagas: visibleCompleted,
-                  ),
+                  // Con búsqueda activa mostramos todas las categorías mezcladas
+                  if (hayBusqueda)
+                    _section(
+                      title: 'Resultados',
+                      subtitle: '${visibleSagas.length} '
+                          '${visibleSagas.length == 1 ? 'saga encontrada' : 'sagas encontradas'}',
+                      icon: Icons.search_rounded,
+                      sagas: visibleSagas,
+                    )
+                  else ...[
+                    _section(
+                      title: 'En curso',
+                      subtitle: 'Universos que ya has empezado',
+                      icon: Icons.auto_stories_rounded,
+                      sagas: visibleActive,
+                    ),
+                    _section(
+                      title: 'Pendientes',
+                      subtitle: 'Sagas guardadas para cuando llegue su momento',
+                      icon: Icons.bookmark_border_rounded,
+                      sagas: visiblePending,
+                    ),
+                    _section(
+                      title: 'Al día',
+                      subtitle: 'Has leído todo lo publicado hasta ahora',
+                      icon: Icons.update_rounded,
+                      sagas: visibleUpToDate,
+                    ),
+                    _section(
+                      title: 'Completadas',
+                      subtitle: 'Historias que ya forman parte de ti',
+                      icon: Icons.workspace_premium_outlined,
+                      sagas: visibleCompleted,
+                    ),
+                    _section(
+                      title: 'Abandonadas',
+                      subtitle: 'Dejadas a medias, por ahora',
+                      icon: Icons.heart_broken_outlined,
+                      sagas: visibleAbandoned,
+                    ),
+                  ],
                 ],
               ],
             ),
@@ -454,16 +483,23 @@ class _SagasPageState extends State<SagasPage> {
 
   List<PerfilSaga> _visibleSagas(List<PerfilSaga> sagas) {
     final query = _query.trim().toLowerCase();
+
+    // Con búsqueda activa: busca en TODAS las categorías, ignorando el filtro
+    if (query.isNotEmpty) {
+      return sagas
+          .where(
+            (saga) =>
+                saga.nombre.toLowerCase().contains(query) ||
+                saga.volumenes.any(
+                  (volume) => volume.titulo.toLowerCase().contains(query),
+                ),
+          )
+          .toList(growable: false);
+    }
+
+    // Sin búsqueda: muestra solo la categoría del filtro activo
     return sagas
-        .where((saga) {
-          final matchesFilter = saga.estado == _filter;
-          if (!matchesFilter) return false;
-          if (query.isEmpty) return true;
-          return saga.nombre.toLowerCase().contains(query) ||
-              saga.volumenes.any(
-                (volume) => volume.titulo.toLowerCase().contains(query),
-              );
-        })
+        .where((saga) => saga.estado == _filter)
         .toList(growable: false);
   }
 
@@ -571,6 +607,7 @@ class _SagaFilters extends StatelessWidget {
     required this.pending,
     required this.upToDate,
     required this.completed,
+    required this.abandoned,
     required this.onSelected,
   });
 
@@ -579,6 +616,7 @@ class _SagaFilters extends StatelessWidget {
   final int pending;
   final int upToDate;
   final int completed;
+  final int abandoned;
   final ValueChanged<String> onSelected;
 
   @override
@@ -593,6 +631,13 @@ class _SagaFilters extends StatelessWidget {
         completed,
         Icons.workspace_premium_outlined,
       ),
+      if (abandoned > 0)
+        (
+          'ABANDONADA',
+          'Abandonadas',
+          abandoned,
+          Icons.heart_broken_outlined,
+        ),
     ];
 
     return SizedBox(

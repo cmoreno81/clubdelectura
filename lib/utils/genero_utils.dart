@@ -32,6 +32,8 @@ String iconoGenero(String genero) {
     case 'no ficcion':
     case 'no ficción':
       return '🧠';
+    case 'infantil':
+      return '🎈';
     default:
       return '📚';
   }

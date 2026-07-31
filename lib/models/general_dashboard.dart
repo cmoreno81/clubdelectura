@@ -435,6 +435,7 @@ class MonthlyFinishedBook {
     required this.coverUrl,
     required this.finishedAt,
     required this.pages,
+    this.rating,
   });
 
   final String id;
@@ -443,6 +444,8 @@ class MonthlyFinishedBook {
   final String coverUrl;
   final String finishedAt;
   final int pages;
+  /// Valoración del usuario (0.5–5.0), null si no ha valorado aún.
+  final double? rating;
 
   factory MonthlyFinishedBook.fromJson(Map<String, dynamic> json) =>
       MonthlyFinishedBook(
@@ -452,6 +455,9 @@ class MonthlyFinishedBook {
         coverUrl: json['coverUrl']?.toString() ?? '',
         finishedAt: json['fechaFin']?.toString() ?? '',
         pages: _integer(json['paginas']),
+        rating: json['valoracion'] != null
+            ? (json['valoracion'] as num).toDouble()
+            : null,
       );
 }
 

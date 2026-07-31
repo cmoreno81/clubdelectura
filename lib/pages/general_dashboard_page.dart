@@ -19,6 +19,7 @@ import '../widgets/common/club_book_cover.dart';
 import '../widgets/common/club_card.dart';
 import '../widgets/common/reading_cover_calendar.dart';
 import '../widgets/dashboard/year_reading_shelf.dart';
+import '../widgets/dashboard/monthly_reading_shelf.dart';
 import 'clubs_page.dart';
 import 'home_page.dart';
 import 'explore_catalog_page.dart';
@@ -27,6 +28,7 @@ import 'monthly_reading_share_page.dart';
 import 'perfil_usuario_page.dart';
 import 'sagas_page.dart';
 import 'year_reading_share_page.dart';
+import '../widgets/common/onboarding_tutorial.dart';
 
 class GeneralDashboardPage extends StatefulWidget {
   const GeneralDashboardPage({super.key});
@@ -43,6 +45,16 @@ class _GeneralDashboardPageState extends State<GeneralDashboardPage> {
   void initState() {
     super.initState();
     _future = GeneralDashboardService().load();
+    _checkOnboarding();
+  }
+
+  Future<void> _checkOnboarding() async {
+    final mostrar = await deberiaMostrarOnboarding();
+    if (!mostrar || !mounted) return;
+    // Pequeño delay para que la pantalla termine de renderizarse
+    await Future<void>.delayed(const Duration(milliseconds: 600));
+    if (!mounted) return;
+    await mostrarOnboardingTutorial(context);
   }
 
   Future<void> _reload() async {
@@ -252,21 +264,14 @@ class _GeneralDashboardPageState extends State<GeneralDashboardPage> {
                         _emptyClubs()
                       else
                         ...data.clubs.map(_clubCard),
-                      if (data.yearShelf.isNotEmpty) ...[
+                      // La biblioteca anual se muestra en el perfil
+                      // Aquí mostramos la estantería del mes
+                      if (data.calendar.finishedBooks.isNotEmpty) ...[
                         const SizedBox(height: AppSpacing.xl),
-                        YearReadingShelf(
+                        MonthlyReadingShelf(
                           year: data.calendar.year,
-                          books: data.yearShelf,
-                          onShare: () => Navigator.push<void>(
-                            context,
-                            AppPageRoute(
-                              builder: (_) => YearReadingSharePage(
-                                year: data.calendar.year,
-                                books: data.yearShelf,
-                                userName: data.userName,
-                              ),
-                            ),
-                          ),
+                          month: data.calendar.month,
+                          books: data.calendar.finishedBooks,
                           onBookTap: (book) => openBookDetail(
                             context,
                             title: book.title,
@@ -275,15 +280,15 @@ class _GeneralDashboardPageState extends State<GeneralDashboardPage> {
                           ),
                         ),
                       ],
-                      if (data.personalLibrary.isNotEmpty) ...[
+                      if (data.currentBooks.isNotEmpty) ...[
                         const SizedBox(height: AppSpacing.xl),
                         _sectionTitle(
-                          'Tu próxima lectura',
-                          'Tu biblioteca, con las prioridades altas primero',
-                          Icons.bookmarks_outlined,
+                          'Leyendo ahora',
+                          'Tus historias, estés en el club que estés',
+                          Icons.auto_stories_outlined,
                         ),
                         const SizedBox(height: AppSpacing.sm),
-                        _personalLibrary(data.personalLibrary, data.userName),
+                        _currentBooks(data.currentBooks),
                       ],
                       if (data.openSeries.isNotEmpty) ...[
                         const SizedBox(height: AppSpacing.xl),
@@ -299,15 +304,15 @@ class _GeneralDashboardPageState extends State<GeneralDashboardPage> {
                         const SizedBox(height: AppSpacing.sm),
                         _openSeries(data.openSeries),
                       ],
-                      if (data.currentBooks.isNotEmpty) ...[
+                      if (data.personalLibrary.isNotEmpty) ...[
                         const SizedBox(height: AppSpacing.xl),
                         _sectionTitle(
-                          'Leyendo ahora',
-                          'Tus historias, estés en el club que estés',
-                          Icons.auto_stories_outlined,
+                          'Tu próxima lectura',
+                          'Tu biblioteca, con las prioridades altas primero',
+                          Icons.bookmarks_outlined,
                         ),
                         const SizedBox(height: AppSpacing.sm),
-                        _currentBooks(data.currentBooks),
+                        _personalLibrary(data.personalLibrary, data.userName),
                       ],
                       const SizedBox(height: AppSpacing.xl),
                       _sectionTitle(

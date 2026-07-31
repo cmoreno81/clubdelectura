@@ -220,6 +220,7 @@ class PerfilSaga {
   bool get completada => estado == 'COMPLETADA';
   bool get alDia => estado == 'AL_DIA';
   bool get pendiente => estado == 'PENDIENTE';
+  bool get abandonada => estado == 'ABANDONADA';
 
   factory PerfilSaga.fromJson(Map<String, dynamic> json) {
     final siguiente = json['siguiente'];
@@ -236,6 +237,7 @@ class PerfilSaga {
         ? leidos > 0
               ? 'EN_CURSO'
               : 'PENDIENTE'
+        // ABANDONADA llega siempre del backend sin necesidad de reinterpretarla
         : estadoRecibido;
 
     return PerfilSaga(

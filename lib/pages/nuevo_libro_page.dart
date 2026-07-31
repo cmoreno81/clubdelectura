@@ -66,6 +66,7 @@ class _NuevoLibroPageState extends State<NuevoLibroPage> {
     _GeneroOption('🕵️', 'Novela Negra', 'Novela negra'),
     _GeneroOption('💬', 'Cómic', 'Cómic'),
     _GeneroOption('🧠', 'No ficción', 'No ficción'),
+    _GeneroOption('🎈', 'Infantil', 'Infantil'),
   ];
 
   @override
@@ -963,25 +964,42 @@ class _SelectorOption extends StatelessWidget {
       borderRadius: BorderRadius.circular(AppRadius.lg),
       onTap: onTap,
       child: AnimatedContainer(
-        duration: const Duration(milliseconds: 180),
-        padding: const EdgeInsets.all(AppSpacing.md),
+        duration: const Duration(milliseconds: 200),
+        padding: const EdgeInsets.symmetric(
+          horizontal: AppSpacing.md,
+          vertical: AppSpacing.md,
+        ),
         decoration: BoxDecoration(
-          color: selected
-              ? color.withValues(alpha: 0.10)
-              : AppColors.surfaceSoft,
+          // Fondo sólido cuando está seleccionado para contraste claro
+          color: selected ? color : AppColors.surfaceSoft,
           borderRadius: BorderRadius.circular(AppRadius.lg),
           border: Border.all(
-            color: selected ? color.withValues(alpha: 0.38) : AppColors.border,
+            color: selected ? color : AppColors.border,
+            width: selected ? 2 : 1,
           ),
+          boxShadow: selected
+              ? [
+                  BoxShadow(
+                    color: color.withValues(alpha: .22),
+                    blurRadius: 8,
+                    offset: const Offset(0, 3),
+                  ),
+                ]
+              : null,
         ),
         child: Column(
           children: [
-            Icon(icon, color: selected ? color : AppColors.textMuted, size: 28),
+            // Icono blanco sobre fondo primario cuando seleccionado
+            Icon(
+              icon,
+              color: selected ? Colors.white : AppColors.textMuted,
+              size: 28,
+            ),
             const SizedBox(height: AppSpacing.sm),
             Text(
               title,
               style: AppTextStyles.subtitle.copyWith(
-                color: selected ? color : AppColors.textPrimary,
+                color: selected ? Colors.white : AppColors.textPrimary,
                 fontWeight: FontWeight.w800,
               ),
             ),
@@ -990,8 +1008,21 @@ class _SelectorOption extends StatelessWidget {
               subtitle,
               textAlign: TextAlign.center,
               maxLines: 2,
-              style: AppTextStyles.caption,
+              style: AppTextStyles.caption.copyWith(
+                color: selected
+                    ? Colors.white.withValues(alpha: .80)
+                    : AppColors.textMuted,
+              ),
             ),
+            // Tick visible solo cuando está seleccionado
+            if (selected) ...[
+              const SizedBox(height: AppSpacing.xs),
+              const Icon(
+                Icons.check_circle_rounded,
+                color: Colors.white,
+                size: 16,
+              ),
+            ],
           ],
         ),
       ),

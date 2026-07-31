@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../widgets/common/onboarding_tutorial.dart';
 import 'package:flutter/services.dart';
 
 import '../models/club_membership.dart';
@@ -195,16 +196,27 @@ class _ClubsPageState extends State<ClubsPage> {
                   ),
                 ),
               const SizedBox(height: 20),
-              FilledButton.icon(
-                onPressed: _busy ? null : _create,
-                icon: const Icon(Icons.add_rounded),
-                label: const Text('Crear un club'),
+              FeatureTooltip(
+                featureKey: 'ft_create_club',
+                message: 'Crea tu primer club de lectura aquí',
+                icon: Icons.group_add_outlined,
+                child: FilledButton.icon(
+                  onPressed: _busy ? null : _create,
+                  icon: const Icon(Icons.add_rounded),
+                  label: const Text('Crear un club'),
+                ),
               ),
               const SizedBox(height: 12),
-              OutlinedButton.icon(
-                onPressed: _busy ? null : _join,
-                icon: const Icon(Icons.key_rounded),
-                label: const Text('Entrar con invitación'),
+              FeatureTooltip(
+                featureKey: 'ft_join_club',
+                message: 'Únete con el código que te comparten',
+                icon: Icons.key_outlined,
+                position: FeatureTooltipPosition.above,
+                child: OutlinedButton.icon(
+                  onPressed: _busy ? null : _join,
+                  icon: const Icon(Icons.key_rounded),
+                  label: const Text('Entrar con invitación'),
+                ),
               ),
             ],
           );

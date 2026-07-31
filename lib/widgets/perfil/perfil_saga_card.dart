@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../common/onboarding_tutorial.dart';
 
 import '../../models/perfil_usuario.dart';
 import '../../theme/app_colors.dart';
@@ -126,10 +127,16 @@ class PerfilSagaCard extends StatelessWidget {
           ),
           if (onCompleteCatalog != null) ...[
             const SizedBox(height: AppSpacing.md),
-            OutlinedButton.icon(
-              onPressed: onCompleteCatalog,
-              icon: const Icon(Icons.auto_awesome_rounded),
-              label: const Text('Completar saga'),
+            FeatureTooltip(
+              featureKey: 'ft_complete_saga',
+              message: 'Busca los tomos que te faltan en el catálogo',
+              icon: Icons.auto_awesome_rounded,
+              position: FeatureTooltipPosition.above,
+              child: OutlinedButton.icon(
+                onPressed: onCompleteCatalog,
+                icon: const Icon(Icons.auto_awesome_rounded),
+                label: const Text('Completar saga'),
+              ),
             ),
           ],
           if (saga.siguiente != null) ...[
