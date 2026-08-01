@@ -229,10 +229,30 @@ class _MonthlyReadingPoster extends StatelessWidget {
                           borderRadius: BorderRadius.circular(16),
                           border: Border.all(color: AppColors.primaryLight),
                         ),
-                        child: ReadingCoverCalendar(
-                          calendar: calendar,
-                          showMonthHeader: false,
-                          cellAspectRatio: .88,
+                        child: Builder(
+                          builder: (context) {
+                            // Calcular semanas del mes para ajustar el aspecto
+                            final firstDay = DateTime(
+                              calendar.year,
+                              calendar.month,
+                              1,
+                            );
+                            final lastDay = DateTime(
+                              calendar.year,
+                              calendar.month + 1,
+                              0,
+                            );
+                            final startOffset = (firstDay.weekday - 1) % 7;
+                            final totalCells = startOffset + lastDay.day;
+                            final weeks = (totalCells / 7).ceil();
+                            // 5 semanas → .88, 6 semanas → .74
+                            final ratio = weeks >= 6 ? .74 : .88;
+                            return ReadingCoverCalendar(
+                              calendar: calendar,
+                              showMonthHeader: false,
+                              cellAspectRatio: ratio,
+                            );
+                          },
                         ),
                       ),
               ),

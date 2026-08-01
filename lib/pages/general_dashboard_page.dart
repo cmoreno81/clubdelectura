@@ -330,24 +330,19 @@ class _GeneralDashboardPageState extends State<GeneralDashboardPage> {
                         'Tu mes lector',
                         'Las portadas recorren los días que estuviste leyendo',
                         Icons.calendar_month_outlined,
-                        action: data.calendar.finishedBooks.isEmpty
-                            ? null
-                            : TextButton.icon(
-                                onPressed: () => Navigator.push<void>(
-                                  context,
-                                  AppPageRoute(
-                                    builder: (_) => MonthlyReadingSharePage(
-                                      calendar: data.calendar,
-                                      userName: data.userName,
-                                    ),
-                                  ),
-                                ),
-                                icon: const Icon(
-                                  Icons.ios_share_rounded,
-                                  size: 18,
-                                ),
-                                label: const Text('Compartir'),
+                        action: TextButton.icon(
+                          onPressed: () => Navigator.push<void>(
+                            context,
+                            AppPageRoute(
+                              builder: (_) => MonthlyReadingSharePage(
+                                calendar: data.calendar,
+                                userName: data.userName,
                               ),
+                            ),
+                          ),
+                          icon: const Icon(Icons.ios_share_rounded, size: 18),
+                          label: const Text('Compartir'),
+                        ),
                       ),
                       const SizedBox(height: AppSpacing.sm),
                       _calendar(data.calendar),

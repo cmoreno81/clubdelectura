@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 
+import '../../navigation/app_page_route.dart';
+import '../../pages/monthly_reading_share_page.dart';
+
 import '../../models/general_dashboard.dart';
 import '../../models/perfil_usuario.dart';
 import '../../navigation/book_detail_navigation.dart';
@@ -28,9 +31,11 @@ class PerfilHistoricoMeses extends StatefulWidget {
     super.key,
     required this.meses,
     required this.onBookTap,
+    this.userName = '',
   });
 
   final List<PerfilMesLector> meses;
+  final String userName;
   final void Function({
     required String title,
     required String bookId,
@@ -63,9 +68,11 @@ class _PerfilHistoricoMesesState extends State<PerfilHistoricoMeses> {
         for (var i = 0; i < widget.meses.length; i++) ...[
           _MesCard(
             mes: widget.meses[i],
+            index: i,
             expanded: _expanded == i,
             onToggle: () => setState(() => _expanded = _expanded == i ? -1 : i),
             onBookTap: widget.onBookTap,
+            userName: widget.userName,
           ),
           const SizedBox(height: AppSpacing.sm),
         ],
@@ -77,14 +84,18 @@ class _PerfilHistoricoMesesState extends State<PerfilHistoricoMeses> {
 class _MesCard extends StatelessWidget {
   const _MesCard({
     required this.mes,
+    required this.index,
     required this.expanded,
     required this.onToggle,
     required this.onBookTap,
+    this.userName = '',
   });
 
   final PerfilMesLector mes;
+  final int index;
   final bool expanded;
   final VoidCallback onToggle;
+  final String userName;
   final void Function({
     required String title,
     required String bookId,
@@ -150,13 +161,35 @@ class _MesCard extends StatelessWidget {
                       ],
                     ),
                   ),
-                  AnimatedRotation(
-                    turns: expanded ? 0.5 : 0,
-                    duration: const Duration(milliseconds: 200),
-                    child: const Icon(
-                      Icons.keyboard_arrow_down_rounded,
-                      color: AppColors.textMuted,
-                    ),
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      // Botón compartir para los 2 meses más recientes
+                      if (index <= 1 && mes.lecturas.isNotEmpty)
+                        IconButton(
+                          tooltip: 'Compartir mes lector',
+                          icon: const Icon(Icons.ios_share_rounded, size: 18),
+                          color: AppColors.primary,
+                          visualDensity: VisualDensity.compact,
+                          onPressed: () => Navigator.push<void>(
+                            context,
+                            AppPageRoute(
+                              builder: (_) => MonthlyReadingSharePage(
+                                calendar: _buildCalendar(),
+                                userName: userName,
+                              ),
+                            ),
+                          ),
+                        ),
+                      AnimatedRotation(
+                        turns: expanded ? 0.5 : 0,
+                        duration: const Duration(milliseconds: 200),
+                        child: const Icon(
+                          Icons.keyboard_arrow_down_rounded,
+                          color: AppColors.textMuted,
+                        ),
+                      ),
+                    ],
                   ),
                 ],
               ),

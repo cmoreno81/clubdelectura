@@ -510,7 +510,7 @@ class _DashboardPageState extends State<DashboardPage> {
 
         Expanded(
           child: InfoCard(
-            title: 'Media del club',
+            title: 'Media histórica',
             value: valoracion == '0' ? 'Sin datos' : '$valoracion / 5',
             icon: Icons.star_outline_rounded,
             variant: InfoCardVariant.gold,

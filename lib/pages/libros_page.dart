@@ -545,7 +545,7 @@ class _LibrosPageState extends State<LibrosPage> {
                     )
                   else if (esAbandonado)
                     const _CoverBadge(
-                      label: 'Dejado',
+                      label: 'Abandonado',
                       icon: Icons.heart_broken_rounded,
                       color: AppColors.danger,
                     ),
