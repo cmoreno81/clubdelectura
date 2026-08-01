@@ -1218,4 +1218,14 @@ class ApiService {
       body: '{}',
     );
   }
+
+  Future<Map<String, dynamic>> getAfinidadDetalle(String miembroId) async {
+    final response = await _client.get(
+      Uri.parse('$baseUrl?action=afinidadDetalle&miembroId=$miembroId'),
+    );
+    if (response.statusCode != 200) return {};
+    final data = jsonDecode(response.body);
+    if (data is! Map<String, dynamic>) return {};
+    return data;
+  }
 }

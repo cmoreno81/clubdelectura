@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 
 import '../navigation/app_page_route.dart';
+import '../navigation/app_page_route.dart';
 import '../navigation/book_detail_navigation.dart';
+import 'afinidad_detalle_page.dart';
 import 'package:flutter/services.dart';
 
 import '../dev/dev_settings.dart';
@@ -1354,7 +1356,21 @@ class _AffinityCard extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
               for (var i = 0; i < miembros.length && i < 5; i++)
-                _AffinityMemberTile(miembro: miembros[i], posicion: i),
+                _AffinityMemberTile(
+                  miembro: miembros[i],
+                  posicion: i,
+                  onTap: () => Navigator.push<void>(
+                    context,
+                    AppPageRoute(
+                      builder: (_) => AfinidadDetallePage(
+                        miembroId: miembros[i].id,
+                        nombre: miembros[i].nombre,
+                        avatarUrl: miembros[i].avatarUrl,
+                        librosComunes: miembros[i].librosComunes,
+                      ),
+                    ),
+                  ),
+                ),
             ],
           ),
         ],
@@ -1364,10 +1380,15 @@ class _AffinityCard extends StatelessWidget {
 }
 
 class _AffinityMemberTile extends StatelessWidget {
-  const _AffinityMemberTile({required this.miembro, required this.posicion});
+  const _AffinityMemberTile({
+    required this.miembro,
+    required this.posicion,
+    required this.onTap,
+  });
 
   final AffinityMember miembro;
   final int posicion;
+  final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
@@ -1384,92 +1405,95 @@ class _AffinityMemberTile extends StatelessWidget {
     ];
     final medalColor = posicion < 3 ? medalColors[posicion] : AppColors.primary;
 
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        // Avatar con borde de color según posición
-        Stack(
-          clipBehavior: Clip.none,
-          children: [
-            Container(
-              width: size,
-              height: size,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                border: Border.all(color: medalColor, width: 2.5),
-                boxShadow: [
-                  BoxShadow(
-                    color: medalColor.withValues(alpha: .3),
-                    blurRadius: 8,
-                    offset: const Offset(0, 3),
-                  ),
-                ],
+    return GestureDetector(
+      onTap: onTap,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // Avatar con borde de color según posición
+          Stack(
+            clipBehavior: Clip.none,
+            children: [
+              Container(
+                width: size,
+                height: size,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  border: Border.all(color: medalColor, width: 2.5),
+                  boxShadow: [
+                    BoxShadow(
+                      color: medalColor.withValues(alpha: .3),
+                      blurRadius: 8,
+                      offset: const Offset(0, 3),
+                    ),
+                  ],
+                ),
+                clipBehavior: Clip.antiAlias,
+                child: miembro.avatarUrl.isNotEmpty
+                    ? Image.network(
+                        miembro.avatarUrl,
+                        fit: BoxFit.cover,
+                        errorBuilder: (_, __, ___) => _initials(),
+                      )
+                    : _initials(),
               ),
-              clipBehavior: Clip.antiAlias,
-              child: miembro.avatarUrl.isNotEmpty
-                  ? Image.network(
-                      miembro.avatarUrl,
-                      fit: BoxFit.cover,
-                      errorBuilder: (_, __, ___) => _initials(),
-                    )
-                  : _initials(),
-            ),
-            // Medalla en esquina inferior derecha
-            if (posicion < 3)
-              Positioned(
-                bottom: -2,
-                right: -2,
-                child: Container(
-                  width: 18,
-                  height: 18,
-                  decoration: BoxDecoration(
-                    color: medalColor,
-                    shape: BoxShape.circle,
-                    border: Border.all(color: Colors.white, width: 1.5),
-                  ),
-                  alignment: Alignment.center,
-                  child: Text(
-                    '${posicion + 1}',
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 9,
-                      fontWeight: FontWeight.w900,
+              // Medalla en esquina inferior derecha
+              if (posicion < 3)
+                Positioned(
+                  bottom: -2,
+                  right: -2,
+                  child: Container(
+                    width: 18,
+                    height: 18,
+                    decoration: BoxDecoration(
+                      color: medalColor,
+                      shape: BoxShape.circle,
+                      border: Border.all(color: Colors.white, width: 1.5),
+                    ),
+                    alignment: Alignment.center,
+                    child: Text(
+                      '${posicion + 1}',
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 9,
+                        fontWeight: FontWeight.w900,
+                      ),
                     ),
                   ),
                 ),
+            ],
+          ),
+
+          const SizedBox(height: 6),
+
+          // Nombre corto
+          SizedBox(
+            width: size + 4,
+            child: Text(
+              miembro.nombre.split(' ').first, // solo primer nombre
+              textAlign: TextAlign.center,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: AppTextStyles.caption.copyWith(
+                fontWeight: posicion == 0 ? FontWeight.w800 : FontWeight.w600,
+                color: AppColors.textPrimary,
+                fontSize: 11,
               ),
-          ],
-        ),
+            ),
+          ),
 
-        const SizedBox(height: 6),
-
-        // Nombre corto
-        SizedBox(
-          width: size + 4,
-          child: Text(
-            miembro.nombre.split(' ').first, // solo primer nombre
-            textAlign: TextAlign.center,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
+          // Libros en común
+          Text(
+            '${miembro.librosComunes} 📚',
             style: AppTextStyles.caption.copyWith(
-              fontWeight: posicion == 0 ? FontWeight.w800 : FontWeight.w600,
-              color: AppColors.textPrimary,
+              color: medalColor,
+              fontWeight: FontWeight.w700,
               fontSize: 11,
             ),
           ),
-        ),
-
-        // Libros en común
-        Text(
-          '${miembro.librosComunes} 📚',
-          style: AppTextStyles.caption.copyWith(
-            color: medalColor,
-            fontWeight: FontWeight.w700,
-            fontSize: 11,
-          ),
-        ),
-      ],
-    );
+        ],
+      ), // Column
+    ); // GestureDetector
   }
 
   Widget _initials() => Container(
