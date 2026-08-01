@@ -7,6 +7,8 @@ import '../theme/app_colors.dart';
 import '../theme/app_radius.dart';
 import '../theme/app_spacing.dart';
 import '../theme/app_text_styles.dart';
+import '../models/mi_voto.dart' show VotoItem;
+import '../widgets/common/club_book_cover.dart';
 import '../widgets/common/club_card.dart';
 import '../widgets/common/club_chip.dart';
 import '../widgets/error_view.dart';
@@ -105,7 +107,7 @@ class _ClubvisionMiVotoPageState extends State<ClubvisionMiVotoPage> {
                       ) ...[
                         _VotoItem(
                           posicion: index,
-                          libro: voto.votos[index],
+                          voto: voto.votos[index],
                           puntos: index < puntos.length ? puntos[index] : 0,
                         ),
 
@@ -315,12 +317,12 @@ class _SectionHeader extends StatelessWidget {
 
 class _VotoItem extends StatelessWidget {
   final int posicion;
-  final String libro;
+  final VotoItem voto;
   final int puntos;
 
   const _VotoItem({
     required this.posicion,
-    required this.libro,
+    required this.voto,
     required this.puntos,
   });
 
@@ -344,24 +346,47 @@ class _VotoItem extends StatelessWidget {
       padding: const EdgeInsets.all(AppSpacing.md),
       child: Row(
         children: [
-          Container(
-            width: 52,
-            height: 52,
-            decoration: BoxDecoration(
-              color: color.withValues(alpha: 0.14),
-              shape: BoxShape.circle,
-            ),
-            alignment: Alignment.center,
-            child: icono != null
-                ? Icon(icono, color: color, size: 27)
-                : Text(
-                    '${posicion + 1}',
-                    style: TextStyle(
-                      color: color,
-                      fontSize: 18,
-                      fontWeight: FontWeight.w800,
-                    ),
+          Stack(
+            clipBehavior: Clip.none,
+            children: [
+              ClubBookCover(
+                title: voto.titulo,
+                imageUrl: voto.coverUrl,
+                width: 56,
+                height: 80,
+                borderRadius: BorderRadius.circular(8),
+                showShadow: true,
+              ),
+              Positioned(
+                top: -6,
+                right: -6,
+                child: Container(
+                  width: 26,
+                  height: 26,
+                  decoration: BoxDecoration(
+                    color: color,
+                    shape: BoxShape.circle,
+                    boxShadow: [
+                      BoxShadow(
+                        color: color.withValues(alpha: .4),
+                        blurRadius: 6,
+                      ),
+                    ],
                   ),
+                  alignment: Alignment.center,
+                  child: icono != null
+                      ? Icon(icono, color: Colors.white, size: 14)
+                      : Text(
+                          '${posicion + 1}',
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 11,
+                            fontWeight: FontWeight.w800,
+                          ),
+                        ),
+                ),
+              ),
+            ],
           ),
 
           const SizedBox(width: AppSpacing.md),
@@ -371,7 +396,7 @@ class _VotoItem extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  libro,
+                  voto.titulo,
                   maxLines: 3,
                   overflow: TextOverflow.ellipsis,
                   style: AppTextStyles.body.copyWith(

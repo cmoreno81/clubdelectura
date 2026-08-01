@@ -1,6 +1,27 @@
 import 'lectura_actual.dart';
 import 'reaccion_comentario.dart';
 
+class AffinityMember {
+  const AffinityMember({
+    required this.id,
+    required this.nombre,
+    required this.avatarUrl,
+    required this.librosComunes,
+  });
+
+  final String id;
+  final String nombre;
+  final String avatarUrl;
+  final int librosComunes;
+
+  factory AffinityMember.fromJson(Map<String, dynamic> json) => AffinityMember(
+    id: json['id']?.toString() ?? '',
+    nombre: json['nombre']?.toString() ?? '',
+    avatarUrl: json['avatarUrl']?.toString() ?? '',
+    librosComunes: (json['librosComunes'] as num?)?.toInt() ?? 0,
+  );
+}
+
 class Dashboard {
   final Resumen resumen;
 
@@ -15,6 +36,7 @@ class Dashboard {
   final List<LeyendoAhora> leyendoAhora;
 
   final LecturaActual lecturaActual;
+  final List<AffinityMember> rankingAfinidad;
 
   Dashboard({
     required this.resumen,
@@ -24,6 +46,7 @@ class Dashboard {
     required this.libroMes,
     required this.leyendoAhora,
     required this.lecturaActual,
+    this.rankingAfinidad = const [],
   });
 
   factory Dashboard.fromJson(Map<String, dynamic> json) {
@@ -45,6 +68,10 @@ class Dashboard {
           .toList(),
 
       lecturaActual: LecturaActual.fromJson(json['lecturaActual'] ?? {}),
+      rankingAfinidad: (json['rankingAfinidad'] as List<dynamic>? ?? [])
+          .cast<Map<String, dynamic>>()
+          .map(AffinityMember.fromJson)
+          .toList(growable: false),
     );
   }
 }

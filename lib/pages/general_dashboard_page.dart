@@ -1,3 +1,4 @@
+import 'package:club_lectura_app/pages/notificaciones_page.dart';
 import 'package:flutter/material.dart';
 
 import '../navigation/app_page_route.dart';
@@ -11,6 +12,7 @@ import '../models/libro_agrupado.dart';
 import '../services/api_exception.dart';
 import '../services/auth_service.dart';
 import '../services/club_service.dart';
+import '../services/api_service.dart';
 import '../services/general_dashboard_service.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_spacing.dart';
@@ -41,12 +43,29 @@ class _GeneralDashboardPageState extends State<GeneralDashboardPage> {
   String? _openingClubId;
   Key _shelfKey = UniqueKey();
   final _scrollController = ScrollController();
+  int _noLeidas = 0;
 
   @override
   void initState() {
     super.initState();
     _future = GeneralDashboardService().load();
     _checkOnboarding();
+    _loadNotificaciones();
+  }
+
+  Future<void> _loadNotificaciones() async {
+    try {
+      final data = await ApiService().getNotificaciones();
+      if (mounted) setState(() => _noLeidas = data.noLeidas);
+    } catch (_) {}
+  }
+
+  Future<void> _abrirNotificaciones() async {
+    await Navigator.push<void>(
+      context,
+      AppPageRoute(builder: (_) => const NotificacionesPage()),
+    );
+    _loadNotificaciones();
   }
 
   @override
@@ -201,6 +220,43 @@ class _GeneralDashboardPageState extends State<GeneralDashboardPage> {
                   ),
                   title: const Text('Mi universo lector'),
                   actions: [
+                    // Campanita con badge de no leídas
+                    Stack(
+                      clipBehavior: Clip.none,
+                      children: [
+                        IconButton(
+                          tooltip: 'Notificaciones',
+                          onPressed: _abrirNotificaciones,
+                          icon: const Icon(Icons.notifications_outlined),
+                        ),
+                        if (_noLeidas > 0)
+                          Positioned(
+                            top: 6,
+                            right: 6,
+                            child: Container(
+                              padding: const EdgeInsets.all(2),
+                              decoration: const BoxDecoration(
+                                color: AppColors.danger,
+                                shape: BoxShape.circle,
+                              ),
+                              constraints: const BoxConstraints(
+                                minWidth: 16,
+                                minHeight: 16,
+                              ),
+                              alignment: Alignment.center,
+                              child: Text(
+                                _noLeidas > 9 ? '9+' : '$_noLeidas',
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 9,
+                                  fontWeight: FontWeight.w800,
+                                  height: 1,
+                                ),
+                              ),
+                            ),
+                          ),
+                      ],
+                    ),
                     IconButton(
                       tooltip: 'Explorar libros',
                       onPressed: _exploreBooks,

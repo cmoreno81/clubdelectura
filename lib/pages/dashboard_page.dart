@@ -307,6 +307,11 @@ class _DashboardPageState extends State<DashboardPage> {
                     },
                   ),
 
+                  if (data.rankingAfinidad.isNotEmpty) ...[
+                    const SizedBox(height: AppSpacing.md),
+                    _AffinityCard(miembros: data.rankingAfinidad),
+                  ],
+
                   if (data.libroMes.isNotEmpty) ...[
                     const SizedBox(height: AppSpacing.md),
 
@@ -1275,4 +1280,208 @@ class _PodioPuesto extends StatelessWidget {
       ),
     );
   }
+}
+
+// ─────────────────────────────────────────────
+// Ranking de afinidad anual
+// ─────────────────────────────────────────────
+
+class _AffinityCard extends StatelessWidget {
+  const _AffinityCard({required this.miembros});
+  final List<AffinityMember> miembros;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [Color(0xFFF0E5FF), Color(0xFFE8F4FF)],
+        ),
+        borderRadius: BorderRadius.circular(AppRadius.lg),
+        border: Border.all(color: AppColors.primaryLight),
+      ),
+      padding: const EdgeInsets.all(AppSpacing.md),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Cabecera
+          Row(
+            children: [
+              Container(
+                width: 38,
+                height: 38,
+                decoration: BoxDecoration(
+                  color: AppColors.primaryLight,
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: const Icon(
+                  Icons.people_alt_rounded,
+                  color: AppColors.primary,
+                  size: 20,
+                ),
+              ),
+              const SizedBox(width: AppSpacing.sm),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Compañeras de lectura',
+                      style: AppTextStyles.subtitle.copyWith(
+                        fontWeight: FontWeight.w800,
+                        color: AppColors.primaryDark,
+                      ),
+                    ),
+                    Text(
+                      'Más libros en común este año',
+                      style: AppTextStyles.caption.copyWith(
+                        color: AppColors.textMuted,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+
+          const SizedBox(height: AppSpacing.lg),
+
+          // Podio de avatares
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              for (var i = 0; i < miembros.length && i < 5; i++)
+                _AffinityMemberTile(miembro: miembros[i], posicion: i),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _AffinityMemberTile extends StatelessWidget {
+  const _AffinityMemberTile({required this.miembro, required this.posicion});
+
+  final AffinityMember miembro;
+  final int posicion;
+
+  @override
+  Widget build(BuildContext context) {
+    // Primera posición: avatar más grande
+    final size = posicion == 0
+        ? 62.0
+        : posicion <= 2
+        ? 52.0
+        : 44.0;
+    final medalColors = [
+      const Color(0xFFE4B63F), // oro
+      const Color(0xFF9AA3AF), // plata
+      const Color(0xFFB77948), // bronce
+    ];
+    final medalColor = posicion < 3 ? medalColors[posicion] : AppColors.primary;
+
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        // Avatar con borde de color según posición
+        Stack(
+          clipBehavior: Clip.none,
+          children: [
+            Container(
+              width: size,
+              height: size,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                border: Border.all(color: medalColor, width: 2.5),
+                boxShadow: [
+                  BoxShadow(
+                    color: medalColor.withValues(alpha: .3),
+                    blurRadius: 8,
+                    offset: const Offset(0, 3),
+                  ),
+                ],
+              ),
+              clipBehavior: Clip.antiAlias,
+              child: miembro.avatarUrl.isNotEmpty
+                  ? Image.network(
+                      miembro.avatarUrl,
+                      fit: BoxFit.cover,
+                      errorBuilder: (_, __, ___) => _initials(),
+                    )
+                  : _initials(),
+            ),
+            // Medalla en esquina inferior derecha
+            if (posicion < 3)
+              Positioned(
+                bottom: -2,
+                right: -2,
+                child: Container(
+                  width: 18,
+                  height: 18,
+                  decoration: BoxDecoration(
+                    color: medalColor,
+                    shape: BoxShape.circle,
+                    border: Border.all(color: Colors.white, width: 1.5),
+                  ),
+                  alignment: Alignment.center,
+                  child: Text(
+                    '${posicion + 1}',
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 9,
+                      fontWeight: FontWeight.w900,
+                    ),
+                  ),
+                ),
+              ),
+          ],
+        ),
+
+        const SizedBox(height: 6),
+
+        // Nombre corto
+        SizedBox(
+          width: size + 4,
+          child: Text(
+            miembro.nombre.split(' ').first, // solo primer nombre
+            textAlign: TextAlign.center,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: AppTextStyles.caption.copyWith(
+              fontWeight: posicion == 0 ? FontWeight.w800 : FontWeight.w600,
+              color: AppColors.textPrimary,
+              fontSize: 11,
+            ),
+          ),
+        ),
+
+        // Libros en común
+        Text(
+          '${miembro.librosComunes} 📚',
+          style: AppTextStyles.caption.copyWith(
+            color: medalColor,
+            fontWeight: FontWeight.w700,
+            fontSize: 11,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _initials() => Container(
+    color: AppColors.primaryLight,
+    alignment: Alignment.center,
+    child: Text(
+      miembro.nombre.isNotEmpty ? miembro.nombre[0].toUpperCase() : '?',
+      style: const TextStyle(
+        color: AppColors.primary,
+        fontWeight: FontWeight.w800,
+        fontSize: 18,
+      ),
+    ),
+  );
 }

@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:club_lectura_app/models/lectura_activa.dart';
 import 'package:club_lectura_app/models/lectura_compartida.dart';
 import 'package:club_lectura_app/models/mi_voto.dart';
+import 'package:club_lectura_app/models/notificacion.dart';
 import 'package:club_lectura_app/utils/app_config.dart';
 import 'package:http/http.dart' as http;
 import '../models/dashboard.dart';
@@ -1188,5 +1189,33 @@ class ApiService {
     final data = jsonDecode(response.body);
     if (data is! Map<String, dynamic>) return {};
     return data;
+  }
+
+  Future<NotificacionesData> getNotificaciones() async {
+    final response = await _client.get(
+      Uri.parse('$baseUrl?action=notificaciones'),
+    );
+    if (response.statusCode != 200)
+      return const NotificacionesData(notificaciones: [], noLeidas: 0);
+    final data = jsonDecode(response.body);
+    if (data is! Map<String, dynamic>)
+      return const NotificacionesData(notificaciones: [], noLeidas: 0);
+    return NotificacionesData.fromJson(data);
+  }
+
+  Future<void> marcarNotificacionLeida(String id) async {
+    await _client.post(
+      Uri.parse('$baseUrl?action=marcarLeida'),
+      headers: const {'Content-Type': 'application/json'},
+      body: jsonEncode({'id': id}),
+    );
+  }
+
+  Future<void> marcarTodasNotificacionesLeidas() async {
+    await _client.post(
+      Uri.parse('$baseUrl?action=marcarTodasLeidas'),
+      headers: const {'Content-Type': 'application/json'},
+      body: '{}',
+    );
   }
 }

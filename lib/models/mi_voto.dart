@@ -1,7 +1,17 @@
+class VotoItem {
+  const VotoItem({required this.titulo, required this.coverUrl});
+  final String titulo;
+  final String coverUrl;
+  factory VotoItem.fromJson(Map<String, dynamic> json) => VotoItem(
+    titulo: json['titulo']?.toString() ?? '',
+    coverUrl: json['coverUrl']?.toString() ?? '',
+  );
+}
+
 class MiVoto {
   final bool encontrado;
 
-  final List<String> votos;
+  final List<VotoItem> votos;
 
   final int votosRecibidos;
   final int totalUsuarios;
@@ -20,7 +30,10 @@ class MiVoto {
   factory MiVoto.fromJson(Map<String, dynamic> json) {
     return MiVoto(
       encontrado: json["encontrado"] ?? false,
-      votos: List<String>.from(json["votos"] ?? []),
+      votos: (json["votos"] as List<dynamic>? ?? [])
+          .whereType<Map<String, dynamic>>()
+          .map(VotoItem.fromJson)
+          .toList(growable: false),
       votosRecibidos: json["votosRecibidos"] ?? 0,
       totalUsuarios: json["totalUsuarios"] ?? 0,
       votosPendientes: json["votosPendientes"] ?? 0,
