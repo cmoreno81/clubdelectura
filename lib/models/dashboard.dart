@@ -64,6 +64,7 @@ class Clubvision {
   final List<String> lectoras;
 
   final int totalCandidatas;
+  final List<String> portadasCandidatas;
 
   final int votosRecibidos;
   final int totalUsuarios;
@@ -82,6 +83,7 @@ class Clubvision {
     required this.lectoras,
     required this.idVotacion,
     required this.totalCandidatas,
+    this.portadasCandidatas = const [],
     required this.votosRecibidos,
     required this.totalUsuarios,
     required this.votosPendientes,
@@ -101,6 +103,10 @@ class Clubvision {
       idVotacion: json['idVotacion']?.toString() ?? '',
       lectoras: List<String>.from(json['lectoras'] ?? []),
       totalCandidatas: (json['totalCandidatas'] as num?)?.toInt() ?? 0,
+      portadasCandidatas: (json['portadasCandidatas'] as List<dynamic>? ?? [])
+          .map((e) => e.toString())
+          .where((e) => e.isNotEmpty)
+          .toList(growable: false),
       votosRecibidos: (json['votosRecibidos'] as num?)?.toInt() ?? 0,
 
       totalUsuarios: (json['totalUsuarios'] as num?)?.toInt() ?? 0,

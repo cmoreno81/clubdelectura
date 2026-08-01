@@ -19,6 +19,7 @@ class DirectorEscenas {
       case ContenidoClub.candidatas:
         return EscenaVotacion(
           totalCandidatas: dashboard.clubvision.totalCandidatas,
+          portadas: dashboard.clubvision.portadasCandidatas,
         );
 
       case ContenidoClub.ganador:

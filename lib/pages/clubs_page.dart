@@ -460,7 +460,7 @@ class _ClubSettingsPageState extends State<_ClubSettingsPage> {
             child: Column(
               children: [
                 GestureDetector(
-                  onTap: _isAdmin ? _editarFotoClub : null,
+                  onTap: _editarFotoClub,
                   child: Stack(
                     children: [
                       Container(
@@ -483,25 +483,24 @@ class _ClubSettingsPageState extends State<_ClubSettingsPage> {
                               )
                             : _avatarFallback(widget.club.nombre),
                       ),
-                      if (_isAdmin)
-                        Positioned(
-                          right: 0,
-                          bottom: 0,
-                          child: Container(
-                            width: 26,
-                            height: 26,
-                            decoration: BoxDecoration(
-                              color: AppColors.primary,
-                              shape: BoxShape.circle,
-                              border: Border.all(color: Colors.white, width: 2),
-                            ),
-                            child: const Icon(
-                              Icons.edit_rounded,
-                              color: Colors.white,
-                              size: 13,
-                            ),
+                      Positioned(
+                        right: 0,
+                        bottom: 0,
+                        child: Container(
+                          width: 26,
+                          height: 26,
+                          decoration: BoxDecoration(
+                            color: AppColors.primary,
+                            shape: BoxShape.circle,
+                            border: Border.all(color: Colors.white, width: 2),
+                          ),
+                          child: const Icon(
+                            Icons.edit_rounded,
+                            color: Colors.white,
+                            size: 13,
                           ),
                         ),
+                      ),
                     ],
                   ),
                 ),
