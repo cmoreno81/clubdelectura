@@ -71,23 +71,39 @@ class DirectorEscenas {
 
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(AppSpacing.lg),
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.lg,
+        vertical: AppSpacing.xl,
+      ),
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.58),
+        gradient: const LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [Color(0xFFFFF8E6), Color(0xFFFFF0C0)],
+        ),
         borderRadius: BorderRadius.circular(AppRadius.lg),
+        border: Border.all(
+          color: const Color(0xFFE4B63F).withValues(alpha: .5),
+        ),
       ),
       child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          // Datos de participación — aportan algo nuevo
           Row(
-            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+            mainAxisAlignment: MainAxisAlignment.center,
             children: [
               _statItem(
                 '$totalVotos',
                 'votos recibidos',
                 Icons.how_to_vote_outlined,
               ),
-              Container(width: 1, height: 40, color: AppColors.border),
+              Container(
+                width: 1,
+                height: 56,
+                margin: const EdgeInsets.symmetric(horizontal: AppSpacing.xl),
+                color: const Color(0xFFE4B63F).withValues(alpha: .4),
+              ),
               _statItem(
                 '$participacion%',
                 'participación',
@@ -95,13 +111,27 @@ class DirectorEscenas {
               ),
             ],
           ),
-          const SizedBox(height: AppSpacing.md),
-          Text(
-            '¡Entra y descubre quién ha ganado! 🏆',
-            textAlign: TextAlign.center,
-            style: AppTextStyles.caption.copyWith(
-              color: AppColors.textSecondary,
-              fontStyle: FontStyle.italic,
+          const SizedBox(height: AppSpacing.lg),
+          Container(
+            padding: const EdgeInsets.symmetric(
+              horizontal: AppSpacing.md,
+              vertical: 6,
+            ),
+            decoration: BoxDecoration(
+              color: const Color(0xFFE4B63F).withValues(alpha: .15),
+              borderRadius: BorderRadius.circular(30),
+              border: Border.all(
+                color: const Color(0xFFE4B63F).withValues(alpha: .4),
+              ),
+            ),
+            child: Text(
+              '¡Entra y descubre quién ha ganado! 🏆',
+              textAlign: TextAlign.center,
+              style: AppTextStyles.caption.copyWith(
+                color: const Color(0xFF7A5A00),
+                fontStyle: FontStyle.italic,
+                fontWeight: FontWeight.w600,
+              ),
             ),
           ),
         ],
@@ -111,20 +141,27 @@ class DirectorEscenas {
 
   Widget _statItem(String value, String label, IconData icon) {
     return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.center,
       children: [
-        Icon(icon, color: AppColors.gold, size: 20),
-        const SizedBox(height: 4),
+        Icon(icon, color: const Color(0xFFB48113), size: 22),
+        const SizedBox(height: 6),
         Text(
           value,
           style: AppTextStyles.title.copyWith(
-            fontSize: 22,
-            color: AppColors.primaryDark,
+            fontSize: 32,
+            color: const Color(0xFF5A3E00),
+            fontWeight: FontWeight.w900,
           ),
         ),
+        const SizedBox(height: 2),
         Text(
           label,
           textAlign: TextAlign.center,
-          style: AppTextStyles.caption.copyWith(color: AppColors.textMuted),
+          style: AppTextStyles.caption.copyWith(
+            color: const Color(0xFF9A7A20),
+            height: 1.3,
+          ),
         ),
       ],
     );

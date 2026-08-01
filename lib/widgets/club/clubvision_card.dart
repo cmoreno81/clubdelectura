@@ -1,3 +1,5 @@
+import 'dart:math';
+import 'package:club_lectura_app/pages/clubvision_gala_page.dart';
 import 'package:club_lectura_app/pages/clubvision_menu_page.dart';
 import 'package:flutter/material.dart';
 
@@ -35,11 +37,14 @@ class ClubvisionCard extends StatelessWidget {
   }
 
   Future<void> _abrirClubvision(BuildContext context) async {
+    final esGala = dashboard.clubvision.estado == 'RESULTADOS';
     await Navigator.push(
       context,
-      AppPageRoute(builder: (_) => const ClubvisionMenuPage()),
+      AppPageRoute(
+        builder: (_) =>
+            esGala ? const ClubvisionGalaPage() : const ClubvisionMenuPage(),
+      ),
     );
-
     await onActualizar();
   }
 
@@ -305,97 +310,7 @@ class ClubvisionCard extends StatelessWidget {
   Widget _bloqueGanador() {
     final esResultados = dashboard.clubvision.estado == 'RESULTADOS';
 
-    // ── Estado RESULTADOS: misterio — no revelamos el título ──
-    if (esResultados) {
-      return Container(
-        width: double.infinity,
-        padding: const EdgeInsets.all(AppSpacing.lg),
-        decoration: BoxDecoration(
-          color: Colors.white.withValues(alpha: .55),
-          borderRadius: BorderRadius.circular(AppRadius.lg),
-          border: Border.all(
-            color: const Color(0xFFE4B63F).withValues(alpha: .4),
-          ),
-        ),
-        child: Column(
-          children: [
-            // Icono sobre sellado / suspense
-            Container(
-              width: 56,
-              height: 56,
-              decoration: BoxDecoration(
-                color: const Color(0xFFFFEDBA),
-                shape: BoxShape.circle,
-                boxShadow: [
-                  BoxShadow(
-                    color: const Color(0xFFE4B63F).withValues(alpha: .25),
-                    blurRadius: 12,
-                    offset: const Offset(0, 4),
-                  ),
-                ],
-              ),
-              child: const Icon(
-                Icons.workspace_premium_rounded,
-                color: Color(0xFFB48113),
-                size: 28,
-              ),
-            ),
-            const SizedBox(height: AppSpacing.sm),
-            Text(
-              'Ya tenemos ganadora',
-              style: AppTextStyles.subtitle.copyWith(
-                fontWeight: FontWeight.w800,
-                color: const Color(0xFF7A5A00),
-              ),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 4),
-            Text(
-              'Entra a la Gala para descubrir el libro elegido y ver cómo votó cada lectora.',
-              style: AppTextStyles.caption.copyWith(
-                color: const Color(0xFF9A7A20),
-                height: 1.4,
-              ),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: AppSpacing.md),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-              decoration: BoxDecoration(
-                color: const Color(0xFFE4B63F),
-                borderRadius: BorderRadius.circular(30),
-                boxShadow: [
-                  BoxShadow(
-                    color: const Color(0xFFE4B63F).withValues(alpha: .35),
-                    blurRadius: 8,
-                    offset: const Offset(0, 3),
-                  ),
-                ],
-              ),
-              child: const Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(
-                    Icons.auto_awesome_rounded,
-                    color: Colors.white,
-                    size: 15,
-                  ),
-                  SizedBox(width: 6),
-                  Text(
-                    'Ver la ganadora →',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.w800,
-                      fontSize: 13,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-      );
-    }
+    if (esResultados) return const _GalaResultadosCard();
 
     // ── Estado LECTURA: muestra actividad del club ──
     return Column(
@@ -466,4 +381,251 @@ class ClubvisionCard extends StatelessWidget {
       ],
     );
   }
+}
+
+// ─────────────────────────────────────────────
+// Card animada para el estado RESULTADOS (Gala)
+// ─────────────────────────────────────────────
+
+class _GalaResultadosCard extends StatefulWidget {
+  const _GalaResultadosCard();
+
+  @override
+  State<_GalaResultadosCard> createState() => _GalaResultadosCardState();
+}
+
+class _GalaResultadosCardState extends State<_GalaResultadosCard>
+    with TickerProviderStateMixin {
+  // Fade + slide de entrada del contenido
+  late final AnimationController _entrada;
+  late final Animation<double> _fade;
+  late final Animation<Offset> _slide;
+
+  // Pulso continuo del botón
+  late final AnimationController _pulso;
+  late final Animation<double> _escala;
+
+  // Estrellas parpadeantes
+  late final AnimationController _estrellas;
+
+  @override
+  void initState() {
+    super.initState();
+
+    _entrada = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 900),
+    )..forward();
+
+    _fade = CurvedAnimation(parent: _entrada, curve: Curves.easeOut);
+    _slide = Tween<Offset>(
+      begin: const Offset(0, .12),
+      end: Offset.zero,
+    ).animate(CurvedAnimation(parent: _entrada, curve: Curves.easeOutCubic));
+
+    _pulso = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1400),
+    )..repeat(reverse: true);
+
+    _escala = Tween<double>(
+      begin: 1.0,
+      end: 1.06,
+    ).animate(CurvedAnimation(parent: _pulso, curve: Curves.easeInOut));
+
+    _estrellas = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 2200),
+    )..repeat();
+  }
+
+  @override
+  void dispose() {
+    _entrada.dispose();
+    _pulso.dispose();
+    _estrellas.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return FadeTransition(
+      opacity: _fade,
+      child: SlideTransition(
+        position: _slide,
+        child: Container(
+          width: double.infinity,
+          decoration: BoxDecoration(
+            gradient: const LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [Color(0xFF3D2800), Color(0xFF7A5A00), Color(0xFFB48113)],
+            ),
+            borderRadius: BorderRadius.circular(AppRadius.lg),
+            boxShadow: [
+              BoxShadow(
+                color: const Color(0xFFB48113).withValues(alpha: .35),
+                blurRadius: 20,
+                offset: const Offset(0, 6),
+              ),
+            ],
+          ),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(AppRadius.lg),
+            child: Stack(
+              children: [
+                // Partículas de fondo
+                Positioned.fill(child: _StarField(controller: _estrellas)),
+
+                // Contenido
+                Padding(
+                  padding: const EdgeInsets.all(AppSpacing.lg),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      // Trofeo
+                      Container(
+                        width: 64,
+                        height: 64,
+                        decoration: BoxDecoration(
+                          color: Colors.white.withValues(alpha: .15),
+                          shape: BoxShape.circle,
+                        ),
+                        child: const Icon(
+                          Icons.workspace_premium_rounded,
+                          color: Color(0xFFFFD700),
+                          size: 34,
+                        ),
+                      ),
+
+                      const SizedBox(height: AppSpacing.md),
+
+                      const Text(
+                        'Ya tenemos ganadora',
+                        style: TextStyle(
+                          color: Color(0xFFFFD700),
+                          fontSize: 20,
+                          fontWeight: FontWeight.w900,
+                          letterSpacing: .5,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+
+                      const SizedBox(height: 8),
+
+                      Text(
+                        'Entra a la Gala para descubrir el libro\nelegido y ver cómo votó cada lectora.',
+                        style: TextStyle(
+                          color: Colors.white.withValues(alpha: .82),
+                          fontSize: 13,
+                          height: 1.45,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+
+                      const SizedBox(height: AppSpacing.lg),
+
+                      // Botón pulsante
+                      ScaleTransition(
+                        scale: _escala,
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 20,
+                            vertical: 12,
+                          ),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFFFD700),
+                            borderRadius: BorderRadius.circular(30),
+                            boxShadow: [
+                              BoxShadow(
+                                color: const Color(
+                                  0xFFFFD700,
+                                ).withValues(alpha: .5),
+                                blurRadius: 16,
+                                spreadRadius: 2,
+                              ),
+                            ],
+                          ),
+                          child: const Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(
+                                Icons.auto_awesome_rounded,
+                                color: Color(0xFF3D2800),
+                                size: 16,
+                              ),
+                              SizedBox(width: 8),
+                              Text(
+                                'Ver la ganadora →',
+                                style: TextStyle(
+                                  color: Color(0xFF3D2800),
+                                  fontWeight: FontWeight.w900,
+                                  fontSize: 14,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// Pequeñas estrellas/destellos animados en el fondo
+class _StarField extends StatelessWidget {
+  const _StarField({required this.controller});
+  final AnimationController controller;
+
+  static final _stars = List.generate(18, (i) {
+    final rng = Random(i * 7 + 3);
+    return (
+      x: rng.nextDouble(),
+      y: rng.nextDouble(),
+      size: 1.5 + rng.nextDouble() * 2.5,
+      phase: rng.nextDouble(),
+    );
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: controller,
+      builder: (_, __) =>
+          CustomPaint(painter: _StarPainter(controller.value, _stars)),
+    );
+  }
+}
+
+class _StarPainter extends CustomPainter {
+  _StarPainter(this.t, this.stars);
+  final double t;
+  final List<({double x, double y, double size, double phase})> stars;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    for (final s in stars) {
+      // cada estrella parpadea con su propio desfase
+      final brightness = (sin((t + s.phase) * 2 * pi) * .5 + .5);
+      final paint = Paint()
+        ..color = const Color(0xFFFFD700).withValues(alpha: brightness * .6)
+        ..style = PaintingStyle.fill;
+      canvas.drawCircle(
+        Offset(s.x * size.width, s.y * size.height),
+        s.size,
+        paint,
+      );
+    }
+  }
+
+  @override
+  bool shouldRepaint(_StarPainter old) => old.t != t;
 }

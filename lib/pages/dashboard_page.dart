@@ -280,6 +280,7 @@ class _DashboardPageState extends State<DashboardPage> {
                     value: data.mood,
                     icon: Icons.psychology_alt_outlined,
                     variant: InfoCardVariant.blush,
+                    pulseIcon: true,
                     onTap: () {
                       Navigator.push(
                         context,
@@ -295,6 +296,7 @@ class _DashboardPageState extends State<DashboardPage> {
                     value: data.tendencia,
                     icon: Icons.trending_up_rounded,
                     variant: InfoCardVariant.sage,
+                    pulseIcon: true,
                     onTap: () {
                       Navigator.push(
                         context,
@@ -493,7 +495,7 @@ class _DashboardPageState extends State<DashboardPage> {
       children: [
         Expanded(
           child: InfoCard(
-            title: 'Actividad',
+            title: 'Este mes',
             value: '$actividad ${actividad == 1 ? 'libro' : 'libros'}',
             icon: Icons.local_fire_department_outlined,
             variant: InfoCardVariant.warning,
@@ -508,7 +510,7 @@ class _DashboardPageState extends State<DashboardPage> {
 
         Expanded(
           child: InfoCard(
-            title: 'Valoración',
+            title: 'Media del club',
             value: valoracion == '0' ? 'Sin datos' : '$valoracion / 5',
             icon: Icons.star_outline_rounded,
             variant: InfoCardVariant.gold,

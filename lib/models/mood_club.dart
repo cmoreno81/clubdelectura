@@ -49,21 +49,28 @@ class MoodSemanal {
   final String? miMood;
   final int total;
   final Map<String, int> distribucion;
+  final Map<String, List<String>> votantes;
 
   const MoodSemanal({
     required this.miMood,
     required this.total,
     required this.distribucion,
+    this.votantes = const {},
   });
 
   factory MoodSemanal.fromJson(Map<String, dynamic> json) {
     final raw = json['distribucion'] as Map? ?? const {};
+    final rawVotantes = json['votantes'] as Map? ?? const {};
     return MoodSemanal(
       miMood: json['miMood']?.toString(),
       total: (json['total'] as num?)?.toInt() ?? 0,
       distribucion: {
         for (final entry in raw.entries)
           entry.key.toString(): (entry.value as num?)?.toInt() ?? 0,
+      },
+      votantes: {
+        for (final entry in rawVotantes.entries)
+          entry.key.toString(): List<String>.from(entry.value as List? ?? []),
       },
     );
   }

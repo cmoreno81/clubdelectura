@@ -8,13 +8,16 @@ import 'common/club_card.dart';
 
 enum InfoCardVariant { primary, blush, sage, warning, gold, info }
 
-class InfoCard extends StatelessWidget {
+class InfoCard extends StatefulWidget {
   final String title;
   final String value;
   final IconData icon;
   final VoidCallback? onTap;
   final InfoCardVariant variant;
   final bool compact;
+
+  /// Si es true, el icono pulsa suavemente en bucle
+  final bool pulseIcon;
 
   const InfoCard({
     super.key,
@@ -24,35 +27,68 @@ class InfoCard extends StatelessWidget {
     this.onTap,
     this.variant = InfoCardVariant.primary,
     this.compact = false,
+    this.pulseIcon = false,
   });
+
+  @override
+  State<InfoCard> createState() => _InfoCardState();
+}
+
+class _InfoCardState extends State<InfoCard>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _ctrl;
+  late final Animation<double> _pulse;
+
+  @override
+  void initState() {
+    super.initState();
+    _ctrl = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1600),
+    );
+    _pulse = Tween<double>(
+      begin: 1.0,
+      end: 1.18,
+    ).animate(CurvedAnimation(parent: _ctrl, curve: Curves.easeInOut));
+    if (widget.pulseIcon) _ctrl.repeat(reverse: true);
+  }
+
+  @override
+  void dispose() {
+    _ctrl.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
     final colors = _resolveColors();
 
     return ClubCard(
-      padding: EdgeInsets.all(compact ? AppSpacing.md : AppSpacing.lg),
+      padding: EdgeInsets.all(widget.compact ? AppSpacing.md : AppSpacing.lg),
       backgroundColor: colors.background,
       borderColor: colors.border,
-      elevated: !compact,
-      onTap: onTap,
-      child: compact ? _compactContent(colors) : _regularContent(colors),
+      elevated: !widget.compact,
+      onTap: widget.onTap,
+      child: widget.compact ? _compactContent(colors) : _regularContent(colors),
     );
   }
 
   Widget _regularContent(_InfoCardColors colors) {
+    final iconWidget = Container(
+      width: 52,
+      height: 52,
+      decoration: BoxDecoration(
+        color: colors.iconBackground,
+        borderRadius: BorderRadius.circular(AppRadius.lg),
+      ),
+      child: Icon(widget.icon, size: 27, color: colors.foreground),
+    );
     return Row(
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
-        Container(
-          width: 52,
-          height: 52,
-          decoration: BoxDecoration(
-            color: colors.iconBackground,
-            borderRadius: BorderRadius.circular(AppRadius.lg),
-          ),
-          child: Icon(icon, size: 27, color: colors.foreground),
-        ),
+        widget.pulseIcon
+            ? ScaleTransition(scale: _pulse, child: iconWidget)
+            : iconWidget,
 
         const SizedBox(width: AppSpacing.md),
 
@@ -61,7 +97,7 @@ class InfoCard extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                title,
+                widget.title,
                 style: AppTextStyles.subtitle.copyWith(
                   color: AppColors.textPrimary,
                   fontWeight: FontWeight.w700,
@@ -70,12 +106,12 @@ class InfoCard extends StatelessWidget {
 
               const SizedBox(height: AppSpacing.xs),
 
-              Text(value, style: AppTextStyles.bodySecondary),
+              Text(widget.value, style: AppTextStyles.bodySecondary),
             ],
           ),
         ),
 
-        if (onTap != null) ...[
+        if (widget.onTap != null) ...[
           const SizedBox(width: AppSpacing.sm),
           Icon(Icons.chevron_right_rounded, color: colors.foreground),
         ],
@@ -96,12 +132,12 @@ class InfoCard extends StatelessWidget {
                 color: colors.iconBackground,
                 borderRadius: BorderRadius.circular(AppRadius.md),
               ),
-              child: Icon(icon, size: 21, color: colors.foreground),
+              child: Icon(widget.icon, size: 21, color: colors.foreground),
             ),
 
             const Spacer(),
 
-            if (onTap != null)
+            if (widget.onTap != null)
               Icon(
                 Icons.arrow_forward_rounded,
                 size: 18,
@@ -113,7 +149,7 @@ class InfoCard extends StatelessWidget {
         const SizedBox(height: AppSpacing.md),
 
         Text(
-          value,
+          widget.value,
           maxLines: 2,
           overflow: TextOverflow.ellipsis,
           style: AppTextStyles.section.copyWith(fontSize: 19),
@@ -122,7 +158,7 @@ class InfoCard extends StatelessWidget {
         const SizedBox(height: AppSpacing.xs),
 
         Text(
-          title,
+          widget.title,
           style: AppTextStyles.caption.copyWith(
             color: AppColors.textSecondary,
             fontWeight: FontWeight.w600,
@@ -133,7 +169,7 @@ class InfoCard extends StatelessWidget {
   }
 
   _InfoCardColors _resolveColors() {
-    switch (variant) {
+    switch (widget.variant) {
       case InfoCardVariant.blush:
         return const _InfoCardColors(
           background: Color(0xFFFFF4F7),

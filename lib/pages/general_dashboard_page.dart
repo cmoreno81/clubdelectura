@@ -27,7 +27,6 @@ import 'detalle_libro_page.dart';
 import 'monthly_reading_share_page.dart';
 import 'perfil_usuario_page.dart';
 import 'sagas_page.dart';
-import 'year_reading_share_page.dart';
 import '../widgets/common/onboarding_tutorial.dart';
 
 class GeneralDashboardPage extends StatefulWidget {
@@ -488,88 +487,227 @@ class _GeneralDashboardPageState extends State<GeneralDashboardPage> {
 
   Widget _metrics(GeneralDashboard data) {
     final summary = data.summary;
-    final metrics = [
-      ('Leyendo', summary.reading, Icons.menu_book_rounded, AppColors.info, ''),
-      (
-        'Terminados',
-        summary.finished,
-        Icons.check_rounded,
-        AppColors.success,
-        'en total',
-      ),
-      (
-        'Este mes',
-        summary.finishedThisMonth,
-        Icons.bolt_rounded,
-        AppColors.warning,
-        data.pagesReadThisMonth > 0
-            ? '${data.pagesReadThisMonth} páginas leídas'
-            : '${summary.finishedThisMonth == 1 ? 'libro terminado' : 'libros terminados'}',
-      ),
-      (
-        'Páginas totales',
-        summary.pagesRead,
-        Icons.bookmark_rounded,
-        AppColors.primary,
-        'histórico completo',
-      ),
-    ];
-    return GridView.count(
-      crossAxisCount: 2,
-      shrinkWrap: true,
-      padding: EdgeInsets.zero,
-      physics: const NeverScrollableScrollPhysics(),
-      childAspectRatio: 1.5,
-      crossAxisSpacing: AppSpacing.sm,
-      mainAxisSpacing: AppSpacing.sm,
-      children: metrics
-          .map(
-            (metric) => ClubCard(
-              elevated: false,
-              padding: const EdgeInsets.all(AppSpacing.md),
-              child: Row(
-                children: [
-                  CircleAvatar(
-                    backgroundColor: metric.$4.withValues(alpha: .14),
-                    child: Icon(metric.$3, color: metric.$4),
-                  ),
-                  const SizedBox(width: AppSpacing.sm),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Text(
-                          '${metric.$2}',
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: Theme.of(context).textTheme.titleLarge
-                              ?.copyWith(fontWeight: FontWeight.w800),
-                        ),
-                        Text(
-                          metric.$1,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(fontSize: 12),
-                        ),
-                        if (metric.$5.isNotEmpty)
-                          Text(
-                            metric.$5,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(
-                              fontSize: 10,
-                              color: AppColors.textSecondary,
-                            ),
-                          ),
-                      ],
-                    ),
-                  ),
-                ],
+    return Column(
+      children: [
+        // Fila 1: Leyendo + Terminados
+        Row(
+          children: [
+            Expanded(
+              child: _metricCard(
+                icon: Icons.menu_book_rounded,
+                color: AppColors.info,
+                title: 'Leyendo',
+                value: '${summary.reading}',
+                subtitle: '',
+                context: context,
               ),
             ),
-          )
-          .toList(),
+            const SizedBox(width: AppSpacing.sm),
+            Expanded(
+              child: _metricCard(
+                icon: Icons.check_rounded,
+                color: AppColors.success,
+                title: 'Terminados',
+                value: '${summary.finished}',
+                subtitle: 'en total',
+                context: context,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: AppSpacing.sm),
+        // Fila 2: Este mes (título arriba) + Páginas (mes principal, histórico pequeño)
+        Row(
+          children: [
+            Expanded(
+              child: _metricCardMes(
+                summary: summary,
+                pages: data.pagesReadThisMonth,
+                context: context,
+              ),
+            ),
+            const SizedBox(width: AppSpacing.sm),
+            Expanded(
+              child: _metricCardPaginas(
+                summary: summary,
+                pagesMes: data.pagesReadThisMonth,
+                context: context,
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget _metricCard({
+    required IconData icon,
+    required Color color,
+    required String title,
+    required String value,
+    required String subtitle,
+    required BuildContext context,
+  }) {
+    return ClubCard(
+      elevated: false,
+      padding: const EdgeInsets.all(AppSpacing.md),
+      child: Row(
+        children: [
+          CircleAvatar(
+            backgroundColor: color.withValues(alpha: .14),
+            child: Icon(icon, color: color),
+          ),
+          const SizedBox(width: AppSpacing.sm),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text(
+                  value,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: Theme.of(
+                    context,
+                  ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w800),
+                ),
+                Text(
+                  title,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(fontSize: 12),
+                ),
+                if (subtitle.isNotEmpty)
+                  Text(
+                    subtitle,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      fontSize: 10,
+                      color: AppColors.textSecondary,
+                    ),
+                  ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _metricCardMes({
+    required GeneralSummary summary,
+    required int pages,
+    required BuildContext context,
+  }) {
+    return ClubCard(
+      elevated: false,
+      padding: const EdgeInsets.all(AppSpacing.md),
+      child: Row(
+        children: [
+          CircleAvatar(
+            backgroundColor: AppColors.warning.withValues(alpha: .14),
+            child: const Icon(Icons.bolt_rounded, color: AppColors.warning),
+          ),
+          const SizedBox(width: AppSpacing.sm),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                // Título en negrita arriba
+                const Text(
+                  'Este mes',
+                  maxLines: 1,
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w800,
+                    color: AppColors.warning,
+                  ),
+                ),
+                // Número grande
+                Text(
+                  '${summary.finishedThisMonth}',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: Theme.of(
+                    context,
+                  ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w800),
+                ),
+                // Subtítulo descriptivo
+                Text(
+                  summary.finishedThisMonth == 1
+                      ? 'libro terminado'
+                      : 'libros terminados',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    fontSize: 10,
+                    color: AppColors.textSecondary,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _metricCardPaginas({
+    required GeneralSummary summary,
+    required int pagesMes,
+    required BuildContext context,
+  }) {
+    return ClubCard(
+      elevated: false,
+      padding: const EdgeInsets.all(AppSpacing.md),
+      child: Row(
+        children: [
+          CircleAvatar(
+            backgroundColor: AppColors.primary.withValues(alpha: .14),
+            child: const Icon(Icons.bookmark_rounded, color: AppColors.primary),
+          ),
+          const SizedBox(width: AppSpacing.sm),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                // Título arriba
+                const Text(
+                  'Páginas',
+                  maxLines: 1,
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w800,
+                    color: AppColors.primary,
+                  ),
+                ),
+                // Páginas del mes (número principal)
+                Text(
+                  pagesMes > 0 ? '$pagesMes' : '0',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: Theme.of(
+                    context,
+                  ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w800),
+                ),
+                // Total histórico en pequeño
+                Text(
+                  '${summary.pagesRead} en total',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    fontSize: 10,
+                    color: AppColors.textSecondary,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
     );
   }
 

@@ -119,10 +119,6 @@ class _MoodClubPageState extends State<MoodClubPage> {
                   onVote: _votar,
                 ),
 
-                const SizedBox(height: AppSpacing.xl),
-
-                _MetricasMood(resumen: mood.resumen),
-
                 if (mood.conversacionDestacada != null) ...[
                   const SizedBox(height: AppSpacing.xl),
                   _ConversacionDestacada(
@@ -138,19 +134,6 @@ class _MoodClubPageState extends State<MoodClubPage> {
                   const SizedBox(height: AppSpacing.md),
                   _LibroActivo(libro: mood.libroActivo!),
                 ],
-
-                const SizedBox(height: AppSpacing.xl),
-
-                const _SectionHeader(
-                  icon: Icons.record_voice_over_outlined,
-                  color: AppColors.primary,
-                  title: 'La voz del club',
-                  subtitle: 'El narrador interpreta el momento lector',
-                ),
-
-                const SizedBox(height: AppSpacing.md),
-
-                _NarradorCard(texto: mood.narrador),
 
                 if (mood.estados.isNotEmpty) ...[
                   const SizedBox(height: AppSpacing.xl),
@@ -408,49 +391,71 @@ class _MoodVoteCard extends StatelessWidget {
           const SizedBox(height: AppSpacing.lg),
           Wrap(
             spacing: AppSpacing.sm,
-            runSpacing: AppSpacing.sm,
+            runSpacing: AppSpacing.md,
             children: _moodOpciones.map((opcion) {
               final seleccionada = mood.miMood == opcion.$1;
               final total = mood.distribucion[opcion.$1] ?? 0;
-              return Tooltip(
-                message: opcion.$3,
-                child: InkWell(
-                  onTap: enabled ? () => onVote(opcion.$1) : null,
-                  borderRadius: BorderRadius.circular(AppRadius.pill),
-                  child: AnimatedContainer(
-                    duration: const Duration(milliseconds: 200),
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: AppSpacing.sm,
-                      vertical: AppSpacing.xs,
-                    ),
-                    decoration: BoxDecoration(
-                      color: seleccionada
-                          ? AppColors.primaryLight
-                          : AppColors.surfaceSoft,
-                      borderRadius: BorderRadius.circular(AppRadius.pill),
-                      border: Border.all(
+              final personas = mood.votantes[opcion.$1] ?? [];
+              return GestureDetector(
+                onTap: enabled ? () => onVote(opcion.$1) : null,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    AnimatedContainer(
+                      duration: const Duration(milliseconds: 200),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: AppSpacing.sm,
+                        vertical: AppSpacing.xs,
+                      ),
+                      decoration: BoxDecoration(
                         color: seleccionada
-                            ? AppColors.primary
-                            : AppColors.border,
-                        width: seleccionada ? 2 : 1,
+                            ? AppColors.primaryLight
+                            : AppColors.surfaceSoft,
+                        borderRadius: BorderRadius.circular(AppRadius.pill),
+                        border: Border.all(
+                          color: seleccionada
+                              ? AppColors.primary
+                              : AppColors.border,
+                          width: seleccionada ? 2 : 1,
+                        ),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(opcion.$2, style: const TextStyle(fontSize: 23)),
+                          if (total > 0) ...[
+                            const SizedBox(width: AppSpacing.xs),
+                            Text(
+                              '$total',
+                              style: AppTextStyles.caption.copyWith(
+                                fontWeight: FontWeight.w800,
+                              ),
+                            ),
+                          ],
+                        ],
                       ),
                     ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Text(opcion.$2, style: const TextStyle(fontSize: 23)),
-                        if (total > 0) ...[
-                          const SizedBox(width: AppSpacing.xs),
-                          Text(
-                            '$total',
-                            style: AppTextStyles.caption.copyWith(
-                              fontWeight: FontWeight.w800,
-                            ),
+                    if (personas.isNotEmpty) ...[
+                      const SizedBox(height: 4),
+                      SizedBox(
+                        width: 90,
+                        child: Text(
+                          personas.length <= 2
+                              ? personas.join(' · ')
+                              : '${personas.take(2).join(', ')} +${personas.length - 2}',
+                          style: AppTextStyles.caption.copyWith(
+                            fontSize: 10,
+                            color: seleccionada
+                                ? AppColors.primary
+                                : AppColors.textMuted,
                           ),
-                        ],
-                      ],
-                    ),
-                  ),
+                          textAlign: TextAlign.center,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ],
+                  ],
                 ),
               );
             }).toList(),
