@@ -51,6 +51,28 @@ const List<_HelpSection> _secciones = [
             'uno estará activo a la vez. Cambia el activo desde "Mis clubes".',
       ),
       _HelpItem(
+        pregunta: '¿Cómo edito el club o añado una foto?',
+        respuesta:
+            'En "Mis clubes" pulsa el icono de ajustes ⚙️ del club. '
+            'Desde ahí puedes editar el nombre y la descripción, y cambiar la foto '
+            'del club desde la galería o con una URL. '
+            'Solo la propietaria y las administradoras pueden editar el club.',
+      ),
+      _HelpItem(
+        pregunta: '¿Cómo veo quién está en el club?',
+        respuesta:
+            'En los ajustes del club encontrarás la opción "Miembros", '
+            'que muestra a todas las personas del club con su rol. '
+            'El número de miembros también aparece en el propio menú.',
+      ),
+      _HelpItem(
+        pregunta: '¿Puedo salir de un club?',
+        respuesta:
+            'Sí, desde los ajustes del club verás la opción "Salir del club". '
+            'Perderás acceso a las lecturas y conversaciones de ese club. '
+            'La propietaria no puede salir — tendría que transferir la propiedad primero.',
+      ),
+      _HelpItem(
         pregunta: '¿Qué diferencia hay entre administradora y miembro?',
         respuesta:
             'La administradora puede abrir y cerrar votaciones de Clubvisión, '
@@ -285,7 +307,9 @@ const List<_HelpSection> _secciones = [
             '"Resumen" muestra tus métricas, la biblioteca anual y tus géneros favoritos. '
             '"Timeline" muestra tu historial de lecturas ordenado por fecha. '
             '"Finalizados" lista todos los libros terminados y abandonados '
-            'agrupados por año.',
+            'agrupados por año. '
+            '"Meses lectores" muestra un calendario por cada mes en el que has '
+            'leído algún libro, con las portadas colocadas en los días que las terminaste.',
       ),
     ],
   ),

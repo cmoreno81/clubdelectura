@@ -44,3 +44,30 @@ class MyClubs {
         .toList(growable: false),
   );
 }
+
+class ClubMember {
+  const ClubMember({
+    required this.id,
+    required this.nombre,
+    required this.avatarUrl,
+    required this.rol,
+    required this.desde,
+  });
+
+  final String id;
+  final String nombre;
+  final String avatarUrl;
+  final String rol;
+  final String desde;
+
+  bool get esOwner => rol == 'OWNER';
+  bool get esAdmin => rol == 'ADMIN' || rol == 'OWNER';
+
+  factory ClubMember.fromJson(Map<String, dynamic> json) => ClubMember(
+    id: json['id']?.toString() ?? '',
+    nombre: json['nombre']?.toString() ?? '',
+    avatarUrl: json['avatarUrl']?.toString() ?? '',
+    rol: json['rol']?.toString() ?? 'MEMBER',
+    desde: json['desde']?.toString() ?? '',
+  );
+}

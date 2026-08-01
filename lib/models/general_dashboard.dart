@@ -12,6 +12,7 @@ class GeneralDashboard {
     this._yearShelf,
     required this.calendar,
     required this.trending,
+    this.trendingAuthors = const [],
     required this.community,
   });
 
@@ -28,6 +29,7 @@ class GeneralDashboard {
   List<YearShelfBook> get yearShelf => _yearShelf ?? const [];
   final ReadingCalendar calendar;
   final List<TrendingBook> trending;
+  final List<TrendingAuthor> trendingAuthors;
   final CommunitySummary community;
 
   int get pagesReadThisMonth {
@@ -64,6 +66,7 @@ class GeneralDashboard {
         Map<String, dynamic>.from(json['calendario'] as Map? ?? {}),
       ),
       trending: _list(json['tendencias'], TrendingBook.fromJson),
+      trendingAuthors: _list(json['autoresTendencia'], TrendingAuthor.fromJson),
       community: CommunitySummary.fromJson(
         Map<String, dynamic>.from(json['comunidad'] as Map? ?? {}),
       ),
@@ -444,6 +447,7 @@ class MonthlyFinishedBook {
   final String coverUrl;
   final String finishedAt;
   final int pages;
+
   /// Valoración del usuario (0.5–5.0), null si no ha valorado aún.
   final double? rating;
 
@@ -485,6 +489,27 @@ class ReadingCalendarEvent {
             .map((item) => item.toString())
             .toList(growable: false),
       );
+}
+
+class TrendingAuthor {
+  const TrendingAuthor({
+    required this.id,
+    required this.nombre,
+    required this.photoUrl,
+    required this.libros,
+  });
+
+  final String id;
+  final String nombre;
+  final String photoUrl;
+  final int libros;
+
+  factory TrendingAuthor.fromJson(Map<String, dynamic> json) => TrendingAuthor(
+    id: json['id']?.toString() ?? '',
+    nombre: json['nombre']?.toString() ?? '',
+    photoUrl: json['photoUrl']?.toString() ?? '',
+    libros: _integer(json['libros']),
+  );
 }
 
 class TrendingBook {

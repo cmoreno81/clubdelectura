@@ -303,6 +303,101 @@ class ClubvisionCard extends StatelessWidget {
   }
 
   Widget _bloqueGanador() {
+    final esResultados = dashboard.clubvision.estado == 'RESULTADOS';
+
+    // ── Estado RESULTADOS: misterio — no revelamos el título ──
+    if (esResultados) {
+      return Container(
+        width: double.infinity,
+        padding: const EdgeInsets.all(AppSpacing.lg),
+        decoration: BoxDecoration(
+          color: Colors.white.withValues(alpha: .55),
+          borderRadius: BorderRadius.circular(AppRadius.lg),
+          border: Border.all(
+            color: const Color(0xFFE4B63F).withValues(alpha: .4),
+          ),
+        ),
+        child: Column(
+          children: [
+            // Icono sobre sellado / suspense
+            Container(
+              width: 56,
+              height: 56,
+              decoration: BoxDecoration(
+                color: const Color(0xFFFFEDBA),
+                shape: BoxShape.circle,
+                boxShadow: [
+                  BoxShadow(
+                    color: const Color(0xFFE4B63F).withValues(alpha: .25),
+                    blurRadius: 12,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
+              ),
+              child: const Icon(
+                Icons.workspace_premium_rounded,
+                color: Color(0xFFB48113),
+                size: 28,
+              ),
+            ),
+            const SizedBox(height: AppSpacing.sm),
+            Text(
+              'Ya tenemos ganadora',
+              style: AppTextStyles.subtitle.copyWith(
+                fontWeight: FontWeight.w800,
+                color: const Color(0xFF7A5A00),
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 4),
+            Text(
+              'Entra a la Gala para descubrir el libro elegido y ver cómo votó cada lectora.',
+              style: AppTextStyles.caption.copyWith(
+                color: const Color(0xFF9A7A20),
+                height: 1.4,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: AppSpacing.md),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+              decoration: BoxDecoration(
+                color: const Color(0xFFE4B63F),
+                borderRadius: BorderRadius.circular(30),
+                boxShadow: [
+                  BoxShadow(
+                    color: const Color(0xFFE4B63F).withValues(alpha: .35),
+                    blurRadius: 8,
+                    offset: const Offset(0, 3),
+                  ),
+                ],
+              ),
+              child: const Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    Icons.auto_awesome_rounded,
+                    color: Colors.white,
+                    size: 15,
+                  ),
+                  SizedBox(width: 6),
+                  Text(
+                    'Ver la ganadora →',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.w800,
+                      fontSize: 13,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    // ── Estado LECTURA: muestra actividad del club ──
     return Column(
       children: [
         if (dashboard.clubvision.estado == 'LECTURA' &&

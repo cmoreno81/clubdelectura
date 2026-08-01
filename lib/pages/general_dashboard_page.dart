@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../navigation/app_page_route.dart';
+import 'autor_libros_page.dart';
 import '../navigation/book_detail_navigation.dart';
 
 import '../models/club_membership.dart';
@@ -351,6 +352,12 @@ class _GeneralDashboardPageState extends State<GeneralDashboardPage> {
                       ),
                       const SizedBox(height: AppSpacing.sm),
                       _calendar(data.calendar),
+                      if (data.trending.isNotEmpty ||
+                          data.trendingAuthors.isNotEmpty) ...[
+                        // ── Separador visual "Comunidad global" ──
+                        const SizedBox(height: AppSpacing.xl),
+                        _communityDivider(),
+                      ],
                       if (data.trending.isNotEmpty) ...[
                         const SizedBox(height: AppSpacing.xl),
                         _sectionTitle(
@@ -360,6 +367,16 @@ class _GeneralDashboardPageState extends State<GeneralDashboardPage> {
                         ),
                         const SizedBox(height: AppSpacing.sm),
                         _trending(data.trending),
+                      ],
+                      if (data.trendingAuthors.isNotEmpty) ...[
+                        const SizedBox(height: AppSpacing.xl),
+                        _sectionTitle(
+                          'Autoras del momento',
+                          'Las más presentes en vuestras bibliotecas',
+                          Icons.people_outline_rounded,
+                        ),
+                        const SizedBox(height: AppSpacing.sm),
+                        _trendingAuthors(data.trendingAuthors),
                       ],
                       if (data.community.formats.total > 0) ...[
                         const SizedBox(height: AppSpacing.xl),
@@ -1205,6 +1222,157 @@ class _GeneralDashboardPageState extends State<GeneralDashboardPage> {
         ),
         Text(label, style: const TextStyle(color: Colors.white70)),
       ],
+    );
+  }
+
+  /// Avatar de fallback con iniciales y color derivado del nombre
+  Widget _authorInitials(String nombre) {
+    final palabras = nombre
+        .trim()
+        .split(' ')
+        .where((p) => p.isNotEmpty)
+        .toList();
+    final iniciales = palabras.length >= 2
+        ? '${palabras[0][0]}${palabras[1][0]}'.toUpperCase()
+        : nombre.isNotEmpty
+        ? nombre[0].toUpperCase()
+        : '?';
+    // Color derivado del hash del nombre para que sea consistente
+    final colors = [
+      const Color(0xFF7C3AED),
+      const Color(0xFF2563EB),
+      const Color(0xFFDB2777),
+      const Color(0xFF059669),
+      const Color(0xFFD97706),
+      const Color(0xFFDC2626),
+      const Color(0xFF0891B2),
+    ];
+    final color = colors[nombre.hashCode.abs() % colors.length];
+    return Container(
+      color: color.withValues(alpha: .15),
+      alignment: Alignment.center,
+      child: Text(
+        iniciales,
+        style: TextStyle(
+          color: color,
+          fontSize: 22,
+          fontWeight: FontWeight.w800,
+        ),
+      ),
+    );
+  }
+
+  Widget _communityDivider() {
+    return Container(
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.md,
+        vertical: AppSpacing.md,
+      ),
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          colors: [AppColors.primaryDark, AppColors.primary],
+          begin: Alignment.centerLeft,
+          end: Alignment.centerRight,
+        ),
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Row(
+        children: [
+          const Icon(Icons.public_rounded, color: Colors.white, size: 22),
+          const SizedBox(width: AppSpacing.sm),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Toda la comunidad',
+                  style: AppTextStyles.subtitle.copyWith(
+                    color: Colors.white,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+                Text(
+                  'Lo que se mueve en ClubReads',
+                  style: AppTextStyles.caption.copyWith(
+                    color: Colors.white.withValues(alpha: .75),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _trendingAuthors(List<TrendingAuthor> authors) {
+    return SizedBox(
+      height: 150,
+      child: ListView.separated(
+        scrollDirection: Axis.horizontal,
+        itemCount: authors.length,
+        separatorBuilder: (_, _) => const SizedBox(width: AppSpacing.md),
+        itemBuilder: (context, index) {
+          final author = authors[index];
+          return GestureDetector(
+            onTap: () => Navigator.push<void>(
+              context,
+              AppPageRoute(
+                builder: (_) => AutorLibrosPage(
+                  autorId: author.id,
+                  nombre: author.nombre,
+                  photoUrl: author.photoUrl,
+                ),
+              ),
+            ),
+            child: SizedBox(
+              width: 80,
+              child: Column(
+                children: [
+                  Container(
+                    width: 72,
+                    height: 72,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      border: Border.all(
+                        color: AppColors.primaryLight,
+                        width: 2,
+                      ),
+                    ),
+                    clipBehavior: Clip.antiAlias,
+                    child: author.photoUrl.isNotEmpty
+                        ? Image.network(
+                            author.photoUrl,
+                            fit: BoxFit.cover,
+                            errorBuilder: (_, __, ___) =>
+                                _authorInitials(author.nombre),
+                          )
+                        : _authorInitials(author.nombre),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    author.nombre,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    textAlign: TextAlign.center,
+                    style: AppTextStyles.caption.copyWith(
+                      fontWeight: FontWeight.w700,
+                      color: AppColors.textPrimary,
+                    ),
+                  ),
+                  Text(
+                    '${author.libros} libros',
+                    style: AppTextStyles.caption.copyWith(
+                      color: AppColors.textMuted,
+                      fontSize: 10,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          );
+        },
+      ),
     );
   }
 

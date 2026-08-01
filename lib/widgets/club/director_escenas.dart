@@ -62,6 +62,12 @@ class DirectorEscenas {
   }
 
   Widget _ganador(Dashboard dashboard) {
+    final totalVotos = dashboard.clubvision.votosRecibidos;
+    final totalMiembros = dashboard.clubvision.totalUsuarios;
+    final participacion = totalMiembros > 0
+        ? (totalVotos / totalMiembros * 100).round()
+        : 0;
+
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(AppSpacing.lg),
@@ -71,21 +77,55 @@ class DirectorEscenas {
       ),
       child: Column(
         children: [
-          const Icon(
-            Icons.workspace_premium_rounded,
-            color: AppColors.gold,
-            size: 40,
+          // Datos de participación — aportan algo nuevo
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+            children: [
+              _statItem(
+                '$totalVotos',
+                'votos recibidos',
+                Icons.how_to_vote_outlined,
+              ),
+              Container(width: 1, height: 40, color: AppColors.border),
+              _statItem(
+                '$participacion%',
+                'participación',
+                Icons.people_outline_rounded,
+              ),
+            ],
           ),
-
           const SizedBox(height: AppSpacing.md),
-
           Text(
-            dashboard.clubvision.mensaje,
+            '¡Entra y descubre quién ha ganado! 🏆',
             textAlign: TextAlign.center,
-            style: AppTextStyles.section,
+            style: AppTextStyles.caption.copyWith(
+              color: AppColors.textSecondary,
+              fontStyle: FontStyle.italic,
+            ),
           ),
         ],
       ),
+    );
+  }
+
+  Widget _statItem(String value, String label, IconData icon) {
+    return Column(
+      children: [
+        Icon(icon, color: AppColors.gold, size: 20),
+        const SizedBox(height: 4),
+        Text(
+          value,
+          style: AppTextStyles.title.copyWith(
+            fontSize: 22,
+            color: AppColors.primaryDark,
+          ),
+        ),
+        Text(
+          label,
+          textAlign: TextAlign.center,
+          style: AppTextStyles.caption.copyWith(color: AppColors.textMuted),
+        ),
+      ],
     );
   }
 

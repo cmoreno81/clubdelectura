@@ -1,272 +1,299 @@
+import 'dart:math' show sin, pi;
+
 import 'package:flutter/material.dart';
 
 import '../../models/dashboard.dart';
-import '../../services/api_service.dart';
-import '../../services/usuario_service.dart';
+import '../../navigation/book_detail_navigation.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_radius.dart';
 import '../../theme/app_spacing.dart';
 import '../../theme/app_text_styles.dart';
 import '../common/club_avatar.dart';
-import '../common/club_button.dart';
-import '../common/club_card.dart';
 import '../common/club_chip.dart';
+import '../common/club_book_cover.dart';
 
-class GalaCard extends StatelessWidget {
+class GalaCard extends StatefulWidget {
   final Dashboard dashboard;
 
   const GalaCard({super.key, required this.dashboard});
 
   @override
-  Widget build(BuildContext context) {
-    final club = dashboard.clubvision;
+  State<GalaCard> createState() => _GalaCardState();
+}
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        _cabeceraGala(club.ganador),
+class _GalaCardState extends State<GalaCard>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _ctrl;
+  late final Animation<double> _fadeAnim;
+  late final Animation<Offset> _slideAnim;
+  late final Animation<double> _scaleAnim;
 
-        const SizedBox(height: AppSpacing.lg),
-
-        _libroGanador(club),
-
-        const SizedBox(height: AppSpacing.lg),
-
-        _lectorasPrevias(club.lectoras),
-
-        const SizedBox(height: AppSpacing.lg),
-
-        _mensajeFinal(),
-
-        const SizedBox(height: AppSpacing.lg),
-
-        ClubButton(
-          label: 'Comenzar lectura',
-          icon: Icons.auto_stories_rounded,
-          onPressed: () async {
-            final usuario = await UsuarioService().obtenerUsuario();
-
-            if (usuario == null || usuario.trim().isEmpty) {
-              if (!context.mounted) return;
-
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('No se ha podido identificar a la usuaria.'),
-                ),
-              );
-              return;
-            }
-
-            final ok = await ApiService().iniciarLectura(
-              usuario: usuario,
-              libro: club.ganador,
-            );
-
-            if (!context.mounted) return;
-
-            if (!ok) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('No se pudo iniciar la lectura.')),
-              );
-              return;
-            }
-
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text(
-                  '📖 ${club.ganador} ya forma parte de tu biblioteca.',
-                ),
-              ),
-            );
-
-            Navigator.pop(context, true);
-          },
-        ),
-      ],
+  @override
+  void initState() {
+    super.initState();
+    _ctrl = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 900),
     );
+    _fadeAnim = CurvedAnimation(parent: _ctrl, curve: Curves.easeOut);
+    _slideAnim = Tween<Offset>(
+      begin: const Offset(0, .06),
+      end: Offset.zero,
+    ).animate(CurvedAnimation(parent: _ctrl, curve: Curves.easeOutCubic));
+    _scaleAnim = Tween<double>(
+      begin: .92,
+      end: 1.0,
+    ).animate(CurvedAnimation(parent: _ctrl, curve: Curves.easeOutBack));
+    _ctrl.forward();
   }
 
-  Widget _cabeceraGala(String ganador) {
-    return ClubCard(
-      elevated: false,
-      padding: const EdgeInsets.all(AppSpacing.xl),
-      gradient: const LinearGradient(
-        begin: Alignment.topLeft,
-        end: Alignment.bottomRight,
-        colors: [AppColors.surfaceSoft, Color(0xFFF1E8FF)],
+  @override
+  void dispose() {
+    _ctrl.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final club = widget.dashboard.clubvision;
+
+    return FadeTransition(
+      opacity: _fadeAnim,
+      child: SlideTransition(
+        position: _slideAnim,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            // ── Hero: portada grande con fondo degradado ──
+            ScaleTransition(
+              scale: _scaleAnim,
+              child: _HeroCover(club: club),
+            ),
+
+            const SizedBox(height: AppSpacing.xl),
+
+            // ── Datos del libro ──
+            _InfoCard(club: club),
+
+            const SizedBox(height: AppSpacing.lg),
+
+            // ── Lectoras previas ──
+            if (club.lectoras.isNotEmpty || true) _LectorasPrevias(club: club),
+
+            const SizedBox(height: AppSpacing.lg),
+
+            // ── Mensaje + botón ficha ──
+            _MensajeYAccion(club: club),
+          ],
+        ),
       ),
-      borderColor: AppColors.primaryLight,
-      child: Column(
-        children: [
-          Container(
-            width: 82,
-            height: 82,
-            decoration: const BoxDecoration(
-              color: Color(0xFFFFEDBA),
-              shape: BoxShape.circle,
-            ),
-            child: const Icon(
-              Icons.workspace_premium_rounded,
-              color: Color(0xFFB48113),
-              size: 42,
-            ),
-          ),
+    );
+  }
+}
 
-          const SizedBox(height: AppSpacing.md),
+// ─────────────────────────────────────────────
+// Hero con portada grande
+// ─────────────────────────────────────────────
 
-          Text(
-            'Ya tenemos ganadora',
-            textAlign: TextAlign.center,
-            style: AppTextStyles.title.copyWith(fontSize: 30),
-          ),
+class _HeroCover extends StatelessWidget {
+  const _HeroCover({required this.club});
+  final Clubvision club;
 
-          const SizedBox(height: AppSpacing.sm),
+  @override
+  Widget build(BuildContext context) {
+    final hasCover = club.ganadorCoverUrl.isNotEmpty;
 
-          Text(
-            ganador.trim().isEmpty
-                ? 'La próxima lectura está a punto de revelarse.'
-                : 'La próxima aventura del club ya tiene nombre.',
-            textAlign: TextAlign.center,
-            style: AppTextStyles.bodySecondary.copyWith(height: 1.45),
-          ),
-
-          const SizedBox(height: AppSpacing.lg),
-
-          const ClubChip(
-            label: 'Ganadora de Clubvisión',
-            icon: Icons.emoji_events_outlined,
-            variant: ClubChipVariant.warning,
+    return Container(
+      height: 320,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(24),
+        gradient: const LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [Color(0xFF2D1B69), Color(0xFF6B3FA0), Color(0xFFB4780A)],
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFF2D1B69).withValues(alpha: .35),
+            blurRadius: 24,
+            offset: const Offset(0, 10),
           ),
         ],
       ),
-    );
-  }
-
-  Widget _libroGanador(dynamic club) {
-    return ClubCard(
-      elevated: true,
-      padding: const EdgeInsets.all(AppSpacing.xl),
-      gradient: const LinearGradient(
-        begin: Alignment.topLeft,
-        end: Alignment.bottomRight,
-        colors: [Color(0xFFFFFBF0), Color(0xFFFFF4D8)],
-      ),
-      borderColor: const Color(0xFFF1E2B3),
-      child: Column(
+      clipBehavior: Clip.antiAlias,
+      child: Stack(
         children: [
-          Container(
-            width: 96,
-            height: 128,
-            decoration: BoxDecoration(
-              color: const Color(0xFFFFEDBA),
-              borderRadius: BorderRadius.circular(AppRadius.xl),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.10),
-                  blurRadius: 18,
-                  offset: const Offset(0, 8),
+          // Confeti / partículas decorativas
+          const Positioned.fill(child: _Confetti()),
+
+          // Portada centrada con sombra
+          Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const SizedBox(height: 16),
+                if (hasCover)
+                  ClubBookCover(
+                    title: club.ganador,
+                    imageUrl: club.ganadorCoverUrl,
+                    width: 130,
+                    height: 190,
+                    borderRadius: BorderRadius.circular(12),
+                    showShadow: true,
+                  )
+                else
+                  Container(
+                    width: 130,
+                    height: 190,
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: .15),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: const Icon(
+                      Icons.menu_book_rounded,
+                      size: 60,
+                      color: Colors.white,
+                    ),
+                  ),
+                const SizedBox(height: 16),
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 8,
+                  ),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFFFD700).withValues(alpha: .18),
+                    borderRadius: BorderRadius.circular(30),
+                    border: Border.all(
+                      color: const Color(0xFFFFD700).withValues(alpha: .55),
+                    ),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(
+                        Icons.emoji_events_rounded,
+                        color: Color(0xFFFFD700),
+                        size: 18,
+                      ),
+                      const SizedBox(width: 6),
+                      Text(
+                        'Ganadora de Clubvisión',
+                        style: AppTextStyles.caption.copyWith(
+                          color: const Color(0xFFFFD700),
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ],
             ),
-            child: const Icon(
-              Icons.menu_book_rounded,
-              size: 46,
-              color: Color(0xFFB48113),
-            ),
-          ),
-
-          const SizedBox(height: AppSpacing.lg),
-
-          Text(
-            club.ganador,
-            textAlign: TextAlign.center,
-            style: AppTextStyles.title.copyWith(fontSize: 30, height: 1.15),
-          ),
-
-          const SizedBox(height: AppSpacing.sm),
-
-          Text(
-            'Elegida por el club',
-            textAlign: TextAlign.center,
-            style: AppTextStyles.bodySecondary.copyWith(fontSize: 17),
-          ),
-
-          const SizedBox(height: AppSpacing.lg),
-
-          Wrap(
-            alignment: WrapAlignment.center,
-            spacing: AppSpacing.sm,
-            runSpacing: AppSpacing.sm,
-            children: const [
-              ClubChip(
-                label: 'Lectura oficial',
-                icon: Icons.auto_stories_outlined,
-                variant: ClubChipVariant.primary,
-              ),
-              ClubChip(
-                label: 'Próxima aventura',
-                icon: Icons.auto_awesome_rounded,
-                variant: ClubChipVariant.warning,
-              ),
-            ],
           ),
         ],
       ),
     );
   }
+}
 
-  Widget _lectorasPrevias(List<String> lectoras) {
-    return ClubCard(
-      elevated: false,
+// ─────────────────────────────────────────────
+// Info card del libro
+// ─────────────────────────────────────────────
+
+class _InfoCard extends StatelessWidget {
+  const _InfoCard({required this.club});
+  final Clubvision club;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(AppSpacing.xl),
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [Color(0xFFFFFBF0), Color(0xFFFFF4D8)],
+        ),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: const Color(0xFFF1E2B3)),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFFB48113).withValues(alpha: .10),
+            blurRadius: 16,
+            offset: const Offset(0, 6),
+          ),
+        ],
+      ),
+      child: Column(
+        children: [
+          Text(
+            club.ganador,
+            textAlign: TextAlign.center,
+            style: AppTextStyles.title.copyWith(fontSize: 26, height: 1.15),
+          ),
+          if (club.mensaje.isNotEmpty &&
+              !club.mensaje.contains(club.ganador)) ...[
+            const SizedBox(height: AppSpacing.sm),
+            Text(
+              club.mensaje,
+              textAlign: TextAlign.center,
+              style: AppTextStyles.bodySecondary.copyWith(
+                color: const Color(0xFFB48113),
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ],
+          const SizedBox(height: AppSpacing.md),
+          Text(
+            'Elegida por el club',
+            textAlign: TextAlign.center,
+            style: AppTextStyles.bodySecondary.copyWith(fontSize: 15),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────
+// Lectoras previas
+// ─────────────────────────────────────────────
+
+class _LectorasPrevias extends StatelessWidget {
+  const _LectorasPrevias({required this.club});
+  final Clubvision club;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
       padding: const EdgeInsets.all(AppSpacing.lg),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: AppColors.border),
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Ya conocían esta historia',
+            club.lectoras.isEmpty
+                ? '✨ Estreno para todo el club'
+                : '👀 Ya lo habían leído',
             style: AppTextStyles.section.copyWith(color: AppColors.textPrimary),
           ),
-
           const SizedBox(height: AppSpacing.xs),
-
           Text(
-            lectoras.isEmpty
-                ? 'Será una lectura completamente nueva para todo el club.'
-                : 'Estas lectoras ya habían pasado por sus páginas.',
+            club.lectoras.isEmpty
+                ? 'Será la primera vez que el club lee esta historia juntas.'
+                : 'Estas lectoras podrán compartir su experiencia.',
             style: AppTextStyles.bodySecondary.copyWith(height: 1.4),
           ),
-
-          const SizedBox(height: AppSpacing.lg),
-
-          if (lectoras.isEmpty)
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(AppSpacing.lg),
-              decoration: BoxDecoration(
-                color: AppColors.surfaceSoft,
-                borderRadius: BorderRadius.circular(AppRadius.lg),
-              ),
-              child: const Column(
-                children: [
-                  Icon(
-                    Icons.auto_awesome_rounded,
-                    color: AppColors.primary,
-                    size: 34,
-                  ),
-                  SizedBox(height: AppSpacing.sm),
-                  Text(
-                    'Estreno para todo el club',
-                    textAlign: TextAlign.center,
-                    style: AppTextStyles.subtitle,
-                  ),
-                ],
-              ),
-            )
-          else
+          if (club.lectoras.isNotEmpty) ...[
+            const SizedBox(height: AppSpacing.lg),
             Wrap(
               spacing: AppSpacing.md,
               runSpacing: AppSpacing.md,
-              children: lectoras
+              children: club.lectoras
                   .map(
                     (nombre) => Column(
                       mainAxisSize: MainAxisSize.min,
@@ -288,42 +315,156 @@ class GalaCard extends StatelessWidget {
                   )
                   .toList(),
             ),
+          ],
         ],
       ),
     );
   }
+}
 
-  Widget _mensajeFinal() {
-    return ClubCard(
-      elevated: false,
+// ─────────────────────────────────────────────
+// Mensaje final + botón ficha del libro
+// ─────────────────────────────────────────────
+
+class _MensajeYAccion extends StatelessWidget {
+  const _MensajeYAccion({required this.club});
+  final Clubvision club;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
       padding: const EdgeInsets.all(AppSpacing.xl),
-      gradient: const LinearGradient(
-        begin: Alignment.topLeft,
-        end: Alignment.bottomRight,
-        colors: [Color(0xFFF8F3FF), Color(0xFFF1E8FF)],
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [Color(0xFFF8F3FF), Color(0xFFF1E8FF)],
+        ),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: AppColors.primaryLight),
       ),
-      borderColor: AppColors.primaryLight,
-      child: const Column(
+      child: Column(
         children: [
-          Icon(Icons.auto_awesome_rounded, color: AppColors.primary, size: 36),
-
-          SizedBox(height: AppSpacing.md),
-
-          Text(
+          const Icon(
+            Icons.auto_awesome_rounded,
+            color: AppColors.primary,
+            size: 36,
+          ),
+          const SizedBox(height: AppSpacing.md),
+          const Text(
             'Empieza una nueva aventura',
             textAlign: TextAlign.center,
             style: AppTextStyles.section,
           ),
-
-          SizedBox(height: AppSpacing.sm),
-
-          Text(
+          const SizedBox(height: AppSpacing.sm),
+          const Text(
             'A partir de ahora, las conversaciones del club girarán alrededor de esta historia. Disfrútala con el resto de lectoras.',
             textAlign: TextAlign.center,
             style: AppTextStyles.bodySecondary,
+          ),
+          const SizedBox(height: AppSpacing.xl),
+          // Botón a la ficha del libro (no "Comenzar lectura")
+          FilledButton.icon(
+            style: FilledButton.styleFrom(
+              backgroundColor: AppColors.primary,
+              minimumSize: const Size(double.infinity, 52),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(AppRadius.pill),
+              ),
+            ),
+            onPressed: () => openBookDetail(
+              context,
+              title: club.ganador,
+              coverUrl: club.ganadorCoverUrl,
+            ),
+            icon: const Icon(Icons.menu_book_outlined, color: Colors.white),
+            label: const Text(
+              'Ver ficha del libro',
+              style: TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.w800,
+                fontSize: 16,
+              ),
+            ),
           ),
         ],
       ),
     );
   }
+}
+
+// ─────────────────────────────────────────────
+// Confeti decorativo (partículas animadas)
+// ─────────────────────────────────────────────
+
+class _Confetti extends StatefulWidget {
+  const _Confetti();
+
+  @override
+  State<_Confetti> createState() => _ConfettiState();
+}
+
+class _ConfettiState extends State<_Confetti>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _ctrl;
+
+  @override
+  void initState() {
+    super.initState();
+    _ctrl = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 6),
+    )..repeat();
+  }
+
+  @override
+  void dispose() {
+    _ctrl.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: _ctrl,
+      builder: (_, __) => CustomPaint(painter: _ConfettiPainter(_ctrl.value)),
+    );
+  }
+}
+
+class _ConfettiPainter extends CustomPainter {
+  final double t;
+  _ConfettiPainter(this.t);
+
+  static final _pieces = List.generate(28, (i) {
+    final rng = (i * 137.508) % 1.0;
+    return (
+      x: rng,
+      speed: 0.12 + (i % 5) * 0.03,
+      size: 4.0 + (i % 4) * 2.5,
+      color: [
+        const Color(0xFFFFD700),
+        const Color(0xFFFF6B9D),
+        const Color(0xFF7FDBFF),
+        const Color(0xFFFFFFFF),
+        const Color(0xFFB4FF9F),
+      ][i % 5],
+      phase: (i * 0.37) % 1.0,
+    );
+  });
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    for (final p in _pieces) {
+      final y = ((t * p.speed + p.phase) % 1.0) * (size.height + 20) - 10;
+      final x = p.x * size.width + sin((t + p.phase) * 2 * pi) * 18;
+      final paint = Paint()
+        ..color = p.color.withValues(alpha: .65)
+        ..style = PaintingStyle.fill;
+      canvas.drawCircle(Offset(x, y), p.size / 2, paint);
+    }
+  }
+
+  @override
+  bool shouldRepaint(_ConfettiPainter old) => old.t != t;
 }

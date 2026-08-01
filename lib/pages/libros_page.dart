@@ -39,6 +39,10 @@ class LibrosPage extends StatefulWidget {
 class _LibrosPageState extends State<LibrosPage> {
   late Future<LibrosData> librosFuture;
   final _orderPreferences = const LibraryOrderPreferences();
+  final _scrollController = ScrollController();
+  // Offset guardado solo al navegar al detalle de un libro.
+  // null = volver al inicio (cualquier otra navegación).
+  double? _pendingScrollOffset;
 
   final TextEditingController buscadorController = TextEditingController();
 
@@ -86,6 +90,7 @@ class _LibrosPageState extends State<LibrosPage> {
   @override
   void dispose() {
     buscadorController.dispose();
+    _scrollController.dispose();
     super.dispose();
   }
 
@@ -221,6 +226,7 @@ class _LibrosPageState extends State<LibrosPage> {
                             : null,
                       )
                     : ListView.builder(
+                        controller: _scrollController,
                         keyboardDismissBehavior:
                             ScrollViewKeyboardDismissBehavior.onDrag,
                         padding: const EdgeInsets.fromLTRB(
@@ -463,6 +469,11 @@ class _LibrosPageState extends State<LibrosPage> {
       margin: const EdgeInsets.only(bottom: AppSpacing.md),
       padding: const EdgeInsets.all(AppSpacing.md),
       onTap: () async {
+        // Guardamos la posición antes de navegar al detalle
+        final scrollOffset = _scrollController.hasClients
+            ? _scrollController.offset
+            : 0.0;
+
         await Navigator.push<bool>(
           context,
           AppPageRoute(builder: (_) => DetalleLibroPage(libro: libro)),
@@ -472,9 +483,28 @@ class _LibrosPageState extends State<LibrosPage> {
 
         if (!mounted) return;
 
-        // El estado, la valoración, las fechas o los datos del libro
-        // pueden haber cambiado dentro del detalle.
+        // Guardamos el offset pendiente ANTES de recargar
+        _pendingScrollOffset = scrollOffset;
+
+        // Recargamos datos y esperamos a que el future se complete
         _recargar();
+        await librosFuture;
+
+        if (!mounted) return;
+
+        // Consumimos y limpiamos el offset pendiente
+        final targetOffset = _pendingScrollOffset;
+        _pendingScrollOffset = null;
+
+        if (targetOffset != null) {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              if (!mounted || !_scrollController.hasClients) return;
+              final max = _scrollController.position.maxScrollExtent;
+              _scrollController.jumpTo(targetOffset.clamp(0.0, max));
+            });
+          });
+        }
       },
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,

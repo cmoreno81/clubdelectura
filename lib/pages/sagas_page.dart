@@ -10,6 +10,7 @@ import '../theme/app_colors.dart';
 import '../theme/app_spacing.dart';
 import '../theme/app_text_styles.dart';
 import '../widgets/common/club_card.dart';
+import '../widgets/common/club_chip.dart';
 import '../widgets/common/club_empty_state.dart';
 import '../widgets/common/club_section_title.dart';
 import '../widgets/error_view.dart';
@@ -388,20 +389,26 @@ class _SagasPageState extends State<SagasPage> {
                   icon: Icons.search_rounded,
                   child: TextField(
                     controller: _searchController,
+                    style: AppTextStyles.body,
+                    textAlignVertical: TextAlignVertical.center,
                     onChanged: (value) => setState(() => _query = value),
                     textInputAction: TextInputAction.search,
                     decoration: InputDecoration(
-                      hintText: 'Buscar una saga',
-                      prefixIcon: const Icon(Icons.search_rounded),
+                      isDense: true,
+                      contentPadding: const EdgeInsets.symmetric(vertical: 10),
+                      hintText: 'Buscar una saga...',
+                      prefixIconConstraints: const BoxConstraints(minWidth: 42),
+                      prefixIcon: const Icon(Icons.search_rounded, size: 21),
                       suffixIcon: _query.isEmpty
                           ? null
                           : IconButton(
                               tooltip: 'Borrar búsqueda',
+                              visualDensity: VisualDensity.compact,
                               onPressed: () {
                                 _searchController.clear();
                                 setState(() => _query = '');
                               },
-                              icon: const Icon(Icons.close_rounded),
+                              icon: const Icon(Icons.close_rounded, size: 20),
                             ),
                     ),
                   ),
@@ -432,7 +439,8 @@ class _SagasPageState extends State<SagasPage> {
                   if (hayBusqueda)
                     _section(
                       title: 'Resultados',
-                      subtitle: '${visibleSagas.length} '
+                      subtitle:
+                          '${visibleSagas.length} '
                           '${visibleSagas.length == 1 ? 'saga encontrada' : 'sagas encontradas'}',
                       icon: Icons.search_rounded,
                       sagas: visibleSagas,
@@ -619,57 +627,47 @@ class _SagaFilters extends StatelessWidget {
   final int abandoned;
   final ValueChanged<String> onSelected;
 
+  ClubChipVariant _variant(String estado) {
+    return switch (estado) {
+      'EN_CURSO' => ClubChipVariant.info,
+      'PENDIENTE' => ClubChipVariant.warning,
+      'AL_DIA' => ClubChipVariant.success,
+      'COMPLETADA' => ClubChipVariant.primary,
+      'ABANDONADA' => ClubChipVariant.danger,
+      _ => ClubChipVariant.neutral,
+    };
+  }
+
   @override
   Widget build(BuildContext context) {
     final options = [
-      ('EN_CURSO', 'En curso', active, Icons.auto_stories_outlined),
-      ('PENDIENTE', 'Pendientes', pending, Icons.bookmark_border_rounded),
-      ('AL_DIA', 'Al día', upToDate, Icons.update_rounded),
+      ('EN_CURSO', 'En curso $active', Icons.auto_stories_outlined),
+      ('PENDIENTE', 'Pendientes $pending', Icons.bookmark_border_rounded),
+      ('AL_DIA', 'Al día $upToDate', Icons.update_rounded),
       (
         'COMPLETADA',
-        'Completadas',
-        completed,
+        'Completadas $completed',
         Icons.workspace_premium_outlined,
       ),
       if (abandoned > 0)
-        (
-          'ABANDONADA',
-          'Abandonadas',
-          abandoned,
-          Icons.heart_broken_outlined,
-        ),
+        ('ABANDONADA', 'Abandonadas $abandoned', Icons.heart_broken_outlined),
     ];
 
-    return SizedBox(
-      height: 40,
-      child: ListView.separated(
-        scrollDirection: Axis.horizontal,
-        itemCount: options.length,
-        separatorBuilder: (_, _) => const SizedBox(width: 7),
-        itemBuilder: (context, index) {
-          final option = options[index];
-          final isSelected = selected == option.$1;
-          return ChoiceChip(
-            selected: isSelected,
-            onSelected: (_) => onSelected(option.$1),
-            avatar: Icon(
-              option.$4,
-              size: 16,
-              color: isSelected ? Colors.white : AppColors.primary,
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      child: Row(
+        children: [
+          for (var i = 0; i < options.length; i++) ...[
+            ClubChip(
+              label: options[i].$2,
+              icon: options[i].$3,
+              selected: selected == options[i].$1,
+              variant: _variant(options[i].$1),
+              onTap: () => onSelected(options[i].$1),
             ),
-            label: Text('${option.$2}  ${option.$3}'),
-            labelStyle: TextStyle(
-              color: isSelected ? Colors.white : AppColors.textPrimary,
-              fontWeight: FontWeight.w700,
-            ),
-            selectedColor: AppColors.primary,
-            backgroundColor: AppColors.surfaceSoft,
-            side: BorderSide(
-              color: isSelected ? AppColors.primary : AppColors.border,
-            ),
-            showCheckmark: false,
-          );
-        },
+            if (i < options.length - 1) const SizedBox(width: AppSpacing.xs),
+          ],
+        ],
       ),
     );
   }

@@ -966,7 +966,7 @@ class _SelectorOption extends StatelessWidget {
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
         // Altura fija: el tick se superpone, no empuja el layout
-        height: 118,
+        height: 128,
         decoration: BoxDecoration(
           color: selected ? color : AppColors.surfaceSoft,
           borderRadius: BorderRadius.circular(AppRadius.lg),

@@ -22,32 +22,32 @@ class ClubService {
     required String nombre,
     String descripcion = '',
   }) async {
-    await _request('crearClub', {
-      'nombre': nombre.trim(),
-      'descripcion': descripcion.trim(),
-    });
+    await _request(
+      'crearClub',
+      body: {'nombre': nombre.trim(), 'descripcion': descripcion.trim()},
+    );
   }
 
   Future<void> joinClub(String codigo) async {
-    await _request('unirseClub', {'codigo': codigo.trim()});
+    await _request('unirseClub', body: {'codigo': codigo.trim()});
   }
 
   Future<void> selectClub(String clubId) async {
-    await _request('seleccionarClub', {'clubId': clubId});
+    await _request('seleccionarClub', body: {'clubId': clubId});
   }
 
   Future<String> getInvite(String clubId) async {
-    final data = await _request('invitacionClub', {'clubId': clubId});
+    final data = await _request('invitacionClub', body: {'clubId': clubId});
     return data['codigo']?.toString() ?? '';
   }
 
   Future<Map<String, dynamic>> _request(
-    String action, [
+    String action, {
     Map<String, dynamic>? body,
-  ]) async {
-    final uri = Uri.parse(
-      AppConfig.baseUrl,
-    ).replace(queryParameters: {'action': action});
+    Map<String, String>? query,
+  }) async {
+    final params = {'action': action, ...?query};
+    final uri = Uri.parse(AppConfig.baseUrl).replace(queryParameters: params);
     final response = body == null
         ? await _client.get(uri)
         : await _client.post(
@@ -66,5 +66,35 @@ class ClubService {
       );
     }
     return data;
+  }
+
+  Future<void> leaveClub(String clubId) async {
+    await _request('salirClub', body: {'clubId': clubId});
+  }
+
+  Future<void> updateClub({
+    required String clubId,
+    String? nombre,
+    String? descripcion,
+    String? avatarUrl,
+  }) async {
+    await _request(
+      'editarClub',
+      body: {
+        'clubId': clubId,
+        if (nombre != null) 'nombre': nombre,
+        if (descripcion != null) 'descripcion': descripcion,
+        if (avatarUrl != null) 'avatarUrl': avatarUrl,
+      },
+    );
+  }
+
+  Future<List<ClubMember>> getClubMembers(String clubId) async {
+    final data = await _request('miembrosClub', query: {'clubId': clubId});
+    final list = data['miembros'] as List<dynamic>? ?? [];
+    return list
+        .cast<Map<String, dynamic>>()
+        .map(ClubMember.fromJson)
+        .toList(growable: false);
   }
 }

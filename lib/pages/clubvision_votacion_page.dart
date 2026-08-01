@@ -11,6 +11,7 @@ import '../theme/app_radius.dart';
 import '../theme/app_spacing.dart';
 import '../theme/app_text_styles.dart';
 import '../widgets/common/club_button.dart';
+import '../widgets/common/club_book_cover.dart';
 import '../widgets/common/club_card.dart';
 import '../widgets/common/club_chip.dart';
 
@@ -273,6 +274,12 @@ class _ClubvisionVotacionPageState extends State<ClubvisionVotacionPage> {
                         ? () => _confirmarEnvio(clubvision)
                         : null,
                     enviando: enviando,
+                    onReorder: (oldIndex, newIndex) {
+                      setState(() {
+                        final item = seleccionadas.removeAt(oldIndex);
+                        seleccionadas.insert(newIndex, item);
+                      });
+                    },
                   ),
 
                   const SizedBox(height: AppSpacing.xl),
@@ -480,12 +487,14 @@ class _PapeletaCard extends StatelessWidget {
   final List<String> seleccionadas;
   final VoidCallback? onEnviar;
   final bool enviando;
+  final void Function(int oldIndex, int newIndex)? onReorder;
 
   const _PapeletaCard({
     required this.votos,
     required this.seleccionadas,
     required this.onEnviar,
     required this.enviando,
+    this.onReorder,
   });
 
   @override
@@ -505,16 +514,50 @@ class _PapeletaCard extends StatelessWidget {
           if (votos.isEmpty)
             const _PapeletaVacia()
           else
-            for (var index = 0; index < votos.length; index++) ...[
-              _PapeletaItem(
-                posicion: index,
-                libro: votos[index].libro,
-                genero: votos[index].genero,
-              ),
-
-              if (index < votos.length - 1)
-                const SizedBox(height: AppSpacing.sm),
-            ],
+            // ReorderableListView para reordenar con drag & drop
+            ReorderableListView(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              padding: EdgeInsets.zero,
+              buildDefaultDragHandles: false,
+              onReorder: (oldIndex, newIndex) {
+                if (newIndex > oldIndex) newIndex--;
+                onReorder?.call(oldIndex, newIndex);
+              },
+              children: [
+                for (var index = 0; index < votos.length; index++)
+                  Padding(
+                    key: ValueKey(votos[index].libro),
+                    padding: EdgeInsets.only(
+                      bottom: index < votos.length - 1 ? AppSpacing.sm : 0,
+                    ),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: _PapeletaItem(
+                            posicion: index,
+                            libro: votos[index].libro,
+                            genero: votos[index].genero,
+                          ),
+                        ),
+                        // Handle de arrastre — solo visible si hay 2+ items
+                        if (votos.length > 1)
+                          ReorderableDragStartListener(
+                            index: index,
+                            child: Padding(
+                              padding: const EdgeInsets.only(left: 8),
+                              child: Icon(
+                                Icons.drag_handle_rounded,
+                                color: AppColors.textMuted,
+                                size: 22,
+                              ),
+                            ),
+                          ),
+                      ],
+                    ),
+                  ),
+              ],
+            ),
 
           const SizedBox(height: AppSpacing.lg),
 
@@ -753,25 +796,38 @@ class _CandidataCard extends StatelessWidget {
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Container(
-                width: 56,
-                height: 56,
-                decoration: BoxDecoration(
-                  color: color.withValues(alpha: 0.13),
-                  borderRadius: BorderRadius.circular(AppRadius.lg),
-                ),
-                alignment: Alignment.center,
-                child: seleccionada
-                    ? Text(
-                        posicionSeleccionada < 3
-                            ? ['🥇', '🥈', '🥉'][posicionSeleccionada]
-                            : '${posicionSeleccionada + 1}',
-                        style: const TextStyle(
-                          fontSize: 24,
-                          fontWeight: FontWeight.w800,
+              Stack(
+                clipBehavior: Clip.none,
+                children: [
+                  ClubBookCover(
+                    title: candidata.libro,
+                    imageUrl: candidata.coverUrl,
+                    width: 56,
+                    height: 80,
+                    borderRadius: BorderRadius.circular(AppRadius.sm),
+                    showShadow: seleccionada,
+                  ),
+                  if (seleccionada)
+                    Positioned(
+                      top: -6,
+                      right: -6,
+                      child: Container(
+                        width: 26,
+                        height: 26,
+                        alignment: Alignment.center,
+                        decoration: const BoxDecoration(
+                          color: AppColors.primary,
+                          shape: BoxShape.circle,
                         ),
-                      )
-                    : Icon(Icons.menu_book_outlined, color: color, size: 28),
+                        child: Text(
+                          posicionSeleccionada < 3
+                              ? ['🥇', '🥈', '🥉'][posicionSeleccionada]
+                              : '${posicionSeleccionada + 1}',
+                          style: const TextStyle(fontSize: 13),
+                        ),
+                      ),
+                    ),
+                ],
               ),
 
               const SizedBox(width: AppSpacing.md),

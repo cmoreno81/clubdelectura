@@ -57,6 +57,7 @@ class Clubvision {
   final String mensaje;
 
   final String ganador;
+  final String ganadorCoverUrl;
 
   final String idVotacion;
 
@@ -77,6 +78,7 @@ class Clubvision {
     required this.titulo,
     required this.mensaje,
     required this.ganador,
+    required this.ganadorCoverUrl,
     required this.lectoras,
     required this.idVotacion,
     required this.totalCandidatas,
@@ -95,6 +97,7 @@ class Clubvision {
       titulo: json['titulo']?.toString() ?? '',
       mensaje: json['mensaje']?.toString() ?? '',
       ganador: json['ganador']?.toString() ?? '',
+      ganadorCoverUrl: json['ganadorCoverUrl']?.toString() ?? '',
       idVotacion: json['idVotacion']?.toString() ?? '',
       lectoras: List<String>.from(json['lectoras'] ?? []),
       totalCandidatas: (json['totalCandidatas'] as num?)?.toInt() ?? 0,

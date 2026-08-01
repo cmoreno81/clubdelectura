@@ -289,8 +289,7 @@ class ApiService {
       throw ApiException(
         statusCode: response.statusCode,
         message: decoded is Map<String, dynamic>
-            ? decoded['mensaje']?.toString() ??
-                  'No se pudo actualizar la saga.'
+            ? decoded['mensaje']?.toString() ?? 'No se pudo actualizar la saga.'
             : 'No se pudo actualizar la saga.',
       );
     }
@@ -1178,6 +1177,16 @@ class ApiService {
       };
     }
 
+    return data;
+  }
+
+  Future<Map<String, dynamic>> getLibrosPorAutor(String autorId) async {
+    final response = await _client.get(
+      Uri.parse('$baseUrl?action=librosPorAutor&autorId=$autorId'),
+    );
+    if (response.statusCode != 200) return {};
+    final data = jsonDecode(response.body);
+    if (data is! Map<String, dynamic>) return {};
     return data;
   }
 }

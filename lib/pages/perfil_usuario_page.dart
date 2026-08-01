@@ -21,6 +21,7 @@ import '../widgets/perfil/editar_fechas_lectura_dialog.dart';
 import '../utils/lectura_fecha_utils.dart';
 import '../widgets/perfil/editar_avatar_dialog.dart';
 import '../widgets/perfil/perfil_timeline_lectura.dart';
+import '../widgets/perfil/perfil_historico_meses.dart';
 import '../widgets/common/club_rating_stars.dart';
 import 'acerca_de_page.dart';
 import 'ayuda_page.dart';
@@ -452,6 +453,16 @@ class _PerfilUsuarioPageState extends State<PerfilUsuarioPage> {
                     selected: _menuPerfil == 'LIBROS',
                   ),
                 ),
+                PopupMenuItem(
+                  value: 'MESES',
+                  height: 70,
+                  child: _ProfileMenuOption(
+                    icon: Icons.calendar_view_month_outlined,
+                    title: 'Meses lectores',
+                    subtitle: 'Un calendario por cada mes',
+                    selected: _menuPerfil == 'MESES',
+                  ),
+                ),
               ],
             ),
           ), // FeatureTooltip
@@ -574,6 +585,39 @@ class _PerfilUsuarioPageState extends State<PerfilUsuarioPage> {
                         coverUrl: libro.coverUrl,
                         genre: libro.genero,
                       ),
+                    ),
+                  const SizedBox(height: AppSpacing.lg),
+                ],
+
+                if (_menuPerfil == 'MESES') ...[
+                  ClubSectionTitle(
+                    title: 'Mis meses lectores',
+                    subtitle: 'Un calendario por cada mes leído',
+                    icon: Icons.calendar_view_month_outlined,
+                    padding: EdgeInsets.zero,
+                  ),
+                  const SizedBox(height: AppSpacing.sm),
+                  if (perfil.historicoMeses.isEmpty)
+                    const ClubEmptyState(
+                      icon: Icons.calendar_view_month_outlined,
+                      title: 'Todavía no hay meses registrados',
+                      message:
+                          'Aquí aparecerán tus calendarios de lectura mes a mes.',
+                    )
+                  else
+                    PerfilHistoricoMeses(
+                      meses: perfil.historicoMeses,
+                      onBookTap:
+                          ({
+                            required String title,
+                            required String bookId,
+                            required String coverUrl,
+                          }) => openBookDetail(
+                            context,
+                            title: title,
+                            bookId: bookId,
+                            coverUrl: coverUrl,
+                          ),
                     ),
                   const SizedBox(height: AppSpacing.lg),
                 ],

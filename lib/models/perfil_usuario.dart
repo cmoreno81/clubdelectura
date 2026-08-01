@@ -10,6 +10,7 @@ class PerfilUsuario {
   final List<PerfilLibro> pendientes;
   final List<PerfilGenero> generosFavoritos;
   final List<PerfilSaga> sagas;
+  final List<PerfilMesLector> historicoMeses;
 
   PerfilUsuario({
     required this.usuario,
@@ -21,6 +22,7 @@ class PerfilUsuario {
     required this.pendientes,
     required this.generosFavoritos,
     required this.sagas,
+    required this.historicoMeses,
   });
 
   factory PerfilUsuario.fromJson(Map<String, dynamic> json) {
@@ -43,6 +45,7 @@ class PerfilUsuario {
       pendientes: parseList('pendientes', PerfilLibro.fromJson),
       generosFavoritos: parseList('generosFavoritos', PerfilGenero.fromJson),
       sagas: parseList('sagas', PerfilSaga.fromJson),
+      historicoMeses: parseList('historicoMeses', PerfilMesLector.fromJson),
     );
   }
 }
@@ -285,5 +288,64 @@ class PerfilSagaVolumen {
         posicion: (json['posicion'] as num?)?.toInt(),
         coverUrl: json['coverUrl']?.toString() ?? '',
         estado: json['estado']?.toString() ?? 'NO_ANADIDO',
+      );
+}
+
+// ─────────────────────────────────────────────
+// Histórico de meses lectores
+// ─────────────────────────────────────────────
+
+class PerfilMesLector {
+  const PerfilMesLector({
+    required this.anio,
+    required this.mes,
+    required this.lecturas,
+  });
+
+  final int anio;
+  final int mes;
+  final List<PerfilMesLectura> lecturas;
+
+  factory PerfilMesLector.fromJson(Map<String, dynamic> json) =>
+      PerfilMesLector(
+        anio: (json['anio'] as num?)?.toInt() ?? 0,
+        mes: (json['mes'] as num?)?.toInt() ?? 0,
+        lecturas: (json['lecturas'] as List<dynamic>? ?? [])
+            .whereType<Map<String, dynamic>>()
+            .map(PerfilMesLectura.fromJson)
+            .toList(growable: false),
+      );
+}
+
+class PerfilMesLectura {
+  const PerfilMesLectura({
+    required this.id,
+    required this.bookId,
+    required this.titulo,
+    required this.coverUrl,
+    required this.fechaInicio,
+    required this.fechaFin,
+    this.valoracion,
+  });
+
+  final String id;
+  final String bookId;
+  final String titulo;
+  final String coverUrl;
+  final String fechaInicio;
+  final String fechaFin;
+  final double? valoracion;
+
+  factory PerfilMesLectura.fromJson(Map<String, dynamic> json) =>
+      PerfilMesLectura(
+        id: json['id']?.toString() ?? '',
+        bookId: json['bookId']?.toString() ?? '',
+        titulo: json['titulo']?.toString() ?? '',
+        coverUrl: json['coverUrl']?.toString() ?? '',
+        fechaInicio: json['fechaInicio']?.toString() ?? '',
+        fechaFin: json['fechaFin']?.toString() ?? '',
+        valoracion: json['valoracion'] != null
+            ? (json['valoracion'] as num).toDouble()
+            : null,
       );
 }
