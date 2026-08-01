@@ -19,12 +19,14 @@ class AfinidadDetallePage extends StatefulWidget {
     required this.nombre,
     required this.avatarUrl,
     required this.librosComunes,
+    this.miAvatarUrl = '',
   });
 
   final String miembroId;
   final String nombre;
   final String avatarUrl;
   final int librosComunes;
+  final String miAvatarUrl;
 
   @override
   State<AfinidadDetallePage> createState() => _AfinidadDetallePageState();
@@ -63,9 +65,15 @@ class _AfinidadDetallePageState extends State<AfinidadDetallePage>
           if (snapshot.hasError || snapshot.data == null) {
             return Scaffold(
               appBar: AppBar(title: Text(widget.nombre)),
-              body: ErrorView(onRetry: () {
-                setState(() => _future = ApiService().getAfinidadDetalle(widget.miembroId));
-              }),
+              body: ErrorView(
+                onRetry: () {
+                  setState(
+                    () => _future = ApiService().getAfinidadDetalle(
+                      widget.miembroId,
+                    ),
+                  );
+                },
+              ),
             );
           }
 
@@ -119,7 +127,7 @@ class _AfinidadDetallePageState extends State<AfinidadDetallePage>
                           width: 120,
                           child: Stack(
                             children: [
-                              // Mi avatar (placeholder)
+                              // Mi avatar
                               Positioned(
                                 left: 0,
                                 child: Container(
@@ -128,14 +136,33 @@ class _AfinidadDetallePageState extends State<AfinidadDetallePage>
                                   decoration: BoxDecoration(
                                     shape: BoxShape.circle,
                                     border: Border.all(
-                                        color: Colors.white, width: 2.5),
-                                    color: AppColors.primaryLight,
+                                      color: Colors.white,
+                                      width: 2.5,
+                                    ),
                                   ),
-                                  child: const Icon(
-                                    Icons.person_rounded,
-                                    color: AppColors.primary,
-                                    size: 32,
-                                  ),
+                                  clipBehavior: Clip.antiAlias,
+                                  child: widget.miAvatarUrl.isNotEmpty
+                                      ? Image.network(
+                                          widget.miAvatarUrl,
+                                          fit: BoxFit.cover,
+                                          errorBuilder: (_, __, ___) =>
+                                              Container(
+                                                color: AppColors.primaryLight,
+                                                child: const Icon(
+                                                  Icons.person_rounded,
+                                                  color: AppColors.primary,
+                                                  size: 32,
+                                                ),
+                                              ),
+                                        )
+                                      : Container(
+                                          color: AppColors.primaryLight,
+                                          child: const Icon(
+                                            Icons.person_rounded,
+                                            color: AppColors.primary,
+                                            size: 32,
+                                          ),
+                                        ),
                                 ),
                               ),
                               // Avatar de la compañera
@@ -147,12 +174,16 @@ class _AfinidadDetallePageState extends State<AfinidadDetallePage>
                                   decoration: BoxDecoration(
                                     shape: BoxShape.circle,
                                     border: Border.all(
-                                        color: Colors.white, width: 2.5),
+                                      color: Colors.white,
+                                      width: 2.5,
+                                    ),
                                   ),
                                   clipBehavior: Clip.antiAlias,
                                   child: widget.avatarUrl.isNotEmpty
-                                      ? Image.network(widget.avatarUrl,
-                                          fit: BoxFit.cover)
+                                      ? Image.network(
+                                          widget.avatarUrl,
+                                          fit: BoxFit.cover,
+                                        )
                                       : Container(
                                           color: AppColors.primaryLight,
                                           alignment: Alignment.center,
@@ -180,8 +211,11 @@ class _AfinidadDetallePageState extends State<AfinidadDetallePage>
                                     color: Color(0xFFE91E8C),
                                     shape: BoxShape.circle,
                                   ),
-                                  child: const Icon(Icons.favorite_rounded,
-                                      color: Colors.white, size: 14),
+                                  child: const Icon(
+                                    Icons.favorite_rounded,
+                                    color: Colors.white,
+                                    size: 14,
+                                  ),
                                 ),
                               ),
                             ],
@@ -211,7 +245,11 @@ class _AfinidadDetallePageState extends State<AfinidadDetallePage>
 
               SliverPadding(
                 padding: const EdgeInsets.fromLTRB(
-                    AppSpacing.md, AppSpacing.lg, AppSpacing.md, 100),
+                  AppSpacing.md,
+                  AppSpacing.lg,
+                  AppSpacing.md,
+                  100,
+                ),
                 sliver: SliverList(
                   delegate: SliverChildListDelegate([
                     if (libros.isEmpty)
@@ -231,7 +269,8 @@ class _AfinidadDetallePageState extends State<AfinidadDetallePage>
                       ClubCard(
                         elevated: false,
                         padding: const EdgeInsets.symmetric(
-                            vertical: AppSpacing.sm),
+                          vertical: AppSpacing.sm,
+                        ),
                         child: Column(
                           children: [
                             for (var i = 0; i < libros.length; i++) ...[
@@ -241,15 +280,17 @@ class _AfinidadDetallePageState extends State<AfinidadDetallePage>
                                   context,
                                   title: libros[i]['titulo']?.toString() ?? '',
                                   bookId: libros[i]['id']?.toString() ?? '',
-                                  coverUrl: libros[i]['coverUrl']?.toString() ?? '',
+                                  coverUrl:
+                                      libros[i]['coverUrl']?.toString() ?? '',
                                   genre: libros[i]['genero']?.toString() ?? '',
                                 ),
                               ),
                               if (i < libros.length - 1)
                                 const Divider(
-                                    height: 1,
-                                    indent: AppSpacing.md,
-                                    endIndent: AppSpacing.md),
+                                  height: 1,
+                                  indent: AppSpacing.md,
+                                  endIndent: AppSpacing.md,
+                                ),
                             ],
                           ],
                         ),
@@ -278,25 +319,35 @@ class _BookTower extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Máximo 8 portadas en la torre
-    final books = libros.take(8).toList();
-    final rng = Random(42);
+    final books = libros.take(7).toList();
+    final n = books.length;
+
+    // Ángulos distribuidos en abanico: de -40° a +40°
+    // El libro central (índice medio) queda vertical, los extremos inclinados
+    List<double> angles = [];
+    List<double> offsets = []; // desplazamiento X
+    for (var i = 0; i < n; i++) {
+      final t = n == 1 ? 0.0 : (i / (n - 1)) * 2 - 1; // -1..1
+      angles.add(t * 38 * pi / 180);
+      offsets.add(t * 55); // spread horizontal
+    }
 
     return SizedBox(
-      height: 280,
+      height: 260,
       child: Center(
         child: Stack(
           alignment: Alignment.bottomCenter,
           clipBehavior: Clip.none,
           children: [
-            for (var i = 0; i < books.length; i++)
+            for (var i = 0; i < n; i++)
               _AnimatedBook(
                 index: i,
-                total: books.length,
+                total: n,
                 titulo: books[i]['titulo']?.toString() ?? '',
                 coverUrl: books[i]['coverUrl']?.toString() ?? '',
                 controller: controller,
-                angle: (rng.nextDouble() * 24 - 12) * pi / 180,
+                angle: angles[i],
+                offsetX: offsets[i],
               ),
           ],
         ),
@@ -313,6 +364,7 @@ class _AnimatedBook extends StatelessWidget {
     required this.coverUrl,
     required this.controller,
     required this.angle,
+    required this.offsetX,
   });
 
   final int index;
@@ -321,50 +373,44 @@ class _AnimatedBook extends StatelessWidget {
   final String coverUrl;
   final AnimationController controller;
   final double angle;
+  final double offsetX;
 
   @override
   Widget build(BuildContext context) {
-    // Los libros se apilan: el primero cae primero, el último encima
-    final delay = index / total;
+    // Escalonado: los extremos caen un poco después
+    final delay = (index / total) * 0.5;
     final anim = CurvedAnimation(
       parent: controller,
-      curve: Interval(delay * 0.6, delay * 0.6 + 0.4,
-          curve: Curves.easeOutBack),
+      curve: Interval(delay, delay + 0.5, curve: Curves.easeOutBack),
     );
-
-    // Offset vertical: los libros más altos en el stack están más arriba
-    final stackOffset = index * 6.0;
 
     return AnimatedBuilder(
       animation: anim,
       builder: (_, child) => Transform(
         alignment: Alignment.bottomCenter,
         transform: Matrix4.identity()
-          ..translate(0.0, (1 - anim.value) * -200)
+          ..translate(offsetX * anim.value, (1 - anim.value) * -180)
           ..rotateZ(angle * anim.value),
         child: child,
       ),
-      child: Positioned(
-        bottom: stackOffset,
-        child: Container(
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(AppRadius.md),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: .18),
-                blurRadius: 8,
-                offset: const Offset(0, 4),
-              ),
-            ],
-          ),
-          child: ClubBookCover(
-            title: titulo,
-            imageUrl: coverUrl,
-            width: 90,
-            height: 130,
-            borderRadius: BorderRadius.circular(AppRadius.md),
-            showShadow: false,
-          ),
+      child: Container(
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(AppRadius.md),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: .22),
+              blurRadius: 10,
+              offset: const Offset(0, 5),
+            ),
+          ],
+        ),
+        child: ClubBookCover(
+          title: titulo,
+          imageUrl: coverUrl,
+          width: 88,
+          height: 128,
+          borderRadius: BorderRadius.circular(AppRadius.md),
+          showShadow: false,
         ),
       ),
     );
@@ -403,8 +449,10 @@ class _LibroRow extends StatelessWidget {
         libro['genero']?.toString() ?? '',
         style: AppTextStyles.caption,
       ),
-      trailing: const Icon(Icons.chevron_right_rounded,
-          color: AppColors.textMuted),
+      trailing: const Icon(
+        Icons.chevron_right_rounded,
+        color: AppColors.textMuted,
+      ),
     );
   }
 }

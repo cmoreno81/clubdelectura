@@ -311,7 +311,10 @@ class _DashboardPageState extends State<DashboardPage> {
 
                   if (data.rankingAfinidad.isNotEmpty) ...[
                     const SizedBox(height: AppSpacing.md),
-                    _AffinityCard(miembros: data.rankingAfinidad),
+                    _AffinityCard(
+                      miembros: data.rankingAfinidad,
+                      miAvatarUrl: avatarUrlActual ?? '',
+                    ),
                   ],
 
                   if (data.libroMes.isNotEmpty) ...[
@@ -1289,8 +1292,9 @@ class _PodioPuesto extends StatelessWidget {
 // ─────────────────────────────────────────────
 
 class _AffinityCard extends StatelessWidget {
-  const _AffinityCard({required this.miembros});
+  const _AffinityCard({required this.miembros, required this.miAvatarUrl});
   final List<AffinityMember> miembros;
+  final String miAvatarUrl;
 
   @override
   Widget build(BuildContext context) {
@@ -1356,20 +1360,27 @@ class _AffinityCard extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
               for (var i = 0; i < miembros.length && i < 5; i++)
-                _AffinityMemberTile(
-                  miembro: miembros[i],
-                  posicion: i,
-                  onTap: () => Navigator.push<void>(
-                    context,
-                    AppPageRoute(
-                      builder: (_) => AfinidadDetallePage(
-                        miembroId: miembros[i].id,
-                        nombre: miembros[i].nombre,
-                        avatarUrl: miembros[i].avatarUrl,
-                        librosComunes: miembros[i].librosComunes,
+                Builder(
+                  key: ValueKey(miembros[i].id),
+                  builder: (_) {
+                    final miembro = miembros[i];
+                    return _AffinityMemberTile(
+                      miembro: miembro,
+                      posicion: i,
+                      onTap: () => Navigator.push<void>(
+                        context,
+                        AppPageRoute(
+                          builder: (_) => AfinidadDetallePage(
+                            miembroId: miembro.id,
+                            nombre: miembro.nombre,
+                            avatarUrl: miembro.avatarUrl,
+                            librosComunes: miembro.librosComunes,
+                            miAvatarUrl: miAvatarUrl,
+                          ),
+                        ),
                       ),
-                    ),
-                  ),
+                    );
+                  },
                 ),
             ],
           ),
