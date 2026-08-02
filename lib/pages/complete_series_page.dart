@@ -69,50 +69,9 @@ class _CompleteSeriesPageState extends State<CompleteSeriesPage> {
   }
 
   Future<void> _select(CatalogBook book) async {
-    var orderText = _suggestedOrder().toString();
-
-    final order = await showDialog<String>(
-      context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: const Text('Número en la saga'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(book.title),
-            const SizedBox(height: AppSpacing.md),
-            TextFormField(
-              initialValue: orderText,
-              autofocus: true,
-              keyboardType: const TextInputType.numberWithOptions(
-                decimal: true,
-              ),
-              onChanged: (value) {
-                orderText = value;
-              },
-              decoration: const InputDecoration(
-                labelText: 'Volumen',
-                hintText: '1, 2, 2.5…',
-              ),
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(dialogContext),
-            child: const Text('Cancelar'),
-          ),
-          FilledButton(
-            onPressed: () {
-              Navigator.pop(dialogContext, orderText.trim());
-            },
-            child: const Text('Confirmar'),
-          ),
-        ],
-      ),
-    );
-
-    if (order == null || order.isEmpty || !mounted) return;
+    final selection = await _askVolumeDetails(book);
+    if (selection == null || !mounted) return;
+    final order = selection.order;
     final normalizedOrder = order.trim().replaceAll(',', '.');
 
     final orderAlreadyExists = widget.series.volumenes.any(
@@ -139,6 +98,11 @@ class _CompleteSeriesPageState extends State<CompleteSeriesPage> {
         sagaId: widget.series.id,
         numero: order,
         book: book,
+        estado: selection.status,
+        formato: selection.format,
+        valoracion: selection.rating,
+        fechaInicio: selection.startDate,
+        fechaFin: selection.endDate,
       );
 
       LibraryRefreshNotifier.instance.invalidate();
@@ -163,6 +127,192 @@ class _CompleteSeriesPageState extends State<CompleteSeriesPage> {
         });
       }
     }
+  }
+
+  Future<_SeriesVolumeSelection?> _askVolumeDetails(CatalogBook book) async {
+    var order = _suggestedOrder().toString();
+    var status = 'PENDIENTE';
+    var format = '';
+    var rating = '';
+    DateTime? startDate;
+    DateTime? endDate;
+    String? error;
+
+    return showDialog<_SeriesVolumeSelection>(
+      context: context,
+      builder: (dialogContext) => StatefulBuilder(
+        builder: (context, setDialogState) => AlertDialog(
+          title: const Text('Añadir volumen'),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(book.title),
+                const SizedBox(height: AppSpacing.md),
+                TextFormField(
+                  initialValue: order,
+                  autofocus: true,
+                  keyboardType: const TextInputType.numberWithOptions(
+                    decimal: true,
+                  ),
+                  onChanged: (value) => order = value,
+                  decoration: const InputDecoration(
+                    labelText: 'Número en la saga',
+                    hintText: '1, 2, 2.5…',
+                  ),
+                ),
+                const SizedBox(height: AppSpacing.md),
+                DropdownButtonFormField<String>(
+                  initialValue: status,
+                  decoration: const InputDecoration(
+                    labelText: 'Estado de lectura',
+                  ),
+                  items: const [
+                    DropdownMenuItem(
+                      value: 'PENDIENTE',
+                      child: Text('Pendiente'),
+                    ),
+                    DropdownMenuItem(value: 'LEYENDO', child: Text('Leyendo')),
+                    DropdownMenuItem(
+                      value: 'FINALIZADO',
+                      child: Text('Terminado'),
+                    ),
+                  ],
+                  onChanged: (value) {
+                    if (value == null) return;
+                    setDialogState(() {
+                      status = value;
+                      error = null;
+                    });
+                  },
+                ),
+                const SizedBox(height: AppSpacing.md),
+                DropdownButtonFormField<String>(
+                  initialValue: format,
+                  decoration: const InputDecoration(
+                    labelText: 'Formato (opcional)',
+                  ),
+                  items: const [
+                    DropdownMenuItem(value: '', child: Text('Sin indicar')),
+                    DropdownMenuItem(value: 'FISICO', child: Text('Físico')),
+                    DropdownMenuItem(value: 'DIGITAL', child: Text('Digital')),
+                    DropdownMenuItem(
+                      value: 'AUDIOLIBRO',
+                      child: Text('Audiolibro'),
+                    ),
+                  ],
+                  onChanged: (value) => setDialogState(() {
+                    format = value ?? '';
+                  }),
+                ),
+                if (status != 'PENDIENTE') ...[
+                  const SizedBox(height: AppSpacing.md),
+                  _DateSelector(
+                    label: 'Fecha de inicio (opcional)',
+                    value: startDate,
+                    onTap: () async {
+                      final selected = await _pickDate(startDate);
+                      if (selected != null) {
+                        setDialogState(() => startDate = selected);
+                      }
+                    },
+                  ),
+                ],
+                if (status == 'FINALIZADO') ...[
+                  const SizedBox(height: AppSpacing.md),
+                  _DateSelector(
+                    label: 'Fecha de fin (opcional)',
+                    value: endDate,
+                    onTap: () async {
+                      final selected = await _pickDate(endDate);
+                      if (selected != null) {
+                        setDialogState(() => endDate = selected);
+                      }
+                    },
+                  ),
+                  const SizedBox(height: AppSpacing.md),
+                  DropdownButtonFormField<String>(
+                    initialValue: rating,
+                    decoration: const InputDecoration(labelText: 'Valoración'),
+                    items: const [
+                      DropdownMenuItem(value: '', child: Text('Selecciona')),
+                      DropdownMenuItem(value: '1', child: Text('1 ★')),
+                      DropdownMenuItem(value: '2', child: Text('2 ★')),
+                      DropdownMenuItem(value: '3', child: Text('3 ★')),
+                      DropdownMenuItem(value: '4', child: Text('4 ★')),
+                      DropdownMenuItem(value: '5', child: Text('5 ★')),
+                    ],
+                    onChanged: (value) => setDialogState(() {
+                      rating = value ?? '';
+                      error = null;
+                    }),
+                  ),
+                ],
+                if (error != null) ...[
+                  const SizedBox(height: AppSpacing.sm),
+                  Text(error!, style: const TextStyle(color: AppColors.danger)),
+                ],
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext),
+              child: const Text('Cancelar'),
+            ),
+            FilledButton(
+              onPressed: () {
+                final cleanOrder = order.trim();
+                if (cleanOrder.isEmpty) {
+                  setDialogState(() => error = 'Indica el número del volumen.');
+                  return;
+                }
+                if (status == 'FINALIZADO' && rating.isEmpty) {
+                  setDialogState(() => error = 'Selecciona una valoración.');
+                  return;
+                }
+                if (startDate != null &&
+                    endDate != null &&
+                    endDate!.isBefore(startDate!)) {
+                  setDialogState(
+                    () => error =
+                        'La fecha de fin no puede ser anterior al inicio.',
+                  );
+                  return;
+                }
+                Navigator.pop(
+                  dialogContext,
+                  _SeriesVolumeSelection(
+                    order: cleanOrder,
+                    status: status,
+                    format: format,
+                    rating: rating,
+                    startDate: _formatDate(startDate),
+                    endDate: _formatDate(endDate),
+                  ),
+                );
+              },
+              child: const Text('Añadir'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<DateTime?> _pickDate(DateTime? current) => showDatePicker(
+    context: context,
+    initialDate: current ?? DateTime.now(),
+    firstDate: DateTime(1900),
+    lastDate: DateTime.now(),
+  );
+
+  String _formatDate(DateTime? date) {
+    if (date == null) return '';
+    final month = date.month.toString().padLeft(2, '0');
+    final day = date.day.toString().padLeft(2, '0');
+    return '${date.year}-$month-$day';
   }
 
   int _suggestedOrder() {
@@ -308,6 +458,52 @@ class _CompleteSeriesPageState extends State<CompleteSeriesPage> {
           ),
         );
       },
+    );
+  }
+}
+
+class _SeriesVolumeSelection {
+  const _SeriesVolumeSelection({
+    required this.order,
+    required this.status,
+    required this.format,
+    required this.rating,
+    required this.startDate,
+    required this.endDate,
+  });
+
+  final String order;
+  final String status;
+  final String format;
+  final String rating;
+  final String startDate;
+  final String endDate;
+}
+
+class _DateSelector extends StatelessWidget {
+  const _DateSelector({
+    required this.label,
+    required this.value,
+    required this.onTap,
+  });
+
+  final String label;
+  final DateTime? value;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final date = value;
+    return ListTile(
+      contentPadding: EdgeInsets.zero,
+      title: Text(label),
+      subtitle: Text(
+        date == null
+            ? 'Se usará la fecha de hoy'
+            : '${date.day}/${date.month}/${date.year}',
+      ),
+      trailing: const Icon(Icons.calendar_month_rounded),
+      onTap: onTap,
     );
   }
 }

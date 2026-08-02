@@ -204,6 +204,11 @@ class ApiService {
     required String sagaId,
     required String numero,
     required CatalogBook book,
+    required String estado,
+    String? formato,
+    String? valoracion,
+    String? fechaInicio,
+    String? fechaFin,
   }) async {
     final response = await _client.post(
       Uri.parse('$baseUrl?action=vincularVolumenSaga'),
@@ -220,6 +225,13 @@ class ApiService {
         'isbn': book.isbn,
         'paginas': book.pages,
         'anioPublicacion': book.publicationYear,
+        'estado': estado,
+        if (formato?.trim().isNotEmpty == true) 'formato': formato!.trim(),
+        if (valoracion?.trim().isNotEmpty == true)
+          'valoracion': valoracion!.trim(),
+        if (fechaInicio?.trim().isNotEmpty == true)
+          'fechaInicio': fechaInicio!.trim(),
+        if (fechaFin?.trim().isNotEmpty == true) 'fechaFin': fechaFin!.trim(),
       }),
     );
     if (response.statusCode != 200) {
