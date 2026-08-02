@@ -289,6 +289,14 @@ class PerfilSagaVolumen {
         coverUrl: json['coverUrl']?.toString() ?? '',
         estado: json['estado']?.toString() ?? 'NO_ANADIDO',
       );
+
+  bool get esLeidoExterno => estado == 'LEIDO_EXTERNO';
+  bool get esOmitido => estado == 'OMITIDO';
+  bool get esNoAnadido => estado == 'NO_ANADIDO';
+
+  /// Cuenta como cubierto para el progreso de la saga
+  bool get estaCubierto =>
+      estado == 'LEIDO' || estado == 'LEIDO_EXTERNO' || estado == 'OMITIDO';
 }
 
 // ─────────────────────────────────────────────

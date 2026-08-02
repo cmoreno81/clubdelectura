@@ -1228,4 +1228,31 @@ class ApiService {
     if (data is! Map<String, dynamic>) return {};
     return data;
   }
+
+  Future<void> setSeriesOverride({
+    required String seriesId,
+    required int posicion,
+    required String tipo, // 'LEIDO_EXTERNO' o 'OMITIDO'
+  }) async {
+    await _client.post(
+      Uri.parse('$baseUrl?action=setSeriesOverride'),
+      headers: const {'Content-Type': 'application/json'},
+      body: jsonEncode({
+        'seriesId': seriesId,
+        'posicion': posicion,
+        'tipo': tipo,
+      }),
+    );
+  }
+
+  Future<void> removeSeriesOverride({
+    required String seriesId,
+    required int posicion,
+  }) async {
+    await _client.post(
+      Uri.parse('$baseUrl?action=removeSeriesOverride'),
+      headers: const {'Content-Type': 'application/json'},
+      body: jsonEncode({'seriesId': seriesId, 'posicion': posicion}),
+    );
+  }
 }

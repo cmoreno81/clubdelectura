@@ -4,6 +4,7 @@ import '../models/catalog_book.dart';
 import '../models/perfil_usuario.dart';
 import '../services/api_exception.dart';
 import '../services/api_service.dart';
+import '../services/library_refresh_notifier.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_spacing.dart';
 
@@ -139,6 +140,8 @@ class _CompleteSeriesPageState extends State<CompleteSeriesPage> {
         numero: order,
         book: book,
       );
+
+      LibraryRefreshNotifier.instance.invalidate();
 
       if (!mounted) return;
 

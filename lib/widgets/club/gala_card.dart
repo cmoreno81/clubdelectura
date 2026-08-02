@@ -9,13 +9,17 @@ import '../../theme/app_radius.dart';
 import '../../theme/app_spacing.dart';
 import '../../theme/app_text_styles.dart';
 import '../common/club_avatar.dart';
-import '../common/club_chip.dart';
 import '../common/club_book_cover.dart';
 
 class GalaCard extends StatefulWidget {
   final Dashboard dashboard;
+  final Map<String, String> readerAvatarUrls;
 
-  const GalaCard({super.key, required this.dashboard});
+  const GalaCard({
+    super.key,
+    required this.dashboard,
+    this.readerAvatarUrls = const {},
+  });
 
   @override
   State<GalaCard> createState() => _GalaCardState();
@@ -78,7 +82,8 @@ class _GalaCardState extends State<GalaCard>
             const SizedBox(height: AppSpacing.lg),
 
             // ── Lectoras previas ──
-            if (club.lectoras.isNotEmpty || true) _LectorasPrevias(club: club),
+            if (club.lectoras.isNotEmpty || true)
+              _LectorasPrevias(club: club, avatarUrls: widget.readerAvatarUrls),
 
             const SizedBox(height: AppSpacing.lg),
 
@@ -260,8 +265,9 @@ class _InfoCard extends StatelessWidget {
 // ─────────────────────────────────────────────
 
 class _LectorasPrevias extends StatelessWidget {
-  const _LectorasPrevias({required this.club});
+  const _LectorasPrevias({required this.club, required this.avatarUrls});
   final Clubvision club;
+  final Map<String, String> avatarUrls;
 
   @override
   Widget build(BuildContext context) {
@@ -298,7 +304,11 @@ class _LectorasPrevias extends StatelessWidget {
                     (nombre) => Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        ClubAvatar(nombre: nombre, size: 54),
+                        ClubAvatar(
+                          nombre: nombre,
+                          imageUrl: avatarUrls[nombre],
+                          size: 54,
+                        ),
                         const SizedBox(height: AppSpacing.xs),
                         SizedBox(
                           width: 72,
@@ -427,7 +437,7 @@ class _ConfettiState extends State<_Confetti>
   Widget build(BuildContext context) {
     return AnimatedBuilder(
       animation: _ctrl,
-      builder: (_, __) => CustomPaint(painter: _ConfettiPainter(_ctrl.value)),
+      builder: (_, _) => CustomPaint(painter: _ConfettiPainter(_ctrl.value)),
     );
   }
 }

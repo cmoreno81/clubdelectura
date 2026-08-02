@@ -15,11 +15,30 @@ class ClubvisionGalaPage extends StatefulWidget {
 
 class _ClubvisionGalaPageState extends State<ClubvisionGalaPage> {
   late Future<Dashboard> dashboardFuture;
+  Map<String, String> _readerAvatarUrls = const {};
 
   @override
   void initState() {
     super.initState();
-    dashboardFuture = ApiService().getDashboard();
+    dashboardFuture = _loadDashboard();
+  }
+
+  Future<Dashboard> _loadDashboard() async {
+    final api = ApiService();
+    final dashboard = await api.getDashboard();
+    final entries = await Future.wait(
+      dashboard.clubvision.lectoras.map((nombre) async {
+        try {
+          final perfil = await api.getPerfilUsuario(nombre);
+          return MapEntry(nombre, perfil.avatarUrl);
+        } catch (_) {
+          return MapEntry(nombre, '');
+        }
+      }),
+    );
+
+    _readerAvatarUrls = Map.fromEntries(entries);
+    return dashboard;
   }
 
   @override
@@ -39,7 +58,7 @@ class _ClubvisionGalaPageState extends State<ClubvisionGalaPage> {
             body: ErrorView(
               onRetry: () {
                 setState(() {
-                  dashboardFuture = ApiService().getDashboard();
+                  dashboardFuture = _loadDashboard();
                 });
               },
             ),
@@ -57,7 +76,10 @@ class _ClubvisionGalaPageState extends State<ClubvisionGalaPage> {
               AppSpacing.md,
               48,
             ),
-            child: GalaCard(dashboard: dashboard),
+            child: GalaCard(
+              dashboard: dashboard,
+              readerAvatarUrls: _readerAvatarUrls,
+            ),
           ),
         );
       },

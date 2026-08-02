@@ -17,6 +17,7 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
   int currentIndex = 0;
+  final _librosController = LibrosPageController();
 
   late final List<Widget> pages;
 
@@ -25,7 +26,7 @@ class _HomePageState extends State<HomePage> {
     super.initState();
     pages = [
       DashboardPage(clubName: widget.club.nombre),
-      LibrosPage(onBackToClub: _volverAlClub),
+      LibrosPage(controller: _librosController, onBackToClub: _volverAlClub),
       const SagasPage(),
       LecturasPage(onBackToClub: _volverAlClub),
       ClubvisionMenuPage(onBackToClub: _volverAlClub),
@@ -60,8 +61,12 @@ class _HomePageState extends State<HomePage> {
           onDestinationSelected: (index) {
             FocusManager.instance.primaryFocus?.unfocus();
 
-            if (index == currentIndex) return;
+            if (index == currentIndex) {
+              if (index == 1) _librosController.refresh();
+              return;
+            }
             setState(() => currentIndex = index);
+            if (index == 1) _librosController.refresh();
           },
           destinations: const [
             NavigationDestination(

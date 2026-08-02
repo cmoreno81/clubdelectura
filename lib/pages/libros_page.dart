@@ -18,6 +18,7 @@ import '../models/libros_data.dart';
 import '../services/api_service.dart';
 import '../services/auth_session_service.dart';
 import '../services/library_order_preferences.dart';
+import '../services/library_refresh_notifier.dart';
 import '../utils/genero_utils.dart';
 import '../utils/reading_status_copy.dart';
 import 'detalle_libro_page.dart';
@@ -27,17 +28,34 @@ import '../widgets/common/onboarding_tutorial.dart';
 
 enum OrdenLibros { populares, recientes, tituloAsc, tituloDesc, mejorValorados }
 
+typedef LibraryDataLoader = Future<LibrosData> Function();
+
+class LibrosPageController {
+  Future<void> Function()? _refresh;
+
+  Future<void> refresh() => _refresh?.call() ?? Future<void>.value();
+}
+
 class LibrosPage extends StatefulWidget {
-  const LibrosPage({super.key, this.onBackToClub});
+  const LibrosPage({
+    super.key,
+    this.onBackToClub,
+    this.controller,
+    this.loadData,
+  });
 
   final VoidCallback? onBackToClub;
+  final LibrosPageController? controller;
+  final LibraryDataLoader? loadData;
 
   @override
   State<LibrosPage> createState() => _LibrosPageState();
 }
 
-class _LibrosPageState extends State<LibrosPage> {
+class _LibrosPageState extends State<LibrosPage> with WidgetsBindingObserver {
   late Future<LibrosData> librosFuture;
+  Future<LibrosData>? _reloadInFlight;
+  LibrosData? _lastData;
   final _orderPreferences = const LibraryOrderPreferences();
   final _scrollController = ScrollController();
   // Offset guardado solo al navegar al detalle de un libro.
@@ -57,8 +75,55 @@ class _LibrosPageState extends State<LibrosPage> {
   @override
   void initState() {
     super.initState();
-    librosFuture = ApiService().getLibrosData();
+    WidgetsBinding.instance.addObserver(this);
+    widget.controller?._refresh = _refresh;
+    LibraryRefreshNotifier.instance.addListener(_onLibraryInvalidated);
+    librosFuture = _startReload(notify: false);
     _restoreOrder();
+  }
+
+  Future<LibrosData> _fetchData() =>
+      (widget.loadData ?? ApiService().getLibrosData)();
+
+  Future<LibrosData> _startReload({bool notify = true}) {
+    final active = _reloadInFlight;
+    if (active != null) return active;
+
+    late final Future<LibrosData> request;
+    request = _fetchData()
+        .then((data) {
+          _lastData = data;
+          return data;
+        })
+        .whenComplete(() {
+          if (identical(_reloadInFlight, request)) _reloadInFlight = null;
+        });
+    _reloadInFlight = request;
+
+    if (notify && mounted) {
+      setState(() {
+        librosFuture = request;
+      });
+    }
+    return request;
+  }
+
+  Future<void> _refresh() async {
+    try {
+      await _startReload();
+    } catch (_) {
+      // FutureBuilder conserva los datos anteriores y muestra el error si no
+      // existe todavía una primera carga válida.
+    }
+  }
+
+  void _onLibraryInvalidated() {
+    _refresh();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) _refresh();
   }
 
   Future<void> _restoreOrder() async {
@@ -81,24 +146,23 @@ class _LibrosPageState extends State<LibrosPage> {
     if (!mounted) return;
 
     if (creado == true) {
-      setState(() {
-        _recargar();
-      });
+      await _refresh();
     }
   }
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    LibraryRefreshNotifier.instance.removeListener(_onLibraryInvalidated);
+    if (identical(widget.controller?._refresh, _refresh)) {
+      widget.controller?._refresh = null;
+    }
     buscadorController.dispose();
     _scrollController.dispose();
     super.dispose();
   }
 
-  void _recargar() {
-    setState(() {
-      librosFuture = ApiService().getLibrosData();
-    });
-  }
+  void _recargar() => _startReload();
 
   @override
   Widget build(BuildContext context) {
@@ -168,16 +232,21 @@ class _LibrosPageState extends State<LibrosPage> {
 
       body: FutureBuilder<LibrosData>(
         future: librosFuture,
+        initialData: _lastData,
         builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
+          if (snapshot.connectionState == ConnectionState.waiting &&
+              !snapshot.hasData) {
             return const Center(child: CircularProgressIndicator());
           }
 
-          if (snapshot.hasError) {
+          final data = snapshot.data ?? _lastData;
+          if (snapshot.hasError && data == null) {
             return ErrorView(onRetry: _recargar);
           }
 
-          final data = snapshot.data!;
+          if (data == null) {
+            return const Center(child: CircularProgressIndicator());
+          }
           final libros = data.libros;
           final finalizados = data.finalizados;
 
@@ -199,48 +268,59 @@ class _LibrosPageState extends State<LibrosPage> {
             finalizados: finalizados,
           );
 
-          return Column(
+          return Stack(
             children: [
-              _cabeceraFiltros(
-                usuariosFiltro: usuariosFiltro,
-                totalResultados: resultado.length,
+              Column(
+                children: [
+                  _cabeceraFiltros(
+                    usuariosFiltro: usuariosFiltro,
+                    totalResultados: resultado.length,
+                  ),
+                  Expanded(
+                    child: resultado.isEmpty
+                        ? ClubEmptyState(
+                            icon: Icons.auto_stories_outlined,
+                            title: 'No hay libros',
+                            message:
+                                'No hemos encontrado libros con los filtros seleccionados.',
+                            actionLabel:
+                                filtroBusqueda.isNotEmpty ||
+                                    filtroEstado != 'TODOS' ||
+                                    filtroUsuario != 'TODAS'
+                                ? 'Limpiar filtros'
+                                : null,
+                            onAction:
+                                filtroBusqueda.isNotEmpty ||
+                                    filtroEstado != 'TODOS' ||
+                                    filtroUsuario != 'TODAS'
+                                ? _limpiarFiltros
+                                : null,
+                          )
+                        : ListView.builder(
+                            controller: _scrollController,
+                            keyboardDismissBehavior:
+                                ScrollViewKeyboardDismissBehavior.onDrag,
+                            padding: const EdgeInsets.fromLTRB(
+                              AppSpacing.md,
+                              AppSpacing.xs,
+                              AppSpacing.md,
+                              110,
+                            ),
+                            itemCount: resultado.length,
+                            itemBuilder: (context, index) {
+                              return _libroCard(resultado[index]);
+                            },
+                          ),
+                  ),
+                ],
               ),
-              Expanded(
-                child: resultado.isEmpty
-                    ? ClubEmptyState(
-                        icon: Icons.auto_stories_outlined,
-                        title: 'No hay libros',
-                        message:
-                            'No hemos encontrado libros con los filtros seleccionados.',
-                        actionLabel:
-                            filtroBusqueda.isNotEmpty ||
-                                filtroEstado != 'TODOS' ||
-                                filtroUsuario != 'TODAS'
-                            ? 'Limpiar filtros'
-                            : null,
-                        onAction:
-                            filtroBusqueda.isNotEmpty ||
-                                filtroEstado != 'TODOS' ||
-                                filtroUsuario != 'TODAS'
-                            ? _limpiarFiltros
-                            : null,
-                      )
-                    : ListView.builder(
-                        controller: _scrollController,
-                        keyboardDismissBehavior:
-                            ScrollViewKeyboardDismissBehavior.onDrag,
-                        padding: const EdgeInsets.fromLTRB(
-                          AppSpacing.md,
-                          AppSpacing.xs,
-                          AppSpacing.md,
-                          110,
-                        ),
-                        itemCount: resultado.length,
-                        itemBuilder: (context, index) {
-                          return _libroCard(resultado[index]);
-                        },
-                      ),
-              ),
+              if (snapshot.connectionState == ConnectionState.waiting)
+                const Positioned(
+                  top: 0,
+                  left: 0,
+                  right: 0,
+                  child: LinearProgressIndicator(minHeight: 2),
+                ),
             ],
           );
         },

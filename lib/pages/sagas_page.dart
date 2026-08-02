@@ -184,6 +184,117 @@ class _SagasPageState extends State<SagasPage> {
     );
   }
 
+  Future<void> _onGapTap(PerfilSaga saga, PerfilSagaVolumen volumen) async {
+    if (volumen.posicion == null) return;
+
+    final current = volumen.estado;
+
+    // Menú con opciones según estado actual
+    final result = await showModalBottomSheet<String>(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const SizedBox(height: 8),
+            Container(
+              width: 40,
+              height: 4,
+              decoration: BoxDecoration(
+                color: Colors.grey[300],
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            const SizedBox(height: 12),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: Text(
+                'Tomo ${volumen.posicion}',
+                style: const TextStyle(
+                  fontWeight: FontWeight.w800,
+                  fontSize: 16,
+                ),
+              ),
+            ),
+            const SizedBox(height: 8),
+            if (current != 'LEIDO_EXTERNO')
+              ListTile(
+                leading: const CircleAvatar(
+                  backgroundColor: Color(0xFFE8F4E8),
+                  child: Icon(
+                    Icons.history_edu_rounded,
+                    color: Colors.green,
+                    size: 20,
+                  ),
+                ),
+                title: const Text('Lo he leído (no está en ClubReads)'),
+                subtitle: const Text(
+                  'Cuenta como leído en el progreso de la saga',
+                ),
+                onTap: () => Navigator.pop(context, 'LEIDO_EXTERNO'),
+              ),
+            if (current != 'OMITIDO')
+              ListTile(
+                leading: CircleAvatar(
+                  backgroundColor: Colors.grey[100],
+                  child: const Icon(
+                    Icons.block_rounded,
+                    color: Colors.grey,
+                    size: 20,
+                  ),
+                ),
+                title: const Text('Omitir este tomo'),
+                subtitle: const Text(
+                  'Para subsagas o tomos que no quieres leer',
+                ),
+                onTap: () => Navigator.pop(context, 'OMITIDO'),
+              ),
+            if (current == 'LEIDO_EXTERNO' || current == 'OMITIDO')
+              ListTile(
+                leading: const CircleAvatar(
+                  backgroundColor: Color(0xFFFFEEEE),
+                  child: Icon(Icons.undo_rounded, color: Colors.red, size: 20),
+                ),
+                title: const Text('Quitar marca'),
+                onTap: () => Navigator.pop(context, 'QUITAR'),
+              ),
+            const SizedBox(height: 8),
+          ],
+        ),
+      ),
+    );
+
+    if (result == null || !mounted) return;
+
+    try {
+      if (result == 'QUITAR') {
+        await ApiService().removeSeriesOverride(
+          seriesId: saga.id,
+          posicion: volumen.posicion!,
+        );
+      } else {
+        await ApiService().setSeriesOverride(
+          seriesId: saga.id,
+          posicion: volumen.posicion!,
+          tipo: result,
+        );
+      }
+      // Recargar sagas
+      final latest = await _load();
+      if (!mounted) return;
+      setState(() => _future = Future.value(latest));
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('No se pudo guardar el cambio')),
+        );
+      }
+    }
+  }
+
   Future<void> _editVolume(PerfilSagaVolumen volumen) async {
     var numeroEditado = volumen.numero;
     final numero = await showDialog<String>(
@@ -537,6 +648,7 @@ class _SagasPageState extends State<SagasPage> {
                 saga: saga,
                 onContinue: _openBook,
                 onCompleteCatalog: () => _completeSeries(saga),
+                onGapTap: (volumen) => _onGapTap(saga, volumen),
                 onEditVolume: _editVolume,
                 onEditSeries: () => _editSeries(saga),
               ),

@@ -14,6 +14,7 @@ class PerfilSagaCard extends StatelessWidget {
     required this.saga,
     this.onContinue,
     this.onCompleteCatalog,
+    this.onGapTap,
     this.onEditVolume,
     this.onEditSeries,
   });
@@ -21,6 +22,7 @@ class PerfilSagaCard extends StatelessWidget {
   final PerfilSaga saga;
   final ValueChanged<PerfilSagaVolumen>? onContinue;
   final VoidCallback? onCompleteCatalog;
+  final ValueChanged<PerfilSagaVolumen>? onGapTap;
   final ValueChanged<PerfilSagaVolumen>? onEditVolume;
   final VoidCallback? onEditSeries;
 
@@ -116,12 +118,38 @@ class PerfilSagaCard extends StatelessWidget {
             runSpacing: 7,
             children: [
               for (var index = 0; index < saga.totalSaga; index++)
-                _VolumeSquare(
-                  index: index,
-                  volume: _volumeAt(index + 1),
-                  onTap: _volumeAt(index + 1) != null && onEditVolume != null
-                      ? () => onEditVolume!(_volumeAt(index + 1)!)
-                      : null,
+                Builder(
+                  key: ValueKey(index),
+                  builder: (_) {
+                    final vol = _volumeAt(index + 1);
+                    final esHueco =
+                        vol == null ||
+                        vol.esNoAnadido ||
+                        vol.esLeidoExterno ||
+                        vol.esOmitido;
+                    return _VolumeSquare(
+                      index: index,
+                      volume: vol,
+                      onTap: vol != null && !esHueco && onEditVolume != null
+                          ? () => onEditVolume!(vol)
+                          : esHueco && onGapTap != null
+                          ? () {
+                              // Creamos un volumen virtual para el hueco
+                              final gap =
+                                  vol ??
+                                  PerfilSagaVolumen(
+                                    bookId: '',
+                                    titulo: 'Tomo ${index + 1}',
+                                    numero: '${index + 1}',
+                                    posicion: index + 1,
+                                    coverUrl: '',
+                                    estado: 'NO_ANADIDO',
+                                  );
+                              onGapTap!(gap);
+                            }
+                          : null,
+                    );
+                  },
                 ),
             ],
           ),
@@ -226,12 +254,16 @@ class _VolumeSquare extends StatelessWidget {
     final read = status == 'LEIDO';
     final reading = status == 'LEYENDO';
     final pending = status == 'PENDIENTE';
-    final color = read
+    final leidoExterno = status == 'LEIDO_EXTERNO';
+    final omitido = status == 'OMITIDO';
+    final color = read || leidoExterno
         ? AppColors.primary
         : reading
         ? AppColors.info
         : pending
         ? AppColors.warning
+        : omitido
+        ? AppColors.textMuted
         : AppColors.textSecondary;
 
     final number = volume?.posicion != null
@@ -298,7 +330,7 @@ class _VolumeSquare extends StatelessWidget {
                   ),
                 ),
               ),
-              if (read || reading)
+              if (read || reading || leidoExterno || omitido)
                 Positioned(
                   top: -5,
                   right: -5,
@@ -306,14 +338,33 @@ class _VolumeSquare extends StatelessWidget {
                     width: 23,
                     height: 23,
                     decoration: BoxDecoration(
-                      color: color,
+                      color: omitido ? AppColors.textMuted : color,
                       shape: BoxShape.circle,
                       border: Border.all(color: Colors.white, width: 2),
                     ),
                     child: Icon(
-                      read ? Icons.check_rounded : Icons.auto_stories_rounded,
+                      read
+                          ? Icons.check_rounded
+                          : reading
+                          ? Icons.auto_stories_rounded
+                          : leidoExterno
+                          ? Icons.history_edu_rounded
+                          : Icons.block_rounded,
                       size: 14,
                       color: Colors.white,
+                    ),
+                  ),
+                ),
+              // Borde discontinuo para LEIDO_EXTERNO
+              if (leidoExterno)
+                Positioned.fill(
+                  child: DecoratedBox(
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(9),
+                      border: Border.all(
+                        color: AppColors.primary.withValues(alpha: .5),
+                        width: 2,
+                      ),
                     ),
                   ),
                 ),
