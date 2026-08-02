@@ -770,18 +770,7 @@ class _GeneralDashboardPageState extends State<GeneralDashboardPage> {
         onTap: () => _openClub(club),
         child: Row(
           children: [
-            Container(
-              width: 54,
-              height: 54,
-              decoration: BoxDecoration(
-                color: AppColors.primaryLight,
-                borderRadius: BorderRadius.circular(18),
-              ),
-              child: const Icon(
-                Icons.local_library_rounded,
-                color: AppColors.primary,
-              ),
-            ),
+            ClubAvatar(nombre: club.name, imageUrl: club.avatarUrl, size: 54),
             const SizedBox(width: AppSpacing.md),
             Expanded(
               child: Column(
@@ -1533,7 +1522,7 @@ class _GeneralDashboardPageState extends State<GeneralDashboardPage> {
                         ? Image.network(
                             author.photoUrl,
                             fit: BoxFit.cover,
-                            errorBuilder: (_, __, ___) =>
+                            errorBuilder: (_, _, _) =>
                                 _authorInitials(author.nombre),
                           )
                         : _authorInitials(author.nombre),

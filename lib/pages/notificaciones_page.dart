@@ -17,6 +17,7 @@ class NotificacionesPage extends StatefulWidget {
 
 class _NotificacionesPageState extends State<NotificacionesPage> {
   late Future<NotificacionesData> _future;
+  final Set<String> _eliminadas = {};
 
   @override
   void initState() {
@@ -33,9 +34,26 @@ class _NotificacionesPageState extends State<NotificacionesPage> {
     await ApiService().marcarNotificacionLeida(id);
     // Refresh silencioso
     ApiService().getNotificaciones().then((data) {
-      if (mounted && data is NotificacionesData)
+      if (mounted) {
         setState(() => _future = Future.value(data));
+      }
     });
+  }
+
+  Future<bool> _eliminar(Notificacion notificacion) async {
+    try {
+      await ApiService().eliminarNotificacion(notificacion.id);
+      return true;
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('No se ha podido borrar la notificación'),
+          ),
+        );
+      }
+      return false;
+    }
   }
 
   @override
@@ -65,8 +83,11 @@ class _NotificacionesPageState extends State<NotificacionesPage> {
           }
 
           final data = snapshot.data!;
+          final notificaciones = data.notificaciones
+              .where((notificacion) => !_eliminadas.contains(notificacion.id))
+              .toList(growable: false);
 
-          if (data.notificaciones.isEmpty) {
+          if (notificaciones.isEmpty) {
             return Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
@@ -93,16 +114,36 @@ class _NotificacionesPageState extends State<NotificacionesPage> {
               horizontal: AppSpacing.md,
               vertical: AppSpacing.md,
             ),
-            itemCount: data.notificaciones.length,
+            itemCount: notificaciones.length,
             separatorBuilder: (_, _) => const SizedBox(height: AppSpacing.sm),
             itemBuilder: (context, i) {
-              final n = data.notificaciones[i];
-              return _NotificacionCard(
-                notificacion: n,
-                onTap: () async {
-                  if (!n.leida) await _marcarLeida(n.id);
-                  if (mounted) _navegarA(n);
-                },
+              final n = notificaciones[i];
+              return Dismissible(
+                key: ValueKey(n.id),
+                direction: DismissDirection.endToStart,
+                confirmDismiss: (_) => _eliminar(n),
+                onDismissed: (_) => setState(() => _eliminadas.add(n.id)),
+                background: Container(
+                  decoration: BoxDecoration(
+                    color: AppColors.danger,
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: AppSpacing.lg,
+                  ),
+                  alignment: Alignment.centerRight,
+                  child: const Icon(
+                    Icons.delete_outline_rounded,
+                    color: Colors.white,
+                  ),
+                ),
+                child: _NotificacionCard(
+                  notificacion: n,
+                  onTap: () async {
+                    if (!n.leida) await _marcarLeida(n.id);
+                    if (mounted) _navegarA(n);
+                  },
+                ),
               );
             },
           );

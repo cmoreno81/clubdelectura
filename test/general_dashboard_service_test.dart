@@ -34,6 +34,7 @@ void main() {
               {
                 'id': 'club-1',
                 'nombre': 'Nuestros gustos son clichés',
+                'avatarUrl': 'https://example.com/club.jpg',
                 'rol': 'OWNER',
                 'activo': true,
                 'miembros': 9,
@@ -171,6 +172,7 @@ void main() {
     expect(dashboard.pagesReadThisMonth, 384);
     expect(dashboard.summary.pagesRead, 4200);
     expect(dashboard.clubs.single.name, 'Nuestros gustos son clichés');
+    expect(dashboard.clubs.single.avatarUrl, 'https://example.com/club.jpg');
     expect(dashboard.personalLibrary.single.title, 'Próxima lectura');
     expect(dashboard.personalLibrary.single.isHighPriority, isTrue);
     expect(dashboard.personalLibrary.single.format, 'DIGITAL');

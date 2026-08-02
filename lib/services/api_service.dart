@@ -1195,11 +1195,13 @@ class ApiService {
     final response = await _client.get(
       Uri.parse('$baseUrl?action=notificaciones'),
     );
-    if (response.statusCode != 200)
+    if (response.statusCode != 200) {
       return const NotificacionesData(notificaciones: [], noLeidas: 0);
+    }
     final data = jsonDecode(response.body);
-    if (data is! Map<String, dynamic>)
+    if (data is! Map<String, dynamic>) {
       return const NotificacionesData(notificaciones: [], noLeidas: 0);
+    }
     return NotificacionesData.fromJson(data);
   }
 
@@ -1217,6 +1219,17 @@ class ApiService {
       headers: const {'Content-Type': 'application/json'},
       body: '{}',
     );
+  }
+
+  Future<void> eliminarNotificacion(String id) async {
+    final response = await _client.post(
+      Uri.parse('$baseUrl?action=eliminarNotificacion'),
+      headers: const {'Content-Type': 'application/json'},
+      body: jsonEncode({'id': id}),
+    );
+    if (!_respuestaOk(response)) {
+      throw ApiException.fromResponse(response);
+    }
   }
 
   Future<Map<String, dynamic>> getAfinidadDetalle(String miembroId) async {
