@@ -163,48 +163,53 @@ class _CompleteSeriesPageState extends State<CompleteSeriesPage> {
                   ),
                 ),
                 const SizedBox(height: AppSpacing.md),
-                DropdownButtonFormField<String>(
-                  initialValue: status,
-                  decoration: const InputDecoration(
-                    labelText: 'Estado de lectura',
-                  ),
-                  items: const [
-                    DropdownMenuItem(
-                      value: 'PENDIENTE',
-                      child: Text('Pendiente'),
-                    ),
-                    DropdownMenuItem(value: 'LEYENDO', child: Text('Leyendo')),
-                    DropdownMenuItem(
-                      value: 'FINALIZADO',
-                      child: Text('Terminado'),
-                    ),
+                const Text(
+                  'Estado de lectura',
+                  style: TextStyle(fontWeight: FontWeight.w700),
+                ),
+                const SizedBox(height: AppSpacing.xs),
+                Wrap(
+                  spacing: AppSpacing.xs,
+                  runSpacing: AppSpacing.xs,
+                  children: [
+                    for (final option in const [
+                      ('PENDIENTE', 'Pendiente'),
+                      ('LEYENDO', 'Leyendo'),
+                      ('FINALIZADO', 'Terminado'),
+                    ])
+                      _OptionChip(
+                        label: option.$2,
+                        selected: status == option.$1,
+                        onSelected: () => setDialogState(() {
+                          status = option.$1;
+                          error = null;
+                        }),
+                      ),
                   ],
-                  onChanged: (value) {
-                    if (value == null) return;
-                    setDialogState(() {
-                      status = value;
-                      error = null;
-                    });
-                  },
                 ),
                 const SizedBox(height: AppSpacing.md),
-                DropdownButtonFormField<String>(
-                  initialValue: format,
-                  decoration: const InputDecoration(
-                    labelText: 'Formato (opcional)',
-                  ),
-                  items: const [
-                    DropdownMenuItem(value: '', child: Text('Sin indicar')),
-                    DropdownMenuItem(value: 'FISICO', child: Text('Físico')),
-                    DropdownMenuItem(value: 'DIGITAL', child: Text('Digital')),
-                    DropdownMenuItem(
-                      value: 'AUDIOLIBRO',
-                      child: Text('Audiolibro'),
-                    ),
+                const Text(
+                  'Formato (opcional)',
+                  style: TextStyle(fontWeight: FontWeight.w700),
+                ),
+                const SizedBox(height: AppSpacing.xs),
+                Wrap(
+                  spacing: AppSpacing.xs,
+                  runSpacing: AppSpacing.xs,
+                  children: [
+                    for (final option in const [
+                      ('', 'Sin indicar'),
+                      ('FISICO', 'Físico'),
+                      ('DIGITAL', 'Digital'),
+                      ('AUDIOLIBRO', 'Audio'),
+                    ])
+                      _OptionChip(
+                        label: option.$2,
+                        selected: format == option.$1,
+                        onSelected: () =>
+                            setDialogState(() => format = option.$1),
+                      ),
                   ],
-                  onChanged: (value) => setDialogState(() {
-                    format = value ?? '';
-                  }),
                 ),
                 if (status != 'PENDIENTE') ...[
                   const SizedBox(height: AppSpacing.md),
@@ -232,21 +237,25 @@ class _CompleteSeriesPageState extends State<CompleteSeriesPage> {
                     },
                   ),
                   const SizedBox(height: AppSpacing.md),
-                  DropdownButtonFormField<String>(
-                    initialValue: rating,
-                    decoration: const InputDecoration(labelText: 'Valoración'),
-                    items: const [
-                      DropdownMenuItem(value: '', child: Text('Selecciona')),
-                      DropdownMenuItem(value: '1', child: Text('1 ★')),
-                      DropdownMenuItem(value: '2', child: Text('2 ★')),
-                      DropdownMenuItem(value: '3', child: Text('3 ★')),
-                      DropdownMenuItem(value: '4', child: Text('4 ★')),
-                      DropdownMenuItem(value: '5', child: Text('5 ★')),
+                  const Text(
+                    'Valoración',
+                    style: TextStyle(fontWeight: FontWeight.w700),
+                  ),
+                  const SizedBox(height: AppSpacing.xs),
+                  Wrap(
+                    spacing: AppSpacing.xs,
+                    runSpacing: AppSpacing.xs,
+                    children: [
+                      for (final value in const ['1', '2', '3', '4', '5'])
+                        _OptionChip(
+                          label: '$value ★',
+                          selected: rating == value,
+                          onSelected: () => setDialogState(() {
+                            rating = value;
+                            error = null;
+                          }),
+                        ),
                     ],
-                    onChanged: (value) => setDialogState(() {
-                      rating = value ?? '';
-                      error = null;
-                    }),
                   ),
                 ],
                 if (error != null) ...[
@@ -504,6 +513,36 @@ class _DateSelector extends StatelessWidget {
       ),
       trailing: const Icon(Icons.calendar_month_rounded),
       onTap: onTap,
+    );
+  }
+}
+
+class _OptionChip extends StatelessWidget {
+  const _OptionChip({
+    required this.label,
+    required this.selected,
+    required this.onSelected,
+  });
+
+  final String label;
+  final bool selected;
+  final VoidCallback onSelected;
+
+  @override
+  Widget build(BuildContext context) {
+    return ChoiceChip(
+      label: Text(label),
+      selected: selected,
+      showCheckmark: selected,
+      selectedColor: AppColors.primary,
+      backgroundColor: AppColors.surfaceSoft,
+      checkmarkColor: Colors.white,
+      side: BorderSide(color: selected ? AppColors.primary : AppColors.border),
+      labelStyle: TextStyle(
+        color: selected ? Colors.white : AppColors.textPrimary,
+        fontWeight: FontWeight.w700,
+      ),
+      onSelected: (_) => onSelected(),
     );
   }
 }
