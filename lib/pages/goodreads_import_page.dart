@@ -38,6 +38,7 @@ class _GoodreadsImportPageState extends State<GoodreadsImportPage> {
   bool _loading = false;
   bool _showAll = false;
   Set<int> _selectedRows = <int>{};
+  Map<int, String> _resolutions = <int, String>{};
 
   bool get _isBookmory => widget.source == ReadingImportSource.bookmory;
 
@@ -51,6 +52,7 @@ class _GoodreadsImportPageState extends State<GoodreadsImportPage> {
       _preview = null;
       _result = null;
       _selectedRows = <int>{};
+      _resolutions = <int, String>{};
       _showAll = false;
     });
     try {
@@ -122,13 +124,23 @@ class _GoodreadsImportPageState extends State<GoodreadsImportPage> {
       _error = '';
     });
     try {
-      final selectedRows = _rows
+      final selectedEntries = _rows
           .asMap()
           .entries
           .where((entry) => _selectedRows.contains(entry.key))
+          .toList(growable: false);
+      final selectedRows = selectedEntries
           .map((entry) => entry.value)
           .toList(growable: false);
-      final result = await _api.confirmarImportacionGoodreads(selectedRows);
+      final resolutions = <int, String>{};
+      for (var position = 0; position < selectedEntries.length; position++) {
+        final bookId = _resolutions[selectedEntries[position].key];
+        if (bookId != null) resolutions[position] = bookId;
+      }
+      final result = await _api.confirmarImportacionGoodreads(
+        selectedRows,
+        resolutions: resolutions,
+      );
       if (!mounted) return;
       setState(() => _result = result);
     } on ApiException catch (error) {
@@ -140,6 +152,20 @@ class _GoodreadsImportPageState extends State<GoodreadsImportPage> {
     } finally {
       if (mounted) setState(() => _loading = false);
     }
+  }
+
+  Future<void> _resolveBook(GoodreadsImportPreviewBook book) async {
+    final candidate = await showModalBottomSheet<GoodreadsImportCandidate>(
+      context: context,
+      isScrollControlled: true,
+      showDragHandle: true,
+      builder: (context) => _CandidatePicker(book: book),
+    );
+    if (candidate == null || !mounted) return;
+    setState(() {
+      _resolutions[book.index] = candidate.bookId;
+      _selectedRows.add(book.index);
+    });
   }
 
   @override
@@ -193,6 +219,8 @@ class _GoodreadsImportPageState extends State<GoodreadsImportPage> {
             _ImportFinished(summary: result)
           else if (preview != null) ...[
             _PreviewSummary(summary: preview.summary),
+            const SizedBox(height: AppSpacing.sm),
+            _ImportCategoryGuide(summary: preview.summary),
             const SizedBox(height: AppSpacing.lg),
             ClubSectionTitle(
               title: 'Revisión previa',
@@ -204,11 +232,17 @@ class _GoodreadsImportPageState extends State<GoodreadsImportPage> {
             const SizedBox(height: AppSpacing.sm),
             _SelectionControls(
               selected: _selectedRows.length,
-              total: preview.books.where((book) => book.canImport).length,
+              total:
+                  preview.books.where((book) => book.canImport).length +
+                  _resolutions.length,
               onSelectAll: () {
                 setState(() {
                   _selectedRows = preview.books
-                      .where((book) => book.canImport)
+                      .where(
+                        (book) =>
+                            book.canImport ||
+                            _resolutions.containsKey(book.index),
+                      )
                       .map((book) => book.index)
                       .toSet();
                 });
@@ -224,7 +258,13 @@ class _GoodreadsImportPageState extends State<GoodreadsImportPage> {
                     child: _PreviewBookTile(
                       book: book,
                       selected: _selectedRows.contains(book.index),
-                      onChanged: book.canImport
+                      selectedCandidateId: _resolutions[book.index],
+                      onResolve:
+                          book.action == 'REVISAR' && book.candidates.isNotEmpty
+                          ? () => _resolveBook(book)
+                          : null,
+                      onChanged:
+                          book.canImport || _resolutions.containsKey(book.index)
                           ? (selected) {
                               setState(() {
                                 if (selected) {
@@ -274,6 +314,7 @@ class _GoodreadsImportPageState extends State<GoodreadsImportPage> {
             ? Row(
                 children: [
                   Expanded(
+                    flex: 2,
                     child: OutlinedButton(
                       onPressed: _loading ? null : _selectFile,
                       child: const Text('Elegir otro'),
@@ -281,12 +322,16 @@ class _GoodreadsImportPageState extends State<GoodreadsImportPage> {
                   ),
                   const SizedBox(width: AppSpacing.sm),
                   Expanded(
+                    flex: 3,
                     child: FilledButton.icon(
                       onPressed: _loading || _selectedRows.isEmpty
                           ? null
                           : _confirm,
                       icon: const Icon(Icons.download_done_rounded),
-                      label: Text('Importar ${_selectedRows.length}'),
+                      label: Text(
+                        'Importar ${_selectedRows.length} seleccionados',
+                        overflow: TextOverflow.ellipsis,
+                      ),
                     ),
                   ),
                 ],
@@ -534,6 +579,120 @@ class _SummaryChip extends StatelessWidget {
   }
 }
 
+class _ImportCategoryGuide extends StatelessWidget {
+  const _ImportCategoryGuide({required this.summary});
+
+  final GoodreadsImportSummary summary;
+
+  @override
+  Widget build(BuildContext context) {
+    return ClubCard(
+      elevated: false,
+      padding: const EdgeInsets.all(AppSpacing.sm),
+      backgroundColor: AppColors.surfaceSoft.withValues(alpha: .62),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Padding(
+            padding: EdgeInsets.fromLTRB(
+              AppSpacing.xs,
+              AppSpacing.xs,
+              AppSpacing.xs,
+              AppSpacing.sm,
+            ),
+            child: Text(
+              '¿Qué ocurrirá con cada grupo?',
+              style: TextStyle(fontWeight: FontWeight.w800),
+            ),
+          ),
+          if (summary.newBooks > 0)
+            const _CategoryExplanation(
+              icon: Icons.add_circle_outline_rounded,
+              color: AppColors.success,
+              title: 'Nuevos',
+              text: 'Se crearán y se añadirán a tu biblioteca.',
+            ),
+          if (summary.toAdd > 0)
+            const _CategoryExplanation(
+              icon: Icons.library_add_outlined,
+              color: AppColors.info,
+              title: 'Para añadir',
+              text: 'Ya existen; añadiremos la ficha correcta a tu biblioteca.',
+            ),
+          if (summary.protected > 0)
+            const _CategoryExplanation(
+              icon: Icons.shield_outlined,
+              color: AppColors.primary,
+              title: 'Protegidos',
+              text: 'Ya los tienes. No cambiaremos ninguno de tus datos.',
+            ),
+          if (summary.toReview > 0)
+            const _CategoryExplanation(
+              icon: Icons.help_outline_rounded,
+              color: AppColors.warning,
+              title: 'Para revisar',
+              text:
+                  'Hay varias coincidencias. No se importarán hasta elegir la correcta.',
+            ),
+          if (summary.skipped > 0)
+            const _CategoryExplanation(
+              icon: Icons.remove_circle_outline_rounded,
+              color: AppColors.textMuted,
+              title: 'Omitidos',
+              text:
+                  'Pendientes, sin valorar o filas repetidas; se quedarán fuera.',
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+class _CategoryExplanation extends StatelessWidget {
+  const _CategoryExplanation({
+    required this.icon,
+    required this.color,
+    required this.title,
+    required this.text,
+  });
+
+  final IconData icon;
+  final Color color;
+  final String title;
+  final String text;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: AppSpacing.sm),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(icon, size: 20, color: color),
+          const SizedBox(width: AppSpacing.sm),
+          Expanded(
+            child: Text.rich(
+              TextSpan(
+                children: [
+                  TextSpan(
+                    text: '$title: ',
+                    style: TextStyle(color: color, fontWeight: FontWeight.w800),
+                  ),
+                  TextSpan(
+                    text: text,
+                    style: const TextStyle(color: AppColors.textSecondary),
+                  ),
+                ],
+              ),
+              style: const TextStyle(fontSize: 13, height: 1.35),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 class _SelectionControls extends StatelessWidget {
   const _SelectionControls({
     required this.selected,
@@ -583,14 +742,25 @@ class _PreviewBookTile extends StatelessWidget {
     required this.book,
     required this.selected,
     required this.onChanged,
+    required this.selectedCandidateId,
+    required this.onResolve,
   });
 
   final GoodreadsImportPreviewBook book;
   final bool selected;
   final ValueChanged<bool>? onChanged;
+  final String? selectedCandidateId;
+  final VoidCallback? onResolve;
 
   @override
   Widget build(BuildContext context) {
+    GoodreadsImportCandidate? selectedCandidate;
+    for (final candidate in book.candidates) {
+      if (candidate.bookId == selectedCandidateId) {
+        selectedCandidate = candidate;
+        break;
+      }
+    }
     final (icon, color) = switch (book.action) {
       'NUEVO' => (Icons.add_circle_outline_rounded, AppColors.success),
       'ANADIR' => (Icons.library_add_outlined, AppColors.info),
@@ -644,6 +814,8 @@ class _PreviewBookTile extends StatelessWidget {
                 Text(
                   onChanged != null && !selected
                       ? 'No se importará'
+                      : selectedCandidate != null
+                      ? 'Usaremos: ${selectedCandidate.title}'
                       : book.message,
                   style: TextStyle(
                     color: onChanged != null && !selected
@@ -652,10 +824,126 @@ class _PreviewBookTile extends StatelessWidget {
                     fontSize: 12,
                   ),
                 ),
+                if (onResolve != null) ...[
+                  const SizedBox(height: AppSpacing.xs),
+                  OutlinedButton.icon(
+                    onPressed: onResolve,
+                    icon: Icon(
+                      selectedCandidateId == null
+                          ? Icons.manage_search_rounded
+                          : Icons.check_circle_outline_rounded,
+                    ),
+                    label: Text(
+                      selectedCandidateId == null
+                          ? 'Elegir coincidencia'
+                          : 'Cambiar coincidencia',
+                    ),
+                  ),
+                ],
               ],
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _CandidatePicker extends StatelessWidget {
+  const _CandidatePicker({required this.book});
+
+  final GoodreadsImportPreviewBook book;
+
+  @override
+  Widget build(BuildContext context) {
+    return SafeArea(
+      child: FractionallySizedBox(
+        heightFactor: .78,
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(
+            AppSpacing.md,
+            0,
+            AppSpacing.md,
+            AppSpacing.md,
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'Elige la ficha correcta',
+                style: TextStyle(fontSize: 20, fontWeight: FontWeight.w900),
+              ),
+              const SizedBox(height: AppSpacing.xs),
+              Text(
+                'Archivo: ${book.title} · ${book.author}',
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(color: AppColors.textSecondary),
+              ),
+              const SizedBox(height: AppSpacing.md),
+              Expanded(
+                child: ListView.separated(
+                  itemCount: book.candidates.length,
+                  separatorBuilder: (_, _) =>
+                      const SizedBox(height: AppSpacing.sm),
+                  itemBuilder: (context, index) {
+                    final candidate = book.candidates[index];
+                    return ClubCard(
+                      elevated: false,
+                      onTap: () => Navigator.pop(context, candidate),
+                      child: Row(
+                        children: [
+                          SizedBox(
+                            width: 54,
+                            height: 78,
+                            child: candidate.coverUrl.isEmpty
+                                ? const Icon(Icons.auto_stories_outlined)
+                                : Image.network(
+                                    candidate.coverUrl,
+                                    fit: BoxFit.cover,
+                                    errorBuilder: (_, _, _) =>
+                                        const Icon(Icons.auto_stories_outlined),
+                                  ),
+                          ),
+                          const SizedBox(width: AppSpacing.md),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  candidate.title,
+                                  style: const TextStyle(
+                                    fontWeight: FontWeight.w800,
+                                  ),
+                                ),
+                                if (candidate.author.isNotEmpty)
+                                  Text(
+                                    candidate.author,
+                                    style: const TextStyle(
+                                      color: AppColors.textSecondary,
+                                    ),
+                                  ),
+                                if (candidate.isbn.isNotEmpty)
+                                  Text(
+                                    'ISBN ${candidate.isbn}',
+                                    style: const TextStyle(
+                                      color: AppColors.textMuted,
+                                      fontSize: 12,
+                                    ),
+                                  ),
+                              ],
+                            ),
+                          ),
+                          const Icon(Icons.check_circle_outline_rounded),
+                        ],
+                      ),
+                    );
+                  },
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }

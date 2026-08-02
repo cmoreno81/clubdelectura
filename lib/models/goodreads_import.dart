@@ -107,6 +107,7 @@ class GoodreadsImportPreviewBook {
     required this.author,
     required this.action,
     required this.message,
+    required this.candidates,
   });
 
   final int index;
@@ -114,6 +115,7 @@ class GoodreadsImportPreviewBook {
   final String author;
   final String action;
   final String message;
+  final List<GoodreadsImportCandidate> candidates;
   bool get canImport => action == 'NUEVO' || action == 'ANADIR';
 
   factory GoodreadsImportPreviewBook.fromJson(Map<String, dynamic> json) =>
@@ -123,5 +125,38 @@ class GoodreadsImportPreviewBook {
         author: json['autor']?.toString() ?? '',
         action: json['accion']?.toString() ?? 'OMITIR',
         message: json['mensaje']?.toString() ?? '',
+        candidates: (json['candidatos'] as List<dynamic>? ?? const [])
+            .whereType<Map>()
+            .map(
+              (item) => GoodreadsImportCandidate.fromJson(
+                Map<String, dynamic>.from(item),
+              ),
+            )
+            .toList(growable: false),
+      );
+}
+
+class GoodreadsImportCandidate {
+  const GoodreadsImportCandidate({
+    required this.bookId,
+    required this.title,
+    required this.author,
+    required this.isbn,
+    required this.coverUrl,
+  });
+
+  final String bookId;
+  final String title;
+  final String author;
+  final String isbn;
+  final String coverUrl;
+
+  factory GoodreadsImportCandidate.fromJson(Map<String, dynamic> json) =>
+      GoodreadsImportCandidate(
+        bookId: json['bookId']?.toString() ?? '',
+        title: json['titulo']?.toString() ?? '',
+        author: json['autor']?.toString() ?? '',
+        isbn: json['isbn']?.toString() ?? '',
+        coverUrl: json['coverUrl']?.toString() ?? '',
       );
 }

@@ -174,12 +174,19 @@ class ApiService {
   }
 
   Future<GoodreadsImportSummary> confirmarImportacionGoodreads(
-    List<GoodreadsImportRow> books,
-  ) async {
+    List<GoodreadsImportRow> books, {
+    Map<int, String> resolutions = const {},
+  }) async {
     final response = await _client.post(
       Uri.parse('$baseUrl?action=confirmarImportacionGoodreads'),
       headers: const {'Content-Type': 'application/json'},
-      body: jsonEncode({'libros': books.map((book) => book.toJson()).toList()}),
+      body: jsonEncode({
+        'libros': books.map((book) => book.toJson()).toList(),
+        if (resolutions.isNotEmpty)
+          'resoluciones': resolutions.entries
+              .map((entry) => {'index': entry.key, 'bookId': entry.value})
+              .toList(growable: false),
+      }),
     );
     if (response.statusCode != 200) {
       throw ApiException.fromResponse(response);

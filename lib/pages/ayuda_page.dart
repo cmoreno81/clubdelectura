@@ -118,19 +118,76 @@ const List<_HelpSection> _secciones = [
             'Puedes cambiar el estado en cualquier momento desde la ficha del libro.',
       ),
       _HelpItem(
-        pregunta: '¿Puedo importar mis libros de Goodreads o Bookmory?',
-        respuesta:
-            'Sí. En Perfil → sección "Más" encontrarás las opciones '
-            '"Importar desde Bookmory" e "Importar desde Goodreads". '
-            'La importación no sobreescribe los datos que ya tengas en ClubReads.',
-      ),
-      _HelpItem(
         pregunta: '¿Qué es la biblioteca global?',
         respuesta:
             'Es el catálogo compartido de todos los libros que existen en ClubReads. '
             'Puedes explorarla desde "Mi universo lector" usando el icono de búsqueda. '
             'Desde ahí puedes añadir cualquier libro directamente a tu biblioteca '
             'personal sin introducir los datos manualmente.',
+      ),
+    ],
+  ),
+  _HelpSection(
+    icono: '📥',
+    titulo: 'Importaciones',
+    items: [
+      _HelpItem(
+        pregunta: '¿Cómo importo desde Bookmory o Goodreads?',
+        respuesta:
+            'Ve a Perfil → Más y elige "Importar desde Bookmory" o '
+            '"Importar desde Goodreads". Para Bookmory selecciona el archivo '
+            '.xlsx exportado directamente por la aplicación; para Goodreads, '
+            'su archivo .csv. ClubReads revisará el contenido antes de guardar '
+            'nada y te permitirá confirmar los libros seleccionados.',
+      ),
+      _HelpItem(
+        pregunta: '¿Qué libros se importan?',
+        respuesta:
+            'Solo se importan los libros terminados que tengan valoración. '
+            'Los pendientes, los que estás leyendo y los terminados sin valorar '
+            'se omiten. Si falta la fecha de finalización, ClubReads asigna una '
+            'fecha segura para poder conservar el libro en tu historial.',
+      ),
+      _HelpItem(
+        pregunta: '¿Qué significan "Nuevos" y "Para añadir"?',
+        respuesta:
+            '"Nuevos" son libros que todavía no existen en el catálogo: se '
+            'crearán y se añadirán a tu biblioteca. "Para añadir" ya existen '
+            'en ClubReads, pero no están en tu biblioteca: se reutilizará su '
+            'ficha. Ambos aparecen seleccionados automáticamente; puedes '
+            'desmarcar cualquier libro que no quieras importar.',
+      ),
+      _HelpItem(
+        pregunta: '¿Qué significa "Protegidos"?',
+        respuesta:
+            'Son libros que ya tienes en ClubReads. No tienes que hacer nada: '
+            'la importación no sustituirá tus estados, fechas, valoraciones, '
+            'reseñas, prioridades, formatos, sagas ni historial guardado. Por '
+            'eso no se incluyen entre los libros seleccionados para importar.',
+      ),
+      _HelpItem(
+        pregunta: '¿Qué hago con los libros "Para revisar"?',
+        respuesta:
+            'ClubReads ha encontrado varias coincidencias posibles y no puede '
+            'decidir con seguridad cuál es la correcta. Esos libros no se '
+            'importan automáticamente. Termina primero la importación y después '
+            'búscalos en la biblioteca global para añadir la ficha correcta. '
+            'Si ninguna coincide, puedes crear el libro manualmente.',
+      ),
+      _HelpItem(
+        pregunta: '¿Qué significa "Pendientes o sin valorar"?',
+        respuesta:
+            'Son filas que no cumplen las condiciones de importación, que no '
+            'tienen título o autor, o que están repetidas dentro del archivo. '
+            'Se omiten y no modifican tu biblioteca.',
+      ),
+      _HelpItem(
+        pregunta: '¿Qué hago si una importación grande da error?',
+        respuesta:
+            'Puedes volver a seleccionar el mismo archivo sin perder lo ya '
+            'guardado. Si hay muchos libros, pulsa "Ninguno", selecciona grupos '
+            'de unos 20 o 30 e impórtalos por tandas. Al abrir de nuevo el archivo, '
+            'los libros ya incorporados aparecerán como protegidos.',
       ),
     ],
   ),
@@ -148,9 +205,40 @@ const List<_HelpSection> _secciones = [
       _HelpItem(
         pregunta: '¿Qué es "Completar saga"?',
         respuesta:
-            'Es una herramienta que busca en el catálogo global los volúmenes '
-            'que te faltan. Pulsa en una saga y luego en "Completar saga" '
-            'para encontrarlos y añadirlos con el orden correcto.',
+            'Es una herramienta para buscar los volúmenes que faltan en el '
+            'catálogo global. Entra en una saga, pulsa "Completar saga", busca '
+            'el libro y confirma que pertenece a ella antes de añadirlo.',
+      ),
+      _HelpItem(
+        pregunta: '¿Qué tengo que indicar al completar una saga?',
+        respuesta:
+            'Indica el número que ocupa el libro en la saga y elige su estado: '
+            'Pendiente, Leyendo o Terminado. También puedes seleccionar el '
+            'formato. Si estás leyendo, puedes indicar la fecha de inicio; si lo '
+            'has terminado, puedes añadir las fechas y debes elegir una valoración.',
+      ),
+      _HelpItem(
+        pregunta: '¿Se añade también a mi biblioteca?',
+        respuesta:
+            'Sí. Al confirmar, el volumen se vincula a la saga y se añade a '
+            'tu biblioteca con el estado y formato elegidos, todo en una sola '
+            'operación. La Biblioteca se actualiza automáticamente; no necesitas '
+            'deslizar la pantalla ni volver a añadir el libro.',
+      ),
+      _HelpItem(
+        pregunta: '¿Qué pasa si el libro ya existe?',
+        respuesta:
+            'ClubReads reutiliza la ficha existente y la vincula a la saga. '
+            'No debe crear otra copia del mismo libro. Si el número elegido ya '
+            'pertenece a otro volumen, la app te avisará para que lo revises.',
+      ),
+      _HelpItem(
+        pregunta: '¿Y si un tomo no está en ClubReads o no quiero leerlo?',
+        respuesta:
+            'Desde el hueco correspondiente de la saga puedes marcarlo como '
+            '"Leído fuera de ClubReads" u "Omitido". Si más adelante añades '
+            'el volumen real con "Completar saga", esa marca se elimina '
+            'automáticamente.',
       ),
       _HelpItem(
         pregunta: '¿Puedo reordenar los tomos de una saga?',
