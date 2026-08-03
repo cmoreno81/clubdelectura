@@ -3,7 +3,7 @@
     <uses-permission android:name="android.permission.INTERNET"/>
 
     <application
-        android:label="club_lectura_app"
+        android:label="ClubReads"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
 

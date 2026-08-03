@@ -131,6 +131,42 @@ void main() {
     expect(storage.value?.refreshToken, 'refresh-2');
   });
 
+  test('dos clientes comparten una única renovación de sesión', () async {
+    await session.establish(_session());
+    var refreshCalls = 0;
+    final inner = MockClient((request) async {
+      if (request.url.queryParameters['action'] == 'refreshToken') {
+        refreshCalls++;
+        await Future<void>.delayed(const Duration(milliseconds: 10));
+        return http.Response(
+          jsonEncode({
+            'ok': true,
+            'accessToken': 'access-2',
+            'refreshToken': 'refresh-2',
+          }),
+          200,
+        );
+      }
+      if (request.headers['Authorization'] == 'Bearer access-1') {
+        return http.Response(
+          jsonEncode({'ok': false, 'error': 'INVALID_ACCESS_TOKEN'}),
+          401,
+        );
+      }
+      return http.Response('ok', 200);
+    });
+    final first = AuthenticatedHttpClient(inner: inner, session: session);
+    final second = AuthenticatedHttpClient(inner: inner, session: session);
+
+    final responses = await Future.wait([
+      first.get(Uri.parse('https://example.test/api?action=dashboard')),
+      second.get(Uri.parse('https://example.test/api?action=notifications')),
+    ]);
+
+    expect(responses.map((response) => response.statusCode), everyElement(200));
+    expect(refreshCalls, 1);
+  });
+
   test('recuperación establece la sesión devuelta por resetPassword', () async {
     final client = MockClient(
       (_) async => http.Response(jsonEncode(_sessionResponse()), 200),

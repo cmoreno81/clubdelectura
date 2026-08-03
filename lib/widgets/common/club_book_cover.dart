@@ -43,7 +43,11 @@ class ClubBookCover extends StatelessWidget {
       ),
       child: ClipRRect(
         borderRadius: radius,
-        child: _buildCoverContent(width: width, height: resolvedHeight),
+        child: _buildCoverContent(
+          width: width,
+          height: resolvedHeight,
+          pixelRatio: MediaQuery.devicePixelRatioOf(context),
+        ),
       ),
     );
 
@@ -61,7 +65,11 @@ class ClubBookCover extends StatelessWidget {
     return cover;
   }
 
-  Widget _buildCoverContent({required double width, required double height}) {
+  Widget _buildCoverContent({
+    required double width,
+    required double height,
+    required double pixelRatio,
+  }) {
     final hasImage = imageUrl != null && imageUrl!.trim().isNotEmpty;
 
     if (hasImage) {
@@ -69,6 +77,8 @@ class ClubBookCover extends StatelessWidget {
         imageUrl!,
         width: width,
         height: height,
+        cacheWidth: (width * pixelRatio).round(),
+        cacheHeight: (height * pixelRatio).round(),
         fit: fit,
         errorBuilder: (_, _, _) {
           return _placeholder();

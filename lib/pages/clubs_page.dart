@@ -460,7 +460,7 @@ class _ClubSettingsPageState extends State<_ClubSettingsPage> {
             child: Column(
               children: [
                 GestureDetector(
-                  onTap: _editarFotoClub,
+                  onTap: _busy ? null : _editarFotoClub,
                   child: Stack(
                     children: [
                       Container(
@@ -536,7 +536,7 @@ class _ClubSettingsPageState extends State<_ClubSettingsPage> {
                       'Copia el código para invitar lectoras',
                     ),
                     trailing: const Icon(Icons.chevron_right_rounded),
-                    onTap: _copyInvite,
+                    onTap: _busy ? null : _copyInvite,
                   ),
                   const Divider(height: 1),
                   ListTile(
@@ -547,7 +547,7 @@ class _ClubSettingsPageState extends State<_ClubSettingsPage> {
                     ),
                     subtitle: const Text('Nombre, descripción y foto'),
                     trailing: const Icon(Icons.chevron_right_rounded),
-                    onTap: _editClub,
+                    onTap: _busy ? null : _editClub,
                   ),
                   const Divider(height: 1),
                 ],
@@ -598,7 +598,7 @@ class _ClubSettingsPageState extends State<_ClubSettingsPage> {
                       Icons.chevron_right_rounded,
                       color: AppColors.danger,
                     ),
-                    onTap: _leaveClub,
+                    onTap: _busy ? null : _leaveClub,
                   ),
                 ],
               ],

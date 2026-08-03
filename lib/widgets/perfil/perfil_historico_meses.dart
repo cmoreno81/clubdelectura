@@ -5,7 +5,6 @@ import '../../pages/monthly_reading_share_page.dart';
 
 import '../../models/general_dashboard.dart';
 import '../../models/perfil_usuario.dart';
-import '../../navigation/book_detail_navigation.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_spacing.dart';
 import '../../theme/app_text_styles.dart';

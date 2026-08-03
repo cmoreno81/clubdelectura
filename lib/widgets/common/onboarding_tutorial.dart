@@ -601,7 +601,6 @@ class _TooltipBubble extends StatelessWidget {
         : Column(mainAxisSize: MainAxisSize.min, children: [bubble, arrow]);
 
     final top = position == FeatureTooltipPosition.below ? null : -(80.0);
-    final bottom = position == FeatureTooltipPosition.below ? null : null;
     final topBelow = position == FeatureTooltipPosition.below ? 42.0 : null;
 
     return Positioned(

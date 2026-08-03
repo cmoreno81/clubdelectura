@@ -1,10 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
-import '../navigation/app_page_route.dart';
 import '../navigation/app_page_route.dart';
 import '../navigation/book_detail_navigation.dart';
 import 'afinidad_detalle_page.dart';
-import 'package:flutter/services.dart';
 
 import '../dev/dev_settings.dart';
 import '../models/dashboard_view_data.dart';
@@ -313,7 +312,7 @@ class _DashboardPageState extends State<DashboardPage> {
                     const SizedBox(height: AppSpacing.md),
                     _AffinityCard(
                       miembros: data.rankingAfinidad,
-                      miAvatarUrl: avatarUrlActual ?? '',
+                      miAvatarUrl: avatarUrlActual,
                     ),
                   ],
 

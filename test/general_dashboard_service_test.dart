@@ -318,15 +318,6 @@ void main() {
         return http.Response(
           jsonEncode({
             'usuario': {'nombre': 'Cristina'},
-            'sagasAbiertas': [
-              {
-                'id': 'old',
-                'nombre': 'Dato anterior',
-                'estado': 'AL_DIA',
-                'leidos': 2,
-                'total': 2,
-              },
-            ],
           }),
           200,
         );

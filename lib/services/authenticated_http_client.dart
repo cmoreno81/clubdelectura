@@ -6,19 +6,23 @@ import '../utils/app_config.dart';
 import 'auth_session_service.dart';
 
 class AuthenticatedHttpClient extends http.BaseClient {
-  AuthenticatedHttpClient({http.Client? inner, AuthSessionService? session})
-    : _inner = inner ?? http.Client(),
-      _session = session ?? AuthSessionService.instance;
+  AuthenticatedHttpClient({
+    http.Client? inner,
+    AuthSessionService? session,
+    this.requestTimeout = const Duration(seconds: 30),
+  }) : _inner = inner ?? http.Client(),
+       _session = session ?? AuthSessionService.instance;
 
   final http.Client _inner;
   final AuthSessionService _session;
-  Future<bool>? _refreshInProgress;
+  final Duration requestTimeout;
 
   @override
   Future<http.StreamedResponse> send(http.BaseRequest request) async {
     final body = await request.finalize().toBytes();
-    final first = _copyRequest(request, body, _session.accessToken);
-    final response = await _inner.send(first);
+    final accessTokenUsed = _session.accessToken;
+    final first = _copyRequest(request, body, accessTokenUsed);
+    final response = await _inner.send(first).timeout(requestTimeout);
 
     if (response.statusCode != 401 || _session.refreshToken == null) {
       return response;
@@ -34,9 +38,14 @@ class AuthenticatedHttpClient extends http.BaseClient {
       );
     }
 
-    final refreshed = await (_refreshInProgress ??= _refresh()).whenComplete(
-      () => _refreshInProgress = null,
-    );
+    final currentAccessToken = _session.accessToken;
+    if (currentAccessToken != null && currentAccessToken != accessTokenUsed) {
+      return _inner
+          .send(_copyRequest(request, body, currentAccessToken))
+          .timeout(requestTimeout);
+    }
+
+    final refreshed = await _session.refreshOnce(_refresh);
     if (!refreshed) {
       await _session.expire();
       return http.StreamedResponse(
@@ -47,7 +56,9 @@ class AuthenticatedHttpClient extends http.BaseClient {
       );
     }
 
-    return _inner.send(_copyRequest(request, body, _session.accessToken));
+    return _inner
+        .send(_copyRequest(request, body, _session.accessToken))
+        .timeout(requestTimeout);
   }
 
   bool _isExpiredAccessToken(List<int> body) {
@@ -85,11 +96,13 @@ class AuthenticatedHttpClient extends http.BaseClient {
     if (refreshToken == null || refreshToken.isEmpty) return false;
 
     try {
-      final response = await _inner.post(
-        Uri.parse('${AppConfig.baseUrl}?action=refreshToken'),
-        headers: const {'Content-Type': 'application/json'},
-        body: jsonEncode({'refreshToken': refreshToken}),
-      );
+      final response = await _inner
+          .post(
+            Uri.parse('${AppConfig.baseUrl}?action=refreshToken'),
+            headers: const {'Content-Type': 'application/json'},
+            body: jsonEncode({'refreshToken': refreshToken}),
+          )
+          .timeout(requestTimeout);
       if (response.statusCode != 200) return false;
       final data = jsonDecode(response.body);
       if (data is! Map<String, dynamic> ||
