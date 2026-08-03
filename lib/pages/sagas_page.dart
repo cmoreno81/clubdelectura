@@ -5,6 +5,7 @@ import '../models/perfil_usuario.dart';
 import '../navigation/app_page_route.dart';
 import '../services/api_exception.dart';
 import '../services/api_service.dart';
+import '../services/series_refresh_notifier.dart';
 import '../services/usuario_service.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_spacing.dart';
@@ -20,10 +21,17 @@ import 'complete_series_page.dart';
 import 'detalle_libro_page.dart';
 import 'explore_catalog_page.dart';
 
+class SagasPageController {
+  Future<void> Function()? _refresh;
+
+  Future<void> refresh() => _refresh?.call() ?? Future<void>.value();
+}
+
 class SagasPage extends StatefulWidget {
-  const SagasPage({super.key, this.showBackButton = false});
+  const SagasPage({super.key, this.showBackButton = false, this.controller});
 
   final bool showBackButton;
+  final SagasPageController? controller;
 
   @override
   State<SagasPage> createState() => _SagasPageState();
@@ -38,11 +46,19 @@ class _SagasPageState extends State<SagasPage> {
   @override
   void initState() {
     super.initState();
+    widget.controller?._refresh = _reload;
+    SeriesRefreshNotifier.instance.addListener(_onSeriesInvalidated);
     _future = _load();
   }
 
+  void _onSeriesInvalidated() => _reload();
+
   @override
   void dispose() {
+    SeriesRefreshNotifier.instance.removeListener(_onSeriesInvalidated);
+    if (identical(widget.controller?._refresh, _reload)) {
+      widget.controller?._refresh = null;
+    }
     _searchController.dispose();
     super.dispose();
   }

@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../models/saga_oculta.dart';
 import '../services/api_exception.dart';
 import '../services/api_service.dart';
+import '../services/series_refresh_notifier.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_spacing.dart';
 import '../widgets/common/club_card.dart';
@@ -39,6 +40,7 @@ class _HiddenSeriesSectionState extends State<HiddenSeriesSection> {
     try {
       await ApiService().mostrarSaga(sagaId: saga.id);
       if (!mounted) return;
+      SeriesRefreshNotifier.instance.invalidate();
       await _reload();
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
