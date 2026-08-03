@@ -115,9 +115,12 @@ class _YearReadingShelfState extends State<YearReadingShelf>
         if (leftDate != null && rightDate == null) return -1;
         final byDate = leftDate?.compareTo(rightDate!) ?? 0;
         if (byDate != 0) {
-          return _order == _YearShelfOrder.firstRead ? byDate : -byDate;
+          return _order == _YearShelfOrder.latestFirst ? byDate : -byDate;
         }
-        return left.$1.compareTo(right.$1);
+        // When dates are equal, reverse index order for firstRead
+        return _order == _YearShelfOrder.latestFirst
+            ? left.$1.compareTo(right.$1)
+            : right.$1.compareTo(left.$1);
       });
     final ordered = indexed.map((entry) => entry.$2).toList(growable: false);
     final visible = !_expanded && ordered.length > 12
