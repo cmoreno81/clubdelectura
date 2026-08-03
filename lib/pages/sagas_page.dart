@@ -435,7 +435,9 @@ class _SagasPageState extends State<SagasPage> {
         content: Text(
           '${saga.nombre} dejará de aparecer en tus sagas y en las '
           'recomendaciones para continuar.\n\nTus libros, lecturas, fechas, '
-          'valoraciones y reseñas no se eliminarán de la biblioteca.',
+          'valoraciones y reseñas no se eliminarán de la biblioteca.\n\n'
+          'Podrás recuperarla cuando quieras desde Perfil → Secciones → '
+          'Sagas ocultas.',
         ),
         actions: [
           TextButton(
@@ -459,7 +461,11 @@ class _SagasPageState extends State<SagasPage> {
       await _reload();
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('${saga.nombre} ya no aparecerá en tus sagas.')),
+        SnackBar(
+          content: Text(
+            '${saga.nombre} se ha ocultado. Puedes recuperarla desde tu perfil.',
+          ),
+        ),
       );
     } on ApiException catch (error) {
       if (!mounted) return;

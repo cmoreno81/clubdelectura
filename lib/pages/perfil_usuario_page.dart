@@ -27,6 +27,7 @@ import 'acerca_de_page.dart';
 import 'ayuda_page.dart';
 import 'change_password_page.dart';
 import 'goodreads_import_page.dart';
+import 'hidden_series_page.dart';
 import '../services/auth_service.dart';
 import '../widgets/common/onboarding_tutorial.dart';
 import '../widgets/dashboard/year_reading_shelf.dart';
@@ -193,9 +194,8 @@ class _PerfilUsuarioPageState extends State<PerfilUsuarioPage> {
   String _menuPerfil = 'RESUMEN';
 
   final _scrollController = ScrollController();
+  final _sectionAnchorKey = GlobalKey();
   Key _shelfKey = UniqueKey();
-  // Offset del ancla calculado y guardado cuando el layout está estable
-  double? _anchorOffset;
 
   @override
   void initState() {
@@ -203,29 +203,13 @@ class _PerfilUsuarioPageState extends State<PerfilUsuarioPage> {
 
     future = _cargarPerfil();
     _cargarUsuarioActual();
-    // Recalcular el offset del ancla cuando el scroll se detiene
-    // (el YearReadingShelf puede cambiar altura durante su animación)
-    _scrollController.addListener(_onScroll);
-  }
-
-  bool _scrolling = false;
-  void _onScroll() {
-    if (!_scrollController.position.isScrollingNotifier.value && _scrolling) {
-      _scrolling = false;
-    }
-    if (_scrollController.position.isScrollingNotifier.value) {
-      _scrolling = true;
-    }
   }
 
   @override
   void dispose() {
-    _scrollController.removeListener(_onScroll);
     _scrollController.dispose();
     super.dispose();
   }
-
-  // offset calculado en cada build por _MeasuredBox
 
   void _seleccionarSeccion(String seccion) {
     setState(() => _menuPerfil = seccion);
@@ -239,18 +223,17 @@ class _PerfilUsuarioPageState extends State<PerfilUsuarioPage> {
       }
       return;
     }
-    // Usamos el offset precalculado cuando el layout estaba estable
-    final target = _anchorOffset;
-    if (target != null && _scrollController.hasClients) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (!mounted) return;
-        _scrollController.animateTo(
-          target,
-          duration: const Duration(milliseconds: 450),
-          curve: Curves.easeInOut,
-        );
-      });
-    }
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      final anchorContext = _sectionAnchorKey.currentContext;
+      if (anchorContext == null) return;
+      Scrollable.ensureVisible(
+        anchorContext,
+        duration: const Duration(milliseconds: 450),
+        curve: Curves.easeInOut,
+        alignment: 0,
+      );
+    });
   }
 
   Future<void> _editarAvatar(PerfilUsuario perfil) async {
@@ -384,43 +367,6 @@ class _PerfilUsuarioPageState extends State<PerfilUsuarioPage> {
               initialValue: _menuPerfil,
               position: PopupMenuPosition.under,
               constraints: const BoxConstraints(minWidth: 250, maxWidth: 290),
-              child: Container(
-                margin: const EdgeInsets.only(right: AppSpacing.sm),
-                padding: const EdgeInsets.symmetric(
-                  horizontal: AppSpacing.sm,
-                  vertical: 7,
-                ),
-                decoration: BoxDecoration(
-                  color: AppColors.primaryLight.withValues(alpha: .65),
-                  borderRadius: BorderRadius.circular(AppRadius.pill),
-                  border: Border.all(
-                    color: AppColors.primary.withValues(alpha: .22),
-                  ),
-                ),
-                child: const Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(
-                      Icons.grid_view_rounded,
-                      size: 18,
-                      color: AppColors.primaryDark,
-                    ),
-                    SizedBox(width: 6),
-                    Text(
-                      'Secciones',
-                      style: TextStyle(
-                        color: AppColors.primaryDark,
-                        fontWeight: FontWeight.w800,
-                      ),
-                    ),
-                    SizedBox(width: 2),
-                    Icon(
-                      Icons.arrow_drop_down_rounded,
-                      color: AppColors.primaryDark,
-                    ),
-                  ],
-                ),
-              ),
               onSelected: _seleccionarSeccion,
               itemBuilder: (_) => [
                 PopupMenuItem(
@@ -463,7 +409,55 @@ class _PerfilUsuarioPageState extends State<PerfilUsuarioPage> {
                     selected: _menuPerfil == 'MESES',
                   ),
                 ),
+                if (esMiPerfil)
+                  PopupMenuItem(
+                    value: 'SAGAS_OCULTAS',
+                    height: 70,
+                    child: _ProfileMenuOption(
+                      icon: Icons.visibility_off_outlined,
+                      title: 'Sagas ocultas',
+                      subtitle: 'Recupera sagas de tu seguimiento',
+                      selected: _menuPerfil == 'SAGAS_OCULTAS',
+                    ),
+                  ),
               ],
+              child: Container(
+                margin: const EdgeInsets.only(right: AppSpacing.sm),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: AppSpacing.sm,
+                  vertical: 7,
+                ),
+                decoration: BoxDecoration(
+                  color: AppColors.primaryLight.withValues(alpha: .65),
+                  borderRadius: BorderRadius.circular(AppRadius.pill),
+                  border: Border.all(
+                    color: AppColors.primary.withValues(alpha: .22),
+                  ),
+                ),
+                child: const Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      Icons.grid_view_rounded,
+                      size: 18,
+                      color: AppColors.primaryDark,
+                    ),
+                    SizedBox(width: 6),
+                    Text(
+                      'Secciones',
+                      style: TextStyle(
+                        color: AppColors.primaryDark,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                    SizedBox(width: 2),
+                    Icon(
+                      Icons.arrow_drop_down_rounded,
+                      color: AppColors.primaryDark,
+                    ),
+                  ],
+                ),
+              ),
             ),
           ), // FeatureTooltip
         ],
@@ -551,14 +545,7 @@ class _PerfilUsuarioPageState extends State<PerfilUsuarioPage> {
                   },
                 ),
 
-                // ── Sección intermedia ──
-                // _MeasuredBox reporta su posición en el scroll después
-                // de cada build, sin depender de GlobalKey.currentContext.
-                _MeasuredBox(
-                  scrollController: _scrollController,
-                  onOffset: (offset) => _anchorOffset = offset,
-                  child: const SizedBox(height: AppSpacing.xl),
-                ),
+                SizedBox(key: _sectionAnchorKey, height: AppSpacing.xl),
 
                 if (_menuPerfil == 'TIMELINE') ...[
                   ClubSectionTitle(
@@ -662,6 +649,19 @@ class _PerfilUsuarioPageState extends State<PerfilUsuarioPage> {
                         child: _libroAbandonado(libro: libro),
                       ),
                     ),
+                  const SizedBox(height: AppSpacing.lg),
+                ],
+
+                if (_menuPerfil == 'SAGAS_OCULTAS' && esMiPerfil) ...[
+                  const ClubSectionTitle(
+                    title: 'Sagas ocultas',
+                    subtitle:
+                        'Gestiona las sagas que apartaste del seguimiento',
+                    icon: Icons.visibility_off_outlined,
+                    padding: EdgeInsets.zero,
+                  ),
+                  const SizedBox(height: AppSpacing.sm),
+                  const HiddenSeriesSection(),
                   const SizedBox(height: AppSpacing.lg),
                 ],
 
@@ -1453,58 +1453,4 @@ class _PerfilUsuarioPageState extends State<PerfilUsuarioPage> {
       ),
     );
   }
-}
-
-/// Widget que mide su propia posición dentro del ScrollController
-/// y la notifica via callback después de cada build.
-/// No usa GlobalKey — usa su propio BuildContext directamente.
-class _MeasuredBox extends StatefulWidget {
-  const _MeasuredBox({
-    required this.scrollController,
-    required this.onOffset,
-    required this.child,
-  });
-
-  final ScrollController scrollController;
-  final ValueChanged<double> onOffset;
-  final Widget child;
-
-  @override
-  State<_MeasuredBox> createState() => _MeasuredBoxState();
-}
-
-class _MeasuredBoxState extends State<_MeasuredBox> {
-  @override
-  void initState() {
-    super.initState();
-    _measure();
-  }
-
-  @override
-  void didUpdateWidget(_MeasuredBox old) {
-    super.didUpdateWidget(old);
-    _measure();
-  }
-
-  void _measure() {
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted) return;
-      if (!widget.scrollController.hasClients) return;
-      // context aquí es el BuildContext de ESTE widget, siempre válido
-      // mientras el widget esté montado — no depende de GlobalKey.
-      final box = context.findRenderObject() as RenderBox?;
-      if (box == null || !box.attached) return;
-      // Posición en coordenadas de pantalla
-      final globalPos = box.localToGlobal(Offset.zero);
-      // Offset dentro del scroll = posición en pantalla + scroll actual
-      final offset = (widget.scrollController.offset + globalPos.dy).clamp(
-        0.0,
-        widget.scrollController.position.maxScrollExtent,
-      );
-      widget.onOffset(offset);
-    });
-  }
-
-  @override
-  Widget build(BuildContext context) => widget.child;
 }

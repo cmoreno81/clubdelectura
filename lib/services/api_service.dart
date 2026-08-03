@@ -27,6 +27,7 @@ import '../models/tendencias_club.dart';
 import '../models/atmosfera_club.dart';
 import '../models/catalog_book.dart';
 import '../models/goodreads_import.dart';
+import '../models/saga_oculta.dart';
 import 'api_exception.dart';
 
 class ApiService {
@@ -331,6 +332,46 @@ class ApiService {
         message: decoded is Map<String, dynamic>
             ? decoded['mensaje']?.toString() ?? 'No se pudo ocultar la saga.'
             : 'No se pudo ocultar la saga.',
+      );
+    }
+  }
+
+  Future<List<SagaOculta>> getSagasOcultas() async {
+    final response = await _client.get(
+      Uri.parse(baseUrl).replace(queryParameters: {'action': 'sagasOcultas'}),
+    );
+    if (response.statusCode != 200) {
+      throw ApiException.fromResponse(response);
+    }
+    final decoded = jsonDecode(response.body);
+    final items = decoded is Map<String, dynamic>
+        ? decoded['sagas'] as List<dynamic>? ?? const []
+        : decoded is List<dynamic>
+        ? decoded
+        : const <dynamic>[];
+    return items
+        .whereType<Map>()
+        .map((item) => SagaOculta.fromJson(Map<String, dynamic>.from(item)))
+        .where((saga) => saga.id.trim().isNotEmpty)
+        .toList(growable: false);
+  }
+
+  Future<void> mostrarSaga({required String sagaId}) async {
+    final response = await _client.post(
+      Uri.parse('$baseUrl?action=mostrarSaga'),
+      headers: const {'Content-Type': 'application/json'},
+      body: jsonEncode({'sagaId': sagaId}),
+    );
+    if (response.statusCode != 200) {
+      throw ApiException.fromResponse(response);
+    }
+    final decoded = jsonDecode(response.body);
+    if (decoded is! Map<String, dynamic> || decoded['ok'] != true) {
+      throw ApiException(
+        statusCode: response.statusCode,
+        message: decoded is Map<String, dynamic>
+            ? decoded['mensaje']?.toString() ?? 'No se pudo mostrar la saga.'
+            : 'No se pudo mostrar la saga.',
       );
     }
   }
