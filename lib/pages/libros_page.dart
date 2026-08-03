@@ -1042,6 +1042,11 @@ class _LibrosPageState extends State<LibrosPage> with WidgetsBindingObserver {
 
         agrupados[clave]!.registros.add(libro);
 
+        if (agrupados[clave]!.coverUrl.trim().isEmpty &&
+            libro.coverUrl.trim().isNotEmpty) {
+          agrupados[clave]!.coverUrl = libro.coverUrl;
+        }
+
         if (libro.yaLoTengo) {
           agrupados[clave]!.yaLoTengo = true;
         }
@@ -1073,6 +1078,10 @@ class _LibrosPageState extends State<LibrosPage> with WidgetsBindingObserver {
           );
 
           agrupado.finalizados.add(finalizado);
+          if (agrupado.coverUrl.trim().isEmpty &&
+              finalizado.coverUrl.trim().isNotEmpty) {
+            agrupado.coverUrl = finalizado.coverUrl;
+          }
           if (finalizado.yaLoTengo) {
             agrupado.leidoPorMi = true;
             agrupado.yaLoTengo = true;
@@ -1141,7 +1150,12 @@ class _LibrosPageState extends State<LibrosPage> with WidgetsBindingObserver {
         ),
       );
 
-      agrupados[clave]!.finalizados.add(finalizado);
+      final agrupado = agrupados[clave]!;
+      agrupado.finalizados.add(finalizado);
+      if (agrupado.coverUrl.trim().isEmpty &&
+          finalizado.coverUrl.trim().isNotEmpty) {
+        agrupado.coverUrl = finalizado.coverUrl;
+      }
       if (finalizado.yaLoTengo) {
         agrupados[clave]!.leidoPorMi = true;
         agrupados[clave]!.yaLoTengo = true;

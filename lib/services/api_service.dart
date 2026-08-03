@@ -783,8 +783,35 @@ class ApiService {
     final libros = await librosFuture;
     final finalizados = await finalizadosFuture;
 
-    return LibrosData(libros: libros, finalizados: finalizados);
+    return LibrosData(
+      libros: libros,
+      finalizados: _deduplicarFinalizados(finalizados),
+    );
   }
+
+  List<LibroFinalizado> _deduplicarFinalizados(
+    List<LibroFinalizado> finalizados,
+  ) {
+    final resultado = <String, LibroFinalizado>{};
+    for (final item in finalizados) {
+      final normalizedTitle = _normalizarTitulo(item.libro);
+      final bookKey = normalizedTitle.isNotEmpty
+          ? normalizedTitle
+          : item.bookId.trim().toLowerCase();
+      final key = '$bookKey|${item.usuario.trim().toLowerCase()}';
+      final anterior = resultado[key];
+      if (anterior == null ||
+          _riquezaFinalizado(item) > _riquezaFinalizado(anterior)) {
+        resultado[key] = item;
+      }
+    }
+    return resultado.values.toList(growable: false);
+  }
+
+  int _riquezaFinalizado(LibroFinalizado item) =>
+      (item.coverUrl.trim().isNotEmpty ? 4 : 0) +
+      (item.resena.trim().isNotEmpty ? 2 : 0) +
+      (item.valoracion.trim().isNotEmpty ? 1 : 0);
 
   Future<Ranking> getRanking({int? anio}) async {
     final year = anio ?? DateTime.now().year;

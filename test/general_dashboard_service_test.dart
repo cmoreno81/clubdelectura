@@ -215,6 +215,52 @@ void main() {
     expect(dashboard.pagesReadThisMonth, 504);
   });
 
+  test('recupera la portada de biblioteca para un alta reciente duplicada', () {
+    final dashboard = GeneralDashboard.fromJson({
+      'miBiblioteca': [
+        {
+          'id': 'book-1',
+          'titulo': 'Distracción',
+          'coverUrl': 'https://example.com/distraccion.jpg',
+        },
+      ],
+      'ultimasIncorporaciones': [
+        {'id': 'book-1', 'titulo': 'Distracción', 'coverUrl': ''},
+        {
+          'id': 'duplicated-book-1',
+          'titulo': 'Distracción',
+          'coverUrl': 'https://example.com/distraccion.jpg',
+        },
+      ],
+    });
+
+    expect(dashboard.latestAdditions, hasLength(1));
+    expect(
+      dashboard.latestAdditions.single.coverUrl,
+      'https://example.com/distraccion.jpg',
+    );
+  });
+
+  test('recupera la portada por título si los ids duplicados no coinciden', () {
+    final dashboard = GeneralDashboard.fromJson({
+      'miBiblioteca': [
+        {
+          'id': 'canonical',
+          'titulo': 'Distracción',
+          'coverUrl': 'https://example.com/distraccion.jpg',
+        },
+      ],
+      'ultimasIncorporaciones': [
+        {'id': 'duplicate', 'titulo': 'Distraccion', 'coverUrl': ''},
+      ],
+    });
+
+    expect(
+      dashboard.latestAdditions.single.coverUrl,
+      'https://example.com/distraccion.jpg',
+    );
+  });
+
   test('un backend anterior sin aviso de Clubvisión sigue siendo válido', () {
     final dashboard = GeneralDashboard.fromJson(const {});
 

@@ -39,6 +39,14 @@ class GeneralDashboard {
 
   factory GeneralDashboard.fromJson(Map<String, dynamic> json) {
     final user = Map<String, dynamic>.from(json['usuario'] as Map? ?? {});
+    final personalLibrary = _list(
+      json['miBiblioteca'],
+      PersonalLibraryBook.fromJson,
+    );
+    final latestAdditions = _reconcileLatestAdditions(
+      _list(json['ultimasIncorporaciones'], GeneralLatestBook.fromJson),
+      personalLibrary,
+    );
     return GeneralDashboard(
       userName: user['nombre']?.toString() ?? '',
       avatarUrl: user['avatarUrl']?.toString() ?? '',
@@ -47,14 +55,8 @@ class GeneralDashboard {
       ),
       clubs: _list(json['clubes'], GeneralClub.fromJson),
       currentBooks: _list(json['leyendoAhora'], GeneralBook.fromJson),
-      personalLibrary: _list(
-        json['miBiblioteca'],
-        PersonalLibraryBook.fromJson,
-      ),
-      latestAdditions: _list(
-        json['ultimasIncorporaciones'],
-        GeneralLatestBook.fromJson,
-      ),
+      personalLibrary: personalLibrary,
+      latestAdditions: latestAdditions,
       clubvisionNotice: json['clubvisionAviso'] is Map
           ? GeneralClubvisionNotice.fromJson(
               Map<String, dynamic>.from(json['clubvisionAviso'] as Map),
@@ -73,6 +75,54 @@ class GeneralDashboard {
     );
   }
 }
+
+List<GeneralLatestBook> _reconcileLatestAdditions(
+  List<GeneralLatestBook> latest,
+  List<PersonalLibraryBook> library,
+) {
+  final libraryById = <String, PersonalLibraryBook>{};
+  final libraryByTitle = <String, PersonalLibraryBook>{};
+  for (final book in library) {
+    if (book.id.trim().isNotEmpty && book.coverUrl.trim().isNotEmpty) {
+      libraryById[book.id.trim()] = book;
+    }
+    if (book.coverUrl.trim().isNotEmpty) {
+      libraryByTitle[_normalizedTitle(book.title)] = book;
+    }
+  }
+
+  final reconciled = <String, GeneralLatestBook>{};
+  for (final book in latest) {
+    final normalizedTitle = _normalizedTitle(book.title);
+    final key = normalizedTitle.isNotEmpty
+        ? 'title:$normalizedTitle'
+        : 'id:${book.id.trim()}';
+    final libraryBook =
+        libraryById[book.id.trim()] ??
+        libraryByTitle[_normalizedTitle(book.title)];
+    final candidate = book.coverUrl.trim().isNotEmpty || libraryBook == null
+        ? book
+        : book.withCover(libraryBook.coverUrl);
+    final previous = reconciled[key];
+    if (previous == null ||
+        (previous.coverUrl.trim().isEmpty &&
+            candidate.coverUrl.trim().isNotEmpty)) {
+      reconciled[key] = candidate;
+    }
+  }
+  return reconciled.values.toList(growable: false);
+}
+
+String _normalizedTitle(String value) => value
+    .trim()
+    .toLowerCase()
+    .replaceAll(RegExp(r'[áàäâ]'), 'a')
+    .replaceAll(RegExp(r'[éèëê]'), 'e')
+    .replaceAll(RegExp(r'[íìïî]'), 'i')
+    .replaceAll(RegExp(r'[óòöô]'), 'o')
+    .replaceAll(RegExp(r'[úùüû]'), 'u')
+    .replaceAll(RegExp(r'[^a-z0-9]+'), ' ')
+    .trim();
 
 class GeneralClubvisionNotice {
   const GeneralClubvisionNotice({
@@ -150,6 +200,15 @@ class GeneralLatestBook {
   final String genre;
   final String coverUrl;
   final String addedAt;
+
+  GeneralLatestBook withCover(String value) => GeneralLatestBook(
+    id: id,
+    title: title,
+    author: author,
+    genre: genre,
+    coverUrl: value,
+    addedAt: addedAt,
+  );
 
   factory GeneralLatestBook.fromJson(Map<String, dynamic> json) =>
       GeneralLatestBook(
