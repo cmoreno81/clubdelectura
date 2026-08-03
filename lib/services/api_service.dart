@@ -212,7 +212,7 @@ class ApiService {
     required String sagaId,
     required String numero,
     required CatalogBook book,
-    required String estado,
+    String? estado,
     String? formato,
     String? valoracion,
     String? fechaInicio,
@@ -233,7 +233,7 @@ class ApiService {
         'isbn': book.isbn,
         'paginas': book.pages,
         'anioPublicacion': book.publicationYear,
-        'estado': estado,
+        if (estado?.trim().isNotEmpty == true) 'estado': estado!.trim(),
         if (formato?.trim().isNotEmpty == true) 'formato': formato!.trim(),
         if (valoracion?.trim().isNotEmpty == true)
           'valoracion': valoracion!.trim(),

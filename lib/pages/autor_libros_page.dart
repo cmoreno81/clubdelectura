@@ -42,8 +42,9 @@ class _AutorLibrosPageState extends State<AutorLibrosPage> {
         .split(' ')
         .where((p) => p.isNotEmpty)
         .toList();
-    if (palabras.length >= 2)
+    if (palabras.length >= 2) {
       return '${palabras[0][0]}${palabras[1][0]}'.toUpperCase();
+    }
     return nombre.isNotEmpty ? nombre[0].toUpperCase() : '?';
   }
 

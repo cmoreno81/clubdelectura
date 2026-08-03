@@ -1,12 +1,20 @@
 import 'package:flutter/material.dart';
 
 import '../models/notificacion.dart';
+import '../navigation/app_page_route.dart';
+import '../navigation/book_detail_navigation.dart';
+import '../services/api_exception.dart';
 import '../services/api_service.dart';
+import '../services/club_context_controller.dart';
+import '../services/club_service.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_spacing.dart';
 import '../theme/app_text_styles.dart';
 import '../widgets/common/club_card.dart';
 import '../widgets/error_view.dart';
+import 'clubvision_menu_page.dart';
+import 'home_page.dart';
+import 'lectura_page.dart';
 
 class NotificacionesPage extends StatefulWidget {
   const NotificacionesPage({super.key});
@@ -18,6 +26,7 @@ class NotificacionesPage extends StatefulWidget {
 class _NotificacionesPageState extends State<NotificacionesPage> {
   late Future<NotificacionesData> _future;
   final Set<String> _eliminadas = {};
+  final Set<String> _abriendo = {};
 
   @override
   void initState() {
@@ -48,11 +57,15 @@ class _NotificacionesPageState extends State<NotificacionesPage> {
     try {
       await ApiService().eliminarNotificacion(notificacion.id);
       return true;
-    } catch (_) {
+    } catch (error) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('No se ha podido borrar la notificación'),
+          SnackBar(
+            content: Text(
+              error is ApiException
+                  ? error.message
+                  : 'No se ha podido borrar la notificación',
+            ),
           ),
         );
       }
@@ -145,9 +158,16 @@ class _NotificacionesPageState extends State<NotificacionesPage> {
                 ),
                 child: _NotificacionCard(
                   notificacion: n,
+                  loading: _abriendo.contains(n.id),
                   onTap: () async {
-                    if (!n.leida) await _marcarLeida(n.id);
-                    if (mounted) _navegarA(n);
+                    if (_abriendo.contains(n.id)) return;
+                    setState(() => _abriendo.add(n.id));
+                    try {
+                      if (!n.leida) await _marcarLeida(n.id);
+                      if (mounted) await _navegarA(n);
+                    } finally {
+                      if (mounted) setState(() => _abriendo.remove(n.id));
+                    }
                   },
                 ),
               );
@@ -158,18 +178,105 @@ class _NotificacionesPageState extends State<NotificacionesPage> {
     );
   }
 
-  void _navegarA(Notificacion n) {
-    // Navegación contextual según tipo — por ahora vuelve al dashboard
-    // En el futuro: navegar al club específico, libro, etc.
-    Navigator.pop(context);
+  Future<void> _navegarA(Notificacion n) async {
+    final selectedClub = await _selectClub(n.clubId);
+    if (!mounted || !selectedClub) return;
+
+    final title = _bookTitle(n);
+    switch (n.tipo) {
+      case 'LIBRO_TERMINADO':
+      case 'LIBRO_EMPEZADO':
+      case 'LIBRO_NUEVO_BIBLIOTECA':
+        if (title.isNotEmpty) {
+          await openBookDetail(
+            context,
+            title: title,
+            bookId: n.bookId?.trim() ?? '',
+          );
+          return;
+        }
+        break;
+      case 'LECTURA_NUEVA':
+      case 'COMENTARIO_LECTURA':
+        if (title.isNotEmpty) {
+          await Navigator.push<void>(
+            context,
+            AppPageRoute(builder: (_) => LecturaPage(libro: title)),
+          );
+          return;
+        }
+        break;
+      case 'CLUBVISION_ABIERTA':
+      case 'CLUBVISION_RESULTADOS':
+        await Navigator.push<void>(
+          context,
+          AppPageRoute(builder: (_) => const ClubvisionMenuPage()),
+        );
+        return;
+      case 'NUEVA_MIEMBRO':
+        final clubId = n.clubId?.trim() ?? '';
+        final clubs = await ClubService().getMyClubs();
+        if (!mounted) return;
+        final matches = clubs.clubs.where((club) => club.id == clubId);
+        if (matches.isNotEmpty) {
+          await Navigator.push<void>(
+            context,
+            AppPageRoute(builder: (_) => HomePage(club: matches.first)),
+          );
+          return;
+        }
+        break;
+      default:
+        break;
+    }
+
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Esta notificación no tiene un destino disponible.'),
+        ),
+      );
+    }
+  }
+
+  Future<bool> _selectClub(String? clubId) async {
+    final id = clubId?.trim() ?? '';
+    if (id.isEmpty) return true;
+    try {
+      await ClubService().selectClub(id);
+      ClubContextController.instance.refresh();
+      return true;
+    } on ApiException catch (error) {
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(error.message)));
+      }
+      return false;
+    }
+  }
+
+  String _bookTitle(Notificacion notification) {
+    final extra = notification.extra ?? const <String, dynamic>{};
+    for (final key in const ['bookTitle', 'titulo', 'libro']) {
+      final value = extra[key]?.toString().trim() ?? '';
+      if (value.isNotEmpty) return value;
+    }
+    final quoted = RegExp(r'[“"]([^”"]+)[”"]').firstMatch(notification.mensaje);
+    return quoted?.group(1)?.trim() ?? '';
   }
 }
 
 class _NotificacionCard extends StatelessWidget {
-  const _NotificacionCard({required this.notificacion, required this.onTap});
+  const _NotificacionCard({
+    required this.notificacion,
+    required this.onTap,
+    required this.loading,
+  });
 
   final Notificacion notificacion;
   final VoidCallback onTap;
+  final bool loading;
 
   @override
   Widget build(BuildContext context) {
@@ -216,7 +323,13 @@ class _NotificacionCard extends StatelessWidget {
                         ),
                       ),
                     ),
-                    if (!leida)
+                    if (loading)
+                      const SizedBox(
+                        width: 16,
+                        height: 16,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    else if (!leida)
                       Container(
                         width: 8,
                         height: 8,

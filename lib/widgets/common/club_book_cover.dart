@@ -71,14 +71,21 @@ class ClubBookCover extends StatelessWidget {
     required double pixelRatio,
   }) {
     final hasImage = imageUrl != null && imageUrl!.trim().isNotEmpty;
+    final validPixelRatio = pixelRatio.isFinite && pixelRatio > 0;
+    final cacheWidth = width.isFinite && width > 0 && validPixelRatio
+        ? (width * pixelRatio).round()
+        : null;
+    final cacheHeight = height.isFinite && height > 0 && validPixelRatio
+        ? (height * pixelRatio).round()
+        : null;
 
     if (hasImage) {
       return Image.network(
         imageUrl!,
         width: width,
         height: height,
-        cacheWidth: (width * pixelRatio).round(),
-        cacheHeight: (height * pixelRatio).round(),
+        cacheWidth: cacheWidth,
+        cacheHeight: cacheHeight,
         fit: fit,
         errorBuilder: (_, _, _) {
           return _placeholder();

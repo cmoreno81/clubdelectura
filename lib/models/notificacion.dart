@@ -22,28 +22,29 @@ class Notificacion {
   final Map<String, dynamic>? extra;
 
   factory Notificacion.fromJson(Map<String, dynamic> json) => Notificacion(
-        id: json['id']?.toString() ?? '',
-        tipo: json['tipo']?.toString() ?? '',
-        titulo: json['titulo']?.toString() ?? '',
-        mensaje: json['mensaje']?.toString() ?? '',
-        leida: json['leida'] == true,
-        fecha: json['fecha']?.toString() ?? '',
-        clubId: json['clubId']?.toString(),
-        bookId: json['bookId']?.toString(),
-        extra: json['extra'] as Map<String, dynamic>?,
-      );
+    id: json['id']?.toString() ?? '',
+    tipo: json['tipo']?.toString() ?? '',
+    titulo: json['titulo']?.toString() ?? '',
+    mensaje: json['mensaje']?.toString() ?? '',
+    leida: json['leida'] == true,
+    fecha: json['fecha']?.toString() ?? '',
+    clubId: json['clubId']?.toString(),
+    bookId: json['bookId']?.toString(),
+    extra: json['extra'] as Map<String, dynamic>?,
+  );
 
   /// Emoji representativo según el tipo
   String get emoji => switch (tipo) {
-        'CLUBVISION_ABIERTA'       => '🗳️',
-        'CLUBVISION_RESULTADOS'    => '🏆',
-        'LECTURA_NUEVA'            => '📖',
-        'COMENTARIO_LECTURA'       => '💬',
-        'LIBRO_TERMINADO'          => '✅',
-        'LIBRO_NUEVO_BIBLIOTECA'   => '✨',
-        'NUEVA_MIEMBRO'            => '👋',
-        _                          => '🔔',
-      };
+    'CLUBVISION_ABIERTA' => '🗳️',
+    'CLUBVISION_RESULTADOS' => '🏆',
+    'LECTURA_NUEVA' => '📖',
+    'COMENTARIO_LECTURA' => '💬',
+    'LIBRO_TERMINADO' => '✅',
+    'LIBRO_EMPEZADO' => '📖',
+    'LIBRO_NUEVO_BIBLIOTECA' => '✨',
+    'NUEVA_MIEMBRO' => '👋',
+    _ => '🔔',
+  };
 }
 
 class NotificacionesData {

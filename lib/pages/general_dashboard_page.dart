@@ -421,8 +421,8 @@ class _GeneralDashboardPageState extends State<GeneralDashboardPage> {
                       if (data.trendingAuthors.isNotEmpty) ...[
                         const SizedBox(height: AppSpacing.xl),
                         _sectionTitle(
-                          'Autoras del momento',
-                          'Las más presentes en vuestras bibliotecas',
+                          'Autores del momento',
+                          'Los más presentes en vuestras bibliotecas',
                           Icons.people_outline_rounded,
                         ),
                         const SizedBox(height: AppSpacing.sm),

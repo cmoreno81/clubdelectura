@@ -120,9 +120,9 @@ class PerfilSagaCard extends StatelessWidget {
                             visualDensity: VisualDensity.compact,
                             onPressed: onHideSeries,
                             icon: const Icon(
-                              Icons.delete_outline_rounded,
+                              Icons.visibility_off_outlined,
                               size: 20,
-                              color: AppColors.danger,
+                              color: AppColors.primary,
                             ),
                           ),
                       ],

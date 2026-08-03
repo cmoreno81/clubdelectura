@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:flutter/material.dart';
 
 import '../../main.dart' show routeObserver;
@@ -5,6 +7,8 @@ import '../../models/general_dashboard.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_radius.dart';
 import '../common/club_book_cover.dart';
+
+enum _YearShelfOrder { random, firstRead, latestFirst }
 
 class YearReadingShelf extends StatefulWidget {
   const YearReadingShelf({
@@ -28,6 +32,9 @@ class _YearReadingShelfState extends State<YearReadingShelf>
     with SingleTickerProviderStateMixin
     implements RouteAware {
   bool _expanded = false;
+  _YearShelfOrder _order = _YearShelfOrder.random;
+  final _random = Random();
+  final Map<String, double> _randomRanks = {};
   late final AnimationController _ctrl;
 
   @override
@@ -40,7 +47,31 @@ class _YearReadingShelfState extends State<YearReadingShelf>
         milliseconds: 400 + widget.books.length.clamp(0, 12) * 85,
       ),
     );
+    _seedRandomRanks(widget.books);
     _ctrl.forward(from: 0);
+  }
+
+  @override
+  void didUpdateWidget(covariant YearReadingShelf oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    _seedRandomRanks(widget.books);
+  }
+
+  String _randomKey(YearShelfBook book, int index) =>
+      '${book.id}|${book.bookId}|${book.finishedAt}|$index';
+
+  void _seedRandomRanks(List<YearShelfBook> books) {
+    for (final entry in books.indexed) {
+      _randomRanks.putIfAbsent(
+        _randomKey(entry.$2, entry.$1),
+        _random.nextDouble,
+      );
+    }
+  }
+
+  void _reshuffle() {
+    _randomRanks.clear();
+    _seedRandomRanks(widget.books);
   }
 
   @override
@@ -71,10 +102,26 @@ class _YearReadingShelfState extends State<YearReadingShelf>
 
   @override
   Widget build(BuildContext context) {
-    final ordered = [...widget.books]
-      ..sort((left, right) => left.finishedAt.compareTo(right.finishedAt));
+    final indexed = widget.books.indexed.toList(growable: false)
+      ..sort((left, right) {
+        if (_order == _YearShelfOrder.random) {
+          final leftRank = _randomRanks[_randomKey(left.$2, left.$1)] ?? 0;
+          final rightRank = _randomRanks[_randomKey(right.$2, right.$1)] ?? 0;
+          return leftRank.compareTo(rightRank);
+        }
+        final leftDate = DateTime.tryParse(left.$2.finishedAt);
+        final rightDate = DateTime.tryParse(right.$2.finishedAt);
+        if (leftDate == null && rightDate != null) return 1;
+        if (leftDate != null && rightDate == null) return -1;
+        final byDate = leftDate?.compareTo(rightDate!) ?? 0;
+        if (byDate != 0) {
+          return _order == _YearShelfOrder.firstRead ? byDate : -byDate;
+        }
+        return left.$1.compareTo(right.$1);
+      });
+    final ordered = indexed.map((entry) => entry.$2).toList(growable: false);
     final visible = !_expanded && ordered.length > 12
-        ? ordered.sublist(ordered.length - 12)
+        ? ordered.sublist(0, 12)
         : ordered;
 
     return Container(
@@ -128,6 +175,39 @@ class _YearReadingShelfState extends State<YearReadingShelf>
                       ),
                     ],
                   ),
+                ),
+                PopupMenuButton<_YearShelfOrder>(
+                  tooltip: 'Ordenar biblioteca anual',
+                  initialValue: _order,
+                  onSelected: (value) {
+                    setState(() {
+                      if (value == _YearShelfOrder.random) _reshuffle();
+                      _order = value;
+                    });
+                    _ctrl.forward(from: 0);
+                  },
+                  icon: const Icon(
+                    Icons.swap_vert_rounded,
+                    color: AppColors.primaryDark,
+                    size: 21,
+                  ),
+                  itemBuilder: (context) => [
+                    CheckedPopupMenuItem(
+                      value: _YearShelfOrder.random,
+                      checked: _order == _YearShelfOrder.random,
+                      child: const Text('Orden aleatorio'),
+                    ),
+                    CheckedPopupMenuItem(
+                      value: _YearShelfOrder.firstRead,
+                      checked: _order == _YearShelfOrder.firstRead,
+                      child: const Text('Primero del año'),
+                    ),
+                    CheckedPopupMenuItem(
+                      value: _YearShelfOrder.latestFirst,
+                      checked: _order == _YearShelfOrder.latestFirst,
+                      child: const Text('Más recientes primero'),
+                    ),
+                  ],
                 ),
                 if (widget.onShare != null) ...[
                   const SizedBox(width: 4),

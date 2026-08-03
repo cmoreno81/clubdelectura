@@ -98,7 +98,7 @@ class _CompleteSeriesPageState extends State<CompleteSeriesPage> {
         sagaId: widget.series.id,
         numero: order,
         book: book,
-        estado: selection.status,
+        estado: selection.status.isEmpty ? null : selection.status,
         formato: selection.format,
         valoracion: selection.rating,
         fechaInicio: selection.startDate,
@@ -130,8 +130,9 @@ class _CompleteSeriesPageState extends State<CompleteSeriesPage> {
   }
 
   Future<_SeriesVolumeSelection?> _askVolumeDetails(CatalogBook book) async {
+    final preservePersonalData = !book.isExternal && book.inMyLibrary;
     var order = _suggestedOrder().toString();
-    var status = 'PENDIENTE';
+    var status = preservePersonalData ? '' : 'PENDIENTE';
     var format = '';
     var rating = '';
     DateTime? startDate;
@@ -149,6 +150,15 @@ class _CompleteSeriesPageState extends State<CompleteSeriesPage> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(book.title),
+                if (preservePersonalData) ...[
+                  const SizedBox(height: AppSpacing.sm),
+                  const Text(
+                    'Este libro ya está en tu biblioteca. Solo se añadirá a '
+                    'la saga; conservaremos su estado, fechas, formato, '
+                    'valoración y reseña.',
+                    style: TextStyle(color: AppColors.textSecondary),
+                  ),
+                ],
                 const SizedBox(height: AppSpacing.md),
                 TextFormField(
                   initialValue: order,
@@ -162,83 +172,10 @@ class _CompleteSeriesPageState extends State<CompleteSeriesPage> {
                     hintText: '1, 2, 2.5…',
                   ),
                 ),
-                const SizedBox(height: AppSpacing.md),
-                const Text(
-                  'Estado de lectura',
-                  style: TextStyle(fontWeight: FontWeight.w700),
-                ),
-                const SizedBox(height: AppSpacing.xs),
-                Wrap(
-                  spacing: AppSpacing.xs,
-                  runSpacing: AppSpacing.xs,
-                  children: [
-                    for (final option in const [
-                      ('PENDIENTE', 'Pendiente'),
-                      ('LEYENDO', 'Leyendo'),
-                      ('FINALIZADO', 'Terminado'),
-                    ])
-                      _OptionChip(
-                        label: option.$2,
-                        selected: status == option.$1,
-                        onSelected: () => setDialogState(() {
-                          status = option.$1;
-                          error = null;
-                        }),
-                      ),
-                  ],
-                ),
-                const SizedBox(height: AppSpacing.md),
-                const Text(
-                  'Formato (opcional)',
-                  style: TextStyle(fontWeight: FontWeight.w700),
-                ),
-                const SizedBox(height: AppSpacing.xs),
-                Wrap(
-                  spacing: AppSpacing.xs,
-                  runSpacing: AppSpacing.xs,
-                  children: [
-                    for (final option in const [
-                      ('', 'Sin indicar'),
-                      ('FISICO', 'Físico'),
-                      ('DIGITAL', 'Digital'),
-                      ('AUDIOLIBRO', 'Audio'),
-                    ])
-                      _OptionChip(
-                        label: option.$2,
-                        selected: format == option.$1,
-                        onSelected: () =>
-                            setDialogState(() => format = option.$1),
-                      ),
-                  ],
-                ),
-                if (status != 'PENDIENTE') ...[
-                  const SizedBox(height: AppSpacing.md),
-                  _DateSelector(
-                    label: 'Fecha de inicio (opcional)',
-                    value: startDate,
-                    onTap: () async {
-                      final selected = await _pickDate(startDate);
-                      if (selected != null) {
-                        setDialogState(() => startDate = selected);
-                      }
-                    },
-                  ),
-                ],
-                if (status == 'FINALIZADO') ...[
-                  const SizedBox(height: AppSpacing.md),
-                  _DateSelector(
-                    label: 'Fecha de fin (opcional)',
-                    value: endDate,
-                    onTap: () async {
-                      final selected = await _pickDate(endDate);
-                      if (selected != null) {
-                        setDialogState(() => endDate = selected);
-                      }
-                    },
-                  ),
+                if (!preservePersonalData) ...[
                   const SizedBox(height: AppSpacing.md),
                   const Text(
-                    'Valoración',
+                    'Estado de lectura',
                     style: TextStyle(fontWeight: FontWeight.w700),
                   ),
                   const SizedBox(height: AppSpacing.xs),
@@ -246,17 +183,92 @@ class _CompleteSeriesPageState extends State<CompleteSeriesPage> {
                     spacing: AppSpacing.xs,
                     runSpacing: AppSpacing.xs,
                     children: [
-                      for (final value in const ['1', '2', '3', '4', '5'])
+                      for (final option in const [
+                        ('PENDIENTE', 'Pendiente'),
+                        ('LEYENDO', 'Leyendo'),
+                        ('FINALIZADO', 'Terminado'),
+                      ])
                         _OptionChip(
-                          label: '$value ★',
-                          selected: rating == value,
+                          label: option.$2,
+                          selected: status == option.$1,
                           onSelected: () => setDialogState(() {
-                            rating = value;
+                            status = option.$1;
                             error = null;
                           }),
                         ),
                     ],
                   ),
+                  const SizedBox(height: AppSpacing.md),
+                  const Text(
+                    'Formato (opcional)',
+                    style: TextStyle(fontWeight: FontWeight.w700),
+                  ),
+                  const SizedBox(height: AppSpacing.xs),
+                  Wrap(
+                    spacing: AppSpacing.xs,
+                    runSpacing: AppSpacing.xs,
+                    children: [
+                      for (final option in const [
+                        ('', 'Sin indicar'),
+                        ('FISICO', 'Físico'),
+                        ('DIGITAL', 'Digital'),
+                        ('AUDIOLIBRO', 'Audio'),
+                      ])
+                        _OptionChip(
+                          label: option.$2,
+                          selected: format == option.$1,
+                          onSelected: () =>
+                              setDialogState(() => format = option.$1),
+                        ),
+                    ],
+                  ),
+                  if (status != 'PENDIENTE') ...[
+                    const SizedBox(height: AppSpacing.md),
+                    _DateSelector(
+                      label: 'Fecha de inicio (opcional)',
+                      value: startDate,
+                      onTap: () async {
+                        final selected = await _pickDate(startDate);
+                        if (selected != null) {
+                          setDialogState(() => startDate = selected);
+                        }
+                      },
+                    ),
+                  ],
+                  if (status == 'FINALIZADO') ...[
+                    const SizedBox(height: AppSpacing.md),
+                    _DateSelector(
+                      label: 'Fecha de fin (opcional)',
+                      value: endDate,
+                      onTap: () async {
+                        final selected = await _pickDate(endDate);
+                        if (selected != null) {
+                          setDialogState(() => endDate = selected);
+                        }
+                      },
+                    ),
+                    const SizedBox(height: AppSpacing.md),
+                    const Text(
+                      'Valoración',
+                      style: TextStyle(fontWeight: FontWeight.w700),
+                    ),
+                    const SizedBox(height: AppSpacing.xs),
+                    Wrap(
+                      spacing: AppSpacing.xs,
+                      runSpacing: AppSpacing.xs,
+                      children: [
+                        for (final value in const ['1', '2', '3', '4', '5'])
+                          _OptionChip(
+                            label: '$value ★',
+                            selected: rating == value,
+                            onSelected: () => setDialogState(() {
+                              rating = value;
+                              error = null;
+                            }),
+                          ),
+                      ],
+                    ),
+                  ],
                 ],
                 if (error != null) ...[
                   const SizedBox(height: AppSpacing.sm),
@@ -302,7 +314,7 @@ class _CompleteSeriesPageState extends State<CompleteSeriesPage> {
                   ),
                 );
               },
-              child: const Text('Añadir'),
+              child: Text(preservePersonalData ? 'Vincular' : 'Añadir'),
             ),
           ],
         ),
@@ -419,6 +431,15 @@ class _CompleteSeriesPageState extends State<CompleteSeriesPage> {
         ),
       );
     }
+    final localBooks = _books.where((book) => !book.isExternal).toList();
+    final externalBooks = _books.where((book) => book.isExternal).toList();
+    final items = <Object>[
+      if (localBooks.isNotEmpty) const _ResultSection('Ya en ClubReads'),
+      ...localBooks,
+      if (externalBooks.isNotEmpty)
+        const _ResultSection('Buscar en catálogos externos'),
+      ...externalBooks,
+    ];
     return ListView.separated(
       padding: const EdgeInsets.fromLTRB(
         AppSpacing.md,
@@ -426,10 +447,23 @@ class _CompleteSeriesPageState extends State<CompleteSeriesPage> {
         AppSpacing.md,
         AppSpacing.xxxl,
       ),
-      itemCount: _books.length,
+      itemCount: items.length,
       separatorBuilder: (_, _) => const SizedBox(height: AppSpacing.sm),
       itemBuilder: (_, index) {
-        final book = _books[index];
+        final item = items[index];
+        if (item is _ResultSection) {
+          return Padding(
+            padding: const EdgeInsets.only(top: AppSpacing.sm),
+            child: Text(
+              item.title,
+              style: const TextStyle(
+                color: AppColors.primaryDark,
+                fontWeight: FontWeight.w900,
+              ),
+            ),
+          );
+        }
+        final book = item as CatalogBook;
         return Card(
           child: ListTile(
             contentPadding: const EdgeInsets.all(AppSpacing.sm),
@@ -451,7 +485,9 @@ class _CompleteSeriesPageState extends State<CompleteSeriesPage> {
               overflow: TextOverflow.ellipsis,
               style: const TextStyle(fontWeight: FontWeight.w800),
             ),
-            subtitle: Text('${book.authorLabel}\n${book.sourceLabel}'),
+            subtitle: Text(
+              '${book.authorLabel}\n${book.inMyLibrary ? 'En tu biblioteca · ' : ''}${book.sourceLabel}',
+            ),
             isThreeLine: true,
             trailing: _linkingId == book.id
                 ? const SizedBox(
@@ -469,6 +505,12 @@ class _CompleteSeriesPageState extends State<CompleteSeriesPage> {
       },
     );
   }
+}
+
+class _ResultSection {
+  const _ResultSection(this.title);
+
+  final String title;
 }
 
 class _SeriesVolumeSelection {
