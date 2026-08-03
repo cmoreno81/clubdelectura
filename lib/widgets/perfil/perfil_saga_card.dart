@@ -17,6 +17,7 @@ class PerfilSagaCard extends StatelessWidget {
     this.onGapTap,
     this.onEditVolume,
     this.onEditSeries,
+    this.onHideSeries,
   });
 
   final PerfilSaga saga;
@@ -25,6 +26,7 @@ class PerfilSagaCard extends StatelessWidget {
   final ValueChanged<PerfilSagaVolumen>? onGapTap;
   final ValueChanged<PerfilSagaVolumen>? onEditVolume;
   final VoidCallback? onEditSeries;
+  final VoidCallback? onHideSeries;
 
   @override
   Widget build(BuildContext context) {
@@ -101,12 +103,29 @@ class PerfilSagaCard extends StatelessWidget {
                       ),
                     ),
                   ),
-                  if (onEditSeries != null)
-                    IconButton(
-                      tooltip: 'Editar datos de la saga',
-                      visualDensity: VisualDensity.compact,
-                      onPressed: onEditSeries,
-                      icon: const Icon(Icons.edit_outlined, size: 19),
+                  if (onEditSeries != null || onHideSeries != null)
+                    Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        if (onEditSeries != null)
+                          IconButton(
+                            tooltip: 'Editar datos de la saga',
+                            visualDensity: VisualDensity.compact,
+                            onPressed: onEditSeries,
+                            icon: const Icon(Icons.edit_outlined, size: 19),
+                          ),
+                        if (onHideSeries != null)
+                          IconButton(
+                            tooltip: 'Ocultar saga',
+                            visualDensity: VisualDensity.compact,
+                            onPressed: onHideSeries,
+                            icon: const Icon(
+                              Icons.delete_outline_rounded,
+                              size: 20,
+                              color: AppColors.danger,
+                            ),
+                          ),
+                      ],
                     ),
                 ],
               ),

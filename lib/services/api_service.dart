@@ -315,6 +315,26 @@ class ApiService {
     }
   }
 
+  Future<void> ocultarSaga({required String sagaId}) async {
+    final response = await _client.post(
+      Uri.parse('$baseUrl?action=ocultarSaga'),
+      headers: const {'Content-Type': 'application/json'},
+      body: jsonEncode({'sagaId': sagaId}),
+    );
+    if (response.statusCode != 200) {
+      throw ApiException.fromResponse(response);
+    }
+    final decoded = jsonDecode(response.body);
+    if (decoded is! Map<String, dynamic> || decoded['ok'] != true) {
+      throw ApiException(
+        statusCode: response.statusCode,
+        message: decoded is Map<String, dynamic>
+            ? decoded['mensaje']?.toString() ?? 'No se pudo ocultar la saga.'
+            : 'No se pudo ocultar la saga.',
+      );
+    }
+  }
+
   Future<List<LibroFinalizado>> getLibrosFinalizados() async {
     final response = await _client.get(
       Uri.parse('$baseUrl?action=librosFinalizados'),

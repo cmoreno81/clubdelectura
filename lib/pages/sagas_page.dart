@@ -427,6 +427,48 @@ class _SagasPageState extends State<SagasPage> {
     }
   }
 
+  Future<void> _hideSeries(PerfilSaga saga) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('¿Ocultar esta saga?'),
+        content: Text(
+          '${saga.nombre} dejará de aparecer en tus sagas y en las '
+          'recomendaciones para continuar.\n\nTus libros, lecturas, fechas, '
+          'valoraciones y reseñas no se eliminarán de la biblioteca.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancelar'),
+          ),
+          FilledButton.icon(
+            style: FilledButton.styleFrom(backgroundColor: AppColors.danger),
+            onPressed: () => Navigator.pop(context, true),
+            icon: const Icon(Icons.visibility_off_outlined),
+            label: const Text('Ocultar saga'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !mounted) return;
+
+    try {
+      await ApiService().ocultarSaga(sagaId: saga.id);
+      if (!mounted) return;
+      await _reload();
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('${saga.nombre} ya no aparecerá en tus sagas.')),
+      );
+    } on ApiException catch (error) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(error.message)));
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -651,6 +693,7 @@ class _SagasPageState extends State<SagasPage> {
                 onGapTap: (volumen) => _onGapTap(saga, volumen),
                 onEditVolume: _editVolume,
                 onEditSeries: () => _editSeries(saga),
+                onHideSeries: () => _hideSeries(saga),
               ),
             ),
         ],
