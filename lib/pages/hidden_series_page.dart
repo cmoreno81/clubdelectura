@@ -30,7 +30,9 @@ class _HiddenSeriesSectionState extends State<HiddenSeriesSection> {
   Future<void> _reload() async {
     final next = ApiService().getSagasOcultas();
     if (!mounted) return;
-    setState(() => _future = next);
+    setState(() {
+      _future = next;
+    });
     await next;
   }
 

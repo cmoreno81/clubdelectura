@@ -43,7 +43,9 @@ class _ClubsPageState extends State<ClubsPage> {
         : Future.value(widget.clubs);
   }
 
-  void _reload() => setState(() => _future = ClubService().getMyClubs());
+  void _reload() => setState(() {
+    _future = ClubService().getMyClubs();
+  });
 
   Future<void> _select(ClubMembership club) async {
     if (club.activo || _busy) return;

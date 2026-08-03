@@ -301,7 +301,9 @@ class _SagasPageState extends State<SagasPage> {
       // Recargar sagas
       final latest = await _load();
       if (!mounted) return;
-      setState(() => _future = Future.value(latest));
+      setState(() {
+        _future = Future.value(latest);
+      });
     } catch (_) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(

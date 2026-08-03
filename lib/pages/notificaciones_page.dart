@@ -27,7 +27,9 @@ class _NotificacionesPageState extends State<NotificacionesPage> {
 
   Future<void> _marcarTodas() async {
     await ApiService().marcarTodasNotificacionesLeidas();
-    setState(() => _future = ApiService().getNotificaciones());
+    setState(() {
+      _future = ApiService().getNotificaciones();
+    });
   }
 
   Future<void> _marcarLeida(String id) async {
@@ -35,7 +37,9 @@ class _NotificacionesPageState extends State<NotificacionesPage> {
     // Refresh silencioso
     ApiService().getNotificaciones().then((data) {
       if (mounted) {
-        setState(() => _future = Future.value(data));
+        setState(() {
+          _future = Future.value(data);
+        });
       }
     });
   }
@@ -77,7 +81,9 @@ class _NotificacionesPageState extends State<NotificacionesPage> {
           if (snapshot.hasError) {
             return ErrorView(
               onRetry: () {
-                setState(() => _future = ApiService().getNotificaciones());
+                setState(() {
+                  _future = ApiService().getNotificaciones();
+                });
               },
             );
           }
