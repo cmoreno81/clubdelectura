@@ -78,7 +78,6 @@ class _SeriesVolumeDetailsDialogState extends State<SeriesVolumeDetailsDialog> {
       setState(() => _error = 'Indica el número del volumen.');
       return;
     }
-    // Valoración obligatoria solo si marca FINALIZADO manualmente (no si ya lo tenía)
     if (_status == 'FINALIZADO' &&
         _rating.isEmpty &&
         !widget.preservePersonalData) {
@@ -110,180 +109,224 @@ class _SeriesVolumeDetailsDialogState extends State<SeriesVolumeDetailsDialog> {
   Widget build(BuildContext context) {
     final preservePersonalData = widget.preservePersonalData;
 
-    return AlertDialog(
-      title: const Text('Añadir a la saga'),
-      content: SingleChildScrollView(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              widget.book.title,
-              style: const TextStyle(fontWeight: FontWeight.w700),
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Handle visual del bottom sheet
+        Center(
+          child: Container(
+            width: 40,
+            height: 4,
+            margin: const EdgeInsets.only(bottom: AppSpacing.md),
+            decoration: BoxDecoration(
+              color: AppColors.border,
+              borderRadius: BorderRadius.circular(2),
             ),
-            const SizedBox(height: AppSpacing.sm),
+          ),
+        ),
 
-            // ── Banner contextual ──
-            if (preservePersonalData)
-              _InfoBanner(
-                icon: Icons.check_circle_rounded,
-                color: AppColors.success,
-                text:
-                    'Ya tienes este libro terminado con su valoración y fechas. '
-                    'Solo necesitamos el número de volumen para vincularlo.',
-              )
-            else if (widget.book.inMyLibrary)
-              _InfoBanner(
-                icon: Icons.info_outline_rounded,
-                color: AppColors.info,
-                text:
-                    'Este libro ya está en tu biblioteca. '
-                    'Se vinculará a la saga respetando tu estado actual.',
-              )
-            else
-              Text(
-                'Vincula este libro a la saga y añade tus datos de lectura.',
-                style: const TextStyle(color: AppColors.textSecondary),
-              ),
+        // Título
+        const Text(
+          'Añadir a la saga',
+          style: TextStyle(fontSize: 20, fontWeight: FontWeight.w800),
+        ),
+        const SizedBox(height: AppSpacing.xs),
+        Text(
+          widget.book.title,
+          style: const TextStyle(fontWeight: FontWeight.w700),
+        ),
+        const SizedBox(height: AppSpacing.sm),
 
-            const SizedBox(height: AppSpacing.md),
+        // ── Banner contextual ──
+        if (preservePersonalData)
+          _InfoBanner(
+            icon: Icons.check_circle_rounded,
+            color: AppColors.success,
+            text:
+                'Ya tienes este libro terminado con su valoración y fechas. '
+                'Solo necesitamos el número de volumen para vincularlo.',
+          )
+        else if (widget.book.inMyLibrary)
+          _InfoBanner(
+            icon: Icons.info_outline_rounded,
+            color: AppColors.info,
+            text:
+                'Este libro ya está en tu biblioteca. '
+                'Se vinculará a la saga respetando tu estado actual.',
+          )
+        else
+          Text(
+            'Vincula este libro a la saga y añade tus datos de lectura.',
+            style: const TextStyle(color: AppColors.textSecondary),
+          ),
 
-            // ── Número de volumen — siempre visible ──
-            TextFormField(
-              controller: _orderController,
-              autofocus: true,
-              keyboardType: const TextInputType.numberWithOptions(
-                decimal: true,
-              ),
-              decoration: const InputDecoration(
-                labelText: 'Número en la saga',
-                hintText: '1, 2, 2.5…',
-              ),
-            ),
+        const SizedBox(height: AppSpacing.md),
 
-            // ── Estado — solo si NO está ya finalizado ──
-            if (!preservePersonalData) ...[
-              const SizedBox(height: AppSpacing.md),
-              const Text(
-                'Estado (opcional)',
-                style: TextStyle(fontWeight: FontWeight.w700),
-              ),
-              const SizedBox(height: AppSpacing.xs),
-              Wrap(
-                spacing: AppSpacing.xs,
-                runSpacing: AppSpacing.xs,
-                children: [
-                  for (final option in const [
-                    ('', 'Sin indicar'),
-                    ('PENDIENTE', 'Pendiente'),
-                    ('LEYENDO', 'Leyendo'),
-                    ('FINALIZADO', 'Terminado'),
-                  ])
-                    _OptionChip(
-                      label: option.$2,
-                      selected: _status == option.$1,
-                      onSelected: () => setState(() {
-                        _status = option.$1;
-                        _error = null;
-                      }),
-                    ),
-                ],
-              ),
+        // ── Número de volumen — siempre visible ──
+        TextFormField(
+          controller: _orderController,
+          autofocus: true,
+          keyboardType: const TextInputType.numberWithOptions(decimal: true),
+          decoration: const InputDecoration(
+            labelText: 'Número en la saga',
+            hintText: '1, 2, 2.5…',
+          ),
+        ),
+
+        // ── Estado — solo si NO está ya finalizado ──
+        if (!preservePersonalData) ...[
+          const SizedBox(height: AppSpacing.md),
+          const Text(
+            'Estado (opcional)',
+            style: TextStyle(fontWeight: FontWeight.w700),
+          ),
+          const SizedBox(height: AppSpacing.xs),
+          Wrap(
+            spacing: AppSpacing.xs,
+            runSpacing: AppSpacing.xs,
+            children: [
+              for (final option in const [
+                ('', 'Sin indicar'),
+                ('PENDIENTE', 'Pendiente'),
+                ('LEYENDO', 'Leyendo'),
+                ('FINALIZADO', 'Terminado'),
+              ])
+                _OptionChip(
+                  label: option.$2,
+                  selected: _status == option.$1,
+                  onSelected: () => setState(() {
+                    _status = option.$1;
+                    _error = null;
+                  }),
+                ),
             ],
+          ),
+        ],
 
-            // ── Formato — solo si no está ya en biblioteca ──
-            if (!widget.book.inMyLibrary) ...[
-              const SizedBox(height: AppSpacing.md),
-              const Text(
-                'Formato (opcional)',
-                style: TextStyle(fontWeight: FontWeight.w700),
-              ),
-              const SizedBox(height: AppSpacing.xs),
-              Wrap(
-                spacing: AppSpacing.xs,
-                runSpacing: AppSpacing.xs,
-                children: [
-                  for (final option in const [
-                    ('', 'Sin indicar'),
-                    ('FISICO', 'Físico'),
-                    ('DIGITAL', 'Digital'),
-                    ('AUDIOLIBRO', 'Audio'),
-                  ])
-                    _OptionChip(
-                      label: option.$2,
-                      selected: _format == option.$1,
-                      onSelected: () => setState(() => _format = option.$1),
-                    ),
-                ],
-              ),
+        // ── Formato — solo si no está ya en biblioteca ──
+        if (!widget.book.inMyLibrary) ...[
+          const SizedBox(height: AppSpacing.md),
+          const Text(
+            'Formato (opcional)',
+            style: TextStyle(fontWeight: FontWeight.w700),
+          ),
+          const SizedBox(height: AppSpacing.xs),
+          Wrap(
+            spacing: AppSpacing.xs,
+            runSpacing: AppSpacing.xs,
+            children: [
+              for (final option in const [
+                ('', 'Sin indicar'),
+                ('FISICO', 'Físico'),
+                ('DIGITAL', 'Digital'),
+                ('AUDIOLIBRO', 'Audio'),
+              ])
+                _OptionChip(
+                  label: option.$2,
+                  selected: _format == option.$1,
+                  onSelected: () => setState(() => _format = option.$1),
+                ),
             ],
+          ),
+        ],
 
-            // ── Fecha inicio — si no está finalizado y hay estado activo ──
-            if (!preservePersonalData &&
-                _status != 'PENDIENTE' &&
-                _status != '') ...[
-              const SizedBox(height: AppSpacing.md),
-              _DateSelector(
-                label: 'Fecha de inicio (opcional)',
-                value: _startDate,
-                onTap: () async {
-                  final selected = await _pickDate(_startDate);
-                  if (selected != null) {
-                    setState(() => _startDate = selected);
-                  }
-                },
-              ),
-            ],
+        // ── Fecha inicio — si no está finalizado y hay estado activo ──
+        if (!preservePersonalData &&
+            _status != 'PENDIENTE' &&
+            _status != '') ...[
+          const SizedBox(height: AppSpacing.md),
+          _DateSelector(
+            label: 'Fecha de inicio (opcional)',
+            value: _startDate,
+            onTap: () async {
+              final selected = await _pickDate(_startDate);
+              if (selected != null) setState(() => _startDate = selected);
+            },
+          ),
+        ],
 
-            // ── Fecha fin + valoración — solo si marca FINALIZADO manualmente ──
-            if (!preservePersonalData && _status == 'FINALIZADO') ...[
-              const SizedBox(height: AppSpacing.md),
-              _DateSelector(
-                label: 'Fecha de fin (opcional)',
-                value: _endDate,
-                onTap: () async {
-                  final selected = await _pickDate(_endDate);
-                  if (selected != null) {
-                    setState(() => _endDate = selected);
-                  }
-                },
-              ),
-              const SizedBox(height: AppSpacing.md),
+        // ── Fecha fin + valoración — visibles en cuanto se marca FINALIZADO ──
+        if (!preservePersonalData && _status == 'FINALIZADO') ...[
+          const SizedBox(height: AppSpacing.md),
+          _DateSelector(
+            label: 'Fecha de fin (opcional)',
+            value: _endDate,
+            onTap: () async {
+              final selected = await _pickDate(_endDate);
+              if (selected != null) setState(() => _endDate = selected);
+            },
+          ),
+          const SizedBox(height: AppSpacing.md),
+          Row(
+            children: [
               const Text(
                 'Valoración',
                 style: TextStyle(fontWeight: FontWeight.w700),
               ),
-              const SizedBox(height: AppSpacing.xs),
-              Wrap(
-                spacing: AppSpacing.xs,
-                runSpacing: AppSpacing.xs,
-                children: [
-                  for (final value in const ['1', '2', '3', '4', '5'])
-                    _OptionChip(
-                      label: '$value ★',
-                      selected: _rating == value,
-                      onSelected: () => setState(() {
-                        _rating = value;
-                        _error = null;
-                      }),
-                    ),
-                ],
+              const SizedBox(width: AppSpacing.xs),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                decoration: BoxDecoration(
+                  color: AppColors.warning.withValues(alpha: .15),
+                  borderRadius: BorderRadius.circular(AppRadius.pill),
+                ),
+                child: Text(
+                  'Recomendada',
+                  style: TextStyle(
+                    fontSize: 10,
+                    color: AppColors.warning,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
               ),
             ],
-
-            if (_error != null) ...[
-              const SizedBox(height: AppSpacing.sm),
-              Text(_error!, style: const TextStyle(color: AppColors.danger)),
+          ),
+          const SizedBox(height: AppSpacing.xs),
+          Wrap(
+            spacing: AppSpacing.xs,
+            runSpacing: AppSpacing.xs,
+            children: [
+              for (final value in const ['1', '2', '3', '4', '5'])
+                _OptionChip(
+                  label: '$value ★',
+                  selected: _rating == value,
+                  onSelected: () => setState(() {
+                    _rating = value;
+                    _error = null;
+                  }),
+                ),
             ],
+          ),
+        ],
+
+        if (_error != null) ...[
+          const SizedBox(height: AppSpacing.sm),
+          Text(_error!, style: const TextStyle(color: AppColors.danger)),
+        ],
+
+        const SizedBox(height: AppSpacing.xl),
+
+        // ── Botones ──
+        Row(
+          children: [
+            Expanded(
+              child: OutlinedButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text('Cancelar'),
+              ),
+            ),
+            const SizedBox(width: AppSpacing.md),
+            Expanded(
+              flex: 2,
+              child: FilledButton(
+                onPressed: _submit,
+                child: const Text('Añadir a la saga'),
+              ),
+            ),
           ],
         ),
-      ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.pop(context),
-          child: const Text('Cancelar'),
-        ),
-        FilledButton(onPressed: _submit, child: const Text('Añadir a la saga')),
+        const SizedBox(height: AppSpacing.sm),
       ],
     );
   }

@@ -125,25 +125,48 @@ class _CompleteSeriesPageState extends State<CompleteSeriesPage> {
     }
   }
 
+  // Caso A: en biblioteca y ya finalizado → preservar todo, solo pedir número
+  // Caso B: en biblioteca pero no finalizado → respetar estado actual
+  // Caso C: no está en biblioteca o es externo → formulario completo
   Future<SeriesVolumeSelection?> _askVolumeDetails(CatalogBook book) async {
-    // Caso A: en biblioteca y ya finalizado → preservar todo, solo pedir número
-    // Caso B: en biblioteca pero no finalizado → respetar estado actual
-    // Caso C: no está en biblioteca o es externo → formulario completo
     final isFinished = book.status == 'FINALIZADO';
     final preservePersonalData =
         !book.isExternal && book.inMyLibrary && isFinished;
 
-    return showDialog<SeriesVolumeSelection>(
+    return showModalBottomSheet<SeriesVolumeSelection>(
       context: context,
-      builder: (dialogContext) => SeriesVolumeDetailsDialog(
-        book: book,
-        preservePersonalData: preservePersonalData,
-        initialOrder: _suggestedOrder().toString(),
-        initialStatus: book.inMyLibrary ? book.status : 'PENDIENTE',
-        initialFormat: '',
-        initialRating: '',
-        initialStartDate: book.startedAt,
-        initialEndDate: book.finishedAt,
+      isScrollControlled:
+          true, // ← clave para que ocupe toda la altura necesaria
+      useSafeArea: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (dialogContext) => DraggableScrollableSheet(
+        expand: false,
+        initialChildSize: 0.85,
+        minChildSize: 0.5,
+        maxChildSize: 0.95,
+        builder: (_, scrollController) => SingleChildScrollView(
+          controller: scrollController,
+          child: Padding(
+            padding: EdgeInsets.fromLTRB(
+              AppSpacing.lg,
+              AppSpacing.lg,
+              AppSpacing.lg,
+              AppSpacing.lg + MediaQuery.viewInsetsOf(dialogContext).bottom,
+            ),
+            child: SeriesVolumeDetailsDialog(
+              book: book,
+              preservePersonalData: preservePersonalData,
+              initialOrder: _suggestedOrder().toString(),
+              initialStatus: book.inMyLibrary ? book.status : 'PENDIENTE',
+              initialFormat: '',
+              initialRating: '',
+              initialStartDate: book.startedAt,
+              initialEndDate: book.finishedAt,
+            ),
+          ),
+        ),
       ),
     );
   }
