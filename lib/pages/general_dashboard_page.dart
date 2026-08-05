@@ -1,4 +1,5 @@
 import 'package:club_lectura_app/pages/notificaciones_page.dart';
+import 'package:club_lectura_app/theme/app_radius.dart';
 import 'package:flutter/material.dart';
 
 import '../navigation/app_page_route.dart';
@@ -30,6 +31,10 @@ import 'monthly_reading_share_page.dart';
 import 'perfil_usuario_page.dart';
 import 'sagas_page.dart';
 import '../widgets/common/onboarding_tutorial.dart';
+import 'mis_logros_page.dart';
+import '../models/achievements/achievement.dart';
+import '../services/achievement_service.dart';
+import '../services/usuario_service.dart';
 
 class GeneralDashboardPage extends StatefulWidget {
   const GeneralDashboardPage({super.key});
@@ -371,6 +376,9 @@ class _GeneralDashboardPageState extends State<GeneralDashboardPage> {
                         const SizedBox(height: AppSpacing.sm),
                         _openSeries(data.openSeries),
                       ],
+                      // ── Mis logros ──
+                      const SizedBox(height: AppSpacing.xl),
+                      _LogrosDashboardSection(userName: data.userName),
                       if (data.personalLibrary.isNotEmpty) ...[
                         const SizedBox(height: AppSpacing.xl),
                         _sectionTitle(
@@ -1606,6 +1614,203 @@ class _DashboardError extends StatelessWidget {
             const Text('No hemos podido cargar tu espacio lector.'),
             const SizedBox(height: 16),
             FilledButton(onPressed: onRetry, child: const Text('Reintentar')),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _LogrosDashboardSection extends StatefulWidget {
+  const _LogrosDashboardSection({required this.userName});
+  final String userName;
+
+  @override
+  State<_LogrosDashboardSection> createState() =>
+      _LogrosDashboardSectionState();
+}
+
+class _LogrosDashboardSectionState extends State<_LogrosDashboardSection> {
+  late Future<List<UserAchievement>> _future;
+
+  @override
+  void initState() {
+    super.initState();
+    _future = ApiService().getAchievements(
+      user: widget.userName.isEmpty ? null : widget.userName,
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return FutureBuilder<List<UserAchievement>>(
+      future: _future,
+      builder: (context, snapshot) {
+        // Mientras carga, nada
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const SizedBox.shrink();
+        }
+        final achievements = snapshot.data ?? const [];
+        if (achievements.isEmpty) return const SizedBox.shrink();
+
+        final unlocked = achievements.where((a) => a.unlocked).length;
+        final total = achievements.length;
+        final pct = total > 0 ? unlocked / total : 0.0;
+
+        // Últimos 6 desbloqueados (ordenados por rareza: legendary > epic > rare > common)
+        final rarityOrder = {'legendary': 0, 'epic': 1, 'rare': 2, 'common': 3};
+        final recent = [...achievements.where((a) => a.unlocked)]
+          ..sort(
+            (a, b) => (rarityOrder[a.rarity] ?? 3).compareTo(
+              rarityOrder[b.rarity] ?? 3,
+            ),
+          );
+        final shown = recent.take(6).toList();
+
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Cabecera con título y "Ver todos"
+            Row(
+              children: [
+                const Text('🏆', style: TextStyle(fontSize: 20)),
+                const SizedBox(width: AppSpacing.xs),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Tus logros ${DateTime.now().year}',
+                        style: AppTextStyles.subtitle.copyWith(
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
+                      Text(
+                        '$unlocked de $total desbloqueados',
+                        style: AppTextStyles.caption.copyWith(
+                          color: AppColors.textMuted,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                TextButton(
+                  onPressed: () => Navigator.push<void>(
+                    context,
+                    AppPageRoute(builder: (_) => const MisLogrosPage()),
+                  ),
+                  child: const Text('Ver todos'),
+                ),
+              ],
+            ),
+            const SizedBox(height: AppSpacing.xs),
+
+            // Barra de progreso global
+            ClipRRect(
+              borderRadius: BorderRadius.circular(4),
+              child: LinearProgressIndicator(
+                value: pct,
+                minHeight: 6,
+                backgroundColor: AppColors.primaryLight,
+                color: AppColors.primary,
+              ),
+            ),
+
+            const SizedBox(height: AppSpacing.md),
+
+            // Grid 3x2 con los mejores logros desbloqueados
+            if (shown.isEmpty)
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
+                child: Text(
+                  '¡Empieza a leer para desbloquear logros este año!',
+                  style: AppTextStyles.bodySecondary,
+                ),
+              )
+            else
+              GridView.builder(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: 3,
+                  crossAxisSpacing: AppSpacing.sm,
+                  mainAxisSpacing: AppSpacing.sm,
+                  childAspectRatio: 0.9,
+                ),
+                itemCount: shown.length,
+                itemBuilder: (context, i) =>
+                    _LogroMiniTile(achievement: shown[i]),
+              ),
+          ],
+        );
+      },
+    );
+  }
+}
+
+class _LogroMiniTile extends StatelessWidget {
+  const _LogroMiniTile({required this.achievement});
+  final UserAchievement achievement;
+
+  Color get _color => switch (achievement.rarity) {
+    'legendary' => const Color(0xFFD97706),
+    'epic' => const Color(0xFF7C3AED),
+    'rare' => const Color(0xFF2563EB),
+    _ => AppColors.primary,
+  };
+
+  @override
+  Widget build(BuildContext context) {
+    final color = _color;
+    return Tooltip(
+      message: '${achievement.title}\n${achievement.description}',
+      child: Container(
+        padding: const EdgeInsets.all(AppSpacing.sm),
+        decoration: BoxDecoration(
+          color: color.withValues(alpha: .08),
+          borderRadius: BorderRadius.circular(AppRadius.md),
+          border: Border.all(color: color.withValues(alpha: .3), width: 1.5),
+          boxShadow: [
+            BoxShadow(
+              color: color.withValues(alpha: .15),
+              blurRadius: 8,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Text(achievement.icon, style: const TextStyle(fontSize: 28)),
+            const SizedBox(height: 4),
+            Text(
+              achievement.title,
+              textAlign: TextAlign.center,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                fontSize: 10,
+                fontWeight: FontWeight.w800,
+                color: color,
+                height: 1.2,
+              ),
+            ),
+            const SizedBox(height: 3),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+              decoration: BoxDecoration(
+                color: color.withValues(alpha: .12),
+                borderRadius: BorderRadius.circular(AppRadius.pill),
+              ),
+              child: Text(
+                AchievementService.rarityLabels[achievement.rarity] ?? '',
+                style: TextStyle(
+                  fontSize: 8,
+                  color: color,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+            ),
           ],
         ),
       ),

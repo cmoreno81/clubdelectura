@@ -199,8 +199,17 @@ const List<_HelpSection> _secciones = [
         pregunta: '¿Cómo aparecen mis sagas?',
         respuesta:
             'Automáticamente. Cuando añades libros que pertenecen a la '
-            'misma saga (mismo nombre de saga), la app los agrupa en la '
-            'pestaña "Sagas".',
+            'misma saga, la app los agrupa en la pestaña "Sagas". '
+            'Verás el progreso de cada saga, cuántos tomos has leído '
+            'y cuál es el siguiente para continuar.',
+      ),
+      _HelpItem(
+        pregunta: '¿Qué significan los iconos en las portadas?',
+        respuesta:
+            'Cada portada lleva un indicador de estado en la esquina inferior: '
+            '✅ morado = terminado, 📖 azul = leyendo, 🔖 naranja = pendiente. '
+            'Los tomos sin marca no están aún en tu biblioteca. '
+            'El candadito 🔒 indica un tomo bloqueado o no añadido.',
       ),
       _HelpItem(
         pregunta: '¿Qué es "Completar saga"?',
@@ -212,25 +221,30 @@ const List<_HelpSection> _secciones = [
       _HelpItem(
         pregunta: '¿Qué tengo que indicar al completar una saga?',
         respuesta:
-            'Indica el número que ocupa el libro en la saga y elige su estado: '
-            'Pendiente, Leyendo o Terminado. También puedes seleccionar el '
-            'formato. Si estás leyendo, puedes indicar la fecha de inicio; si lo '
-            'has terminado, puedes añadir las fechas y debes elegir una valoración.',
+            'Depende de si el libro ya está en tu biblioteca:\n\n'
+            '• Si ya lo tienes terminado: solo necesitas indicar el número '
+            'de tomo. Tus fechas, valoración y reseña se conservan intactas.\n\n'
+            '• Si está en tu biblioteca pero no terminado: puedes ajustar '
+            'el estado respetando tus datos actuales.\n\n'
+            '• Si es un libro nuevo: indica el número de tomo, estado, '
+            'formato y, si está terminado, las fechas y valoración.',
       ),
       _HelpItem(
         pregunta: '¿Se añade también a mi biblioteca?',
         respuesta:
             'Sí. Al confirmar, el volumen se vincula a la saga y se añade a '
             'tu biblioteca con el estado y formato elegidos, todo en una sola '
-            'operación. La Biblioteca se actualiza automáticamente; no necesitas '
-            'deslizar la pantalla ni volver a añadir el libro.',
+            'operación. La biblioteca se actualiza automáticamente.',
       ),
       _HelpItem(
-        pregunta: '¿Qué pasa si el libro ya existe?',
+        pregunta: '¿Puedo reordenar los tomos de una saga?',
         respuesta:
-            'ClubReads reutiliza la ficha existente y la vincula a la saga. '
-            'No debe crear otra copia del mismo libro. Si el número elegido ya '
-            'pertenece a otro volumen, la app te avisará para que lo revises.',
+            'Sí. En la card de cada saga verás el icono ⇅ si tienes al menos '
+            '2 volúmenes. Al pulsarlo, los tomos se convierten en una lista '
+            'arrastrable: arrastra y suelta para cambiar el orden visual. '
+            'Este orden es tuyo personal — no afecta a otras lectoras, '
+            'ni a tus fechas ni valoraciones. Pulsa "Guardar orden" para '
+            'confirmar o la X para cancelar sin cambios.',
       ),
       _HelpItem(
         pregunta: '¿Y si un tomo no está en ClubReads o no quiero leerlo?',
@@ -239,12 +253,6 @@ const List<_HelpSection> _secciones = [
             '"Leído fuera de ClubReads" u "Omitido". Si más adelante añades '
             'el volumen real con "Completar saga", esa marca se elimina '
             'automáticamente.',
-      ),
-      _HelpItem(
-        pregunta: '¿Puedo reordenar los tomos de una saga?',
-        respuesta:
-            'Sí. Entra en el detalle de la saga, pulsa sobre el tomo '
-            'que quieras editar y cambia el número de orden.',
       ),
       _HelpItem(
         pregunta: '¿Qué significa que una saga esté "abandonada"?',
@@ -264,9 +272,9 @@ const List<_HelpSection> _secciones = [
         pregunta: '¿Qué es Clubvisión?',
         respuesta:
             'Es el sistema de votación del club para elegir el próximo libro '
-            'de lectura grupal. Funciona por ediciones: se abre una votación, '
-            'las miembros votan entre las candidatas y la ganadora se convierte '
-            'en la siguiente lectura del club.',
+            'de lectura grupal. Funciona por ediciones mensuales: se abre una '
+            'votación, las miembros votan entre las candidatas y la ganadora '
+            'se convierte en la siguiente lectura del club.',
       ),
       _HelpItem(
         pregunta: '¿Cómo se eligen las candidatas?',
@@ -278,18 +286,26 @@ const List<_HelpSection> _secciones = [
             'una edición anterior de Clubvisión.',
       ),
       _HelpItem(
+        pregunta: '¿Qué pasa si no hay candidatas?',
+        respuesta:
+            'Si ningún libro cumple las condiciones, Clubvisión no se abre '
+            'ese mes y verás un aviso en la pantalla del club explicando '
+            'el motivo. Para que haya candidatas, al menos dos miembros '
+            'tienen que tener el mismo libro en "En mi estantería".',
+      ),
+      _HelpItem(
         pregunta: '¿Cómo voto?',
         respuesta:
-            'Cuando la administradora abre la votación, entra en Clubvisión '
-            'y ordena las candidatas según tus preferencias. '
+            'Cuando la votación está abierta, entra en Clubvisión '
+            'y ordena las candidatas según tus preferencias arrastrándolas. '
             'Tu voto se guarda al confirmar. Solo puedes votar una vez por edición.',
       ),
       _HelpItem(
         pregunta: '¿Puedo ver cómo ha votado cada persona?',
         respuesta:
-            'Sí, pero solo una vez cerrada la votación. Cuando la administradora '
-            'cierra la edición, cualquier miembro puede ver el desglose completo '
-            'de votos en "Cómo votaron" — quién votó qué y en qué orden. '
+            'Sí, pero solo una vez cerrada la votación. Cuando se cierra '
+            'la edición, cualquier miembro puede ver el desglose completo '
+            'de votos en "Cómo votaron". '
             'Durante la votación activa, los votos son privados.',
       ),
       _HelpItem(
@@ -331,8 +347,103 @@ const List<_HelpSection> _secciones = [
         pregunta: '¿Qué es el Kit de lectura?',
         respuesta:
             'El Kit de lectura es una selección de recursos para preparar '
-            'la lectura del club: playlist musical, paleta de colores '
-            'y otros elementos ambientales para enriquecer la experiencia lectora.',
+            'la experiencia: playlist musical, paleta de colores, atmósfera '
+            'y story para compartir. Lo encontrarás en la ficha de cada libro.',
+      ),
+    ],
+  ),
+  _HelpSection(
+    icono: '🏆',
+    titulo: 'Logros',
+    items: [
+      _HelpItem(
+        pregunta: '¿Qué son los logros?',
+        respuesta:
+            'Son medallas que desbloqueas automáticamente al alcanzar hitos '
+            'en tu lectura y participación en el club. Hay logros de distintas '
+            'rarezas: Común, Raro, Épico y Legendario. '
+            'Puedes verlos en tu perfil lector → sección Logros, '
+            'y los del club en El Club → Logros del club.',
+      ),
+      _HelpItem(
+        pregunta: '📚 Categoría Lectora — ¿cómo se desbloquea?',
+        respuesta:
+            'Estos logros se consiguen terminando libros:\n\n'
+            '📖 Primer libro — completa 1 lectura\n'
+            '📚 Lectora en marcha — llega a 5 libros terminados\n'
+            '🔟 Lectora habitual — alcanza 10 libros finalizados\n'
+            '🌟 Voraz lectora (Raro) — 25 libros en tu historial\n'
+            '🏆 Biblióvora (Épico) — 50 libros completados\n'
+            '💯 Centenaria lectora (Legendario) — 100 libros. Una hazaña.',
+      ),
+      _HelpItem(
+        pregunta: '📄 Categoría Páginas — ¿cómo se desbloquea?',
+        respuesta:
+            'Se calculan sumando las páginas de todos tus libros terminados:\n\n'
+            '📄 Mil páginas — supera las 1.000 páginas leídas\n'
+            '📃 Lectora resistente (Raro) — 5.000 páginas\n'
+            '📜 Maratoniana de páginas (Épico) — 10.000 páginas\n'
+            '🗺️ Leyenda de las páginas (Legendario) — 50.000 páginas',
+      ),
+      _HelpItem(
+        pregunta: '🌀 Categoría Sagas — ¿cómo se desbloquea?',
+        respuesta:
+            'Se desbloquean al completar sagas enteras (todos los volúmenes terminados '
+            'y la saga marcada como finalizada por la editorial):\n\n'
+            '🌀 Saga completada (Raro) — termina tu primera saga\n'
+            '💫 Maestra de sagas (Épico) — completa 3 sagas\n'
+            '🌌 Coleccionista de sagas (Legendario) — 5 sagas completas',
+      ),
+      _HelpItem(
+        pregunta: '🎭 Categoría Géneros — ¿cómo se desbloquea?',
+        respuesta:
+            'Se obtienen leyendo libros de géneros específicos:\n\n'
+            '💗 Romance addict (Raro) — 10 libros de Romance\n'
+            '🧙 Guardiana de mundos (Raro) — 10 libros de Fantasía\n'
+            '🔪 Thriller queen (Raro) — 5 libros de Thriller\n'
+            '🖤 Dark side (Raro) — 5 libros de Dark Romance\n'
+            '🗺️ Exploradora (Épico) — lee libros de 5 géneros distintos',
+      ),
+      _HelpItem(
+        pregunta: '✍️ Categoría Reseñas — ¿cómo se desbloquea?',
+        respuesta:
+            'Se consiguen escribiendo reseñas en tus libros terminados:\n\n'
+            '✍️ Primera reseña — escribe tu primera reseña\n'
+            '📝 Crítica literaria (Raro) — 10 reseñas escritas\n'
+            '🖊️ Pluma incansable (Épico) — 25 reseñas en tu historial',
+      ),
+      _HelpItem(
+        pregunta: '💬 Categoría Club — ¿cómo se desbloquea?',
+        respuesta:
+            'Se obtienen participando en las lecturas del club:\n\n'
+            '💬 Primera voz — comenta por primera vez en una lectura\n'
+            '🗣️ Voz del club (Raro) — 10 comentarios en lecturas\n'
+            '🎤 Alma del club (Épico) — 50 comentarios. La más activa.',
+      ),
+      _HelpItem(
+        pregunta: '🗳️ Categoría Clubvisión — ¿cómo se desbloquea?',
+        respuesta:
+            'Se consiguen votando en las ediciones de Clubvisión:\n\n'
+            '🗳️ Primera votante — participa en tu primera Clubvisión\n'
+            '🏛️ Votante fiel (Raro) — 5 participaciones en Clubvisión\n'
+            '👑 Electora veterana (Épico) — 10 votaciones en Clubvisión',
+      ),
+      _HelpItem(
+        pregunta: '🔥 Categoría Constancia — ¿cómo se desbloquea?',
+        respuesta:
+            'Premian la intensidad lectora en períodos cortos:\n\n'
+            '🔥 Mes intenso (Raro) — 3 libros en un mismo mes\n'
+            '⚡ Maratoniana (Épico) — 5 libros en un mes\n'
+            '🗓️ Gran año lector (Raro) — 10 libros en un año\n'
+            '🏅 Año legendario (Legendario) — 20 libros en un solo año',
+      ),
+      _HelpItem(
+        pregunta: '¿Qué son los Logros del club?',
+        respuesta:
+            'En "El Club" → "Logros del club" puedes ver los logros desbloqueados '
+            'por todas las miembros. En la pestaña "Por miembro" aparecen ordenadas '
+            'por número de logros conseguidos, con los emojis de cada uno. '
+            'En "Recientes" aparecen los últimos logros desbloqueados en el club.',
       ),
     ],
   ),
@@ -358,8 +469,8 @@ const List<_HelpSection> _secciones = [
         pregunta: '¿Puedo personalizar mi perfil?',
         respuesta:
             'Sí. En tu perfil puedes editar tu avatar, ver tus estadísticas '
-            'lectoras, tu timeline de lecturas, los géneros favoritos '
-            'y todos los libros que has terminado o abandonado.',
+            'lectoras, tu timeline de lecturas, los géneros favoritos, '
+            'los meses lectores y todos los libros que has terminado o abandonado.',
       ),
     ],
   ),
@@ -383,21 +494,31 @@ const List<_HelpSection> _secciones = [
             'Si el libro tiene valoración, aparece una estrella sobre la portada.',
       ),
       _HelpItem(
-        pregunta: '¿Qué es la biblioteca 2026?',
+        pregunta: '¿Qué es la biblioteca anual?',
         respuesta:
-            'La estantería anual con todos los libros que has terminado en '
+            'La estantería con todos los libros que has terminado en '
             'el año en curso. La encontrarás en tu perfil lector, '
             'en la sección Resumen. También se anima al entrar.',
       ),
       _HelpItem(
         pregunta: '¿Qué son las secciones del perfil?',
         respuesta:
-            '"Resumen" muestra tus métricas, la biblioteca anual y tus géneros favoritos. '
-            '"Timeline" muestra tu historial de lecturas ordenado por fecha. '
+            '"Resumen" muestra tus métricas, la biblioteca anual y tus géneros favoritos.\n\n'
+            '"Timeline" muestra tu historial de lecturas ordenado por fecha.\n\n'
             '"Finalizados" lista todos los libros terminados y abandonados '
-            'agrupados por año. '
+            'agrupados por año.\n\n'
             '"Meses lectores" muestra un calendario por cada mes en el que has '
-            'leído algún libro, con las portadas colocadas en los días que las terminaste.',
+            'leído algún libro, con las portadas colocadas en los días que las terminaste.\n\n'
+            '"Logros" muestra todas tus medallas agrupadas por categoría, '
+            'con barra de progreso y estado de desbloqueo.',
+      ),
+      _HelpItem(
+        pregunta: '¿Cómo funcionan las notificaciones?',
+        respuesta:
+            'Recibirás notificaciones dentro de la app (campanita en el dashboard) '
+            'cuando ocurra algo relevante en tu club: nueva lectura oficial, '
+            'nueva miembro, resultado de Clubvisión, nuevo libro en la biblioteca '
+            'o cuando alguien comenta en una lectura en la que participas.',
       ),
     ],
   ),

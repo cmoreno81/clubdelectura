@@ -423,16 +423,6 @@ class _PerfilUsuarioPageState extends State<PerfilUsuarioPage> {
                     selected: _menuPerfil == 'MESES',
                   ),
                 ),
-                PopupMenuItem(
-                  value: 'LOGROS',
-                  height: 70,
-                  child: _ProfileMenuOption(
-                    icon: Icons.emoji_events_outlined,
-                    title: 'Logros',
-                    subtitle: 'Tus metas y progresos',
-                    selected: _menuPerfil == 'LOGROS',
-                  ),
-                ),
                 if (esMiPerfil)
                   PopupMenuItem(
                     value: 'SAGAS_OCULTAS',
@@ -597,40 +587,6 @@ class _PerfilUsuarioPageState extends State<PerfilUsuarioPage> {
                         genre: libro.genero,
                       ),
                     ),
-                  const SizedBox(height: AppSpacing.lg),
-                ],
-
-                if (_menuPerfil == 'LOGROS') ...[
-                  const ClubSectionTitle(
-                    title: 'Logros',
-                    subtitle: 'Tus metas lectoras y tus progresos',
-                    icon: Icons.emoji_events_rounded,
-                    padding: EdgeInsets.zero,
-                  ),
-                  const SizedBox(height: AppSpacing.sm),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: AppSpacing.md,
-                    ),
-                    child: FutureBuilder<List<UserAchievement>>(
-                      future: _achievementsFuture,
-                      builder: (context, snapshot) {
-                        if (snapshot.connectionState ==
-                            ConnectionState.waiting) {
-                          return const Center(
-                            child: Padding(
-                              padding: EdgeInsets.symmetric(
-                                vertical: AppSpacing.lg,
-                              ),
-                              child: CircularProgressIndicator(),
-                            ),
-                          );
-                        }
-                        final achievements = snapshot.data ?? const [];
-                        return AchievementsSection(achievements: achievements);
-                      },
-                    ),
-                  ),
                   const SizedBox(height: AppSpacing.lg),
                 ],
 
