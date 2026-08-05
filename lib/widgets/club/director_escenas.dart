@@ -16,6 +16,9 @@ class DirectorEscenas {
       case ContenidoClub.preparando:
         return _preparando();
 
+      case ContenidoClub.sinCandidatas:
+        return _sinCandidatas();
+
       case ContenidoClub.candidatas:
         return EscenaVotacion(
           totalCandidatas: dashboard.clubvision.totalCandidatas,
@@ -28,6 +31,72 @@ class DirectorEscenas {
       case ContenidoClub.lectura:
         return _lectura(dashboard);
     }
+  }
+
+  Widget _sinCandidatas() {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(AppSpacing.lg),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: .6),
+        borderRadius: BorderRadius.circular(AppRadius.lg),
+        border: Border.all(color: AppColors.border),
+      ),
+      child: Column(
+        children: [
+          const Icon(
+            Icons.library_books_outlined,
+            size: 40,
+            color: AppColors.textMuted,
+          ),
+          const SizedBox(height: AppSpacing.md),
+          Text(
+            'Sin candidatas este mes',
+            style: AppTextStyles.section.copyWith(color: AppColors.textPrimary),
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: AppSpacing.sm),
+          Text(
+            'Para que Clubvisión se abra, al menos dos lectoras del club deben '
+            'tener el mismo libro en estado "En mi estantería".',
+            style: AppTextStyles.bodySecondary.copyWith(height: 1.4),
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: AppSpacing.lg),
+          Container(
+            padding: const EdgeInsets.symmetric(
+              horizontal: AppSpacing.md,
+              vertical: AppSpacing.sm,
+            ),
+            decoration: BoxDecoration(
+              color: AppColors.surfaceSoft,
+              borderRadius: BorderRadius.circular(AppRadius.pill),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(
+                  Icons.tips_and_updates_outlined,
+                  size: 16,
+                  color: AppColors.primary,
+                ),
+                const SizedBox(width: 6),
+                Flexible(
+                  child: Text(
+                    'Añade libros pendientes y comenta los que te interesan',
+                    style: AppTextStyles.caption.copyWith(
+                      color: AppColors.primary,
+                      fontWeight: FontWeight.w600,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   Widget _preparando() {
@@ -169,6 +238,34 @@ class DirectorEscenas {
 
   Widget _lectura(Dashboard dashboard) {
     final lectura = dashboard.lecturaActual;
+    // Si no hay título, mostrar estado de transición
+    if (lectura.titulo.trim().isEmpty) {
+      return Container(
+        width: double.infinity,
+        padding: const EdgeInsets.all(AppSpacing.lg),
+        decoration: BoxDecoration(
+          color: Colors.white.withValues(alpha: .6),
+          borderRadius: BorderRadius.circular(AppRadius.lg),
+        ),
+        child: const Column(
+          children: [
+            Icon(Icons.menu_book_rounded, color: AppColors.primary, size: 30),
+            SizedBox(height: AppSpacing.sm),
+            Text(
+              'Preparando la lectura',
+              textAlign: TextAlign.center,
+              style: AppTextStyles.section,
+            ),
+            SizedBox(height: AppSpacing.xs),
+            Text(
+              'La próxima lectura oficial está a punto de comenzar.',
+              textAlign: TextAlign.center,
+              style: AppTextStyles.bodySecondary,
+            ),
+          ],
+        ),
+      );
+    }
 
     return Container(
       width: double.infinity,

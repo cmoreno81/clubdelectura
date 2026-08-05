@@ -11,6 +11,8 @@ class CatalogBook {
     required this.status,
     this.pages,
     this.publicationYear,
+    this.startedAt,
+    this.finishedAt,
   });
 
   final String id;
@@ -24,6 +26,8 @@ class CatalogBook {
   final String status;
   final int? pages;
   final int? publicationYear;
+  final DateTime? startedAt;
+  final DateTime? finishedAt;
 
   String get authorLabel =>
       authors.isEmpty ? 'Autor desconocido' : authors.join(', ');
@@ -50,9 +54,20 @@ class CatalogBook {
     status: json['estado']?.toString() ?? '',
     pages: _intOrNull(json['paginas']),
     publicationYear: _intOrNull(json['anioPublicacion']),
+    startedAt: json['fechaInicio'] != null
+        ? DateTime.tryParse(json['fechaInicio'].toString())
+        : null,
+    finishedAt: json['fechaFin'] != null
+        ? DateTime.tryParse(json['fechaFin'].toString())
+        : null,
   );
 
-  CatalogBook copyWith({bool? inMyLibrary, String? status}) => CatalogBook(
+  CatalogBook copyWith({
+    bool? inMyLibrary,
+    String? status,
+    DateTime? startedAt,
+    DateTime? finishedAt,
+  }) => CatalogBook(
     id: id,
     source: source,
     title: title,
@@ -64,6 +79,8 @@ class CatalogBook {
     status: status ?? this.status,
     pages: pages,
     publicationYear: publicationYear,
+    startedAt: startedAt ?? this.startedAt,
+    finishedAt: finishedAt ?? this.finishedAt,
   );
 }
 

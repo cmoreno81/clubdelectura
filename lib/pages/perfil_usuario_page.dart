@@ -20,6 +20,7 @@ import '../services/usuario_service.dart';
 import '../widgets/perfil/editar_fechas_lectura_dialog.dart';
 import '../utils/lectura_fecha_utils.dart';
 import '../widgets/perfil/editar_avatar_dialog.dart';
+import '../widgets/perfil/achievements_section.dart';
 import '../widgets/perfil/perfil_timeline_lectura.dart';
 import '../widgets/perfil/perfil_historico_meses.dart';
 import '../widgets/common/club_rating_stars.dart';
@@ -31,6 +32,8 @@ import 'hidden_series_page.dart';
 import '../services/auth_service.dart';
 import '../widgets/common/onboarding_tutorial.dart';
 import '../widgets/dashboard/year_reading_shelf.dart';
+import '../services/achievement_service.dart';
+import '../models/achievements/achievement.dart';
 import '../models/general_dashboard.dart' show YearShelfBook;
 import 'year_reading_share_page.dart';
 
@@ -190,6 +193,7 @@ class _FinalizadosYearGroup extends StatelessWidget {
 
 class _PerfilUsuarioPageState extends State<PerfilUsuarioPage> {
   late Future<PerfilUsuario> future;
+  late Future<List<UserAchievement>> _achievementsFuture;
   String? usuarioActual;
   String _menuPerfil = 'RESUMEN';
 
@@ -202,6 +206,7 @@ class _PerfilUsuarioPageState extends State<PerfilUsuarioPage> {
     super.initState();
 
     future = _cargarPerfil();
+    _achievementsFuture = _cargarLogros();
     _cargarUsuarioActual();
   }
 
@@ -345,10 +350,19 @@ class _PerfilUsuarioPageState extends State<PerfilUsuarioPage> {
   Future<void> _recargar() async {
     setState(() {
       future = _cargarPerfil();
+      _achievementsFuture = _cargarLogros();
       _shelfKey = UniqueKey();
     });
 
     await future;
+  }
+
+  Future<List<UserAchievement>> _cargarLogros() async {
+    try {
+      return await ApiService().getAchievements(user: widget.usuario);
+    } catch (_) {
+      return const [];
+    }
   }
 
   @override
@@ -407,6 +421,16 @@ class _PerfilUsuarioPageState extends State<PerfilUsuarioPage> {
                     title: 'Meses lectores',
                     subtitle: 'Un calendario por cada mes',
                     selected: _menuPerfil == 'MESES',
+                  ),
+                ),
+                PopupMenuItem(
+                  value: 'LOGROS',
+                  height: 70,
+                  child: _ProfileMenuOption(
+                    icon: Icons.emoji_events_outlined,
+                    title: 'Logros',
+                    subtitle: 'Tus metas y progresos',
+                    selected: _menuPerfil == 'LOGROS',
                   ),
                 ),
                 if (esMiPerfil)
@@ -573,6 +597,40 @@ class _PerfilUsuarioPageState extends State<PerfilUsuarioPage> {
                         genre: libro.genero,
                       ),
                     ),
+                  const SizedBox(height: AppSpacing.lg),
+                ],
+
+                if (_menuPerfil == 'LOGROS') ...[
+                  const ClubSectionTitle(
+                    title: 'Logros',
+                    subtitle: 'Tus metas lectoras y tus progresos',
+                    icon: Icons.emoji_events_rounded,
+                    padding: EdgeInsets.zero,
+                  ),
+                  const SizedBox(height: AppSpacing.sm),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: AppSpacing.md,
+                    ),
+                    child: FutureBuilder<List<UserAchievement>>(
+                      future: _achievementsFuture,
+                      builder: (context, snapshot) {
+                        if (snapshot.connectionState ==
+                            ConnectionState.waiting) {
+                          return const Center(
+                            child: Padding(
+                              padding: EdgeInsets.symmetric(
+                                vertical: AppSpacing.lg,
+                              ),
+                              child: CircularProgressIndicator(),
+                            ),
+                          );
+                        }
+                        final achievements = snapshot.data ?? const [];
+                        return AchievementsSection(achievements: achievements);
+                      },
+                    ),
+                  ),
                   const SizedBox(height: AppSpacing.lg),
                 ],
 

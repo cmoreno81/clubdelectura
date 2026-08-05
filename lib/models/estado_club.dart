@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-enum ContenidoClub { preparando, candidatas, ganador, lectura }
+enum ContenidoClub { preparando, sinCandidatas, candidatas, ganador, lectura }
 
 enum EstadoClubTipo { preparando, votacion, ultimasHoras, gala, lectura }
 

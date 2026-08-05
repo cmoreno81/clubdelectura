@@ -7,6 +7,7 @@ import '../services/api_service.dart';
 import '../services/library_refresh_notifier.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_spacing.dart';
+import '../widgets/sagas/series_volume_details_dialog.dart';
 
 class CompleteSeriesPage extends StatefulWidget {
   const CompleteSeriesPage({super.key, required this.series});
@@ -71,6 +72,7 @@ class _CompleteSeriesPageState extends State<CompleteSeriesPage> {
   Future<void> _select(CatalogBook book) async {
     final selection = await _askVolumeDetails(book);
     if (selection == null || !mounted) return;
+
     final order = selection.order;
     final normalizedOrder = order.trim().replaceAll(',', '.');
 
@@ -89,9 +91,7 @@ class _CompleteSeriesPageState extends State<CompleteSeriesPage> {
       return;
     }
 
-    setState(() {
-      _linkingId = book.id;
-    });
+    setState(() => _linkingId = book.id);
 
     try {
       final linkedBookId = await ApiService().vincularVolumenSaga(
@@ -121,219 +121,31 @@ class _CompleteSeriesPageState extends State<CompleteSeriesPage> {
         ).showSnackBar(SnackBar(content: Text(error.message)));
       }
     } finally {
-      if (mounted) {
-        setState(() {
-          _linkingId = null;
-        });
-      }
+      if (mounted) setState(() => _linkingId = null);
     }
   }
 
-  Future<_SeriesVolumeSelection?> _askVolumeDetails(CatalogBook book) async {
-    final preservePersonalData = !book.isExternal && book.inMyLibrary;
-    var order = _suggestedOrder().toString();
-    var status = preservePersonalData ? '' : 'PENDIENTE';
-    var format = '';
-    var rating = '';
-    DateTime? startDate;
-    DateTime? endDate;
-    String? error;
+  Future<SeriesVolumeSelection?> _askVolumeDetails(CatalogBook book) async {
+    // Caso A: en biblioteca y ya finalizado → preservar todo, solo pedir número
+    // Caso B: en biblioteca pero no finalizado → respetar estado actual
+    // Caso C: no está en biblioteca o es externo → formulario completo
+    final isFinished = book.status == 'FINALIZADO';
+    final preservePersonalData =
+        !book.isExternal && book.inMyLibrary && isFinished;
 
-    return showDialog<_SeriesVolumeSelection>(
+    return showDialog<SeriesVolumeSelection>(
       context: context,
-      builder: (dialogContext) => StatefulBuilder(
-        builder: (context, setDialogState) => AlertDialog(
-          title: const Text('Añadir volumen'),
-          content: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(book.title),
-                if (preservePersonalData) ...[
-                  const SizedBox(height: AppSpacing.sm),
-                  const Text(
-                    'Este libro ya está en tu biblioteca. Solo se añadirá a '
-                    'la saga; conservaremos su estado, fechas, formato, '
-                    'valoración y reseña.',
-                    style: TextStyle(color: AppColors.textSecondary),
-                  ),
-                ],
-                const SizedBox(height: AppSpacing.md),
-                TextFormField(
-                  initialValue: order,
-                  autofocus: true,
-                  keyboardType: const TextInputType.numberWithOptions(
-                    decimal: true,
-                  ),
-                  onChanged: (value) => order = value,
-                  decoration: const InputDecoration(
-                    labelText: 'Número en la saga',
-                    hintText: '1, 2, 2.5…',
-                  ),
-                ),
-                if (!preservePersonalData) ...[
-                  const SizedBox(height: AppSpacing.md),
-                  const Text(
-                    'Estado de lectura',
-                    style: TextStyle(fontWeight: FontWeight.w700),
-                  ),
-                  const SizedBox(height: AppSpacing.xs),
-                  Wrap(
-                    spacing: AppSpacing.xs,
-                    runSpacing: AppSpacing.xs,
-                    children: [
-                      for (final option in const [
-                        ('PENDIENTE', 'Pendiente'),
-                        ('LEYENDO', 'Leyendo'),
-                        ('FINALIZADO', 'Terminado'),
-                      ])
-                        _OptionChip(
-                          label: option.$2,
-                          selected: status == option.$1,
-                          onSelected: () => setDialogState(() {
-                            status = option.$1;
-                            error = null;
-                          }),
-                        ),
-                    ],
-                  ),
-                  const SizedBox(height: AppSpacing.md),
-                  const Text(
-                    'Formato (opcional)',
-                    style: TextStyle(fontWeight: FontWeight.w700),
-                  ),
-                  const SizedBox(height: AppSpacing.xs),
-                  Wrap(
-                    spacing: AppSpacing.xs,
-                    runSpacing: AppSpacing.xs,
-                    children: [
-                      for (final option in const [
-                        ('', 'Sin indicar'),
-                        ('FISICO', 'Físico'),
-                        ('DIGITAL', 'Digital'),
-                        ('AUDIOLIBRO', 'Audio'),
-                      ])
-                        _OptionChip(
-                          label: option.$2,
-                          selected: format == option.$1,
-                          onSelected: () =>
-                              setDialogState(() => format = option.$1),
-                        ),
-                    ],
-                  ),
-                  if (status != 'PENDIENTE') ...[
-                    const SizedBox(height: AppSpacing.md),
-                    _DateSelector(
-                      label: 'Fecha de inicio (opcional)',
-                      value: startDate,
-                      onTap: () async {
-                        final selected = await _pickDate(startDate);
-                        if (selected != null) {
-                          setDialogState(() => startDate = selected);
-                        }
-                      },
-                    ),
-                  ],
-                  if (status == 'FINALIZADO') ...[
-                    const SizedBox(height: AppSpacing.md),
-                    _DateSelector(
-                      label: 'Fecha de fin (opcional)',
-                      value: endDate,
-                      onTap: () async {
-                        final selected = await _pickDate(endDate);
-                        if (selected != null) {
-                          setDialogState(() => endDate = selected);
-                        }
-                      },
-                    ),
-                    const SizedBox(height: AppSpacing.md),
-                    const Text(
-                      'Valoración',
-                      style: TextStyle(fontWeight: FontWeight.w700),
-                    ),
-                    const SizedBox(height: AppSpacing.xs),
-                    Wrap(
-                      spacing: AppSpacing.xs,
-                      runSpacing: AppSpacing.xs,
-                      children: [
-                        for (final value in const ['1', '2', '3', '4', '5'])
-                          _OptionChip(
-                            label: '$value ★',
-                            selected: rating == value,
-                            onSelected: () => setDialogState(() {
-                              rating = value;
-                              error = null;
-                            }),
-                          ),
-                      ],
-                    ),
-                  ],
-                ],
-                if (error != null) ...[
-                  const SizedBox(height: AppSpacing.sm),
-                  Text(error!, style: const TextStyle(color: AppColors.danger)),
-                ],
-              ],
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(dialogContext),
-              child: const Text('Cancelar'),
-            ),
-            FilledButton(
-              onPressed: () {
-                final cleanOrder = order.trim();
-                if (cleanOrder.isEmpty) {
-                  setDialogState(() => error = 'Indica el número del volumen.');
-                  return;
-                }
-                if (status == 'FINALIZADO' && rating.isEmpty) {
-                  setDialogState(() => error = 'Selecciona una valoración.');
-                  return;
-                }
-                if (startDate != null &&
-                    endDate != null &&
-                    endDate!.isBefore(startDate!)) {
-                  setDialogState(
-                    () => error =
-                        'La fecha de fin no puede ser anterior al inicio.',
-                  );
-                  return;
-                }
-                Navigator.pop(
-                  dialogContext,
-                  _SeriesVolumeSelection(
-                    order: cleanOrder,
-                    status: status,
-                    format: format,
-                    rating: rating,
-                    startDate: _formatDate(startDate),
-                    endDate: _formatDate(endDate),
-                  ),
-                );
-              },
-              child: Text(preservePersonalData ? 'Vincular' : 'Añadir'),
-            ),
-          ],
-        ),
+      builder: (dialogContext) => SeriesVolumeDetailsDialog(
+        book: book,
+        preservePersonalData: preservePersonalData,
+        initialOrder: _suggestedOrder().toString(),
+        initialStatus: book.inMyLibrary ? book.status : 'PENDIENTE',
+        initialFormat: '',
+        initialRating: '',
+        initialStartDate: book.startedAt,
+        initialEndDate: book.finishedAt,
       ),
     );
-  }
-
-  Future<DateTime?> _pickDate(DateTime? current) => showDatePicker(
-    context: context,
-    initialDate: current ?? DateTime.now(),
-    firstDate: DateTime(1900),
-    lastDate: DateTime.now(),
-  );
-
-  String _formatDate(DateTime? date) {
-    if (date == null) return '';
-    final month = date.month.toString().padLeft(2, '0');
-    final day = date.day.toString().padLeft(2, '0');
-    return '${date.year}-$month-$day';
   }
 
   int _suggestedOrder() {
@@ -486,7 +298,7 @@ class _CompleteSeriesPageState extends State<CompleteSeriesPage> {
               style: const TextStyle(fontWeight: FontWeight.w800),
             ),
             subtitle: Text(
-              '${book.authorLabel}\n${book.inMyLibrary ? 'En tu biblioteca · ' : ''}${book.sourceLabel}',
+              '${book.authorLabel}\n${book.inMyLibrary ? '${_statusLabel(book.status)} · ' : ''}${book.sourceLabel}',
             ),
             isThreeLine: true,
             trailing: _linkingId == book.id
@@ -505,86 +317,16 @@ class _CompleteSeriesPageState extends State<CompleteSeriesPage> {
       },
     );
   }
+
+  String _statusLabel(String status) => switch (status) {
+    'FINALIZADO' => '✅ Terminado',
+    'LEYENDO' => '📖 Leyendo',
+    'PENDIENTE' => '🔖 Pendiente',
+    _ => 'En tu biblioteca',
+  };
 }
 
 class _ResultSection {
   const _ResultSection(this.title);
-
   final String title;
-}
-
-class _SeriesVolumeSelection {
-  const _SeriesVolumeSelection({
-    required this.order,
-    required this.status,
-    required this.format,
-    required this.rating,
-    required this.startDate,
-    required this.endDate,
-  });
-
-  final String order;
-  final String status;
-  final String format;
-  final String rating;
-  final String startDate;
-  final String endDate;
-}
-
-class _DateSelector extends StatelessWidget {
-  const _DateSelector({
-    required this.label,
-    required this.value,
-    required this.onTap,
-  });
-
-  final String label;
-  final DateTime? value;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final date = value;
-    return ListTile(
-      contentPadding: EdgeInsets.zero,
-      title: Text(label),
-      subtitle: Text(
-        date == null
-            ? 'Se usará la fecha de hoy'
-            : '${date.day}/${date.month}/${date.year}',
-      ),
-      trailing: const Icon(Icons.calendar_month_rounded),
-      onTap: onTap,
-    );
-  }
-}
-
-class _OptionChip extends StatelessWidget {
-  const _OptionChip({
-    required this.label,
-    required this.selected,
-    required this.onSelected,
-  });
-
-  final String label;
-  final bool selected;
-  final VoidCallback onSelected;
-
-  @override
-  Widget build(BuildContext context) {
-    return ChoiceChip(
-      label: Text(label),
-      selected: selected,
-      showCheckmark: selected,
-      selectedColor: AppColors.primary,
-      backgroundColor: AppColors.surfaceSoft,
-      checkmarkColor: Colors.white,
-      side: BorderSide(color: selected ? AppColors.primary : AppColors.border),
-      labelStyle: TextStyle(
-        color: selected ? Colors.white : AppColors.textPrimary,
-        fontWeight: FontWeight.w700,
-      ),
-      onSelected: (_) => onSelected(),
-    );
-  }
 }

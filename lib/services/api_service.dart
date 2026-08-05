@@ -6,6 +6,7 @@ import 'package:club_lectura_app/models/mi_voto.dart';
 import 'package:club_lectura_app/models/notificacion.dart';
 import 'package:club_lectura_app/utils/app_config.dart';
 import 'package:http/http.dart' as http;
+import '../models/achievements/achievement.dart';
 import '../models/dashboard.dart';
 import '../models/libro.dart';
 import '../models/libro_finalizado.dart';
@@ -115,15 +116,29 @@ class ApiService {
         .toList(growable: false);
   }
 
+  // REEMPLAZA el método completo:
   Future<void> importarLibroCatalogo({
-    required CatalogBook book,
+    CatalogBook? book,
+    String? bookId,
     required String prioridad,
     required String formato,
+    String? estado,
+    String? fechaInicio,
+    String? fechaFin,
+    String? valoracion,
   }) async {
-    final response = await _client.post(
-      Uri.parse('$baseUrl?action=importarLibroCatalogo'),
-      headers: const {'Content-Type': 'application/json'},
-      body: jsonEncode({
+    final body = <String, dynamic>{
+      'prioridad': prioridad,
+      'formato': formato,
+      if (estado != null && estado.isNotEmpty) 'estado': estado,
+      if (fechaInicio != null && fechaInicio.isNotEmpty)
+        'fechaInicio': fechaInicio,
+      if (fechaFin != null && fechaFin.isNotEmpty) 'fechaFin': fechaFin,
+      if (valoracion != null && valoracion.isNotEmpty) 'valoracion': valoracion,
+    };
+
+    if (book != null) {
+      body.addAll({
         'id': book.id,
         'origen': book.source,
         'titulo': book.title,
@@ -133,13 +148,18 @@ class ApiService {
         'isbn': book.isbn,
         'paginas': book.pages,
         'anioPublicacion': book.publicationYear,
-        'prioridad': prioridad,
-        'formato': formato,
-      }),
-    );
-    if (response.statusCode != 200) {
-      throw ApiException.fromResponse(response);
+      });
+    } else if (bookId != null) {
+      body['id'] = bookId;
+      body['origen'] = 'CLUBREADS';
     }
+
+    final response = await _client.post(
+      Uri.parse('$baseUrl?action=importarLibroCatalogo'),
+      headers: const {'Content-Type': 'application/json'},
+      body: jsonEncode(body),
+    );
+    if (response.statusCode != 200) throw ApiException.fromResponse(response);
     final decoded = jsonDecode(response.body);
     if (decoded is! Map<String, dynamic> || decoded['ok'] != true) {
       throw ApiException(
@@ -1288,15 +1308,37 @@ class ApiService {
     return data;
   }
 
-  Future<Map<String, dynamic>> getLibrosPorAutor(String autorId) async {
+  // ── Logros ──────────────────────────────────────────────────────
+
+  Future<List<UserAchievement>> getAchievements({String? user}) async {
+    final uri = Uri.parse(baseUrl).replace(
+      queryParameters: {
+        'action': 'achievements',
+        if (user != null && user.isNotEmpty) 'user': user,
+      },
+    );
+    final response = await _client.get(uri);
+    if (response.statusCode != 200) return [];
+    final data = jsonDecode(response.body);
+    if (data is! Map<String, dynamic>) return [];
+    final list = data['achievements'] as List<dynamic>? ?? [];
+    return list
+        .cast<Map<String, dynamic>>()
+        .map(UserAchievement.fromJson)
+        .toList(growable: false);
+  }
+
+  Future<Map<String, dynamic>> getRecentClubAchievements() async {
     final response = await _client.get(
-      Uri.parse('$baseUrl?action=librosPorAutor&autorId=$autorId'),
+      Uri.parse('$baseUrl?action=clubAchievementsRecent'),
     );
     if (response.statusCode != 200) return {};
     final data = jsonDecode(response.body);
     if (data is! Map<String, dynamic>) return {};
     return data;
   }
+
+  // ── Notificaciones ───────────────────────────────────────────────
 
   Future<NotificacionesData> getNotificaciones() async {
     final response = await _client.get(
@@ -1339,6 +1381,8 @@ class ApiService {
     }
   }
 
+  // ── Afinidad ────────────────────────────────────────────────────
+
   Future<Map<String, dynamic>> getAfinidadDetalle(String miembroId) async {
     final response = await _client.get(
       Uri.parse('$baseUrl?action=afinidadDetalle&miembroId=$miembroId'),
@@ -1349,10 +1393,12 @@ class ApiService {
     return data;
   }
 
+  // ── Series overrides ────────────────────────────────────────────
+
   Future<void> setSeriesOverride({
     required String seriesId,
     required int posicion,
-    required String tipo, // 'LEIDO_EXTERNO' o 'OMITIDO'
+    required String tipo,
   }) async {
     await _client.post(
       Uri.parse('$baseUrl?action=setSeriesOverride'),
@@ -1374,5 +1420,43 @@ class ApiService {
       headers: const {'Content-Type': 'application/json'},
       body: jsonEncode({'seriesId': seriesId, 'posicion': posicion}),
     );
+  }
+
+  // ── General dashboard ───────────────────────────────────────────
+
+  Future<Map<String, dynamic>> getLibrosPorAutor(String autorId) async {
+    final response = await _client.get(
+      Uri.parse('$baseUrl?action=librosPorAutor&autorId=$autorId'),
+    );
+    if (response.statusCode != 200) return {};
+    final data = jsonDecode(response.body);
+    if (data is! Map<String, dynamic>) return {};
+    return data;
+  }
+
+  Future<void> guardarOrdenPersonalSaga({
+    required String sagaId,
+    required List<({String bookId, int posicion})> order,
+  }) async {
+    final response = await _client.post(
+      Uri.parse('$baseUrl?action=saveUserSeriesOrder'),
+      headers: const {'Content-Type': 'application/json'},
+      body: jsonEncode({
+        'seriesId': sagaId,
+        'order': order
+            .map((item) => {'bookId': item.bookId, 'posicion': item.posicion})
+            .toList(),
+      }),
+    );
+    if (response.statusCode != 200) throw ApiException.fromResponse(response);
+    final decoded = jsonDecode(response.body);
+    if (decoded is! Map<String, dynamic> || decoded['ok'] != true) {
+      throw ApiException(
+        statusCode: response.statusCode,
+        message: decoded is Map<String, dynamic>
+            ? decoded['mensaje']?.toString() ?? 'No se pudo guardar el orden.'
+            : 'No se pudo guardar el orden.',
+      );
+    }
   }
 }

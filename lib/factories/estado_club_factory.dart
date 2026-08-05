@@ -65,6 +65,18 @@ class EstadoClubFactory {
           color: Color(0xFFF3F0FF),
         );
 
+      case 'SIN_CANDIDATAS':
+        return const EstadoClub(
+          estado: EstadoClubTipo.preparando,
+          titulo: 'Sin candidatas este mes',
+          mensaje:
+              'Ningún libro tiene suficiente interés compartido para abrir la votación.',
+          icono: Icons.library_books_outlined,
+          iconColor: Colors.grey,
+          contenido: ContenidoClub.sinCandidatas,
+          color: Color(0xFFF5F5F5),
+        );
+
       default:
         return const EstadoClub(
           estado: EstadoClubTipo.preparando,

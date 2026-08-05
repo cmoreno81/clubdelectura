@@ -34,25 +34,22 @@ Future<bool> openBookDetail(
         )
         .toList();
 
-    if (registros.isEmpty && finalizados.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Este libro todavía no está disponible en el club.'),
-        ),
-      );
-      return false;
-    }
-
+    // Si no está en la biblioteca del club, navegamos igual con los datos
+    // que ya tenemos — título, portada y género del callsite
     final resolvedCover = coverUrl.isNotEmpty
         ? coverUrl
         : registros.isNotEmpty
         ? registros.first.coverUrl
-        : finalizados.first.coverUrl;
+        : finalizados.isNotEmpty
+        ? finalizados.first.coverUrl
+        : '';
     final resolvedGenre = genre.isNotEmpty
         ? genre
         : registros.isNotEmpty
         ? registros.first.genero
-        : finalizados.first.genero;
+        : finalizados.isNotEmpty
+        ? finalizados.first.genero
+        : '';
 
     await Navigator.push<void>(
       context,

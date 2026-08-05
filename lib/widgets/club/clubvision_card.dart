@@ -36,6 +36,14 @@ class ClubvisionCard extends StatelessWidget {
     return estado == 'VOTACION' || estado == 'RESULTADOS';
   }
 
+  bool get _esInteractiva {
+    final estado = dashboard.clubvision.estado.toUpperCase();
+    return estado == 'VOTACION' ||
+        estado == 'RESULTADOS' ||
+        estado == 'LECTURA' ||
+        estado == 'ULTIMAS_HORAS';
+  }
+
   Future<void> _abrirClubvision(BuildContext context) async {
     final esGala = dashboard.clubvision.estado == 'RESULTADOS';
     await Navigator.push(
@@ -62,7 +70,7 @@ class ClubvisionCard extends StatelessWidget {
               estadoClub.color,
         ],
       ),
-      onTap: () => _abrirClubvision(context),
+      onTap: _esInteractiva ? () => _abrirClubvision(context) : null,
       child: Stack(
         children: [
           Padding(

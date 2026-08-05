@@ -8,7 +8,7 @@ import '../../theme/app_spacing.dart';
 import '../common/club_book_cover.dart';
 import '../common/club_card.dart';
 
-class PerfilSagaCard extends StatelessWidget {
+class PerfilSagaCard extends StatefulWidget {
   const PerfilSagaCard({
     super.key,
     required this.saga,
@@ -16,8 +16,10 @@ class PerfilSagaCard extends StatelessWidget {
     this.onCompleteCatalog,
     this.onGapTap,
     this.onEditVolume,
+    this.onAddToLibrary,
     this.onEditSeries,
     this.onHideSeries,
+    this.onReorderVolumes,
   });
 
   final PerfilSaga saga;
@@ -25,8 +27,63 @@ class PerfilSagaCard extends StatelessWidget {
   final VoidCallback? onCompleteCatalog;
   final ValueChanged<PerfilSagaVolumen>? onGapTap;
   final ValueChanged<PerfilSagaVolumen>? onEditVolume;
+
+  /// Libro en ClubReads pero NO en la biblioteca del usuario
+  final ValueChanged<PerfilSagaVolumen>? onAddToLibrary;
+
   final VoidCallback? onEditSeries;
   final VoidCallback? onHideSeries;
+
+  /// Llamado con la nueva lista ordenada de volúmenes (solo los que tienen bookId)
+  final Future<void> Function(List<PerfilSagaVolumen> newOrder)?
+  onReorderVolumes;
+
+  @override
+  State<PerfilSagaCard> createState() => _PerfilSagaCardState();
+}
+
+class _PerfilSagaCardState extends State<PerfilSagaCard> {
+  bool _reordering = false;
+  bool _saving = false;
+
+  late List<PerfilSagaVolumen> _orderedVolumes;
+
+  @override
+  void initState() {
+    super.initState();
+    _orderedVolumes = _realVolumes();
+  }
+
+  @override
+  void didUpdateWidget(PerfilSagaCard oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (!_reordering) {
+      _orderedVolumes = _realVolumes();
+    }
+  }
+
+  List<PerfilSagaVolumen> _realVolumes() =>
+      widget.saga.volumenes.where((v) => v.bookId.isNotEmpty).toList();
+
+  PerfilSaga get saga => widget.saga;
+
+  void _toggleReorder() {
+    setState(() {
+      _reordering = !_reordering;
+      if (!_reordering) _orderedVolumes = _realVolumes();
+    });
+  }
+
+  Future<void> _saveOrder() async {
+    if (widget.onReorderVolumes == null) return;
+    setState(() => _saving = true);
+    try {
+      await widget.onReorderVolumes!(_orderedVolumes);
+      if (mounted) setState(() => _reordering = false);
+    } finally {
+      if (mounted) setState(() => _saving = false);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -56,6 +113,7 @@ class PerfilSagaCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // ── Cabecera ──
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -103,76 +161,134 @@ class PerfilSagaCard extends StatelessWidget {
                       ),
                     ),
                   ),
-                  if (onEditSeries != null || onHideSeries != null)
-                    Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        if (onEditSeries != null)
-                          IconButton(
-                            tooltip: 'Editar datos de la saga',
-                            visualDensity: VisualDensity.compact,
-                            onPressed: onEditSeries,
-                            icon: const Icon(Icons.edit_outlined, size: 19),
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      if (widget.onReorderVolumes != null &&
+                          _orderedVolumes.length >= 2)
+                        IconButton(
+                          tooltip: _reordering
+                              ? 'Cancelar reordenar'
+                              : 'Reordenar volúmenes',
+                          visualDensity: VisualDensity.compact,
+                          onPressed: _toggleReorder,
+                          icon: Icon(
+                            _reordering
+                                ? Icons.close_rounded
+                                : Icons.swap_vert_rounded,
+                            size: 19,
+                            color: _reordering
+                                ? AppColors.danger
+                                : AppColors.textSecondary,
                           ),
-                        if (onHideSeries != null)
-                          IconButton(
-                            tooltip: 'Ocultar saga',
-                            visualDensity: VisualDensity.compact,
-                            onPressed: onHideSeries,
-                            icon: const Icon(
-                              Icons.visibility_off_outlined,
-                              size: 20,
-                              color: AppColors.primary,
-                            ),
+                        ),
+                      if (widget.onEditSeries != null)
+                        IconButton(
+                          tooltip: 'Editar datos de la saga',
+                          visualDensity: VisualDensity.compact,
+                          onPressed: widget.onEditSeries,
+                          icon: const Icon(Icons.edit_outlined, size: 19),
+                        ),
+                      if (widget.onHideSeries != null)
+                        IconButton(
+                          tooltip: 'Ocultar saga',
+                          visualDensity: VisualDensity.compact,
+                          onPressed: widget.onHideSeries,
+                          icon: const Icon(
+                            Icons.visibility_off_outlined,
+                            size: 20,
+                            color: AppColors.primary,
                           ),
-                      ],
-                    ),
+                        ),
+                    ],
+                  ),
                 ],
               ),
             ],
           ),
+
           const SizedBox(height: AppSpacing.md),
-          Wrap(
-            spacing: 7,
-            runSpacing: 7,
-            children: [
-              for (var index = 0; index < saga.totalSaga; index++)
-                Builder(
-                  key: ValueKey(index),
-                  builder: (_) {
-                    final vol = _volumeAt(index + 1);
-                    final esHueco =
-                        vol == null ||
-                        vol.esNoAnadido ||
-                        vol.esLeidoExterno ||
-                        vol.esOmitido;
-                    return _VolumeSquare(
-                      index: index,
-                      volume: vol,
-                      onTap: vol != null && !esHueco && onEditVolume != null
-                          ? () => onEditVolume!(vol)
-                          : esHueco && onGapTap != null
-                          ? () {
-                              // Creamos un volumen virtual para el hueco
-                              final gap =
-                                  vol ??
-                                  PerfilSagaVolumen(
-                                    bookId: '',
-                                    titulo: 'Tomo ${index + 1}',
-                                    numero: '${index + 1}',
-                                    posicion: index + 1,
-                                    coverUrl: '',
-                                    estado: 'NO_ANADIDO',
-                                  );
-                              onGapTap!(gap);
-                            }
-                          : null,
-                    );
-                  },
-                ),
-            ],
-          ),
-          if (onCompleteCatalog != null) ...[
+
+          // ── Volúmenes: modo normal o modo reordenar ──
+          if (_reordering)
+            _ReorderableVolumeList(
+              volumes: _orderedVolumes,
+              saving: _saving,
+              accent: accent,
+              onReorder: (oldIndex, newIndex) {
+                setState(() {
+                  if (newIndex > oldIndex) newIndex--;
+                  final item = _orderedVolumes.removeAt(oldIndex);
+                  _orderedVolumes.insert(newIndex, item);
+                });
+              },
+              onSave: _saveOrder,
+            )
+          else
+            Wrap(
+              spacing: 7,
+              runSpacing: 7,
+              children: [
+                for (var index = 0; index < saga.totalSaga; index++)
+                  Builder(
+                    key: ValueKey(index),
+                    builder: (_) {
+                      final vol = _volumeAt(index + 1);
+
+                      // Caso 1: hueco real (no en ClubReads, o marcado especial)
+                      final esHueco =
+                          vol == null ||
+                          vol.esNoAnadido ||
+                          vol.esLeidoExterno ||
+                          vol.esOmitido;
+
+                      // Caso 2: en ClubReads pero NO en mi biblioteca
+                      final enClubReadsNoEnBiblioteca =
+                          vol != null && !esHueco && vol.estado.trim().isEmpty;
+
+                      VoidCallback? tapCallback;
+                      if (vol != null &&
+                          !esHueco &&
+                          !enClubReadsNoEnBiblioteca) {
+                        // Tiene estado → editar volumen
+                        if (widget.onEditVolume != null) {
+                          tapCallback = () => widget.onEditVolume!(vol);
+                        }
+                      } else if (enClubReadsNoEnBiblioteca) {
+                        // Está en ClubReads pero no en mi biblioteca → añadir
+                        if (widget.onAddToLibrary != null) {
+                          tapCallback = () => widget.onAddToLibrary!(vol!);
+                        }
+                      } else if (esHueco) {
+                        // No en ClubReads → gap tap (override o completar)
+                        if (widget.onGapTap != null) {
+                          final gap =
+                              vol ??
+                              PerfilSagaVolumen(
+                                bookId: '',
+                                titulo: 'Tomo ${index + 1}',
+                                numero: '${index + 1}',
+                                posicion: index + 1,
+                                coverUrl: '',
+                                estado: 'NO_ANADIDO',
+                              );
+                          tapCallback = () => widget.onGapTap!(gap);
+                        }
+                      }
+
+                      return _VolumeSquare(
+                        index: index,
+                        volume: vol,
+                        enClubReadsNoEnBiblioteca: enClubReadsNoEnBiblioteca,
+                        onTap: tapCallback,
+                      );
+                    },
+                  ),
+              ],
+            ),
+
+          // ── Completar saga ──
+          if (!_reordering && widget.onCompleteCatalog != null) ...[
             const SizedBox(height: AppSpacing.md),
             FeatureTooltip(
               featureKey: 'ft_complete_saga',
@@ -180,21 +296,23 @@ class PerfilSagaCard extends StatelessWidget {
               icon: Icons.auto_awesome_rounded,
               position: FeatureTooltipPosition.above,
               child: OutlinedButton.icon(
-                onPressed: onCompleteCatalog,
+                onPressed: widget.onCompleteCatalog,
                 icon: const Icon(Icons.auto_awesome_rounded),
                 label: const Text('Completar saga'),
               ),
             ),
           ],
-          if (saga.siguiente != null) ...[
+
+          // ── Siguiente para continuar ──
+          if (!_reordering && saga.siguiente != null) ...[
             const SizedBox(height: AppSpacing.lg),
             Material(
               color: Colors.transparent,
               child: InkWell(
                 borderRadius: BorderRadius.circular(AppRadius.md),
-                onTap: onContinue == null
+                onTap: widget.onContinue == null
                     ? null
-                    : () => onContinue!(saga.siguiente!),
+                    : () => widget.onContinue!(saga.siguiente!),
                 child: Container(
                   width: double.infinity,
                   padding: const EdgeInsets.all(AppSpacing.sm),
@@ -239,7 +357,7 @@ class PerfilSagaCard extends StatelessWidget {
                           ],
                         ),
                       ),
-                      if (onContinue != null)
+                      if (widget.onContinue != null)
                         Icon(Icons.arrow_forward_rounded, color: accent),
                     ],
                   ),
@@ -260,11 +378,202 @@ class PerfilSagaCard extends StatelessWidget {
   }
 }
 
+// ─── Lista reordenable ───────────────────────────────────────────
+
+class _ReorderableVolumeList extends StatelessWidget {
+  const _ReorderableVolumeList({
+    required this.volumes,
+    required this.saving,
+    required this.accent,
+    required this.onReorder,
+    required this.onSave,
+  });
+
+  final List<PerfilSagaVolumen> volumes;
+  final bool saving;
+  final Color accent;
+  final void Function(int oldIndex, int newIndex) onReorder;
+  final VoidCallback onSave;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Container(
+          width: double.infinity,
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppSpacing.sm,
+            vertical: AppSpacing.xs,
+          ),
+          decoration: BoxDecoration(
+            color: AppColors.primaryLight.withValues(alpha: .5),
+            borderRadius: BorderRadius.circular(AppRadius.sm),
+          ),
+          child: const Row(
+            children: [
+              Icon(
+                Icons.drag_indicator_rounded,
+                size: 16,
+                color: AppColors.primaryDark,
+              ),
+              SizedBox(width: 6),
+              Expanded(
+                child: Text(
+                  'Arrastra los tomos para cambiar el orden visual. '
+                  'No afecta a tus fechas ni valoraciones.',
+                  style: TextStyle(fontSize: 12, color: AppColors.primaryDark),
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: AppSpacing.sm),
+        ReorderableListView.builder(
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          itemCount: volumes.length,
+          onReorder: onReorder,
+          proxyDecorator: (child, index, animation) => Material(
+            elevation: 4,
+            borderRadius: BorderRadius.circular(AppRadius.md),
+            child: child,
+          ),
+          itemBuilder: (context, index) {
+            final vol = volumes[index];
+            final status = vol.estado;
+            final read = status == 'LEIDO' || status == 'LEIDO_EXTERNO';
+            final reading = status == 'LEYENDO';
+            final color = read
+                ? AppColors.primary
+                : reading
+                ? AppColors.info
+                : status == 'OMITIDO'
+                ? AppColors.textMuted
+                : AppColors.textSecondary;
+
+            return Container(
+              key: ValueKey(vol.bookId),
+              margin: const EdgeInsets.only(bottom: 6),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(AppRadius.md),
+                border: Border.all(color: color.withValues(alpha: .25)),
+              ),
+              child: Row(
+                children: [
+                  ClipRRect(
+                    borderRadius: const BorderRadius.only(
+                      topLeft: Radius.circular(AppRadius.md - 1),
+                      bottomLeft: Radius.circular(AppRadius.md - 1),
+                    ),
+                    child: SizedBox(
+                      width: 36,
+                      height: 52,
+                      child: vol.coverUrl.isNotEmpty
+                          ? Image.network(
+                              vol.coverUrl,
+                              fit: BoxFit.cover,
+                              errorBuilder: (_, _, _) =>
+                                  _placeholder(color, '${index + 1}'),
+                            )
+                          : _placeholder(color, '${index + 1}'),
+                    ),
+                  ),
+                  const SizedBox(width: AppSpacing.sm),
+                  Container(
+                    width: 26,
+                    height: 26,
+                    decoration: BoxDecoration(
+                      color: color.withValues(alpha: .12),
+                      borderRadius: BorderRadius.circular(AppRadius.sm),
+                    ),
+                    alignment: Alignment.center,
+                    child: Text(
+                      '${index + 1}',
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w900,
+                        color: color,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: AppSpacing.sm),
+                  Expanded(
+                    child: Text(
+                      vol.titulo,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ),
+                  const Padding(
+                    padding: EdgeInsets.symmetric(horizontal: 8),
+                    child: Icon(
+                      Icons.drag_handle_rounded,
+                      color: AppColors.textMuted,
+                      size: 20,
+                    ),
+                  ),
+                ],
+              ),
+            );
+          },
+        ),
+        const SizedBox(height: AppSpacing.sm),
+        SizedBox(
+          width: double.infinity,
+          child: FilledButton.icon(
+            onPressed: saving ? null : onSave,
+            icon: saving
+                ? const SizedBox(
+                    width: 16,
+                    height: 16,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: Colors.white,
+                    ),
+                  )
+                : const Icon(Icons.check_rounded, size: 18),
+            label: Text(saving ? 'Guardando…' : 'Guardar orden'),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _placeholder(Color color, String number) {
+    return Container(
+      color: color.withValues(alpha: .1),
+      alignment: Alignment.center,
+      child: Text(
+        number,
+        style: TextStyle(
+          fontWeight: FontWeight.w900,
+          color: color,
+          fontSize: 13,
+        ),
+      ),
+    );
+  }
+}
+
+// ─── Cuadrado de volumen (modo normal) ──────────────────────────
+
 class _VolumeSquare extends StatelessWidget {
-  const _VolumeSquare({required this.index, required this.volume, this.onTap});
+  const _VolumeSquare({
+    required this.index,
+    required this.volume,
+    required this.enClubReadsNoEnBiblioteca,
+    this.onTap,
+  });
 
   final int index;
   final PerfilSagaVolumen? volume;
+  final bool enClubReadsNoEnBiblioteca;
   final VoidCallback? onTap;
 
   @override
@@ -275,6 +584,7 @@ class _VolumeSquare extends StatelessWidget {
     final pending = status == 'PENDIENTE';
     final leidoExterno = status == 'LEIDO_EXTERNO';
     final omitido = status == 'OMITIDO';
+
     final color = read || leidoExterno
         ? AppColors.primary
         : reading
@@ -283,6 +593,8 @@ class _VolumeSquare extends StatelessWidget {
         ? AppColors.warning
         : omitido
         ? AppColors.textMuted
+        : enClubReadsNoEnBiblioteca
+        ? AppColors.primary.withValues(alpha: .4)
         : AppColors.textSecondary;
 
     final number = volume?.posicion != null
@@ -290,10 +602,18 @@ class _VolumeSquare extends StatelessWidget {
         : volume?.numero.isNotEmpty == true
         ? volume!.numero
         : '${index + 1}';
+
+    String tooltipMsg;
+    if (volume == null) {
+      tooltipMsg = 'Volumen ${index + 1} aún no registrado';
+    } else if (enClubReadsNoEnBiblioteca) {
+      tooltipMsg = '${volume!.titulo} · Pulsa para añadir a tu biblioteca';
+    } else {
+      tooltipMsg = '${volume!.titulo} · Volumen $number';
+    }
+
     return Tooltip(
-      message: volume == null
-          ? 'Volumen ${index + 1} aún no registrado'
-          : '${volume!.titulo} · Volumen $number',
+      message: tooltipMsg,
       child: InkWell(
         onTap: onTap,
         borderRadius: BorderRadius.circular(10),
@@ -303,6 +623,7 @@ class _VolumeSquare extends StatelessWidget {
           child: Stack(
             clipBehavior: Clip.none,
             children: [
+              // Portada
               Positioned.fill(
                 child: ClipRRect(
                   borderRadius: BorderRadius.circular(9),
@@ -316,6 +637,7 @@ class _VolumeSquare extends StatelessWidget {
                       : _coverPlaceholder(color, number),
                 ),
               ),
+              // Borde
               Positioned.fill(
                 child: DecoratedBox(
                   decoration: BoxDecoration(
@@ -327,63 +649,71 @@ class _VolumeSquare extends StatelessWidget {
                   ),
                 ),
               ),
-              Positioned(
-                left: 4,
-                bottom: 4,
-                child: Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 5,
-                    vertical: 2,
-                  ),
-                  decoration: BoxDecoration(
-                    color: Colors.black.withValues(alpha: .72),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Text(
-                    number,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 10,
-                      fontWeight: FontWeight.w900,
-                    ),
-                  ),
-                ),
-              ),
-              if (read || reading || leidoExterno || omitido)
+              // Indicador de estado — esquina inferior derecha
+              if (read || leidoExterno)
                 Positioned(
-                  top: -5,
-                  right: -5,
-                  child: Container(
-                    width: 23,
-                    height: 23,
-                    decoration: BoxDecoration(
-                      color: omitido ? AppColors.textMuted : color,
-                      shape: BoxShape.circle,
-                      border: Border.all(color: Colors.white, width: 2),
-                    ),
-                    child: Icon(
-                      read
-                          ? Icons.check_rounded
-                          : reading
-                          ? Icons.auto_stories_rounded
-                          : leidoExterno
-                          ? Icons.history_edu_rounded
-                          : Icons.block_rounded,
-                      size: 14,
-                      color: Colors.white,
-                    ),
+                  right: 2,
+                  bottom: 2,
+                  child: _statusBadge(
+                    color: color,
+                    icon: Icons.check_rounded,
+                    iconSize: 11,
                   ),
                 ),
-              // Borde discontinuo para LEIDO_EXTERNO
+              if (reading)
+                Positioned(
+                  right: 2,
+                  bottom: 2,
+                  child: _statusBadge(
+                    color: color,
+                    icon: Icons.menu_book_rounded,
+                    iconSize: 10,
+                  ),
+                ),
+              if (pending)
+                Positioned(
+                  right: 2,
+                  bottom: 2,
+                  child: _statusBadge(
+                    color: color,
+                    icon: Icons.bookmark_rounded,
+                    iconSize: 10,
+                  ),
+                ),
+              // Indicador especial — esquina superior derecha
+              if (omitido)
+                Positioned(
+                  top: 2,
+                  right: 2,
+                  child: Icon(Icons.block_rounded, size: 13, color: color),
+                ),
               if (leidoExterno)
-                Positioned.fill(
-                  child: DecoratedBox(
+                Positioned(
+                  top: 2,
+                  right: 2,
+                  child: Icon(
+                    Icons.history_edu_rounded,
+                    size: 13,
+                    color: color,
+                  ),
+                ),
+              // En ClubReads pero no en mi biblioteca → icono de añadir
+              if (enClubReadsNoEnBiblioteca)
+                Positioned(
+                  right: 2,
+                  bottom: 2,
+                  child: Container(
+                    width: 18,
+                    height: 18,
                     decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(9),
-                      border: Border.all(
-                        color: AppColors.primary.withValues(alpha: .5),
-                        width: 2,
-                      ),
+                      color: AppColors.primary,
+                      shape: BoxShape.circle,
+                      border: Border.all(color: Colors.white, width: 1.5),
+                    ),
+                    child: const Icon(
+                      Icons.add_rounded,
+                      size: 11,
+                      color: Colors.white,
                     ),
                   ),
                 ),
@@ -394,12 +724,38 @@ class _VolumeSquare extends StatelessWidget {
     );
   }
 
-  Widget _coverPlaceholder(Color color, String number) => Container(
-    color: color.withValues(alpha: .1),
-    alignment: Alignment.center,
-    child: Text(
-      number,
-      style: TextStyle(color: color, fontWeight: FontWeight.w900),
-    ),
-  );
+  Widget _statusBadge({
+    required Color color,
+    required IconData icon,
+    required double iconSize,
+  }) {
+    return Container(
+      width: 18,
+      height: 18,
+      decoration: BoxDecoration(
+        color: color,
+        shape: BoxShape.circle,
+        border: Border.all(color: Colors.white, width: 1.5),
+      ),
+      child: Icon(icon, size: iconSize, color: Colors.white),
+    );
+  }
+
+  Widget _coverPlaceholder(Color color, String number) {
+    return Container(
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: .1),
+        borderRadius: BorderRadius.circular(9),
+      ),
+      alignment: Alignment.center,
+      child: Text(
+        number,
+        style: TextStyle(
+          fontWeight: FontWeight.w900,
+          fontSize: 16,
+          color: color,
+        ),
+      ),
+    );
+  }
 }

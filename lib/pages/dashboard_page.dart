@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 
+import '../navigation/app_page_route.dart';
 import '../navigation/app_page_route.dart';
 import '../navigation/book_detail_navigation.dart';
 import 'afinidad_detalle_page.dart';
+import 'club_logros_page.dart';
+import 'package:flutter/services.dart';
 
 import '../dev/dev_settings.dart';
 import '../models/dashboard_view_data.dart';
@@ -257,13 +259,13 @@ class _DashboardPageState extends State<DashboardPage> {
                   ),
 
                   const SizedBox(height: AppSpacing.lg),
-
-                  ClubvisionCard(
-                    dashboard: data,
-                    estadoClub: estadoClub,
-                    haVotado: viewData.haVotado,
-                    onActualizar: _recargar,
-                  ),
+                  if (data.clubvision.estado.toUpperCase() != 'SIN_DATOS')
+                    ClubvisionCard(
+                      dashboard: data,
+                      estadoClub: estadoClub,
+                      haVotado: viewData.haVotado,
+                      onActualizar: _recargar,
+                    ),
 
                   const SizedBox(height: AppSpacing.lg),
 
@@ -275,6 +277,11 @@ class _DashboardPageState extends State<DashboardPage> {
                   ),
 
                   const SizedBox(height: AppSpacing.sm),
+
+                  // ── Logros del club — primera card de la sección ──
+                  _LogrosClubCard(),
+
+                  const SizedBox(height: AppSpacing.md),
 
                   InfoCard(
                     title: 'Pulso del club',
@@ -312,7 +319,7 @@ class _DashboardPageState extends State<DashboardPage> {
                     const SizedBox(height: AppSpacing.md),
                     _AffinityCard(
                       miembros: data.rankingAfinidad,
-                      miAvatarUrl: avatarUrlActual,
+                      miAvatarUrl: avatarUrlActual ?? '',
                     ),
                   ],
 
@@ -519,7 +526,7 @@ class _DashboardPageState extends State<DashboardPage> {
 
         Expanded(
           child: InfoCard(
-            title: 'Media histórica',
+            title: 'Media del club',
             value: valoracion == '0' ? 'Sin datos' : '$valoracion / 5',
             icon: Icons.star_outline_rounded,
             variant: InfoCardVariant.gold,
@@ -1518,4 +1525,69 @@ class _AffinityMemberTile extends StatelessWidget {
       ),
     ),
   );
+}
+
+// ─────────────────────────────────────────────
+// Card de logros del club
+// ─────────────────────────────────────────────
+
+class _LogrosClubCard extends StatelessWidget {
+  const _LogrosClubCard();
+
+  @override
+  Widget build(BuildContext context) {
+    return ClubCard(
+      elevated: false,
+      gradient: const LinearGradient(
+        begin: Alignment.topLeft,
+        end: Alignment.bottomRight,
+        colors: [Color(0xFFFFFBE6), Color(0xFFFFF3CD)],
+      ),
+      borderColor: Color(0xFFE4B63F),
+      onTap: () => Navigator.push<void>(
+        context,
+        AppPageRoute(builder: (_) => const ClubLogrosPage()),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 52,
+            height: 52,
+            decoration: BoxDecoration(
+              color: const Color(0xFFFFEDBA),
+              borderRadius: BorderRadius.circular(AppRadius.lg),
+            ),
+            child: const Icon(
+              Icons.emoji_events_rounded,
+              color: Color(0xFFB48113),
+              size: 27,
+            ),
+          ),
+          const SizedBox(width: AppSpacing.md),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Logros del club',
+                  style: AppTextStyles.subtitle.copyWith(
+                    fontWeight: FontWeight.w700,
+                    color: const Color(0xFF7A5A00),
+                  ),
+                ),
+                const SizedBox(height: AppSpacing.xs),
+                Text(
+                  'Descubre los logros de tus compañeras',
+                  style: AppTextStyles.bodySecondary.copyWith(
+                    color: const Color(0xFF9A7A20),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const Icon(Icons.chevron_right_rounded, color: Color(0xFFB48113)),
+        ],
+      ),
+    );
+  }
 }

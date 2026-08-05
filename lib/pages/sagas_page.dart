@@ -1,3 +1,4 @@
+import 'package:club_lectura_app/services/api_service.dart';
 import 'package:flutter/material.dart';
 
 import '../models/libro_agrupado.dart';
@@ -493,6 +494,58 @@ class _SagasPageState extends State<SagasPage> {
     }
   }
 
+  Future<void> _onAddToLibrary(
+    PerfilSaga saga,
+    PerfilSagaVolumen volumen,
+  ) async {
+    final result = await showModalBottomSheet<_LibraryPreferences>(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (_) => _AddVolumeToLibrarySheet(titulo: volumen.titulo),
+    );
+    if (result == null || !mounted) return;
+
+    try {
+      // Construimos un CatalogBook mínimo con el bookId del volumen
+      await ApiService().importarLibroCatalogo(
+        bookId: volumen.bookId,
+        prioridad: result.priority,
+        formato: result.format,
+        estado: result.status,
+        fechaInicio: result.startDate,
+        fechaFin: result.endDate,
+        valoracion: result.rating,
+      );
+      if (!mounted) return;
+      await _reload();
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('${volumen.titulo} añadido a tu biblioteca')),
+      );
+    } on ApiException catch (error) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(error.message)));
+    }
+  }
+
+  Future<void> _reorderVolumes(
+    PerfilSaga saga,
+    List<PerfilSagaVolumen> newOrder,
+  ) async {
+    final order = [
+      for (var i = 0; i < newOrder.length; i++)
+        (bookId: newOrder[i].bookId, posicion: i + 1),
+    ];
+
+    await ApiService().guardarOrdenPersonalSaga(sagaId: saga.id, order: order);
+
+    await _reload();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -710,14 +763,18 @@ class _SagasPageState extends State<SagasPage> {
           for (final saga in sagas)
             Padding(
               padding: const EdgeInsets.only(bottom: AppSpacing.md),
-              child: PerfilSagaCard(
+              child: // En el método _section, dentro del for (final saga in sagas):
+              PerfilSagaCard(
                 saga: saga,
                 onContinue: _openBook,
                 onCompleteCatalog: () => _completeSeries(saga),
                 onGapTap: (volumen) => _onGapTap(saga, volumen),
                 onEditVolume: _editVolume,
+                onAddToLibrary: (volumen) =>
+                    _onAddToLibrary(saga, volumen), // ← nuevo
                 onEditSeries: () => _editSeries(saga),
                 onHideSeries: () => _hideSeries(saga),
+                onReorderVolumes: (newOrder) => _reorderVolumes(saga, newOrder),
               ),
             ),
         ],
@@ -847,6 +904,268 @@ class _SagaFilters extends StatelessWidget {
             if (i < options.length - 1) const SizedBox(width: AppSpacing.xs),
           ],
         ],
+      ),
+    );
+  }
+}
+
+class _LibraryPreferences {
+  const _LibraryPreferences({
+    required this.priority,
+    required this.format,
+    required this.status,
+    this.startDate,
+    this.endDate,
+    this.rating,
+  });
+  final String priority;
+  final String format;
+  final String status;
+  final String? startDate;
+  final String? endDate;
+  final String? rating;
+}
+
+class _AddVolumeToLibrarySheet extends StatefulWidget {
+  const _AddVolumeToLibrarySheet({required this.titulo});
+  final String titulo;
+
+  @override
+  State<_AddVolumeToLibrarySheet> createState() =>
+      _AddVolumeToLibrarySheetState();
+}
+
+class _AddVolumeToLibrarySheetState extends State<_AddVolumeToLibrarySheet> {
+  String _priority = 'MEDIA';
+  String _format = '';
+  String _status = 'PENDIENTE';
+  String _rating = '';
+  DateTime? _startDate;
+  DateTime? _endDate;
+
+  Future<DateTime?> _pickDate(DateTime? current) => showDatePicker(
+    context: context,
+    initialDate: current ?? DateTime.now(),
+    firstDate: DateTime(1900),
+    lastDate: DateTime.now(),
+  );
+
+  String _fmt(DateTime? d) {
+    if (d == null) return '';
+    return '${d.year}-${d.month.toString().padLeft(2, '0')}-'
+        '${d.day.toString().padLeft(2, '0')}';
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return SafeArea(
+      child: SingleChildScrollView(
+        padding: EdgeInsets.fromLTRB(
+          AppSpacing.lg,
+          AppSpacing.lg,
+          AppSpacing.lg,
+          AppSpacing.lg + MediaQuery.viewInsetsOf(context).bottom,
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Añadir a mi biblioteca',
+              style: Theme.of(context).textTheme.titleLarge,
+            ),
+            const SizedBox(height: AppSpacing.xs),
+            Text(
+              widget.titulo,
+              style: const TextStyle(
+                fontWeight: FontWeight.w700,
+                color: AppColors.textSecondary,
+              ),
+            ),
+            const SizedBox(height: AppSpacing.lg),
+
+            // Estado
+            const Text('Estado'),
+            const SizedBox(height: AppSpacing.xs),
+            Wrap(
+              spacing: AppSpacing.xs,
+              runSpacing: AppSpacing.xs,
+              children: [
+                for (final opt in const [
+                  ('PENDIENTE', 'Pendiente'),
+                  ('LEYENDO', 'Leyendo'),
+                  ('FINALIZADO', 'Terminado'),
+                ])
+                  ChoiceChip(
+                    label: Text(opt.$2),
+                    selected: _status == opt.$1,
+                    selectedColor: AppColors.primaryDark,
+                    checkmarkColor: Colors.white,
+                    labelStyle: TextStyle(
+                      color: _status == opt.$1
+                          ? Colors.white
+                          : AppColors.textPrimary,
+                      fontWeight: _status == opt.$1
+                          ? FontWeight.w800
+                          : FontWeight.w500,
+                    ),
+                    onSelected: (_) => setState(() {
+                      _status = opt.$1;
+                      if (_status != 'FINALIZADO') {
+                        _rating = '';
+                        _endDate = null;
+                      }
+                      if (_status == 'PENDIENTE') _startDate = null;
+                    }),
+                  ),
+              ],
+            ),
+
+            // Fecha inicio — si leyendo o finalizado
+            if (_status == 'LEYENDO' || _status == 'FINALIZADO') ...[
+              const SizedBox(height: AppSpacing.md),
+              ListTile(
+                contentPadding: EdgeInsets.zero,
+                title: const Text('Fecha de inicio (opcional)'),
+                subtitle: Text(
+                  _startDate == null
+                      ? 'Sin fecha'
+                      : '${_startDate!.day}/${_startDate!.month}/${_startDate!.year}',
+                ),
+                trailing: const Icon(Icons.calendar_month_rounded),
+                onTap: () async {
+                  final d = await _pickDate(_startDate);
+                  if (d != null) setState(() => _startDate = d);
+                },
+              ),
+            ],
+
+            // Fecha fin + valoración — si finalizado
+            if (_status == 'FINALIZADO') ...[
+              const SizedBox(height: AppSpacing.xs),
+              ListTile(
+                contentPadding: EdgeInsets.zero,
+                title: const Text('Fecha de fin (opcional)'),
+                subtitle: Text(
+                  _endDate == null
+                      ? 'Sin fecha'
+                      : '${_endDate!.day}/${_endDate!.month}/${_endDate!.year}',
+                ),
+                trailing: const Icon(Icons.calendar_month_rounded),
+                onTap: () async {
+                  final d = await _pickDate(_endDate);
+                  if (d != null) setState(() => _endDate = d);
+                },
+              ),
+              const SizedBox(height: AppSpacing.md),
+              const Text('Valoración'),
+              const SizedBox(height: AppSpacing.xs),
+              Wrap(
+                spacing: AppSpacing.xs,
+                children: [
+                  for (final v in const ['1', '2', '3', '4', '5'])
+                    ChoiceChip(
+                      label: Text('$v ★'),
+                      selected: _rating == v,
+                      selectedColor: AppColors.primaryDark,
+                      checkmarkColor: Colors.white,
+                      labelStyle: TextStyle(
+                        color: _rating == v
+                            ? Colors.white
+                            : AppColors.textPrimary,
+                        fontWeight: _rating == v
+                            ? FontWeight.w800
+                            : FontWeight.w500,
+                      ),
+                      onSelected: (_) => setState(() => _rating = v),
+                    ),
+                ],
+              ),
+            ],
+
+            const SizedBox(height: AppSpacing.md),
+
+            // Prioridad
+            const Text('Prioridad'),
+            const SizedBox(height: AppSpacing.xs),
+            Wrap(
+              spacing: AppSpacing.xs,
+              children: ['ALTA', 'MEDIA', 'BAJA']
+                  .map(
+                    (v) => ChoiceChip(
+                      label: Text(v[0] + v.substring(1).toLowerCase()),
+                      selected: _priority == v,
+                      selectedColor: AppColors.primaryDark,
+                      checkmarkColor: Colors.white,
+                      labelStyle: TextStyle(
+                        color: _priority == v
+                            ? Colors.white
+                            : AppColors.textPrimary,
+                        fontWeight: _priority == v
+                            ? FontWeight.w800
+                            : FontWeight.w500,
+                      ),
+                      onSelected: (_) => setState(() => _priority = v),
+                    ),
+                  )
+                  .toList(),
+            ),
+
+            const SizedBox(height: AppSpacing.md),
+
+            // Formato
+            const Text('Formato (puedes decidirlo más tarde)'),
+            const SizedBox(height: AppSpacing.xs),
+            Wrap(
+              spacing: AppSpacing.xs,
+              children:
+                  const {
+                        '': 'Sin decidir',
+                        'FISICO': 'Físico',
+                        'DIGITAL': 'Digital',
+                        'AUDIOLIBRO': 'Audiolibro',
+                      }.entries
+                      .map(
+                        (e) => ChoiceChip(
+                          label: Text(e.value),
+                          selected: _format == e.key,
+                          selectedColor: AppColors.primaryDark,
+                          checkmarkColor: Colors.white,
+                          labelStyle: TextStyle(
+                            color: _format == e.key
+                                ? Colors.white
+                                : AppColors.textPrimary,
+                            fontWeight: _format == e.key
+                                ? FontWeight.w800
+                                : FontWeight.w500,
+                          ),
+                          onSelected: (_) => setState(() => _format = e.key),
+                        ),
+                      )
+                      .toList(),
+            ),
+
+            const SizedBox(height: AppSpacing.xl),
+            SizedBox(
+              width: double.infinity,
+              child: FilledButton.icon(
+                onPressed: () => Navigator.pop(
+                  context,
+                  _LibraryPreferences(
+                    priority: _priority,
+                    format: _format,
+                    status: _status,
+                    startDate: _fmt(_startDate),
+                    endDate: _fmt(_endDate),
+                    rating: _rating.isEmpty ? null : _rating,
+                  ),
+                ),
+                icon: const Icon(Icons.add_rounded),
+                label: const Text('Añadir'),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
