@@ -494,6 +494,53 @@ class _SagasPageState extends State<SagasPage> {
     }
   }
 
+  Future<void> _removeSeries(PerfilSaga saga) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('¿Eliminar esta saga?'),
+        content: Text(
+          '${saga.nombre} desaparecerá de tu lista de sagas.\n\n'
+          'Tus libros, lecturas, fechas, valoraciones y reseñas '
+          'se conservan intactos en tu biblioteca.\n\n'
+          'Podrás recuperarla desde Perfil → Secciones → Sagas ocultas.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancelar'),
+          ),
+          FilledButton.icon(
+            style: FilledButton.styleFrom(backgroundColor: AppColors.danger),
+            onPressed: () => Navigator.pop(context, true),
+            icon: const Icon(Icons.delete_outline_rounded),
+            label: const Text('Eliminar saga'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !mounted) return;
+
+    try {
+      await ApiService().eliminarSaga(sagaId: saga.id);
+      if (!mounted) return;
+      await _reload();
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            '${saga.nombre} eliminada. Puedes recuperarla desde tu perfil.',
+          ),
+        ),
+      );
+    } on ApiException catch (error) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(error.message)));
+    }
+  }
+
   Future<void> _onAddToLibrary(
     PerfilSaga saga,
     PerfilSagaVolumen volumen,
@@ -774,6 +821,7 @@ class _SagasPageState extends State<SagasPage> {
                     _onAddToLibrary(saga, volumen), // ← nuevo
                 onEditSeries: () => _editSeries(saga),
                 onHideSeries: () => _hideSeries(saga),
+                onRemoveSeries: () => _removeSeries(saga),
                 onReorderVolumes: (newOrder) => _reorderVolumes(saga, newOrder),
               ),
             ),

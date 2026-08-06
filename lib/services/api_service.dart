@@ -356,6 +356,24 @@ class ApiService {
     }
   }
 
+  Future<void> eliminarSaga({required String sagaId}) async {
+    final response = await _client.post(
+      Uri.parse('$baseUrl?action=eliminarSaga'),
+      headers: const {'Content-Type': 'application/json'},
+      body: jsonEncode({'sagaId': sagaId}),
+    );
+    if (response.statusCode != 200) throw ApiException.fromResponse(response);
+    final decoded = jsonDecode(response.body);
+    if (decoded is! Map<String, dynamic> || decoded['ok'] != true) {
+      throw ApiException(
+        statusCode: response.statusCode,
+        message: decoded is Map<String, dynamic>
+            ? decoded['mensaje']?.toString() ?? 'No se pudo eliminar la saga.'
+            : 'No se pudo eliminar la saga.',
+      );
+    }
+  }
+
   Future<List<SagaOculta>> getSagasOcultas() async {
     final response = await _client.get(
       Uri.parse(baseUrl).replace(queryParameters: {'action': 'sagasOcultas'}),
@@ -1456,6 +1474,52 @@ class ApiService {
         message: decoded is Map<String, dynamic>
             ? decoded['mensaje']?.toString() ?? 'No se pudo guardar el orden.'
             : 'No se pudo guardar el orden.',
+      );
+    }
+  }
+
+  Future<Map<String, dynamic>> getClubChallenges() async {
+    final response = await _client.post(
+      Uri.parse('$baseUrl?action=getClubChallenges'),
+      headers: const {'Content-Type': 'application/json'},
+      body: jsonEncode({}),
+    );
+    if (response.statusCode != 200) throw ApiException.fromResponse(response);
+    return jsonDecode(response.body) as Map<String, dynamic>;
+  }
+
+  Future<void> setReadingChallenge({required int target}) async {
+    final response = await _client.post(
+      Uri.parse('$baseUrl?action=setReadingChallenge'),
+      headers: const {'Content-Type': 'application/json'},
+      body: jsonEncode({'target': target}),
+    );
+    if (response.statusCode != 200) throw ApiException.fromResponse(response);
+    final decoded = jsonDecode(response.body);
+    if (decoded is! Map<String, dynamic> || decoded['ok'] != true) {
+      throw ApiException(
+        statusCode: response.statusCode,
+        message:
+            decoded['mensaje']?.toString() ?? 'No se pudo guardar el reto.',
+      );
+    }
+  }
+
+  Future<void> actualizarPaginaActual({
+    required String bookId,
+    required int pagina,
+  }) async {
+    final response = await _client.post(
+      Uri.parse('$baseUrl?action=actualizarPaginaLibrary'),
+      headers: const {'Content-Type': 'application/json'},
+      body: jsonEncode({'bookId': bookId, 'paginaActual': pagina}),
+    );
+    if (response.statusCode != 200) throw ApiException.fromResponse(response);
+    final decoded = jsonDecode(response.body);
+    if (decoded is! Map<String, dynamic> || decoded['ok'] != true) {
+      throw ApiException(
+        statusCode: response.statusCode,
+        message: decoded['mensaje']?.toString() ?? 'No se pudo actualizar.',
       );
     }
   }

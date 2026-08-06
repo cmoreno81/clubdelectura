@@ -4,7 +4,7 @@ import '../navigation/app_page_route.dart';
 import '../navigation/app_page_route.dart';
 import '../navigation/book_detail_navigation.dart';
 import 'afinidad_detalle_page.dart';
-import 'club_logros_page.dart';
+import 'club_challenge_page.dart';
 import 'package:flutter/services.dart';
 
 import '../dev/dev_settings.dart';
@@ -1530,7 +1530,6 @@ class _AffinityMemberTile extends StatelessWidget {
 // ─────────────────────────────────────────────
 // Card de logros del club
 // ─────────────────────────────────────────────
-
 class _LogrosClubCard extends StatelessWidget {
   const _LogrosClubCard();
 
@@ -1541,12 +1540,12 @@ class _LogrosClubCard extends StatelessWidget {
       gradient: const LinearGradient(
         begin: Alignment.topLeft,
         end: Alignment.bottomRight,
-        colors: [Color(0xFFFFFBE6), Color(0xFFFFF3CD)],
+        colors: [Color(0xFFF0E5FF), Color(0xFFE8F4FF)],
       ),
-      borderColor: Color(0xFFE4B63F),
+      borderColor: AppColors.primary.withValues(alpha: .2),
       onTap: () => Navigator.push<void>(
         context,
-        AppPageRoute(builder: (_) => const ClubLogrosPage()),
+        AppPageRoute(builder: (_) => const ClubChallengePage()),
       ),
       child: Row(
         children: [
@@ -1554,12 +1553,12 @@ class _LogrosClubCard extends StatelessWidget {
             width: 52,
             height: 52,
             decoration: BoxDecoration(
-              color: const Color(0xFFFFEDBA),
+              color: AppColors.primaryLight,
               borderRadius: BorderRadius.circular(AppRadius.lg),
             ),
             child: const Icon(
-              Icons.emoji_events_rounded,
-              color: Color(0xFFB48113),
+              Icons.local_fire_department_rounded,
+              color: AppColors.primary,
               size: 27,
             ),
           ),
@@ -1569,23 +1568,23 @@ class _LogrosClubCard extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Logros del club',
+                  'Reto lector ${DateTime.now().year}',
                   style: AppTextStyles.subtitle.copyWith(
                     fontWeight: FontWeight.w700,
-                    color: const Color(0xFF7A5A00),
+                    color: AppColors.primaryDark,
                   ),
                 ),
                 const SizedBox(height: AppSpacing.xs),
                 Text(
-                  'Descubre los logros de tus compañeras',
+                  'Ve el progreso de todas las lectoras',
                   style: AppTextStyles.bodySecondary.copyWith(
-                    color: const Color(0xFF9A7A20),
+                    color: AppColors.textSecondary,
                   ),
                 ),
               ],
             ),
           ),
-          const Icon(Icons.chevron_right_rounded, color: Color(0xFFB48113)),
+          const Icon(Icons.chevron_right_rounded, color: AppColors.primary),
         ],
       ),
     );

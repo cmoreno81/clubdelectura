@@ -432,10 +432,10 @@ const List<_HelpSection> _secciones = [
         pregunta: '🔥 Categoría Constancia — ¿cómo se desbloquea?',
         respuesta:
             'Premian la intensidad lectora en períodos cortos:\n\n'
-            '🔥 Mes intenso (Raro) — 3 libros en un mismo mes\n'
-            '⚡ Maratoniana (Épico) — 5 libros en un mes\n'
-            '🗓️ Gran año lector (Raro) — 10 libros en un año\n'
-            '🏅 Año legendario (Legendario) — 20 libros en un solo año',
+            '🔥 Mes intenso (Raro) — 5 libros en un mismo mes\n'
+            '⚡ Maratoniana (Épico) — 10 libros en un mes\n'
+            '🗓️ Gran año lector (Raro) — 50 libros en un año\n'
+            '🏅 Año legendario (Legendario) — 100 libros en un solo año',
       ),
       _HelpItem(
         pregunta: '¿Qué son los Logros del club?',

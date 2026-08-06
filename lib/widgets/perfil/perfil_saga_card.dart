@@ -20,6 +20,7 @@ class PerfilSagaCard extends StatefulWidget {
     this.onEditSeries,
     this.onHideSeries,
     this.onReorderVolumes,
+    this.onRemoveSeries,
   });
 
   final PerfilSaga saga;
@@ -33,6 +34,7 @@ class PerfilSagaCard extends StatefulWidget {
 
   final VoidCallback? onEditSeries;
   final VoidCallback? onHideSeries;
+  final VoidCallback? onRemoveSeries;
 
   /// Llamado con la nueva lista ordenada de volúmenes (solo los que tienen bookId)
   final Future<void> Function(List<PerfilSagaVolumen> newOrder)?
@@ -198,6 +200,18 @@ class _PerfilSagaCardState extends State<PerfilSagaCard> {
                             Icons.visibility_off_outlined,
                             size: 20,
                             color: AppColors.primary,
+                          ),
+                        ),
+                      // Justo antes o después del icono de ocultar:
+                      if (widget.onRemoveSeries != null)
+                        IconButton(
+                          tooltip: 'Eliminar saga',
+                          visualDensity: VisualDensity.compact,
+                          onPressed: widget.onRemoveSeries,
+                          icon: const Icon(
+                            Icons.delete_outline_rounded,
+                            size: 20,
+                            color: AppColors.danger,
                           ),
                         ),
                     ],

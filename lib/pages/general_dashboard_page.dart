@@ -73,6 +73,66 @@ class _GeneralDashboardPageState extends State<GeneralDashboardPage> {
     _loadNotificaciones();
   }
 
+  Future<void> _actualizarProgreso(GeneralBook book) async {
+    final controller = TextEditingController(
+      text: book.currentPage != null ? '${book.currentPage}' : '',
+    );
+    final result = await showDialog<int>(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: Text('Progreso en ${book.title}'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            if (book.pages != null)
+              Text(
+                '${book.pages} páginas en total',
+                style: AppTextStyles.bodySecondary,
+              ),
+            const SizedBox(height: AppSpacing.md),
+            TextFormField(
+              controller: controller,
+              autofocus: true,
+              keyboardType: TextInputType.number,
+              decoration: const InputDecoration(
+                labelText: 'Página actual',
+                hintText: 'Ej. 120',
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancelar'),
+          ),
+          FilledButton(
+            onPressed: () {
+              final v = int.tryParse(controller.text.trim());
+              if (v != null && v >= 0) Navigator.pop(context, v);
+            },
+            child: const Text('Guardar'),
+          ),
+        ],
+      ),
+    );
+    if (result == null || !mounted) return;
+    try {
+      await ApiService().actualizarPaginaActual(
+        bookId: book.id,
+        pagina: result,
+      );
+      if (mounted) _reload();
+    } on ApiException catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(e.message)));
+      }
+    }
+  }
+
   @override
   void dispose() {
     _scrollController.dispose();
@@ -334,6 +394,11 @@ class _GeneralDashboardPageState extends State<GeneralDashboardPage> {
                         _emptyClubs()
                       else
                         ...data.clubs.map(_clubCard),
+
+                      // ── Mis logros ──
+                      const SizedBox(height: AppSpacing.xl),
+                      _LogrosDashboardSection(userName: data.userName),
+
                       // La biblioteca anual se muestra en el perfil
                       // Aquí mostramos la estantería del mes
                       if (data.calendar.finishedBooks.isNotEmpty) ...[
@@ -376,9 +441,7 @@ class _GeneralDashboardPageState extends State<GeneralDashboardPage> {
                         const SizedBox(height: AppSpacing.sm),
                         _openSeries(data.openSeries),
                       ],
-                      // ── Mis logros ──
-                      const SizedBox(height: AppSpacing.xl),
-                      _LogrosDashboardSection(userName: data.userName),
+
                       if (data.personalLibrary.isNotEmpty) ...[
                         const SizedBox(height: AppSpacing.xl),
                         _sectionTitle(
@@ -852,46 +915,23 @@ class _GeneralDashboardPageState extends State<GeneralDashboardPage> {
   }
 
   Widget _currentBooks(List<GeneralBook> books) {
-    return SizedBox(
-      height: 220,
-      child: ListView.separated(
-        scrollDirection: Axis.horizontal,
-        itemCount: books.length,
-        separatorBuilder: (_, _) => const SizedBox(width: AppSpacing.md),
-        itemBuilder: (context, index) {
-          final book = books[index];
-          return SizedBox(
-            width: 122,
-            child: InkWell(
-              borderRadius: BorderRadius.circular(16),
+    return Column(
+      children: [
+        for (final book in books)
+          Padding(
+            padding: const EdgeInsets.only(bottom: AppSpacing.sm),
+            child: _CurrentBookCard(
+              book: book,
               onTap: () => openBookDetail(
                 context,
                 title: book.title,
                 bookId: book.id,
                 coverUrl: book.coverUrl,
               ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  ClubBookCover(
-                    title: book.title,
-                    imageUrl: book.coverUrl,
-                    width: 110,
-                    height: 158,
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    book.title,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(fontWeight: FontWeight.w700),
-                  ),
-                ],
-              ),
+              onUpdateProgress: () => _actualizarProgreso(book),
             ),
-          );
-        },
-      ),
+          ),
+      ],
     );
   }
 
@@ -987,7 +1027,7 @@ class _GeneralDashboardPageState extends State<GeneralDashboardPage> {
             width: 112,
             child: InkWell(
               borderRadius: BorderRadius.circular(18),
-              onTap: () => openBookDetail(
+              onTap: () => openCatalogBookDetail(
                 context,
                 title: book.title,
                 bookId: book.id,
@@ -1199,7 +1239,7 @@ class _GeneralDashboardPageState extends State<GeneralDashboardPage> {
             width: 100,
             child: InkWell(
               borderRadius: BorderRadius.circular(16),
-              onTap: () => openBookDetail(
+              onTap: () => openCatalogBookDetail(
                 context,
                 title: book.title,
                 bookId: book.id,
@@ -1767,12 +1807,12 @@ class _LogroMiniTile extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.all(AppSpacing.sm),
         decoration: BoxDecoration(
-          color: color.withValues(alpha: .08),
+          color: color.withValues(alpha: .05),
           borderRadius: BorderRadius.circular(AppRadius.md),
-          border: Border.all(color: color.withValues(alpha: .3), width: 1.5),
+          border: Border.all(color: color.withValues(alpha: .18), width: 1),
           boxShadow: [
             BoxShadow(
-              color: color.withValues(alpha: .15),
+              color: color.withValues(alpha: .08),
               blurRadius: 8,
               offset: const Offset(0, 2),
             ),
@@ -1791,7 +1831,7 @@ class _LogroMiniTile extends StatelessWidget {
               style: TextStyle(
                 fontSize: 10,
                 fontWeight: FontWeight.w800,
-                color: color,
+                color: color.withValues(alpha: .75),
                 height: 1.2,
               ),
             ),
@@ -1806,12 +1846,110 @@ class _LogroMiniTile extends StatelessWidget {
                 AchievementService.rarityLabels[achievement.rarity] ?? '',
                 style: TextStyle(
                   fontSize: 8,
-                  color: color,
+                  color: color.withValues(alpha: .75),
                   fontWeight: FontWeight.w800,
                 ),
               ),
             ),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+class _CurrentBookCard extends StatelessWidget {
+  const _CurrentBookCard({
+    required this.book,
+    required this.onTap,
+    required this.onUpdateProgress,
+  });
+
+  final GeneralBook book;
+  final VoidCallback onTap;
+  final VoidCallback onUpdateProgress;
+
+  @override
+  Widget build(BuildContext context) {
+    final pct = book.pages != null && book.pages! > 0
+        ? (book.currentPage ?? 0) / book.pages!
+        : book.progress / 100.0;
+    final pctClamped = pct.clamp(0.0, 1.0);
+    final hasPageInfo =
+        book.currentPage != null && book.pages != null && book.pages! > 0;
+
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(AppRadius.lg),
+        child: Container(
+          padding: const EdgeInsets.all(AppSpacing.sm),
+          decoration: BoxDecoration(
+            color: AppColors.surfaceSoft.withValues(alpha: .6),
+            borderRadius: BorderRadius.circular(AppRadius.lg),
+            border: Border.all(color: AppColors.border.withValues(alpha: .5)),
+          ),
+          child: Row(
+            children: [
+              // Portada
+              ClubBookCover(
+                title: book.title,
+                imageUrl: book.coverUrl,
+                width: 52,
+                height: 76,
+                showShadow: false,
+              ),
+              const SizedBox(width: AppSpacing.md),
+              // Info + progreso
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      book.title,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        fontWeight: FontWeight.w800,
+                        fontSize: 14,
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(4),
+                      child: LinearProgressIndicator(
+                        value: pctClamped,
+                        minHeight: 6,
+                        backgroundColor: AppColors.primaryLight,
+                        color: AppColors.primary,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      hasPageInfo
+                          ? 'Pág. ${book.currentPage} de ${book.pages} · '
+                                '${(pctClamped * 100).round()}%'
+                          : '${book.progress}%',
+                      style: AppTextStyles.caption.copyWith(
+                        color: AppColors.textMuted,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              // Botón editar progreso
+              IconButton(
+                tooltip: 'Actualizar progreso',
+                onPressed: onUpdateProgress,
+                icon: const Icon(
+                  Icons.edit_rounded,
+                  size: 18,
+                  color: AppColors.primary,
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
