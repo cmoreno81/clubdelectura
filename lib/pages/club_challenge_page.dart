@@ -110,11 +110,17 @@ class _ClubChallengePageState extends State<ClubChallengePage> {
               .cast<Map<String, dynamic>>();
 
           // Mi challenge
-          final myChallenge = challenges.isNotEmpty ? challenges.first : null;
-          final myTarget = myChallenge?['target'] != null
-              ? (myChallenge!['target'] as num).toInt()
+          final myChallenge = challenges
+              .cast<Map<String, dynamic>>()
+              .firstWhere(
+                (c) => c['isMe'] == true,
+                orElse: () => <String, dynamic>{},
+              );
+          final myTarget =
+              myChallenge.isNotEmpty && myChallenge['target'] != null
+              ? (myChallenge['target'] as num).toInt()
               : null;
-          final myRead = (myChallenge?['read'] as num? ?? 0).toInt();
+          final myRead = (myChallenge['read'] as num? ?? 0).toInt();
 
           return RefreshIndicator(
             onRefresh: _reload,
