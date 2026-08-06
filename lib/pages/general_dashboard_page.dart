@@ -1,5 +1,7 @@
+import 'package:club_lectura_app/models/dashboard.dart';
 import 'package:club_lectura_app/pages/notificaciones_page.dart';
 import 'package:club_lectura_app/theme/app_radius.dart';
+import 'package:club_lectura_app/widgets/common/editar_progreso_dialog.dart';
 import 'package:flutter/material.dart';
 
 import '../navigation/app_page_route.dart';
@@ -74,54 +76,39 @@ class _GeneralDashboardPageState extends State<GeneralDashboardPage> {
   }
 
   Future<void> _actualizarProgreso(GeneralBook book) async {
-    final controller = TextEditingController(
-      text: book.currentPage != null ? '${book.currentPage}' : '',
+    final lectura = LecturaAhoraItem(
+      libraryId: '',
+      bookId: book.id,
+      titulo: book.title,
+      coverUrl: book.coverUrl,
+      progreso: book.progress,
+      paginaActual: book.currentPage,
+      paginasTotales: book.pages,
+      comentario: '',
+      actualizadoEn: null,
+      reacciones: {},
+      miReaccion: null,
     );
-    final result = await showDialog<int>(
-      context: context,
-      builder: (_) => AlertDialog(
-        title: Text('Progreso en ${book.title}'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            if (book.pages != null)
-              Text(
-                '${book.pages} páginas en total',
-                style: AppTextStyles.bodySecondary,
-              ),
-            const SizedBox(height: AppSpacing.md),
-            TextFormField(
-              controller: controller,
-              autofocus: true,
-              keyboardType: TextInputType.number,
-              decoration: const InputDecoration(
-                labelText: 'Página actual',
-                hintText: 'Ej. 120',
-              ),
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancelar'),
-          ),
-          FilledButton(
-            onPressed: () {
-              final v = int.tryParse(controller.text.trim());
-              if (v != null && v >= 0) Navigator.pop(context, v);
-            },
-            child: const Text('Guardar'),
-          ),
-        ],
-      ),
-    );
-    if (result == null || !mounted) return;
+
+    final resultado =
+        await showDialog<
+          ({int progreso, int? paginaActual, String comentario})
+        >(
+          context: context,
+          builder: (_) => EditarProgresoDialog(lectura: lectura),
+        );
+    if (resultado == null || !mounted) return;
+
+    final usuario = (await UsuarioService().obtenerUsuario()) ?? '';
+
     try {
-      await ApiService().actualizarPaginaActual(
-        bookId: book.id,
-        pagina: result,
+      await ApiService().actualizarProgresoLectura(
+        usuario: usuario,
+        libro: book.title,
+        progreso: resultado.progreso,
+        comentario: resultado.comentario,
+        paginaActual: resultado.paginaActual,
+        paginasTotales: book.pages,
       );
       if (mounted) _reload();
     } on ApiException catch (e) {

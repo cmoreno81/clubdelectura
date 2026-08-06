@@ -262,6 +262,19 @@ const List<_HelpSection> _secciones = [
             'En la pestaña "Sagas" aparece un filtro específico para verlas. '
             'Siempre puedes retomarla cambiando el estado del libro.',
       ),
+      _HelpItem(
+        pregunta: '¿Puedo ocultar o eliminar una saga?',
+        respuesta:
+            'Sí, desde la card de cada saga tienes dos opciones:\n\n'
+            '👁️ Ocultar — la saga desaparece de tu lista pero puedes '
+            'recuperarla desde Perfil → Sagas ocultas. Útil si no quieres '
+            'verla pero podrías retomarla en el futuro.\n\n'
+            '🗑️ Eliminar — la saga desaparece de tu lista de forma permanente '
+            'hasta que la recuperes desde Perfil → Sagas ocultas. '
+            'Importante: tus libros, lecturas, fechas, valoraciones y reseñas '
+            'se conservan intactos en tu biblioteca. Solo desaparece '
+            'la agrupación visual de la saga.',
+      ),
     ],
   ),
   _HelpSection(
@@ -361,9 +374,10 @@ const List<_HelpSection> _secciones = [
         respuesta:
             'Son medallas que desbloqueas automáticamente al alcanzar hitos '
             'en tu lectura y participación en el club. Hay logros de distintas '
-            'rarezas: Común, Raro, Épico y Legendario. '
-            'Puedes verlos en tu perfil lector → sección Logros, '
-            'y los del club en El Club → Logros del club.',
+            'rarezas: Común, Raro, Épico y Legendario. Se resetean cada año — '
+            'solo cuentan los libros, reseñas y participación del año en curso.\n\n'
+            'Puedes verlos desde "Mi universo lector" → "Ver todos" o '
+            'desde tu perfil lector → sección Logros.',
       ),
       _HelpItem(
         pregunta: '📚 Categoría Lectora — ¿cómo se desbloquea?',
@@ -438,12 +452,18 @@ const List<_HelpSection> _secciones = [
             '🏅 Año legendario (Legendario) — 100 libros en un solo año',
       ),
       _HelpItem(
-        pregunta: '¿Qué son los Logros del club?',
+        pregunta: '¿Qué es el Reto lector del club?',
         respuesta:
-            'En "El Club" → "Logros del club" puedes ver los logros desbloqueados '
-            'por todas las miembros. En la pestaña "Por miembro" aparecen ordenadas '
-            'por número de logros conseguidos, con los emojis de cada uno. '
-            'En "Recientes" aparecen los últimos logros desbloqueados en el club.',
+            'En "El Club" → "Reto lector" cada lectora puede marcarse un '
+            'objetivo personal de libros para el año en curso. '
+            'El progreso se actualiza automáticamente según vas finalizando libros.\n\n'
+            'Puedes ver el avance de todas las compañeras ordenado por porcentaje '
+            'de cumplimiento. Las que han superado su reto aparecen con 🏆.\n\n'
+            'Además existe un reto colectivo: la suma de todos los objetivos '
+            'individuales del club. Si entre todas lo superáis, '
+            'se celebra con un logro especial.\n\n'
+            'Para crear o cambiar tu reto, entra en "Reto lector" y pulsa '
+            '"Crear reto" o "Cambiar". Puedes modificarlo en cualquier momento.',
       ),
     ],
   ),
