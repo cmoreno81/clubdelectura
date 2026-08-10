@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../../theme/app_spacing.dart';
+import '../common/optimized_network_image.dart';
 import '../common/url_text_field.dart';
 import 'dart:convert';
 import 'package:image/image.dart' as img;
@@ -279,14 +280,11 @@ class _AvatarPreview extends StatelessWidget {
         height: 116,
       );
     } else if (imageUrl.isNotEmpty) {
-      contenido = Image.network(
-        imageUrl,
-        fit: BoxFit.cover,
+      contenido = OptimizedNetworkImage(
+        url: imageUrl,
         width: 116,
         height: 116,
-        errorBuilder: (_, _, _) {
-          return const _AvatarFallback();
-        },
+        fallback: const _AvatarFallback(),
       );
     } else {
       contenido = const _AvatarFallback();

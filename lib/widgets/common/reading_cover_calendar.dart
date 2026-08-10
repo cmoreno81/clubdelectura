@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../models/general_dashboard.dart';
 import '../../theme/app_colors.dart';
+import 'optimized_network_image.dart';
 
 class ReadingCoverCalendar extends StatelessWidget {
   const ReadingCoverCalendar({
@@ -10,17 +11,28 @@ class ReadingCoverCalendar extends StatelessWidget {
     this.onBookTap,
     this.showMonthHeader = true,
     this.cellAspectRatio = .72,
+    this.highResolution = false,
   });
 
   final ReadingCalendar calendar;
   final ValueChanged<MonthlyReadingSpan>? onBookTap;
   final bool showMonthHeader;
   final double cellAspectRatio;
+  final bool highResolution;
 
   static const _months = [
-    'Enero', 'Febrero', 'Marzo', 'Abril',
-    'Mayo', 'Junio', 'Julio', 'Agosto',
-    'Septiembre', 'Octubre', 'Noviembre', 'Diciembre',
+    'Enero',
+    'Febrero',
+    'Marzo',
+    'Abril',
+    'Mayo',
+    'Junio',
+    'Julio',
+    'Agosto',
+    'Septiembre',
+    'Octubre',
+    'Noviembre',
+    'Diciembre',
   ];
 
   @override
@@ -108,6 +120,7 @@ class ReadingCoverCalendar extends StatelessWidget {
                 readings: readings,
                 finishRating: finishRating,
                 onBookTap: onBookTap,
+                highResolution: highResolution,
               );
             },
           ),
@@ -132,12 +145,15 @@ class _ReadingDayCell extends StatelessWidget {
     required this.day,
     required this.readings,
     required this.onBookTap,
+    required this.highResolution,
     this.finishRating,
   });
 
   final int day;
   final List<MonthlyReadingSpan> readings;
   final ValueChanged<MonthlyReadingSpan>? onBookTap;
+  final bool highResolution;
+
   /// Rating del libro terminado este día exacto (null = no termina ninguno hoy).
   final double? finishRating;
 
@@ -161,7 +177,10 @@ class _ReadingDayCell extends StatelessWidget {
                       onTap: onBookTap == null
                           ? null
                           : () => onBookTap!(reading),
-                      child: _CalendarCover(reading: reading),
+                      child: _CalendarCover(
+                        reading: reading,
+                        highResolution: highResolution,
+                      ),
                     ),
                   ),
               ],
@@ -275,34 +294,37 @@ class _FinishBadge extends StatelessWidget {
 }
 
 class _CalendarCover extends StatelessWidget {
-  const _CalendarCover({required this.reading});
+  const _CalendarCover({required this.reading, required this.highResolution});
 
   final MonthlyReadingSpan reading;
+  final bool highResolution;
 
   @override
   Widget build(BuildContext context) {
-    if (reading.coverUrl.trim().isEmpty) {
-      return Container(
-        color: AppColors.primaryLight,
-        alignment: Alignment.center,
-        padding: const EdgeInsets.all(2),
-        child: Text(
-          reading.title,
-          maxLines: 3,
-          overflow: TextOverflow.ellipsis,
-          textAlign: TextAlign.center,
-          style: const TextStyle(
-            color: AppColors.primaryDark,
-            fontSize: 7,
-            fontWeight: FontWeight.w800,
-          ),
+    final fallback = Container(
+      color: AppColors.primaryLight,
+      alignment: Alignment.center,
+      padding: const EdgeInsets.all(2),
+      child: Text(
+        reading.title,
+        maxLines: 3,
+        overflow: TextOverflow.ellipsis,
+        textAlign: TextAlign.center,
+        style: const TextStyle(
+          color: AppColors.primaryDark,
+          fontSize: 7,
+          fontWeight: FontWeight.w800,
         ),
-      );
-    }
-    return Image.network(
-      reading.coverUrl,
-      fit: BoxFit.cover,
-      errorBuilder: (_, _, _) => Container(color: AppColors.primaryLight),
+      ),
+    );
+    return LayoutBuilder(
+      builder: (context, constraints) => OptimizedNetworkImage(
+        url: reading.coverUrl,
+        width: constraints.maxWidth,
+        height: constraints.maxHeight,
+        fallback: fallback,
+        highResolution: highResolution,
+      ),
     );
   }
 }

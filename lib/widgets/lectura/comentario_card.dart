@@ -15,6 +15,8 @@ import 'respuesta_card.dart';
 class ComentarioCard extends StatefulWidget {
   final ComentarioLectura comentario;
   final VoidCallback onActualizar;
+  final ValueChanged<String>? onEdited;
+  final VoidCallback? onDeleted;
   final String usuarioActual;
 
   const ComentarioCard({
@@ -22,6 +24,8 @@ class ComentarioCard extends StatefulWidget {
     required this.comentario,
     required this.onActualizar,
     required this.usuarioActual,
+    this.onEdited,
+    this.onDeleted,
   });
 
   @override
@@ -233,7 +237,11 @@ class _ComentarioCardState extends State<ComentarioCard> {
     if (!mounted) return;
 
     if (ok) {
-      widget.onActualizar();
+      if (widget.onEdited != null) {
+        widget.onEdited!(nuevo);
+      } else {
+        widget.onActualizar();
+      }
 
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Comentario actualizado 💜')),
@@ -269,7 +277,11 @@ class _ComentarioCardState extends State<ComentarioCard> {
     if (!mounted) return;
 
     if (ok) {
-      widget.onActualizar();
+      if (widget.onDeleted != null) {
+        widget.onDeleted!();
+      } else {
+        widget.onActualizar();
+      }
 
       ScaffoldMessenger.of(
         context,

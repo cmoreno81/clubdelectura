@@ -9,15 +9,15 @@ import 'package:flutter/services.dart';
 class EditarProgresoDialog extends StatefulWidget {
   final LecturaAhoraItem lectura;
 
-  const EditarProgresoDialog({required this.lectura});
+  const EditarProgresoDialog({super.key, required this.lectura});
 
   @override
-  State<EditarProgresoDialog> createState() => EditarProgresoDialogState();
+  State<EditarProgresoDialog> createState() => _EditarProgresoDialogState();
 }
 
 enum _ModoProgreso { porcentaje, pagina }
 
-class EditarProgresoDialogState extends State<EditarProgresoDialog> {
+class _EditarProgresoDialogState extends State<EditarProgresoDialog> {
   late double progreso;
   late final TextEditingController comentarioController;
   late final TextEditingController paginaController;

@@ -31,7 +31,7 @@ class CapituloTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final tieneActividad = capitulo.ultimaActividad.trim().isNotEmpty;
+    final tieneActividad = capitulo.ultimaActividad?.trim().isNotEmpty == true;
 
     final tieneNovedades = capitulo.tieneNovedades && capitulo.nuevosTotal > 0;
 

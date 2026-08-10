@@ -26,7 +26,7 @@ class ClubAchievementsSection extends StatelessWidget {
           shrinkWrap: true,
           physics: const NeverScrollableScrollPhysics(),
           itemCount: events.length,
-          separatorBuilder: (_, __) => const SizedBox(height: AppSpacing.sm),
+          separatorBuilder: (_, _) => const SizedBox(height: AppSpacing.sm),
           itemBuilder: (_, index) {
             final event = events[index];
             return Container(

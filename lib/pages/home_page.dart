@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'clubvision_menu_page.dart';
 import 'dashboard_page.dart';
@@ -6,10 +8,13 @@ import 'libros_page.dart';
 import 'sagas_page.dart';
 import '../models/club_membership.dart';
 
+typedef HomePageBuilder = Widget Function();
+
 class HomePage extends StatefulWidget {
-  const HomePage({super.key, required this.club});
+  const HomePage({super.key, required this.club, this.pageBuilders});
 
   final ClubMembership club;
+  final List<HomePageBuilder>? pageBuilders;
 
   @override
   State<HomePage> createState() => _HomePageState();
@@ -17,30 +22,56 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
   int currentIndex = 0;
+  final _dashboardController = DashboardPageController();
   final _librosController = LibrosPageController();
   final _sagasController = SagasPageController();
 
-  late final List<Widget> pages;
+  late final List<HomePageBuilder> _pageBuilders;
+  late final List<Widget?> _pages;
 
   @override
   void initState() {
     super.initState();
-    pages = [
-      DashboardPage(clubName: widget.club.nombre),
-      LibrosPage(controller: _librosController, onBackToClub: _volverAlClub),
-      SagasPage(controller: _sagasController),
-      LecturasPage(onBackToClub: _volverAlClub),
-      ClubvisionMenuPage(onBackToClub: _volverAlClub),
-    ];
+    _pageBuilders =
+        widget.pageBuilders ??
+        [
+          () => DashboardPage(
+            clubName: widget.club.nombre,
+            controller: _dashboardController,
+          ),
+          () => LibrosPage(
+            controller: _librosController,
+            onBackToClub: _volverAlClub,
+          ),
+          () => SagasPage(controller: _sagasController),
+          () => LecturasPage(onBackToClub: _volverAlClub),
+          () => ClubvisionMenuPage(onBackToClub: _volverAlClub),
+        ];
+    assert(_pageBuilders.length == 5);
+    _pages = List<Widget?>.filled(_pageBuilders.length, null);
+    _pages[0] = _pageBuilders[0]();
+  }
+
+  void _selectTab(int index) {
+    FocusManager.instance.primaryFocus?.unfocus();
+
+    if (index == currentIndex) {
+      if (index == 1) _librosController.refresh();
+      if (index == 2) _sagasController.refresh();
+      return;
+    }
+
+    setState(() {
+      _pages[index] ??= _pageBuilders[index]();
+      currentIndex = index;
+    });
   }
 
   void _volverAlClub() {
     if (currentIndex == 0) return;
     FocusManager.instance.primaryFocus?.unfocus();
-    setState(() {
-      pages[0] = DashboardPage(key: UniqueKey(), clubName: widget.club.nombre);
-      currentIndex = 0;
-    });
+    setState(() => currentIndex = 0);
+    unawaited(_dashboardController.refresh());
   }
 
   @override
@@ -55,22 +86,16 @@ class _HomePageState extends State<HomePage> {
       child: Scaffold(
         extendBody: false,
 
-        body: IndexedStack(index: currentIndex, children: pages),
+        body: IndexedStack(
+          index: currentIndex,
+          children: [
+            for (final page in _pages) page ?? const SizedBox.shrink(),
+          ],
+        ),
 
         bottomNavigationBar: NavigationBar(
           selectedIndex: currentIndex,
-          onDestinationSelected: (index) {
-            FocusManager.instance.primaryFocus?.unfocus();
-
-            if (index == currentIndex) {
-              if (index == 1) _librosController.refresh();
-              if (index == 2) _sagasController.refresh();
-              return;
-            }
-            setState(() => currentIndex = index);
-            if (index == 1) _librosController.refresh();
-            if (index == 2) _sagasController.refresh();
-          },
+          onDestinationSelected: _selectTab,
           destinations: const [
             NavigationDestination(
               icon: Icon(Icons.dashboard_outlined),

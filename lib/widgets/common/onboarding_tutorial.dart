@@ -107,8 +107,8 @@ Future<void> mostrarOnboardingTutorial(BuildContext context) async {
     PageRouteBuilder<void>(
       opaque: false,
       barrierColor: Colors.black.withValues(alpha: .65),
-      pageBuilder: (_, __, ___) => const _OnboardingOverlay(),
-      transitionsBuilder: (_, animation, __, child) {
+      pageBuilder: (_, _, _) => const _OnboardingOverlay(),
+      transitionsBuilder: (_, animation, _, child) {
         return FadeTransition(opacity: animation, child: child);
       },
     ),

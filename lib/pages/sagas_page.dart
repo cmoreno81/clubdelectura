@@ -1,4 +1,3 @@
-import 'package:club_lectura_app/services/api_service.dart';
 import 'package:flutter/material.dart';
 
 import '../models/libro_agrupado.dart';
@@ -502,8 +501,8 @@ class _SagasPageState extends State<SagasPage> {
         content: Text(
           '${saga.nombre} desaparecerá de tu lista de sagas.\n\n'
           'Tus libros, lecturas, fechas, valoraciones y reseñas '
-          'se conservan intactos en tu biblioteca.\n\n'
-          'Podrás recuperarla desde Perfil → Secciones → Sagas ocultas.',
+          'se conservan intactos en tu biblioteca. '
+          'Solo desaparece la agrupación visual de la saga.\n\n',
         ),
         actions: [
           TextButton(
@@ -568,6 +567,7 @@ class _SagasPageState extends State<SagasPage> {
       );
       if (!mounted) return;
       await _reload();
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('${volumen.titulo} añadido a tu biblioteca')),
       );

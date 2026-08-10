@@ -6,6 +6,7 @@ import '../../theme/app_colors.dart';
 import '../../theme/app_radius.dart';
 import '../../theme/app_spacing.dart';
 import '../../theme/app_text_styles.dart';
+import '../lectura/fecha_relativa.dart';
 import '../common/club_book_cover.dart';
 import '../common/club_chip.dart';
 import 'escenas/escena_votacion.dart';
@@ -353,7 +354,7 @@ class DirectorEscenas {
               ),
             ],
           ),
-          if (lectura.ultimaActividad.isNotEmpty) ...[
+          if (lectura.ultimaActividad?.trim().isNotEmpty == true) ...[
             const SizedBox(height: AppSpacing.md),
             Container(
               width: double.infinity,
@@ -375,7 +376,7 @@ class DirectorEscenas {
                   const SizedBox(width: AppSpacing.xs),
                   Expanded(
                     child: Text(
-                      lectura.ultimaActividad,
+                      FechaRelativa.formato(lectura.ultimaActividad),
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                       style: AppTextStyles.caption.copyWith(height: 1.3),

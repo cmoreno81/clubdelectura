@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 
 import '../models/achievements/achievement.dart';
-import '../navigation/app_page_route.dart';
 import '../services/api_service.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_radius.dart';
@@ -11,7 +10,6 @@ import '../widgets/common/club_avatar.dart';
 import '../widgets/common/club_card.dart';
 import '../widgets/common/club_chip.dart';
 import '../widgets/error_view.dart';
-import '../services/achievement_service.dart';
 
 class ClubLogrosPage extends StatefulWidget {
   const ClubLogrosPage({super.key});
@@ -102,11 +100,6 @@ class _ClubLogrosPageState extends State<ClubLogrosPage> {
 class _RecentList extends StatelessWidget {
   const _RecentList({required this.events});
   final List<ClubAchievementEvent> events;
-
-  Color _rarityColor(String icon) {
-    // Inferimos rareza del icono para colorear
-    return AppColors.primary;
-  }
 
   @override
   Widget build(BuildContext context) {

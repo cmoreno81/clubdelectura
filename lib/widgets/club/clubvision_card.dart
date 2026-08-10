@@ -607,7 +607,7 @@ class _StarField extends StatelessWidget {
   Widget build(BuildContext context) {
     return AnimatedBuilder(
       animation: controller,
-      builder: (_, __) =>
+      builder: (_, _) =>
           CustomPaint(painter: _StarPainter(controller.value, _stars)),
     );
   }

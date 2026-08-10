@@ -7,6 +7,7 @@ import '../../theme/app_radius.dart';
 import '../../theme/app_spacing.dart';
 import '../common/club_book_cover.dart';
 import '../common/club_card.dart';
+import '../common/optimized_network_image.dart';
 
 class PerfilSagaCard extends StatefulWidget {
   const PerfilSagaCard({
@@ -231,7 +232,6 @@ class _PerfilSagaCardState extends State<PerfilSagaCard> {
               accent: accent,
               onReorder: (oldIndex, newIndex) {
                 setState(() {
-                  if (newIndex > oldIndex) newIndex--;
                   final item = _orderedVolumes.removeAt(oldIndex);
                   _orderedVolumes.insert(newIndex, item);
                 });
@@ -271,7 +271,7 @@ class _PerfilSagaCardState extends State<PerfilSagaCard> {
                       } else if (enClubReadsNoEnBiblioteca) {
                         // Está en ClubReads pero no en mi biblioteca → añadir
                         if (widget.onAddToLibrary != null) {
-                          tapCallback = () => widget.onAddToLibrary!(vol!);
+                          tapCallback = () => widget.onAddToLibrary!(vol);
                         }
                       } else if (esHueco) {
                         // No en ClubReads → gap tap (override o completar)
@@ -447,7 +447,7 @@ class _ReorderableVolumeList extends StatelessWidget {
           shrinkWrap: true,
           physics: const NeverScrollableScrollPhysics(),
           itemCount: volumes.length,
-          onReorder: onReorder,
+          onReorderItem: onReorder,
           proxyDecorator: (child, index, animation) => Material(
             elevation: 4,
             borderRadius: BorderRadius.circular(AppRadius.md),
@@ -484,14 +484,12 @@ class _ReorderableVolumeList extends StatelessWidget {
                     child: SizedBox(
                       width: 36,
                       height: 52,
-                      child: vol.coverUrl.isNotEmpty
-                          ? Image.network(
-                              vol.coverUrl,
-                              fit: BoxFit.cover,
-                              errorBuilder: (_, _, _) =>
-                                  _placeholder(color, '${index + 1}'),
-                            )
-                          : _placeholder(color, '${index + 1}'),
+                      child: OptimizedNetworkImage(
+                        url: vol.coverUrl,
+                        width: 36,
+                        height: 52,
+                        fallback: _placeholder(color, '${index + 1}'),
+                      ),
                     ),
                   ),
                   const SizedBox(width: AppSpacing.sm),
@@ -641,14 +639,12 @@ class _VolumeSquare extends StatelessWidget {
               Positioned.fill(
                 child: ClipRRect(
                   borderRadius: BorderRadius.circular(9),
-                  child: volume?.coverUrl.isNotEmpty == true
-                      ? Image.network(
-                          volume!.coverUrl,
-                          fit: BoxFit.cover,
-                          errorBuilder: (_, _, _) =>
-                              _coverPlaceholder(color, number),
-                        )
-                      : _coverPlaceholder(color, number),
+                  child: OptimizedNetworkImage(
+                    url: volume?.coverUrl,
+                    width: 48,
+                    height: 72,
+                    fallback: _coverPlaceholder(color, number),
+                  ),
                 ),
               ),
               // Borde

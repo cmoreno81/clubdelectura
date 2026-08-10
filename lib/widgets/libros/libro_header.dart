@@ -43,6 +43,7 @@ class LibroHeader extends StatelessWidget {
                 title: libro.libro,
                 imageUrl: libro.coverUrl,
                 width: 184,
+                highResolution: true,
                 showShadow: true,
               ),
 

@@ -4,6 +4,7 @@ import '../../theme/app_colors.dart';
 import '../../theme/app_radius.dart';
 import '../../theme/app_shadows.dart';
 import '../../theme/app_text_styles.dart';
+import 'optimized_network_image.dart';
 
 class ClubBookCover extends StatelessWidget {
   final String title;
@@ -15,6 +16,7 @@ class ClubBookCover extends StatelessWidget {
   final String? heroTag;
   final bool showShadow;
   final BoxFit fit;
+  final bool highResolution;
 
   const ClubBookCover({
     super.key,
@@ -27,6 +29,7 @@ class ClubBookCover extends StatelessWidget {
     this.heroTag,
     this.showShadow = true,
     this.fit = BoxFit.cover,
+    this.highResolution = false,
   });
 
   @override
@@ -43,11 +46,7 @@ class ClubBookCover extends StatelessWidget {
       ),
       child: ClipRRect(
         borderRadius: radius,
-        child: _buildCoverContent(
-          width: width,
-          height: resolvedHeight,
-          pixelRatio: MediaQuery.devicePixelRatioOf(context),
-        ),
+        child: _buildCoverContent(width: width, height: resolvedHeight),
       ),
     );
 
@@ -65,44 +64,26 @@ class ClubBookCover extends StatelessWidget {
     return cover;
   }
 
-  Widget _buildCoverContent({
-    required double width,
-    required double height,
-    required double pixelRatio,
-  }) {
+  Widget _buildCoverContent({required double width, required double height}) {
     final hasImage = imageUrl != null && imageUrl!.trim().isNotEmpty;
-    final validPixelRatio = pixelRatio.isFinite && pixelRatio > 0;
-    final cacheWidth = width.isFinite && width > 0 && validPixelRatio
-        ? (width * pixelRatio).round()
-        : null;
-    final cacheHeight = height.isFinite && height > 0 && validPixelRatio
-        ? (height * pixelRatio).round()
-        : null;
 
     if (hasImage) {
-      return Image.network(
-        imageUrl!,
+      return OptimizedNetworkImage(
+        url: imageUrl,
         width: width,
         height: height,
-        cacheWidth: cacheWidth,
-        cacheHeight: cacheHeight,
         fit: fit,
-        errorBuilder: (_, _, _) {
-          return _placeholder();
-        },
-        loadingBuilder: (context, child, progress) {
-          if (progress == null) return child;
-
-          return Container(
-            color: AppColors.surfaceSoft,
-            alignment: Alignment.center,
-            child: const SizedBox(
-              width: 28,
-              height: 28,
-              child: CircularProgressIndicator(strokeWidth: 2),
-            ),
-          );
-        },
+        highResolution: highResolution,
+        fallback: _placeholder(),
+        placeholder: Container(
+          color: AppColors.surfaceSoft,
+          alignment: Alignment.center,
+          child: const Icon(
+            Icons.image_outlined,
+            size: 28,
+            color: AppColors.textMuted,
+          ),
+        ),
       );
     }
 

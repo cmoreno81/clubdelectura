@@ -8,12 +8,13 @@ import '../../theme/app_colors.dart';
 import '../../theme/app_radius.dart';
 import '../../theme/app_spacing.dart';
 import '../../theme/app_text_styles.dart';
+import '../lectura/fecha_relativa.dart';
 import '../common/club_card.dart';
 import '../common/club_chip.dart';
 import '../ui/club_metric.dart';
 import 'libro_section.dart';
 
-class ConversacionesLibroCard extends StatelessWidget {
+class ConversacionesLibroCard extends StatefulWidget {
   final String libro;
   final String coverUrl;
 
@@ -24,9 +25,53 @@ class ConversacionesLibroCard extends StatelessWidget {
   });
 
   @override
+  State<ConversacionesLibroCard> createState() =>
+      _ConversacionesLibroCardState();
+}
+
+class _ConversacionesLibroCardState extends State<ConversacionesLibroCard> {
+  final List<ConversacionLibro> _conversaciones = [];
+  String? _cursor;
+  bool _hasMore = true;
+  bool _loadingMore = false;
+  late Future<void> _initialLoad;
+
+  @override
+  void initState() {
+    super.initState();
+    _initialLoad = _loadMore();
+  }
+
+  Future<void> _loadMore() async {
+    if (_loadingMore || !_hasMore) return;
+    _loadingMore = true;
+    try {
+      final page = await ApiService().getConversacionesLibroPage(
+        libro: widget.libro,
+        cursor: _cursor,
+      );
+      if (!mounted) return;
+      setState(() {
+        final known = _conversaciones
+            .map((item) => '${item.libro}|${item.tipo}|${item.estado}')
+            .toSet();
+        _conversaciones.addAll(
+          page.items.where(
+            (item) => known.add('${item.libro}|${item.tipo}|${item.estado}'),
+          ),
+        );
+        _cursor = page.nextCursor;
+        _hasMore = page.hasMore && page.nextCursor?.isNotEmpty == true;
+      });
+    } finally {
+      _loadingMore = false;
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return FutureBuilder<List<ConversacionLibro>>(
-      future: ApiService().getConversacionesLibro(libro: libro),
+    return FutureBuilder<void>(
+      future: _initialLoad,
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return LibroSection(
@@ -51,7 +96,7 @@ class ConversacionesLibroCard extends StatelessWidget {
           );
         }
 
-        final conversaciones = snapshot.data ?? const <ConversacionLibro>[];
+        final conversaciones = _conversaciones;
 
         if (conversaciones.isEmpty) {
           return const SizedBox.shrink();
@@ -73,8 +118,10 @@ class ConversacionesLibroCard extends StatelessWidget {
                     Navigator.push(
                       context,
                       AppPageRoute(
-                        builder: (_) =>
-                            LecturaPage(libro: libro, coverUrl: coverUrl),
+                        builder: (_) => LecturaPage(
+                          libro: widget.libro,
+                          coverUrl: widget.coverUrl,
+                        ),
                       ),
                     );
                   },
@@ -82,6 +129,27 @@ class ConversacionesLibroCard extends StatelessWidget {
 
                 if (index < conversaciones.length - 1)
                   const SizedBox(height: AppSpacing.md),
+              ],
+              if (_hasMore) ...[
+                const SizedBox(height: AppSpacing.md),
+                TextButton.icon(
+                  onPressed: _loadingMore
+                      ? null
+                      : () async {
+                          setState(() {});
+                          await _loadMore();
+                          if (mounted) setState(() {});
+                        },
+                  icon: _loadingMore
+                      ? const SizedBox.square(
+                          dimension: 16,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : const Icon(Icons.expand_more_rounded),
+                  label: Text(
+                    _loadingMore ? 'Cargando…' : 'Cargar más conversaciones',
+                  ),
+                ),
               ],
             ],
           ),
@@ -215,7 +283,7 @@ class _ConversacionCard extends StatelessWidget {
             ],
           ),
 
-          if (conversacion.ultimaActividad.trim().isNotEmpty) ...[
+          if (conversacion.ultimaActividad?.trim().isNotEmpty == true) ...[
             const SizedBox(height: AppSpacing.md),
 
             Container(
@@ -241,7 +309,7 @@ class _ConversacionCard extends StatelessWidget {
 
                   Expanded(
                     child: Text(
-                      conversacion.ultimaActividad,
+                      FechaRelativa.formato(conversacion.ultimaActividad),
                       style: AppTextStyles.caption.copyWith(height: 1.35),
                     ),
                   ),

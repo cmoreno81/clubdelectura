@@ -8,11 +8,13 @@ import 'club_challenge_page.dart';
 import '../dev/dev_settings.dart';
 import '../models/dashboard_view_data.dart';
 import '../models/dashboard.dart';
+import '../models/auth_session.dart';
 import '../models/ranking_item.dart';
 import '../models/reaccion_comentario.dart';
 import '../services/api_service.dart';
+import '../services/auth_session_service.dart';
+import '../services/club_dashboard_service.dart';
 import '../services/club_narrador.dart';
-import '../services/usuario_service.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_spacing.dart';
 import '../theme/app_radius.dart';
@@ -24,6 +26,7 @@ import '../widgets/common/club_chip.dart';
 import '../widgets/common/club_empty_state.dart';
 import '../widgets/common/club_section_title.dart';
 import '../widgets/common/club_book_cover.dart';
+import '../widgets/common/optimized_network_image.dart';
 import '../widgets/error_view.dart';
 import '../widgets/info_card.dart';
 import 'mood_club_page.dart';
@@ -32,101 +35,83 @@ import 'ranking_page.dart';
 import 'tendencias_club_page.dart';
 
 class DashboardPage extends StatefulWidget {
-  const DashboardPage({super.key, required this.clubName});
+  const DashboardPage({
+    super.key,
+    required this.clubName,
+    this.controller,
+    this.loadData,
+    this.initialUser,
+    this.profilePageBuilder,
+  });
 
   final String clubName;
+  final DashboardPageController? controller;
+  final Future<DashboardViewData> Function()? loadData;
+  final AuthUser? initialUser;
+  final Widget Function(String userName)? profilePageBuilder;
 
   @override
   State<DashboardPage> createState() => _DashboardPageState();
 }
 
+class DashboardPageController {
+  Future<void> Function()? _refresh;
+
+  Future<void> refresh() => _refresh?.call() ?? Future<void>.value();
+}
+
 class _DashboardPageState extends State<DashboardPage> {
   late Future<DashboardViewData> dashboardFuture;
-  final Map<String, LecturaAhoraItem> _reactionOverrides = {};
+  final Map<String, ValueNotifier<LecturaAhoraItem>> _reactionNotifiers = {};
   final Set<String> _reactingProgressIds = {};
 
   String? usuarioActual;
   String avatarUrlActual = '';
+  bool _headerLoading = true;
 
   @override
   void initState() {
     super.initState();
-
+    final sessionUser = widget.initialUser ?? AuthSessionService.instance.user;
+    usuarioActual = sessionUser?.nombre.trim();
+    avatarUrlActual = sessionUser?.avatarUrl.trim() ?? '';
+    widget.controller?._refresh = _recargar;
     dashboardFuture = _cargarDashboard();
-    _cargarUsuarioActual();
   }
 
   @override
-  void reassemble() {
-    super.reassemble();
-
-    // En desarrollo, un hot reload puede conservar un DashboardViewData
-    // anterior que todavía no incluía el top 3. Volvemos a pedirlo para que
-    // el podio se reconstruya completo sin necesitar reiniciar la app.
-    dashboardFuture = _cargarDashboard();
+  void dispose() {
+    if (widget.controller?._refresh == _recargar) {
+      widget.controller?._refresh = null;
+    }
+    for (final notifier in _reactionNotifiers.values) {
+      notifier.dispose();
+    }
+    super.dispose();
   }
 
   Future<DashboardViewData> _cargarDashboard() async {
-    final dashboardFuture = ApiService().getDashboard();
-    final clubvisionFuture = ApiService().getClubvision();
-    final topLectorasFuture = ApiService().getTopLectorasMes();
-
-    final dashboard = await dashboardFuture;
-    final clubvision = await clubvisionFuture;
-    List<RankingItem> topLectoras;
-
+    late final DashboardViewData viewData;
     try {
-      topLectoras = await topLectorasFuture;
-    } catch (_) {
-      topLectoras = const [];
+      viewData =
+          await (widget.loadData?.call() ?? ClubDashboardService().load());
+    } finally {
+      _headerLoading = false;
     }
-
-    return DashboardViewData(
-      dashboard: dashboard,
-      haVotado: clubvision.haVotado,
-      topLectoras: topLectoras,
-    );
-  }
-
-  Future<void> _cargarUsuarioActual() async {
-    final usuario = await UsuarioService().obtenerUsuario();
-    final nombre = usuario?.trim() ?? '';
-
-    if (!mounted) return;
-
-    if (nombre.isEmpty) {
-      setState(() {
-        usuarioActual = '';
-        avatarUrlActual = '';
-      });
-
-      return;
+    for (final member in viewData.dashboard.leyendoAhora) {
+      for (final reading in member.lecturas) {
+        _reactionNotifiers[reading.libraryId]?.value = reading;
+      }
     }
-
-    try {
-      final perfil = await ApiService().getPerfilUsuario(nombre);
-
-      if (!mounted) return;
-
-      setState(() {
-        usuarioActual = nombre;
-        avatarUrlActual = perfil.avatarUrl;
-      });
-    } catch (error) {
-      debugPrint('No se pudo cargar el avatar del dashboard: $error');
-
-      if (!mounted) return;
-
-      setState(() {
-        usuarioActual = nombre;
-        avatarUrlActual = '';
-      });
-    }
+    final dashboardName = viewData.dashboard.usuarioActual.trim();
+    final dashboardAvatar = viewData.dashboard.avatarUrlActual.trim();
+    if (dashboardName.isNotEmpty) usuarioActual = dashboardName;
+    if (dashboardAvatar.isNotEmpty) avatarUrlActual = dashboardAvatar;
+    return viewData;
   }
 
   Future<void> _recargar() async {
     setState(() {
-      _reactionOverrides.clear();
       dashboardFuture = _cargarDashboard();
     });
 
@@ -140,8 +125,26 @@ class _DashboardPageState extends State<DashboardPage> {
 
     Navigator.push(
       context,
-      AppPageRoute(builder: (_) => PerfilUsuarioPage(usuario: limpio)),
+      AppPageRoute(
+        builder: (_) =>
+            widget.profilePageBuilder?.call(limpio) ??
+            PerfilUsuarioPage(usuario: limpio),
+      ),
     );
+  }
+
+  Future<void> _abrirMiPerfil() async {
+    final nombre = usuarioActual?.trim() ?? '';
+    if (nombre.isEmpty) return;
+    await Navigator.push<void>(
+      context,
+      AppPageRoute(
+        builder: (_) =>
+            widget.profilePageBuilder?.call(nombre) ??
+            PerfilUsuarioPage(usuario: nombre),
+      ),
+    );
+    if (mounted) await _recargar();
   }
 
   void _abrirRanking({int initialTab = 0}) {
@@ -197,23 +200,8 @@ class _DashboardPageState extends State<DashboardPage> {
               nombre: usuarioActual ?? '',
               imageUrl: avatarUrlActual,
               size: 46,
-              onTap: () async {
-                final nombre = usuarioActual?.trim() ?? '';
-
-                if (nombre.isEmpty) return;
-
-                await Navigator.push(
-                  context,
-                  AppPageRoute(
-                    builder: (_) => PerfilUsuarioPage(usuario: nombre),
-                  ),
-                );
-
-                if (!mounted) return;
-
-                // Recargamos por si la usuaria cambió su foto en el perfil.
-                await _cargarUsuarioActual();
-              },
+              neutralWhenUnnamed: _headerLoading,
+              onTap: _abrirMiPerfil,
             ),
           ),
         ],
@@ -317,7 +305,7 @@ class _DashboardPageState extends State<DashboardPage> {
                     const SizedBox(height: AppSpacing.md),
                     _AffinityCard(
                       miembros: data.rankingAfinidad,
-                      miAvatarUrl: avatarUrlActual ?? '',
+                      miAvatarUrl: avatarUrlActual,
                     ),
                   ],
 
@@ -583,21 +571,23 @@ class _DashboardPageState extends State<DashboardPage> {
             ),
             const SizedBox(height: AppSpacing.md),
             for (var index = 0; index < lecturas.length; index++) ...[
-              _LecturaProgresoCard(
-                lectura: _effectiveReading(lecturas[index]),
-                editable:
-                    usuarioActual?.trim().toLowerCase() ==
-                    nombre.trim().toLowerCase(),
-                onEditar: () =>
-                    _editarProgreso(nombre, _effectiveReading(lecturas[index])),
-                onBookTap: () => openBookDetail(
-                  context,
-                  title: lecturas[index].titulo,
-                  bookId: lecturas[index].bookId,
-                  coverUrl: lecturas[index].coverUrl,
+              ValueListenableBuilder<LecturaAhoraItem>(
+                valueListenable: _reactionNotifier(lecturas[index]),
+                builder: (context, lectura, _) => _LecturaProgresoCard(
+                  key: ValueKey('progress-${lectura.libraryId}'),
+                  lectura: lectura,
+                  editable:
+                      usuarioActual?.trim().toLowerCase() ==
+                      nombre.trim().toLowerCase(),
+                  onEditar: () => _editarProgreso(nombre, lectura),
+                  onBookTap: () => openBookDetail(
+                    context,
+                    title: lectura.titulo,
+                    bookId: lectura.bookId,
+                    coverUrl: lectura.coverUrl,
+                  ),
+                  onReact: () => _reaccionarProgreso(lectura),
                 ),
-                onReact: () =>
-                    _reaccionarProgreso(_effectiveReading(lecturas[index])),
               ),
               if (index < lecturas.length - 1)
                 const SizedBox(height: AppSpacing.sm),
@@ -700,10 +690,8 @@ class _DashboardPageState extends State<DashboardPage> {
     if (reaccion == null || !mounted) return;
     final previous = _effectiveReading(lectura);
     final optimistic = _toggleLocalReaction(previous, reaccion);
-    setState(() {
-      _reactingProgressIds.add(lectura.libraryId);
-      _reactionOverrides[lectura.libraryId] = optimistic;
-    });
+    _reactingProgressIds.add(lectura.libraryId);
+    _reactionNotifier(lectura).value = optimistic;
     try {
       final result = await ApiService().toggleProgressReaction(
         libraryId: lectura.libraryId,
@@ -714,33 +702,35 @@ class _DashboardPageState extends State<DashboardPage> {
         throw StateError('No se ha podido guardar la reacción');
       }
       final rawReactions = result['reacciones'] as Map? ?? const {};
-      setState(() {
-        _reactionOverrides[lectura.libraryId] = _withReactionState(
-          previous,
-          reactions: {
-            for (final item in ReaccionComentario.values)
-              item: (rawReactions[item.apiValue] as num?)?.toInt() ?? 0,
-          },
-          myReaction: ReaccionComentarioDatos.fromApi(
-            result['miReaccion']?.toString(),
-          ),
-        );
-      });
+      _reactionNotifier(lectura).value = _withReactionState(
+        previous,
+        reactions: {
+          for (final item in ReaccionComentario.values)
+            item: (rawReactions[item.apiValue] as num?)?.toInt() ?? 0,
+        },
+        myReaction: ReaccionComentarioDatos.fromApi(
+          result['miReaccion']?.toString(),
+        ),
+      );
     } catch (_) {
       if (!mounted) return;
-      setState(() => _reactionOverrides[lectura.libraryId] = previous);
+      _reactionNotifier(lectura).value = previous;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('No se ha podido guardar la reacción.')),
       );
     } finally {
-      if (mounted) {
-        setState(() => _reactingProgressIds.remove(lectura.libraryId));
-      }
+      _reactingProgressIds.remove(lectura.libraryId);
     }
   }
 
   LecturaAhoraItem _effectiveReading(LecturaAhoraItem reading) =>
-      _reactionOverrides[reading.libraryId] ?? reading;
+      _reactionNotifiers[reading.libraryId]?.value ?? reading;
+
+  ValueNotifier<LecturaAhoraItem> _reactionNotifier(LecturaAhoraItem reading) =>
+      _reactionNotifiers.putIfAbsent(
+        reading.libraryId,
+        () => ValueNotifier<LecturaAhoraItem>(reading),
+      );
 
   LecturaAhoraItem _toggleLocalReaction(
     LecturaAhoraItem reading,
@@ -787,6 +777,7 @@ class _LecturaProgresoCard extends StatelessWidget {
   final VoidCallback onReact;
 
   const _LecturaProgresoCard({
+    super.key,
     required this.lectura,
     required this.editable,
     required this.onEditar,
@@ -1175,13 +1166,12 @@ class _AffinityMemberTile extends StatelessWidget {
                   ],
                 ),
                 clipBehavior: Clip.antiAlias,
-                child: miembro.avatarUrl.isNotEmpty
-                    ? Image.network(
-                        miembro.avatarUrl,
-                        fit: BoxFit.cover,
-                        errorBuilder: (_, __, ___) => _initials(),
-                      )
-                    : _initials(),
+                child: OptimizedNetworkImage(
+                  url: miembro.avatarUrl,
+                  width: size,
+                  height: size,
+                  fallback: _initials(),
+                ),
               ),
               // Medalla en esquina inferior derecha
               if (posicion < 3)

@@ -163,9 +163,14 @@ class _AnimatedCover extends StatelessWidget {
       builder: (_, child) => Transform(
         alignment: Alignment.center,
         transform: Matrix4.identity()
-          ..translate(data.dx, data.dy + (1 - anim.value) * 60)
+          ..translateByDouble(data.dx, data.dy + (1 - anim.value) * 60, 0, 1)
           ..rotateZ(data.angle)
-          ..scale(data.scale * anim.value.clamp(0.0, 1.0)),
+          ..scaleByDouble(
+            data.scale * anim.value.clamp(0.0, 1.0),
+            data.scale * anim.value.clamp(0.0, 1.0),
+            1,
+            1,
+          ),
         child: child,
       ),
       child: Container(

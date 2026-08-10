@@ -24,6 +24,7 @@ import '../widgets/common/club_avatar.dart';
 import '../widgets/common/club_book_cover.dart';
 import '../widgets/common/club_card.dart';
 import '../widgets/common/reading_cover_calendar.dart';
+import '../widgets/common/optimized_network_image.dart';
 import '../widgets/dashboard/monthly_reading_shelf.dart';
 import 'clubs_page.dart';
 import 'home_page.dart';
@@ -48,7 +49,6 @@ class GeneralDashboardPage extends StatefulWidget {
 class _GeneralDashboardPageState extends State<GeneralDashboardPage> {
   late Future<GeneralDashboard> _future;
   String? _openingClubId;
-  Key _shelfKey = UniqueKey();
   final _scrollController = ScrollController();
   int _noLeidas = 0;
 
@@ -92,7 +92,12 @@ class _GeneralDashboardPageState extends State<GeneralDashboardPage> {
 
     final resultado =
         await showDialog<
-          ({int progreso, int? paginaActual, String comentario})
+          ({
+            int progreso,
+            int? paginaActual,
+            int? paginasTotales,
+            String comentario,
+          })
         >(
           context: context,
           builder: (_) => EditarProgresoDialog(lectura: lectura),
@@ -138,7 +143,6 @@ class _GeneralDashboardPageState extends State<GeneralDashboardPage> {
   Future<void> _reload() async {
     setState(() {
       _future = GeneralDashboardService().load();
-      _shelfKey = UniqueKey();
     });
     await _future;
   }
@@ -391,7 +395,9 @@ class _GeneralDashboardPageState extends State<GeneralDashboardPage> {
                       if (data.calendar.finishedBooks.isNotEmpty) ...[
                         const SizedBox(height: AppSpacing.xl),
                         MonthlyReadingShelf(
-                          key: _shelfKey,
+                          key: ValueKey(
+                            'monthly-${data.calendar.year}-${data.calendar.month}',
+                          ),
                           year: data.calendar.year,
                           month: data.calendar.month,
                           books: data.calendar.finishedBooks,
@@ -828,7 +834,7 @@ class _GeneralDashboardPageState extends State<GeneralDashboardPage> {
         onTap: () => _openClub(club),
         child: Row(
           children: [
-            ClubAvatar(nombre: club.name, imageUrl: club.avatarUrl, size: 54),
+            ClubAvatar(nombre: club.name, imageUrl: club.avatarUrl, size: 72),
             const SizedBox(width: AppSpacing.md),
             Expanded(
               child: Column(
@@ -1553,14 +1559,12 @@ class _GeneralDashboardPageState extends State<GeneralDashboardPage> {
                       ),
                     ),
                     clipBehavior: Clip.antiAlias,
-                    child: author.photoUrl.isNotEmpty
-                        ? Image.network(
-                            author.photoUrl,
-                            fit: BoxFit.cover,
-                            errorBuilder: (_, _, _) =>
-                                _authorInitials(author.nombre),
-                          )
-                        : _authorInitials(author.nombre),
+                    child: OptimizedNetworkImage(
+                      url: author.photoUrl,
+                      width: 72,
+                      height: 72,
+                      fallback: _authorInitials(author.nombre),
+                    ),
                   ),
                   const SizedBox(height: 8),
                   Text(

@@ -9,6 +9,7 @@ import '../../utils/genero_utils.dart';
 import '../../utils/lectura_fecha_utils.dart';
 import '../common/club_card.dart';
 import '../common/club_rating_stars.dart';
+import '../common/optimized_network_image.dart';
 
 class PerfilTimelineLectura extends StatelessWidget {
   final List<PerfilLibroTerminado> libros;
@@ -545,15 +546,12 @@ class _TimelineEntrada extends StatelessWidget {
                       child: SizedBox(
                         width: 48,
                         height: 68,
-                        child: libro.coverUrl.trim().isNotEmpty
-                            ? Image.network(
-                                libro.coverUrl,
-                                fit: BoxFit.cover,
-                                errorBuilder: (_, _, _) {
-                                  return _PortadaFallback(color: color);
-                                },
-                              )
-                            : _PortadaFallback(color: color),
+                        child: OptimizedNetworkImage(
+                          url: libro.coverUrl,
+                          width: 48,
+                          height: 68,
+                          fallback: _PortadaFallback(color: color),
+                        ),
                       ),
                     ),
 

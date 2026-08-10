@@ -10,6 +10,7 @@ import '../theme/app_spacing.dart';
 import '../theme/app_text_styles.dart';
 import '../widgets/common/club_book_cover.dart';
 import '../widgets/common/club_card.dart';
+import '../widgets/common/optimized_network_image.dart';
 import '../widgets/error_view.dart';
 
 class AfinidadDetallePage extends StatefulWidget {
@@ -141,28 +142,19 @@ class _AfinidadDetallePageState extends State<AfinidadDetallePage>
                                     ),
                                   ),
                                   clipBehavior: Clip.antiAlias,
-                                  child: widget.miAvatarUrl.isNotEmpty
-                                      ? Image.network(
-                                          widget.miAvatarUrl,
-                                          fit: BoxFit.cover,
-                                          errorBuilder: (_, __, ___) =>
-                                              Container(
-                                                color: AppColors.primaryLight,
-                                                child: const Icon(
-                                                  Icons.person_rounded,
-                                                  color: AppColors.primary,
-                                                  size: 32,
-                                                ),
-                                              ),
-                                        )
-                                      : Container(
-                                          color: AppColors.primaryLight,
-                                          child: const Icon(
-                                            Icons.person_rounded,
-                                            color: AppColors.primary,
-                                            size: 32,
-                                          ),
-                                        ),
+                                  child: OptimizedNetworkImage(
+                                    url: widget.miAvatarUrl,
+                                    width: 64,
+                                    height: 64,
+                                    fallback: Container(
+                                      color: AppColors.primaryLight,
+                                      child: const Icon(
+                                        Icons.person_rounded,
+                                        color: AppColors.primary,
+                                        size: 32,
+                                      ),
+                                    ),
+                                  ),
                                 ),
                               ),
                               // Avatar de la compañera
@@ -179,25 +171,25 @@ class _AfinidadDetallePageState extends State<AfinidadDetallePage>
                                     ),
                                   ),
                                   clipBehavior: Clip.antiAlias,
-                                  child: widget.avatarUrl.isNotEmpty
-                                      ? Image.network(
-                                          widget.avatarUrl,
-                                          fit: BoxFit.cover,
-                                        )
-                                      : Container(
-                                          color: AppColors.primaryLight,
-                                          alignment: Alignment.center,
-                                          child: Text(
-                                            widget.nombre.isNotEmpty
-                                                ? widget.nombre[0].toUpperCase()
-                                                : '?',
-                                            style: const TextStyle(
-                                              color: AppColors.primary,
-                                              fontSize: 22,
-                                              fontWeight: FontWeight.w800,
-                                            ),
-                                          ),
+                                  child: OptimizedNetworkImage(
+                                    url: widget.avatarUrl,
+                                    width: 64,
+                                    height: 64,
+                                    fallback: Container(
+                                      color: AppColors.primaryLight,
+                                      alignment: Alignment.center,
+                                      child: Text(
+                                        widget.nombre.isNotEmpty
+                                            ? widget.nombre[0].toUpperCase()
+                                            : '?',
+                                        style: const TextStyle(
+                                          color: AppColors.primary,
+                                          fontSize: 22,
+                                          fontWeight: FontWeight.w800,
                                         ),
+                                      ),
+                                    ),
+                                  ),
                                 ),
                               ),
                               // Corazón central
@@ -389,7 +381,12 @@ class _AnimatedBook extends StatelessWidget {
       builder: (_, child) => Transform(
         alignment: Alignment.bottomCenter,
         transform: Matrix4.identity()
-          ..translate(offsetX * anim.value, (1 - anim.value) * -180)
+          ..translateByDouble(
+            offsetX * anim.value,
+            (1 - anim.value) * -180,
+            0,
+            1,
+          )
           ..rotateZ(angle * anim.value),
         child: child,
       ),

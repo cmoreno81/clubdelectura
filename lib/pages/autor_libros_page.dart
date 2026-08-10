@@ -9,6 +9,7 @@ import '../theme/app_text_styles.dart';
 import '../utils/genero_utils.dart';
 import '../widgets/common/club_book_cover.dart';
 import '../widgets/common/club_card.dart';
+import '../widgets/common/optimized_network_image.dart';
 import '../widgets/error_view.dart';
 
 class AutorLibrosPage extends StatefulWidget {
@@ -149,10 +150,11 @@ class _AutorLibrosPageState extends State<AutorLibrosPage> {
                                 ],
                               ),
                               clipBehavior: Clip.antiAlias,
-                              child: Image.network(
-                                widget.photoUrl,
-                                fit: BoxFit.cover,
-                                errorBuilder: (_, __, ___) => Container(
+                              child: OptimizedNetworkImage(
+                                url: widget.photoUrl,
+                                width: 96,
+                                height: 96,
+                                fallback: Container(
                                   color: Colors.white.withValues(alpha: .2),
                                   alignment: Alignment.center,
                                   child: Text(

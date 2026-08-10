@@ -419,6 +419,7 @@ class _PosterShelf extends StatelessWidget {
                           title: books[index].title,
                           imageUrl: books[index].coverUrl,
                           width: bookWidth,
+                          highResolution: true,
                           height: bookHeight,
                           borderRadius: BorderRadius.circular(3),
                           showShadow: false,

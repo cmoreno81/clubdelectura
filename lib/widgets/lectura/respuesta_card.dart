@@ -24,6 +24,46 @@ class RespuestaCard extends StatefulWidget {
 }
 
 class _RespuestaCardState extends State<RespuestaCard> {
+  late int _likes;
+  late bool _miLike;
+  bool _loadingLike = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _likes = widget.respuesta.likes;
+    _miLike = widget.respuesta.miLike;
+  }
+
+  Future<void> _toggleLike() async {
+    if (_loadingLike) return;
+    setState(() {
+      _loadingLike = true;
+      _miLike = !_miLike;
+      _likes += _miLike ? 1 : -1;
+    });
+    try {
+      final json = await ApiService().toggleLikeComentario(
+        comentarioId: widget.respuesta.id,
+        reaccion: 'LIKE',
+      );
+      if (!mounted) return;
+      setState(() {
+        _miLike = json['miLike'] as bool? ?? _miLike;
+        _likes = (json['likes'] as num?)?.toInt() ?? _likes;
+      });
+    } catch (_) {
+      // Revertir si falla
+      if (!mounted) return;
+      setState(() {
+        _miLike = !_miLike;
+        _likes += _miLike ? 1 : -1;
+      });
+    } finally {
+      if (mounted) setState(() => _loadingLike = false);
+    }
+  }
+
   Future<void> _editarRespuesta() async {
     final controller = TextEditingController(text: widget.respuesta.respuesta);
 
@@ -67,7 +107,6 @@ class _RespuestaCardState extends State<RespuestaCard> {
 
     if (ok) {
       widget.onActualizar();
-
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(const SnackBar(content: Text('Respuesta actualizada 💜')));
@@ -103,7 +142,6 @@ class _RespuestaCardState extends State<RespuestaCard> {
 
     if (ok) {
       widget.onActualizar();
-
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(const SnackBar(content: Text('Respuesta eliminada')));
@@ -181,7 +219,6 @@ class _RespuestaCardState extends State<RespuestaCard> {
                                   if (accion == 'editar') {
                                     _editarRespuesta();
                                   }
-
                                   if (accion == 'eliminar') {
                                     _eliminarRespuesta();
                                   }
@@ -226,6 +263,59 @@ class _RespuestaCardState extends State<RespuestaCard> {
                             ),
                           ),
                         ],
+
+                        const SizedBox(height: AppSpacing.sm),
+
+                        // ── Botón de like ──
+                        GestureDetector(
+                          onTap: _loadingLike ? null : _toggleLike,
+                          child: AnimatedContainer(
+                            duration: const Duration(milliseconds: 180),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 10,
+                              vertical: 4,
+                            ),
+                            decoration: BoxDecoration(
+                              color: _miLike
+                                  ? AppColors.primary.withValues(alpha: .1)
+                                  : Colors.transparent,
+                              borderRadius: BorderRadius.circular(
+                                AppRadius.pill,
+                              ),
+                              border: Border.all(
+                                color: _miLike
+                                    ? AppColors.primary.withValues(alpha: .4)
+                                    : AppColors.border,
+                              ),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Text(
+                                  _miLike ? '🤍' : '🤍',
+                                  style: TextStyle(
+                                    fontSize: 13,
+                                    color: _miLike
+                                        ? AppColors.primary
+                                        : AppColors.textMuted,
+                                  ),
+                                ),
+                                if (_likes > 0) ...[
+                                  const SizedBox(width: 4),
+                                  Text(
+                                    '$_likes',
+                                    style: AppTextStyles.caption.copyWith(
+                                      fontWeight: FontWeight.w700,
+                                      color: _miLike
+                                          ? AppColors.primary
+                                          : AppColors.textMuted,
+                                    ),
+                                  ),
+                                ],
+                              ],
+                            ),
+                          ),
+                        ),
                       ],
                     ),
                   ),

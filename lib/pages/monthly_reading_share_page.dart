@@ -249,6 +249,7 @@ class _MonthlyReadingPoster extends StatelessWidget {
                             final ratio = weeks >= 6 ? .74 : .88;
                             return ReadingCoverCalendar(
                               calendar: calendar,
+                              highResolution: true,
                               showMonthHeader: false,
                               cellAspectRatio: ratio,
                             );

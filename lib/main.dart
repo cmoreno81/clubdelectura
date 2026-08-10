@@ -1,6 +1,7 @@
 import 'package:club_lectura_app/services/atmosfera_scope.dart';
 import 'package:flutter/material.dart';
 
+import 'dev/ui_performance_diagnostics.dart';
 import 'pages/splash_page.dart';
 import 'pages/club_gate_page.dart';
 import 'pages/login_page.dart';
@@ -18,6 +19,7 @@ final routeObserver = RouteObserver<ModalRoute<void>>();
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  configureUiPerformanceDiagnostics();
 
   runApp(const MyApp());
 }
@@ -33,6 +35,8 @@ class _MyAppState extends State<MyApp> {
   late final AtmosferaController atmosferaController;
   final authSession = AuthSessionService.instance;
   final navigatorKey = GlobalKey<NavigatorState>();
+  final scaffoldMessengerKey = GlobalKey<ScaffoldMessengerState>();
+  bool _expiryPresented = false;
 
   @override
   void initState() {
@@ -44,9 +48,22 @@ class _MyAppState extends State<MyApp> {
   }
 
   void _onAuthChanged() {
-    if (!authSession.initialized || authSession.isAuthenticated) return;
+    if (!authSession.initialized) return;
+    if (authSession.isAuthenticated) {
+      _expiryPresented = false;
+      return;
+    }
+    if (!authSession.sessionExpired || _expiryPresented) return;
+    _expiryPresented = true;
     WidgetsBinding.instance.addPostFrameCallback((_) {
       navigatorKey.currentState?.popUntil((route) => route.isFirst);
+      scaffoldMessengerKey.currentState
+        ?..hideCurrentSnackBar()
+        ..showSnackBar(
+          const SnackBar(
+            content: Text('Tu sesión ha caducado. Inicia sesión de nuevo.'),
+          ),
+        );
     });
   }
 
@@ -66,6 +83,7 @@ class _MyAppState extends State<MyApp> {
           controller: atmosferaController,
           child: MaterialApp(
             navigatorKey: navigatorKey,
+            scaffoldMessengerKey: scaffoldMessengerKey,
             navigatorObservers: [routeObserver],
             debugShowCheckedModeBanner: false,
             title: 'ClubReads',
