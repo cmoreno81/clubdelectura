@@ -1,5 +1,3 @@
-import '../models/achievements/achievement.dart';
-
 class AchievementService {
   // El servicio ahora es solo un stub — los logros vienen del backend
   static const List<String> categories = [

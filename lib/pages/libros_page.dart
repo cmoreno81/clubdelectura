@@ -67,6 +67,10 @@ class _LibrosPageState extends State<LibrosPage> with WidgetsBindingObserver {
   String filtroBusqueda = '';
   String filtroEstado = 'TODOS';
   String filtroUsuario = 'TODAS';
+  List<Libro>? _cachedBooks;
+  List<LibroFinalizado>? _cachedFinishedBooks;
+  String? _cachedFilterKey;
+  List<LibroAgrupado>? _cachedResult;
   OrdenLibros ordenSeleccionado = OrdenLibros.populares;
   bool _orderChangedInThisVisit = false;
 
@@ -1004,6 +1008,25 @@ class _LibrosPageState extends State<LibrosPage> with WidgetsBindingObserver {
   }
 
   List<LibroAgrupado> _crearResultado({
+    required List<Libro> libros,
+    required List<LibroFinalizado> finalizados,
+  }) {
+    final filterKey =
+        '$filtroBusqueda\u0000$filtroEstado\u0000$filtroUsuario\u0000$ordenSeleccionado';
+    if (identical(_cachedBooks, libros) &&
+        identical(_cachedFinishedBooks, finalizados) &&
+        _cachedFilterKey == filterKey) {
+      return _cachedResult!;
+    }
+    final result = _calcularResultado(libros: libros, finalizados: finalizados);
+    _cachedBooks = libros;
+    _cachedFinishedBooks = finalizados;
+    _cachedFilterKey = filterKey;
+    _cachedResult = result;
+    return result;
+  }
+
+  List<LibroAgrupado> _calcularResultado({
     required List<Libro> libros,
     required List<LibroFinalizado> finalizados,
   }) {

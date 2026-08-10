@@ -10,6 +10,7 @@ import '../theme/app_spacing.dart';
 import '../theme/app_text_styles.dart';
 import '../widgets/common/club_button.dart';
 import '../widgets/common/club_card.dart';
+import '../widgets/common/optimized_network_image.dart';
 import '../widgets/common/club_chip.dart';
 import '../widgets/common/url_text_field.dart';
 
@@ -867,31 +868,16 @@ class _PortadaPreview extends StatelessWidget {
           ),
         ],
       ),
-      child: url.isEmpty
-          ? _PortadaFallback(title: title, color: color)
-          : Image.network(
-              url,
-              fit: BoxFit.cover,
-              errorBuilder: (_, _, _) {
-                return _PortadaFallback(
-                  title: title,
-                  color: color,
-                  error: true,
-                );
-              },
-              loadingBuilder: (context, child, progress) {
-                if (progress == null) return child;
-
-                return Center(
-                  child: CircularProgressIndicator(
-                    value: progress.expectedTotalBytes == null
-                        ? null
-                        : progress.cumulativeBytesLoaded /
-                              progress.expectedTotalBytes!,
-                  ),
-                );
-              },
-            ),
+      child: OptimizedNetworkImage(
+        url: url,
+        width: 118,
+        height: 168,
+        fallback: _PortadaFallback(
+          title: title,
+          color: color,
+          error: url.isNotEmpty,
+        ),
+      ),
     );
   }
 }

@@ -85,6 +85,30 @@ class ComentarioLectura {
 
   bool get esCita => tipo == 'QUOTE';
 
+  ComentarioLectura copyWith({
+    String? comentario,
+    bool? editado,
+    bool? eliminado,
+  }) => ComentarioLectura(
+    id: id,
+    libro: libro,
+    capitulo: capitulo,
+    usuario: usuario,
+    avatarUrl: avatarUrl,
+    fecha: fecha,
+    comentario: comentario ?? this.comentario,
+    tipo: tipo,
+    color: color,
+    likes: likes,
+    miLike: miLike,
+    reacciones: reacciones,
+    miReaccion: miReaccion,
+    editado: editado ?? this.editado,
+    eliminado: eliminado ?? this.eliminado,
+    esMio: esMio,
+    respuestas: respuestas,
+  );
+
   static Map<ReaccionComentario, int> _parseReacciones(
     Map<String, dynamic> json,
   ) {

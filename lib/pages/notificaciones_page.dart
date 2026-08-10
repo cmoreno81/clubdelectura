@@ -7,6 +7,7 @@ import '../services/api_exception.dart';
 import '../services/api_service.dart';
 import '../services/club_context_controller.dart';
 import '../services/club_service.dart';
+import '../services/cursor_pagination_controller.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_spacing.dart';
 import '../theme/app_text_styles.dart';
@@ -24,33 +25,46 @@ class NotificacionesPage extends StatefulWidget {
 }
 
 class _NotificacionesPageState extends State<NotificacionesPage> {
-  late Future<NotificacionesData> _future;
+  late final CursorPaginationController<Notificacion> _pagination;
+  final ScrollController _scrollController = ScrollController();
   final Set<String> _eliminadas = {};
   final Set<String> _abriendo = {};
 
   @override
   void initState() {
     super.initState();
-    _future = ApiService().getNotificaciones();
+    _pagination = CursorPaginationController(
+      loadPage: (cursor) => ApiService().getNotificacionesPage(cursor: cursor),
+      keyOf: (notification) => notification.id,
+    )..loadFirst();
+    _scrollController.addListener(_onScroll);
+  }
+
+  void _onScroll() {
+    if (!_scrollController.hasClients) return;
+    if (_scrollController.position.extentAfter < 400) {
+      _pagination.loadMore();
+    }
   }
 
   Future<void> _marcarTodas() async {
     await ApiService().marcarTodasNotificacionesLeidas();
-    setState(() {
-      _future = ApiService().getNotificaciones();
-    });
+    await _pagination.loadFirst();
   }
 
   Future<void> _marcarLeida(String id) async {
     await ApiService().marcarNotificacionLeida(id);
-    // Refresh silencioso
-    ApiService().getNotificaciones().then((data) {
-      if (mounted) {
-        setState(() {
-          _future = Future.value(data);
-        });
-      }
-    });
+    _pagination.replace(
+      id,
+      (notification) => notification.copyWith(leida: true),
+    );
+  }
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    _pagination.dispose();
+    super.dispose();
   }
 
   Future<bool> _eliminar(Notificacion notificacion) async {
@@ -85,28 +99,23 @@ class _NotificacionesPageState extends State<NotificacionesPage> {
           ),
         ],
       ),
-      body: FutureBuilder<NotificacionesData>(
-        future: _future,
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
+      body: AnimatedBuilder(
+        animation: _pagination,
+        builder: (context, _) {
+          if (_pagination.showInitialLoader) {
             return const Center(child: CircularProgressIndicator());
           }
-          if (snapshot.hasError) {
-            return ErrorView(
-              onRetry: () {
-                setState(() {
-                  _future = ApiService().getNotificaciones();
-                });
-              },
-            );
+          if (_pagination.showInitialError) {
+            return ErrorView(onRetry: _pagination.loadFirst);
           }
 
-          final data = snapshot.data!;
-          final notificaciones = data.notificaciones
+          final notificaciones = _pagination.items
               .where((notificacion) => !_eliminadas.contains(notificacion.id))
               .toList(growable: false);
 
-          if (notificaciones.isEmpty) {
+          if (!_pagination.initialLoading &&
+              notificaciones.isEmpty &&
+              _pagination.initialError == null) {
             return Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
@@ -128,50 +137,82 @@ class _NotificacionesPageState extends State<NotificacionesPage> {
             );
           }
 
-          return ListView.separated(
-            padding: const EdgeInsets.symmetric(
-              horizontal: AppSpacing.md,
-              vertical: AppSpacing.md,
-            ),
-            itemCount: notificaciones.length,
-            separatorBuilder: (_, _) => const SizedBox(height: AppSpacing.sm),
-            itemBuilder: (context, i) {
-              final n = notificaciones[i];
-              return Dismissible(
-                key: ValueKey(n.id),
-                direction: DismissDirection.endToStart,
-                confirmDismiss: (_) => _eliminar(n),
-                onDismissed: (_) => setState(() => _eliminadas.add(n.id)),
-                background: Container(
-                  decoration: BoxDecoration(
-                    color: AppColors.danger,
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: AppSpacing.lg,
-                  ),
-                  alignment: Alignment.centerRight,
-                  child: const Icon(
-                    Icons.delete_outline_rounded,
-                    color: Colors.white,
-                  ),
+          final hasFooter =
+              _pagination.loadingMore ||
+              _pagination.loadMoreError != null ||
+              _pagination.hasContentError;
+          return Stack(
+            children: [
+              ListView.separated(
+                controller: _scrollController,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: AppSpacing.md,
+                  vertical: AppSpacing.md,
                 ),
-                child: _NotificacionCard(
-                  notificacion: n,
-                  loading: _abriendo.contains(n.id),
-                  onTap: () async {
-                    if (_abriendo.contains(n.id)) return;
-                    setState(() => _abriendo.add(n.id));
-                    try {
-                      if (!n.leida) await _marcarLeida(n.id);
-                      if (mounted) await _navegarA(n);
-                    } finally {
-                      if (mounted) setState(() => _abriendo.remove(n.id));
+                itemCount: notificaciones.length + (hasFooter ? 1 : 0),
+                separatorBuilder: (_, _) =>
+                    const SizedBox(height: AppSpacing.sm),
+                itemBuilder: (context, i) {
+                  if (i == notificaciones.length) {
+                    if (_pagination.hasContentError) {
+                      return Center(
+                        child: TextButton.icon(
+                          onPressed: _pagination.loadFirst,
+                          icon: const Icon(Icons.refresh_rounded),
+                          label: const Text(
+                            'No se pudo actualizar. Reintentar',
+                          ),
+                        ),
+                      );
                     }
-                  },
+                    return _PaginationFooter(
+                      loading: _pagination.loadingMore,
+                      onRetry: _pagination.loadMore,
+                    );
+                  }
+                  final n = notificaciones[i];
+                  return Dismissible(
+                    key: ValueKey(n.id),
+                    direction: DismissDirection.endToStart,
+                    confirmDismiss: (_) => _eliminar(n),
+                    onDismissed: (_) => setState(() => _eliminadas.add(n.id)),
+                    background: Container(
+                      decoration: BoxDecoration(
+                        color: AppColors.danger,
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: AppSpacing.lg,
+                      ),
+                      alignment: Alignment.centerRight,
+                      child: const Icon(
+                        Icons.delete_outline_rounded,
+                        color: Colors.white,
+                      ),
+                    ),
+                    child: _NotificacionCard(
+                      notificacion: n,
+                      loading: _abriendo.contains(n.id),
+                      onTap: () async {
+                        if (_abriendo.contains(n.id)) return;
+                        setState(() => _abriendo.add(n.id));
+                        try {
+                          if (!n.leida) await _marcarLeida(n.id);
+                          if (mounted) await _navegarA(n);
+                        } finally {
+                          if (mounted) setState(() => _abriendo.remove(n.id));
+                        }
+                      },
+                    ),
+                  );
+                },
+              ),
+              if (_pagination.refreshing)
+                const Align(
+                  alignment: Alignment.topCenter,
+                  child: LinearProgressIndicator(minHeight: 2),
                 ),
-              );
-            },
+            ],
           );
         },
       ),
@@ -265,6 +306,30 @@ class _NotificacionesPageState extends State<NotificacionesPage> {
     final quoted = RegExp(r'[“"]([^”"]+)[”"]').firstMatch(notification.mensaje);
     return quoted?.group(1)?.trim() ?? '';
   }
+}
+
+class _PaginationFooter extends StatelessWidget {
+  const _PaginationFooter({required this.loading, required this.onRetry});
+
+  final bool loading;
+  final VoidCallback onRetry;
+
+  @override
+  Widget build(BuildContext context) => Padding(
+    padding: const EdgeInsets.all(AppSpacing.md),
+    child: Center(
+      child: loading
+          ? const SizedBox.square(
+              dimension: 24,
+              child: CircularProgressIndicator(strokeWidth: 2),
+            )
+          : TextButton.icon(
+              onPressed: onRetry,
+              icon: const Icon(Icons.refresh_rounded),
+              label: const Text('No se pudo cargar más. Reintentar'),
+            ),
+    ),
+  );
 }
 
 class _NotificacionCard extends StatelessWidget {

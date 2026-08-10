@@ -12,6 +12,7 @@ import '../theme/app_radius.dart';
 import '../theme/app_spacing.dart';
 import '../widgets/common/club_card.dart';
 import '../widgets/common/club_section_title.dart';
+import '../widgets/common/optimized_network_image.dart';
 
 enum ReadingImportSource { goodreads, bookmory }
 
@@ -896,14 +897,12 @@ class _CandidatePicker extends StatelessWidget {
                           SizedBox(
                             width: 54,
                             height: 78,
-                            child: candidate.coverUrl.isEmpty
-                                ? const Icon(Icons.auto_stories_outlined)
-                                : Image.network(
-                                    candidate.coverUrl,
-                                    fit: BoxFit.cover,
-                                    errorBuilder: (_, _, _) =>
-                                        const Icon(Icons.auto_stories_outlined),
-                                  ),
+                            child: OptimizedNetworkImage(
+                              url: candidate.coverUrl,
+                              width: 54,
+                              height: 78,
+                              fallback: const Icon(Icons.auto_stories_outlined),
+                            ),
                           ),
                           const SizedBox(width: AppSpacing.md),
                           Expanded(

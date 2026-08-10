@@ -33,6 +33,18 @@ class Notificacion {
     extra: json['extra'] as Map<String, dynamic>?,
   );
 
+  Notificacion copyWith({bool? leida}) => Notificacion(
+    id: id,
+    tipo: tipo,
+    titulo: titulo,
+    mensaje: mensaje,
+    leida: leida ?? this.leida,
+    fecha: fecha,
+    clubId: clubId,
+    bookId: bookId,
+    extra: extra,
+  );
+
   /// Emoji representativo según el tipo
   String get emoji => switch (tipo) {
     'CLUBVISION_ABIERTA' => '🗳️',

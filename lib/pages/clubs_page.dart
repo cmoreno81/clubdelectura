@@ -14,6 +14,7 @@ import '../theme/app_text_styles.dart';
 import '../widgets/common/club_avatar.dart';
 import '../widgets/perfil/editar_avatar_dialog.dart';
 import '../widgets/common/club_card.dart';
+import '../widgets/common/optimized_network_image.dart';
 
 class ClubsPage extends StatefulWidget {
   const ClubsPage({
@@ -221,8 +222,8 @@ class _ClubCard extends StatelessWidget {
       child: Row(
         children: [
           Container(
-            width: 56,
-            height: 56,
+            width: 72,
+            height: 72,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
               border: Border.all(
@@ -231,13 +232,12 @@ class _ClubCard extends StatelessWidget {
               ),
             ),
             clipBehavior: Clip.antiAlias,
-            child: club.avatarUrl.isNotEmpty
-                ? Image.network(
-                    club.avatarUrl,
-                    fit: BoxFit.cover,
-                    errorBuilder: (_, __, ___) => _initials(),
-                  )
-                : _initials(),
+            child: OptimizedNetworkImage(
+              url: club.avatarUrl,
+              width: 72,
+              height: 72,
+              fallback: _initials(),
+            ),
           ),
           const SizedBox(width: AppSpacing.md),
           Expanded(
@@ -466,8 +466,8 @@ class _ClubSettingsPageState extends State<_ClubSettingsPage> {
                   child: Stack(
                     children: [
                       Container(
-                        width: 88,
-                        height: 88,
+                        width: 120,
+                        height: 120,
                         decoration: BoxDecoration(
                           shape: BoxShape.circle,
                           border: Border.all(
@@ -476,14 +476,12 @@ class _ClubSettingsPageState extends State<_ClubSettingsPage> {
                           ),
                         ),
                         clipBehavior: Clip.antiAlias,
-                        child: widget.club.avatarUrl.isNotEmpty
-                            ? Image.network(
-                                widget.club.avatarUrl,
-                                fit: BoxFit.cover,
-                                errorBuilder: (_, __, ___) =>
-                                    _avatarFallback(widget.club.nombre),
-                              )
-                            : _avatarFallback(widget.club.nombre),
+                        child: OptimizedNetworkImage(
+                          url: widget.club.avatarUrl,
+                          width: 120,
+                          height: 120,
+                          fallback: _avatarFallback(widget.club.nombre),
+                        ),
                       ),
                       Positioned(
                         right: 0,

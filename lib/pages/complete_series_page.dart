@@ -7,12 +7,16 @@ import '../services/api_service.dart';
 import '../services/library_refresh_notifier.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_spacing.dart';
+import '../widgets/common/optimized_network_image.dart';
 import '../widgets/sagas/series_volume_details_dialog.dart';
 
+typedef SeriesCatalogSearch = Future<List<CatalogBook>> Function(String query);
+
 class CompleteSeriesPage extends StatefulWidget {
-  const CompleteSeriesPage({super.key, required this.series});
+  const CompleteSeriesPage({super.key, required this.series, this.searchBooks});
 
   final PerfilSaga series;
+  final SeriesCatalogSearch? searchBooks;
 
   @override
   State<CompleteSeriesPage> createState() => _CompleteSeriesPageState();
@@ -49,9 +53,9 @@ class _CompleteSeriesPageState extends State<CompleteSeriesPage> {
       _error = null;
     });
     try {
-      final books = await ApiService().getCatalogoGeneral(
-        query: _searchController.text,
-      );
+      final books =
+          await (widget.searchBooks?.call(_searchController.text) ??
+              ApiService().getCatalogoGeneral(query: _searchController.text));
       final linkedIds = widget.series.volumenes
           .map((volume) => volume.bookId)
           .toSet();
@@ -305,14 +309,12 @@ class _CompleteSeriesPageState extends State<CompleteSeriesPage> {
             leading: SizedBox(
               width: 48,
               height: 70,
-              child: book.coverUrl.isEmpty
-                  ? const Icon(Icons.auto_stories_outlined)
-                  : Image.network(
-                      book.coverUrl,
-                      fit: BoxFit.cover,
-                      errorBuilder: (_, _, _) =>
-                          const Icon(Icons.auto_stories_outlined),
-                    ),
+              child: OptimizedNetworkImage(
+                url: book.coverUrl,
+                width: 48,
+                height: 70,
+                fallback: const Icon(Icons.auto_stories_outlined),
+              ),
             ),
             title: Text(
               book.title,

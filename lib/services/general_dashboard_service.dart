@@ -1,11 +1,9 @@
-import 'dart:convert';
-
 import 'package:http/http.dart' as http;
 
 import '../models/general_dashboard.dart';
 import '../utils/app_config.dart';
-import 'api_exception.dart';
 import 'authenticated_http_client.dart';
+import 'http_response_handler.dart';
 
 class GeneralDashboardService {
   GeneralDashboardService({http.Client? client})
@@ -19,16 +17,7 @@ class GeneralDashboardService {
         AppConfig.baseUrl,
       ).replace(queryParameters: {'action': 'dashboardGeneral'}),
     );
-    if (response.statusCode < 200 || response.statusCode >= 300) {
-      throw ApiException.fromResponse(response);
-    }
-    final data = jsonDecode(response.body);
-    if (data is! Map<String, dynamic>) {
-      throw const ApiException(
-        statusCode: 500,
-        message: 'La respuesta del servidor no es válida.',
-      );
-    }
+    final data = HttpResponseHandler.decodeObject(response);
     if (data['sagasAbiertas'] is! List) {
       await _completeSeriesPreview(data);
     }
@@ -46,9 +35,7 @@ class GeneralDashboardService {
           queryParameters: {'action': 'perfilUsuario', 'perfil': userName},
         ),
       );
-      if (response.statusCode < 200 || response.statusCode >= 300) return;
-      final decoded = jsonDecode(response.body);
-      if (decoded is! Map<String, dynamic>) return;
+      final decoded = HttpResponseHandler.decodeObject(response);
       final sagas =
           (decoded['sagas'] as List<dynamic>? ?? const [])
               .whereType<Map>()

@@ -1,4 +1,5 @@
 import 'lectura_actual.dart';
+import 'ranking_item.dart';
 import 'reaccion_comentario.dart';
 
 class AffinityMember {
@@ -37,6 +38,9 @@ class Dashboard {
 
   final LecturaActual lecturaActual;
   final List<AffinityMember> rankingAfinidad;
+  final List<RankingItem> topLectorasMes;
+  final String usuarioActual;
+  final String avatarUrlActual;
 
   Dashboard({
     required this.resumen,
@@ -47,6 +51,9 @@ class Dashboard {
     required this.leyendoAhora,
     required this.lecturaActual,
     this.rankingAfinidad = const [],
+    this.topLectorasMes = const [],
+    this.usuarioActual = '',
+    this.avatarUrlActual = '',
   });
 
   factory Dashboard.fromJson(Map<String, dynamic> json) {
@@ -72,6 +79,14 @@ class Dashboard {
           .cast<Map<String, dynamic>>()
           .map(AffinityMember.fromJson)
           .toList(growable: false),
+      topLectorasMes: (json['topLectorasMes'] as List<dynamic>? ?? [])
+          .whereType<Map>()
+          .map((item) => RankingItem.fromJson(Map<String, dynamic>.from(item)))
+          .toList(growable: false),
+      usuarioActual:
+          (json['usuarioActual'] as Map?)?['nombre']?.toString() ?? '',
+      avatarUrlActual:
+          (json['usuarioActual'] as Map?)?['avatarUrl']?.toString() ?? '',
     );
   }
 }
@@ -100,6 +115,7 @@ class Clubvision {
   final int comentarios;
   final int likes;
   final String ultimaActividad;
+  final bool haVotado;
 
   Clubvision({
     required this.estado,
@@ -118,6 +134,7 @@ class Clubvision {
     required this.comentarios,
     required this.likes,
     required this.ultimaActividad,
+    this.haVotado = false,
   });
 
   factory Clubvision.fromJson(Map<String, dynamic> json) {
@@ -147,6 +164,7 @@ class Clubvision {
       likes: (json['likes'] as num?)?.toInt() ?? 0,
 
       ultimaActividad: json['ultimaActividad']?.toString() ?? '',
+      haVotado: json['haVotado'] == true,
     );
   }
 }

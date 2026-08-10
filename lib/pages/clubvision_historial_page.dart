@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../models/historial_clubvision.dart';
 import '../navigation/book_detail_navigation.dart';
 import '../services/api_service.dart';
+import '../services/cursor_pagination_controller.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_radius.dart';
 import '../theme/app_spacing.dart';
@@ -21,21 +22,34 @@ class ClubvisionHistorialPage extends StatefulWidget {
 }
 
 class _ClubvisionHistorialPageState extends State<ClubvisionHistorialPage> {
-  late Future<List<HistorialClubvision>> future;
+  late final CursorPaginationController<HistorialClubvision> _pagination;
+  final ScrollController _scrollController = ScrollController();
 
   @override
   void initState() {
     super.initState();
-    _recargar();
+    _pagination = CursorPaginationController(
+      loadPage: (cursor) =>
+          ApiService().getHistorialClubvisionPage(cursor: cursor),
+      keyOf: (item) => item.mes,
+    )..loadFirst();
+    _scrollController.addListener(_onScroll);
   }
 
-  void _recargar() {
-    future = ApiService().getHistorialClubvision();
+  void _onScroll() {
+    if (_scrollController.hasClients &&
+        _scrollController.position.extentAfter < 500) {
+      _pagination.loadMore();
+    }
   }
 
-  Future<void> _refrescar() async {
-    setState(_recargar);
-    await future;
+  Future<void> _refrescar() => _pagination.loadFirst();
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    _pagination.dispose();
+    super.dispose();
   }
 
   String _mes(String fecha) {
@@ -70,62 +84,96 @@ class _ClubvisionHistorialPageState extends State<ClubvisionHistorialPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text('Historial')),
-      body: FutureBuilder<List<HistorialClubvision>>(
-        future: future,
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
+      body: AnimatedBuilder(
+        animation: _pagination,
+        builder: (context, _) {
+          if (_pagination.showInitialLoader) {
             return const Center(child: CircularProgressIndicator());
           }
 
-          if (snapshot.hasError) {
-            return ErrorView(
-              onRetry: () {
-                setState(_recargar);
-              },
-            );
+          if (_pagination.showInitialError) {
+            return ErrorView(onRetry: _pagination.loadFirst);
           }
 
-          final historial = snapshot.data ?? const <HistorialClubvision>[];
+          final historial = _pagination.items;
 
-          if (historial.isEmpty) {
+          if (_pagination.showEmpty) {
             return _HistorialVacio(onRefresh: _refrescar);
           }
 
-          return RefreshIndicator(
-            onRefresh: _refrescar,
-            child: ListView(
-              physics: const AlwaysScrollableScrollPhysics(),
-              padding: const EdgeInsets.fromLTRB(
-                AppSpacing.md,
-                AppSpacing.sm,
-                AppSpacing.md,
-                110,
-              ),
-              children: [
-                _HistorialHeader(totalEdiciones: historial.length),
-
-                const SizedBox(height: AppSpacing.lg),
-
-                const _SectionHeader(
-                  icon: Icons.history_rounded,
-                  color: AppColors.primary,
-                  title: 'Ediciones anteriores',
-                  subtitle: 'Las historias que fueron elegidas por el club',
-                ),
-
-                const SizedBox(height: AppSpacing.md),
-
-                for (var index = 0; index < historial.length; index++) ...[
-                  _EdicionCard(
-                    historial: historial[index],
-                    mes: _mes(historial[index].mes),
-                    destacada: index == 0,
+          return Stack(
+            children: [
+              RefreshIndicator(
+                onRefresh: _refrescar,
+                child: ListView(
+                  controller: _scrollController,
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  padding: const EdgeInsets.fromLTRB(
+                    AppSpacing.md,
+                    AppSpacing.sm,
+                    AppSpacing.md,
+                    110,
                   ),
+                  children: [
+                    _HistorialHeader(
+                      totalEdiciones: _pagination.hasMore
+                          ? null
+                          : historial.length,
+                    ),
 
-                  const SizedBox(height: AppSpacing.md),
-                ],
-              ],
-            ),
+                    const SizedBox(height: AppSpacing.lg),
+
+                    const _SectionHeader(
+                      icon: Icons.history_rounded,
+                      color: AppColors.primary,
+                      title: 'Ediciones anteriores',
+                      subtitle: 'Las historias que fueron elegidas por el club',
+                    ),
+
+                    const SizedBox(height: AppSpacing.md),
+
+                    for (var index = 0; index < historial.length; index++) ...[
+                      _EdicionCard(
+                        historial: historial[index],
+                        mes: _mes(historial[index].mes),
+                        destacada: index == 0,
+                      ),
+
+                      const SizedBox(height: AppSpacing.md),
+                    ],
+                    if (_pagination.loadingMore)
+                      const Center(
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      ),
+                    if (_pagination.loadMoreError != null)
+                      Center(
+                        child: TextButton.icon(
+                          onPressed: _pagination.loadMore,
+                          icon: const Icon(Icons.refresh_rounded),
+                          label: const Text(
+                            'No se pudo cargar más. Reintentar',
+                          ),
+                        ),
+                      ),
+                    if (_pagination.hasContentError)
+                      Center(
+                        child: TextButton.icon(
+                          onPressed: _pagination.loadFirst,
+                          icon: const Icon(Icons.refresh_rounded),
+                          label: const Text(
+                            'No se pudo actualizar. Reintentar',
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+              if (_pagination.refreshing)
+                const Align(
+                  alignment: Alignment.topCenter,
+                  child: LinearProgressIndicator(minHeight: 2),
+                ),
+            ],
           );
         },
       ),
@@ -134,7 +182,7 @@ class _ClubvisionHistorialPageState extends State<ClubvisionHistorialPage> {
 }
 
 class _HistorialHeader extends StatelessWidget {
-  final int totalEdiciones;
+  final int? totalEdiciones;
 
   const _HistorialHeader({required this.totalEdiciones});
 
@@ -176,7 +224,9 @@ class _HistorialHeader extends StatelessWidget {
                 ),
                 const SizedBox(height: 2),
                 Text(
-                  totalEdiciones == 1
+                  totalEdiciones == null
+                      ? 'Las ediciones que forman parte de la historia del club.'
+                      : totalEdiciones == 1
                       ? 'Una edición forma parte de la historia del club.'
                       : '$totalEdiciones ediciones forman parte de la historia del club.',
                   style: AppTextStyles.bodySecondary.copyWith(height: 1.3),
@@ -185,6 +235,8 @@ class _HistorialHeader extends StatelessWidget {
                 ClubChip(
                   label: totalEdiciones == 1
                       ? '1 ganadora'
+                      : totalEdiciones == null
+                      ? 'Ganadoras'
                       : '$totalEdiciones ganadoras',
                   icon: Icons.emoji_events_outlined,
                   variant: ClubChipVariant.warning,

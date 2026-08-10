@@ -4,7 +4,7 @@ class LecturaActiva {
   final int lectoras;
   final bool configurada;
   final int comentarios;
-  final String ultimaActividad;
+  final String? ultimaActividad;
   final String tipo;
   final String estado;
 
@@ -26,7 +26,7 @@ class LecturaActiva {
       lectoras: _toInt(json['lectoras']),
       configurada: json['configurada'] == true,
       comentarios: _toInt(json['comentarios']),
-      ultimaActividad: json['ultimaActividad']?.toString() ?? '',
+      ultimaActividad: json['ultimaActividad']?.toString(),
       tipo: json['tipo']?.toString().toUpperCase() ?? 'LIBRE',
       estado: json['estado']?.toString().toUpperCase() ?? 'ACTIVA',
     );

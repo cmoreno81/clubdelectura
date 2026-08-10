@@ -4,8 +4,8 @@ import 'package:http/http.dart' as http;
 
 import '../models/club_membership.dart';
 import '../utils/app_config.dart';
-import 'api_exception.dart';
 import 'authenticated_http_client.dart';
+import 'http_response_handler.dart';
 
 class ClubService {
   ClubService({http.Client? client})
@@ -55,17 +55,7 @@ class ClubService {
             headers: const {'Content-Type': 'application/json'},
             body: jsonEncode(body),
           );
-    if (response.statusCode < 200 || response.statusCode >= 300) {
-      throw ApiException.fromResponse(response);
-    }
-    final data = jsonDecode(response.body);
-    if (data is! Map<String, dynamic>) {
-      throw const ApiException(
-        statusCode: 500,
-        message: 'La respuesta del servidor no es válida.',
-      );
-    }
-    return data;
+    return HttpResponseHandler.decodeObject(response);
   }
 
   Future<void> leaveClub(String clubId) async {
@@ -82,9 +72,9 @@ class ClubService {
       'editarClub',
       body: {
         'clubId': clubId,
-        if (nombre != null) 'nombre': nombre,
-        if (descripcion != null) 'descripcion': descripcion,
-        if (avatarUrl != null) 'avatarUrl': avatarUrl,
+        'nombre': ?nombre,
+        'descripcion': ?descripcion,
+        'avatarUrl': ?avatarUrl,
       },
     );
   }

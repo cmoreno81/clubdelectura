@@ -520,8 +520,7 @@ class _PapeletaCard extends StatelessWidget {
               physics: const NeverScrollableScrollPhysics(),
               padding: EdgeInsets.zero,
               buildDefaultDragHandles: false,
-              onReorder: (oldIndex, newIndex) {
-                if (newIndex > oldIndex) newIndex--;
+              onReorderItem: (oldIndex, newIndex) {
                 onReorder?.call(oldIndex, newIndex);
               },
               children: [

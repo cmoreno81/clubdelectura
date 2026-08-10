@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../models/dashboard.dart';
 import '../services/api_service.dart';
+import '../widgets/lectura/fecha_relativa.dart';
 
 class LecturaActualPage extends StatefulWidget {
   const LecturaActualPage({super.key});
@@ -84,8 +85,8 @@ class _LecturaActualPageState extends State<LecturaActualPage> {
                   child: ListTile(
                     leading: const Icon(Icons.forum),
                     title: Text("💬 ${lectura.comentarios} comentarios"),
-                    subtitle: lectura.ultimaActividad.isNotEmpty
-                        ? Text(lectura.ultimaActividad)
+                    subtitle: lectura.ultimaActividad?.trim().isNotEmpty == true
+                        ? Text(FechaRelativa.formato(lectura.ultimaActividad))
                         : null,
                     trailing: Text("❤️ ${lectura.likes}"),
                   ),

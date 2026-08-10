@@ -10,7 +10,8 @@ class AuthSessionService extends ChangeNotifier {
 
   TokenStorage _storage = SecureTokenStorage();
   AuthSession? _session;
-  Future<bool>? _refreshInProgress;
+  Future<Object?>? _refreshInProgress;
+  Future<void>? _expireInProgress;
   bool _initialized = false;
   bool _sessionExpired = false;
 
@@ -21,9 +22,9 @@ class AuthSessionService extends ChangeNotifier {
   String? get accessToken => _session?.accessToken;
   String? get refreshToken => _session?.refreshToken;
 
-  Future<bool> refreshOnce(Future<bool> Function() refresh) {
+  Future<T> refreshOnce<T>(Future<T> Function() refresh) {
     final current = _refreshInProgress;
-    if (current != null) return current;
+    if (current != null) return current.then((value) => value as T);
 
     final pending = refresh();
     _refreshInProgress = pending;
@@ -94,10 +95,21 @@ class AuthSessionService extends ChangeNotifier {
   }
 
   Future<void> expire() async {
+    if (_session == null && _sessionExpired) return;
     await _storage.clear();
     _session = null;
     _sessionExpired = true;
     notifyListeners();
+  }
+
+  Future<void> expireOnce() {
+    final current = _expireInProgress;
+    if (current != null) return current;
+    final pending = expire();
+    _expireInProgress = pending;
+    return pending.whenComplete(() {
+      if (identical(_expireInProgress, pending)) _expireInProgress = null;
+    });
   }
 
   @visibleForTesting
@@ -105,6 +117,7 @@ class AuthSessionService extends ChangeNotifier {
     _storage = storage;
     _session = null;
     _refreshInProgress = null;
+    _expireInProgress = null;
     _initialized = false;
     _sessionExpired = false;
   }

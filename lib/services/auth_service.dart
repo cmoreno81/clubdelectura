@@ -1,4 +1,6 @@
+import 'dart:async';
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:http/http.dart' as http;
 
@@ -7,6 +9,7 @@ import '../utils/app_config.dart';
 import 'api_exception.dart';
 import 'auth_session_service.dart';
 import 'authenticated_http_client.dart';
+import 'http_response_handler.dart';
 
 class AuthService {
   AuthService({
@@ -96,7 +99,14 @@ class AuthService {
 
   Future<void> logout() async {
     try {
-      await _authenticatedClient.post(_uri('logout'));
+      await _authenticatedClient.post(
+        _uri('logout'),
+        headers: const {
+          'Content-Type': 'application/json',
+          AuthenticatedHttpClient.noRetryHeader: 'true',
+        },
+        body: jsonEncode(<String, dynamic>{}),
+      );
     } finally {
       await _session.clear();
     }
@@ -110,15 +120,20 @@ class AuthService {
       if (data['ok'] != true ||
           data['accessToken'] is! String ||
           data['refreshToken'] is! String) {
-        return false;
+        // Una respuesta correcta pero incompleta no demuestra que el refresh
+        // token sea inválido. Se conserva para poder reintentar más tarde.
+        return true;
       }
       await _session.replaceTokens(
         accessToken: data['accessToken'] as String,
         refreshToken: data['refreshToken'] as String,
       );
       return true;
+    } on ApiException catch (error) {
+      return error.code != 'INVALID_REFRESH_TOKEN' &&
+          error.code != 'TOKEN_REVOKED';
     } catch (_) {
-      return false;
+      return true;
     }
   }
 
@@ -131,20 +146,22 @@ class AuthService {
     String action,
     Map<String, dynamic> body,
   ) async {
-    final response = await _publicClient.post(
-      _uri(action),
-      headers: const {'Content-Type': 'application/json'},
-      body: jsonEncode(body),
-    );
-    _ensureSuccess(response);
-    final data = jsonDecode(response.body);
-    if (data is! Map<String, dynamic>) {
-      throw const ApiException(
-        statusCode: 500,
-        message: 'La respuesta del servidor no es válida.',
-      );
+    try {
+      final response = await _publicClient
+          .post(
+            _uri(action),
+            headers: const {'Content-Type': 'application/json'},
+            body: jsonEncode(body),
+          )
+          .timeout(const Duration(seconds: 12));
+      return HttpResponseHandler.decodeObject(response);
+    } on TimeoutException {
+      throw ApiException.timeout();
+    } on SocketException {
+      throw ApiException.noConnection();
+    } on http.ClientException {
+      throw ApiException.noConnection();
     }
-    return data;
   }
 
   Future<void> _saveSession(Map<String, dynamic> data) async {
@@ -171,8 +188,6 @@ class AuthService {
       Uri.parse(AppConfig.baseUrl).replace(queryParameters: {'action': action});
 
   void _ensureSuccess(http.Response response) {
-    if (response.statusCode < 200 || response.statusCode >= 300) {
-      throw ApiException.fromResponse(response);
-    }
+    HttpResponseHandler.ensureSuccess(response);
   }
 }

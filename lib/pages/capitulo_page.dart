@@ -1,7 +1,12 @@
 import 'dart:async';
 
 import 'package:club_lectura_app/models/comentarios_capitulo.dart';
+import 'package:club_lectura_app/models/comentario_lectura.dart';
 import 'package:club_lectura_app/services/usuario_service.dart';
+import 'package:club_lectura_app/services/cursor_pagination_controller.dart';
+import 'package:club_lectura_app/services/chapter_initialization.dart';
+import 'package:club_lectura_app/services/conversation_scroll_policy.dart';
+import 'package:club_lectura_app/services/comment_publication.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../theme/app_colors.dart';
@@ -30,7 +35,8 @@ class CapituloPage extends StatefulWidget {
 }
 
 class _CapituloPageState extends State<CapituloPage> {
-  late Future<ComentariosCapitulo> future;
+  late Future<void> future;
+  late final CursorPaginationController<ComentarioLectura> _pagination;
 
   final TextEditingController controller = TextEditingController();
   final ScrollController scrollController = ScrollController();
@@ -50,6 +56,15 @@ class _CapituloPageState extends State<CapituloPage> {
   void initState() {
     super.initState();
 
+    _pagination = CursorPaginationController(
+      loadPage: (cursor) => ApiService().getComentariosCapituloPage(
+        libro: widget.libro,
+        capitulo: widget.capitulo,
+        cursor: cursor,
+      ),
+      keyOf: (comment) => comment.id,
+    )..addListener(_onPaginationChanged);
+    scrollController.addListener(_onScroll);
     controller.addListener(_programarGuardadoBorrador);
     future = _inicializar();
     _cargarColoresKit();
@@ -80,29 +95,33 @@ class _CapituloPageState extends State<CapituloPage> {
     return '#${value.toRadixString(16).padLeft(6, '0').toUpperCase()}';
   }
 
-  Future<ComentariosCapitulo> _inicializar() async {
-    final u = await UsuarioService().obtenerUsuario();
+  void _onPaginationChanged() {
+    if (mounted) setState(() {});
+  }
 
-    usuario = u;
+  void _onScroll() {
+    if (!scrollController.hasClients) return;
+    if (scrollController.position.extentAfter < 500) {
+      _pagination.loadMore();
+    }
+  }
 
-    await _restaurarBorrador();
-
-    if (u != null && u.trim().isNotEmpty) {
-      await ApiService().marcarConversacionVista(
+  Future<void> _inicializar() async {
+    await ChapterInitialization.run(
+      loadComments: _pagination.loadFirst,
+      loadUser: UsuarioService().obtenerUsuario,
+      onUserLoaded: (value) => usuario = value,
+      restoreDraft: _restaurarBorrador,
+      markSeen: (value) => ApiService().marcarConversacionVista(
         libro: widget.libro,
         capitulo: widget.capitulo,
-        usuario: u,
-      );
-    }
+        usuario: value,
+      ),
+    );
 
     if (mounted) {
       setState(() {});
     }
-
-    return ApiService().getComentariosCapitulo(
-      libro: widget.libro,
-      capitulo: widget.capitulo,
-    );
   }
 
   String? get _claveBorrador {
@@ -166,12 +185,7 @@ class _CapituloPageState extends State<CapituloPage> {
     await prefs.remove(clave);
   }
 
-  void _recargar() {
-    future = ApiService().getComentariosCapitulo(
-      libro: widget.libro,
-      capitulo: widget.capitulo,
-    );
-  }
+  Future<void> _recargar() => _pagination.loadFirst();
 
   Future<void> _publicar() async {
     final texto = controller.text.trim();
@@ -187,23 +201,30 @@ class _CapituloPageState extends State<CapituloPage> {
       return;
     }
 
+    final estabaCercaDelFinal = shouldAutoScrollAfterPublishing(
+      hasScrollPosition: scrollController.hasClients,
+      extentAfter: scrollController.hasClients
+          ? scrollController.position.extentAfter
+          : 0,
+    );
+
     setState(() {
       enviando = true;
     });
 
     try {
-      await ApiService().guardarComentarioLectura(
-        libro: widget.libro,
-        capitulo: widget.capitulo,
-        usuario: usuario!,
-        comentario: texto,
-        tipo: editorEsCita ? 'QUOTE' : 'COMMENT',
-        color: editorEsCita ? _colorAHex(colorCita) : '',
+      await publishConfirmedComment(
+        publish: () => ApiService().guardarComentarioLectura(
+          libro: widget.libro,
+          capitulo: widget.capitulo,
+          usuario: usuario!,
+          comentario: texto,
+          tipo: editorEsCita ? 'QUOTE' : 'COMMENT',
+          color: editorEsCita ? _colorAHex(colorCita) : '',
+        ),
+        onConfirmed: _pagination.appendLocal,
+        clearDraft: _borrarBorrador,
       );
-
-      if (!mounted) return;
-
-      await _borrarBorrador();
 
       if (!mounted) return;
 
@@ -212,16 +233,33 @@ class _CapituloPageState extends State<CapituloPage> {
 
       setState(() {
         if (esReflexion) editorReflexionVisible = false;
-        _recargar();
       });
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            esReflexion ? 'Reflexión publicada 💜' : 'Comentario publicado 💜',
+      if (estabaCercaDelFinal) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (!mounted || !scrollController.hasClients) return;
+          scrollController.animateTo(
+            scrollController.position.maxScrollExtent,
+            duration: const Duration(milliseconds: 260),
+            curve: Curves.easeOut,
+          );
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              esReflexion
+                  ? 'Reflexión publicada 💜'
+                  : 'Comentario publicado 💜',
+            ),
           ),
-        ),
-      );
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Text('Comentario publicado'),
+            action: SnackBarAction(label: 'Ir al final', onPressed: _irAlFinal),
+          ),
+        );
+      }
     } catch (_) {
       if (!mounted) return;
 
@@ -237,6 +275,15 @@ class _CapituloPageState extends State<CapituloPage> {
         });
       }
     }
+  }
+
+  void _irAlFinal() {
+    if (!scrollController.hasClients) return;
+    scrollController.animateTo(
+      scrollController.position.maxScrollExtent,
+      duration: const Duration(milliseconds: 300),
+      curve: Curves.easeOut,
+    );
   }
 
   void _abrirEditorReflexion() {
@@ -375,8 +422,8 @@ class _CapituloPageState extends State<CapituloPage> {
     );
   }
 
-  Widget _contenidoComentarios(AsyncSnapshot<ComentariosCapitulo> snapshot) {
-    if (snapshot.connectionState == ConnectionState.waiting) {
+  Widget _contenidoComentarios() {
+    if (_pagination.showInitialLoader) {
       return CustomScrollView(
         controller: scrollController,
         slivers: [
@@ -389,7 +436,7 @@ class _CapituloPageState extends State<CapituloPage> {
       );
     }
 
-    if (snapshot.hasError || !snapshot.hasData) {
+    if (_pagination.showInitialError) {
       return CustomScrollView(
         controller: scrollController,
         slivers: [
@@ -419,9 +466,7 @@ class _CapituloPageState extends State<CapituloPage> {
 
                     FilledButton.icon(
                       onPressed: () {
-                        setState(() {
-                          _recargar();
-                        });
+                        _recargar();
                       },
                       icon: const Icon(Icons.refresh),
                       label: const Text('Reintentar'),
@@ -435,7 +480,10 @@ class _CapituloPageState extends State<CapituloPage> {
       );
     }
 
-    final data = snapshot.data!;
+    final data = ComentariosCapitulo(
+      capitulo: widget.capitulo,
+      comentarios: _pagination.items,
+    );
 
     return CustomScrollView(
       controller: scrollController,
@@ -443,7 +491,12 @@ class _CapituloPageState extends State<CapituloPage> {
       slivers: [
         SliverToBoxAdapter(child: _cabecera()),
 
-        if (data.comentarios.isEmpty)
+        if (_pagination.refreshing)
+          const SliverToBoxAdapter(
+            child: LinearProgressIndicator(minHeight: 2),
+          ),
+
+        if (_pagination.showEmpty)
           SliverFillRemaining(
             hasScrollBody: false,
             child: Center(
@@ -469,15 +522,20 @@ class _CapituloPageState extends State<CapituloPage> {
             sliver: SliverList(
               delegate: SliverChildBuilderDelegate((context, index) {
                 final comentarioCard = ComentarioCard(
+                  key: ValueKey(data.comentarios[index].id),
                   comentario: data.comentarios[index],
                   usuarioActual: usuario ?? '',
                   onActualizar: () {
                     if (!mounted) return;
-
-                    setState(() {
-                      _recargar();
-                    });
+                    _recargar();
                   },
+                  onEdited: (text) => _pagination.replace(
+                    data.comentarios[index].id,
+                    (comment) =>
+                        comment.copyWith(comentario: text, editado: true),
+                  ),
+                  onDeleted: () =>
+                      _pagination.remove(data.comentarios[index].id),
                 );
 
                 if (!esReflexion) return comentarioCard;
@@ -487,6 +545,31 @@ class _CapituloPageState extends State<CapituloPage> {
                   child: comentarioCard,
                 );
               }, childCount: data.comentarios.length),
+            ),
+          ),
+        if (_pagination.loadingMore || _pagination.loadMoreError != null)
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: const EdgeInsets.all(AppSpacing.md),
+              child: Center(
+                child: _pagination.loadingMore
+                    ? const CircularProgressIndicator(strokeWidth: 2)
+                    : TextButton.icon(
+                        onPressed: _pagination.loadMore,
+                        icon: const Icon(Icons.refresh_rounded),
+                        label: const Text('No se pudo cargar más. Reintentar'),
+                      ),
+              ),
+            ),
+          ),
+        if (_pagination.hasContentError)
+          SliverToBoxAdapter(
+            child: Center(
+              child: TextButton.icon(
+                onPressed: _recargar,
+                icon: const Icon(Icons.refresh_rounded),
+                label: const Text('No se pudo actualizar. Reintentar'),
+              ),
             ),
           ),
       ],
@@ -505,11 +588,9 @@ class _CapituloPageState extends State<CapituloPage> {
         child: Column(
           children: [
             Expanded(
-              child: FutureBuilder<ComentariosCapitulo>(
+              child: FutureBuilder<void>(
                 future: future,
-                builder: (context, snapshot) {
-                  return _contenidoComentarios(snapshot);
-                },
+                builder: (context, snapshot) => _contenidoComentarios(),
               ),
             ),
 
@@ -572,6 +653,9 @@ class _CapituloPageState extends State<CapituloPage> {
     unawaited(_guardarBorrador(controller.text));
     controller.dispose();
     scrollController.dispose();
+    _pagination
+      ..removeListener(_onPaginationChanged)
+      ..dispose();
     editorFocusNode.dispose();
     super.dispose();
   }

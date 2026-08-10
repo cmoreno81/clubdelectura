@@ -4,7 +4,6 @@ import '../models/catalog_book.dart';
 import '../services/api_exception.dart';
 import '../services/api_service.dart';
 import '../theme/app_colors.dart';
-import '../theme/app_radius.dart';
 import '../theme/app_spacing.dart';
 import '../theme/app_text_styles.dart';
 import '../widgets/common/club_book_cover.dart';
@@ -33,7 +32,6 @@ class _CatalogBookDetailPageState extends State<CatalogBookDetailPage> {
   bool _loading = true;
   bool _adding = false;
   bool _added = false;
-  String? _error;
 
   @override
   void initState() {
@@ -52,11 +50,12 @@ class _CatalogBookDetailPageState extends State<CatalogBookDetailPage> {
                     widget.title.trim().toLowerCase(),
           )
           .firstOrNull;
-      if (mounted)
+      if (mounted) {
         setState(() {
           _book = match;
           _loading = false;
         });
+      }
     } catch (_) {
       if (mounted) setState(() => _loading = false);
     }
@@ -86,11 +85,12 @@ class _CatalogBookDetailPageState extends State<CatalogBookDetailPage> {
         fechaFin: result.endDate,
         valoracion: result.rating,
       );
-      if (mounted)
+      if (mounted) {
         setState(() {
           _added = true;
           _adding = false;
         });
+      }
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('${widget.title} añadido a tu biblioteca')),
@@ -128,6 +128,7 @@ class _CatalogBookDetailPageState extends State<CatalogBookDetailPage> {
                 title: widget.title,
                 imageUrl: widget.coverUrl,
                 width: 110,
+                highResolution: true,
                 height: 160,
               ),
               const SizedBox(width: AppSpacing.md),

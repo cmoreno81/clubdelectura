@@ -2,7 +2,7 @@ class CapituloLectura {
   final String nombre;
   final int comentarios;
   final int likes;
-  final String ultimaActividad;
+  final String? ultimaActividad;
 
   final int nuevosComentarios;
   final bool tieneNovedades;
@@ -36,7 +36,7 @@ class CapituloLectura {
       comentarios: (json['comentarios'] as num?)?.toInt() ?? 0,
       respuestas: (json['respuestas'] as num?)?.toInt() ?? 0,
       likes: (json['likes'] as num?)?.toInt() ?? 0,
-      ultimaActividad: json['ultimaActividad']?.toString() ?? '',
+      ultimaActividad: json['ultimaActividad']?.toString(),
       nuevosComentarios: nuevosComentarios,
       nuevasRespuestas: nuevasRespuestas,
       nuevosTotal: nuevosTotal,

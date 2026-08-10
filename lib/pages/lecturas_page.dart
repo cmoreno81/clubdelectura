@@ -12,6 +12,7 @@ import '../theme/app_text_styles.dart';
 import '../widgets/common/club_book_cover.dart';
 import '../widgets/common/club_card.dart';
 import '../widgets/common/club_chip.dart';
+import '../widgets/lectura/fecha_relativa.dart';
 import '../widgets/ui/club_metric.dart';
 import 'configurar_lectura_page.dart';
 import 'lectura_page.dart';
@@ -365,7 +366,7 @@ class _LecturaCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final tieneActividad = lectura.ultimaActividad.trim().isNotEmpty;
+    final tieneActividad = lectura.ultimaActividad?.trim().isNotEmpty == true;
 
     return ClubCard(
       elevated: destacada,
@@ -518,7 +519,7 @@ class _LecturaCard extends StatelessWidget {
 
                   Expanded(
                     child: Text(
-                      lectura.ultimaActividad,
+                      FechaRelativa.formato(lectura.ultimaActividad),
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                       style: AppTextStyles.caption.copyWith(height: 1.3),

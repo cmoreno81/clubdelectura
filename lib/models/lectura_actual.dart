@@ -25,7 +25,7 @@ class LecturaActual {
 
   final int comentarios;
   final int likes;
-  final String ultimaActividad;
+  final String? ultimaActividad;
   final String coverUrl;
 
   const LecturaActual({
@@ -55,7 +55,7 @@ class LecturaActual {
       totalFinalizado: json['totalFinalizado'] ?? 0,
       comentarios: (json["comentarios"] as num?)?.toInt() ?? 0,
       likes: (json["likes"] as num?)?.toInt() ?? 0,
-      ultimaActividad: json["ultimaActividad"] ?? "",
+      ultimaActividad: json['ultimaActividad']?.toString(),
       coverUrl: json['coverUrl']?.toString() ?? '',
     );
   }
