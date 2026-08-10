@@ -112,7 +112,7 @@ void main() {
       if (protectedCalls == 1) {
         expect(request.headers['Authorization'], 'Bearer access-1');
         return http.Response(
-          jsonEncode({'ok': false, 'error': 'INVALID_ACCESS_TOKEN'}),
+          jsonEncode({'ok': false, 'error': 'UNAUTHORIZED'}),
           401,
         );
       }
@@ -181,19 +181,61 @@ void main() {
     expect(session.isAuthenticated, isTrue);
   });
 
-  test('logout limpia siempre la sesión local', () async {
+  test(
+    'logout envía una sola petición POST con un objeto JSON vacío',
+    () async {
+      await session.establish(_session());
+      var requests = 0;
+      final client = MockClient((request) async {
+        requests++;
+        expect(request.method, 'POST');
+        expect(request.url.queryParameters['action'], 'logout');
+        expect(request.headers['content-type'], 'application/json');
+        expect(jsonDecode(request.body), <String, dynamic>{});
+        return http.Response(jsonEncode({'ok': true}), 200);
+      });
+
+      await AuthService(
+        publicClient: client,
+        authenticatedClient: client,
+        session: session,
+      ).logout();
+
+      expect(requests, 1);
+      expect(session.isAuthenticated, isFalse);
+      expect(storage.value, isNull);
+    },
+  );
+
+  test('logout limpia la sesión local ante un fallo HTTP', () async {
     await session.establish(_session());
+    var requests = 0;
     final client = MockClient((request) async {
-      expect(request.url.queryParameters['action'], 'logout');
-      return http.Response(jsonEncode({'ok': true}), 200);
+      requests++;
+      return http.Response(jsonEncode({'ok': false}), 500);
     });
 
-    await AuthService(
-      publicClient: client,
-      authenticatedClient: client,
-      session: session,
-    ).logout();
+    await AuthService(authenticatedClient: client, session: session).logout();
 
+    expect(requests, 1);
+    expect(session.isAuthenticated, isFalse);
+    expect(storage.value, isNull);
+  });
+
+  test('logout limpia la sesión local ante un fallo de red', () async {
+    await session.establish(_session());
+    var requests = 0;
+    final client = MockClient((request) async {
+      requests++;
+      throw http.ClientException('network unavailable');
+    });
+
+    await expectLater(
+      AuthService(authenticatedClient: client, session: session).logout(),
+      throwsA(isA<http.ClientException>()),
+    );
+
+    expect(requests, 1);
     expect(session.isAuthenticated, isFalse);
     expect(storage.value, isNull);
   });

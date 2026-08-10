@@ -24,7 +24,7 @@ void main() {
           home: Scaffold(
             body: SeriesVolumeDetailsDialog(
               book: book,
-              preservePersonalData: true,
+              preservePersonalData: false,
               initialOrder: '1',
               initialStatus: 'PENDIENTE',
               initialFormat: '',

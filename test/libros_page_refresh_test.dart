@@ -10,6 +10,50 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
+  testWidgets('filtrar y reconstruir no vuelve a llamar a la API', (
+    tester,
+  ) async {
+    SharedPreferences.setMockInitialValues({});
+    final atmosfera = AtmosferaController();
+    var requests = 0;
+
+    await tester.pumpWidget(
+      AtmosferaScope(
+        controller: atmosfera,
+        child: MaterialApp(
+          home: LibrosPage(
+            loadData: () async {
+              requests++;
+              return _data('Libro antiguo');
+            },
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.enterText(find.byType(TextField).first, 'antiguo');
+    await tester.pump();
+    await tester.pumpWidget(
+      AtmosferaScope(
+        controller: atmosfera,
+        child: MaterialApp(
+          home: LibrosPage(
+            loadData: () async {
+              requests++;
+              return _data('Libro antiguo');
+            },
+          ),
+        ),
+      ),
+    );
+    await tester.pump();
+
+    expect(requests, 1);
+    expect(find.text('Libro antiguo'), findsWidgets);
+    atmosfera.dispose();
+  });
+
   testWidgets(
     'muestra un libro nuevo al regresar a Libros sin perder la búsqueda',
     (tester) async {
