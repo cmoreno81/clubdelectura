@@ -1,3 +1,4 @@
+import 'package:club_lectura_app/services/libros_data_cache.dart';
 import 'package:club_lectura_app/services/usuario_service.dart';
 import 'package:club_lectura_app/theme/app_colors.dart';
 import 'package:club_lectura_app/theme/app_spacing.dart';
@@ -86,8 +87,9 @@ class _LibrosPageState extends State<LibrosPage> with WidgetsBindingObserver {
     _restoreOrder();
   }
 
-  Future<LibrosData> _fetchData() =>
-      (widget.loadData ?? ApiService().getLibrosData)();
+  Future<LibrosData> _fetchData() => widget.loadData != null
+      ? widget.loadData!()
+      : LibrosDataCache.instance.get(() => ApiService().getLibrosData());
 
   Future<LibrosData> _startReload({bool notify = true}) {
     final active = _reloadInFlight;

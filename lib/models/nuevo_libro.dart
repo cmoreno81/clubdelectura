@@ -36,16 +36,18 @@ class NuevoLibro {
 
       'usuario': usuario,
       'libro': libro,
-      'autor': autor.trim(),
+      if (autor.trim().isNotEmpty) 'autor': autor.trim(), // ← omitir si vacío
       'genero': genero,
       'saga': saga,
       'numSaga': numSaga,
       'autoconclusivo': autoconclusivo,
-      'prioridad': prioridad,
-      'formato': formato,
-      'goodreads': goodreads.trim(),
-      'coverUrl': coverUrl.trim(),
-      'paginas': paginas,
+      if (prioridad.trim().isNotEmpty)
+        'prioridad': prioridad, // ← omitir si vacío
+      if (formato.trim().isNotEmpty) 'formato': formato, // ← omitir si vacío
+      if (goodreads.trim().isNotEmpty) 'goodreads': goodreads.trim(),
+      if (coverUrl.trim().isNotEmpty) 'coverUrl': coverUrl.trim(),
+      if (paginas != null && paginas! > 0)
+        'paginas': paginas, // ← omitir si null o 0
     };
   }
 }

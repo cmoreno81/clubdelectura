@@ -1,3 +1,4 @@
+import 'package:club_lectura_app/services/libros_data_cache.dart';
 import 'package:flutter/material.dart';
 
 import '../models/libro_agrupado.dart';
@@ -88,7 +89,9 @@ class _SagasPageState extends State<SagasPage> {
 
   Future<void> _openBook(PerfilSagaVolumen volumen) async {
     try {
-      final data = await ApiService().getLibrosData();
+      final data = await LibrosDataCache.instance.get(
+        () => ApiService().getLibrosData(),
+      );
       if (!mounted) return;
 
       final title = volumen.titulo.trim().toLowerCase();

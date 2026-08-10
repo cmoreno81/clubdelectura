@@ -3,7 +3,9 @@ import 'dart:convert';
 import 'package:club_lectura_app/models/lectura_activa.dart';
 import 'package:club_lectura_app/models/mi_voto.dart';
 import 'package:club_lectura_app/models/notificacion.dart';
+import 'package:club_lectura_app/services/libros_data_cache.dart';
 import 'package:club_lectura_app/utils/app_config.dart';
+import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import '../models/achievements/achievement.dart';
 import '../models/dashboard.dart';
@@ -171,7 +173,7 @@ class ApiService {
   }) async {
     final body = <String, dynamic>{
       'prioridad': prioridad,
-      'formato': formato,
+      if (formato.trim().isNotEmpty) 'formato': formato,
       if (estado != null && estado.isNotEmpty) 'estado': estado,
       if (fechaInicio != null && fechaInicio.isNotEmpty)
         'fechaInicio': fechaInicio,
@@ -506,7 +508,10 @@ class ApiService {
     final items = <LibroFinalizado>[];
     String? cursor;
     do {
-      final page = await getLibrosFinalizadosPage(cursor: cursor);
+      final page = await getLibrosFinalizadosPage(
+        limit: 500, // ← subir de 50 a 500
+        cursor: cursor,
+      );
       items.addAll(page.items);
       cursor = page.hasMore ? page.nextCursor : null;
     } while (cursor?.isNotEmpty == true);
@@ -826,6 +831,9 @@ class ApiService {
       body: jsonEncode(libro.toJson()),
     );
 
+    debugPrint('[crearLibro] status: ${response.statusCode}');
+    debugPrint('[crearLibro] body: ${response.body}'); // ← añadir esto
+
     if (response.statusCode != 200) {
       return {
         'ok': false,
@@ -959,16 +967,27 @@ class ApiService {
     return _respuestaOk(response);
   }
 
-  Future<LibrosData> getLibrosData() async {
-    final librosFuture = getLibros();
-    final finalizadosFuture = getAllLibrosFinalizados();
-    final libros = await librosFuture;
-    final finalizados = await finalizadosFuture;
+  Future<LibrosData> getLibrosData() {
+    return LibrosDataCache.instance.get(() async {
+      final libros = await getLibros();
+      final finalizados = await getAllLibrosFinalizados();
+      return LibrosData(
+        libros: libros,
+        finalizados: _deduplicarFinalizados(finalizados),
+      );
+    });
+  }
 
-    return LibrosData(
-      libros: libros,
-      finalizados: _deduplicarFinalizados(finalizados),
+  Future<Map<String, dynamic>> getLibroPorId(String bookId) async {
+    final response = await _client.get(
+      Uri.parse(
+        baseUrl,
+      ).replace(queryParameters: {'action': 'libroPorId', 'bookId': bookId}),
     );
+    if (response.statusCode != 200) return {'ok': false};
+    final data = _decodeJson(response);
+    if (data is! Map<String, dynamic>) return {'ok': false};
+    return data;
   }
 
   List<LibroFinalizado> _deduplicarFinalizados(
@@ -1119,7 +1138,7 @@ class ApiService {
     final response = await _postJson('anadirLibroExistente', {
       'libro': libro,
       'prioridad': prioridad,
-      'formato': formato,
+      if (formato.trim().isNotEmpty) 'formato': formato,
     });
 
     if (response.statusCode != 200) {
@@ -1144,8 +1163,8 @@ class ApiService {
       headers: const {'Content-Type': 'application/json'},
       body: jsonEncode({
         'libro': libro,
-        'prioridad': prioridad,
-        'formato': formato,
+        if (prioridad.trim().isNotEmpty) 'prioridad': prioridad,
+        if (formato.trim().isNotEmpty) 'formato': formato,
       }),
     );
     return _respuestaOk(response);
@@ -1486,6 +1505,14 @@ class ApiService {
   Future<void> marcarTodasNotificacionesLeidas() async {
     await _client.post(
       Uri.parse('$baseUrl?action=marcarTodasLeidas'),
+      headers: const {'Content-Type': 'application/json'},
+      body: '{}',
+    );
+  }
+
+  Future<void> eliminarTodasNotificaciones() async {
+    await _client.post(
+      Uri.parse('$baseUrl?action=eliminarTodasNotificaciones'),
       headers: const {'Content-Type': 'application/json'},
       body: '{}',
     );

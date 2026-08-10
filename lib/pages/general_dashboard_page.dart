@@ -49,6 +49,7 @@ class GeneralDashboardPage extends StatefulWidget {
 class _GeneralDashboardPageState extends State<GeneralDashboardPage> {
   late Future<GeneralDashboard> _future;
   String? _openingClubId;
+  bool _openingBook = false; // ← evita abrir dos fichas a la vez
   final _scrollController = ScrollController();
   int _noLeidas = 0;
 
@@ -134,7 +135,6 @@ class _GeneralDashboardPageState extends State<GeneralDashboardPage> {
   Future<void> _checkOnboarding() async {
     final mostrar = await deberiaMostrarOnboarding();
     if (!mostrar || !mounted) return;
-    // Pequeño delay para que la pantalla termine de renderizarse
     await Future<void>.delayed(const Duration(milliseconds: 600));
     if (!mounted) return;
     await mostrarOnboardingTutorial(context);
@@ -163,37 +163,89 @@ class _GeneralDashboardPageState extends State<GeneralDashboardPage> {
     if (mounted) await _reload();
   }
 
+  // ── Apertura de ficha de libro con protección anti-doble-tap ─────────────
+  Future<void> _openBook({
+    required String title,
+    String bookId = '',
+    String coverUrl = '',
+    String genre = '',
+  }) async {
+    if (_openingBook) return;
+    setState(() => _openingBook = true);
+    try {
+      await openBookDetail(
+        context,
+        title: title,
+        bookId: bookId,
+        coverUrl: coverUrl,
+        genre: genre,
+      );
+      if (mounted) await _reload();
+    } finally {
+      if (mounted) setState(() => _openingBook = false);
+    }
+  }
+
+  Future<void> _openCatalogBook({
+    required String title,
+    String bookId = '',
+    String coverUrl = '',
+    String genre = '',
+  }) async {
+    if (_openingBook) return;
+    setState(() => _openingBook = true);
+    try {
+      await openCatalogBookDetail(
+        context,
+        title: title,
+        bookId: bookId,
+        coverUrl: coverUrl,
+        genre: genre,
+      );
+      if (mounted) await _reload();
+    } finally {
+      if (mounted) setState(() => _openingBook = false);
+    }
+  }
+  // ─────────────────────────────────────────────────────────────────────────
+
   Future<void> _openPersonalBook(
     PersonalLibraryBook book,
     String userName,
   ) async {
-    final registro = Libro.fromJson({
-      'bookId': book.id,
-      'usuario': userName,
-      'libro': book.title,
-      'genero': book.genre,
-      'prioridad': book.priority,
-      'formato': book.format,
-      'estado': book.status,
-      'yaLoTengo': true,
-      'coverUrl': book.coverUrl,
-    });
-    await Navigator.push<void>(
-      context,
-      AppPageRoute(
-        builder: (_) => DetalleLibroPage(
-          libro: LibroAgrupado(
-            libro: book.title,
-            genero: book.genre,
-            registros: [registro],
-            finalizados: const [],
-            yaLoTengo: true,
-            coverUrl: book.coverUrl,
+    if (_openingBook) return;
+    setState(() => _openingBook = true);
+    try {
+      final registro = Libro.fromJson({
+        'bookId': book.id,
+        'usuario': userName,
+        'libro': book.title,
+        'genero': book.genre,
+        'prioridad': book.priority,
+        'formato': book.format,
+        'estado': book.status,
+        'yaLoTengo': true,
+        'coverUrl': book.coverUrl,
+      });
+      await Navigator.push<void>(
+        context,
+        AppPageRoute(
+          builder: (_) => DetalleLibroPage(
+            libro: LibroAgrupado(
+              libro: book.title,
+              genero: book.genre,
+              registros: [registro],
+              finalizados: const [],
+              yaLoTengo: true,
+              coverUrl: book.coverUrl,
+            ),
           ),
         ),
-      ),
-    );
-    if (mounted) await _reload();
+      );
+      if (mounted) await _reload();
+    } finally {
+      if (mounted) setState(() => _openingBook = false);
+    }
   }
 
   Future<void> _openMySeries() async {
@@ -276,7 +328,6 @@ class _GeneralDashboardPageState extends State<GeneralDashboardPage> {
                   ),
                   title: const Text('Mi universo lector'),
                   actions: [
-                    // Campanita con badge de no leídas
                     Stack(
                       clipBehavior: Clip.none,
                       children: [
@@ -386,12 +437,9 @@ class _GeneralDashboardPageState extends State<GeneralDashboardPage> {
                       else
                         ...data.clubs.map(_clubCard),
 
-                      // ── Mis logros ──
                       const SizedBox(height: AppSpacing.xl),
                       _LogrosDashboardSection(userName: data.userName),
 
-                      // La biblioteca anual se muestra en el perfil
-                      // Aquí mostramos la estantería del mes
                       if (data.calendar.finishedBooks.isNotEmpty) ...[
                         const SizedBox(height: AppSpacing.xl),
                         MonthlyReadingShelf(
@@ -402,8 +450,7 @@ class _GeneralDashboardPageState extends State<GeneralDashboardPage> {
                           month: data.calendar.month,
                           books: data.calendar.finishedBooks,
                           scrollController: _scrollController,
-                          onBookTap: (book) => openBookDetail(
-                            context,
+                          onBookTap: (book) => _openBook(
                             title: book.title,
                             bookId: book.bookId,
                             coverUrl: book.coverUrl,
@@ -468,7 +515,6 @@ class _GeneralDashboardPageState extends State<GeneralDashboardPage> {
                       _calendar(data.calendar),
                       if (data.trending.isNotEmpty ||
                           data.trendingAuthors.isNotEmpty) ...[
-                        // ── Separador visual "Comunidad global" ──
                         const SizedBox(height: AppSpacing.xl),
                         _communityDivider(),
                       ],
@@ -604,7 +650,6 @@ class _GeneralDashboardPageState extends State<GeneralDashboardPage> {
     final summary = data.summary;
     return Column(
       children: [
-        // Fila 1: Leyendo + Terminados
         Row(
           children: [
             Expanded(
@@ -631,7 +676,6 @@ class _GeneralDashboardPageState extends State<GeneralDashboardPage> {
           ],
         ),
         const SizedBox(height: AppSpacing.sm),
-        // Fila 2: Este mes (título arriba) + Páginas (mes principal, histórico pequeño)
         Row(
           children: [
             Expanded(
@@ -730,7 +774,6 @@ class _GeneralDashboardPageState extends State<GeneralDashboardPage> {
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                // Título en negrita arriba
                 const Text(
                   'Este mes',
                   maxLines: 1,
@@ -740,7 +783,6 @@ class _GeneralDashboardPageState extends State<GeneralDashboardPage> {
                     color: AppColors.warning,
                   ),
                 ),
-                // Número grande
                 Text(
                   '${summary.finishedThisMonth}',
                   maxLines: 1,
@@ -749,7 +791,6 @@ class _GeneralDashboardPageState extends State<GeneralDashboardPage> {
                     context,
                   ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w800),
                 ),
-                // Subtítulo descriptivo
                 Text(
                   summary.finishedThisMonth == 1
                       ? 'libro terminado'
@@ -789,7 +830,6 @@ class _GeneralDashboardPageState extends State<GeneralDashboardPage> {
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                // Título arriba
                 const Text(
                   'Páginas',
                   maxLines: 1,
@@ -799,7 +839,6 @@ class _GeneralDashboardPageState extends State<GeneralDashboardPage> {
                     color: AppColors.primary,
                   ),
                 ),
-                // Páginas del mes (número principal)
                 Text(
                   pagesMes > 0 ? '$pagesMes' : '0',
                   maxLines: 1,
@@ -808,7 +847,6 @@ class _GeneralDashboardPageState extends State<GeneralDashboardPage> {
                     context,
                   ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w800),
                 ),
-                // Total histórico en pequeño
                 Text(
                   '${summary.pagesRead} en total',
                   maxLines: 1,
@@ -915,8 +953,7 @@ class _GeneralDashboardPageState extends State<GeneralDashboardPage> {
             padding: const EdgeInsets.only(bottom: AppSpacing.sm),
             child: _CurrentBookCard(
               book: book,
-              onTap: () => openBookDetail(
-                context,
+              onTap: () => _openBook(
                 title: book.title,
                 bookId: book.id,
                 coverUrl: book.coverUrl,
@@ -1020,8 +1057,7 @@ class _GeneralDashboardPageState extends State<GeneralDashboardPage> {
             width: 112,
             child: InkWell(
               borderRadius: BorderRadius.circular(18),
-              onTap: () => openCatalogBookDetail(
-                context,
+              onTap: () => _openCatalogBook(
                 title: book.title,
                 bookId: book.id,
                 coverUrl: book.coverUrl,
@@ -1113,8 +1149,7 @@ class _GeneralDashboardPageState extends State<GeneralDashboardPage> {
                 borderRadius: BorderRadius.circular(18),
                 onTap: item.next == null
                     ? _openMySeries
-                    : () => openBookDetail(
-                        context,
+                    : () => _openBook(
                         title: item.next!.title,
                         bookId: item.next!.id,
                         coverUrl: item.next!.coverUrl,
@@ -1232,8 +1267,7 @@ class _GeneralDashboardPageState extends State<GeneralDashboardPage> {
             width: 100,
             child: InkWell(
               borderRadius: BorderRadius.circular(16),
-              onTap: () => openCatalogBookDetail(
-                context,
+              onTap: () => _openCatalogBook(
                 title: book.title,
                 bookId: book.id,
                 coverUrl: book.coverUrl,
@@ -1289,7 +1323,7 @@ class _GeneralDashboardPageState extends State<GeneralDashboardPage> {
   Future<void> _openCalendarBooks(List<String> books) async {
     if (books.isEmpty) return;
     if (books.length == 1) {
-      await openBookDetail(context, title: books.first);
+      await _openBook(title: books.first);
       return;
     }
     final selected = await showModalBottomSheet<String>(
@@ -1317,7 +1351,7 @@ class _GeneralDashboardPageState extends State<GeneralDashboardPage> {
       ),
     );
     if (selected != null && mounted) {
-      await openBookDetail(context, title: selected);
+      await _openBook(title: selected);
     }
   }
 
@@ -1444,7 +1478,6 @@ class _GeneralDashboardPageState extends State<GeneralDashboardPage> {
     );
   }
 
-  /// Avatar de fallback con iniciales y color derivado del nombre
   Widget _authorInitials(String nombre) {
     final palabras = nombre
         .trim()
@@ -1456,7 +1489,6 @@ class _GeneralDashboardPageState extends State<GeneralDashboardPage> {
         : nombre.isNotEmpty
         ? nombre[0].toUpperCase()
         : '?';
-    // Color derivado del hash del nombre para que sea consistente
     final colors = [
       const Color(0xFF7C3AED),
       const Color(0xFF2563EB),
@@ -1677,7 +1709,6 @@ class _LogrosDashboardSectionState extends State<_LogrosDashboardSection> {
     return FutureBuilder<List<UserAchievement>>(
       future: _future,
       builder: (context, snapshot) {
-        // Mientras carga, nada
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const SizedBox.shrink();
         }
@@ -1688,7 +1719,6 @@ class _LogrosDashboardSectionState extends State<_LogrosDashboardSection> {
         final total = achievements.length;
         final pct = total > 0 ? unlocked / total : 0.0;
 
-        // Últimos 6 desbloqueados (ordenados por rareza: legendary > epic > rare > common)
         final rarityOrder = {'legendary': 0, 'epic': 1, 'rare': 2, 'common': 3};
         final recent = [...achievements.where((a) => a.unlocked)]
           ..sort(
@@ -1701,7 +1731,6 @@ class _LogrosDashboardSectionState extends State<_LogrosDashboardSection> {
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Cabecera con título y "Ver todos"
             Row(
               children: [
                 const Text('🏆', style: TextStyle(fontSize: 20)),
@@ -1735,8 +1764,6 @@ class _LogrosDashboardSectionState extends State<_LogrosDashboardSection> {
               ],
             ),
             const SizedBox(height: AppSpacing.xs),
-
-            // Barra de progreso global
             ClipRRect(
               borderRadius: BorderRadius.circular(4),
               child: LinearProgressIndicator(
@@ -1746,10 +1773,7 @@ class _LogrosDashboardSectionState extends State<_LogrosDashboardSection> {
                 color: AppColors.primary,
               ),
             ),
-
             const SizedBox(height: AppSpacing.md),
-
-            // Grid 3x2 con los mejores logros desbloqueados
             if (shown.isEmpty)
               Padding(
                 padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
@@ -1883,7 +1907,6 @@ class _CurrentBookCard extends StatelessWidget {
           ),
           child: Row(
             children: [
-              // Portada
               ClubBookCover(
                 title: book.title,
                 imageUrl: book.coverUrl,
@@ -1892,7 +1915,6 @@ class _CurrentBookCard extends StatelessWidget {
                 showShadow: false,
               ),
               const SizedBox(width: AppSpacing.md),
-              // Info + progreso
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -1929,7 +1951,6 @@ class _CurrentBookCard extends StatelessWidget {
                   ],
                 ),
               ),
-              // Botón editar progreso
               IconButton(
                 tooltip: 'Actualizar progreso',
                 onPressed: onUpdateProgress,

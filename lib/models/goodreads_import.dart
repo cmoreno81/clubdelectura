@@ -30,16 +30,17 @@ class GoodreadsImportRow {
   Map<String, dynamic> toJson() => {
     'title': title,
     'author': author,
-    'additionalAuthors': additionalAuthors,
-    'isbn': isbn,
-    'isbn13': isbn13,
-    'rating': rating,
-    'pages': pages,
-    'publicationYear': publicationYear,
-    'dateRead': dateRead,
-    'dateAdded': dateAdded,
+    if (additionalAuthors.isNotEmpty) 'additionalAuthors': additionalAuthors,
+    if (isbn.trim().isNotEmpty) 'isbn': isbn.trim(),
+    if (isbn13.trim().isNotEmpty) 'isbn13': isbn13.trim(),
+    if (rating != null) 'rating': rating,
+    if (pages != null && pages! > 0) 'pages': pages,
+    if (publicationYear != null && publicationYear! > 0)
+      'publicationYear': publicationYear,
+    if (dateRead.trim().isNotEmpty) 'dateRead': dateRead.trim(),
+    if (dateAdded.trim().isNotEmpty) 'dateAdded': dateAdded.trim(),
     'exclusiveShelf': exclusiveShelf,
-    'review': review,
+    if (review.trim().isNotEmpty) 'review': review.trim(),
   };
 }
 

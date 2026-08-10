@@ -1,11 +1,71 @@
 import 'package:club_lectura_app/services/usuario_service.dart';
 import 'package:flutter/material.dart';
 
+import '../models/libro.dart';
 import '../models/libro_agrupado.dart';
+import '../models/libro_finalizado.dart';
 import '../pages/detalle_libro_page.dart';
-import '../pages/catalog_book_detail_page.dart'; // ← nueva página
+import '../pages/catalog_book_detail_page.dart';
 import '../services/api_service.dart';
+import '../services/libros_data_cache.dart';
 import 'app_page_route.dart';
+
+// ── Modelo mínimo de la respuesta de libroPorId ───────────────────────────────
+
+class _LibroPorIdData {
+  final List<Libro> libros;
+  final List<LibroFinalizado> finalizados;
+
+  const _LibroPorIdData({required this.libros, required this.finalizados});
+}
+
+// ── Fetch del nuevo endpoint rápido ──────────────────────────────────────────
+
+Future<_LibroPorIdData?> _fetchLibroPorId(String bookId) async {
+  try {
+    final data = await ApiService().getLibroPorId(bookId);
+    if (data['ok'] != true) return null;
+
+    final libros = (data['libros'] as List? ?? [])
+        .map((e) => Libro.fromJson(Map<String, dynamic>.from(e as Map)))
+        .toList();
+    final finalizados = (data['finalizados'] as List? ?? [])
+        .map(
+          (e) => LibroFinalizado.fromJson(Map<String, dynamic>.from(e as Map)),
+        )
+        .toList();
+
+    return _LibroPorIdData(libros: libros, finalizados: finalizados);
+  } catch (_) {
+    return null;
+  }
+}
+
+// ── Helpers compartidos ───────────────────────────────────────────────────────
+
+String _resolvedCover(
+  String coverUrl,
+  List<Libro> registros,
+  List<LibroFinalizado> finalizados,
+) {
+  if (coverUrl.isNotEmpty) return coverUrl;
+  if (registros.isNotEmpty) return registros.first.coverUrl;
+  if (finalizados.isNotEmpty) return finalizados.first.coverUrl;
+  return '';
+}
+
+String _resolvedGenre(
+  String genre,
+  List<Libro> registros,
+  List<LibroFinalizado> finalizados,
+) {
+  if (genre.isNotEmpty) return genre;
+  if (registros.isNotEmpty) return registros.first.genero;
+  if (finalizados.isNotEmpty) return finalizados.first.genero;
+  return '';
+}
+
+// ── openBookDetail ────────────────────────────────────────────────────────────
 
 Future<bool> openBookDetail(
   BuildContext context, {
@@ -18,25 +78,46 @@ Future<bool> openBookDetail(
   if (normalizedTitle.isEmpty) return false;
 
   try {
-    final data = await ApiService().getLibrosData();
-    if (!context.mounted) return false;
+    List<Libro> registros;
+    List<LibroFinalizado> finalizados;
 
-    final registros = data.libros
-        .where(
-          (item) =>
-              (bookId.isNotEmpty && item.bookId == bookId) ||
-              item.libro.trim().toLowerCase() == normalizedTitle,
-        )
-        .toList();
-    final finalizados = data.finalizados
-        .where(
-          (item) =>
-              (bookId.isNotEmpty && item.bookId == bookId) ||
-              item.libro.trim().toLowerCase() == normalizedTitle,
-        )
-        .toList();
+    if (bookId.isNotEmpty) {
+      // Ruta rápida: endpoint específico por bookId
+      final result = await _fetchLibroPorId(bookId);
+      if (!context.mounted) return false;
 
-    // Si no está en biblioteca del club → ficha ligera con opción de añadir
+      if (result == null) {
+        // El libro no existe o error → ficha de catálogo
+        await Navigator.push<void>(
+          context,
+          AppPageRoute(
+            builder: (_) => CatalogBookDetailPage(
+              bookId: bookId,
+              title: title,
+              coverUrl: coverUrl,
+              genre: genre,
+            ),
+          ),
+        );
+        return true;
+      }
+      registros = result.libros;
+      finalizados = result.finalizados;
+    } else {
+      // Fallback sin bookId: usar caché de biblioteca completa
+      final data = await LibrosDataCache.instance.get(
+        () => ApiService().getLibrosData(),
+      );
+      if (!context.mounted) return false;
+
+      registros = data.libros
+          .where((item) => item.libro.trim().toLowerCase() == normalizedTitle)
+          .toList();
+      finalizados = data.finalizados
+          .where((item) => item.libro.trim().toLowerCase() == normalizedTitle)
+          .toList();
+    }
+
     if (registros.isEmpty && finalizados.isEmpty) {
       await Navigator.push<void>(
         context,
@@ -52,29 +133,18 @@ Future<bool> openBookDetail(
       return true;
     }
 
-    final resolvedCover = coverUrl.isNotEmpty
-        ? coverUrl
-        : registros.isNotEmpty
-        ? registros.first.coverUrl
-        : finalizados.first.coverUrl;
-    final resolvedGenre = genre.isNotEmpty
-        ? genre
-        : registros.isNotEmpty
-        ? registros.first.genero
-        : finalizados.first.genero;
-
     await Navigator.push<void>(
       context,
       AppPageRoute(
         builder: (_) => DetalleLibroPage(
           libro: LibroAgrupado(
             libro: title,
-            genero: resolvedGenre,
+            genero: _resolvedGenre(genre, registros, finalizados),
             registros: registros,
             finalizados: finalizados,
             yaLoTengo: registros.any((item) => item.yaLoTengo),
             leidoPorMi: finalizados.any((item) => item.yaLoTengo),
-            coverUrl: resolvedCover,
+            coverUrl: _resolvedCover(coverUrl, registros, finalizados),
           ),
         ),
       ),
@@ -90,7 +160,8 @@ Future<bool> openBookDetail(
   }
 }
 
-// En book_detail_navigation.dart — función nueva SOLO para el dashboard global
+// ── openCatalogBookDetail ─────────────────────────────────────────────────────
+
 Future<bool> openCatalogBookDetail(
   BuildContext context, {
   required String title,
@@ -102,30 +173,75 @@ Future<bool> openCatalogBookDetail(
   if (normalizedTitle.isEmpty) return false;
 
   try {
-    final usuarioActual = ((await UsuarioService().obtenerUsuario()) ?? '')
-        .trim()
-        .toLowerCase();
-    final data = await ApiService().getLibrosData();
-    if (!context.mounted) return false;
+    List<Libro> registros;
+    List<LibroFinalizado> finalizados;
 
-    final registros = data.libros
-        .where(
-          (item) =>
-              ((bookId.isNotEmpty && item.bookId == bookId) ||
-                  item.libro.trim().toLowerCase() == normalizedTitle) &&
-              (usuarioActual.isEmpty ||
-                  item.usuario.trim().toLowerCase() == usuarioActual),
-        )
-        .toList();
-    final finalizados = data.finalizados
-        .where(
-          (item) =>
-              ((bookId.isNotEmpty && item.bookId == bookId) ||
-                  item.libro.trim().toLowerCase() == normalizedTitle) &&
-              (usuarioActual.isEmpty ||
-                  item.usuario.trim().toLowerCase() == usuarioActual),
-        )
-        .toList();
+    if (bookId.isNotEmpty) {
+      // Ruta rápida: endpoint específico por bookId, filtrado por usuaria actual
+      final usuarioActual = ((await UsuarioService().obtenerUsuario()) ?? '')
+          .trim()
+          .toLowerCase();
+
+      final result = await _fetchLibroPorId(bookId);
+      if (!context.mounted) return false;
+
+      if (result == null) {
+        await Navigator.push<void>(
+          context,
+          AppPageRoute(
+            builder: (_) => CatalogBookDetailPage(
+              bookId: bookId,
+              title: title,
+              coverUrl: coverUrl,
+              genre: genre,
+            ),
+          ),
+        );
+        return true;
+      }
+
+      registros = result.libros
+          .where(
+            (item) =>
+                usuarioActual.isEmpty ||
+                item.usuario.trim().toLowerCase() == usuarioActual,
+          )
+          .toList();
+      finalizados = result.finalizados
+          .where(
+            (item) =>
+                usuarioActual.isEmpty ||
+                item.usuario.trim().toLowerCase() == usuarioActual,
+          )
+          .toList();
+    } else {
+      // Fallback sin bookId
+      final usuarioActual = ((await UsuarioService().obtenerUsuario()) ?? '')
+          .trim()
+          .toLowerCase();
+
+      final data = await LibrosDataCache.instance.get(
+        () => ApiService().getLibrosData(),
+      );
+      if (!context.mounted) return false;
+
+      registros = data.libros
+          .where(
+            (item) =>
+                item.libro.trim().toLowerCase() == normalizedTitle &&
+                (usuarioActual.isEmpty ||
+                    item.usuario.trim().toLowerCase() == usuarioActual),
+          )
+          .toList();
+      finalizados = data.finalizados
+          .where(
+            (item) =>
+                item.libro.trim().toLowerCase() == normalizedTitle &&
+                (usuarioActual.isEmpty ||
+                    item.usuario.trim().toLowerCase() == usuarioActual),
+          )
+          .toList();
+    }
 
     if (registros.isEmpty && finalizados.isEmpty) {
       await Navigator.push<void>(
@@ -142,29 +258,18 @@ Future<bool> openCatalogBookDetail(
       return true;
     }
 
-    final resolvedCover = coverUrl.isNotEmpty
-        ? coverUrl
-        : registros.isNotEmpty
-        ? registros.first.coverUrl
-        : finalizados.first.coverUrl;
-    final resolvedGenre = genre.isNotEmpty
-        ? genre
-        : registros.isNotEmpty
-        ? registros.first.genero
-        : finalizados.first.genero;
-
     await Navigator.push<void>(
       context,
       AppPageRoute(
         builder: (_) => DetalleLibroPage(
           libro: LibroAgrupado(
             libro: title,
-            genero: resolvedGenre,
+            genero: _resolvedGenre(genre, registros, finalizados),
             registros: registros,
             finalizados: finalizados,
             yaLoTengo: registros.any((item) => item.yaLoTengo),
             leidoPorMi: finalizados.any((item) => item.yaLoTengo),
-            coverUrl: resolvedCover,
+            coverUrl: _resolvedCover(coverUrl, registros, finalizados),
           ),
         ),
       ),

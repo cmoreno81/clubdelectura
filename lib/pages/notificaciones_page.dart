@@ -52,6 +52,30 @@ class _NotificacionesPageState extends State<NotificacionesPage> {
     await _pagination.loadFirst();
   }
 
+  Future<void> _eliminarTodas() async {
+    final confirmar = await showDialog<bool>(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: const Text('Eliminar todas las notificaciones'),
+        content: const Text('¿Seguro? Esta acción no se puede deshacer.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancelar'),
+          ),
+          FilledButton(
+            style: FilledButton.styleFrom(backgroundColor: AppColors.danger),
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Eliminar todas'),
+          ),
+        ],
+      ),
+    );
+    if (confirmar != true || !mounted) return;
+    await ApiService().eliminarTodasNotificaciones();
+    if (mounted) await _pagination.loadFirst();
+  }
+
   Future<void> _marcarLeida(String id) async {
     await ApiService().marcarNotificacionLeida(id);
     _pagination.replace(
@@ -96,6 +120,11 @@ class _NotificacionesPageState extends State<NotificacionesPage> {
           TextButton(
             onPressed: _marcarTodas,
             child: const Text('Marcar todas'),
+          ),
+          TextButton(
+            onPressed: _eliminarTodas,
+            style: TextButton.styleFrom(foregroundColor: AppColors.danger),
+            child: const Text('Eliminar todas'),
           ),
         ],
       ),
@@ -303,7 +332,7 @@ class _NotificacionesPageState extends State<NotificacionesPage> {
       final value = extra[key]?.toString().trim() ?? '';
       if (value.isNotEmpty) return value;
     }
-    final quoted = RegExp(r'[“"]([^”"]+)[”"]').firstMatch(notification.mensaje);
+    final quoted = RegExp(r'[""]([^""]+)[""]').firstMatch(notification.mensaje);
     return quoted?.group(1)?.trim() ?? '';
   }
 }
@@ -354,7 +383,6 @@ class _NotificacionCard extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Emoji / indicador
           Container(
             width: 44,
             height: 44,
@@ -369,8 +397,6 @@ class _NotificacionCard extends StatelessWidget {
             ),
           ),
           const SizedBox(width: AppSpacing.md),
-
-          // Contenido
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
