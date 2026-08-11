@@ -1,3 +1,4 @@
+import 'package:club_lectura_app/services/library_refresh_notifier.dart';
 import 'package:flutter/material.dart';
 import '../models/libro.dart';
 import '../models/libro_agrupado.dart';
@@ -35,7 +36,7 @@ class _NuevoLibroPageState extends State<NuevoLibroPage> {
   final paginasController = TextEditingController();
 
   String genero = 'Fantasía';
-  String prioridad = 'Media';
+  String prioridad = 'MEDIA';
   String formato = '';
   String autoconclusivo = 'Si';
 
@@ -104,7 +105,7 @@ class _NuevoLibroPageState extends State<NuevoLibroPage> {
 
     prioridad = registro?.prioridad.isNotEmpty == true
         ? _normalizarPrioridad(registro!.prioridad)
-        : 'Media';
+        : 'MEDIA';
     formato = registro?.formato ?? finalizado?.formato ?? '';
 
     goodreadsController.text = registro?.goodreads ?? '';
@@ -126,11 +127,11 @@ class _NuevoLibroPageState extends State<NuevoLibroPage> {
   String _normalizarPrioridad(String value) {
     switch (value.trim().toUpperCase()) {
       case 'ALTA':
-        return 'Alta';
+        return 'ALTA';
       case 'BAJA':
-        return 'Baja';
+        return 'BAJA';
       default:
-        return 'Media';
+        return 'MEDIA';
     }
   }
 
@@ -241,7 +242,7 @@ class _NuevoLibroPageState extends State<NuevoLibroPage> {
           backgroundColor: AppColors.success,
         ),
       );
-
+      LibraryRefreshNotifier.instance.invalidate();
       Navigator.pop(context, true);
     } catch (error) {
       if (!mounted) return;
@@ -469,10 +470,10 @@ class _NuevoLibroPageState extends State<NuevoLibroPage> {
                       child: _PrioridadOption(
                         label: 'Baja',
                         emoji: '🟢',
-                        selected: prioridad == 'Baja',
+                        selected: prioridad == 'BAJA',
                         onTap: () {
                           setState(() {
-                            prioridad = 'Baja';
+                            prioridad = 'BAJA';
                           });
                         },
                       ),
@@ -482,10 +483,10 @@ class _NuevoLibroPageState extends State<NuevoLibroPage> {
                       child: _PrioridadOption(
                         label: 'Media',
                         emoji: '🟡',
-                        selected: prioridad == 'Media',
+                        selected: prioridad == 'MEDIA',
                         onTap: () {
                           setState(() {
-                            prioridad = 'Media';
+                            prioridad = 'MEDIA';
                           });
                         },
                       ),
@@ -495,10 +496,10 @@ class _NuevoLibroPageState extends State<NuevoLibroPage> {
                       child: _PrioridadOption(
                         label: 'Alta',
                         emoji: '🔴',
-                        selected: prioridad == 'Alta',
+                        selected: prioridad == 'ALTA',
                         onTap: () {
                           setState(() {
-                            prioridad = 'Alta';
+                            prioridad = 'ALTA';
                           });
                         },
                       ),

@@ -1,3 +1,4 @@
+import 'package:club_lectura_app/services/library_refresh_notifier.dart';
 import 'package:club_lectura_app/services/libros_data_cache.dart';
 import 'package:flutter/material.dart';
 
@@ -568,6 +569,8 @@ class _SagasPageState extends State<SagasPage> {
         fechaFin: result.endDate,
         valoracion: result.rating,
       );
+      LibraryRefreshNotifier.instance.invalidate();
+
       if (!mounted) return;
       await _reload();
       if (!mounted) return;

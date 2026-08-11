@@ -7,6 +7,7 @@ import '../services/bookmory_xlsx_parser.dart';
 import '../services/api_exception.dart';
 import '../services/api_service.dart';
 import '../services/goodreads_csv_parser.dart';
+import '../services/library_refresh_notifier.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_radius.dart';
 import '../theme/app_spacing.dart';
@@ -308,7 +309,10 @@ class _GoodreadsImportPageState extends State<GoodreadsImportPage> {
         minimum: const EdgeInsets.all(AppSpacing.md),
         child: result != null
             ? FilledButton(
-                onPressed: () => Navigator.pop(context, true),
+                onPressed: () {
+                  LibraryRefreshNotifier.instance.invalidate();
+                  Navigator.pop(context, true);
+                },
                 child: const Text('Volver a mi perfil'),
               )
             : preview != null

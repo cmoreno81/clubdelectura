@@ -1356,6 +1356,7 @@ class _LibrosPageState extends State<LibrosPage> with WidgetsBindingObserver {
     );
 
     if (ok) {
+      LibraryRefreshNotifier.instance.invalidate();
       _recargar();
     }
   }

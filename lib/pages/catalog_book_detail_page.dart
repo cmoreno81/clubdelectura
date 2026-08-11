@@ -1,3 +1,4 @@
+import 'package:club_lectura_app/services/library_refresh_notifier.dart';
 import 'package:flutter/material.dart';
 
 import '../models/catalog_book.dart';
@@ -86,6 +87,8 @@ class _CatalogBookDetailPageState extends State<CatalogBookDetailPage> {
         valoracion: result.rating,
       );
       if (mounted) {
+        LibraryRefreshNotifier.instance.invalidate();
+
         setState(() {
           _added = true;
           _adding = false;

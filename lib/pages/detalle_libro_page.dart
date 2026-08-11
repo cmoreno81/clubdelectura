@@ -10,6 +10,7 @@ import '../services/atmosfera_controller.dart';
 import '../services/atmosfera_scope.dart';
 import '../services/kit_lectura_service.dart';
 import '../services/usuario_service.dart';
+import '../services/library_refresh_notifier.dart';
 import '../theme/app_spacing.dart';
 import '../widgets/libros/conversaciones_libro_card.dart';
 import '../widgets/libros/finalizar_libro_dialog.dart';
@@ -155,6 +156,8 @@ class _DetalleLibroPageState extends State<DetalleLibroPage> {
 
       if (!mounted) return;
 
+      LibraryRefreshNotifier.instance.invalidate();
+
       final index = registros.indexOf(libro);
 
       if (index == -1) {
@@ -247,6 +250,7 @@ class _DetalleLibroPageState extends State<DetalleLibroPage> {
     );
 
     if (respuesta['ok'] == true) {
+      LibraryRefreshNotifier.instance.invalidate();
       _cerrarAtmosferaDelLibro();
 
       if (!mounted) return;

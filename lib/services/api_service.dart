@@ -505,17 +505,14 @@ class ApiService {
   }
 
   Future<List<LibroFinalizado>> getAllLibrosFinalizados() async {
-    final items = <LibroFinalizado>[];
-    String? cursor;
-    do {
-      final page = await getLibrosFinalizadosPage(
-        limit: 500, // ← subir de 50 a 500
-        cursor: cursor,
-      );
-      items.addAll(page.items);
-      cursor = page.hasMore ? page.nextCursor : null;
-    } while (cursor?.isNotEmpty == true);
-    return items;
+    final response = await _client.get(
+      Uri.parse('$baseUrl?action=librosFinalizadosTodos'),
+    );
+    if (response.statusCode != 200) throw ApiException.fromResponse(response);
+    final List data = _decodeJson(response);
+    return data
+        .map((e) => LibroFinalizado.fromJson(e as Map<String, dynamic>))
+        .toList();
   }
 
   Future<bool> iniciarLectura({
@@ -830,9 +827,6 @@ class ApiService {
       headers: const {'Content-Type': 'application/json'},
       body: jsonEncode(libro.toJson()),
     );
-
-    debugPrint('[crearLibro] status: ${response.statusCode}');
-    debugPrint('[crearLibro] body: ${response.body}'); // ← añadir esto
 
     if (response.statusCode != 200) {
       return {

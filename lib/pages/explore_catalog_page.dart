@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:club_lectura_app/services/library_refresh_notifier.dart';
 import 'package:flutter/material.dart';
 
 import '../models/catalog_book.dart';
@@ -130,6 +131,8 @@ class _ExploreCatalogPageState extends State<ExploreCatalogPage> {
         formato: preferences.format,
       );
       if (!mounted) return;
+      LibraryRefreshNotifier.instance.invalidate();
+
       setState(() {
         _books = _books
             .map(
