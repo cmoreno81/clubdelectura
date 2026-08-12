@@ -27,7 +27,6 @@ const _kClubvisionIndex  = 4;
 
 class _HomePageState extends State<HomePage> {
   int currentIndex = 0;
-  int _noLeidasClub       = 0; // El Club (social: libros, miembros)
   int _noLeidasLecturas   = 0; // Lecturas (comentarios, lecturas nuevas)
   int _noLeidasClubvision = 0; // Clubvisión (votaciones)
 
@@ -67,7 +66,6 @@ class _HomePageState extends State<HomePage> {
       final data = await ApiService().getNotificaciones();
       if (!mounted) return;
       setState(() {
-        _noLeidasClub       = data.noLeidasClub;
         _noLeidasLecturas   = data.noLeidasLecturas;
         _noLeidasClubvision = data.noLeidasClubvision;
       });
@@ -147,17 +145,9 @@ class _HomePageState extends State<HomePage> {
           selectedIndex: currentIndex,
           onDestinationSelected: _selectTab,
           destinations: [
-            NavigationDestination(
-              icon: Badge(
-                isLabelVisible: _noLeidasClub > 0,
-                label: Text(_noLeidasClub < 10 ? '$_noLeidasClub' : '9+'),
-                child: const Icon(Icons.dashboard_outlined),
-              ),
-              selectedIcon: Badge(
-                isLabelVisible: _noLeidasClub > 0,
-                label: Text(_noLeidasClub < 10 ? '$_noLeidasClub' : '9+'),
-                child: const Icon(Icons.dashboard_rounded),
-              ),
+            const NavigationDestination(
+              icon: Icon(Icons.dashboard_outlined),
+              selectedIcon: Icon(Icons.dashboard_rounded),
               label: 'El Club',
             ),
             const NavigationDestination(
