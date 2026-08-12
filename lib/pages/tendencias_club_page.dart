@@ -879,9 +879,9 @@ class _TendenciasVacias extends StatelessWidget {
       elevated: false,
       padding: const EdgeInsets.all(AppSpacing.xl),
       backgroundColor: AppColors.surfaceSoft,
-      child: const Column(
+      child: Column(
         children: [
-          Icon(
+          const Icon(
             Icons.query_stats_outlined,
             color: AppColors.textMuted,
             size: 40,

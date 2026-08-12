@@ -583,7 +583,7 @@ class _HistorialVacio extends StatelessWidget {
 
                     const SizedBox(height: AppSpacing.sm),
 
-                    const Text(
+                    Text(
                       'Las futuras ganadoras de Clubvisión aparecerán aquí.',
                       textAlign: TextAlign.center,
                       style: AppTextStyles.bodySecondary,

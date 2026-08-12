@@ -289,9 +289,9 @@ class ClubvisionCard extends StatelessWidget {
               color: Colors.white.withValues(alpha: 0.62),
               borderRadius: BorderRadius.circular(AppRadius.lg),
             ),
-            child: const Column(
+            child: Column(
               children: [
-                Icon(
+                const Icon(
                   Icons.check_circle_rounded,
                   color: AppColors.success,
                   size: 34,

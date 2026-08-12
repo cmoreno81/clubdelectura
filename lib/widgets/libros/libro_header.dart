@@ -186,7 +186,7 @@ class LibroHeader extends StatelessWidget {
 
                       const SizedBox(height: AppSpacing.xs),
 
-                      const Text(
+                      Text(
                         'Sinopsis, opiniones y valoraciones',
                         style: AppTextStyles.bodySecondary,
                       ),
@@ -214,10 +214,10 @@ class LibroHeader extends StatelessWidget {
     }
 
     if (referencia!.autoconclusivo == 'Si') {
-      return const Row(
+      return Row(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(
+          const Icon(
             Icons.auto_stories_outlined,
             size: 18,
             color: AppColors.textSecondary,

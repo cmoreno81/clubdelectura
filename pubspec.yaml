@@ -48,6 +48,7 @@ dependencies:
   file_selector: ^1.0.4
   archive: ^4.0.9
   xml: ^7.0.1
+  google_fonts: ^8.2.1
 dev_dependencies:
   integration_test:
     sdk: flutter

@@ -19,7 +19,7 @@ class TecnologiaCreditosPage extends StatelessWidget {
           AppSpacing.md,
           48,
         ),
-        children: const [
+        children: [
           ClubCard(
             elevated: false,
             padding: EdgeInsets.all(AppSpacing.lg),

@@ -495,9 +495,9 @@ class _ConversacionDestacadaState extends State<_ConversacionDestacada> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Row(
+          Row(
             children: [
-              Icon(
+              const Icon(
                 Icons.local_fire_department_outlined,
                 color: AppColors.danger,
               ),
@@ -776,9 +776,9 @@ class _ActividadVacia extends StatelessWidget {
       elevated: false,
       padding: const EdgeInsets.all(AppSpacing.xl),
       backgroundColor: AppColors.surfaceSoft,
-      child: const Column(
+      child: Column(
         children: [
-          Icon(
+          const Icon(
             Icons.nights_stay_outlined,
             color: AppColors.textMuted,
             size: 38,

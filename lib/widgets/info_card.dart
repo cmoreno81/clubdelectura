@@ -6,7 +6,7 @@ import '../theme/app_spacing.dart';
 import '../theme/app_text_styles.dart';
 import 'common/club_card.dart';
 
-enum InfoCardVariant { primary, blush, sage, warning, gold, info }
+enum InfoCardVariant { primary, blush, sage, warning, gold, info, coral }
 
 class InfoCard extends StatefulWidget {
   final String title;
@@ -208,6 +208,14 @@ class _InfoCardState extends State<InfoCard>
           border: Color(0xFFD6E2F4),
           iconBackground: Color(0xFFE2EBFA),
           foreground: AppColors.info,
+        );
+
+      case InfoCardVariant.coral:
+        return const _InfoCardColors(
+          background: Color(0xFFFFF0EB),
+          border: Color(0xFFF5CFC5),
+          iconBackground: Color(0xFFFFDDD4),
+          foreground: AppColors.inkCoral,
         );
 
       case InfoCardVariant.primary:

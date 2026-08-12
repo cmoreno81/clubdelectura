@@ -47,7 +47,7 @@ class _MisLogrosPageState extends State<MisLogrosPage> {
           }
           final achievements = snapshot.data ?? const [];
           if (achievements.isEmpty) {
-            return const Center(
+            return Center(
               child: Padding(
                 padding: EdgeInsets.all(AppSpacing.xl),
                 child: Column(

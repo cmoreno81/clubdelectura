@@ -509,7 +509,7 @@ class _DashboardPageState extends State<DashboardPage> {
             title: 'Este mes',
             value: '$actividad ${actividad == 1 ? 'libro' : 'libros'}',
             icon: Icons.local_fire_department_outlined,
-            variant: InfoCardVariant.warning,
+            variant: InfoCardVariant.coral,
             compact: true,
             onTap: () {
               _abrirRanking(initialTab: 1);
@@ -1501,15 +1501,15 @@ class _RachaLectoraTile extends StatelessWidget {
 
   static (String emoji, String mensaje, Color color) _datos(int racha) {
     if (racha >= 30) {
-      return ('🏆', '¡Racha legendaria!', const Color(0xFFFFB800));
+      return ('🏆', '¡Racha legendaria!', AppColors.gold);
     } else if (racha >= 14) {
-      return ('🔥', '¡Imparable!', const Color(0xFFE85D04));
+      return ('🔥', '¡Imparable!', AppColors.inkCoral);
     } else if (racha >= 7) {
-      return ('⚡', '¡Una semana seguida!', const Color(0xFFE85D04));
+      return ('⚡', '¡Una semana seguida!', AppColors.inkCoral);
     } else if (racha >= 3) {
-      return ('🔥', '¡En racha!', const Color(0xFFFF6B35));
+      return ('🔥', '¡En racha!', AppColors.inkCoral);
     } else if (racha == 2) {
-      return ('📖', '¡Dos días seguidos!', AppColors.primary);
+      return ('📖', '¡Dos días seguidos!', AppColors.inkCoral);
     } else {
       return ('📖', 'Sigue leyendo cada día', AppColors.textSecondary);
     }

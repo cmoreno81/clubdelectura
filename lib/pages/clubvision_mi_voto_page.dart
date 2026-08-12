@@ -133,9 +133,9 @@ class _ClubvisionMiVotoPageState extends State<ClubvisionMiVotoPage> {
                     colors: [Color(0xFFF8F3FF), Color(0xFFF1E8FF)],
                   ),
                   borderColor: AppColors.primaryLight,
-                  child: const Column(
+                  child: Column(
                     children: [
-                      Icon(
+                      const Icon(
                         Icons.favorite_rounded,
                         color: AppColors.primary,
                         size: 38,
@@ -474,7 +474,7 @@ class _VotoNoEncontrado extends StatelessWidget {
 
                     const SizedBox(height: AppSpacing.sm),
 
-                    const Text(
+                    Text(
                       'Puede que todavía no hayas participado en esta edición.',
                       textAlign: TextAlign.center,
                       style: AppTextStyles.bodySecondary,

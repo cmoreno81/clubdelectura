@@ -36,7 +36,7 @@ class AchievementsSection extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text('Logros', style: AppTextStyles.section),
+                  Text('Logros', style: AppTextStyles.section),
                   Text(
                     '$unlocked de $total desbloqueados',
                     style: AppTextStyles.caption.copyWith(
@@ -283,7 +283,7 @@ class _EmptyAchievements extends StatelessWidget {
             color: AppColors.textMuted,
           ),
           const SizedBox(height: AppSpacing.md),
-          const Text(
+          Text(
             'Aún no hay logros',
             style: AppTextStyles.section,
             textAlign: TextAlign.center,

@@ -671,7 +671,7 @@ class _LecturasVacias extends StatelessWidget {
 
                     const SizedBox(height: AppSpacing.sm),
 
-                    const Text(
+                    Text(
                       'Cuando el club empiece una historia, aparecerá aquí.',
                       textAlign: TextAlign.center,
                       style: AppTextStyles.bodySecondary,

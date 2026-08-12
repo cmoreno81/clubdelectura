@@ -436,7 +436,7 @@ class _VotacionesVacias extends StatelessWidget {
 
                     const SizedBox(height: AppSpacing.sm),
 
-                    const Text(
+                    Text(
                       'Cuando las lectoras voten, sus clasificaciones aparecerán aquí.',
                       textAlign: TextAlign.center,
                       style: AppTextStyles.bodySecondary,

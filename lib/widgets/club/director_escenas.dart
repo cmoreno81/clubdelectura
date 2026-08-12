@@ -108,9 +108,9 @@ class DirectorEscenas {
         color: Colors.white.withValues(alpha: 0.58),
         borderRadius: BorderRadius.circular(AppRadius.lg),
       ),
-      child: const Column(
+      child: Column(
         children: [
-          Icon(Icons.auto_awesome_rounded, color: AppColors.primary, size: 30),
+          const Icon(Icons.auto_awesome_rounded, color: AppColors.primary, size: 30),
 
           SizedBox(height: AppSpacing.sm),
 
@@ -248,9 +248,9 @@ class DirectorEscenas {
           color: Colors.white.withValues(alpha: .6),
           borderRadius: BorderRadius.circular(AppRadius.lg),
         ),
-        child: const Column(
+        child: Column(
           children: [
-            Icon(Icons.menu_book_rounded, color: AppColors.primary, size: 30),
+            const Icon(Icons.menu_book_rounded, color: AppColors.primary, size: 30),
             SizedBox(height: AppSpacing.sm),
             Text(
               'Preparando la lectura',

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 import 'app_colors.dart';
 import 'app_radius.dart';
@@ -27,7 +28,8 @@ abstract final class AppTheme {
         surface: AppColors.surface,
       ).copyWith(secondary: AppColors.inkCoral, outline: AppColors.border),
 
-      appBarTheme: const AppBarTheme(
+      // ── AppBar ─────────────────────────────────────────────────────────────
+      appBarTheme: AppBarTheme(
         elevation: 0,
         scrolledUnderElevation: 0,
         centerTitle: true,
@@ -35,13 +37,14 @@ abstract final class AppTheme {
         foregroundColor: AppColors.textPrimary,
         surfaceTintColor: Colors.transparent,
         titleTextStyle: AppTextStyles.section,
-        shape: Border(
+        shape: const Border(
           bottom: BorderSide(color: AppColors.paperLine, width: .7),
         ),
       ),
 
       dividerColor: AppColors.divider,
 
+      // ── Cards — identidad visual: radio asimétrico "página de libro" ───────
       cardTheme: CardThemeData(
         elevation: 0,
         color: AppColors.surface,
@@ -55,6 +58,7 @@ abstract final class AppTheme {
         ),
       ),
 
+      // ── Inputs — radio más contenido para distinguirlos de las cards ───────
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
         fillColor: AppColors.surfaceSoft,
@@ -65,21 +69,22 @@ abstract final class AppTheme {
         ),
 
         border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(AppRadius.lg),
+          borderRadius: BorderRadius.circular(AppRadius.input),
           borderSide: BorderSide.none,
         ),
 
         enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(AppRadius.lg),
+          borderRadius: BorderRadius.circular(AppRadius.input),
           borderSide: const BorderSide(color: AppColors.border),
         ),
 
         focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(AppRadius.lg),
+          borderRadius: BorderRadius.circular(AppRadius.input),
           borderSide: const BorderSide(color: AppColors.primary, width: 1.6),
         ),
       ),
 
+      // ── Botones ────────────────────────────────────────────────────────────
       filledButtonTheme: FilledButtonThemeData(
         style: FilledButton.styleFrom(
           minimumSize: const Size(0, 54),
@@ -99,6 +104,27 @@ abstract final class AppTheme {
         ),
       ),
 
+      outlinedButtonTheme: OutlinedButtonThemeData(
+        style: OutlinedButton.styleFrom(
+          textStyle: AppTextStyles.button,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(AppRadius.md),
+          ),
+        ),
+      ),
+
+      // ── Diálogos — radio consistente con el resto de la UI ─────────────────
+      dialogTheme: DialogThemeData(
+        backgroundColor: AppColors.surface,
+        surfaceTintColor: Colors.transparent,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppRadius.dialog),
+        ),
+        titleTextStyle: AppTextStyles.section.copyWith(fontSize: 20),
+        contentTextStyle: AppTextStyles.body,
+      ),
+
+      // ── SnackBar ───────────────────────────────────────────────────────────
       snackBarTheme: SnackBarThemeData(
         behavior: SnackBarBehavior.floating,
         backgroundColor: AppColors.midnight,
@@ -107,7 +133,8 @@ abstract final class AppTheme {
         ),
       ),
 
-      textTheme: const TextTheme(
+      // ── Texto — DM Sans como base global; Playfair y Lora en roles clave ───
+      textTheme: GoogleFonts.dmSansTextTheme().copyWith(
         displayLarge: AppTextStyles.hero,
         headlineMedium: AppTextStyles.title,
         titleLarge: AppTextStyles.section,

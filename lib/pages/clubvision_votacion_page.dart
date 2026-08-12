@@ -625,9 +625,9 @@ class _PapeletaVacia extends StatelessWidget {
         color: Colors.white.withValues(alpha: 0.62),
         borderRadius: BorderRadius.circular(AppRadius.lg),
       ),
-      child: const Column(
+      child: Column(
         children: [
-          Icon(Icons.ballot_outlined, color: AppColors.primary, size: 34),
+          const Icon(Icons.ballot_outlined, color: AppColors.primary, size: 34),
 
           SizedBox(height: AppSpacing.sm),
 
@@ -979,9 +979,9 @@ class _VotoRegistrado extends StatelessWidget {
       padding: const EdgeInsets.all(AppSpacing.xl),
       backgroundColor: const Color(0xFFF1FAF5),
       borderColor: AppColors.success.withValues(alpha: 0.24),
-      child: const Column(
+      child: Column(
         children: [
-          Icon(Icons.check_circle_rounded, color: AppColors.success, size: 56),
+          const Icon(Icons.check_circle_rounded, color: AppColors.success, size: 56),
 
           SizedBox(height: AppSpacing.md),
 
@@ -1013,9 +1013,9 @@ class _VotacionCerrada extends StatelessWidget {
       elevated: false,
       padding: const EdgeInsets.all(AppSpacing.xl),
       backgroundColor: AppColors.surfaceSoft,
-      child: const Column(
+      child: Column(
         children: [
-          Icon(
+          const Icon(
             Icons.lock_outline_rounded,
             color: AppColors.textMuted,
             size: 44,

@@ -361,13 +361,13 @@ class _MensajeYAccion extends StatelessWidget {
             size: 36,
           ),
           const SizedBox(height: AppSpacing.md),
-          const Text(
+          Text(
             'Empieza una nueva aventura',
             textAlign: TextAlign.center,
             style: AppTextStyles.section,
           ),
           const SizedBox(height: AppSpacing.sm),
-          const Text(
+          Text(
             'A partir de ahora, las conversaciones del club girarán alrededor de esta historia. Disfrútala con el resto de lectoras.',
             textAlign: TextAlign.center,
             style: AppTextStyles.bodySecondary,

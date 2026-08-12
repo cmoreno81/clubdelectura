@@ -852,7 +852,7 @@ class _EstadoEnEsperaCard extends StatelessWidget {
 
           const SizedBox(height: AppSpacing.sm),
 
-          const Text(
+          Text(
             'Muy pronto conoceremos las nuevas candidatas.',
             textAlign: TextAlign.center,
             style: AppTextStyles.bodySecondary,
