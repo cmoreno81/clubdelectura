@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 class PausarLecturaDialog extends StatefulWidget {
   const PausarLecturaDialog({super.key});
@@ -51,6 +52,7 @@ class _PausarLecturaDialogState extends State<PausarLecturaDialog> {
   }
 
   void _confirmar() {
+    HapticFeedback.lightImpact();
     Navigator.pop<String>(context, _motivoFinal);
   }
 

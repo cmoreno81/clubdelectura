@@ -1,12 +1,14 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'clubvision_menu_page.dart';
 import 'dashboard_page.dart';
 import 'lecturas_page.dart';
 import 'libros_page.dart';
 import 'sagas_page.dart';
 import '../models/club_membership.dart';
+import '../services/api_service.dart';
 
 typedef HomePageBuilder = Widget Function();
 
@@ -20,8 +22,15 @@ class HomePage extends StatefulWidget {
   State<HomePage> createState() => _HomePageState();
 }
 
+const _kLecturasIndex    = 3;
+const _kClubvisionIndex  = 4;
+
 class _HomePageState extends State<HomePage> {
   int currentIndex = 0;
+  int _noLeidasClub       = 0; // El Club (social: libros, miembros)
+  int _noLeidasLecturas   = 0; // Lecturas (comentarios, lecturas nuevas)
+  int _noLeidasClubvision = 0; // Clubvisión (votaciones)
+
   final _dashboardController = DashboardPageController();
   final _librosController = LibrosPageController();
   final _sagasController = SagasPageController();
@@ -50,6 +59,21 @@ class _HomePageState extends State<HomePage> {
     assert(_pageBuilders.length == 5);
     _pages = List<Widget?>.filled(_pageBuilders.length, null);
     _pages[0] = _pageBuilders[0]();
+    _cargarNoLeidas();
+  }
+
+  Future<void> _cargarNoLeidas() async {
+    try {
+      final data = await ApiService().getNotificaciones();
+      if (!mounted) return;
+      setState(() {
+        _noLeidasClub       = data.noLeidasClub;
+        _noLeidasLecturas   = data.noLeidasLecturas;
+        _noLeidasClubvision = data.noLeidasClubvision;
+      });
+    } catch (_) {
+      // Si falla, los badges simplemente no se muestran.
+    }
   }
 
   void _selectTab(int index) {
@@ -61,17 +85,32 @@ class _HomePageState extends State<HomePage> {
       return;
     }
 
+    HapticFeedback.selectionClick();
+
+    // Al salir de Lecturas o Clubvisión el usuario puede haber marcado
+    // notificaciones como leídas, así que refrescamos los badges.
+    final salimosDeNotifTab =
+        currentIndex == _kLecturasIndex ||
+        currentIndex == _kClubvisionIndex;
+
     setState(() {
       _pages[index] ??= _pageBuilders[index]();
       currentIndex = index;
     });
+
+    if (salimosDeNotifTab) unawaited(_cargarNoLeidas());
   }
 
   void _volverAlClub() {
     if (currentIndex == 0) return;
     FocusManager.instance.primaryFocus?.unfocus();
+    HapticFeedback.selectionClick();
+    final salimosDeNotifTab =
+        currentIndex == _kLecturasIndex ||
+        currentIndex == _kClubvisionIndex;
     setState(() => currentIndex = 0);
     unawaited(_dashboardController.refresh());
+    if (salimosDeNotifTab) unawaited(_cargarNoLeidas());
   }
 
   @override
@@ -86,40 +125,83 @@ class _HomePageState extends State<HomePage> {
       child: Scaffold(
         extendBody: false,
 
-        body: IndexedStack(
-          index: currentIndex,
+        // Stack + AnimatedOpacity preserva el estado de cada pestaña
+        // (scroll, datos cargados) mientras anima la transición.
+        body: Stack(
           children: [
-            for (final page in _pages) page ?? const SizedBox.shrink(),
+            for (int i = 0; i < _pageBuilders.length; i++)
+              AnimatedOpacity(
+                key: ValueKey(i),
+                opacity: i == currentIndex ? 1.0 : 0.0,
+                duration: const Duration(milliseconds: 200),
+                curve: Curves.easeInOut,
+                child: IgnorePointer(
+                  ignoring: i != currentIndex,
+                  child: _pages[i] ?? const SizedBox.shrink(),
+                ),
+              ),
           ],
         ),
 
         bottomNavigationBar: NavigationBar(
           selectedIndex: currentIndex,
           onDestinationSelected: _selectTab,
-          destinations: const [
+          destinations: [
             NavigationDestination(
-              icon: Icon(Icons.dashboard_outlined),
-              selectedIcon: Icon(Icons.dashboard_rounded),
+              icon: Badge(
+                isLabelVisible: _noLeidasClub > 0,
+                label: Text(_noLeidasClub < 10 ? '$_noLeidasClub' : '9+'),
+                child: const Icon(Icons.dashboard_outlined),
+              ),
+              selectedIcon: Badge(
+                isLabelVisible: _noLeidasClub > 0,
+                label: Text(_noLeidasClub < 10 ? '$_noLeidasClub' : '9+'),
+                child: const Icon(Icons.dashboard_rounded),
+              ),
               label: 'El Club',
             ),
-            NavigationDestination(
+            const NavigationDestination(
               icon: Icon(Icons.menu_book_outlined),
               selectedIcon: Icon(Icons.menu_book_rounded),
               label: 'Libros',
             ),
-            NavigationDestination(
+            const NavigationDestination(
               icon: Icon(Icons.view_week_outlined),
               selectedIcon: Icon(Icons.view_week_rounded),
               label: 'Sagas',
             ),
             NavigationDestination(
-              icon: Icon(Icons.auto_stories_outlined),
-              selectedIcon: Icon(Icons.auto_stories_rounded),
+              icon: Badge(
+                isLabelVisible: _noLeidasLecturas > 0,
+                label: Text(
+                  _noLeidasLecturas < 10 ? '$_noLeidasLecturas' : '9+',
+                ),
+                child: const Icon(Icons.auto_stories_outlined),
+              ),
+              selectedIcon: Badge(
+                isLabelVisible: _noLeidasLecturas > 0,
+                label: Text(
+                  _noLeidasLecturas < 10 ? '$_noLeidasLecturas' : '9+',
+                ),
+                child: const Icon(Icons.auto_stories_rounded),
+              ),
               label: 'Lecturas',
             ),
             NavigationDestination(
-              icon: Icon(Icons.mic_none_outlined),
-              selectedIcon: Icon(Icons.mic_rounded),
+              icon: Badge(
+                isLabelVisible: _noLeidasClubvision > 0,
+                label: Text(
+                  _noLeidasClubvision < 10 ? '$_noLeidasClubvision' : '9+',
+                ),
+                child: const Icon(Icons.mic_none_outlined),
+              ),
+              selectedIcon: Badge(
+                isLabelVisible: _noLeidasClubvision > 0,
+                label: Text(
+                  _noLeidasClubvision < 10 ? '$_noLeidasClubvision' : '9+',
+                ),
+                child: const Icon(Icons.mic_rounded),
+              ),
               label: 'Clubvisión',
             ),
           ],

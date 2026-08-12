@@ -5,6 +5,7 @@ import '../navigation/book_detail_navigation.dart';
 
 import '../models/lectura_activa.dart';
 import '../services/api_service.dart';
+import '../services/reading_last_seen_service.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_radius.dart';
 import '../theme/app_spacing.dart';
@@ -30,6 +31,9 @@ class LecturasPage extends StatefulWidget {
 class _LecturasPageState extends State<LecturasPage> {
   late Future<List<LecturaActiva>> future;
 
+  /// Última vez que el usuario abrió cada lectura, indexado por título.
+  Map<String, DateTime> _lastSeen = {};
+
   @override
   void initState() {
     super.initState();
@@ -37,12 +41,35 @@ class _LecturasPageState extends State<LecturasPage> {
   }
 
   void _recargar() {
-    future = ApiService().getLecturasActivas();
+    final f = ApiService().getLecturasActivas();
+    future = f;
+    // Carga los timestamps en cuanto tengamos los títulos.
+    f.then((lecturas) {
+      if (!mounted) return;
+      ReadingLastSeenService.ultimasVistas(
+        lecturas.map((l) => l.libro),
+      ).then((map) {
+        if (mounted) setState(() => _lastSeen = map);
+      });
+    }).ignore();
   }
 
   Future<void> _refrescar() async {
     setState(_recargar);
     await future;
+  }
+
+  /// Devuelve true si [lectura] tiene actividad posterior a la última vez
+  /// que el usuario la abrió.
+  bool _tieneActividadNueva(LecturaActiva lectura) {
+    final raw = lectura.ultimaActividad;
+    if (raw == null || raw.trim().isEmpty) return false;
+    final ultimaAct = DateTime.tryParse(raw.replaceFirst(' ', 'T'));
+    if (ultimaAct == null) return false;
+    final visto = _lastSeen[lectura.libro];
+    // Nunca la abrió → no mostramos badge para no alarmar desde el principio.
+    if (visto == null) return false;
+    return ultimaAct.isAfter(visto);
   }
 
   Future<void> _abrirLectura(LecturaActiva lectura) async {
@@ -64,6 +91,13 @@ class _LecturasPageState extends State<LecturasPage> {
       return;
     }
 
+    // Registramos la apertura ANTES de navegar para que al volver
+    // el badge desaparezca sin esperar a la próxima carga.
+    await ReadingLastSeenService.marcarVista(lectura.libro);
+    if (!mounted) return;
+    setState(() => _lastSeen[lectura.libro] = DateTime.now());
+
+    if (!mounted) return;
     await Navigator.push(
       context,
       AppPageRoute(
@@ -166,6 +200,7 @@ class _LecturasPageState extends State<LecturasPage> {
                       lectura: lectura,
                       destacada: true,
                       masComentada: esMasComentada(lectura),
+                      tieneActividadNueva: _tieneActividadNueva(lectura),
                       onTap: () => _abrirLectura(lectura),
                       onBookTap: () => openBookDetail(
                         context,
@@ -194,6 +229,7 @@ class _LecturasPageState extends State<LecturasPage> {
                     _LecturaCard(
                       lectura: lectura,
                       masComentada: esMasComentada(lectura),
+                      tieneActividadNueva: _tieneActividadNueva(lectura),
                       onTap: () => _abrirLectura(lectura),
                       onBookTap: () => openBookDetail(
                         context,
@@ -356,6 +392,7 @@ class _LecturaCard extends StatelessWidget {
   final VoidCallback onBookTap;
   final bool destacada;
   final bool masComentada;
+  final bool tieneActividadNueva;
 
   const _LecturaCard({
     required this.lectura,
@@ -363,6 +400,7 @@ class _LecturaCard extends StatelessWidget {
     required this.onBookTap,
     this.destacada = false,
     this.masComentada = false,
+    this.tieneActividadNueva = false,
   });
 
   @override
@@ -462,6 +500,13 @@ class _LecturaCard extends StatelessWidget {
                             label: 'Debate activo',
                             icon: Icons.local_fire_department_outlined,
                             variant: ClubChipVariant.danger,
+                          ),
+
+                        if (tieneActividadNueva)
+                          const ClubChip(
+                            label: 'Nuevo',
+                            icon: Icons.mark_chat_unread_outlined,
+                            variant: ClubChipVariant.success,
                           ),
                       ],
                     ),

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import '../common/club_rating_selector.dart';
 
 class FinalizarLibroDialog extends StatefulWidget {
@@ -116,6 +117,8 @@ class _FinalizarLibroDialogState extends State<FinalizarLibroDialog> {
     final valor = valoracion;
 
     if (valor == null || formato.isEmpty) return;
+
+    HapticFeedback.mediumImpact();
 
     Navigator.pop<Map<String, String>>(context, {
       // El backend admite 3, 3.5, 4.5, etc.

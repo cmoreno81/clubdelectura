@@ -66,7 +66,45 @@ class NotificacionesData {
   });
 
   final List<Notificacion> notificaciones;
+
+  /// Total de no leídas que devuelve el servidor (fuente de verdad global).
   final int noLeidas;
+
+  // ── Contadores por destino, calculados sobre la lista recibida ──────────────
+  // Si el servidor devuelve solo las más recientes, estos valores son
+  // conservadores (pueden ser menores al total real), pero son suficientes
+  // para el badge visual.
+
+  /// Notificaciones que llevan a la pestaña Lecturas.
+  int get noLeidasLecturas => notificaciones
+      .where(
+        (n) =>
+            !n.leida &&
+            (n.tipo == 'LECTURA_NUEVA' || n.tipo == 'COMENTARIO_LECTURA'),
+      )
+      .length;
+
+  /// Notificaciones que llevan a la pestaña Clubvisión.
+  int get noLeidasClubvision => notificaciones
+      .where(
+        (n) =>
+            !n.leida &&
+            (n.tipo == 'CLUBVISION_ABIERTA' ||
+                n.tipo == 'CLUBVISION_RESULTADOS'),
+      )
+      .length;
+
+  /// Notificaciones sociales que llevan al dashboard (El Club).
+  int get noLeidasClub => notificaciones
+      .where(
+        (n) =>
+            !n.leida &&
+            (n.tipo == 'LIBRO_TERMINADO' ||
+                n.tipo == 'LIBRO_EMPEZADO' ||
+                n.tipo == 'LIBRO_NUEVO_BIBLIOTECA' ||
+                n.tipo == 'NUEVA_MIEMBRO'),
+      )
+      .length;
 
   factory NotificacionesData.fromJson(Map<String, dynamic> json) =>
       NotificacionesData(

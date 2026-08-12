@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:club_lectura_app/services/libros_data_cache.dart';
 import 'package:club_lectura_app/services/usuario_service.dart';
 import 'package:club_lectura_app/theme/app_colors.dart';
@@ -10,6 +12,7 @@ import 'package:club_lectura_app/widgets/common/club_empty_state.dart';
 import 'package:club_lectura_app/widgets/common/club_shimmer.dart';
 import 'package:club_lectura_app/widgets/error_view.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import '../navigation/app_page_route.dart';
 import '../navigation/book_detail_page_route.dart';
@@ -66,6 +69,7 @@ class _LibrosPageState extends State<LibrosPage> with WidgetsBindingObserver {
   double? _pendingScrollOffset;
 
   final TextEditingController buscadorController = TextEditingController();
+  Timer? _debounce;
 
   String filtroBusqueda = '';
   String filtroEstado = 'TODOS';
@@ -165,6 +169,7 @@ class _LibrosPageState extends State<LibrosPage> with WidgetsBindingObserver {
     if (identical(widget.controller?._refresh, _refresh)) {
       widget.controller?._refresh = null;
     }
+    _debounce?.cancel();
     buscadorController.dispose();
     _scrollController.dispose();
     super.dispose();
@@ -355,9 +360,13 @@ class _LibrosPageState extends State<LibrosPage> with WidgetsBindingObserver {
             style: AppTextStyles.body,
             textAlignVertical: TextAlignVertical.center,
             onChanged: (value) {
-              setState(() {
-                filtroBusqueda = value;
-              });
+              _debounce?.cancel();
+              _debounce = Timer(
+                const Duration(milliseconds: 300),
+                () {
+                  if (mounted) setState(() => filtroBusqueda = value);
+                },
+              );
             },
             decoration: InputDecoration(
               isDense: true,
@@ -505,6 +514,7 @@ class _LibrosPageState extends State<LibrosPage> with WidgetsBindingObserver {
       selected: filtroEstado == estado,
       variant: _chipVariant(estado),
       onTap: () {
+        HapticFeedback.selectionClick();
         setState(() {
           filtroEstado = estado;
         });
@@ -559,6 +569,7 @@ class _LibrosPageState extends State<LibrosPage> with WidgetsBindingObserver {
       margin: const EdgeInsets.only(bottom: AppSpacing.md),
       padding: const EdgeInsets.all(AppSpacing.md),
       onTap: () async {
+        HapticFeedback.lightImpact();
         // Guardamos la posición antes de navegar al detalle
         final scrollOffset = _scrollController.hasClients
             ? _scrollController.offset
@@ -1351,6 +1362,7 @@ class _LibrosPageState extends State<LibrosPage> with WidgetsBindingObserver {
     if (!mounted) return;
 
     final ok = respuesta['ok'] == true;
+    if (ok) HapticFeedback.mediumImpact();
 
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
