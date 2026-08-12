@@ -9,6 +9,7 @@ import 'club_logros_page.dart';
 import '../dev/dev_settings.dart';
 import '../models/dashboard_view_data.dart';
 import '../models/dashboard.dart';
+import '../services/reading_streak_service.dart';
 import '../models/auth_session.dart';
 import '../models/ranking_item.dart';
 import '../models/reaccion_comentario.dart';
@@ -336,6 +337,10 @@ class _DashboardPageState extends State<DashboardPage> {
                     actividad: data.resumen.actividadMes,
                     valoracion: data.resumen.valoracionMedia,
                   ),
+
+                  const SizedBox(height: AppSpacing.md),
+
+                  const _RachaLectoraCard(),
 
                   const SizedBox(height: AppSpacing.lg),
 
@@ -1369,5 +1374,144 @@ class _AchievementsClubCard extends StatelessWidget {
         ],
       ),
     );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Racha lectora — días consecutivos abriendo la app
+// ─────────────────────────────────────────────────────────────────────────────
+
+class _RachaLectoraCard extends StatefulWidget {
+  const _RachaLectoraCard();
+
+  @override
+  State<_RachaLectoraCard> createState() => _RachaLectoraCardState();
+}
+
+class _RachaLectoraCardState extends State<_RachaLectoraCard> {
+  late final Future<int> _rachaFuture;
+
+  @override
+  void initState() {
+    super.initState();
+    // Registra la visita de hoy y obtiene el total actualizado
+    _rachaFuture = ReadingStreakService.registrarVisita();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return FutureBuilder<int>(
+      future: _rachaFuture,
+      builder: (context, snap) {
+        final racha = snap.data ?? 0;
+        return _RachaLectoraTile(racha: racha);
+      },
+    );
+  }
+}
+
+class _RachaLectoraTile extends StatelessWidget {
+  const _RachaLectoraTile({required this.racha});
+
+  final int racha;
+
+  @override
+  Widget build(BuildContext context) {
+    final (emoji, mensaje, color) = _datos(racha);
+
+    return ClubCard(
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.lg,
+        vertical: AppSpacing.md,
+      ),
+      borderColor: color.withValues(alpha: 0.35),
+      child: Row(
+        children: [
+          // ── Icono de llama ──────────────────────────────────────────────
+          Container(
+            width: 52,
+            height: 52,
+            decoration: BoxDecoration(
+              color: color.withValues(alpha: 0.12),
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: Center(
+              child: Text(emoji, style: const TextStyle(fontSize: 26)),
+            ),
+          ),
+
+          const SizedBox(width: AppSpacing.md),
+
+          // ── Texto central ───────────────────────────────────────────────
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Racha lectora',
+                  style: AppTextStyles.caption.copyWith(
+                    color: AppColors.textSecondary,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  mensaje,
+                  style: AppTextStyles.body.copyWith(
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+          // ── Contador de días ────────────────────────────────────────────
+          AnimatedSwitcher(
+            duration: const Duration(milliseconds: 400),
+            transitionBuilder: (child, anim) => ScaleTransition(
+              scale: anim,
+              child: FadeTransition(opacity: anim, child: child),
+            ),
+            child: Column(
+              key: ValueKey(racha),
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  '$racha',
+                  style: AppTextStyles.section.copyWith(
+                    fontSize: 28,
+                    fontWeight: FontWeight.w900,
+                    color: color,
+                  ),
+                ),
+                Text(
+                  racha == 1 ? 'día' : 'días',
+                  style: AppTextStyles.caption.copyWith(
+                    color: color,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  static (String emoji, String mensaje, Color color) _datos(int racha) {
+    if (racha >= 30) {
+      return ('🏆', '¡Racha legendaria!', const Color(0xFFFFB800));
+    } else if (racha >= 14) {
+      return ('🔥', '¡Imparable!', const Color(0xFFE85D04));
+    } else if (racha >= 7) {
+      return ('⚡', '¡Una semana seguida!', const Color(0xFFE85D04));
+    } else if (racha >= 3) {
+      return ('🔥', '¡En racha!', const Color(0xFFFF6B35));
+    } else if (racha == 2) {
+      return ('📖', '¡Dos días seguidos!', AppColors.primary);
+    } else {
+      return ('📖', 'Sigue leyendo cada día', AppColors.textSecondary);
+    }
   }
 }

@@ -16,6 +16,9 @@ import 'package:flutter/services.dart';
 
 import '../navigation/app_page_route.dart';
 import '../navigation/book_detail_page_route.dart';
+import '../widgets/libros/finalizar_libro_dialog.dart';
+import '../widgets/libros/libro_acciones_sheet.dart';
+import '../widgets/libros/pausar_lectura_dialog.dart';
 
 import '../models/libro_agrupado.dart';
 import '../models/libro.dart';
@@ -565,51 +568,59 @@ class _LibrosPageState extends State<LibrosPage> with WidgetsBindingObserver {
 
     final heroTag = 'book-cover-${libro.bookId.isNotEmpty ? libro.bookId : libro.libro.hashCode}';
 
-    return ClubCard(
-      margin: const EdgeInsets.only(bottom: AppSpacing.md),
-      padding: const EdgeInsets.all(AppSpacing.md),
-      onTap: () async {
-        HapticFeedback.lightImpact();
-        // Guardamos la posición antes de navegar al detalle
-        final scrollOffset = _scrollController.hasClients
-            ? _scrollController.offset
-            : 0.0;
+    // ── Fondo visible al deslizar hacia la izquierda ──────────────────────────
+    const cardRadius = BorderRadius.only(
+      topLeft: Radius.circular(24),
+      topRight: Radius.circular(12),
+      bottomRight: Radius.circular(24),
+      bottomLeft: Radius.circular(16),
+    );
 
-        await Navigator.push<bool>(
-          context,
-          BookDetailPageRoute(
-            builder: (_) => DetalleLibroPage(libro: libro, heroTag: heroTag),
+    return Padding(
+      padding: const EdgeInsets.only(bottom: AppSpacing.md),
+      child: Dismissible(
+        key: ValueKey('libro-${libro.bookId.isNotEmpty ? libro.bookId : libro.libro.hashCode}'),
+        direction: DismissDirection.endToStart,
+        dismissThresholds: const {DismissDirection.endToStart: 0.25},
+        confirmDismiss: (_) async {
+          HapticFeedback.mediumImpact();
+          await _mostrarAcciones(libro);
+          return false;
+        },
+        background: const SizedBox.shrink(),
+        secondaryBackground: ClipRRect(
+          borderRadius: cardRadius,
+          child: ColoredBox(
+            color: AppColors.primary.withValues(alpha: 0.10),
+            child: Align(
+              alignment: Alignment.centerRight,
+              child: Padding(
+                padding: const EdgeInsets.only(right: AppSpacing.lg),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(Icons.bolt_rounded, color: AppColors.primary, size: 28),
+                    const SizedBox(height: 4),
+                    Text(
+                      'Acciones',
+                      style: AppTextStyles.caption.copyWith(
+                        color: AppColors.primary,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
           ),
-        );
-
-        _atmosferaRestaurada = false;
-
-        if (!mounted) return;
-
-        // Guardamos el offset pendiente ANTES de recargar
-        _pendingScrollOffset = scrollOffset;
-
-        // Recargamos datos y esperamos a que el future se complete
-        _recargar();
-        await librosFuture;
-
-        if (!mounted) return;
-
-        // Consumimos y limpiamos el offset pendiente
-        final targetOffset = _pendingScrollOffset;
-        _pendingScrollOffset = null;
-
-        if (targetOffset != null) {
-          WidgetsBinding.instance.addPostFrameCallback((_) {
-            WidgetsBinding.instance.addPostFrameCallback((_) {
-              if (!mounted || !_scrollController.hasClients) return;
-              final max = _scrollController.position.maxScrollExtent;
-              _scrollController.jumpTo(targetOffset.clamp(0.0, max));
-            });
-          });
-        }
-      },
-      child: Row(
+        ),
+        child: ClubCard(
+          padding: const EdgeInsets.all(AppSpacing.md),
+          onTap: () async {
+            HapticFeedback.lightImpact();
+            await _navegarAlDetalle(libro);
+          },
+          child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Builder(
@@ -624,9 +635,14 @@ class _LibrosPageState extends State<LibrosPage> with WidgetsBindingObserver {
               final esPausado = propioEstado == 'PAUSADO';
               final esAbandonado = propioEstado == 'ABANDONADO';
 
-              return Stack(
-                clipBehavior: Clip.none,
-                children: [
+              return GestureDetector(
+                onLongPress: () {
+                  HapticFeedback.mediumImpact();
+                  _mostrarAcciones(libro);
+                },
+                child: Stack(
+                  clipBehavior: Clip.none,
+                  children: [
                   ClubBookCover(
                     title: libro.libro,
                     imageUrl: libro.coverUrl,
@@ -654,7 +670,8 @@ class _LibrosPageState extends State<LibrosPage> with WidgetsBindingObserver {
                       color: AppColors.danger,
                     ),
                 ],
-              );
+              ),   // Stack
+              );   // GestureDetector
             },
           ),
 
@@ -784,8 +801,10 @@ class _LibrosPageState extends State<LibrosPage> with WidgetsBindingObserver {
             ),
           ),
         ],
-      ),
-    );
+      ),     // Row
+    ),       // ClubCard
+  ),         // Dismissible
+);           // Padding
   }
 
   String get _labelOrden {
@@ -1364,16 +1383,284 @@ class _LibrosPageState extends State<LibrosPage> with WidgetsBindingObserver {
     final ok = respuesta['ok'] == true;
     if (ok) HapticFeedback.mediumImpact();
 
+    if (ok) {
+      final messenger = ScaffoldMessenger.of(context);
+      messenger.showSnackBar(
+        SnackBar(
+          content: const Text('📚 Añadido a tu lista'),
+          behavior: SnackBarBehavior.floating,
+          action: SnackBarAction(
+            label: 'Deshacer',
+            onPressed: () async {
+              final u = await UsuarioService().obtenerUsuario();
+              if (u == null || u.trim().isEmpty) return;
+              await ApiService().quitarLibroPendientes(
+                usuario: u,
+                libro: libro.libro,
+              );
+              if (!mounted) return;
+              LibraryRefreshNotifier.instance.invalidate();
+              _recargar();
+            },
+          ),
+        ),
+      );
+      LibraryRefreshNotifier.instance.invalidate();
+      _recargar();
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(respuesta['mensaje'] ?? 'No se ha podido añadir'),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    }
+  }
+
+  // ── Navegación al detalle con restauración de scroll ──────────────────────
+  Future<void> _navegarAlDetalle(LibroAgrupado libro) async {
+    final heroTag =
+        'book-cover-${libro.bookId.isNotEmpty ? libro.bookId : libro.libro.hashCode}';
+    final scrollOffset =
+        _scrollController.hasClients ? _scrollController.offset : 0.0;
+
+    await Navigator.push<bool>(
+      context,
+      BookDetailPageRoute(
+        builder: (_) => DetalleLibroPage(libro: libro, heroTag: heroTag),
+      ),
+    );
+
+    _atmosferaRestaurada = false;
+    if (!mounted) return;
+
+    _pendingScrollOffset = scrollOffset;
+    _recargar();
+    await librosFuture;
+    if (!mounted) return;
+
+    final targetOffset = _pendingScrollOffset;
+    _pendingScrollOffset = null;
+    if (targetOffset != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (!mounted || !_scrollController.hasClients) return;
+          final max = _scrollController.position.maxScrollExtent;
+          _scrollController.jumpTo(targetOffset.clamp(0.0, max));
+        });
+      });
+    }
+  }
+
+  // ── Bottom sheet de acciones + handler ────────────────────────────────────
+  Future<void> _mostrarAcciones(LibroAgrupado libro) async {
+    if (!mounted) return;
+    final accion = await mostrarLibroAccionesSheet(context, libro);
+    if (!mounted || accion == null) return;
+
+    switch (accion) {
+      case LibroAccion.anadir:
+        await _confirmarAgregarLibro(libro);
+      case LibroAccion.empezar:
+        await _iniciarLectura(libro);
+      case LibroAccion.reanudar:
+        await _reanudarLectura(libro);
+      case LibroAccion.pausar:
+        await _pausarLectura(libro);
+      case LibroAccion.finalizar:
+        await _finalizarLectura(libro);
+      case LibroAccion.releer:
+        await _releer(libro);
+      case LibroAccion.quitar:
+        await _quitarPendientes(libro);
+      case LibroAccion.verFicha:
+        await _navegarAlDetalle(libro);
+    }
+  }
+
+  Future<void> _iniciarLectura(LibroAgrupado libro) async {
+    final usuario = await UsuarioService().obtenerUsuario();
+    if (usuario == null || usuario.trim().isEmpty || !mounted) return;
+
+    final ok = await ApiService().iniciarLectura(
+      usuario: usuario,
+      libro: libro.libro,
+    );
+    if (!mounted) return;
+
+    if (ok) HapticFeedback.mediumImpact();
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(ok ? '📖 ¡Empezando «${libro.libro}»!' : 'No se ha podido iniciar la lectura'),
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
+    if (ok) {
+      LibraryRefreshNotifier.instance.invalidate();
+      _recargar();
+    }
+  }
+
+  Future<void> _reanudarLectura(LibroAgrupado libro) async {
+    final usuario = await UsuarioService().obtenerUsuario();
+    if (usuario == null || usuario.trim().isEmpty || !mounted) return;
+
+    final ok = await ApiService().actualizarEstado(
+      usuario: usuario,
+      libro: libro.libro,
+      estado: 'LEYENDO',
+    );
+    if (!mounted) return;
+
+    if (ok) HapticFeedback.mediumImpact();
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(ok ? '📖 ¡Lectura reanudada!' : 'No se ha podido reanudar'),
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
+    if (ok) {
+      LibraryRefreshNotifier.instance.invalidate();
+      _recargar();
+    }
+  }
+
+  Future<void> _pausarLectura(LibroAgrupado libro) async {
+    final motivo = await showDialog<String>(
+      context: context,
+      builder: (_) => const PausarLecturaDialog(),
+    );
+    if (motivo == null || !mounted) return;
+
+    final usuario = await UsuarioService().obtenerUsuario();
+    if (usuario == null || usuario.trim().isEmpty || !mounted) return;
+
+    final ok = await ApiService().actualizarEstado(
+      usuario: usuario,
+      libro: libro.libro,
+      estado: 'PAUSADO',
+      motivoPausa: motivo.isNotEmpty ? motivo : null,
+    );
+    if (!mounted) return;
+
+    if (ok) HapticFeedback.lightImpact();
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(ok ? '🌙 Lectura pausada' : 'No se ha podido pausar'),
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
+    if (ok) {
+      LibraryRefreshNotifier.instance.invalidate();
+      _recargar();
+    }
+  }
+
+  Future<void> _finalizarLectura(LibroAgrupado libro) async {
+    final resultado = await showDialog<Map<String, String>>(
+      context: context,
+      builder: (_) => const FinalizarLibroDialog(),
+    );
+    if (resultado == null || !mounted) return;
+
+    final usuario = await UsuarioService().obtenerUsuario();
+    if (usuario == null || usuario.trim().isEmpty || !mounted) return;
+
+    final ok = await ApiService().actualizarEstado(
+      usuario: usuario,
+      libro: libro.libro,
+      estado: 'FINALIZADO',
+      valoracion: resultado['valoracion'],
+      reflexion: resultado['reflexion'],
+      fechaInicio: resultado['fechaInicio'],
+      fechaFin: resultado['fechaFin'],
+      formato: resultado['formato'],
+    );
+    if (!mounted) return;
+
+    if (ok) HapticFeedback.mediumImpact();
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(ok ? '✅ ¡«${libro.libro}» finalizado!' : 'No se ha podido finalizar'),
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
+    if (ok) {
+      LibraryRefreshNotifier.instance.invalidate();
+      _recargar();
+    }
+  }
+
+  Future<void> _releer(LibroAgrupado libro) async {
+    final usuario = await UsuarioService().obtenerUsuario();
+    if (usuario == null || usuario.trim().isEmpty || !mounted) return;
+
+    final ok = await ApiService().actualizarEstado(
+      usuario: usuario,
+      libro: libro.libro,
+      estado: 'RELECTURA',
+    );
+    if (!mounted) return;
+
+    if (ok) HapticFeedback.mediumImpact();
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(ok ? '🔄 ¡Empezando relectura!' : 'No se ha podido iniciar la relectura'),
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
+    if (ok) {
+      LibraryRefreshNotifier.instance.invalidate();
+      _recargar();
+    }
+  }
+
+  Future<void> _quitarPendientes(LibroAgrupado libro) async {
+    final confirmar = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('¿Quitar de pendientes?'),
+        content: Text(
+          '«${libro.libro}» se eliminará de tu lista de pendientes.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Cancelar'),
+          ),
+          FilledButton(
+            style: FilledButton.styleFrom(
+              backgroundColor: AppColors.danger,
+            ),
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('Quitar'),
+          ),
+        ],
+      ),
+    );
+    if (confirmar != true || !mounted) return;
+
+    final usuario = await UsuarioService().obtenerUsuario();
+    if (usuario == null || usuario.trim().isEmpty || !mounted) return;
+
+    final respuesta = await ApiService().quitarLibroPendientes(
+      usuario: usuario,
+      libro: libro.libro,
+    );
+    if (!mounted) return;
+
+    final ok = respuesta['ok'] == true;
+    if (ok) HapticFeedback.mediumImpact();
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(
           ok
-              ? 'Añadido a tu lista'
-              : respuesta['mensaje'] ?? 'No se ha podido añadir',
+              ? 'Eliminado de pendientes'
+              : respuesta['mensaje']?.toString() ?? 'No se ha podido quitar',
         ),
+        behavior: SnackBarBehavior.floating,
       ),
     );
-
     if (ok) {
       LibraryRefreshNotifier.instance.invalidate();
       _recargar();
