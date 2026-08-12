@@ -5,6 +5,7 @@ import '../navigation/app_page_route.dart';
 import '../navigation/book_detail_navigation.dart';
 import 'afinidad_detalle_page.dart';
 import 'club_challenge_page.dart';
+import 'club_logros_page.dart';
 import '../dev/dev_settings.dart';
 import '../models/dashboard_view_data.dart';
 import '../models/dashboard.dart';
@@ -33,6 +34,7 @@ import 'mood_club_page.dart';
 import 'perfil_usuario_page.dart';
 import 'ranking_page.dart';
 import 'tendencias_club_page.dart';
+import 'package:club_lectura_app/widgets/common/club_shimmer.dart';
 
 class DashboardPage extends StatefulWidget {
   const DashboardPage({
@@ -211,7 +213,7 @@ class _DashboardPageState extends State<DashboardPage> {
         future: dashboardFuture,
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
+            return const DashboardSkeleton();
           }
 
           if (snapshot.hasError) {
@@ -266,6 +268,8 @@ class _DashboardPageState extends State<DashboardPage> {
 
                   // ── Logros del club — primera card de la sección ──
                   _LogrosClubCard(),
+                  const SizedBox(height: AppSpacing.sm),
+                  _AchievementsClubCard(),
 
                   const SizedBox(height: AppSpacing.md),
 
@@ -1304,6 +1308,64 @@ class _LogrosClubCard extends StatelessWidget {
             ),
           ),
           const Icon(Icons.chevron_right_rounded, color: AppColors.primary),
+        ],
+      ),
+    );
+  }
+}
+
+// Card de ranking de logros del club
+// ─────────────────────────────────────────────
+class _AchievementsClubCard extends StatelessWidget {
+  const _AchievementsClubCard();
+
+  @override
+  Widget build(BuildContext context) {
+    return ClubCard(
+      elevated: false,
+      gradient: const LinearGradient(
+        begin: Alignment.topLeft,
+        end: Alignment.bottomRight,
+        colors: [Color(0xFFFFF8E5), Color(0xFFFFEDD5)],
+      ),
+      borderColor: AppColors.gold.withValues(alpha: .3),
+      onTap: () => Navigator.push<void>(
+        context,
+        AppPageRoute(builder: (_) => const ClubLogrosPage()),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 52,
+            height: 52,
+            decoration: BoxDecoration(
+              color: AppColors.gold.withValues(alpha: .15),
+              borderRadius: BorderRadius.circular(AppRadius.lg),
+            ),
+            child: const Icon(
+              Icons.emoji_events_rounded,
+              color: AppColors.gold,
+              size: 27,
+            ),
+          ),
+          const SizedBox(width: AppSpacing.md),
+          const Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Logros del club',
+                  style: TextStyle(fontWeight: FontWeight.w800, fontSize: 16),
+                ),
+                SizedBox(height: 2),
+                Text(
+                  'Ranking y últimos logros desbloqueados',
+                  style: TextStyle(color: AppColors.textSecondary),
+                ),
+              ],
+            ),
+          ),
+          const Icon(Icons.arrow_forward_rounded),
         ],
       ),
     );

@@ -33,11 +33,19 @@ import '../services/auth_service.dart';
 import '../widgets/dashboard/year_reading_shelf.dart';
 import '../models/general_dashboard.dart' show YearShelfBook;
 import 'year_reading_share_page.dart';
+import '../models/achievements/achievement.dart';
+import '../services/achievement_service.dart';
+import 'package:club_lectura_app/widgets/common/club_shimmer.dart';
 
 class PerfilUsuarioPage extends StatefulWidget {
-  final String usuario;
+  const PerfilUsuarioPage({
+    super.key,
+    required this.usuario,
+    this.initialTab = 'RESUMEN',
+  });
 
-  const PerfilUsuarioPage({super.key, required this.usuario});
+  final String usuario;
+  final String initialTab;
 
   @override
   State<PerfilUsuarioPage> createState() => _PerfilUsuarioPageState();
@@ -130,7 +138,10 @@ class _PerfilUsuarioPageState extends State<PerfilUsuarioPage> {
   @override
   void initState() {
     super.initState();
-    future = _cargarPerfil();
+    _menuPerfil = widget.initialTab;
+    if (widget.initialTab != 'LOGROS') {
+      future = _cargarPerfil();
+    }
     _cargarUsuarioActual();
   }
 
@@ -383,6 +394,9 @@ class _PerfilUsuarioPageState extends State<PerfilUsuarioPage> {
           ],
         );
 
+      case 'LOGROS':
+        return _PerfilLogrosSection(usuario: perfil.usuario);
+
       case 'SAGAS_OCULTAS':
         if (!esMiPerfil) return const SizedBox.shrink();
         return Column(
@@ -627,13 +641,24 @@ class _PerfilUsuarioPageState extends State<PerfilUsuarioPage> {
 
   @override
   Widget build(BuildContext context) {
+    // Ruta rápida: si venimos de logros del club, mostrar logros sin esperar al perfil completo
+    if (widget.initialTab == 'LOGROS' && _menuPerfil == 'LOGROS') {
+      return Scaffold(
+        appBar: AppBar(title: Text(widget.usuario.split(' ').first)),
+        body: SingleChildScrollView(
+          padding: const EdgeInsets.all(AppSpacing.md),
+          child: _PerfilLogrosSection(usuario: widget.usuario),
+        ),
+      );
+    }
+
     return Scaffold(
       appBar: AppBar(title: const Text('Perfil lector')),
       body: FutureBuilder<PerfilUsuario>(
         future: future,
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
+            return const ProfileSkeleton();
           }
 
           if (snapshot.hasError) {
@@ -655,6 +680,7 @@ class _PerfilUsuarioPageState extends State<PerfilUsuarioPage> {
               Icons.calendar_view_month_outlined,
               'Meses lectores',
             ),
+            _TabItem('LOGROS', Icons.emoji_events_outlined, 'Logros'),
             if (esMiPerfil)
               _TabItem(
                 'SAGAS_OCULTAS',
@@ -1422,4 +1448,178 @@ class _TabBarDelegate extends SliverPersistentHeaderDelegate {
   @override
   bool shouldRebuild(_TabBarDelegate old) =>
       old.selected != selected || old.tabs.length != tabs.length;
+}
+
+// ─── Sección de logros en perfil ─────────────────────────────────────────────
+
+class _PerfilLogrosSection extends StatefulWidget {
+  const _PerfilLogrosSection({required this.usuario});
+  final String usuario;
+
+  @override
+  State<_PerfilLogrosSection> createState() => _PerfilLogrosSectionState();
+}
+
+class _PerfilLogrosSectionState extends State<_PerfilLogrosSection> {
+  late Future<List<UserAchievement>> _future;
+
+  @override
+  void initState() {
+    super.initState();
+    _future = ApiService().getAchievements(user: widget.usuario);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return FutureBuilder<List<UserAchievement>>(
+      future: _future,
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const CardListSkeleton(count: 4);
+        }
+
+        final achievements = snapshot.data ?? [];
+        final unlocked = achievements.where((a) => a.unlocked).toList();
+        final locked = achievements.where((a) => !a.unlocked).toList();
+
+        final rarityOrder = {'legendary': 0, 'epic': 1, 'rare': 2, 'common': 3};
+        unlocked.sort(
+          (a, b) => (rarityOrder[a.rarity] ?? 3).compareTo(
+            rarityOrder[b.rarity] ?? 3,
+          ),
+        );
+
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            ClubSectionTitle(
+              title: 'Logros de ${widget.usuario.split(' ').first}',
+              subtitle:
+                  '${unlocked.length} de ${achievements.length} desbloqueados',
+              icon: Icons.emoji_events_outlined,
+              padding: EdgeInsets.zero,
+            ),
+            const SizedBox(height: AppSpacing.md),
+            if (unlocked.isEmpty)
+              const ClubEmptyState(
+                icon: Icons.emoji_events_outlined,
+                title: 'Todavía sin logros',
+                message: 'Los logros desbloqueados aparecerán aquí.',
+              )
+            else ...[
+              GridView.builder(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: 3,
+                  crossAxisSpacing: AppSpacing.sm,
+                  mainAxisSpacing: AppSpacing.sm,
+                  childAspectRatio: 0.9,
+                ),
+                itemCount: unlocked.length,
+                itemBuilder: (context, i) =>
+                    _PerfilLogroTile(achievement: unlocked[i]),
+              ),
+              if (locked.isNotEmpty) ...[
+                const SizedBox(height: AppSpacing.xl),
+                ClubSectionTitle(
+                  title: 'Por desbloquear',
+                  subtitle: 'Retos pendientes',
+                  icon: Icons.lock_outline_rounded,
+                  padding: EdgeInsets.zero,
+                ),
+                const SizedBox(height: AppSpacing.md),
+                GridView.builder(
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: 3,
+                    crossAxisSpacing: AppSpacing.sm,
+                    mainAxisSpacing: AppSpacing.sm,
+                    childAspectRatio: 0.9,
+                  ),
+                  itemCount: locked.length,
+                  itemBuilder: (context, i) =>
+                      _PerfilLogroTile(achievement: locked[i], locked: true),
+                ),
+              ],
+            ],
+          ],
+        );
+      },
+    );
+  }
+}
+
+class _PerfilLogroTile extends StatelessWidget {
+  const _PerfilLogroTile({required this.achievement, this.locked = false});
+
+  final UserAchievement achievement;
+  final bool locked;
+
+  Color get _color => locked
+      ? AppColors.textMuted
+      : switch (achievement.rarity) {
+          'legendary' => const Color(0xFFD97706),
+          'epic' => const Color(0xFF7C3AED),
+          'rare' => const Color(0xFF2563EB),
+          _ => AppColors.primary,
+        };
+
+  @override
+  Widget build(BuildContext context) {
+    final color = _color;
+    return Tooltip(
+      message: '${achievement.title}\n${achievement.description}',
+      child: Opacity(
+        opacity: locked ? 0.4 : 1.0,
+        child: Container(
+          padding: const EdgeInsets.all(AppSpacing.sm),
+          decoration: BoxDecoration(
+            color: color.withValues(alpha: .05),
+            borderRadius: BorderRadius.circular(AppRadius.md),
+            border: Border.all(
+              color: color.withValues(alpha: locked ? .1 : .18),
+              width: 1,
+            ),
+          ),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Text(achievement.icon, style: const TextStyle(fontSize: 28)),
+              const SizedBox(height: 4),
+              Text(
+                achievement.title,
+                textAlign: TextAlign.center,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  fontSize: 10,
+                  fontWeight: FontWeight.w800,
+                  color: color.withValues(alpha: locked ? 0.5 : .75),
+                  height: 1.2,
+                ),
+              ),
+              const SizedBox(height: 3),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+                decoration: BoxDecoration(
+                  color: color.withValues(alpha: .12),
+                  borderRadius: BorderRadius.circular(AppRadius.pill),
+                ),
+                child: Text(
+                  AchievementService.rarityLabels[achievement.rarity] ?? '',
+                  style: TextStyle(
+                    fontSize: 8,
+                    color: color.withValues(alpha: .75),
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
 }

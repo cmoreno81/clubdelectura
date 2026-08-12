@@ -16,6 +16,7 @@ import '../widgets/error_view.dart';
 import 'clubvision_menu_page.dart';
 import 'home_page.dart';
 import 'lectura_page.dart';
+import 'package:club_lectura_app/widgets/common/club_shimmer.dart';
 
 class NotificacionesPage extends StatefulWidget {
   const NotificacionesPage({super.key});
@@ -117,14 +118,16 @@ class _NotificacionesPageState extends State<NotificacionesPage> {
       appBar: AppBar(
         title: const Text('Notificaciones'),
         actions: [
-          TextButton(
+          IconButton(
+            tooltip: 'Marcar todas como leídas',
             onPressed: _marcarTodas,
-            child: const Text('Marcar todas'),
+            icon: const Icon(Icons.done_all_rounded),
           ),
-          TextButton(
+          IconButton(
+            tooltip: 'Eliminar todas',
             onPressed: _eliminarTodas,
-            style: TextButton.styleFrom(foregroundColor: AppColors.danger),
-            child: const Text('Eliminar todas'),
+            style: IconButton.styleFrom(foregroundColor: AppColors.danger),
+            icon: const Icon(Icons.delete_sweep_rounded),
           ),
         ],
       ),
@@ -132,7 +135,7 @@ class _NotificacionesPageState extends State<NotificacionesPage> {
         animation: _pagination,
         builder: (context, _) {
           if (_pagination.showInitialLoader) {
-            return const Center(child: CircularProgressIndicator());
+            return const CardListSkeleton();
           }
           if (_pagination.showInitialError) {
             return ErrorView(onRetry: _pagination.loadFirst);

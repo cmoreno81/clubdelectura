@@ -17,6 +17,7 @@ import '../services/api_service.dart';
 import '../services/kit_lectura_service.dart';
 import '../widgets/lectura/comentario_card.dart';
 import '../widgets/lectura/comentario_input.dart';
+import 'package:club_lectura_app/widgets/common/club_shimmer.dart';
 
 class CapituloPage extends StatefulWidget {
   final String libro;
@@ -430,7 +431,7 @@ class _CapituloPageState extends State<CapituloPage> {
           SliverToBoxAdapter(child: _cabecera()),
           const SliverFillRemaining(
             hasScrollBody: false,
-            child: Center(child: CircularProgressIndicator()),
+            child: CardListSkeleton(),
           ),
         ],
       );

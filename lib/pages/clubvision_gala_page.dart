@@ -5,6 +5,7 @@ import '../services/api_service.dart';
 import '../theme/app_spacing.dart';
 import '../widgets/error_view.dart';
 import '../widgets/club/gala_card.dart';
+import 'package:club_lectura_app/widgets/common/club_shimmer.dart';
 
 class ClubvisionGalaPage extends StatefulWidget {
   const ClubvisionGalaPage({super.key});
@@ -47,9 +48,7 @@ class _ClubvisionGalaPageState extends State<ClubvisionGalaPage> {
       future: dashboardFuture,
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Scaffold(
-            body: Center(child: CircularProgressIndicator()),
-          );
+          return const Scaffold(body: CardListSkeleton());
         }
 
         if (snapshot.hasError || !snapshot.hasData) {

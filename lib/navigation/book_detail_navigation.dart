@@ -8,7 +8,7 @@ import '../pages/detalle_libro_page.dart';
 import '../pages/catalog_book_detail_page.dart';
 import '../services/api_service.dart';
 import '../services/libros_data_cache.dart';
-import 'app_page_route.dart';
+import 'book_detail_page_route.dart';
 
 // ── Modelo mínimo de la respuesta de libroPorId ───────────────────────────────
 
@@ -90,7 +90,7 @@ Future<bool> openBookDetail(
         // El libro no existe o error → ficha de catálogo
         await Navigator.push<void>(
           context,
-          AppPageRoute(
+          BookDetailPageRoute(
             builder: (_) => CatalogBookDetailPage(
               bookId: bookId,
               title: title,
@@ -121,7 +121,7 @@ Future<bool> openBookDetail(
     if (registros.isEmpty && finalizados.isEmpty) {
       await Navigator.push<void>(
         context,
-        AppPageRoute(
+        BookDetailPageRoute(
           builder: (_) => CatalogBookDetailPage(
             bookId: bookId,
             title: title,
@@ -135,7 +135,7 @@ Future<bool> openBookDetail(
 
     await Navigator.push<void>(
       context,
-      AppPageRoute(
+      BookDetailPageRoute(
         builder: (_) => DetalleLibroPage(
           libro: LibroAgrupado(
             libro: title,
@@ -188,7 +188,7 @@ Future<bool> openCatalogBookDetail(
       if (result == null) {
         await Navigator.push<void>(
           context,
-          AppPageRoute(
+          BookDetailPageRoute(
             builder: (_) => CatalogBookDetailPage(
               bookId: bookId,
               title: title,
@@ -246,7 +246,7 @@ Future<bool> openCatalogBookDetail(
     if (registros.isEmpty && finalizados.isEmpty) {
       await Navigator.push<void>(
         context,
-        AppPageRoute(
+        BookDetailPageRoute(
           builder: (_) => CatalogBookDetailPage(
             bookId: bookId,
             title: title,
@@ -260,7 +260,7 @@ Future<bool> openCatalogBookDetail(
 
     await Navigator.push<void>(
       context,
-      AppPageRoute(
+      BookDetailPageRoute(
         builder: (_) => DetalleLibroPage(
           libro: LibroAgrupado(
             libro: title,

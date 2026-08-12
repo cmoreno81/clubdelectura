@@ -9,6 +9,7 @@ import '../theme/app_spacing.dart';
 import '../widgets/common/club_card.dart';
 import '../widgets/common/club_empty_state.dart';
 import '../widgets/error_view.dart';
+import 'package:club_lectura_app/widgets/common/club_shimmer.dart';
 
 class HiddenSeriesSection extends StatefulWidget {
   const HiddenSeriesSection({super.key});
@@ -64,10 +65,7 @@ class _HiddenSeriesSectionState extends State<HiddenSeriesSection> {
       future: _future,
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Padding(
-            padding: EdgeInsets.all(AppSpacing.xl),
-            child: Center(child: CircularProgressIndicator()),
-          );
+          return const CardListSkeleton();
         }
         if (snapshot.hasError) return ErrorView(onRetry: _reload);
 

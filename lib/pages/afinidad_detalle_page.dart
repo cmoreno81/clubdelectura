@@ -12,6 +12,7 @@ import '../widgets/common/club_book_cover.dart';
 import '../widgets/common/club_card.dart';
 import '../widgets/common/optimized_network_image.dart';
 import '../widgets/error_view.dart';
+import 'package:club_lectura_app/widgets/common/club_shimmer.dart';
 
 class AfinidadDetallePage extends StatefulWidget {
   const AfinidadDetallePage({
@@ -61,7 +62,7 @@ class _AfinidadDetallePageState extends State<AfinidadDetallePage>
         future: _future,
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
+            return const CardListSkeleton();
           }
           if (snapshot.hasError || snapshot.data == null) {
             return Scaffold(

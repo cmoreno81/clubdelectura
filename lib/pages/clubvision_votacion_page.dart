@@ -14,6 +14,7 @@ import '../widgets/common/club_button.dart';
 import '../widgets/common/club_book_cover.dart';
 import '../widgets/common/club_card.dart';
 import '../widgets/common/club_chip.dart';
+import 'package:club_lectura_app/widgets/common/club_shimmer.dart';
 
 class ClubvisionVotacionPage extends StatefulWidget {
   final String idVotacion;
@@ -211,7 +212,7 @@ class _ClubvisionVotacionPageState extends State<ClubvisionVotacionPage> {
         future: future,
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
+            return const CardListSkeleton();
           }
 
           if (snapshot.hasError || !snapshot.hasData) {

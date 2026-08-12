@@ -13,6 +13,7 @@ import '../widgets/common/club_book_cover.dart';
 import '../widgets/common/club_card.dart';
 import '../widgets/common/club_chip.dart';
 import '../widgets/error_view.dart';
+import 'package:club_lectura_app/widgets/common/club_shimmer.dart';
 
 class RankingPage extends StatefulWidget {
   final int initialTab;
@@ -96,7 +97,7 @@ class _RankingPageState extends State<RankingPage> {
         future: rankingFuture,
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
+            return const CoverListSkeleton();
           }
 
           if (snapshot.hasError || !snapshot.hasData) {

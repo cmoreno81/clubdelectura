@@ -10,6 +10,7 @@ import '../services/cursor_pagination_controller.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_spacing.dart';
 import '../widgets/common/optimized_network_image.dart';
+import 'package:club_lectura_app/widgets/common/club_shimmer.dart';
 
 class ExploreCatalogPage extends StatefulWidget {
   const ExploreCatalogPage({super.key, this.initialQuery = ''});
@@ -214,7 +215,7 @@ class _ExploreCatalogPageState extends State<ExploreCatalogPage> {
     final error = browsing ? _pagination.initialError?.toString() : _error;
     final books = browsing ? _pagination.items : _books;
     if (loading && books.isEmpty) {
-      return const Center(child: CircularProgressIndicator());
+      return const CoverListSkeleton();
     }
     if (error != null && books.isEmpty) {
       return Center(

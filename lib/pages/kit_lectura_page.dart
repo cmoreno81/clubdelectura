@@ -19,6 +19,7 @@ import '../services/atmosfera_scope.dart';
 import '../models/playlist_lectura_seleccion.dart';
 import 'playlist_lectura_page.dart';
 import 'kit_export_page.dart';
+import 'package:club_lectura_app/widgets/common/club_shimmer.dart';
 
 class KitLecturaPage extends StatefulWidget {
   final String bookId;
@@ -282,7 +283,7 @@ class _KitLecturaPageState extends State<KitLecturaPage> {
     return Scaffold(
       appBar: AppBar(title: const Text('Kit de lectura')),
       body: _cargandoKit
-          ? const Center(child: CircularProgressIndicator())
+          ? const CardListSkeleton()
           : ListView(
               padding: const EdgeInsets.fromLTRB(
                 AppSpacing.md,

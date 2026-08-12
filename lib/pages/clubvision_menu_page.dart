@@ -18,6 +18,7 @@ import 'clubvision_historial_page.dart';
 import 'clubvision_mi_voto_page.dart';
 import 'configurar_lectura_page.dart';
 import 'lectura_page.dart';
+import 'package:club_lectura_app/widgets/common/club_shimmer.dart';
 
 class ClubvisionMenuPage extends StatefulWidget {
   const ClubvisionMenuPage({super.key, this.onBackToClub});
@@ -121,7 +122,7 @@ class _ClubvisionMenuPageState extends State<ClubvisionMenuPage> {
         future: clubvisionFuture,
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
+            return const CardListSkeleton();
           }
 
           if (snapshot.hasError || !snapshot.hasData) {

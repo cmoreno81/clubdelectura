@@ -23,8 +23,10 @@ import 'nuevo_libro_page.dart';
 
 class DetalleLibroPage extends StatefulWidget {
   final LibroAgrupado libro;
+  /// Tag Hero que coincide con el de la portada en la pantalla de origen.
+  final String? heroTag;
 
-  const DetalleLibroPage({super.key, required this.libro});
+  const DetalleLibroPage({super.key, required this.libro, this.heroTag});
 
   @override
   State<DetalleLibroPage> createState() => _DetalleLibroPageState();
@@ -378,6 +380,7 @@ class _DetalleLibroPageState extends State<DetalleLibroPage> {
               LibroHeader(
                 libro: libro,
                 referencia: referencia,
+                heroTag: widget.heroTag,
                 onAbrirGoodreads: _abrirGoodreads,
               ),
 

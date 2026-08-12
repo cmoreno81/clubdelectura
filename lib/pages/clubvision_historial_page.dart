@@ -12,6 +12,7 @@ import '../widgets/common/club_card.dart';
 import '../widgets/common/club_chip.dart';
 import '../widgets/common/awarded_book_cover.dart';
 import '../widgets/error_view.dart';
+import 'package:club_lectura_app/widgets/common/club_shimmer.dart';
 
 class ClubvisionHistorialPage extends StatefulWidget {
   const ClubvisionHistorialPage({super.key});
@@ -88,7 +89,7 @@ class _ClubvisionHistorialPageState extends State<ClubvisionHistorialPage> {
         animation: _pagination,
         builder: (context, _) {
           if (_pagination.showInitialLoader) {
-            return const Center(child: CircularProgressIndicator());
+            return const CardListSkeleton();
           }
 
           if (_pagination.showInitialError) {

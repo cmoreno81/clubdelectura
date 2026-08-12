@@ -7,10 +7,12 @@ import 'package:club_lectura_app/widgets/common/club_book_cover.dart';
 import 'package:club_lectura_app/widgets/common/club_card.dart';
 import 'package:club_lectura_app/widgets/common/club_chip.dart';
 import 'package:club_lectura_app/widgets/common/club_empty_state.dart';
+import 'package:club_lectura_app/widgets/common/club_shimmer.dart';
 import 'package:club_lectura_app/widgets/error_view.dart';
 import 'package:flutter/material.dart';
 
 import '../navigation/app_page_route.dart';
+import '../navigation/book_detail_page_route.dart';
 
 import '../models/libro_agrupado.dart';
 import '../models/libro.dart';
@@ -242,7 +244,7 @@ class _LibrosPageState extends State<LibrosPage> with WidgetsBindingObserver {
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting &&
               !snapshot.hasData) {
-            return const Center(child: CircularProgressIndicator());
+            return const BookListSkeleton();
           }
 
           final data = snapshot.data ?? _lastData;
@@ -251,7 +253,7 @@ class _LibrosPageState extends State<LibrosPage> with WidgetsBindingObserver {
           }
 
           if (data == null) {
-            return const Center(child: CircularProgressIndicator());
+            return const BookListSkeleton();
           }
           final libros = data.libros;
           final finalizados = data.finalizados;
@@ -551,6 +553,8 @@ class _LibrosPageState extends State<LibrosPage> with WidgetsBindingObserver {
       _ => Icons.auto_stories_rounded,
     };
 
+    final heroTag = 'book-cover-${libro.bookId.isNotEmpty ? libro.bookId : libro.libro.hashCode}';
+
     return ClubCard(
       margin: const EdgeInsets.only(bottom: AppSpacing.md),
       padding: const EdgeInsets.all(AppSpacing.md),
@@ -562,7 +566,9 @@ class _LibrosPageState extends State<LibrosPage> with WidgetsBindingObserver {
 
         await Navigator.push<bool>(
           context,
-          AppPageRoute(builder: (_) => DetalleLibroPage(libro: libro)),
+          BookDetailPageRoute(
+            builder: (_) => DetalleLibroPage(libro: libro, heroTag: heroTag),
+          ),
         );
 
         _atmosferaRestaurada = false;
@@ -615,6 +621,7 @@ class _LibrosPageState extends State<LibrosPage> with WidgetsBindingObserver {
                     imageUrl: libro.coverUrl,
                     width: 92,
                     showShadow: false,
+                    heroTag: heroTag,
                   ),
                   // Badge en esquina superior derecha de la portada
                   if (libro.leidoPorMi)

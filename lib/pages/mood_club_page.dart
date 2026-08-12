@@ -14,6 +14,7 @@ import '../widgets/common/club_book_cover.dart';
 import '../widgets/common/club_chip.dart';
 import '../widgets/error_view.dart';
 import 'capitulo_page.dart';
+import 'package:club_lectura_app/widgets/common/club_shimmer.dart';
 
 class MoodClubPage extends StatefulWidget {
   const MoodClubPage({super.key});
@@ -85,7 +86,7 @@ class _MoodClubPageState extends State<MoodClubPage> {
         future: future,
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
+            return const CardListSkeleton();
           }
 
           if (snapshot.hasError || !snapshot.hasData) {

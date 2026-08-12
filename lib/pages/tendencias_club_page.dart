@@ -17,6 +17,7 @@ import '../widgets/common/club_card.dart';
 import '../widgets/common/club_chip.dart';
 import '../widgets/error_view.dart';
 import 'perfil_usuario_page.dart';
+import 'package:club_lectura_app/widgets/common/club_shimmer.dart';
 
 class TendenciasClubPage extends StatefulWidget {
   const TendenciasClubPage({super.key});
@@ -62,7 +63,7 @@ class _TendenciasClubPageState extends State<TendenciasClubPage> {
         future: future,
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
+            return const CardListSkeleton();
           }
 
           if (snapshot.hasError || !snapshot.hasData) {

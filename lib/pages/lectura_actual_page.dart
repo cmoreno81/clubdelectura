@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../models/dashboard.dart';
 import '../services/api_service.dart';
 import '../widgets/lectura/fecha_relativa.dart';
+import 'package:club_lectura_app/widgets/common/club_shimmer.dart';
 
 class LecturaActualPage extends StatefulWidget {
   const LecturaActualPage({super.key});
@@ -41,9 +42,7 @@ class _LecturaActualPageState extends State<LecturaActualPage> {
         }
 
         if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Scaffold(
-            body: Center(child: CircularProgressIndicator()),
-          );
+          return const Scaffold(body: CardListSkeleton());
         }
 
         if (!snapshot.hasData) {

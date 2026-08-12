@@ -9,6 +9,7 @@ import '../theme/app_colors.dart';
 import '../theme/app_spacing.dart';
 import '../widgets/common/optimized_network_image.dart';
 import '../widgets/sagas/series_volume_details_dialog.dart';
+import 'package:club_lectura_app/widgets/common/club_shimmer.dart';
 
 typedef SeriesCatalogSearch = Future<List<CatalogBook>> Function(String query);
 
@@ -244,7 +245,7 @@ class _CompleteSeriesPageState extends State<CompleteSeriesPage> {
   }
 
   Widget _content() {
-    if (_loading) return const Center(child: CircularProgressIndicator());
+    if (_loading) return const CardListSkeleton();
     if (_error != null) {
       return Center(child: Text(_error!, textAlign: TextAlign.center));
     }

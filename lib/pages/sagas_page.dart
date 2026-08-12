@@ -22,6 +22,7 @@ import '../widgets/common/onboarding_tutorial.dart';
 import 'complete_series_page.dart';
 import 'detalle_libro_page.dart';
 import 'explore_catalog_page.dart';
+import 'package:club_lectura_app/widgets/common/club_shimmer.dart';
 
 class SagasPageController {
   Future<void> Function()? _refresh;
@@ -610,7 +611,7 @@ class _SagasPageState extends State<SagasPage> {
         future: _future,
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
+            return const CardListSkeleton();
           }
           if (snapshot.hasError) {
             return ErrorView(onRetry: _reload);

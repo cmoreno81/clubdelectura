@@ -14,6 +14,7 @@ import '../widgets/common/club_card.dart';
 import '../widgets/ui/club_section_title.dart';
 import '../widgets/lectura/capitulo_tile.dart';
 import 'capitulo_page.dart';
+import 'package:club_lectura_app/widgets/common/club_shimmer.dart';
 
 class LecturaPage extends StatefulWidget {
   final String libro;
@@ -161,7 +162,7 @@ class _LecturaPageState extends State<LecturaPage> {
         future: future,
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
+            return const CardListSkeleton();
           }
 
           if (snapshot.hasError) {

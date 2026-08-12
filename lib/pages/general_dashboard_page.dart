@@ -38,6 +38,7 @@ import 'mis_logros_page.dart';
 import '../models/achievements/achievement.dart';
 import '../services/achievement_service.dart';
 import '../services/usuario_service.dart';
+import 'package:club_lectura_app/widgets/common/club_shimmer.dart';
 
 class GeneralDashboardPage extends StatefulWidget {
   const GeneralDashboardPage({super.key});
@@ -306,7 +307,7 @@ class _GeneralDashboardPageState extends State<GeneralDashboardPage> {
         future: _future,
         builder: (context, snapshot) {
           if (snapshot.connectionState != ConnectionState.done) {
-            return const Center(child: CircularProgressIndicator());
+            return const DashboardSkeleton();
           }
           if (snapshot.hasError) {
             return _DashboardError(onRetry: _reload);
@@ -1886,8 +1887,9 @@ class _CurrentBookCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final pct = book.pages != null && book.pages! > 0
-        ? (book.currentPage ?? 0) / book.pages!
+    final pct =
+        book.currentPage != null && book.pages != null && book.pages! > 0
+        ? book.currentPage! / book.pages!
         : book.progress / 100.0;
     final pctClamped = pct.clamp(0.0, 1.0);
     final hasPageInfo =

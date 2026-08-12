@@ -15,6 +15,7 @@ import '../widgets/common/club_avatar.dart';
 import '../widgets/perfil/editar_avatar_dialog.dart';
 import '../widgets/common/club_card.dart';
 import '../widgets/common/optimized_network_image.dart';
+import 'package:club_lectura_app/widgets/common/club_shimmer.dart';
 
 class ClubsPage extends StatefulWidget {
   const ClubsPage({
@@ -126,7 +127,7 @@ class _ClubsPageState extends State<ClubsPage> {
         future: _future,
         builder: (context, snapshot) {
           if (!snapshot.hasData) {
-            return const Center(child: CircularProgressIndicator());
+            return const CardListSkeleton();
           }
           final clubs = snapshot.data!.clubs;
           return ListView(
@@ -636,7 +637,7 @@ class _MembersPage extends StatelessWidget {
         future: future,
         builder: (context, snap) {
           if (!snap.hasData) {
-            return const Center(child: CircularProgressIndicator());
+            return const CardListSkeleton();
           }
           return ListView.separated(
             padding: const EdgeInsets.symmetric(

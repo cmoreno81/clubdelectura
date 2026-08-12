@@ -9,6 +9,7 @@ import '../theme/app_text_styles.dart';
 import '../widgets/common/club_avatar.dart';
 import '../widgets/common/club_card.dart';
 import '../widgets/error_view.dart';
+import 'package:club_lectura_app/widgets/common/club_shimmer.dart';
 
 class ClubChallengePage extends StatefulWidget {
   const ClubChallengePage({super.key});
@@ -95,7 +96,7 @@ class _ClubChallengePageState extends State<ClubChallengePage> {
         future: _future,
         builder: (context, snap) {
           if (snap.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
+            return const CardListSkeleton();
           }
           if (snap.hasError || snap.data == null) {
             return ErrorView(onRetry: _reload);

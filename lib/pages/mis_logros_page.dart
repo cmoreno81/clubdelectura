@@ -9,6 +9,7 @@ import '../theme/app_radius.dart';
 import '../theme/app_spacing.dart';
 import '../theme/app_text_styles.dart';
 import '../widgets/error_view.dart';
+import 'package:club_lectura_app/widgets/common/club_shimmer.dart';
 
 class MisLogrosPage extends StatefulWidget {
   const MisLogrosPage({super.key});
@@ -39,7 +40,7 @@ class _MisLogrosPageState extends State<MisLogrosPage> {
         future: _future,
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
+            return const CardListSkeleton();
           }
           if (snapshot.hasError) {
             return ErrorView(onRetry: () => setState(() => _future = _load()));
