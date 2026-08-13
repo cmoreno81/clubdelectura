@@ -356,13 +356,13 @@ class _DashboardPageState extends State<DashboardPage> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Expanded(
-                        child: InfoCard(
+                        child: _PulsoTendenciaCard(
                           title: 'Pulso del club',
                           value: data.mood,
                           icon: Icons.psychology_alt_outlined,
-                          variant: InfoCardVariant.blush,
-                          compact: true,
-                          pulseIcon: true,
+                          foreground: const Color(0xFFD95781),
+                          background: const Color(0xFFFFF4F7),
+                          border: const Color(0xFFF5D8E1),
                           onTap: () => Navigator.push(
                             context,
                             AppPageRoute(builder: (_) => const MoodClubPage()),
@@ -371,13 +371,13 @@ class _DashboardPageState extends State<DashboardPage> {
                       ),
                       const SizedBox(width: AppSpacing.sm),
                       Expanded(
-                        child: InfoCard(
+                        child: _PulsoTendenciaCard(
                           title: 'Tendencia',
                           value: data.tendencia,
                           icon: Icons.trending_up_rounded,
-                          variant: InfoCardVariant.sage,
-                          compact: true,
-                          pulseIcon: true,
+                          foreground: const Color(0xFF3D7358),
+                          background: const Color(0xFFF0F7F4),
+                          border: const Color(0xFFB8D9C5),
                           onTap: () => Navigator.push(
                             context,
                             AppPageRoute(
@@ -1614,28 +1614,48 @@ class _RachaLectoraCardState extends State<_RachaLectoraCard> {
     _rachaFuture = ReadingStreakService.registrarVisita();
   }
 
+  Future<void> _irASeguimiento(BuildContext context) async {
+    final usuario = AuthSessionService.instance.user?.nombre ?? '';
+    if (usuario.isEmpty) return;
+    await Navigator.push<void>(
+      context,
+      AppPageRoute(
+        builder: (_) => PerfilUsuarioPage(
+          usuario: usuario,
+          scrollToSeguimiento: true,
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return FutureBuilder<int>(
       future: _rachaFuture,
       builder: (context, snap) {
         final racha = snap.data ?? 0;
-        return _RachaLectoraTile(racha: racha);
+        return _RachaLectoraTile(
+          racha: racha,
+          onTap: () => _irASeguimiento(context),
+        );
       },
     );
   }
 }
 
 class _RachaLectoraTile extends StatelessWidget {
-  const _RachaLectoraTile({required this.racha});
+  const _RachaLectoraTile({required this.racha, this.onTap});
 
   final int racha;
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
     final (emoji, mensaje, color) = _datos(racha);
 
-    return ClubCard(
+    return GestureDetector(
+      onTap: onTap,
+      child: ClubCard(
       padding: const EdgeInsets.symmetric(
         horizontal: AppSpacing.lg,
         vertical: AppSpacing.md,
@@ -1710,8 +1730,19 @@ class _RachaLectoraTile extends StatelessWidget {
               ],
             ),
           ),
+
+          // ── Chevron de navegación ───────────────────────────────────────
+          if (onTap != null) ...[
+            const SizedBox(width: AppSpacing.xs),
+            Icon(
+              Icons.chevron_right_rounded,
+              color: AppColors.textMuted,
+              size: 20,
+            ),
+          ],
         ],
       ),
+    ),
     );
   }
 
@@ -1729,5 +1760,122 @@ class _RachaLectoraTile extends StatelessWidget {
     } else {
       return ('📖', 'Sigue leyendo cada día', AppColors.textSecondary);
     }
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Tarjeta compacta: Pulso del club / Tendencia
+// Muestra el título con claridad arriba, el valor debajo con wrap completo,
+// y un ícono decorativo a la derecha con animación de pulso opcional.
+// ─────────────────────────────────────────────────────────────────────────────
+
+class _PulsoTendenciaCard extends StatefulWidget {
+  const _PulsoTendenciaCard({
+    required this.title,
+    required this.value,
+    required this.icon,
+    required this.foreground,
+    required this.background,
+    required this.border,
+    this.onTap,
+  });
+
+  final String title;
+  final String value;
+  final IconData icon;
+  final Color foreground;
+  final Color background;
+  final Color border;
+  final VoidCallback? onTap;
+
+  @override
+  State<_PulsoTendenciaCard> createState() => _PulsoTendenciaCardState();
+}
+
+class _PulsoTendenciaCardState extends State<_PulsoTendenciaCard>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _controller;
+  late final Animation<double> _scale;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1200),
+    )..repeat(reverse: true);
+    _scale = Tween<double>(begin: 0.92, end: 1.08).animate(
+      CurvedAnimation(parent: _controller, curve: Curves.easeInOut),
+    );
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: widget.onTap,
+      child: Container(
+        padding: const EdgeInsets.all(AppSpacing.md),
+        decoration: BoxDecoration(
+          color: widget.background,
+          borderRadius: BorderRadius.circular(AppRadius.md),
+          border: Border.all(color: widget.border),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Cabecera: ícono animado + título
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                ScaleTransition(
+                  scale: _scale,
+                  child: Icon(
+                    widget.icon,
+                    color: widget.foreground,
+                    size: 16,
+                  ),
+                ),
+                const SizedBox(width: 6),
+                Expanded(
+                  child: Text(
+                    widget.title,
+                    style: AppTextStyles.caption.copyWith(
+                      color: widget.foreground,
+                      fontWeight: FontWeight.w700,
+                      fontSize: 11,
+                      letterSpacing: 0.5,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+                Icon(
+                  Icons.chevron_right_rounded,
+                  size: 14,
+                  color: widget.foreground.withValues(alpha: 0.6),
+                ),
+              ],
+            ),
+            const SizedBox(height: AppSpacing.xs),
+            // Valor — texto completo, sin truncar
+            Text(
+              widget.value,
+              style: AppTextStyles.body.copyWith(
+                color: AppColors.textPrimary,
+                fontWeight: FontWeight.w600,
+                fontSize: 13,
+                height: 1.35,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }

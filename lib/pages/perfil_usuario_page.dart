@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/scheduler.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../navigation/app_page_route.dart';
@@ -46,10 +47,14 @@ class PerfilUsuarioPage extends StatefulWidget {
     super.key,
     required this.usuario,
     this.initialTab = 'RESUMEN',
+    this.scrollToSeguimiento = false,
   });
 
   final String usuario;
   final String initialTab;
+  /// Si es true, hace scroll automático a la sección "Seguimiento lector"
+  /// una vez cargado el perfil.
+  final bool scrollToSeguimiento;
 
   @override
   State<PerfilUsuarioPage> createState() => _PerfilUsuarioPageState();
@@ -138,6 +143,8 @@ class _PerfilUsuarioPageState extends State<PerfilUsuarioPage> {
   String _menuPerfil = 'RESUMEN';
 
   final _scrollController = ScrollController();
+  /// Clave global para el título de "Seguimiento lector" — usada para scroll automático.
+  final _seguimientoKey = GlobalKey();
 
   @override
   void initState() {
@@ -481,7 +488,8 @@ class _PerfilUsuarioPageState extends State<PerfilUsuarioPage> {
         // ── Seguimiento lector (solo propio perfil) ──────────────────────────
         if (esMiPerfil) ...[
           const SizedBox(height: AppSpacing.xl),
-          const ClubSectionTitle(
+          ClubSectionTitle(
+            key: _seguimientoKey,
             title: 'Seguimiento lector',
             subtitle: 'Tu racha, actividad anual y resumen del año',
             icon: Icons.local_fire_department_outlined,
@@ -738,6 +746,21 @@ class _PerfilUsuarioPageState extends State<PerfilUsuarioPage> {
           }
 
           final perfil = snapshot.data!;
+
+          // Scroll automático a "Seguimiento lector" cuando se solicita
+          if (widget.scrollToSeguimiento) {
+            SchedulerBinding.instance.addPostFrameCallback((_) {
+              final ctx = _seguimientoKey.currentContext;
+              if (ctx != null) {
+                Scrollable.ensureVisible(
+                  ctx,
+                  duration: const Duration(milliseconds: 500),
+                  curve: Curves.easeInOut,
+                  alignment: 0.0,
+                );
+              }
+            });
+          }
 
           final tabs = [
             _TabItem('RESUMEN', Icons.person_outline_rounded, 'Resumen'),
