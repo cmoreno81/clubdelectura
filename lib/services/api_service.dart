@@ -5,7 +5,6 @@ import 'package:club_lectura_app/models/mi_voto.dart';
 import 'package:club_lectura_app/models/notificacion.dart';
 import 'package:club_lectura_app/services/libros_data_cache.dart';
 import 'package:club_lectura_app/utils/app_config.dart';
-import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import '../models/achievements/achievement.dart';
 import '../models/dashboard.dart';
@@ -1646,5 +1645,48 @@ class ApiService {
         message: decoded['mensaje']?.toString() ?? 'No se pudo actualizar.',
       );
     }
+  }
+
+  // ── Check-in lector ─────────────────────────────────────────────────────────
+
+  /// Registra el check-in del día. Devuelve {ok, date, streak, checkedToday}.
+  Future<Map<String, dynamic>> doCheckin({String? nota}) async {
+    final response = await _client.post(
+      Uri.parse('$baseUrl?action=doCheckin'),
+      headers: const {'Content-Type': 'application/json'},
+      body: jsonEncode({'nota': nota}),
+    );
+    if (response.statusCode != 200) throw ApiException.fromResponse(response);
+    return _decodeJson(response) as Map<String, dynamic>;
+  }
+
+  /// Devuelve el historial de check-ins + racha actual.
+  /// [dias] cuántos días hacia atrás recuperar (por defecto 365).
+  Future<Map<String, dynamic>> getHistorialCheckin({int dias = 365}) async {
+    final response = await _client.get(
+      Uri.parse('$baseUrl?action=historialCheckin&dias=$dias'),
+    );
+    if (response.statusCode != 200) throw ApiException.fromResponse(response);
+    return _decodeJson(response) as Map<String, dynamic>;
+  }
+
+  /// Devuelve los días con actividad lectora del año [anio] para el mapa de calor.
+  Future<Map<String, dynamic>> getMapaCalor({int? anio}) async {
+    final year = anio ?? DateTime.now().year;
+    final response = await _client.get(
+      Uri.parse('$baseUrl?action=mapaCalor&anio=$year'),
+    );
+    if (response.statusCode != 200) throw ApiException.fromResponse(response);
+    return _decodeJson(response) as Map<String, dynamic>;
+  }
+
+  /// Devuelve el resumen Wrapped del año [anio].
+  Future<Map<String, dynamic>> getWrappedAnual({int? anio}) async {
+    final year = anio ?? DateTime.now().year;
+    final response = await _client.get(
+      Uri.parse('$baseUrl?action=wrappedAnual&anio=$year'),
+    );
+    if (response.statusCode != 200) throw ApiException.fromResponse(response);
+    return _decodeJson(response) as Map<String, dynamic>;
   }
 }

@@ -10,7 +10,10 @@ import '../theme/app_colors.dart';
 import '../theme/app_radius.dart';
 import '../theme/app_spacing.dart';
 import '../theme/app_text_styles.dart';
+import '../widgets/common/checkin_button.dart';
+import '../widgets/common/mapa_calor_widget.dart';
 import 'mis_logros_page.dart';
+import 'wrapped_page.dart';
 
 /// Pantalla de logros y estadísticas personales para el modo lector solitario.
 /// Diseñada para motivar al lector con datos propios y hitos alcanzados.
@@ -45,10 +48,14 @@ class _MiEspacioPageState extends State<MiEspacioPage>
     final results = await Future.wait([
       GeneralDashboardService().load(),
       ApiService().getAchievements(),
+      ApiService().getHistorialCheckin(dias: 7),
     ]);
+    final checkinData = results[2] as Map<String, dynamic>;
     return _PageData(
       dashboard: results[0] as GeneralDashboard,
       achievements: results[1] as List<UserAchievement>,
+      checkedToday: checkinData['checkedToday'] as bool? ?? false,
+      streak: (checkinData['streak'] as num?)?.toInt() ?? 0,
     );
   }
 
@@ -78,6 +85,10 @@ class _MiEspacioPageState extends State<MiEspacioPage>
               context,
               AppPageRoute(builder: (_) => const MisLogrosPage()),
             ),
+            onVerWrapped: () => Navigator.push<void>(
+              context,
+              AppPageRoute(builder: (_) => const WrappedPage()),
+            ),
           );
         },
       ),
@@ -86,9 +97,16 @@ class _MiEspacioPageState extends State<MiEspacioPage>
 }
 
 class _PageData {
-  const _PageData({required this.dashboard, required this.achievements});
+  const _PageData({
+    required this.dashboard,
+    required this.achievements,
+    required this.checkedToday,
+    required this.streak,
+  });
   final GeneralDashboard dashboard;
   final List<UserAchievement> achievements;
+  final bool checkedToday;
+  final int streak;
 }
 
 // ────────────────────────────────────────────────────────────────────────────
@@ -100,11 +118,13 @@ class _Content extends StatelessWidget {
     required this.data,
     required this.streakPulse,
     required this.onVerTodos,
+    required this.onVerWrapped,
   });
 
   final _PageData data;
   final Animation<double> streakPulse;
   final VoidCallback onVerTodos;
+  final VoidCallback onVerWrapped;
 
   @override
   Widget build(BuildContext context) {
@@ -258,6 +278,60 @@ class _Content extends StatelessWidget {
           ],
 
           // ── CTA motivacional ──────────────────────────────────────────────
+          // ── Check-in diario ───────────────────────────────────────────────
+          SliverPadding(
+            padding: const EdgeInsets.fromLTRB(
+              AppSpacing.md,
+              AppSpacing.xl,
+              AppSpacing.md,
+              0,
+            ),
+            sliver: SliverToBoxAdapter(
+              child: _SectionLabel(icon: '📖', label: 'Check-in diario'),
+            ),
+          ),
+          SliverPadding(
+            padding: const EdgeInsets.fromLTRB(
+              AppSpacing.md,
+              AppSpacing.sm,
+              AppSpacing.md,
+              0,
+            ),
+            sliver: SliverToBoxAdapter(
+              child: CheckinButton(
+                checkedToday: data.checkedToday,
+                streak: data.streak,
+              ),
+            ),
+          ),
+
+          // ── Mapa de calor ─────────────────────────────────────────────────
+          SliverPadding(
+            padding: const EdgeInsets.fromLTRB(
+              AppSpacing.md,
+              AppSpacing.xl,
+              AppSpacing.md,
+              0,
+            ),
+            sliver: const SliverToBoxAdapter(
+              child: MapaCalorWidget(),
+            ),
+          ),
+
+          // ── Wrapped anual ─────────────────────────────────────────────────
+          SliverPadding(
+            padding: const EdgeInsets.fromLTRB(
+              AppSpacing.md,
+              AppSpacing.xl,
+              AppSpacing.md,
+              0,
+            ),
+            sliver: SliverToBoxAdapter(
+              child: _WrappedCta(onTap: onVerWrapped),
+            ),
+          ),
+
+          // ── Motivación ────────────────────────────────────────────────────
           SliverPadding(
             padding: const EdgeInsets.fromLTRB(
               AppSpacing.md,
@@ -274,6 +348,62 @@ class _Content extends StatelessWidget {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+// ────────────────────────────────────────────────────────────────────────────
+// _WrappedCta
+// ────────────────────────────────────────────────────────────────────────────
+
+class _WrappedCta extends StatelessWidget {
+  const _WrappedCta({required this.onTap});
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final year = DateTime.now().year;
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.all(AppSpacing.lg),
+        decoration: BoxDecoration(
+          gradient: const LinearGradient(
+            colors: [Color(0xFF6C3FF5), Color(0xFF1DB954)],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+          borderRadius: BorderRadius.circular(AppRadius.lg),
+        ),
+        child: Row(
+          children: [
+            const Text('✨', style: TextStyle(fontSize: 36)),
+            const SizedBox(width: AppSpacing.md),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Tu Wrapped $year',
+                    style: AppTextStyles.subtitle.copyWith(
+                      color: Colors.white,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    'Tu año en libros, de un vistazo.',
+                    style: AppTextStyles.bodySecondary.copyWith(
+                      color: Colors.white70,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const Icon(Icons.arrow_forward_ios_rounded, color: Colors.white70, size: 18),
+          ],
+        ),
       ),
     );
   }
