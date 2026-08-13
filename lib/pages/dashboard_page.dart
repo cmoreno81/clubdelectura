@@ -352,36 +352,41 @@ class _DashboardPageState extends State<DashboardPage> {
                   if (!widget.esPersonal) ...[
                   const SizedBox(height: AppSpacing.md),
 
-                  InfoCard(
-                    title: 'Pulso del club',
-                    value: data.mood,
-                    icon: Icons.psychology_alt_outlined,
-                    variant: InfoCardVariant.blush,
-                    pulseIcon: true,
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        AppPageRoute(builder: (_) => const MoodClubPage()),
-                      );
-                    },
-                  ),
-
-                  const SizedBox(height: AppSpacing.md),
-
-                  InfoCard(
-                    title: 'Tendencia',
-                    value: data.tendencia,
-                    icon: Icons.trending_up_rounded,
-                    variant: InfoCardVariant.sage,
-                    pulseIcon: true,
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        AppPageRoute(
-                          builder: (_) => const TendenciasClubPage(),
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Expanded(
+                        child: InfoCard(
+                          title: 'Pulso del club',
+                          value: data.mood,
+                          icon: Icons.psychology_alt_outlined,
+                          variant: InfoCardVariant.blush,
+                          compact: true,
+                          pulseIcon: true,
+                          onTap: () => Navigator.push(
+                            context,
+                            AppPageRoute(builder: (_) => const MoodClubPage()),
+                          ),
                         ),
-                      );
-                    },
+                      ),
+                      const SizedBox(width: AppSpacing.sm),
+                      Expanded(
+                        child: InfoCard(
+                          title: 'Tendencia',
+                          value: data.tendencia,
+                          icon: Icons.trending_up_rounded,
+                          variant: InfoCardVariant.sage,
+                          compact: true,
+                          pulseIcon: true,
+                          onTap: () => Navigator.push(
+                            context,
+                            AppPageRoute(
+                              builder: (_) => const TendenciasClubPage(),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
 
                   if (data.rankingAfinidad.isNotEmpty) ...[
@@ -505,59 +510,73 @@ class _DashboardPageState extends State<DashboardPage> {
 
           Text(
             participantes.isEmpty
-                ? 'Descubre las clasificaciones y favoritos del club'
+                ? '¿Quién lo conseguirá este mes?'
                 : 'El podio lector de este mes',
             style: AppTextStyles.caption,
             textAlign: TextAlign.center,
           ),
 
-          if (participantes.isNotEmpty) ...[
-            const SizedBox(height: AppSpacing.sm),
+          const SizedBox(height: AppSpacing.sm),
 
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: [
-                Expanded(
-                  child: participantes.length > 1
-                      ? _PodioPuesto(
-                          item: participantes[1],
-                          posicion: 2,
-                          altura: 44,
-                          color: const Color(0xFF9AA3AD),
-                          onTap: () => _abrirPerfil(participantes[1].nombre),
-                        )
-                      : const SizedBox.shrink(),
-                ),
+          // Podio — siempre muestra 3 puestos; los vacíos animan a participar
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              Expanded(
+                child: participantes.length > 1
+                    ? _PodioPuesto(
+                        item: participantes[1],
+                        posicion: 2,
+                        altura: 44,
+                        color: const Color(0xFF9AA3AD),
+                        onTap: () => _abrirPerfil(participantes[1].nombre),
+                      )
+                    : const _PodioPuestoVacio(
+                        posicion: 2,
+                        altura: 44,
+                        color: Color(0xFF9AA3AD),
+                      ),
+              ),
 
-                const SizedBox(width: AppSpacing.xs),
+              const SizedBox(width: AppSpacing.xs),
 
-                Expanded(
-                  child: _PodioPuesto(
-                    item: participantes.first,
-                    posicion: 1,
-                    altura: 60,
-                    color: AppColors.gold,
-                    destacado: true,
-                    onTap: () => _abrirPerfil(participantes.first.nombre),
-                  ),
-                ),
+              Expanded(
+                child: participantes.isNotEmpty
+                    ? _PodioPuesto(
+                        item: participantes.first,
+                        posicion: 1,
+                        altura: 60,
+                        color: AppColors.gold,
+                        destacado: true,
+                        onTap: () => _abrirPerfil(participantes.first.nombre),
+                      )
+                    : const _PodioPuestoVacio(
+                        posicion: 1,
+                        altura: 60,
+                        color: AppColors.gold,
+                        destacado: true,
+                      ),
+              ),
 
-                const SizedBox(width: AppSpacing.xs),
+              const SizedBox(width: AppSpacing.xs),
 
-                Expanded(
-                  child: participantes.length > 2
-                      ? _PodioPuesto(
-                          item: participantes[2],
-                          posicion: 3,
-                          altura: 36,
-                          color: const Color(0xFFB77A4A),
-                          onTap: () => _abrirPerfil(participantes[2].nombre),
-                        )
-                      : const SizedBox.shrink(),
-                ),
-              ],
-            ),
-          ],
+              Expanded(
+                child: participantes.length > 2
+                    ? _PodioPuesto(
+                        item: participantes[2],
+                        posicion: 3,
+                        altura: 36,
+                        color: const Color(0xFFB77A4A),
+                        onTap: () => _abrirPerfil(participantes[2].nombre),
+                      )
+                    : const _PodioPuestoVacio(
+                        posicion: 3,
+                        altura: 36,
+                        color: Color(0xFFB77A4A),
+                      ),
+              ),
+            ],
+          ),
           const SizedBox(height: AppSpacing.sm),
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
@@ -1102,6 +1121,111 @@ class _PodioPuesto extends StatelessWidget {
           ],
         ),
       ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────
+// Puesto vacío del podio (inicio de mes / sin datos)
+// ─────────────────────────────────────────────
+
+class _PodioPuestoVacio extends StatelessWidget {
+  final int posicion;
+  final double altura;
+  final Color color;
+  final bool destacado;
+
+  const _PodioPuestoVacio({
+    required this.posicion,
+    required this.altura,
+    required this.color,
+    this.destacado = false,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        // Copa o espacio arriba (igual que _PodioPuesto)
+        if (destacado)
+          Icon(Icons.emoji_events_rounded, color: color.withValues(alpha: .35), size: 18)
+        else
+          const SizedBox(height: 18),
+
+        const SizedBox(height: AppSpacing.xxs),
+
+        // Avatar placeholder — círculo punteado
+        Container(
+          width: destacado ? 52 : 46,
+          height: destacado ? 52 : 46,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            border: Border.all(
+              color: color.withValues(alpha: .45),
+              width: 2,
+              strokeAlign: BorderSide.strokeAlignInside,
+            ),
+            color: color.withValues(alpha: .07),
+          ),
+          child: Center(
+            child: Text(
+              '?',
+              style: TextStyle(
+                fontSize: destacado ? 22 : 18,
+                fontWeight: FontWeight.w900,
+                color: color.withValues(alpha: .4),
+              ),
+            ),
+          ),
+        ),
+
+        const SizedBox(height: AppSpacing.xxs),
+
+        Text(
+          'Libre',
+          maxLines: 1,
+          textAlign: TextAlign.center,
+          style: AppTextStyles.caption.copyWith(
+            color: AppColors.textMuted,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+
+        Text(
+          '–',
+          style: AppTextStyles.caption.copyWith(
+            color: AppColors.textMuted,
+            fontSize: 11,
+          ),
+        ),
+
+        const SizedBox(height: AppSpacing.xxs),
+
+        // Bloque del podio — translúcido y con patrón de puntos
+        Container(
+          height: altura,
+          width: double.infinity,
+          alignment: Alignment.center,
+          decoration: BoxDecoration(
+            color: color.withValues(alpha: .14),
+            border: Border.all(
+              color: color.withValues(alpha: .28),
+              width: 1.5,
+            ),
+            borderRadius: const BorderRadius.vertical(
+              top: Radius.circular(14),
+            ),
+          ),
+          child: Text(
+            '$posicion',
+            style: AppTextStyles.title.copyWith(
+              color: color.withValues(alpha: .4),
+              fontSize: destacado ? 25 : 21,
+            ),
+          ),
+        ),
+      ],
     );
   }
 }

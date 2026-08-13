@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../navigation/app_page_route.dart';
 import '../navigation/book_detail_navigation.dart';
@@ -520,6 +521,7 @@ class _PerfilUsuarioPageState extends State<PerfilUsuarioPage> {
                 child: ClubCard(
                   elevated: false,
                   child: Wrap(
+                    alignment: WrapAlignment.center,
                     spacing: AppSpacing.xs,
                     runSpacing: AppSpacing.xs,
                     children: perfil.generosFavoritos
@@ -600,6 +602,39 @@ class _PerfilUsuarioPageState extends State<PerfilUsuarioPage> {
                 );
                 if (imported == true && mounted) {
                   await _recargar();
+                }
+              },
+            ),
+          ),
+        ),
+        const SizedBox(height: AppSpacing.sm),
+        ClubCard(
+          elevated: false,
+          padding: EdgeInsets.zero,
+          child: Material(
+            color: Colors.transparent,
+            child: ListTile(
+              leading: const Icon(Icons.feedback_outlined),
+              title: const Text('Sugerencias y errores'),
+              subtitle: const Text('Cuéntanos qué mejorar o qué no funciona'),
+              trailing: const Icon(Icons.chevron_right_rounded),
+              onTap: () async {
+                final uri = Uri(
+                  scheme: 'mailto',
+                  path: 'c.moreno.benavente@gmail.com',
+                  queryParameters: {
+                    'subject': 'ClubReads · Sugerencia / Error',
+                    'body': 'Hola,\n\nQuiero reportar lo siguiente:\n\n\n'
+                        '---\n(Adjunta capturas si puedes, nos ayuda mucho 🙏)',
+                  },
+                );
+                final abierto = await launchUrl(uri);
+                if (!abierto && mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('No se ha podido abrir el correo.'),
+                    ),
+                  );
                 }
               },
             ),
