@@ -98,7 +98,17 @@ class _ElegirModoPageState extends State<ElegirModoPage>
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              const SizedBox(height: AppSpacing.xl),
+              // Botón volver
+              Align(
+                alignment: Alignment.centerLeft,
+                child: IconButton(
+                  icon: const Icon(Icons.arrow_back_ios_new_rounded),
+                  color: AppColors.textSecondary,
+                  tooltip: 'Volver',
+                  onPressed: () => Navigator.of(context).pop(),
+                ),
+              ),
+              const SizedBox(height: AppSpacing.sm),
               FadeTransition(
                 opacity: _heroFade,
                 child: SlideTransition(

@@ -61,7 +61,7 @@ class ClubService {
   /// Crea (o reactiva) el espacio lector personal del usuario.
   /// Es idempotente: si ya existe, simplemente lo selecciona como activo.
   Future<Map<String, dynamic>> crearEspacioPersonal() async {
-    return _request('crearEspacioPersonal');
+    return _request('crearEspacioPersonal', body: {});
   }
 
   Future<void> leaveClub(String clubId) async {
