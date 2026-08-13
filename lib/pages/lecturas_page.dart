@@ -1,9 +1,12 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 
 import '../navigation/app_page_route.dart';
 import '../navigation/book_detail_navigation.dart';
 
 import '../models/lectura_activa.dart';
+import '../models/notificacion.dart';
 import '../services/api_service.dart';
 import '../services/reading_last_seen_service.dart';
 import '../theme/app_colors.dart';
@@ -13,8 +16,10 @@ import '../theme/app_text_styles.dart';
 import '../widgets/common/club_book_cover.dart';
 import '../widgets/common/club_card.dart';
 import '../widgets/common/club_chip.dart';
+import '../widgets/common/notificaciones_sheet.dart';
 import '../widgets/lectura/fecha_relativa.dart';
 import '../widgets/ui/club_metric.dart';
+import 'capitulo_page.dart';
 import 'configurar_lectura_page.dart';
 import 'lectura_page.dart';
 import 'package:club_lectura_app/widgets/common/club_shimmer.dart';
@@ -34,10 +39,88 @@ class _LecturasPageState extends State<LecturasPage> {
   /// Última vez que el usuario abrió cada lectura, indexado por título.
   Map<String, DateTime> _lastSeen = {};
 
+  /// Notificaciones no leídas de tipo Lecturas (para el badge del bell).
+  int _noLeidasLecturas = 0;
+
   @override
   void initState() {
     super.initState();
     _recargar();
+    _cargarNoLeidas();
+  }
+
+  Future<void> _cargarNoLeidas() async {
+    try {
+      final data = await ApiService().getNotificaciones();
+      if (!mounted) return;
+      setState(() => _noLeidasLecturas = data.noLeidasLecturas);
+    } catch (_) {}
+  }
+
+  /// Abre el sheet de notificaciones y navega al destino correcto.
+  Future<void> _abrirNotificaciones() async {
+    final notif = await mostrarNotificacionesSheet(
+      context,
+      titulo: 'Novedades en Lecturas',
+      filtro:
+          (n) =>
+              n.tipo == 'LECTURA_NUEVA' || n.tipo == 'COMENTARIO_LECTURA',
+    );
+
+    // Refrescar badge tras cerrar (haya o no pulsado)
+    unawaited(_cargarNoLeidas());
+
+    if (notif == null || !mounted) return;
+    await _navegarDesdeNotificacion(notif);
+  }
+
+  Future<void> _navegarDesdeNotificacion(Notificacion n) async {
+    final extra = n.extra ?? const <String, dynamic>{};
+
+    // Extraer título del libro
+    String libro = '';
+    for (final key in const ['bookTitle', 'titulo', 'libro']) {
+      final v = extra[key]?.toString().trim() ?? '';
+      if (v.isNotEmpty) { libro = v; break; }
+    }
+    // Fallback: intentar leerlo del mensaje entre comillas
+    if (libro.isEmpty) {
+      final match = RegExp(r'["«"]([^""»"]+)["»"]').firstMatch(n.mensaje);
+      libro = match?.group(1)?.trim() ?? '';
+    }
+    if (libro.isEmpty) return;
+
+    // Extraer capítulo si existe (COMENTARIO_LECTURA lleva el capítulo en extra)
+    String capitulo = '';
+    for (final key in const ['capitulo', 'capituloId', 'capituloNombre', 'chapter']) {
+      final v = extra[key]?.toString().trim() ?? '';
+      if (v.isNotEmpty) { capitulo = v; break; }
+    }
+
+    if (!mounted) return;
+
+    if (capitulo.isNotEmpty) {
+      // Navegar directamente al capítulo con el comentario
+      await Navigator.push(
+        context,
+        AppPageRoute(
+          builder:
+              (_) => CapituloPage(
+                libro: libro,
+                capitulo: capitulo,
+                bookId: n.bookId ?? '',
+              ),
+        ),
+      );
+    } else {
+      // Navegar a la página de la lectura (el usuario elegirá capítulo)
+      await Navigator.push(
+        context,
+        AppPageRoute(builder: (_) => LecturaPage(libro: libro)),
+      );
+    }
+
+    if (mounted) setState(_recargar);
   }
 
   void _recargar() {
@@ -124,6 +207,20 @@ class _LecturasPageState extends State<LecturasPage> {
                 icon: const Icon(Icons.arrow_back_ios_new_rounded),
               ),
         title: const Text('Lecturas'),
+        actions: [
+          IconButton(
+            tooltip: 'Notificaciones',
+            onPressed: _abrirNotificaciones,
+            icon: Badge(
+              isLabelVisible: _noLeidasLecturas > 0,
+              label: Text(
+                _noLeidasLecturas < 10 ? '$_noLeidasLecturas' : '9+',
+              ),
+              child: const Icon(Icons.notifications_none_rounded),
+            ),
+          ),
+          const SizedBox(width: AppSpacing.xs),
+        ],
       ),
       body: FutureBuilder<List<LecturaActiva>>(
         future: future,

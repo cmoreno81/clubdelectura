@@ -1,8 +1,12 @@
+import 'dart:async';
+
 import 'package:club_lectura_app/widgets/common/editar_progreso_dialog.dart';
 import 'package:flutter/material.dart';
 
+import '../models/notificacion.dart';
 import '../navigation/app_page_route.dart';
 import '../navigation/book_detail_navigation.dart';
+import '../widgets/common/notificaciones_sheet.dart';
 import 'afinidad_detalle_page.dart';
 import 'club_challenge_page.dart';
 import 'club_logros_page.dart';
@@ -72,6 +76,8 @@ class _DashboardPageState extends State<DashboardPage> {
   String avatarUrlActual = '';
   bool _headerLoading = true;
 
+  int _noLeidasClub = 0;
+
   @override
   void initState() {
     super.initState();
@@ -80,6 +86,63 @@ class _DashboardPageState extends State<DashboardPage> {
     avatarUrlActual = sessionUser?.avatarUrl.trim() ?? '';
     widget.controller?._refresh = _recargar;
     dashboardFuture = _cargarDashboard();
+    _cargarNoLeidas();
+  }
+
+  Future<void> _cargarNoLeidas() async {
+    try {
+      final data = await ApiService().getNotificaciones();
+      if (!mounted) return;
+      setState(() => _noLeidasClub = data.noLeidasClub);
+    } catch (_) {}
+  }
+
+  Future<void> _abrirNotificaciones() async {
+    final notif = await mostrarNotificacionesSheet(
+      context,
+      titulo: 'Actividad del club',
+      filtro:
+          (n) =>
+              n.tipo == 'LIBRO_TERMINADO' ||
+              n.tipo == 'LIBRO_EMPEZADO' ||
+              n.tipo == 'LIBRO_NUEVO_BIBLIOTECA' ||
+              n.tipo == 'NUEVA_MIEMBRO',
+    );
+
+    unawaited(_cargarNoLeidas());
+
+    if (notif == null || !mounted) return;
+    await _navegarDesdeNotificacion(notif);
+  }
+
+  Future<void> _navegarDesdeNotificacion(Notificacion n) async {
+    final extra = n.extra ?? const <String, dynamic>{};
+    String bookTitle = '';
+    for (final key in const ['bookTitle', 'titulo', 'libro']) {
+      final v = extra[key]?.toString().trim() ?? '';
+      if (v.isNotEmpty) { bookTitle = v; break; }
+    }
+    if (bookTitle.isEmpty) {
+      final match = RegExp(r'["«"]([^""»"]+)["»"]').firstMatch(n.mensaje);
+      bookTitle = match?.group(1)?.trim() ?? '';
+    }
+
+    if (!mounted) return;
+
+    switch (n.tipo) {
+      case 'LIBRO_TERMINADO':
+      case 'LIBRO_EMPEZADO':
+      case 'LIBRO_NUEVO_BIBLIOTECA':
+        if (bookTitle.isNotEmpty) {
+          await openBookDetail(
+            context,
+            title: bookTitle,
+            bookId: n.bookId?.trim() ?? '',
+          );
+        }
+      default:
+        break;
+    }
   }
 
   @override
@@ -197,6 +260,17 @@ class _DashboardPageState extends State<DashboardPage> {
           ],
         ),
         actions: [
+          IconButton(
+            tooltip: 'Actividad del club',
+            onPressed: _abrirNotificaciones,
+            icon: Badge(
+              isLabelVisible: _noLeidasClub > 0,
+              label: Text(
+                _noLeidasClub < 10 ? '$_noLeidasClub' : '9+',
+              ),
+              child: const Icon(Icons.notifications_none_rounded),
+            ),
+          ),
           Padding(
             padding: const EdgeInsets.only(right: AppSpacing.md),
             child: ClubAvatar(
