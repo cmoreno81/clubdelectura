@@ -352,8 +352,9 @@ class _DashboardPageState extends State<DashboardPage> {
                   if (!widget.esPersonal) ...[
                   const SizedBox(height: AppSpacing.md),
 
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                  IntrinsicHeight(
+                   child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
                       Expanded(
                         child: _PulsoTendenciaCard(
@@ -387,6 +388,7 @@ class _DashboardPageState extends State<DashboardPage> {
                         ),
                       ),
                     ],
+                  ),
                   ),
 
                   if (data.rankingAfinidad.isNotEmpty) ...[

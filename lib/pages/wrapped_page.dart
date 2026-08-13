@@ -1,7 +1,12 @@
+import 'dart:io';
 import 'dart:math' as math;
+import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:share_plus/share_plus.dart';
 
 import '../services/api_service.dart';
 import '../theme/app_radius.dart';
@@ -65,12 +70,38 @@ class _WrappedContent extends StatefulWidget {
 
 class _WrappedContentState extends State<_WrappedContent> {
   final PageController _pc = PageController();
+  final _repaintKey = GlobalKey();
   int _page = 0;
+  bool _sharing = false;
 
   @override
   void dispose() {
     _pc.dispose();
     super.dispose();
+  }
+
+  Future<void> _compartir() async {
+    if (_sharing) return;
+    setState(() => _sharing = true);
+    try {
+      final boundary = _repaintKey.currentContext?.findRenderObject() as RenderRepaintBoundary?;
+      if (boundary == null) return;
+      final image = await boundary.toImage(pixelRatio: 3.0);
+      final byteData = await image.toByteData(format: ui.ImageByteFormat.png);
+      if (byteData == null) return;
+      final bytes = byteData.buffer.asUint8List();
+      final tempDir = await getTemporaryDirectory();
+      final file = File('${tempDir.path}/wrapped_${widget.year}.png');
+      await file.writeAsBytes(bytes);
+      await SharePlus.instance.share(
+        ShareParams(
+          files: [XFile(file.path)],
+          text: 'Mi Wrapped ${widget.year} en ClubReads 📚✨',
+        ),
+      );
+    } finally {
+      if (mounted) setState(() => _sharing = false);
+    }
   }
 
   void _next() {
@@ -144,7 +175,11 @@ class _WrappedContentState extends State<_WrappedContent> {
     final pages = _pages;
     return GestureDetector(
       onTapDown: (details) {
-        final half = MediaQuery.of(context).size.width / 2;
+        // Ignorar taps en el tercio inferior derecho (zona del botón compartir)
+        final size = MediaQuery.of(context).size;
+        if (details.localPosition.dx > size.width * 0.7 &&
+            details.localPosition.dy > size.height * 0.8) { return; }
+        final half = size.width / 2;
         if (details.localPosition.dx > half) {
           _next();
         } else {
@@ -153,13 +188,18 @@ class _WrappedContentState extends State<_WrappedContent> {
       },
       child: Stack(
         children: [
-          PageView.builder(
-            controller: _pc,
-            itemCount: pages.length,
-            onPageChanged: (i) => setState(() => _page = i),
-            itemBuilder: (_, i) => pages[i],
+          // ── Slides con RepaintBoundary para captura ──────────────────────
+          RepaintBoundary(
+            key: _repaintKey,
+            child: PageView.builder(
+              controller: _pc,
+              itemCount: pages.length,
+              onPageChanged: (i) => setState(() => _page = i),
+              itemBuilder: (_, i) => pages[i],
+            ),
           ),
-          // Indicador de progreso arriba
+
+          // ── Indicador de progreso arriba ─────────────────────────────────
           SafeArea(
             child: Padding(
               padding: const EdgeInsets.fromLTRB(AppSpacing.md, AppSpacing.sm, AppSpacing.md, 0),
@@ -179,7 +219,8 @@ class _WrappedContentState extends State<_WrappedContent> {
               ),
             ),
           ),
-          // Botón cerrar
+
+          // ── Botón cerrar ─────────────────────────────────────────────────
           SafeArea(
             child: Align(
               alignment: Alignment.topRight,
@@ -188,6 +229,45 @@ class _WrappedContentState extends State<_WrappedContent> {
                 child: IconButton(
                   icon: const Icon(Icons.close_rounded, color: Colors.white70),
                   onPressed: () => Navigator.pop(context),
+                ),
+              ),
+            ),
+          ),
+
+          // ── Botón compartir (esquina inferior derecha) ───────────────────
+          SafeArea(
+            child: Align(
+              alignment: Alignment.bottomRight,
+              child: Padding(
+                padding: const EdgeInsets.all(AppSpacing.lg),
+                child: GestureDetector(
+                  onTap: _compartir,
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 200),
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: _sharing ? 0.15 : 0.2),
+                      borderRadius: BorderRadius.circular(AppRadius.pill),
+                      border: Border.all(color: Colors.white30),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        if (_sharing)
+                          const SizedBox(
+                            width: 14, height: 14,
+                            child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                          )
+                        else
+                          const Icon(Icons.ios_share_rounded, color: Colors.white, size: 16),
+                        const SizedBox(width: 6),
+                        const Text(
+                          'Compartir',
+                          style: TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w600),
+                        ),
+                      ],
+                    ),
+                  ),
                 ),
               ),
             ),

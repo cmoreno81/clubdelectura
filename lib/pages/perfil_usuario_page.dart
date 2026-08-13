@@ -271,6 +271,13 @@ class _PerfilUsuarioPageState extends State<PerfilUsuarioPage> {
     });
   }
 
+  /// Wrapped disponible: noviembre (11), diciembre (12) y enero (1).
+  /// En enero se muestra el Wrapped del año anterior.
+  bool _isWrappedDisponible() {
+    final month = DateTime.now().month;
+    return month == 11 || month == 12 || month == 1;
+  }
+
   bool get esMiPerfil {
     return usuarioActual != null &&
         usuarioActual!.trim().isNotEmpty &&
@@ -503,10 +510,13 @@ class _PerfilUsuarioPageState extends State<PerfilUsuarioPage> {
             child: MapaCalorWidget(),
           ),
           const SizedBox(height: AppSpacing.sm),
-          _WrappedPerfilCta(onTap: () => Navigator.push<void>(
-            context,
-            AppPageRoute(builder: (_) => const WrappedPage()),
-          )),
+          _WrappedPerfilCta(
+            disponible: _isWrappedDisponible(),
+            onTap: () => Navigator.push<void>(
+              context,
+              AppPageRoute(builder: (_) => const WrappedPage()),
+            ),
+          ),
         ],
 
         // ── Géneros favoritos — AL FINAL, tarjeta a sangre completa ──────────
@@ -1774,50 +1784,109 @@ class _CheckinSectionState extends State<_CheckinSection> {
 // ── Wrapped CTA en perfil ─────────────────────────────────────────────────────
 
 class _WrappedPerfilCta extends StatelessWidget {
-  const _WrappedPerfilCta({required this.onTap});
+  const _WrappedPerfilCta({required this.onTap, required this.disponible});
   final VoidCallback onTap;
+  final bool disponible;
+
+  /// Días hasta el 1 de noviembre
+  int _diasHastaNoviembre() {
+    final now = DateTime.now();
+    final noviembre = DateTime(now.month >= 11 ? now.year + 1 : now.year, 11, 1);
+    return noviembre.difference(DateTime(now.year, now.month, now.day)).inDays;
+  }
 
   @override
   Widget build(BuildContext context) {
-    final year = DateTime.now().year;
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.all(AppSpacing.md),
-        decoration: BoxDecoration(
-          gradient: const LinearGradient(
-            colors: [Color(0xFF6C3FF5), Color(0xFF1DB954)],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ),
-          borderRadius: BorderRadius.circular(AppRadius.lg),
-        ),
-        child: Row(
-          children: [
-            const Text('✨', style: TextStyle(fontSize: 28)),
-            const SizedBox(width: AppSpacing.md),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Tu Wrapped $year',
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.w800,
-                      fontSize: 15,
-                    ),
-                  ),
-                  const Text(
-                    'Tu año en libros, de un vistazo.',
-                    style: TextStyle(color: Colors.white70, fontSize: 13),
-                  ),
-                ],
-              ),
+    final now = DateTime.now();
+    // En enero mostramos el año anterior
+    final wrappedYear = now.month == 1 ? now.year - 1 : now.year;
+
+    if (disponible) {
+      // ── Estado activo: Wrapped disponible ──────────────────────────────
+      return GestureDetector(
+        onTap: onTap,
+        child: Container(
+          padding: const EdgeInsets.all(AppSpacing.md),
+          decoration: BoxDecoration(
+            gradient: const LinearGradient(
+              colors: [Color(0xFF6C3FF5), Color(0xFF1DB954)],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
             ),
-            const Icon(Icons.arrow_forward_ios_rounded, color: Colors.white70, size: 16),
-          ],
+            borderRadius: BorderRadius.circular(AppRadius.lg),
+          ),
+          child: Row(
+            children: [
+              const Text('✨', style: TextStyle(fontSize: 28)),
+              const SizedBox(width: AppSpacing.md),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Tu Wrapped $wrappedYear',
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w800,
+                        fontSize: 15,
+                      ),
+                    ),
+                    const Text(
+                      'Tu año en libros, de un vistazo.',
+                      style: TextStyle(color: Colors.white70, fontSize: 13),
+                    ),
+                  ],
+                ),
+              ),
+              const Icon(Icons.arrow_forward_ios_rounded, color: Colors.white70, size: 16),
+            ],
+          ),
         ),
+      );
+    }
+
+    // ── Estado inactivo: Wrapped no disponible todavía ──────────────────
+    final dias = _diasHastaNoviembre();
+    return Container(
+      padding: const EdgeInsets.all(AppSpacing.md),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(AppRadius.lg),
+        border: Border.all(color: AppColors.border),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 44,
+            height: 44,
+            decoration: BoxDecoration(
+              color: const Color(0xFF6C3FF5).withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: const Center(
+              child: Text('🎁', style: TextStyle(fontSize: 22)),
+            ),
+          ),
+          const SizedBox(width: AppSpacing.md),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Wrapped $wrappedYear',
+                  style: AppTextStyles.body.copyWith(fontWeight: FontWeight.w700),
+                ),
+                Text(
+                  dias > 0
+                      ? 'Disponible en $dias ${dias == 1 ? 'día' : 'días'} · llega en noviembre'
+                      : 'Disponible en noviembre',
+                  style: AppTextStyles.caption.copyWith(color: AppColors.textMuted),
+                ),
+              ],
+            ),
+          ),
+          const Icon(Icons.lock_outline_rounded, color: AppColors.textMuted, size: 18),
+        ],
       ),
     );
   }
