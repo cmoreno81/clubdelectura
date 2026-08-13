@@ -477,36 +477,6 @@ class _PerfilUsuarioPageState extends State<PerfilUsuarioPage> {
         // ── Su historia lectora DESPUÉS ──
         _resumenLectura(perfil),
 
-        // ── Géneros favoritos ──
-        if (perfil.generosFavoritos.isNotEmpty) ...[
-          const SizedBox(height: AppSpacing.xl),
-          const ClubSectionTitle(
-            title: 'Géneros favoritos',
-            subtitle: 'Los universos que más visitas',
-            icon: Icons.favorite_border_rounded,
-            padding: EdgeInsets.zero,
-          ),
-          const SizedBox(height: AppSpacing.sm),
-          ClubCard(
-            elevated: false,
-            child: Wrap(
-              spacing: AppSpacing.xs,
-              runSpacing: AppSpacing.xs,
-              children: perfil.generosFavoritos
-                  .map(
-                    (genero) => ClubChip(
-                      label:
-                          '${iconoGenero(genero.genero)} '
-                          '${genero.genero} · '
-                          '${genero.total}',
-                      variant: ClubChipVariant.primary,
-                    ),
-                  )
-                  .toList(),
-            ),
-          ),
-        ],
-
         // ── Seguimiento lector (solo propio perfil) ──────────────────────────
         if (esMiPerfil) ...[
           const SizedBox(height: AppSpacing.xl),
@@ -528,6 +498,41 @@ class _PerfilUsuarioPageState extends State<PerfilUsuarioPage> {
             context,
             AppPageRoute(builder: (_) => const WrappedPage()),
           )),
+        ],
+
+        // ── Géneros favoritos — AL FINAL, tarjeta a sangre completa ──────────
+        if (perfil.generosFavoritos.isNotEmpty) ...[
+          const SizedBox(height: AppSpacing.xl),
+          const ClubSectionTitle(
+            title: 'Géneros favoritos',
+            subtitle: 'Los universos que más visitas',
+            icon: Icons.favorite_border_rounded,
+            padding: EdgeInsets.zero,
+          ),
+          const SizedBox(height: AppSpacing.sm),
+          // Margen negativo para que la tarjeta llegue a los bordes de pantalla
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: -AppSpacing.md),
+            child: ClubCard(
+              elevated: false,
+              child: Wrap(
+                spacing: AppSpacing.xs,
+                runSpacing: AppSpacing.xs,
+                children: perfil.generosFavoritos
+                    .map(
+                      (genero) => ClubChip(
+                        label:
+                            '${iconoGenero(genero.genero)} '
+                            '${genero.genero} · '
+                            '${genero.total}',
+                        variant: ClubChipVariant.primary,
+                      ),
+                    )
+                    .toList(),
+              ),
+            ),
+          ),
+          const SizedBox(height: AppSpacing.md),
         ],
       ],
     );

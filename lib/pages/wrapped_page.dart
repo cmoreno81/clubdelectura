@@ -104,9 +104,20 @@ class _WrappedContentState extends State<_WrappedContent> {
     final byMonth = (d['byMonth'] as List<dynamic>?)
         ?.map((e) => (e as num).toInt())
         .toList() ?? List.filled(12, 0);
+    final rawBooks = (d['books'] as List<dynamic>?) ?? [];
+    final allBooks = rawBooks
+        .cast<Map<String, dynamic>>()
+        .map((b) => _WrappedBook(
+              title: b['title'] as String? ?? '',
+              coverUrl: b['coverUrl'] as String? ?? '',
+            ))
+        .toList(growable: false);
 
     return [
       _SlideIntro(year: widget.year),
+      // Estantería visual — justo después de la intro si hay libros con portada
+      if (allBooks.any((b) => b.coverUrl.isNotEmpty))
+        _SlideEstanteria(books: allBooks, year: widget.year),
       _SlideLibros(total: totalBooks, paginas: totalPages),
       _SlideDias(dias: totalActiveDays, streak: streak),
       if (topGenre != null) _SlideGenero(genero: topGenre['name'] as String? ?? ''),
@@ -114,8 +125,15 @@ class _WrappedContentState extends State<_WrappedContent> {
       if (bestMonth != null) _SlideMes(mes: bestMonth['name'] as String? ?? '', libros: bestMonth['count'] as int? ?? 0),
       _SlideGrafico(byMonth: byMonth),
       if (avgRating != null) _SlideRating(rating: avgRating.toDouble()),
-      if (longestBook != null) _SlideLongest(titulo: longestBook['title'] as String? ?? '', paginas: longestBook['pages'] as int?),
-      if (firstBook != null) _SlidePrimero(titulo: firstBook['title'] as String? ?? ''),
+      if (longestBook != null) _SlideLongest(
+        titulo: longestBook['title'] as String? ?? '',
+        paginas: longestBook['pages'] as int?,
+        coverUrl: longestBook['coverUrl'] as String?,
+      ),
+      if (firstBook != null) _SlidePrimero(
+        titulo: firstBook['title'] as String? ?? '',
+        coverUrl: firstBook['coverUrl'] as String?,
+      ),
       _SlideComparativa(totalBooks: totalBooks, prevYear: prevYearBooks, diff: diffVsPrevYear, year: widget.year),
       _SlideFinal(totalBooks: totalBooks, year: widget.year),
     ];
@@ -178,6 +196,79 @@ class _WrappedContentState extends State<_WrappedContent> {
       ),
     );
   }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Widget portada de libro
+// ─────────────────────────────────────────────────────────────────────────────
+
+class _BookCover extends StatelessWidget {
+  const _BookCover({
+    required this.coverUrl,
+    this.height = 180,
+  });
+
+  final String coverUrl;
+  final double height;
+
+  @override
+  Widget build(BuildContext context) {
+    final ratio = 2 / 3; // proporción estándar libro
+    final width = height * ratio;
+
+    return Container(
+      width: width,
+      height: height,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(8),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: .45),
+            blurRadius: 20,
+            offset: const Offset(4, 8),
+          ),
+        ],
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(8),
+        child: coverUrl.isNotEmpty
+            ? Image.network(
+                coverUrl,
+                fit: BoxFit.cover,
+                errorBuilder: (_, __, ___) => _PlaceholderCover(width: width, height: height),
+              )
+            : _PlaceholderCover(width: width, height: height),
+      ),
+    );
+  }
+}
+
+class _PlaceholderCover extends StatelessWidget {
+  const _PlaceholderCover({required this.width, required this.height});
+  final double width;
+  final double height;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: width,
+      height: height,
+      color: Colors.white12,
+      child: const Center(
+        child: Text('📖', style: TextStyle(fontSize: 36)),
+      ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Modelo interno
+// ─────────────────────────────────────────────────────────────────────────────
+
+class _WrappedBook {
+  const _WrappedBook({required this.title, required this.coverUrl});
+  final String title;
+  final String coverUrl;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -277,6 +368,105 @@ class _Accent extends StatelessWidget {
 }
 
 // ── Slides concretos ──────────────────────────────────────────────────────────
+
+/// Slide de estantería — muestra todas las portadas del año en una cuadrícula.
+class _SlideEstanteria extends StatelessWidget {
+  const _SlideEstanteria({required this.books, required this.year});
+  final List<_WrappedBook> books;
+  final int year;
+
+  @override
+  Widget build(BuildContext context) {
+    // Filtramos los que tienen portada; el resto se muestran como placeholder
+    final booksConPortada = books.where((b) => b.coverUrl.isNotEmpty).toList();
+    final total = books.length;
+
+    return Container(
+      width: double.infinity,
+      height: double.infinity,
+      decoration: const BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [Color(0xFF1A0A2E), Color(0xFF0D0D1A)],
+        ),
+      ),
+      child: SafeArea(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Encabezado
+            Padding(
+              padding: const EdgeInsets.fromLTRB(28, 48, 28, 0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text('📚', style: TextStyle(fontSize: 44)),
+                  const SizedBox(height: AppSpacing.sm),
+                  Text(
+                    'Tu estantería\nde $year',
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 34,
+                      fontWeight: FontWeight.w900,
+                      height: 1.1,
+                      letterSpacing: -0.5,
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    '$total ${total == 1 ? 'libro terminado' : 'libros terminados'}',
+                    style: const TextStyle(
+                      color: Colors.white54,
+                      fontSize: 15,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: AppSpacing.lg),
+            // Cuadrícula de portadas — desplazable si hay muchos libros
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 24),
+                child: GridView.builder(
+                  physics: const BouncingScrollPhysics(),
+                  gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
+                    maxCrossAxisExtent: 90,
+                    crossAxisSpacing: 10,
+                    mainAxisSpacing: 10,
+                    childAspectRatio: 2 / 3,
+                  ),
+                  itemCount: booksConPortada.length,
+                  itemBuilder: (_, i) {
+                    final book = booksConPortada[i];
+                    return Tooltip(
+                      message: book.title,
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(6),
+                        child: Image.network(
+                          book.coverUrl,
+                          fit: BoxFit.cover,
+                          errorBuilder: (_, __, ___) => Container(
+                            color: Colors.white12,
+                            child: const Center(
+                              child: Text('📖', style: TextStyle(fontSize: 20)),
+                            ),
+                          ),
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              ),
+            ),
+            const SizedBox(height: AppSpacing.md),
+          ],
+        ),
+      ),
+    );
+  }
+}
 
 class _SlideIntro extends StatelessWidget {
   const _SlideIntro({required this.year});
@@ -504,24 +694,41 @@ class _SlideRating extends StatelessWidget {
 }
 
 class _SlideLongest extends StatelessWidget {
-  const _SlideLongest({required this.titulo, this.paginas});
+  const _SlideLongest({required this.titulo, this.paginas, this.coverUrl});
   final String titulo;
   final int? paginas;
+  final String? coverUrl;
 
   @override
   Widget build(BuildContext context) {
+    final hasCover = coverUrl != null && coverUrl!.isNotEmpty;
     return _BaseSlide(
       color: const Color(0xFF4CAF50),
-      emoji: '🏆',
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.end,
         children: [
-          const _Headline('El libro más\nlargo que\nterminaste'),
-          const SizedBox(height: AppSpacing.md),
-          _Accent(titulo, size: 26),
-          if (paginas != null) ...[
-            const SizedBox(height: AppSpacing.sm),
-            _Sub('$paginas páginas. ¡Toda una hazaña!'),
+          // Texto a la izquierda
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Text('🏆', style: TextStyle(fontSize: 52)),
+                const SizedBox(height: AppSpacing.lg),
+                const _Headline('El libro más\nlargo que\nterminaste'),
+                const SizedBox(height: AppSpacing.md),
+                _Accent(titulo, size: hasCover ? 20 : 26),
+                if (paginas != null) ...[
+                  const SizedBox(height: AppSpacing.sm),
+                  _Sub('$paginas páginas.\n¡Toda una hazaña!'),
+                ],
+              ],
+            ),
+          ),
+          // Portada a la derecha
+          if (hasCover) ...[
+            const SizedBox(width: AppSpacing.lg),
+            _BookCover(coverUrl: coverUrl!, height: 160),
           ],
         ],
       ),
@@ -530,20 +737,43 @@ class _SlideLongest extends StatelessWidget {
 }
 
 class _SlidePrimero extends StatelessWidget {
-  const _SlidePrimero({required this.titulo});
+  const _SlidePrimero({required this.titulo, this.coverUrl});
   final String titulo;
+  final String? coverUrl;
 
   @override
   Widget build(BuildContext context) {
+    final hasCover = coverUrl != null && coverUrl!.isNotEmpty;
     return _BaseSlide(
       color: const Color(0xFF9C27B0),
-      emoji: '🌱',
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisAlignment: MainAxisAlignment.center,
         children: [
+          const Text('🌱', style: TextStyle(fontSize: 52)),
+          const SizedBox(height: AppSpacing.lg),
           const _Headline('Empezaste\nel año con'),
-          const SizedBox(height: AppSpacing.md),
-          _Accent(titulo, size: 28),
+          const SizedBox(height: AppSpacing.xl),
+          if (hasCover)
+            // Portada horizontal centrada en la parte inferior
+            Center(
+              child: _BookCover(coverUrl: coverUrl!, height: 200),
+            )
+          else
+            _Accent(titulo, size: 28),
+          if (hasCover) ...[
+            const SizedBox(height: AppSpacing.md),
+            Text(
+              titulo,
+              style: const TextStyle(
+                color: Colors.white70,
+                fontSize: 16,
+                fontStyle: FontStyle.italic,
+              ),
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ],
         ],
       ),
     );
