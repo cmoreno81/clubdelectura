@@ -510,25 +510,31 @@ class _PerfilUsuarioPageState extends State<PerfilUsuarioPage> {
             padding: EdgeInsets.zero,
           ),
           const SizedBox(height: AppSpacing.sm),
-          // Margen negativo para que la tarjeta llegue a los bordes de pantalla
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: -AppSpacing.md),
-            child: ClubCard(
-              elevated: false,
-              child: Wrap(
-                spacing: AppSpacing.xs,
-                runSpacing: AppSpacing.xs,
-                children: perfil.generosFavoritos
-                    .map(
-                      (genero) => ClubChip(
-                        label:
-                            '${iconoGenero(genero.genero)} '
-                            '${genero.genero} · '
-                            '${genero.total}',
-                        variant: ClubChipVariant.primary,
-                      ),
-                    )
-                    .toList(),
+          // LayoutBuilder + Transform para que la tarjeta llegue a los bordes
+          // sin usar padding negativo (que lanza assertion en Flutter).
+          LayoutBuilder(
+            builder: (_, constraints) => Transform.translate(
+              offset: const Offset(-AppSpacing.md, 0),
+              child: SizedBox(
+                width: constraints.maxWidth + 2 * AppSpacing.md,
+                child: ClubCard(
+                  elevated: false,
+                  child: Wrap(
+                    spacing: AppSpacing.xs,
+                    runSpacing: AppSpacing.xs,
+                    children: perfil.generosFavoritos
+                        .map(
+                          (genero) => ClubChip(
+                            label:
+                                '${iconoGenero(genero.genero)} '
+                                '${genero.genero} · '
+                                '${genero.total}',
+                            variant: ClubChipVariant.primary,
+                          ),
+                        )
+                        .toList(),
+                  ),
+                ),
               ),
             ),
           ),
