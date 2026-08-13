@@ -45,6 +45,7 @@ class DashboardPage extends StatefulWidget {
   const DashboardPage({
     super.key,
     required this.clubName,
+    this.esPersonal = false,
     this.controller,
     this.loadData,
     this.initialUser,
@@ -52,6 +53,7 @@ class DashboardPage extends StatefulWidget {
   });
 
   final String clubName;
+  final bool esPersonal;
   final DashboardPageController? controller;
   final Future<DashboardViewData> Function()? loadData;
   final AuthUser? initialUser;
@@ -260,6 +262,7 @@ class _DashboardPageState extends State<DashboardPage> {
           ],
         ),
         actions: [
+          if (!widget.esPersonal)
           IconButton(
             tooltip: 'Actividad del club',
             onPressed: _abrirNotificaciones,
@@ -315,37 +318,38 @@ class _DashboardPageState extends State<DashboardPage> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  _podioLectoras(
-                    lectoras: viewData.topLectoras ?? const [],
-                    usuarioMes: data.resumen.usuarioMes,
-                    librosUsuarioMes: data.resumen.librosUsuarioMes,
-                  ),
-
-                  const SizedBox(height: AppSpacing.lg),
-                  if (data.clubvision.estado.toUpperCase() != 'SIN_DATOS')
-                    ClubvisionCard(
-                      dashboard: data,
-                      estadoClub: estadoClub,
-                      haVotado: viewData.haVotado,
-                      onActualizar: _recargar,
+                  if (!widget.esPersonal) ...[
+                    _podioLectoras(
+                      lectoras: viewData.topLectoras ?? const [],
+                      usuarioMes: data.resumen.usuarioMes,
+                      librosUsuarioMes: data.resumen.librosUsuarioMes,
                     ),
+                    const SizedBox(height: AppSpacing.lg),
+                    if (data.clubvision.estado.toUpperCase() != 'SIN_DATOS')
+                      ClubvisionCard(
+                        dashboard: data,
+                        estadoClub: estadoClub,
+                        haVotado: viewData.haVotado,
+                        onActualizar: _recargar,
+                      ),
+                    const SizedBox(height: AppSpacing.lg),
+                  ],
 
-                  const SizedBox(height: AppSpacing.lg),
-
-                  const ClubSectionTitle(
-                    title: 'Así está el club',
-                    subtitle: 'El pulso lector de este mes',
+                  ClubSectionTitle(
+                    title: widget.esPersonal ? 'Tu actividad lectora' : 'Así está el club',
+                    subtitle: widget.esPersonal ? 'Tu mes en números' : 'El pulso lector de este mes',
                     icon: Icons.auto_awesome_rounded,
                     padding: EdgeInsets.zero,
                   ),
 
                   const SizedBox(height: AppSpacing.sm),
 
-                  // ── Logros del club — primera card de la sección ──
-                  _LogrosClubCard(),
+                  // ── Logros / reto — adaptado según modo ──
+                  _LogrosClubCard(esPersonal: widget.esPersonal),
                   const SizedBox(height: AppSpacing.sm),
-                  _AchievementsClubCard(),
+                  _AchievementsClubCard(esPersonal: widget.esPersonal),
 
+                  if (!widget.esPersonal) ...[
                   const SizedBox(height: AppSpacing.md),
 
                   InfoCard(
@@ -404,6 +408,7 @@ class _DashboardPageState extends State<DashboardPage> {
                       ),
                     ),
                   ],
+                  ], // fin if (!widget.esPersonal)
 
                   const SizedBox(height: AppSpacing.lg),
 
@@ -418,9 +423,11 @@ class _DashboardPageState extends State<DashboardPage> {
 
                   const SizedBox(height: AppSpacing.lg),
 
-                  const ClubSectionTitle(
+                  ClubSectionTitle(
                     title: 'Leyendo ahora',
-                    subtitle: 'Qué tienen entre manos las lectoras',
+                    subtitle: widget.esPersonal
+                        ? 'Tus lecturas activas'
+                        : 'Qué tienen entre manos las lectoras',
                     icon: Icons.menu_book_rounded,
                     padding: EdgeInsets.zero,
                   ),
@@ -428,12 +435,15 @@ class _DashboardPageState extends State<DashboardPage> {
                   const SizedBox(height: AppSpacing.sm),
 
                   if (data.leyendoAhora.isEmpty)
-                    const ClubEmptyState(
+                    ClubEmptyState(
                       icon: Icons.menu_book_outlined,
-                      title: 'El club está entre lecturas',
-                      message:
-                          'Cuando alguna lectora empiece un libro, aparecerá aquí.',
-                      padding: EdgeInsets.symmetric(vertical: AppSpacing.xl),
+                      title: widget.esPersonal
+                          ? 'Aún no tienes lecturas activas'
+                          : 'El club está entre lecturas',
+                      message: widget.esPersonal
+                          ? 'Ve a Libros y empieza una nueva lectura.'
+                          : 'Cuando alguna lectora empiece un libro, aparecerá aquí.',
+                      padding: const EdgeInsets.symmetric(vertical: AppSpacing.xl),
                     )
                   else
                     ...data.leyendoAhora.map(
@@ -1333,7 +1343,9 @@ class _AffinityMemberTile extends StatelessWidget {
 // Card de logros del club
 // ─────────────────────────────────────────────
 class _LogrosClubCard extends StatelessWidget {
-  const _LogrosClubCard();
+  const _LogrosClubCard({this.esPersonal = false});
+
+  final bool esPersonal;
 
   @override
   Widget build(BuildContext context) {
@@ -1378,7 +1390,9 @@ class _LogrosClubCard extends StatelessWidget {
                 ),
                 const SizedBox(height: AppSpacing.xs),
                 Text(
-                  'Ve el progreso de todas las lectoras',
+                  esPersonal
+                      ? 'Tu progreso lector este año'
+                      : 'Ve el progreso de todas las lectoras',
                   style: AppTextStyles.bodySecondary.copyWith(
                     color: AppColors.textSecondary,
                   ),
@@ -1396,7 +1410,9 @@ class _LogrosClubCard extends StatelessWidget {
 // Card de ranking de logros del club
 // ─────────────────────────────────────────────
 class _AchievementsClubCard extends StatelessWidget {
-  const _AchievementsClubCard();
+  const _AchievementsClubCard({this.esPersonal = false});
+
+  final bool esPersonal;
 
   @override
   Widget build(BuildContext context) {
@@ -1428,18 +1444,20 @@ class _AchievementsClubCard extends StatelessWidget {
             ),
           ),
           const SizedBox(width: AppSpacing.md),
-          const Expanded(
+          Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Logros del club',
-                  style: TextStyle(fontWeight: FontWeight.w800, fontSize: 16),
+                  esPersonal ? 'Mis logros' : 'Logros del club',
+                  style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 16),
                 ),
-                SizedBox(height: 2),
+                const SizedBox(height: 2),
                 Text(
-                  'Ranking y últimos logros desbloqueados',
-                  style: TextStyle(color: AppColors.textSecondary),
+                  esPersonal
+                      ? 'Tus logros desbloqueados este año'
+                      : 'Ranking y últimos logros desbloqueados',
+                  style: const TextStyle(color: AppColors.textSecondary),
                 ),
               ],
             ),

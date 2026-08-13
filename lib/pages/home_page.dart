@@ -50,6 +50,7 @@ class _HomePageState extends State<HomePage> {
       _pageBuilders = widget.pageBuilders ?? [
         () => DashboardPage(
           clubName: widget.club.nombre,
+          esPersonal: true,
           controller: _dashboardController,
         ),
         () => LibrosPage(
