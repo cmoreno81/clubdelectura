@@ -80,7 +80,7 @@ class _RegistrationPageState extends State<RegistrationPage> {
               eyebrow: 'Empieza tu historia',
               title: 'Crea tu cuenta lectora',
               message:
-                  'Tu biblioteca será personal. Después podrás crear un club o entrar con una invitación.',
+                  'Tu biblioteca será personal. Después podrás leer en solitario, crear un club o unirte con una invitación.',
             ),
             const SizedBox(height: AppSpacing.md),
             ClubCard(

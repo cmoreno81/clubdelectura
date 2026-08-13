@@ -26,6 +26,8 @@ Future<Notificacion?> mostrarNotificacionesSheet(
     context: context,
     isScrollControlled: true,
     useSafeArea: true,
+    // Sin color propio para que el DraggableScrollableSheet pinte su fondo
+    backgroundColor: Colors.transparent,
     shape: const RoundedRectangleBorder(
       borderRadius: BorderRadius.vertical(top: Radius.circular(AppRadius.xl)),
     ),
@@ -60,10 +62,22 @@ class _NotificacionesSheetState extends State<_NotificacionesSheet> {
     try {
       final data = await ApiService().getNotificaciones();
       if (!mounted) return;
+      final filtradas = data.notificaciones.where(widget.filtro).toList();
       setState(() {
-        _notifs = data.notificaciones.where(widget.filtro).toList();
+        _notifs = filtradas;
         _loading = false;
       });
+      // Auto-marcar como leídas al abrir el panel (comportamiento estándar iOS/Android)
+      final hayNoLeidas = filtradas.any((n) => !n.leida);
+      if (hayNoLeidas) {
+        unawaited(ApiService().marcarTodasNotificacionesLeidas());
+        // Actualizamos el estado local para que el conteo desaparezca inmediatamente
+        if (mounted) {
+          setState(() {
+            _notifs = filtradas.map((n) => n.copyWith(leida: true)).toList();
+          });
+        }
+      }
     } catch (_) {
       if (!mounted) return;
       setState(() => _loading = false);
@@ -98,8 +112,12 @@ class _NotificacionesSheetState extends State<_NotificacionesSheet> {
       minChildSize: 0.35,
       maxChildSize: 0.92,
       expand: false,
-      builder: (_, scrollController) => Column(
-        children: [
+      builder: (_, scrollController) => ClipRRect(
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(AppRadius.xl)),
+        child: ColoredBox(
+          color: Theme.of(context).colorScheme.surface,
+          child: Column(
+            children: [
           // ── Handle ────────────────────────────────────────────────────────
           Padding(
             padding: const EdgeInsets.symmetric(vertical: 12),
@@ -173,7 +191,7 @@ class _NotificacionesSheetState extends State<_NotificacionesSheet> {
                     controller: scrollController,
                     itemCount: _notifs!.length,
                     separatorBuilder:
-                        (_, __) => const Divider(
+                        (context, i) => const Divider(
                           height: 1,
                           indent: AppSpacing.lg + 24 + AppSpacing.md,
                         ),
@@ -185,7 +203,9 @@ class _NotificacionesSheetState extends State<_NotificacionesSheet> {
                   ),
           ),
         ],
-      ),
+      ),    // Column
+        ),  // ColoredBox
+      ),    // ClipRRect
     );
   }
 }
