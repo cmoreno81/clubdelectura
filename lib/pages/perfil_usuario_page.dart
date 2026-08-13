@@ -10,16 +10,19 @@ import '../theme/app_radius.dart';
 import '../theme/app_spacing.dart';
 import '../theme/app_text_styles.dart';
 import '../utils/genero_utils.dart';
+import '../widgets/common/checkin_button.dart';
 import '../widgets/common/club_avatar.dart';
 import '../widgets/common/club_card.dart';
 import '../widgets/common/club_chip.dart';
 import '../widgets/common/club_empty_state.dart';
 import '../widgets/common/club_section_title.dart';
+import '../widgets/common/mapa_calor_widget.dart';
 import '../widgets/common/optimized_network_image.dart';
 import '../widgets/error_view.dart';
 import '../services/usuario_service.dart';
 import '../widgets/perfil/editar_fechas_lectura_dialog.dart';
 import '../utils/lectura_fecha_utils.dart';
+import 'wrapped_page.dart';
 import '../widgets/perfil/editar_avatar_dialog.dart';
 import '../widgets/perfil/perfil_timeline_lectura.dart';
 import '../widgets/perfil/perfil_historico_meses.dart';
@@ -474,7 +477,7 @@ class _PerfilUsuarioPageState extends State<PerfilUsuarioPage> {
         // ── Su historia lectora DESPUÉS ──
         _resumenLectura(perfil),
 
-        // ── Géneros favoritos al final ──
+        // ── Géneros favoritos ──
         if (perfil.generosFavoritos.isNotEmpty) ...[
           const SizedBox(height: AppSpacing.xl),
           const ClubSectionTitle(
@@ -502,6 +505,29 @@ class _PerfilUsuarioPageState extends State<PerfilUsuarioPage> {
                   .toList(),
             ),
           ),
+        ],
+
+        // ── Seguimiento lector (solo propio perfil) ──────────────────────────
+        if (esMiPerfil) ...[
+          const SizedBox(height: AppSpacing.xl),
+          const ClubSectionTitle(
+            title: 'Seguimiento lector',
+            subtitle: 'Tu racha, actividad anual y resumen del año',
+            icon: Icons.local_fire_department_outlined,
+            padding: EdgeInsets.zero,
+          ),
+          const SizedBox(height: AppSpacing.sm),
+          _CheckinSection(),
+          const SizedBox(height: AppSpacing.md),
+          ClubCard(
+            elevated: false,
+            child: MapaCalorWidget(),
+          ),
+          const SizedBox(height: AppSpacing.sm),
+          _WrappedPerfilCta(onTap: () => Navigator.push<void>(
+            context,
+            AppPageRoute(builder: (_) => const WrappedPage()),
+          )),
         ],
       ],
     );
@@ -1618,6 +1644,110 @@ class _PerfilLogroTile extends StatelessWidget {
               ),
             ],
           ),
+        ),
+      ),
+    );
+  }
+}
+
+// ── Check-in en perfil ────────────────────────────────────────────────────────
+
+class _CheckinSection extends StatefulWidget {
+  @override
+  State<_CheckinSection> createState() => _CheckinSectionState();
+}
+
+class _CheckinSectionState extends State<_CheckinSection> {
+  bool _checkedToday = false;
+  int _streak = 0;
+  bool _loaded = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _cargar();
+  }
+
+  Future<void> _cargar() async {
+    try {
+      final data = await ApiService().getHistorialCheckin(dias: 7);
+      if (mounted) {
+        setState(() {
+          _checkedToday = data['checkedToday'] as bool? ?? false;
+          _streak = (data['streak'] as num?)?.toInt() ?? 0;
+          _loaded = true;
+        });
+      }
+    } catch (_) {
+      if (mounted) setState(() => _loaded = true);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (!_loaded) {
+      return const SizedBox(
+        height: 80,
+        child: Center(child: CircularProgressIndicator()),
+      );
+    }
+    return CheckinButton(
+      checkedToday: _checkedToday,
+      streak: _streak,
+      onCheckinDone: (newStreak) => setState(() {
+        _checkedToday = true;
+        _streak = newStreak;
+      }),
+    );
+  }
+}
+
+// ── Wrapped CTA en perfil ─────────────────────────────────────────────────────
+
+class _WrappedPerfilCta extends StatelessWidget {
+  const _WrappedPerfilCta({required this.onTap});
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final year = DateTime.now().year;
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.all(AppSpacing.md),
+        decoration: BoxDecoration(
+          gradient: const LinearGradient(
+            colors: [Color(0xFF6C3FF5), Color(0xFF1DB954)],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+          borderRadius: BorderRadius.circular(AppRadius.lg),
+        ),
+        child: Row(
+          children: [
+            const Text('✨', style: TextStyle(fontSize: 28)),
+            const SizedBox(width: AppSpacing.md),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Tu Wrapped $year',
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.w800,
+                      fontSize: 15,
+                    ),
+                  ),
+                  const Text(
+                    'Tu año en libros, de un vistazo.',
+                    style: TextStyle(color: Colors.white70, fontSize: 13),
+                  ),
+                ],
+              ),
+            ),
+            const Icon(Icons.arrow_forward_ios_rounded, color: Colors.white70, size: 16),
+          ],
         ),
       ),
     );

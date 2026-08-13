@@ -31,13 +31,24 @@ const List<_TutorialStep> _pasos = [
     emoji: '📚',
     titulo: '¡Bienvenida a ClubReads!',
     descripcion:
-        'Tu espacio para leer en compañía. En este breve tutorial te '
-        'enseñamos lo más importante para que empieces con buen pie.',
+        'Tu espacio para leer, ya sea en compañía o en solitario. '
+        'En este breve tutorial te enseñamos lo más importante para '
+        'que empieces con buen pie.',
     detalle: null,
   ),
   _TutorialStep(
+    emoji: '🔀',
+    titulo: 'Elige cómo quieres leer',
+    descripcion:
+        'ClubReads tiene dos modos: puedes leer en solitario con tu '
+        '"Espacio lector personal", o unirte a un club para leer con otras personas.',
+    detalle:
+        '📖 Espacio personal — biblioteca privada, racha, mapa de calor y Wrapped anual.\n'
+        '👥 Club lector — lecturas grupales, Clubvisión, conversaciones y rankings.',
+  ),
+  _TutorialStep(
     emoji: '🏛️',
-    titulo: 'Crea o únete a un club',
+    titulo: 'Modo club: crea o únete',
     descripcion:
         'Desde "Mis clubes" puedes crear tu propio club de lectura o '
         'unirte a uno con el código de invitación que te hayan compartido.',
@@ -68,11 +79,22 @@ const List<_TutorialStep> _pasos = [
         'tomo con el orden correcto.',
   ),
   _TutorialStep(
+    emoji: '🔥',
+    titulo: 'Tu racha lectora y actividad',
+    descripcion:
+        'Desde tu perfil → "Seguimiento lector" puedes hacer check-in '
+        'diario, ver tu mapa de calor anual y acceder a tu Wrapped — '
+        'el resumen del año al estilo Spotify.',
+    detalle:
+        'El mapa de calor combina check-ins, progreso en libros y '
+        'lecturas terminadas para mostrar tu actividad real.',
+  ),
+  _TutorialStep(
     emoji: '🗳️',
     titulo: 'Clubvisión · Vota el próximo libro',
     descripcion:
-        'En la sección Clubvisión los miembros proponen candidatas y votan '
-        'el siguiente libro del club. ¡La democracia lectora mola!',
+        'En modo club, la sección Clubvisión permite votar entre '
+        'las candidatas para elegir el siguiente libro grupal. ¡La democracia lectora mola!',
     detalle:
         'Solo puede votar quien tenga el rol de lectura activo. '
         'La moderadora abre y cierra la votación.',

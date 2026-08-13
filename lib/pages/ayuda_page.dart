@@ -26,6 +26,52 @@ class _HelpItem {
 
 const List<_HelpSection> _secciones = [
   _HelpSection(
+    icono: '🔀',
+    titulo: 'Modos de lectura',
+    items: [
+      _HelpItem(
+        pregunta: '¿Qué modos de lectura tiene ClubReads?',
+        respuesta:
+            'ClubReads tiene dos modos:\n\n'
+            '📖 Espacio lector personal — para quien quiere leer en solitario. '
+            'Tienes tu biblioteca privada, racha lectora, mapa de calor anual '
+            'y Wrapped (resumen del año). No necesitas unirte a ningún club.\n\n'
+            '👥 Club lector — para leer en compañía. Incluye lecturas grupales, '
+            'Clubvisión (votaciones), comentarios por capítulo, rankings, '
+            'logros de club y más.',
+      ),
+      _HelpItem(
+        pregunta: '¿Cómo elijo mi modo?',
+        respuesta:
+            'Al iniciar sesión por primera vez, la app te pregunta cómo '
+            'quieres empezar. Puedes elegir "Mi espacio lector" para modo '
+            'personal, o "Crear un club" / "Tengo un código" para modo club.\n\n'
+            'Si ya tienes una cuenta, puedes crear tu espacio personal desde '
+            '"Mis clubes" en cualquier momento, o unirte a un club con un código '
+            'de invitación.',
+      ),
+      _HelpItem(
+        pregunta: '¿Puedo cambiar de modo o tener los dos?',
+        respuesta:
+            'Sí. Puedes tener tanto tu espacio personal como uno o más clubes. '
+            'Desde "Mis clubes" verás todos y podrás cambiar entre ellos. '
+            'La pestaña activa cambia según el modo seleccionado.',
+      ),
+      _HelpItem(
+        pregunta: '¿Qué es "Mi espacio lector"?',
+        respuesta:
+            'Es una pantalla exclusiva del modo personal que muestra:\n\n'
+            '• Tus estadísticas (libros leídos, páginas, mes actual, racha)\n'
+            '• Logros desbloqueados y progreso hacia los siguientes\n'
+            '• Check-in lector diario con racha de días\n'
+            '• Mapa de calor anual con tu actividad\n'
+            '• Acceso a tu Wrapped del año\n\n'
+            'En modo club, estas mismas funcionalidades están en tu Perfil → '
+            'sección "Seguimiento lector".',
+      ),
+    ],
+  ),
+  _HelpSection(
     icono: '🏛️',
     titulo: 'Clubes',
     items: [
@@ -468,6 +514,68 @@ const List<_HelpSection> _secciones = [
     ],
   ),
   _HelpSection(
+    icono: '🔥',
+    titulo: 'Check-in, mapa de calor y Wrapped',
+    items: [
+      _HelpItem(
+        pregunta: '¿Qué es el check-in lector diario?',
+        respuesta:
+            'Es un botón para marcar que has leído hoy. Cada vez que lo pulsas, '
+            'se suma un día a tu racha lectora. Si olvidas hacerlo un día, '
+            'la racha se mantiene si el día anterior ya lo registraste.\n\n'
+            'Lo encontrarás en:\n'
+            '• Modo personal → pestaña "Mi espacio"\n'
+            '• Cualquier modo → tu Perfil → sección "Seguimiento lector"',
+      ),
+      _HelpItem(
+        pregunta: '¿Cómo funciona la racha lectora?',
+        respuesta:
+            'La racha cuenta los días consecutivos en los que has hecho '
+            'check-in. Si hoy ya lo hiciste, o si ayer lo hiciste y hoy '
+            'aún no has tenido tiempo, la racha se mantiene. '
+            'Si no hay actividad ni de ayer ni de hoy, la racha vuelve a 0.\n\n'
+            'La racha aparece en el banner de "Mi espacio" y junto al '
+            'botón de check-in.',
+      ),
+      _HelpItem(
+        pregunta: '¿Qué es el mapa de calor anual?',
+        respuesta:
+            'Es un calendario visual estilo GitHub que muestra tu actividad '
+            'lectora durante el año: cada cuadrado representa un día y su '
+            'color indica el nivel de actividad (del gris al verde oscuro).\n\n'
+            'El mapa combina tres fuentes:\n'
+            '• Check-ins explícitos que tú marcas\n'
+            '• Días en los que actualizaste el progreso de algún libro\n'
+            '• Días en los que terminaste un libro (cuentan el doble)\n\n'
+            'Haz scroll horizontal para ver todo el año. Toca cualquier '
+            'cuadrado para ver la fecha y el nivel de actividad.',
+      ),
+      _HelpItem(
+        pregunta: '¿Qué es el Wrapped anual?',
+        respuesta:
+            'Es un resumen de tu año lector al estilo Spotify Wrapped. '
+            'Se presenta en diapositivas deslizables con:\n\n'
+            '• Total de libros y páginas leídas\n'
+            '• Tu racha y días activos\n'
+            '• Género y autor favoritos\n'
+            '• Mejor mes del año y gráfico mensual\n'
+            '• Valoración media de tus lecturas\n'
+            '• El libro más largo que terminaste\n'
+            '• El primer libro del año\n'
+            '• Comparativa con el año anterior\n\n'
+            'Toca a la derecha para avanzar y a la izquierda para retroceder.',
+      ),
+      _HelpItem(
+        pregunta: '¿Están disponibles en modo club también?',
+        respuesta:
+            'Sí. El check-in, el mapa de calor y el Wrapped son funcionalidades '
+            'personales: aparecen en tu Perfil → sección "Seguimiento lector" '
+            'independientemente de si estás en modo club o personal.\n\n'
+            'En modo lector personal también aparecen en la pestaña "Mi espacio".',
+      ),
+    ],
+  ),
+  _HelpSection(
     icono: '🌈',
     titulo: 'Atmósferas y personalización',
     items: [
@@ -539,6 +647,13 @@ const List<_HelpSection> _secciones = [
             'cuando ocurra algo relevante en tu club: nueva lectura oficial, '
             'nueva miembro, resultado de Clubvisión, nuevo libro en la biblioteca '
             'o cuando alguien comenta en una lectura en la que participas.',
+      ),
+      _HelpItem(
+        pregunta: '¿Qué es "Seguimiento lector" en el perfil?',
+        respuesta:
+            'Es la sección de tu perfil (solo visible en tu propio perfil) '
+            'que agrupa el check-in diario, el mapa de calor anual y el '
+            'botón para ver tu Wrapped. Disponible en modo club y personal.',
       ),
     ],
   ),
