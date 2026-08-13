@@ -235,7 +235,7 @@ class _BookCover extends StatelessWidget {
             ? Image.network(
                 coverUrl,
                 fit: BoxFit.cover,
-                errorBuilder: (_, __, ___) => _PlaceholderCover(width: width, height: height),
+                errorBuilder: (_, _, _) => _PlaceholderCover(width: width, height: height),
               )
             : _PlaceholderCover(width: width, height: height),
       ),
@@ -256,6 +256,43 @@ class _PlaceholderCover extends StatelessWidget {
       color: Colors.white12,
       child: const Center(
         child: Text('📖', style: TextStyle(fontSize: 36)),
+      ),
+    );
+  }
+}
+
+/// Placeholder compacto para la cuadrícula de la estantería (sin portada)
+class _GridPlaceholder extends StatelessWidget {
+  const _GridPlaceholder({required this.title});
+  final String title;
+
+  // Paleta de colores variados según inicial del título
+  static const _colors = [
+    Color(0xFF3D1A5C),
+    Color(0xFF1A3D5C),
+    Color(0xFF5C3D1A),
+    Color(0xFF1A5C3D),
+    Color(0xFF5C1A3D),
+    Color(0xFF3D5C1A),
+    Color(0xFF2A1A5C),
+    Color(0xFF5C2A1A),
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    final colorIdx = title.isEmpty ? 0 : title.codeUnitAt(0) % _colors.length;
+    final initial = title.isEmpty ? '?' : title[0].toUpperCase();
+    return Container(
+      color: _colors[colorIdx],
+      child: Center(
+        child: Text(
+          initial,
+          style: const TextStyle(
+            color: Colors.white54,
+            fontSize: 22,
+            fontWeight: FontWeight.w900,
+          ),
+        ),
       ),
     );
   }
@@ -377,9 +414,10 @@ class _SlideEstanteria extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Filtramos los que tienen portada; el resto se muestran como placeholder
-    final booksConPortada = books.where((b) => b.coverUrl.isNotEmpty).toList();
     final total = books.length;
+    // Todos los libros aparecen en la cuadrícula; los sin portada muestran placeholder
+    final conPortada = books.where((b) => b.coverUrl.isNotEmpty).length;
+    final sinPortada = total - conPortada;
 
     return Container(
       width: double.infinity,
@@ -421,11 +459,19 @@ class _SlideEstanteria extends StatelessWidget {
                       fontSize: 15,
                     ),
                   ),
+                  if (sinPortada > 0)
+                    Text(
+                      '$sinPortada sin portada disponible',
+                      style: const TextStyle(
+                        color: Colors.white30,
+                        fontSize: 12,
+                      ),
+                    ),
                 ],
               ),
             ),
             const SizedBox(height: AppSpacing.lg),
-            // Cuadrícula de portadas — desplazable si hay muchos libros
+            // Cuadrícula — todos los libros, desplazable si hay muchos
             Expanded(
               child: Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 24),
@@ -437,23 +483,21 @@ class _SlideEstanteria extends StatelessWidget {
                     mainAxisSpacing: 10,
                     childAspectRatio: 2 / 3,
                   ),
-                  itemCount: booksConPortada.length,
+                  itemCount: total,
                   itemBuilder: (_, i) {
-                    final book = booksConPortada[i];
+                    final book = books[i];
                     return Tooltip(
                       message: book.title,
                       child: ClipRRect(
                         borderRadius: BorderRadius.circular(6),
-                        child: Image.network(
-                          book.coverUrl,
-                          fit: BoxFit.cover,
-                          errorBuilder: (_, __, ___) => Container(
-                            color: Colors.white12,
-                            child: const Center(
-                              child: Text('📖', style: TextStyle(fontSize: 20)),
-                            ),
-                          ),
-                        ),
+                        child: book.coverUrl.isNotEmpty
+                            ? Image.network(
+                                book.coverUrl,
+                                fit: BoxFit.cover,
+                                errorBuilder: (_, _, _) =>
+                                    _GridPlaceholder(title: book.title),
+                              )
+                            : _GridPlaceholder(title: book.title),
                       ),
                     );
                   },

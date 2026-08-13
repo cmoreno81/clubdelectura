@@ -123,7 +123,11 @@ class ClubvisionCard extends StatelessWidget {
   }
 
   Widget _cabecera() {
-    if (estadoClub.estado == EstadoClubTipo.lectura) {
+    // Lectura oficial con libro conocido → banner "LECTURA OFICIAL"
+    final tieneLibroOficial = estadoClub.estado == EstadoClubTipo.lectura &&
+        dashboard.lecturaActual.titulo.trim().isNotEmpty;
+
+    if (tieneLibroOficial) {
       return Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -184,6 +188,18 @@ class ClubvisionCard extends StatelessWidget {
       );
     }
 
+    // Estado LECTURA sin libro oficial: usar título y mensaje neutros
+    final sinLibroOficial = estadoClub.estado == EstadoClubTipo.lectura &&
+        dashboard.lecturaActual.titulo.trim().isEmpty;
+    final titulo = sinLibroOficial ? 'Lecturas libres' : estadoClub.titulo;
+    final mensaje = sinLibroOficial
+        ? 'Cada lectora avanza con sus propios libros.'
+        : estadoClub.mensaje;
+    final icono =
+        sinLibroOficial ? Icons.import_contacts_rounded : estadoClub.icono;
+    final iconColor =
+        sinLibroOficial ? AppColors.textMuted : estadoClub.iconColor;
+
     return Column(
       children: [
         Container(
@@ -193,7 +209,7 @@ class ClubvisionCard extends StatelessWidget {
             color: Colors.white.withValues(alpha: 0.72),
             borderRadius: BorderRadius.circular(AppRadius.xl),
           ),
-          child: Icon(estadoClub.icono, size: 34, color: estadoClub.iconColor),
+          child: Icon(icono, size: 34, color: iconColor),
         ),
 
         const SizedBox(height: AppSpacing.md),
@@ -203,17 +219,17 @@ class ClubvisionCard extends StatelessWidget {
             horizontal: _mostrarFlecha ? AppSpacing.xl : 0,
           ),
           child: Text(
-            estadoClub.titulo,
+            titulo,
             textAlign: TextAlign.center,
             style: AppTextStyles.section.copyWith(fontWeight: FontWeight.w700),
           ),
         ),
 
-        if (estadoClub.mensaje.trim().isNotEmpty) ...[
+        if (mensaje.trim().isNotEmpty) ...[
           const SizedBox(height: AppSpacing.xs),
 
           Text(
-            estadoClub.mensaje,
+            mensaje,
             textAlign: TextAlign.center,
             style: AppTextStyles.bodySecondary,
           ),

@@ -239,7 +239,7 @@ class DirectorEscenas {
 
   Widget _lectura(Dashboard dashboard) {
     final lectura = dashboard.lecturaActual;
-    // Si no hay título, mostrar estado de transición
+    // Sin lectura oficial — cada lectora va a su ritmo
     if (lectura.titulo.trim().isEmpty) {
       return Container(
         width: double.infinity,
@@ -247,21 +247,27 @@ class DirectorEscenas {
         decoration: BoxDecoration(
           color: Colors.white.withValues(alpha: .6),
           borderRadius: BorderRadius.circular(AppRadius.lg),
+          border: Border.all(color: AppColors.border),
         ),
         child: Column(
           children: [
-            const Icon(Icons.menu_book_rounded, color: AppColors.primary, size: 30),
-            SizedBox(height: AppSpacing.sm),
-            Text(
-              'Preparando la lectura',
-              textAlign: TextAlign.center,
-              style: AppTextStyles.section,
+            const Icon(
+              Icons.import_contacts_rounded,
+              color: AppColors.textMuted,
+              size: 38,
             ),
-            SizedBox(height: AppSpacing.xs),
+            const SizedBox(height: AppSpacing.md),
             Text(
-              'La próxima lectura oficial está a punto de comenzar.',
+              'Sin lectura conjunta',
               textAlign: TextAlign.center,
-              style: AppTextStyles.bodySecondary,
+              style: AppTextStyles.section.copyWith(color: AppColors.textPrimary),
+            ),
+            const SizedBox(height: AppSpacing.sm),
+            Text(
+              'Este club no tiene una lectura oficial en común. '
+              'Cada lectora avanza con sus propios libros.',
+              style: AppTextStyles.bodySecondary.copyWith(height: 1.4),
+              textAlign: TextAlign.center,
             ),
           ],
         ),
