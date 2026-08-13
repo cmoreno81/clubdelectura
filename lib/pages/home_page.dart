@@ -6,6 +6,7 @@ import 'clubvision_menu_page.dart';
 import 'dashboard_page.dart';
 import 'lecturas_page.dart';
 import 'libros_page.dart';
+import 'mi_espacio_page.dart';
 import 'sagas_page.dart';
 import '../models/club_membership.dart';
 import '../services/api_service.dart';
@@ -25,6 +26,7 @@ class HomePage extends StatefulWidget {
 const _kLecturasIndex    = 3;
 const _kClubvisionIndex  = 4;
 
+
 class _HomePageState extends State<HomePage> {
   int currentIndex = 0;
   int _noLeidasClub       = 0; // El Club (actividad social del club)
@@ -38,28 +40,48 @@ class _HomePageState extends State<HomePage> {
   late final List<HomePageBuilder> _pageBuilders;
   late final List<Widget?> _pages;
 
+  bool get _esPersonal => widget.club.esPersonal;
+
   @override
   void initState() {
     super.initState();
-    _pageBuilders =
-        widget.pageBuilders ??
-        [
-          () => DashboardPage(
-            clubName: widget.club.nombre,
-            controller: _dashboardController,
-          ),
-          () => LibrosPage(
-            controller: _librosController,
-            onBackToClub: _volverAlClub,
-          ),
-          () => SagasPage(controller: _sagasController),
-          () => LecturasPage(onBackToClub: _volverAlClub),
-          () => ClubvisionMenuPage(onBackToClub: _volverAlClub),
-        ];
-    assert(_pageBuilders.length == 5);
+    if (_esPersonal) {
+      // Modo lector solitario: 4 tabs sin Lecturas ni Clubvisión
+      _pageBuilders = widget.pageBuilders ?? [
+        () => DashboardPage(
+          clubName: widget.club.nombre,
+          controller: _dashboardController,
+        ),
+        () => LibrosPage(
+          controller: _librosController,
+          onBackToClub: _volverAlClub,
+        ),
+        () => SagasPage(controller: _sagasController),
+        () => const MiEspacioPage(),
+      ];
+      assert(_pageBuilders.length == 4);
+    } else {
+      // Modo club social: 5 tabs completos
+      _pageBuilders =
+          widget.pageBuilders ??
+          [
+            () => DashboardPage(
+              clubName: widget.club.nombre,
+              controller: _dashboardController,
+            ),
+            () => LibrosPage(
+              controller: _librosController,
+              onBackToClub: _volverAlClub,
+            ),
+            () => SagasPage(controller: _sagasController),
+            () => LecturasPage(onBackToClub: _volverAlClub),
+            () => ClubvisionMenuPage(onBackToClub: _volverAlClub),
+          ];
+      assert(_pageBuilders.length == 5);
+    }
     _pages = List<Widget?>.filled(_pageBuilders.length, null);
     _pages[0] = _pageBuilders[0]();
-    _cargarNoLeidas();
+    if (!_esPersonal) _cargarNoLeidas();
   }
 
   Future<void> _cargarNoLeidas() async {
@@ -89,10 +111,11 @@ class _HomePageState extends State<HomePage> {
 
     // Al salir de cualquier tab con notificaciones el usuario puede haber
     // marcado notificaciones como leídas, así que refrescamos los badges.
-    final salimosDeNotifTab =
+    final salimosDeNotifTab = !_esPersonal && (
         currentIndex == 0 || // El Club
         currentIndex == _kLecturasIndex ||
-        currentIndex == _kClubvisionIndex;
+        currentIndex == _kClubvisionIndex
+    );
 
     setState(() {
       _pages[index] ??= _pageBuilders[index]();
@@ -102,13 +125,93 @@ class _HomePageState extends State<HomePage> {
     if (salimosDeNotifTab) unawaited(_cargarNoLeidas());
   }
 
+  List<NavigationDestination> _socialDestinations() => [
+        NavigationDestination(
+          icon: Badge(
+            isLabelVisible: _noLeidasClub > 0,
+            label: Text(_noLeidasClub < 10 ? '$_noLeidasClub' : '9+'),
+            child: const Icon(Icons.dashboard_outlined),
+          ),
+          selectedIcon: Badge(
+            isLabelVisible: _noLeidasClub > 0,
+            label: Text(_noLeidasClub < 10 ? '$_noLeidasClub' : '9+'),
+            child: const Icon(Icons.dashboard_rounded),
+          ),
+          label: 'El Club',
+        ),
+        const NavigationDestination(
+          icon: Icon(Icons.menu_book_outlined),
+          selectedIcon: Icon(Icons.menu_book_rounded),
+          label: 'Libros',
+        ),
+        const NavigationDestination(
+          icon: Icon(Icons.view_week_outlined),
+          selectedIcon: Icon(Icons.view_week_rounded),
+          label: 'Sagas',
+        ),
+        NavigationDestination(
+          icon: Badge(
+            isLabelVisible: _noLeidasLecturas > 0,
+            label: Text(_noLeidasLecturas < 10 ? '$_noLeidasLecturas' : '9+'),
+            child: const Icon(Icons.auto_stories_outlined),
+          ),
+          selectedIcon: Badge(
+            isLabelVisible: _noLeidasLecturas > 0,
+            label: Text(_noLeidasLecturas < 10 ? '$_noLeidasLecturas' : '9+'),
+            child: const Icon(Icons.auto_stories_rounded),
+          ),
+          label: 'Lecturas',
+        ),
+        NavigationDestination(
+          icon: Badge(
+            isLabelVisible: _noLeidasClubvision > 0,
+            label: Text(
+              _noLeidasClubvision < 10 ? '$_noLeidasClubvision' : '9+',
+            ),
+            child: const Icon(Icons.mic_none_outlined),
+          ),
+          selectedIcon: Badge(
+            isLabelVisible: _noLeidasClubvision > 0,
+            label: Text(
+              _noLeidasClubvision < 10 ? '$_noLeidasClubvision' : '9+',
+            ),
+            child: const Icon(Icons.mic_rounded),
+          ),
+          label: 'Clubvisión',
+        ),
+      ];
+
+  List<NavigationDestination> _personalDestinations() => const [
+        NavigationDestination(
+          icon: Icon(Icons.home_outlined),
+          selectedIcon: Icon(Icons.home_rounded),
+          label: 'Inicio',
+        ),
+        NavigationDestination(
+          icon: Icon(Icons.menu_book_outlined),
+          selectedIcon: Icon(Icons.menu_book_rounded),
+          label: 'Libros',
+        ),
+        NavigationDestination(
+          icon: Icon(Icons.view_week_outlined),
+          selectedIcon: Icon(Icons.view_week_rounded),
+          label: 'Sagas',
+        ),
+        NavigationDestination(
+          icon: Icon(Icons.emoji_events_outlined),
+          selectedIcon: Icon(Icons.emoji_events_rounded),
+          label: 'Mi espacio',
+        ),
+      ];
+
   void _volverAlClub() {
     if (currentIndex == 0) return;
     FocusManager.instance.primaryFocus?.unfocus();
     HapticFeedback.selectionClick();
-    final salimosDeNotifTab =
+    final salimosDeNotifTab = !_esPersonal && (
         currentIndex == _kLecturasIndex ||
-        currentIndex == _kClubvisionIndex;
+        currentIndex == _kClubvisionIndex
+    );
     setState(() => currentIndex = 0);
     unawaited(_dashboardController.refresh());
     if (salimosDeNotifTab) unawaited(_cargarNoLeidas());
@@ -147,69 +250,9 @@ class _HomePageState extends State<HomePage> {
         bottomNavigationBar: NavigationBar(
           selectedIndex: currentIndex,
           onDestinationSelected: _selectTab,
-          destinations: [
-            NavigationDestination(
-              icon: Badge(
-                isLabelVisible: _noLeidasClub > 0,
-                label: Text(
-                  _noLeidasClub < 10 ? '$_noLeidasClub' : '9+',
-                ),
-                child: const Icon(Icons.dashboard_outlined),
-              ),
-              selectedIcon: Badge(
-                isLabelVisible: _noLeidasClub > 0,
-                label: Text(
-                  _noLeidasClub < 10 ? '$_noLeidasClub' : '9+',
-                ),
-                child: const Icon(Icons.dashboard_rounded),
-              ),
-              label: 'El Club',
-            ),
-            const NavigationDestination(
-              icon: Icon(Icons.menu_book_outlined),
-              selectedIcon: Icon(Icons.menu_book_rounded),
-              label: 'Libros',
-            ),
-            const NavigationDestination(
-              icon: Icon(Icons.view_week_outlined),
-              selectedIcon: Icon(Icons.view_week_rounded),
-              label: 'Sagas',
-            ),
-            NavigationDestination(
-              icon: Badge(
-                isLabelVisible: _noLeidasLecturas > 0,
-                label: Text(
-                  _noLeidasLecturas < 10 ? '$_noLeidasLecturas' : '9+',
-                ),
-                child: const Icon(Icons.auto_stories_outlined),
-              ),
-              selectedIcon: Badge(
-                isLabelVisible: _noLeidasLecturas > 0,
-                label: Text(
-                  _noLeidasLecturas < 10 ? '$_noLeidasLecturas' : '9+',
-                ),
-                child: const Icon(Icons.auto_stories_rounded),
-              ),
-              label: 'Lecturas',
-            ),
-            NavigationDestination(
-              icon: Badge(
-                isLabelVisible: _noLeidasClubvision > 0,
-                label: Text(
-                  _noLeidasClubvision < 10 ? '$_noLeidasClubvision' : '9+',
-                ),
-                child: const Icon(Icons.mic_none_outlined),
-              ),
-              selectedIcon: Badge(
-                isLabelVisible: _noLeidasClubvision > 0,
-                label: Text(
-                  _noLeidasClubvision < 10 ? '$_noLeidasClubvision' : '9+',
-                ),
-                child: const Icon(Icons.mic_rounded),
-              ),
-              label: 'Clubvisión',
-            ),
-          ],
+          destinations: _esPersonal
+              ? _personalDestinations()
+              : _socialDestinations(),
         ),
       ),
     );

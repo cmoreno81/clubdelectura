@@ -1,3 +1,5 @@
+enum TipoClub { social, personal }
+
 class ClubMembership {
   const ClubMembership({
     required this.id,
@@ -7,6 +9,7 @@ class ClubMembership {
     required this.activo,
     this.descripcion = '',
     this.avatarUrl = '',
+    this.tipo = TipoClub.social,
   });
 
   final String id;
@@ -16,6 +19,10 @@ class ClubMembership {
   final bool activo;
   final String descripcion;
   final String avatarUrl;
+  final TipoClub tipo;
+
+  /// Espacio lector personal (modo solitario).
+  bool get esPersonal => tipo == TipoClub.personal;
 
   factory ClubMembership.fromJson(Map<String, dynamic> json) => ClubMembership(
     id: json['id']?.toString() ?? '',
@@ -25,6 +32,9 @@ class ClubMembership {
     activo: json['activo'] == true,
     descripcion: json['descripcion']?.toString() ?? '',
     avatarUrl: json['avatarUrl']?.toString() ?? '',
+    tipo: json['tipo']?.toString() == 'PERSONAL'
+        ? TipoClub.personal
+        : TipoClub.social,
   );
 }
 

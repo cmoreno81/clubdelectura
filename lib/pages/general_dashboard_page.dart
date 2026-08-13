@@ -27,6 +27,7 @@ import '../widgets/common/reading_cover_calendar.dart';
 import '../widgets/common/optimized_network_image.dart';
 import '../widgets/dashboard/monthly_reading_shelf.dart';
 import 'clubs_page.dart';
+import 'elegir_modo_page.dart';
 import 'home_page.dart';
 import 'explore_catalog_page.dart';
 import 'detalle_libro_page.dart';
@@ -152,6 +153,14 @@ class _GeneralDashboardPageState extends State<GeneralDashboardPage> {
     await Navigator.push<void>(
       context,
       AppPageRoute(builder: (_) => const ClubsPage()),
+    );
+    if (mounted) await _reload();
+  }
+
+  Future<void> _elegirModo() async {
+    await Navigator.push<void>(
+      context,
+      AppPageRoute(builder: (_) => const ElegirModoPage()),
     );
     if (mounted) await _reload();
   }
@@ -283,6 +292,7 @@ class _GeneralDashboardPageState extends State<GeneralDashboardPage> {
               activo: true,
               descripcion: club.description,
               avatarUrl: club.avatarUrl,
+              tipo: club.esPersonal ? TipoClub.personal : TipoClub.social,
             ),
           ),
         ),
@@ -902,7 +912,9 @@ class _GeneralDashboardPageState extends State<GeneralDashboardPage> {
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    '${club.members} miembros · ${club.activeReadings} lecturas activas',
+                    club.esPersonal
+                        ? 'Tu espacio lector personal'
+                        : '${club.members} miembros · ${club.activeReadings} lecturas activas',
                     style: const TextStyle(color: AppColors.textSecondary),
                   ),
                 ],
@@ -924,23 +936,31 @@ class _GeneralDashboardPageState extends State<GeneralDashboardPage> {
     return ClubCard(
       elevated: false,
       gradient: const LinearGradient(
+        begin: Alignment.topLeft,
+        end: Alignment.bottomRight,
         colors: [AppColors.surfaceSoft, Color(0xFFFFF5EA)],
       ),
       child: Column(
         children: [
-          const Icon(
-            Icons.group_add_outlined,
-            size: 48,
-            color: AppColors.primary,
-          ),
+          const Text('📚', style: TextStyle(fontSize: 48)),
           const SizedBox(height: AppSpacing.sm),
           const Text(
-            'Crea un club o entra con una invitación',
+            '¿Cómo quieres leer?',
             textAlign: TextAlign.center,
-            style: TextStyle(fontWeight: FontWeight.w800, fontSize: 17),
+            style: TextStyle(fontWeight: FontWeight.w900, fontSize: 18),
+          ),
+          const SizedBox(height: AppSpacing.xs),
+          const Text(
+            'Lee en solitario o únete a una comunidad',
+            textAlign: TextAlign.center,
+            style: TextStyle(color: AppColors.textSecondary, fontSize: 14),
           ),
           const SizedBox(height: AppSpacing.md),
-          FilledButton(onPressed: _manageClubs, child: const Text('Empezar')),
+          FilledButton.icon(
+            onPressed: _elegirModo,
+            icon: const Icon(Icons.arrow_forward_rounded),
+            label: const Text('Elegir mi modo'),
+          ),
         ],
       ),
     );

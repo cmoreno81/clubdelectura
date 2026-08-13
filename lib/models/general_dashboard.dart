@@ -382,6 +382,7 @@ class GeneralClub {
     required this.activeReadings,
     this.description = '',
     this.avatarUrl = '',
+    this.tipo = 'SOCIAL',
   });
 
   final String id;
@@ -392,6 +393,10 @@ class GeneralClub {
   final bool active;
   final int members;
   final int activeReadings;
+  /// 'SOCIAL' o 'PERSONAL'
+  final String tipo;
+
+  bool get esPersonal => tipo == 'PERSONAL';
 
   factory GeneralClub.fromJson(Map<String, dynamic> json) => GeneralClub(
     id: json['id']?.toString() ?? '',
@@ -402,6 +407,7 @@ class GeneralClub {
     active: json['activo'] == true,
     members: _integer(json['miembros']),
     activeReadings: _integer(json['lecturasActivas']),
+    tipo: json['tipo']?.toString() ?? 'SOCIAL',
   );
 }
 
