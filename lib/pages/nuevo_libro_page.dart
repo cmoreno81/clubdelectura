@@ -1252,7 +1252,10 @@ class _DuplicadosSheetState extends State<_DuplicadosSheet> {
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
 
-    return SafeArea(
+    return Material(
+      color: cs.surface,
+      borderRadius: const BorderRadius.vertical(top: Radius.circular(AppRadius.xl)),
+      child: SafeArea(
       child: Padding(
         padding: const EdgeInsets.fromLTRB(
           AppSpacing.lg,
@@ -1402,6 +1405,7 @@ class _DuplicadosSheetState extends State<_DuplicadosSheet> {
           ],
         ),
       ),
-    );
+    ), // SafeArea
+  );   // Material
   }
 }

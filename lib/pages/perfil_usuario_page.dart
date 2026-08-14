@@ -545,6 +545,11 @@ class _PerfilUsuarioPageState extends State<PerfilUsuarioPage> {
           _FavoritosShelf(
             favoritos: perfil.favoritos,
             esMiPerfil: esMiPerfil,
+            todosLosLibros: esMiPerfil ? [
+              ...perfil.leyendo.map((l) => _LibroSeleccionable(bookId: l.bookId, title: l.libro, coverUrl: l.coverUrl)),
+              ...perfil.terminados.map((l) => _LibroSeleccionable(bookId: l.bookId, title: l.libro, coverUrl: l.coverUrl)),
+              ...perfil.pendientes.map((l) => _LibroSeleccionable(bookId: l.bookId, title: l.libro, coverUrl: l.coverUrl)),
+            ] : const [],
           ),
         ],
 
@@ -1927,14 +1932,28 @@ class _WrappedPerfilCta extends StatelessWidget {
 // Estantería de favoritos
 // ─────────────────────────────────────────────────────────────────────────────
 
+// Modelo ligero para la selección de favoritos
+class _LibroSeleccionable {
+  const _LibroSeleccionable({
+    required this.bookId,
+    required this.title,
+    required this.coverUrl,
+  });
+  final String bookId;
+  final String title;
+  final String coverUrl;
+}
+
 class _FavoritosShelf extends StatelessWidget {
   const _FavoritosShelf({
     required this.favoritos,
     required this.esMiPerfil,
+    this.todosLosLibros = const [],
   });
 
   final List<LibroFavorito> favoritos;
   final bool esMiPerfil;
+  final List<_LibroSeleccionable> todosLosLibros;
 
   static const int _maxSlots = 5;
 
@@ -1946,13 +1965,23 @@ class _FavoritosShelf extends StatelessWidget {
         listenable: FavoritosService.instance,
         builder: (context, _) {
           final live = FavoritosService.instance.favoritos;
-          // Si el servicio ya cargó y tiene datos, usar esos; si no, los del perfil
+          // Si el servicio ya cargó, usar esos; si no, los del perfil
           final lista = FavoritosService.instance.total > 0 ? live : favoritos;
           return _buildShelf(context, lista);
         },
       );
     }
     return _buildShelf(context, favoritos);
+  }
+
+  void _mostrarSelector(BuildContext context) {
+    showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      useSafeArea: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => _SeleccionFavoritoSheet(todosLosLibros: todosLosLibros),
+    );
   }
 
   Widget _buildShelf(BuildContext context, List<LibroFavorito> lista) {
@@ -1977,7 +2006,13 @@ class _FavoritosShelf extends StatelessWidget {
         return Expanded(
           child: Padding(
             padding: EdgeInsets.only(right: entry.key < _maxSlots - 1 ? 8 : 0),
-            child: _FavoritoSlot(libro: libro, esMiPerfil: esMiPerfil),
+            child: _FavoritoSlot(
+              libro: libro,
+              esMiPerfil: esMiPerfil,
+              onAnadir: esMiPerfil && libro == null
+                  ? () => _mostrarSelector(context)
+                  : null,
+            ),
           ),
         );
       }).toList(),
@@ -1986,44 +2021,52 @@ class _FavoritosShelf extends StatelessWidget {
 }
 
 class _FavoritoSlot extends StatelessWidget {
-  const _FavoritoSlot({required this.libro, required this.esMiPerfil});
+  const _FavoritoSlot({
+    required this.libro,
+    required this.esMiPerfil,
+    this.onAnadir,
+  });
 
   final LibroFavorito? libro;
   final bool esMiPerfil;
+  final VoidCallback? onAnadir;
 
   @override
   Widget build(BuildContext context) {
     if (libro == null) {
       if (!esMiPerfil) return const SizedBox.shrink();
-      // Hueco vacío con "+" para el propio usuario
-      return Column(
-        children: [
-          AspectRatio(
-            aspectRatio: 2 / 3,
-            child: Container(
-              decoration: BoxDecoration(
-                border: Border.all(
-                  color: AppColors.border,
-                  width: 1.5,
-                  strokeAlign: BorderSide.strokeAlignInside,
+      // Hueco vacío con "+" para el propio usuario — tappable
+      return GestureDetector(
+        onTap: onAnadir,
+        child: Column(
+          children: [
+            AspectRatio(
+              aspectRatio: 2 / 3,
+              child: Container(
+                decoration: BoxDecoration(
+                  border: Border.all(
+                    color: AppColors.border,
+                    width: 1.5,
+                    strokeAlign: BorderSide.strokeAlignInside,
+                  ),
+                  borderRadius: BorderRadius.circular(AppRadius.sm),
+                  color: Theme.of(context).colorScheme.surfaceContainerLowest,
                 ),
-                borderRadius: BorderRadius.circular(AppRadius.sm),
-                color: Theme.of(context).colorScheme.surfaceContainerLowest,
-              ),
-              child: const Center(
-                child: Icon(Icons.add_rounded, color: AppColors.textMuted, size: 22),
+                child: const Center(
+                  child: Icon(Icons.add_rounded, color: AppColors.textMuted, size: 22),
+                ),
               ),
             ),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            'Añadir',
-            style: AppTextStyles.caption.copyWith(color: AppColors.textMuted),
-            textAlign: TextAlign.center,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-          ),
-        ],
+            const SizedBox(height: 4),
+            Text(
+              'Añadir',
+              style: AppTextStyles.caption.copyWith(color: AppColors.textMuted),
+              textAlign: TextAlign.center,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ],
+        ),
       );
     }
 
@@ -2085,6 +2128,172 @@ class _FavoritoSlot extends StatelessWidget {
           overflow: TextOverflow.ellipsis,
         ),
       ],
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Sheet para seleccionar un libro favorito
+// ─────────────────────────────────────────────────────────────────────────────
+
+class _SeleccionFavoritoSheet extends StatefulWidget {
+  const _SeleccionFavoritoSheet({required this.todosLosLibros});
+  final List<_LibroSeleccionable> todosLosLibros;
+
+  @override
+  State<_SeleccionFavoritoSheet> createState() => _SeleccionFavoritoSheetState();
+}
+
+class _SeleccionFavoritoSheetState extends State<_SeleccionFavoritoSheet> {
+  String _query = '';
+  bool _toggling = false;
+
+  List<_LibroSeleccionable> get _disponibles {
+    // Deduplicar por bookId y excluir ya favoritos
+    final vistos = <String>{};
+    return widget.todosLosLibros.where((l) {
+      if (l.bookId.isEmpty) return false;
+      if (FavoritosService.instance.isFavorito(l.bookId)) return false;
+      return vistos.add(l.bookId);
+    }).toList();
+  }
+
+  List<_LibroSeleccionable> get _filtrados {
+    if (_query.isEmpty) return _disponibles;
+    final q = _query.toLowerCase();
+    return _disponibles.where((l) => l.title.toLowerCase().contains(q)).toList();
+  }
+
+  Future<void> _elegir(_LibroSeleccionable libro) async {
+    if (_toggling) return;
+    setState(() => _toggling = true);
+    final resultado = await FavoritosService.instance.toggle(
+      libro.bookId,
+      libro.title,
+      coverUrl: libro.coverUrl.isNotEmpty ? libro.coverUrl : null,
+    );
+    if (!mounted) return;
+    if (resultado.ok) {
+      Navigator.pop(context);
+    } else {
+      setState(() => _toggling = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(resultado.mensaje)),
+      );
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    final filtrados = _filtrados;
+
+    return Material(
+      color: cs.surface,
+      borderRadius: const BorderRadius.vertical(top: Radius.circular(AppRadius.xl)),
+      child: SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // Handle
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 12),
+              child: Container(
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: AppColors.border,
+                  borderRadius: BorderRadius.circular(AppRadius.pill),
+                ),
+              ),
+            ),
+
+            Padding(
+              padding: const EdgeInsets.fromLTRB(AppSpacing.lg, 0, AppSpacing.lg, AppSpacing.sm),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('Elige un favorito', style: AppTextStyles.section),
+                  const SizedBox(height: AppSpacing.xs),
+                  Text(
+                    'Selecciona uno de tus libros para marcarlo como favorito',
+                    style: AppTextStyles.bodySecondary.copyWith(color: AppColors.textSecondary),
+                  ),
+                  const SizedBox(height: AppSpacing.md),
+                  TextField(
+                    autofocus: false,
+                    decoration: InputDecoration(
+                      hintText: 'Buscar libro…',
+                      prefixIcon: const Icon(Icons.search_rounded, size: 20),
+                      isDense: true,
+                      contentPadding: const EdgeInsets.symmetric(vertical: 10),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(AppRadius.md),
+                      ),
+                    ),
+                    onChanged: (v) => setState(() => _query = v),
+                  ),
+                ],
+              ),
+            ),
+
+            const Divider(height: 1),
+
+            Flexible(
+              child: _toggling
+                  ? const Center(child: Padding(
+                      padding: EdgeInsets.all(32),
+                      child: CircularProgressIndicator(),
+                    ))
+                  : filtrados.isEmpty
+                      ? Padding(
+                          padding: const EdgeInsets.all(AppSpacing.xl),
+                          child: Text(
+                            widget.todosLosLibros.isEmpty
+                                ? 'Añade libros a tu biblioteca primero'
+                                : 'No se encontraron libros',
+                            style: AppTextStyles.bodySecondary.copyWith(color: AppColors.textMuted),
+                            textAlign: TextAlign.center,
+                          ),
+                        )
+                      : ListView.separated(
+                          shrinkWrap: true,
+                          itemCount: filtrados.length,
+                          separatorBuilder: (context, i) => const Divider(height: 1, indent: 72),
+                          itemBuilder: (_, i) {
+                            final l = filtrados[i];
+                            return ListTile(
+                              leading: ClipRRect(
+                                borderRadius: BorderRadius.circular(AppRadius.xs),
+                                child: l.coverUrl.isNotEmpty
+                                    ? OptimizedNetworkImage(
+                                        url: l.coverUrl,
+                                        width: 36,
+                                        height: 52,
+                                        fit: BoxFit.cover,
+                                      )
+                                    : Container(
+                                        width: 36,
+                                        height: 52,
+                                        color: cs.surfaceContainerHighest,
+                                        child: const Icon(Icons.menu_book_rounded, size: 16),
+                                      ),
+                              ),
+                              title: Text(
+                                l.title,
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                                style: AppTextStyles.subtitle,
+                              ),
+                              trailing: const Icon(Icons.add_rounded, color: AppColors.primary),
+                              onTap: () => _elegir(l),
+                            );
+                          },
+                        ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

@@ -38,6 +38,7 @@ import '../widgets/error_view.dart';
 import '../widgets/info_card.dart';
 import 'mood_club_page.dart';
 import 'perfil_usuario_page.dart';
+import '../models/perfil_usuario.dart';
 import 'ranking_page.dart';
 import 'tendencias_club_page.dart';
 import 'package:club_lectura_app/widgets/common/club_shimmer.dart';
@@ -395,6 +396,9 @@ class _DashboardPageState extends State<DashboardPage> {
                       miAvatarUrl: avatarUrlActual,
                     ),
                   ],
+
+                  const SizedBox(height: AppSpacing.md),
+                  _FavoritosClubCard(),
 
                   if (data.libroMes.isNotEmpty) ...[
                     const SizedBox(height: AppSpacing.md),
@@ -1873,6 +1877,354 @@ class _PulsoTendenciaCardState extends State<_PulsoTendenciaCard>
               ),
             ),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Tarjeta "Favoritos del club"
+// ─────────────────────────────────────────────────────────────────────────────
+
+class _FavoritosClubCard extends StatefulWidget {
+  const _FavoritosClubCard();
+
+  @override
+  State<_FavoritosClubCard> createState() => _FavoritosClubCardState();
+}
+
+class _FavoritosClubCardState extends State<_FavoritosClubCard> {
+  List<MiembroFavoritos>? _miembros;
+  bool _cargando = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _cargar();
+  }
+
+  Future<void> _cargar() async {
+    try {
+      final lista = await ApiService().getFavoritosDelClub();
+      if (!mounted) return;
+      setState(() {
+        _miembros = lista;
+        _cargando = false;
+      });
+    } catch (_) {
+      if (mounted) setState(() => _cargando = false);
+    }
+  }
+
+  void _verFavoritos(MiembroFavoritos miembro) {
+    showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      useSafeArea: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => _FavoritosDeUsuarioSheet(miembro: miembro),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    // Ocultar si no hay datos y no está cargando
+    if (!_cargando && (_miembros == null || _miembros!.isEmpty)) {
+      return const SizedBox.shrink();
+    }
+
+    return ClubCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Cabecera
+          Row(
+            children: [
+              Container(
+                width: 38,
+                height: 38,
+                decoration: BoxDecoration(
+                  color: const Color(0xFFFDE8EF),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: const Icon(
+                  Icons.favorite_rounded,
+                  color: Color(0xFFD4537E),
+                  size: 20,
+                ),
+              ),
+              const SizedBox(width: AppSpacing.sm),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Favoritos del club',
+                      style: AppTextStyles.subtitle.copyWith(
+                        fontWeight: FontWeight.w800,
+                        color: const Color(0xFFAD2F5A),
+                      ),
+                    ),
+                    Text(
+                      'Los 5 libros favoritos de tus compañeras',
+                      style: AppTextStyles.caption.copyWith(
+                        color: AppColors.textMuted,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+
+          const SizedBox(height: AppSpacing.lg),
+
+          if (_cargando)
+            const Center(
+              child: Padding(
+                padding: EdgeInsets.symmetric(vertical: AppSpacing.md),
+                child: CircularProgressIndicator(),
+              ),
+            )
+          else
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              children: _miembros!.map((m) => _FavoritosMiembroTile(
+                miembro: m,
+                onTap: () => _verFavoritos(m),
+              )).toList(),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+class _FavoritosMiembroTile extends StatelessWidget {
+  const _FavoritosMiembroTile({required this.miembro, required this.onTap});
+
+  final MiembroFavoritos miembro;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Column(
+        children: [
+          Stack(
+            clipBehavior: Clip.none,
+            children: [
+              ClubAvatar(
+                nombre: miembro.nombre,
+                imageUrl: miembro.avatarUrl,
+                size: 52,
+              ),
+              // Miniatura del primer favorito
+              if (miembro.favoritos.isNotEmpty)
+                Positioned(
+                  bottom: -4,
+                  right: -6,
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(4),
+                    child: miembro.favoritos.first.coverUrl != null &&
+                            miembro.favoritos.first.coverUrl!.isNotEmpty
+                        ? OptimizedNetworkImage(
+                            url: miembro.favoritos.first.coverUrl,
+                            width: 22,
+                            height: 32,
+                            fit: BoxFit.cover,
+                          )
+                        : Container(
+                            width: 22,
+                            height: 32,
+                            color: const Color(0xFFD4537E),
+                            child: const Icon(Icons.favorite_rounded,
+                                color: Colors.white, size: 10),
+                          ),
+                  ),
+                ),
+            ],
+          ),
+          const SizedBox(height: 6),
+          Text(
+            miembro.nombre,
+            style: AppTextStyles.caption.copyWith(fontWeight: FontWeight.w600),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _FavoritosDeUsuarioSheet extends StatelessWidget {
+  const _FavoritosDeUsuarioSheet({required this.miembro});
+  final MiembroFavoritos miembro;
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    return Material(
+      color: cs.surface,
+      borderRadius: const BorderRadius.vertical(top: Radius.circular(AppRadius.xl)),
+      child: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(
+            AppSpacing.lg, AppSpacing.md, AppSpacing.lg, AppSpacing.lg),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Handle
+              Center(
+                child: Container(
+                  width: 40, height: 4,
+                  margin: const EdgeInsets.only(bottom: AppSpacing.md),
+                  decoration: BoxDecoration(
+                    color: AppColors.border,
+                    borderRadius: BorderRadius.circular(AppRadius.pill),
+                  ),
+                ),
+              ),
+              Row(
+                children: [
+                  ClubAvatar(
+                    nombre: miembro.nombre,
+                    imageUrl: miembro.avatarUrl,
+                    size: 36,
+                  ),
+                  const SizedBox(width: AppSpacing.sm),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Favoritos de ${miembro.nombre}',
+                          style: AppTextStyles.section,
+                        ),
+                        Text(
+                          '${miembro.favoritos.length} libro${miembro.favoritos.length == 1 ? '' : 's'}',
+                          style: AppTextStyles.caption.copyWith(color: AppColors.textMuted),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: AppSpacing.lg),
+              Row(
+                children: [
+                  for (var i = 0; i < 5; i++)
+                    Expanded(
+                      child: Padding(
+                        padding: EdgeInsets.only(right: i < 4 ? 8 : 0),
+                        child: i < miembro.favoritos.length
+                            ? _MiniPortada(libro: miembro.favoritos[i])
+                            : const _MiniSlotVacio(),
+                      ),
+                    ),
+                ],
+              ),
+              const SizedBox(height: AppSpacing.lg),
+              // Navegar al perfil
+              SizedBox(
+                width: double.infinity,
+                child: OutlinedButton.icon(
+                  icon: const Icon(Icons.person_outline_rounded, size: 18),
+                  label: Text('Ver perfil de ${miembro.nombre}'),
+                  onPressed: () {
+                    Navigator.pop(context);
+                    Navigator.push<void>(
+                      context,
+                      AppPageRoute(
+                        builder: (_) => PerfilUsuarioPage(usuario: miembro.nombre),
+                      ),
+                    );
+                  },
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _MiniPortada extends StatelessWidget {
+  const _MiniPortada({required this.libro});
+  final LibroFavorito libro;
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    return Column(
+      children: [
+        Stack(
+          children: [
+            AspectRatio(
+              aspectRatio: 2 / 3,
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(AppRadius.sm),
+                child: libro.coverUrl != null && libro.coverUrl!.isNotEmpty
+                    ? OptimizedNetworkImage(
+                        url: libro.coverUrl,
+                        width: double.infinity,
+                        height: double.infinity,
+                        fit: BoxFit.cover,
+                      )
+                    : Container(
+                        color: cs.surfaceContainerHighest,
+                        child: Center(
+                          child: Text(
+                            libro.title.isNotEmpty ? libro.title[0].toUpperCase() : '?',
+                            style: AppTextStyles.section.copyWith(color: AppColors.textMuted),
+                          ),
+                        ),
+                      ),
+              ),
+            ),
+            Positioned(
+              bottom: 3, right: 3,
+              child: Container(
+                width: 14, height: 14,
+                decoration: const BoxDecoration(
+                  color: Color(0xFFD4537E),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(Icons.favorite_rounded, color: Colors.white, size: 8),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 4),
+        Text(
+          libro.title,
+          style: AppTextStyles.caption.copyWith(color: AppColors.textSecondary),
+          textAlign: TextAlign.center,
+          maxLines: 2,
+          overflow: TextOverflow.ellipsis,
+        ),
+      ],
+    );
+  }
+}
+
+class _MiniSlotVacio extends StatelessWidget {
+  const _MiniSlotVacio();
+
+  @override
+  Widget build(BuildContext context) {
+    return AspectRatio(
+      aspectRatio: 2 / 3,
+      child: Container(
+        decoration: BoxDecoration(
+          border: Border.all(color: AppColors.border, width: 1),
+          borderRadius: BorderRadius.circular(AppRadius.sm),
+          color: Theme.of(context).colorScheme.surfaceContainerLowest,
         ),
       ),
     );

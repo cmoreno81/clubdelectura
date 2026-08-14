@@ -81,6 +81,27 @@ class LibroFavorito {
   );
 }
 
+class MiembroFavoritos {
+  const MiembroFavoritos({
+    required this.nombre,
+    required this.avatarUrl,
+    required this.favoritos,
+  });
+
+  final String nombre;
+  final String avatarUrl;
+  final List<LibroFavorito> favoritos;
+
+  factory MiembroFavoritos.fromJson(Map<String, dynamic> json) => MiembroFavoritos(
+    nombre: json['nombre']?.toString() ?? '',
+    avatarUrl: json['avatarUrl']?.toString() ?? '',
+    favoritos: (json['favoritos'] as List? ?? [])
+        .whereType<Map<String, dynamic>>()
+        .map(LibroFavorito.fromJson)
+        .toList(),
+  );
+}
+
 class PerfilResumen {
   final int terminados;
   final int relecturas;

@@ -1716,4 +1716,18 @@ class ApiService {
         .map(LibroFavorito.fromJson)
         .toList();
   }
+
+  Future<List<MiembroFavoritos>> getFavoritosDelClub() async {
+    final uri = Uri.parse(baseUrl).replace(
+      queryParameters: {'action': 'favoritosDelClub'},
+    );
+    final response = await _client.get(uri);
+    if (response.statusCode != 200) return [];
+    final data = _decodeJson(response);
+    if (data is! Map<String, dynamic>) return [];
+    return (data['miembros'] as List? ?? [])
+        .whereType<Map<String, dynamic>>()
+        .map(MiembroFavoritos.fromJson)
+        .toList();
+  }
 }
