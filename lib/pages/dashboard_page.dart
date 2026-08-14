@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 
 import '../models/notificacion.dart';
 import '../navigation/app_page_route.dart';
+import '../services/notificaciones_service.dart';
 import '../navigation/book_detail_navigation.dart';
 import '../widgets/common/notificaciones_sheet.dart';
 import 'afinidad_detalle_page.dart';
@@ -78,8 +79,6 @@ class _DashboardPageState extends State<DashboardPage> {
   String avatarUrlActual = '';
   bool _headerLoading = true;
 
-  int _noLeidasClub = 0;
-
   @override
   void initState() {
     super.initState();
@@ -88,15 +87,8 @@ class _DashboardPageState extends State<DashboardPage> {
     avatarUrlActual = sessionUser?.avatarUrl.trim() ?? '';
     widget.controller?._refresh = _recargar;
     dashboardFuture = _cargarDashboard();
-    _cargarNoLeidas();
-  }
-
-  Future<void> _cargarNoLeidas() async {
-    try {
-      final data = await ApiService().getNotificaciones();
-      if (!mounted) return;
-      setState(() => _noLeidasClub = data.noLeidasClub);
-    } catch (_) {}
+    // Carga inicial de notificaciones en el servicio compartido
+    unawaited(NotificacionesService.instance.cargar());
   }
 
   Future<void> _abrirNotificaciones() async {
@@ -111,7 +103,8 @@ class _DashboardPageState extends State<DashboardPage> {
               n.tipo == 'NUEVA_MIEMBRO',
     );
 
-    unawaited(_cargarNoLeidas());
+    // Refrescar el servicio tras cerrar el sheet
+    unawaited(NotificacionesService.instance.cargar());
 
     if (notif == null || !mounted) return;
     await _navegarDesdeNotificacion(notif);
@@ -263,16 +256,20 @@ class _DashboardPageState extends State<DashboardPage> {
         ),
         actions: [
           if (!widget.esPersonal)
-          IconButton(
-            tooltip: 'Actividad del club',
-            onPressed: _abrirNotificaciones,
-            icon: Badge(
-              isLabelVisible: _noLeidasClub > 0,
-              label: Text(
-                _noLeidasClub < 10 ? '$_noLeidasClub' : '9+',
-              ),
-              child: const Icon(Icons.notifications_none_rounded),
-            ),
+          ListenableBuilder(
+            listenable: NotificacionesService.instance,
+            builder: (context, _) {
+              final n = NotificacionesService.instance.noLeidasClub;
+              return IconButton(
+                tooltip: 'Actividad del club',
+                onPressed: _abrirNotificaciones,
+                icon: Badge(
+                  isLabelVisible: n > 0,
+                  label: Text(n < 10 ? '$n' : '9+'),
+                  child: const Icon(Icons.notifications_none_rounded),
+                ),
+              );
+            },
           ),
           Padding(
             padding: const EdgeInsets.only(right: AppSpacing.md),

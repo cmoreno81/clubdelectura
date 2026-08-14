@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 
 import '../../models/notificacion.dart';
 import '../../services/api_service.dart';
+import '../../services/notificaciones_service.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_radius.dart';
 import '../../theme/app_spacing.dart';
@@ -67,17 +68,8 @@ class _NotificacionesSheetState extends State<_NotificacionesSheet> {
         _notifs = filtradas;
         _loading = false;
       });
-      // Auto-marcar como leídas al abrir el panel (comportamiento estándar iOS/Android)
-      final hayNoLeidas = filtradas.any((n) => !n.leida);
-      if (hayNoLeidas) {
-        unawaited(ApiService().marcarTodasNotificacionesLeidas());
-        // Actualizamos el estado local para que el conteo desaparezca inmediatamente
-        if (mounted) {
-          setState(() {
-            _notifs = filtradas.map((n) => n.copyWith(leida: true)).toList();
-          });
-        }
-      }
+      // NO auto-marcamos al abrir: el usuario debe ver qué es nuevo.
+      // El badge global se resetea cuando el sheet cierra o el usuario toca algo.
     } catch (_) {
       if (!mounted) return;
       setState(() => _loading = false);
@@ -86,7 +78,8 @@ class _NotificacionesSheetState extends State<_NotificacionesSheet> {
 
   Future<void> _marcarTodas() async {
     setState(() => _marcandoTodas = true);
-    await ApiService().marcarTodasNotificacionesLeidas();
+    // Usar el servicio para que todos los badges se actualicen
+    await NotificacionesService.instance.marcarTodas();
     if (!mounted) return;
     setState(() {
       _marcandoTodas = false;
@@ -95,9 +88,15 @@ class _NotificacionesSheetState extends State<_NotificacionesSheet> {
   }
 
   void _tocar(Notificacion n) {
-    // Marcar como leída en el backend (fire-and-forget)
+    // Marcar como leída en el servicio (actualiza todos los badges)
     if (!n.leida) {
-      unawaited(ApiService().marcarNotificacionLeida(n.id));
+      unawaited(NotificacionesService.instance.marcarLeida(n.id));
+      // Actualizar la lista local para que el punto desaparezca
+      setState(() {
+        _notifs = _notifs
+            ?.map((x) => x.id == n.id ? x.copyWith(leida: true) : x)
+            .toList();
+      });
     }
     // Cerrar el sheet y devolver la notificación al caller para que navegue
     Navigator.pop(context, n);

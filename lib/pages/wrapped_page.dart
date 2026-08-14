@@ -70,38 +70,12 @@ class _WrappedContent extends StatefulWidget {
 
 class _WrappedContentState extends State<_WrappedContent> {
   final PageController _pc = PageController();
-  final _repaintKey = GlobalKey();
   int _page = 0;
-  bool _sharing = false;
 
   @override
   void dispose() {
     _pc.dispose();
     super.dispose();
-  }
-
-  Future<void> _compartir() async {
-    if (_sharing) return;
-    setState(() => _sharing = true);
-    try {
-      final boundary = _repaintKey.currentContext?.findRenderObject() as RenderRepaintBoundary?;
-      if (boundary == null) return;
-      final image = await boundary.toImage(pixelRatio: 3.0);
-      final byteData = await image.toByteData(format: ui.ImageByteFormat.png);
-      if (byteData == null) return;
-      final bytes = byteData.buffer.asUint8List();
-      final tempDir = await getTemporaryDirectory();
-      final file = File('${tempDir.path}/wrapped_${widget.year}.png');
-      await file.writeAsBytes(bytes);
-      await SharePlus.instance.share(
-        ShareParams(
-          files: [XFile(file.path)],
-          text: 'Mi Wrapped ${widget.year} en ClubReads 📚✨',
-        ),
-      );
-    } finally {
-      if (mounted) setState(() => _sharing = false);
-    }
   }
 
   void _next() {
@@ -167,6 +141,17 @@ class _WrappedContentState extends State<_WrappedContent> {
       ),
       _SlideComparativa(totalBooks: totalBooks, prevYear: prevYearBooks, diff: diffVsPrevYear, year: widget.year),
       _SlideFinal(totalBooks: totalBooks, year: widget.year),
+      _SlideResumenCompartir(
+        year: widget.year,
+        totalBooks: totalBooks,
+        totalPages: totalPages,
+        totalActiveDays: totalActiveDays,
+        streak: streak,
+        topGenre: topGenre?['name'] as String?,
+        topAuthor: topAuthor?['name'] as String?,
+        avgRating: avgRating?.toDouble(),
+        bestMonth: bestMonth?['name'] as String?,
+      ),
     ];
   }
 
@@ -175,11 +160,7 @@ class _WrappedContentState extends State<_WrappedContent> {
     final pages = _pages;
     return GestureDetector(
       onTapDown: (details) {
-        // Ignorar taps en el tercio inferior derecho (zona del botón compartir)
-        final size = MediaQuery.of(context).size;
-        if (details.localPosition.dx > size.width * 0.7 &&
-            details.localPosition.dy > size.height * 0.8) { return; }
-        final half = size.width / 2;
+        final half = MediaQuery.of(context).size.width / 2;
         if (details.localPosition.dx > half) {
           _next();
         } else {
@@ -188,15 +169,12 @@ class _WrappedContentState extends State<_WrappedContent> {
       },
       child: Stack(
         children: [
-          // ── Slides con RepaintBoundary para captura ──────────────────────
-          RepaintBoundary(
-            key: _repaintKey,
-            child: PageView.builder(
-              controller: _pc,
-              itemCount: pages.length,
-              onPageChanged: (i) => setState(() => _page = i),
-              itemBuilder: (_, i) => pages[i],
-            ),
+          // ── Slides ────────────────────────────────────────────────────────
+          PageView.builder(
+            controller: _pc,
+            itemCount: pages.length,
+            onPageChanged: (i) => setState(() => _page = i),
+            itemBuilder: (_, i) => pages[i],
           ),
 
           // ── Indicador de progreso arriba ─────────────────────────────────
@@ -229,45 +207,6 @@ class _WrappedContentState extends State<_WrappedContent> {
                 child: IconButton(
                   icon: const Icon(Icons.close_rounded, color: Colors.white70),
                   onPressed: () => Navigator.pop(context),
-                ),
-              ),
-            ),
-          ),
-
-          // ── Botón compartir (esquina inferior derecha) ───────────────────
-          SafeArea(
-            child: Align(
-              alignment: Alignment.bottomRight,
-              child: Padding(
-                padding: const EdgeInsets.all(AppSpacing.lg),
-                child: GestureDetector(
-                  onTap: _compartir,
-                  child: AnimatedContainer(
-                    duration: const Duration(milliseconds: 200),
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: _sharing ? 0.15 : 0.2),
-                      borderRadius: BorderRadius.circular(AppRadius.pill),
-                      border: Border.all(color: Colors.white30),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        if (_sharing)
-                          const SizedBox(
-                            width: 14, height: 14,
-                            child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
-                          )
-                        else
-                          const Icon(Icons.ios_share_rounded, color: Colors.white, size: 16),
-                        const SizedBox(width: 6),
-                        const Text(
-                          'Compartir',
-                          style: TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w600),
-                        ),
-                      ],
-                    ),
-                  ),
                 ),
               ),
             ),
@@ -973,6 +912,347 @@ class _SlideFinal extends StatelessWidget {
                   fontSize: 16,
                 ),
               ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Slide resumen + compartir (pantalla final)
+// ─────────────────────────────────────────────────────────────────────────────
+
+class _SlideResumenCompartir extends StatefulWidget {
+  const _SlideResumenCompartir({
+    required this.year,
+    required this.totalBooks,
+    required this.totalPages,
+    required this.totalActiveDays,
+    required this.streak,
+    this.topGenre,
+    this.topAuthor,
+    this.avgRating,
+    this.bestMonth,
+  });
+
+  final int year;
+  final int totalBooks;
+  final int totalPages;
+  final int totalActiveDays;
+  final int streak;
+  final String? topGenre;
+  final String? topAuthor;
+  final double? avgRating;
+  final String? bestMonth;
+
+  @override
+  State<_SlideResumenCompartir> createState() => _SlideResumenCompartirState();
+}
+
+class _SlideResumenCompartirState extends State<_SlideResumenCompartir> {
+  final _repaintKey = GlobalKey();
+  bool _sharing = false;
+
+  Future<void> _compartir() async {
+    if (_sharing) return;
+    setState(() => _sharing = true);
+    try {
+      final boundary = _repaintKey.currentContext?.findRenderObject()
+          as RenderRepaintBoundary?;
+      if (boundary == null) return;
+      final image = await boundary.toImage(pixelRatio: 3.0);
+      final byteData = await image.toByteData(format: ui.ImageByteFormat.png);
+      if (byteData == null) return;
+      final bytes = byteData.buffer.asUint8List();
+      final tempDir = await getTemporaryDirectory();
+      final file = File('${tempDir.path}/wrapped_${widget.year}.png');
+      await file.writeAsBytes(bytes);
+      await SharePlus.instance.share(
+        ShareParams(
+          files: [XFile(file.path)],
+          text: 'Mi Wrapped ${widget.year} en ClubReads 📚✨',
+        ),
+      );
+    } finally {
+      if (mounted) setState(() => _sharing = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final stars = widget.avgRating != null
+        ? '⭐ ${widget.avgRating!.toStringAsFixed(1)}'
+        : null;
+
+    return Container(
+      decoration: const BoxDecoration(
+        gradient: LinearGradient(
+          colors: [Color(0xFF0D0D1A), Color(0xFF1A0D2E), Color(0xFF0D1A12)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+      ),
+      child: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(
+              AppSpacing.lg, AppSpacing.xl, AppSpacing.lg, AppSpacing.md),
+          child: Column(
+            children: [
+              // ── Tarjeta capturada ──────────────────────────────────────
+              Expanded(
+                child: RepaintBoundary(
+                  key: _repaintKey,
+                  child: Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(AppSpacing.xl),
+                    decoration: BoxDecoration(
+                      gradient: const LinearGradient(
+                        colors: [Color(0xFF1A0A3D), Color(0xFF0D2218)],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                      ),
+                      borderRadius: BorderRadius.circular(AppRadius.xl),
+                      border: Border.all(
+                          color: Colors.white.withValues(alpha: 0.12)),
+                    ),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        // Encabezado
+                        const Text('✨',
+                            style: TextStyle(fontSize: 36)),
+                        const SizedBox(height: 8),
+                        Text(
+                          'Wrapped ${widget.year}',
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 22,
+                            fontWeight: FontWeight.w900,
+                            letterSpacing: -0.5,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          'ClubReads',
+                          style: TextStyle(
+                            color: Colors.white.withValues(alpha: 0.4),
+                            fontSize: 12,
+                            letterSpacing: 2,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+
+                        const SizedBox(height: AppSpacing.xl),
+
+                        // ── Grid de estadísticas ──────────────────────────
+                        _StatGrid(children: [
+                          _StatCell(
+                            emoji: '📚',
+                            value: '${widget.totalBooks}',
+                            label: widget.totalBooks == 1 ? 'libro' : 'libros',
+                            accent: const Color(0xFF6C3FF5),
+                          ),
+                          _StatCell(
+                            emoji: '📄',
+                            value: '${widget.totalPages}',
+                            label: 'páginas',
+                            accent: const Color(0xFF1DB954),
+                          ),
+                          _StatCell(
+                            emoji: '📅',
+                            value: '${widget.totalActiveDays}',
+                            label: 'días activa',
+                            accent: const Color(0xFFFF6B9D),
+                          ),
+                          _StatCell(
+                            emoji: '🔥',
+                            value: '${widget.streak}',
+                            label: 'racha',
+                            accent: const Color(0xFFFFB347),
+                          ),
+                          if (widget.topGenre != null)
+                            _StatCell(
+                              emoji: '🎭',
+                              value: widget.topGenre!,
+                              label: 'género fav.',
+                              accent: const Color(0xFF64B5F6),
+                              isText: true,
+                            ),
+                          if (widget.topAuthor != null)
+                            _StatCell(
+                              emoji: '✍️',
+                              value: widget.topAuthor!,
+                              label: 'autor fav.',
+                              accent: const Color(0xFFFFD700),
+                              isText: true,
+                            ),
+                          if (stars != null)
+                            _StatCell(
+                              emoji: '⭐',
+                              value: widget.avgRating!.toStringAsFixed(1),
+                              label: 'media lectora',
+                              accent: const Color(0xFFFFD700),
+                            ),
+                          if (widget.bestMonth != null)
+                            _StatCell(
+                              emoji: '🏆',
+                              value: widget.bestMonth!,
+                              label: 'mejor mes',
+                              accent: const Color(0xFFFF8A65),
+                              isText: true,
+                            ),
+                        ]),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+
+              const SizedBox(height: AppSpacing.lg),
+
+              // ── Botón compartir grande ────────────────────────────────
+              GestureDetector(
+                onTap: _compartir,
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 200),
+                  width: double.infinity,
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  decoration: BoxDecoration(
+                    gradient: _sharing
+                        ? null
+                        : const LinearGradient(
+                            colors: [Color(0xFF6C3FF5), Color(0xFF1DB954)],
+                            begin: Alignment.centerLeft,
+                            end: Alignment.centerRight,
+                          ),
+                    color: _sharing
+                        ? Colors.white.withValues(alpha: 0.15)
+                        : null,
+                    borderRadius: BorderRadius.circular(AppRadius.pill),
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      if (_sharing)
+                        const SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(
+                              strokeWidth: 2, color: Colors.white),
+                        )
+                      else
+                        const Icon(Icons.ios_share_rounded,
+                            color: Colors.white, size: 22),
+                      const SizedBox(width: 10),
+                      Text(
+                        _sharing ? 'Preparando imagen...' : 'Compartir mi Wrapped',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 16,
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+
+              const SizedBox(height: AppSpacing.sm),
+
+              // Botón cerrar secundario
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: Text(
+                  'Cerrar',
+                  style: TextStyle(
+                    color: Colors.white.withValues(alpha: 0.5),
+                    fontSize: 14,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// ── Helpers visuales del resumen ─────────────────────────────────────────────
+
+class _StatGrid extends StatelessWidget {
+  const _StatGrid({required this.children});
+  final List<Widget> children;
+
+  @override
+  Widget build(BuildContext context) {
+    return GridView.count(
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      crossAxisCount: 2,
+      mainAxisSpacing: AppSpacing.sm,
+      crossAxisSpacing: AppSpacing.sm,
+      childAspectRatio: 2.0,
+      children: children,
+    );
+  }
+}
+
+class _StatCell extends StatelessWidget {
+  const _StatCell({
+    required this.emoji,
+    required this.value,
+    required this.label,
+    required this.accent,
+    this.isText = false,
+  });
+
+  final String emoji;
+  final String value;
+  final String label;
+  final Color accent;
+  final bool isText;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      decoration: BoxDecoration(
+        color: accent.withValues(alpha: 0.12),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: accent.withValues(alpha: 0.25)),
+      ),
+      child: Row(
+        children: [
+          Text(emoji, style: const TextStyle(fontSize: 18)),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  value,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: isText ? 11 : 16,
+                    fontWeight: FontWeight.w800,
+                    height: 1.1,
+                  ),
+                ),
+                Text(
+                  label,
+                  style: TextStyle(
+                    color: Colors.white.withValues(alpha: 0.5),
+                    fontSize: 10,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ],
             ),
           ),
         ],

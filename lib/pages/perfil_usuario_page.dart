@@ -519,7 +519,7 @@ class _PerfilUsuarioPageState extends State<PerfilUsuarioPage> {
           ),
         ],
 
-        // ── Géneros favoritos — AL FINAL, tarjeta a sangre completa ──────────
+        // ── Géneros favoritos ─────────────────────────────────────────────
         if (perfil.generosFavoritos.isNotEmpty) ...[
           const SizedBox(height: AppSpacing.xl),
           const ClubSectionTitle(
@@ -529,33 +529,23 @@ class _PerfilUsuarioPageState extends State<PerfilUsuarioPage> {
             padding: EdgeInsets.zero,
           ),
           const SizedBox(height: AppSpacing.sm),
-          // LayoutBuilder + Transform para que la tarjeta llegue a los bordes
-          // sin usar padding negativo (que lanza assertion en Flutter).
-          LayoutBuilder(
-            builder: (_, constraints) => Transform.translate(
-              offset: const Offset(-AppSpacing.md, 0),
-              child: SizedBox(
-                width: constraints.maxWidth + 2 * AppSpacing.md,
-                child: ClubCard(
-                  elevated: false,
-                  child: Wrap(
-                    alignment: WrapAlignment.center,
-                    spacing: AppSpacing.xs,
-                    runSpacing: AppSpacing.xs,
-                    children: perfil.generosFavoritos
-                        .map(
-                          (genero) => ClubChip(
-                            label:
-                                '${iconoGenero(genero.genero)} '
-                                '${genero.genero} · '
-                                '${genero.total}',
-                            variant: ClubChipVariant.primary,
-                          ),
-                        )
-                        .toList(),
-                  ),
-                ),
-              ),
+          ClubCard(
+            elevated: false,
+            child: Wrap(
+              alignment: WrapAlignment.center,
+              spacing: AppSpacing.xs,
+              runSpacing: AppSpacing.xs,
+              children: perfil.generosFavoritos
+                  .map(
+                    (genero) => ClubChip(
+                      label:
+                          '${iconoGenero(genero.genero)} '
+                          '${genero.genero} · '
+                          '${genero.total}',
+                      variant: ClubChipVariant.primary,
+                    ),
+                  )
+                  .toList(),
             ),
           ),
           const SizedBox(height: AppSpacing.md),

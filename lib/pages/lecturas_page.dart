@@ -8,6 +8,7 @@ import '../navigation/book_detail_navigation.dart';
 import '../models/lectura_activa.dart';
 import '../models/notificacion.dart';
 import '../services/api_service.dart';
+import '../services/notificaciones_service.dart';
 import '../services/reading_last_seen_service.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_radius.dart';
@@ -39,22 +40,12 @@ class _LecturasPageState extends State<LecturasPage> {
   /// Última vez que el usuario abrió cada lectura, indexado por título.
   Map<String, DateTime> _lastSeen = {};
 
-  /// Notificaciones no leídas de tipo Lecturas (para el badge del bell).
-  int _noLeidasLecturas = 0;
-
   @override
   void initState() {
     super.initState();
     _recargar();
-    _cargarNoLeidas();
-  }
-
-  Future<void> _cargarNoLeidas() async {
-    try {
-      final data = await ApiService().getNotificaciones();
-      if (!mounted) return;
-      setState(() => _noLeidasLecturas = data.noLeidasLecturas);
-    } catch (_) {}
+    // Asegurar que el servicio compartido tiene datos actualizados
+    unawaited(NotificacionesService.instance.cargar());
   }
 
   /// Abre el sheet de notificaciones y navega al destino correcto.
@@ -67,8 +58,8 @@ class _LecturasPageState extends State<LecturasPage> {
               n.tipo == 'LECTURA_NUEVA' || n.tipo == 'COMENTARIO_LECTURA',
     );
 
-    // Refrescar badge tras cerrar (haya o no pulsado)
-    unawaited(_cargarNoLeidas());
+    // Refrescar el servicio compartido (actualiza todos los badges)
+    unawaited(NotificacionesService.instance.cargar());
 
     if (notif == null || !mounted) return;
     await _navegarDesdeNotificacion(notif);
@@ -208,16 +199,20 @@ class _LecturasPageState extends State<LecturasPage> {
               ),
         title: const Text('Lecturas'),
         actions: [
-          IconButton(
-            tooltip: 'Notificaciones',
-            onPressed: _abrirNotificaciones,
-            icon: Badge(
-              isLabelVisible: _noLeidasLecturas > 0,
-              label: Text(
-                _noLeidasLecturas < 10 ? '$_noLeidasLecturas' : '9+',
-              ),
-              child: const Icon(Icons.notifications_none_rounded),
-            ),
+          ListenableBuilder(
+            listenable: NotificacionesService.instance,
+            builder: (context, _) {
+              final n = NotificacionesService.instance.noLeidasLecturas;
+              return IconButton(
+                tooltip: 'Notificaciones',
+                onPressed: _abrirNotificaciones,
+                icon: Badge(
+                  isLabelVisible: n > 0,
+                  label: Text(n < 10 ? '$n' : '9+'),
+                  child: const Icon(Icons.notifications_none_rounded),
+                ),
+              );
+            },
           ),
           const SizedBox(width: AppSpacing.xs),
         ],
