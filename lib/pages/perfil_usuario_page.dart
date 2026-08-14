@@ -516,6 +516,11 @@ class _PerfilUsuarioPageState extends State<PerfilUsuarioPage> {
               context,
               AppPageRoute(builder: (_) => const WrappedPage()),
             ),
+            // Long-press siempre abre el Wrapped (acceso para pruebas)
+            onLongPress: () => Navigator.push<void>(
+              context,
+              AppPageRoute(builder: (_) => const WrappedPage()),
+            ),
           ),
         ],
 
@@ -1774,8 +1779,13 @@ class _CheckinSectionState extends State<_CheckinSection> {
 // ── Wrapped CTA en perfil ─────────────────────────────────────────────────────
 
 class _WrappedPerfilCta extends StatelessWidget {
-  const _WrappedPerfilCta({required this.onTap, required this.disponible});
+  const _WrappedPerfilCta({
+    required this.onTap,
+    required this.disponible,
+    this.onLongPress,
+  });
   final VoidCallback onTap;
+  final VoidCallback? onLongPress;
   final bool disponible;
 
   /// Días hasta el 1 de noviembre
@@ -1837,7 +1847,9 @@ class _WrappedPerfilCta extends StatelessWidget {
 
     // ── Estado inactivo: Wrapped no disponible todavía ──────────────────
     final dias = _diasHastaNoviembre();
-    return Container(
+    return GestureDetector(
+      onLongPress: onLongPress,
+      child: Container(
       padding: const EdgeInsets.all(AppSpacing.md),
       decoration: BoxDecoration(
         color: AppColors.surface,
@@ -1878,6 +1890,7 @@ class _WrappedPerfilCta extends StatelessWidget {
           const Icon(Icons.lock_outline_rounded, color: AppColors.textMuted, size: 18),
         ],
       ),
+    ),
     );
   }
 }
