@@ -1689,4 +1689,29 @@ class ApiService {
     if (response.statusCode != 200) throw ApiException.fromResponse(response);
     return _decodeJson(response) as Map<String, dynamic>;
   }
+
+  // ── Favoritos ──────────────────────────────────────────────────────────────
+
+  Future<Map<String, dynamic>> toggleFavorito(String bookId) async {
+    final response = await _postJson('toggleFavorito', {'bookId': bookId});
+    if (response.statusCode != 200) {
+      return {'ok': false, 'mensaje': 'Error de conexión con el servidor.'};
+    }
+    final data = _decodeJson(response);
+    return data is Map<String, dynamic> ? data : {'ok': false};
+  }
+
+  Future<List<LibroFavorito>> getFavoritosUsuario(String usuario) async {
+    final uri = Uri.parse(baseUrl).replace(
+      queryParameters: {'action': 'favoritosUsuario', 'perfil': usuario},
+    );
+    final response = await _client.get(uri);
+    if (response.statusCode != 200) return [];
+    final data = _decodeJson(response);
+    if (data is! Map<String, dynamic>) return [];
+    return (data['favoritos'] as List? ?? [])
+        .whereType<Map<String, dynamic>>()
+        .map(LibroFavorito.fromJson)
+        .toList();
+  }
 }

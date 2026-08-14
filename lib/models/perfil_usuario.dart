@@ -11,6 +11,7 @@ class PerfilUsuario {
   final List<PerfilGenero> generosFavoritos;
   final List<PerfilSaga> sagas;
   final List<PerfilMesLector> historicoMeses;
+  final List<LibroFavorito> favoritos;
 
   PerfilUsuario({
     required this.usuario,
@@ -23,6 +24,7 @@ class PerfilUsuario {
     required this.generosFavoritos,
     required this.sagas,
     required this.historicoMeses,
+    this.favoritos = const [],
   });
 
   factory PerfilUsuario.fromJson(Map<String, dynamic> json) {
@@ -46,8 +48,37 @@ class PerfilUsuario {
       generosFavoritos: parseList('generosFavoritos', PerfilGenero.fromJson),
       sagas: parseList('sagas', PerfilSaga.fromJson),
       historicoMeses: parseList('historicoMeses', PerfilMesLector.fromJson),
+      favoritos: parseList('favoritos', LibroFavorito.fromJson),
     );
   }
+}
+
+// ─────────────────────────────────────────────
+// Libro favorito (para perfil)
+// ─────────────────────────────────────────────
+
+class LibroFavorito {
+  const LibroFavorito({
+    required this.id,
+    required this.title,
+    this.authorName,
+    this.coverUrl,
+    this.genreName = '',
+  });
+
+  final String id;
+  final String title;
+  final String? authorName;
+  final String? coverUrl;
+  final String genreName;
+
+  factory LibroFavorito.fromJson(Map<String, dynamic> json) => LibroFavorito(
+    id: json['id']?.toString() ?? '',
+    title: json['title']?.toString() ?? '',
+    authorName: json['authorName']?.toString(),
+    coverUrl: json['coverUrl']?.toString(),
+    genreName: json['genreName']?.toString() ?? '',
+  );
 }
 
 class PerfilResumen {

@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -35,6 +37,7 @@ import 'change_password_page.dart';
 import 'goodreads_import_page.dart';
 import 'hidden_series_page.dart';
 import '../services/auth_service.dart';
+import '../services/favoritos_service.dart';
 import '../widgets/dashboard/year_reading_shelf.dart';
 import '../models/general_dashboard.dart' show YearShelfBook;
 import 'year_reading_share_page.dart';
@@ -269,6 +272,11 @@ class _PerfilUsuarioPageState extends State<PerfilUsuarioPage> {
     setState(() {
       usuarioActual = usuario?.trim();
     });
+    // Cargar favoritos del servicio singleton (para la vista propia)
+    if (usuario != null &&
+        usuario.trim().toLowerCase() == widget.usuario.trim().toLowerCase()) {
+      unawaited(FavoritosService.instance.cargar());
+    }
   }
 
   /// Wrapped disponible: noviembre (11), diciembre (12) y enero (1).
@@ -521,6 +529,22 @@ class _PerfilUsuarioPageState extends State<PerfilUsuarioPage> {
               context,
               AppPageRoute(builder: (_) => const WrappedPage()),
             ),
+          ),
+        ],
+
+        // ── Libros favoritos ──────────────────────────────────────────────
+        if (esMiPerfil || perfil.favoritos.isNotEmpty) ...[
+          const SizedBox(height: AppSpacing.xl),
+          ClubSectionTitle(
+            title: 'Libros favoritos',
+            subtitle: esMiPerfil ? 'Tus 5 favoritos de siempre' : 'Sus 5 libros favoritos',
+            icon: Icons.favorite_rounded,
+            padding: EdgeInsets.zero,
+          ),
+          const SizedBox(height: AppSpacing.sm),
+          _FavoritosShelf(
+            favoritos: perfil.favoritos,
+            esMiPerfil: esMiPerfil,
           ),
         ],
 
@@ -1904,6 +1928,172 @@ class _WrappedPerfilCta extends StatelessWidget {
         ],
       ),
     ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Estantería de favoritos
+// ─────────────────────────────────────────────────────────────────────────────
+
+class _FavoritosShelf extends StatelessWidget {
+  const _FavoritosShelf({
+    required this.favoritos,
+    required this.esMiPerfil,
+  });
+
+  final List<LibroFavorito> favoritos;
+  final bool esMiPerfil;
+
+  static const int _maxSlots = 5;
+
+  @override
+  Widget build(BuildContext context) {
+    // Si es mi perfil, usar ListenableBuilder para reflejar cambios en tiempo real
+    if (esMiPerfil) {
+      return ListenableBuilder(
+        listenable: FavoritosService.instance,
+        builder: (context, _) {
+          final live = FavoritosService.instance.favoritos;
+          // Si el servicio ya cargó y tiene datos, usar esos; si no, los del perfil
+          final lista = FavoritosService.instance.total > 0 ? live : favoritos;
+          return _buildShelf(context, lista);
+        },
+      );
+    }
+    return _buildShelf(context, favoritos);
+  }
+
+  Widget _buildShelf(BuildContext context, List<LibroFavorito> lista) {
+    final slots = List<LibroFavorito?>.generate(
+      _maxSlots,
+      (i) => i < lista.length ? lista[i] : null,
+    );
+
+    if (!esMiPerfil && lista.isEmpty) {
+      return Padding(
+        padding: const EdgeInsets.symmetric(vertical: AppSpacing.md),
+        child: Text(
+          'Todavía no ha marcado favoritos',
+          style: AppTextStyles.bodySecondary.copyWith(color: AppColors.textMuted),
+        ),
+      );
+    }
+
+    return Row(
+      children: slots.asMap().entries.map((entry) {
+        final libro = entry.value;
+        return Expanded(
+          child: Padding(
+            padding: EdgeInsets.only(right: entry.key < _maxSlots - 1 ? 8 : 0),
+            child: _FavoritoSlot(libro: libro, esMiPerfil: esMiPerfil),
+          ),
+        );
+      }).toList(),
+    );
+  }
+}
+
+class _FavoritoSlot extends StatelessWidget {
+  const _FavoritoSlot({required this.libro, required this.esMiPerfil});
+
+  final LibroFavorito? libro;
+  final bool esMiPerfil;
+
+  @override
+  Widget build(BuildContext context) {
+    if (libro == null) {
+      if (!esMiPerfil) return const SizedBox.shrink();
+      // Hueco vacío con "+" para el propio usuario
+      return Column(
+        children: [
+          AspectRatio(
+            aspectRatio: 2 / 3,
+            child: Container(
+              decoration: BoxDecoration(
+                border: Border.all(
+                  color: AppColors.border,
+                  width: 1.5,
+                  strokeAlign: BorderSide.strokeAlignInside,
+                ),
+                borderRadius: BorderRadius.circular(AppRadius.sm),
+                color: Theme.of(context).colorScheme.surfaceContainerLowest,
+              ),
+              child: const Center(
+                child: Icon(Icons.add_rounded, color: AppColors.textMuted, size: 22),
+              ),
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            'Añadir',
+            style: AppTextStyles.caption.copyWith(color: AppColors.textMuted),
+            textAlign: TextAlign.center,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+        ],
+      );
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: [
+        Stack(
+          children: [
+            AspectRatio(
+              aspectRatio: 2 / 3,
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(AppRadius.sm),
+                child: libro!.coverUrl != null && libro!.coverUrl!.isNotEmpty
+                    ? OptimizedNetworkImage(
+                        url: libro!.coverUrl,
+                        width: double.infinity,
+                        height: double.infinity,
+                        fit: BoxFit.cover,
+                      )
+                    : Container(
+                        color: Theme.of(context).colorScheme.surfaceContainerHighest,
+                        child: Center(
+                          child: Text(
+                            libro!.title.isNotEmpty ? libro!.title[0].toUpperCase() : '?',
+                            style: AppTextStyles.section.copyWith(
+                              color: AppColors.textMuted,
+                            ),
+                          ),
+                        ),
+                      ),
+              ),
+            ),
+            // Corazoncito
+            Positioned(
+              bottom: 4,
+              right: 4,
+              child: Container(
+                width: 18,
+                height: 18,
+                decoration: const BoxDecoration(
+                  color: Color(0xFFD4537E),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(
+                  Icons.favorite_rounded,
+                  color: Colors.white,
+                  size: 10,
+                ),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 4),
+        Text(
+          libro!.title,
+          style: AppTextStyles.caption.copyWith(color: AppColors.textSecondary),
+          textAlign: TextAlign.center,
+          maxLines: 2,
+          overflow: TextOverflow.ellipsis,
+        ),
+      ],
     );
   }
 }

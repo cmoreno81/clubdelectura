@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 
 import '../navigation/app_page_route.dart';
@@ -8,6 +10,7 @@ import '../models/libro_agrupado.dart';
 import '../services/api_service.dart';
 import '../services/atmosfera_controller.dart';
 import '../services/atmosfera_scope.dart';
+import '../services/favoritos_service.dart';
 import '../services/kit_lectura_service.dart';
 import '../services/usuario_service.dart';
 import '../services/library_refresh_notifier.dart';
@@ -42,6 +45,7 @@ class _DetalleLibroPageState extends State<DetalleLibroPage> {
 
   bool _controllerPreparado = false;
   bool _atmosferaCerrada = false;
+  bool _toggling = false;
 
   @override
   void initState() {
@@ -52,6 +56,7 @@ class _DetalleLibroPageState extends State<DetalleLibroPage> {
     registros = List<Libro>.from(libro.registros);
 
     _cargarUsuarioActual();
+    unawaited(FavoritosService.instance.cargar());
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
@@ -281,6 +286,23 @@ class _DetalleLibroPageState extends State<DetalleLibroPage> {
     }
   }
 
+  Future<void> _toggleFavorito() async {
+    if (_toggling || libro.bookId.isEmpty) return;
+    setState(() => _toggling = true);
+    final resultado = await FavoritosService.instance.toggle(
+      libro.bookId,
+      libro.libro,
+      coverUrl: libro.coverUrl.isNotEmpty ? libro.coverUrl : null,
+    );
+    if (!mounted) return;
+    setState(() => _toggling = false);
+    if (!resultado.ok) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(resultado.mensaje)),
+      );
+    }
+  }
+
   Future<void> _editarLibro() async {
     if (libro.bookId.isEmpty) return;
 
@@ -346,7 +368,29 @@ class _DetalleLibroPageState extends State<DetalleLibroPage> {
             overflow: TextOverflow.ellipsis,
           ),
           actions: [
-            if (libro.bookId.isNotEmpty)
+            if (libro.bookId.isNotEmpty) ...[
+              // ── Corazón de favorito ───────────────────────────────────────
+              ListenableBuilder(
+                listenable: FavoritosService.instance,
+                builder: (context, _) {
+                  final esFavorito = FavoritosService.instance.isFavorito(libro.bookId);
+                  return IconButton(
+                    tooltip: esFavorito ? 'Quitar de favoritos' : 'Añadir a favoritos',
+                    onPressed: _toggling ? null : _toggleFavorito,
+                    icon: _toggling
+                        ? const SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
+                        : Icon(
+                            esFavorito ? Icons.favorite_rounded : Icons.favorite_border_rounded,
+                            color: esFavorito ? const Color(0xFFD4537E) : null,
+                          ),
+                  );
+                },
+              ),
+              // ── Editar ───────────────────────────────────────────────────
               Padding(
                 padding: const EdgeInsets.only(right: 12),
                 child: Center(
@@ -366,6 +410,7 @@ class _DetalleLibroPageState extends State<DetalleLibroPage> {
                   ),
                 ),
               ),
+            ],
           ],
         ),
         body: SafeArea(
