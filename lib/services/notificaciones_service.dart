@@ -46,13 +46,26 @@ class NotificacionesService extends ChangeNotifier {
     notifyListeners();
   }
 
-  /// Marca una notificación individual como leída y decrementa el contador.
-  Future<void> marcarLeida(String id) async {
+  /// Marca una notificación individual como leída y decrementa los contadores.
+  /// [tipo] es el campo `tipo` de la notificación — permite decrementar el
+  /// contador de categoría correcto además del total.
+  Future<void> marcarLeida(String id, {String tipo = ''}) async {
     try {
       await ApiService().marcarNotificacionLeida(id);
     } catch (_) {}
-    // Decrementar conservadoramente (no sabemos de qué tipo era sin consultarlo)
     if (_noLeidas > 0) _noLeidas--;
+    // Decrementar también el contador de categoría según el tipo
+    switch (tipo) {
+      case 'LECTURA_NUEVA':
+      case 'COMENTARIO_LECTURA':
+        if (_noLeidasLecturas > 0) _noLeidasLecturas--;
+      case 'CLUBVISION_ABIERTA':
+      case 'CLUBVISION_RESULTADOS':
+        if (_noLeidasClubvision > 0) _noLeidasClubvision--;
+      default:
+        // Tipos de Club (LIBRO_TERMINADO, LIBRO_EMPEZADO, etc.)
+        if (tipo.isNotEmpty && _noLeidasClub > 0) _noLeidasClub--;
+    }
     notifyListeners();
   }
 

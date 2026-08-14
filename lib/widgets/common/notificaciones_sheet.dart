@@ -90,7 +90,7 @@ class _NotificacionesSheetState extends State<_NotificacionesSheet> {
   void _tocar(Notificacion n) {
     // Marcar como leída en el servicio (actualiza todos los badges)
     if (!n.leida) {
-      unawaited(NotificacionesService.instance.marcarLeida(n.id));
+      unawaited(NotificacionesService.instance.marcarLeida(n.id, tipo: n.tipo));
       // Actualizar la lista local para que el punto desaparezca
       setState(() {
         _notifs = _notifs

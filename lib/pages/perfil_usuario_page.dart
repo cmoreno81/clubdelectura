@@ -558,37 +558,28 @@ class _PerfilUsuarioPageState extends State<PerfilUsuarioPage> {
             padding: EdgeInsets.zero,
           ),
           const SizedBox(height: AppSpacing.sm),
-          // Tarjeta a sangre completa: usa MediaQuery para compensar el padding del padre
-          Builder(
-            builder: (ctx) {
-              final screenWidth = MediaQuery.of(ctx).size.width;
-              const parentPadding = AppSpacing.md;
-              return Transform.translate(
-                offset: const Offset(-parentPadding, 0),
-                child: SizedBox(
-                  width: screenWidth,
-                  child: ClubCard(
-                    elevated: false,
-                    child: Wrap(
-                      alignment: WrapAlignment.center,
-                      spacing: AppSpacing.xs,
-                      runSpacing: AppSpacing.xs,
-                      children: perfil.generosFavoritos
-                          .map(
-                            (genero) => ClubChip(
-                              label:
-                                  '${iconoGenero(genero.genero)} '
-                                  '${genero.genero} · '
-                                  '${genero.total}',
-                              variant: ClubChipVariant.primary,
-                            ),
-                          )
-                          .toList(),
-                    ),
-                  ),
-                ),
-              );
-            },
+          // Tarjeta a sangre completa: margen negativo compensa el padding del padre
+          Container(
+            margin: const EdgeInsets.symmetric(horizontal: -AppSpacing.md),
+            child: ClubCard(
+              elevated: false,
+              child: Wrap(
+                alignment: WrapAlignment.center,
+                spacing: AppSpacing.xs,
+                runSpacing: AppSpacing.xs,
+                children: perfil.generosFavoritos
+                    .map(
+                      (genero) => ClubChip(
+                        label:
+                            '${iconoGenero(genero.genero)} '
+                            '${genero.genero} · '
+                            '${genero.total}',
+                        variant: ClubChipVariant.primary,
+                      ),
+                    )
+                    .toList(),
+              ),
+            ),
           ),
           const SizedBox(height: AppSpacing.md),
         ],
