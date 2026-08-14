@@ -377,45 +377,50 @@ class _CapituloPageState extends State<CapituloPage> {
       ),
       child: ClubCard(
         elevated: false,
-        padding: const EdgeInsets.all(AppSpacing.lg),
-        gradient: const LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [AppColors.surfaceSoft, Color(0xFFF0E5FF)],
+        padding: const EdgeInsets.symmetric(
+          horizontal: AppSpacing.md,
+          vertical: AppSpacing.sm,
         ),
         borderColor: AppColors.primaryLight,
-        child: Column(
+        child: Row(
           children: [
             Container(
-              width: 58,
-              height: 58,
+              width: 40,
+              height: 40,
               decoration: const BoxDecoration(
                 color: AppColors.primaryLight,
                 shape: BoxShape.circle,
               ),
-              child: Icon(
-                esReflexion
-                    ? Icons.psychology_alt_outlined
-                    : Icons.forum_outlined,
+              child: const Icon(
+                Icons.forum_outlined,
                 color: AppColors.primary,
-                size: 29,
+                size: 22,
               ),
             ),
-
-            const SizedBox(height: AppSpacing.md),
-
-            Text(
-              widget.libro,
-              textAlign: TextAlign.center,
-              style: AppTextStyles.section.copyWith(fontSize: 23, height: 1.2),
-            ),
-
-            const SizedBox(height: AppSpacing.xs),
-
-            Text(
-              widget.capitulo,
-              textAlign: TextAlign.center,
-              style: AppTextStyles.bodySecondary,
+            const SizedBox(width: AppSpacing.md),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    widget.capitulo,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: AppTextStyles.subtitle.copyWith(
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    widget.libro,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: AppTextStyles.caption.copyWith(
+                      color: AppColors.textMuted,
+                    ),
+                  ),
+                ],
+              ),
             ),
           ],
         ),

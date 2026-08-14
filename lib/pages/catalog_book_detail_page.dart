@@ -2,6 +2,8 @@ import 'package:club_lectura_app/services/library_refresh_notifier.dart';
 import 'package:flutter/material.dart';
 
 import '../models/catalog_book.dart';
+import '../models/libro_agrupado.dart';
+import '../navigation/app_page_route.dart';
 import '../services/api_exception.dart';
 import '../services/api_service.dart';
 import '../theme/app_colors.dart';
@@ -9,6 +11,7 @@ import '../theme/app_spacing.dart';
 import '../theme/app_text_styles.dart';
 import '../widgets/common/club_book_cover.dart';
 import '../widgets/common/club_card.dart';
+import 'detalle_libro_page.dart';
 
 class CatalogBookDetailPage extends StatefulWidget {
   const CatalogBookDetailPage({
@@ -33,6 +36,11 @@ class _CatalogBookDetailPageState extends State<CatalogBookDetailPage> {
   bool _loading = true;
   bool _adding = false;
   bool _added = false;
+  bool _navigating = false;
+
+  /// bookId devuelto por el servidor al añadir (puede diferir del widget.bookId
+  /// si el servidor redirige a un libro canónico).
+  String _addedBookId = '';
 
   @override
   void initState() {
@@ -76,7 +84,7 @@ class _CatalogBookDetailPageState extends State<CatalogBookDetailPage> {
 
     setState(() => _adding = true);
     try {
-      await ApiService().importarLibroCatalogo(
+      final addedId = await ApiService().importarLibroCatalogo(
         book: _book,
         bookId: _book == null ? widget.bookId : null,
         titulo: _book == null ? widget.title : null,
@@ -93,6 +101,7 @@ class _CatalogBookDetailPageState extends State<CatalogBookDetailPage> {
         setState(() {
           _added = true;
           _adding = false;
+          _addedBookId = addedId.isNotEmpty ? addedId : widget.bookId;
         });
       }
       if (mounted) {
@@ -107,6 +116,73 @@ class _CatalogBookDetailPageState extends State<CatalogBookDetailPage> {
           context,
         ).showSnackBar(SnackBar(content: Text(e.message)));
       }
+    }
+  }
+
+  Future<void> _verEnBiblioteca() async {
+    if (_navigating) return;
+    setState(() => _navigating = true);
+
+    try {
+      final effectiveBookId =
+          _addedBookId.isNotEmpty ? _addedBookId : widget.bookId;
+
+      // Cargamos los datos reales de la biblioteca (la caché ya fue invalidada
+      // por LibraryRefreshNotifier al añadir el libro).
+      final data = await ApiService().getLibrosData();
+
+      if (!mounted) return;
+
+      // Buscamos el libro por bookId entre todos los registros de la biblioteca.
+      final Map<String, LibroAgrupado> agrupados = {};
+      for (final libro in data.libros) {
+        final clave = libro.libro.trim().toLowerCase();
+        agrupados.putIfAbsent(
+          clave,
+          () => LibroAgrupado(
+            libro: libro.libro,
+            genero: libro.genero,
+            registros: [],
+            finalizados: [],
+            yaLoTengo: libro.yaLoTengo,
+            coverUrl: libro.coverUrl,
+          ),
+        );
+        agrupados[clave]!.registros.add(libro);
+        if (agrupados[clave]!.coverUrl.isEmpty && libro.coverUrl.isNotEmpty) {
+          agrupados[clave]!.coverUrl = libro.coverUrl;
+        }
+      }
+      for (final fin in data.finalizados) {
+        final clave = fin.libro.trim().toLowerCase();
+        agrupados.putIfAbsent(
+          clave,
+          () => LibroAgrupado(
+            libro: fin.libro,
+            genero: fin.genero,
+            registros: [],
+            finalizados: [],
+            yaLoTengo: false,
+            coverUrl: fin.coverUrl,
+          ),
+        );
+        agrupados[clave]!.finalizados.add(fin);
+      }
+
+      // Primero buscamos por bookId exacto, después por título.
+      LibroAgrupado? agrupado = agrupados.values
+          .where((a) => a.bookId == effectiveBookId)
+          .firstOrNull;
+      agrupado ??= agrupados[widget.title.trim().toLowerCase()];
+
+      if (agrupado == null || !mounted) return;
+
+      await Navigator.push<void>(
+        context,
+        AppPageRoute(builder: (_) => DetalleLibroPage(libro: agrupado!)),
+      );
+    } finally {
+      if (mounted) setState(() => _navigating = false);
     }
   }
 
@@ -182,20 +258,41 @@ class _CatalogBookDetailPageState extends State<CatalogBookDetailPage> {
             ClubCard(
               elevated: false,
               borderColor: AppColors.success.withValues(alpha: .3),
-              child: Row(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
                 children: [
-                  const Icon(
-                    Icons.check_circle_rounded,
-                    color: AppColors.success,
-                  ),
-                  const SizedBox(width: AppSpacing.sm),
-                  Expanded(
-                    child: Text(
-                      '¡Añadido a tu biblioteca!',
-                      style: AppTextStyles.body.copyWith(
+                  Row(
+                    children: [
+                      const Icon(
+                        Icons.check_circle_rounded,
                         color: AppColors.success,
-                        fontWeight: FontWeight.w700,
                       ),
+                      const SizedBox(width: AppSpacing.sm),
+                      Expanded(
+                        child: Text(
+                          '¡Añadido a tu biblioteca!',
+                          style: AppTextStyles.body.copyWith(
+                            color: AppColors.success,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: AppSpacing.sm),
+                  SizedBox(
+                    width: double.infinity,
+                    child: OutlinedButton.icon(
+                      onPressed: _navigating ? null : _verEnBiblioteca,
+                      icon: _navigating
+                          ? const SizedBox(
+                              width: 16,
+                              height: 16,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            )
+                          : const Icon(Icons.menu_book_outlined, size: 18),
+                      label: const Text('Ver en mi biblioteca'),
                     ),
                   ),
                 ],

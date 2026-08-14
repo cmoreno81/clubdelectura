@@ -160,7 +160,9 @@ class ApiService {
   }
 
   // REEMPLAZA el método completo:
-  Future<void> importarLibroCatalogo({
+  /// Añade un libro del catálogo a la biblioteca y devuelve el bookId
+  /// asignado por el servidor, o una cadena vacía si no se pudo obtener.
+  Future<String> importarLibroCatalogo({
     CatalogBook? book,
     String? bookId,
     String? titulo,
@@ -212,6 +214,12 @@ class ApiService {
             : 'No se pudo añadir el libro.',
       );
     }
+    // El servidor devuelve { ok: true, libro: { id, titulo } }
+    final libro = decoded['libro'];
+    if (libro is Map<String, dynamic>) {
+      return libro['id']?.toString() ?? '';
+    }
+    return '';
   }
 
   Future<GoodreadsImportPreview> previsualizarImportacionGoodreads(

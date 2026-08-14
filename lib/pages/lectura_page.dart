@@ -32,8 +32,12 @@ class _LecturaPageState extends State<LecturaPage> {
   final ScrollController _scrollController = ScrollController();
 
   /// Los capítulos que estén dentro de este conjunto aparecen plegados.
-  /// Al comenzar está vacío, así que todos aparecen desplegados.
+  /// Se rellena automáticamente en la primera carga para que todos aparezcan
+  /// plegados por defecto.
   final Set<String> _capitulosPlegados = <String>{};
+
+  /// Evita aplicar el colapso automático más de una vez.
+  bool _autoColapsadoUnaVez = false;
 
   @override
   void initState() {
@@ -42,7 +46,24 @@ class _LecturaPageState extends State<LecturaPage> {
   }
 
   void _recargar() {
-    future = ApiService().getConfiguracionLectura(libro: widget.libro);
+    final nuevaFuture = ApiService().getConfiguracionLectura(
+      libro: widget.libro,
+    );
+
+    // En la primera carga, colapsa todos los capítulos por defecto.
+    nuevaFuture.then((config) {
+      if (!mounted) return;
+      if (!_autoColapsadoUnaVez) {
+        _autoColapsadoUnaVez = true;
+        setState(() {
+          _capitulosPlegados.addAll(
+            config.capitulosDisponibles.map((c) => c.nombre),
+          );
+        });
+      }
+    }).ignore();
+
+    future = nuevaFuture;
   }
 
   Future<void> _refrescar() async {

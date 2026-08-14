@@ -2,6 +2,7 @@ import 'package:club_lectura_app/widgets/lectura/fecha_relativa.dart';
 import 'package:flutter/material.dart';
 
 import '../../models/respuesta_comentario.dart';
+import '../../models/reaccion_comentario.dart';
 import '../../services/api_service.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_radius.dart';
@@ -26,42 +27,142 @@ class RespuestaCard extends StatefulWidget {
 class _RespuestaCardState extends State<RespuestaCard> {
   late int _likes;
   late bool _miLike;
-  bool _loadingLike = false;
+
+  /// Reacción visual local (no persiste en el modelo del servidor, pero sí
+  /// se envía al endpoint para que lo procese si tiene soporte).
+  ReaccionComentario? _miReaccion;
+
+  final GlobalKey _reaccionKey = GlobalKey();
 
   @override
   void initState() {
     super.initState();
     _likes = widget.respuesta.likes;
     _miLike = widget.respuesta.miLike;
+    // Si el servidor ya devuelve una reacción concreta, usarla; de lo
+    // contrario, mostrar el corazón genérico cuando haya like.
+    _miReaccion =
+        _miLike ? ReaccionComentario.meGusta : null;
   }
 
-  Future<void> _toggleLike() async {
-    if (_loadingLike) return;
+  Future<void> _toggleReaccion(ReaccionComentario reaccion) async {
+    // Optimistic update
+    final anteriorReaccion = _miReaccion;
+    final anteriorLike = _miLike;
+    final anteriorLikes = _likes;
+
     setState(() {
-      _loadingLike = true;
-      _miLike = !_miLike;
-      _likes += _miLike ? 1 : -1;
+      if (_miReaccion == reaccion) {
+        // Quitar reacción
+        _miReaccion = null;
+        _miLike = false;
+        _likes = (_likes - 1).clamp(0, 9999);
+      } else {
+        final teniaPreviamenteReaccion = _miReaccion != null;
+        _miReaccion = reaccion;
+        _miLike = true;
+        if (!teniaPreviamenteReaccion) _likes += 1;
+      }
     });
+
     try {
       final json = await ApiService().toggleLikeComentario(
         comentarioId: widget.respuesta.id,
-        reaccion: 'LIKE',
+        reaccion: reaccion.apiValue,
       );
       if (!mounted) return;
       setState(() {
         _miLike = json['miLike'] as bool? ?? _miLike;
         _likes = (json['likes'] as num?)?.toInt() ?? _likes;
+        if (!_miLike) _miReaccion = null;
       });
     } catch (_) {
-      // Revertir si falla
       if (!mounted) return;
       setState(() {
-        _miLike = !_miLike;
-        _likes += _miLike ? 1 : -1;
+        _miReaccion = anteriorReaccion;
+        _miLike = anteriorLike;
+        _likes = anteriorLikes;
       });
-    } finally {
-      if (mounted) setState(() => _loadingLike = false);
     }
+  }
+
+  Future<void> _mostrarReacciones() async {
+    final buttonBox =
+        _reaccionKey.currentContext?.findRenderObject() as RenderBox?;
+    final overlayBox =
+        Overlay.of(context).context.findRenderObject() as RenderBox?;
+    if (buttonBox == null || overlayBox == null) return;
+
+    final buttonOffset = buttonBox.localToGlobal(
+      Offset.zero,
+      ancestor: overlayBox,
+    );
+    final buttonRect = buttonOffset & buttonBox.size;
+    final anchor = Rect.fromLTWH(
+      12,
+      buttonRect.top - 62,
+      overlayBox.size.width - 24,
+      1,
+    );
+
+    final seleccion = await showMenu<ReaccionComentario>(
+      context: context,
+      position: RelativeRect.fromRect(anchor, Offset.zero & overlayBox.size),
+      elevation: 10,
+      color: AppColors.surface,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(AppRadius.pill),
+        side: const BorderSide(color: AppColors.border),
+      ),
+      constraints: BoxConstraints.tightFor(
+        width: (overlayBox.size.width - 24).clamp(340, 410).toDouble(),
+      ),
+      menuPadding: EdgeInsets.zero,
+      items: [
+        PopupMenuItem<ReaccionComentario>(
+          height: 48,
+          padding: const EdgeInsets.symmetric(horizontal: 6),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+            children: ReaccionComentario.values.map((reaccion) {
+              final seleccionada = _miReaccion == reaccion;
+              return Tooltip(
+                message: reaccion.titulo,
+                child: Semantics(
+                  button: true,
+                  selected: seleccionada,
+                  label: reaccion.titulo,
+                  child: InkWell(
+                    onTap: () => Navigator.pop(context, reaccion),
+                    customBorder: const CircleBorder(),
+                    child: AnimatedContainer(
+                      duration: const Duration(milliseconds: 180),
+                      width: 36,
+                      height: 36,
+                      alignment: Alignment.center,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: seleccionada
+                            ? AppColors.primaryLight
+                            : Colors.transparent,
+                        border: seleccionada
+                            ? Border.all(color: AppColors.primary, width: 2)
+                            : null,
+                      ),
+                      child: Text(
+                        reaccion.emoji,
+                        style: const TextStyle(fontSize: 22),
+                      ),
+                    ),
+                  ),
+                ),
+              );
+            }).toList(),
+          ),
+        ),
+      ],
+    );
+    if (seleccion != null) await _toggleReaccion(seleccion);
   }
 
   Future<void> _editarRespuesta() async {
@@ -266,55 +367,49 @@ class _RespuestaCardState extends State<RespuestaCard> {
 
                         const SizedBox(height: AppSpacing.sm),
 
-                        // ── Botón de like ──
-                        GestureDetector(
-                          onTap: _loadingLike ? null : _toggleLike,
-                          child: AnimatedContainer(
-                            duration: const Duration(milliseconds: 180),
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 10,
-                              vertical: 4,
-                            ),
-                            decoration: BoxDecoration(
-                              color: _miLike
-                                  ? AppColors.primary.withValues(alpha: .1)
-                                  : Colors.transparent,
-                              borderRadius: BorderRadius.circular(
-                                AppRadius.pill,
-                              ),
-                              border: Border.all(
-                                color: _miLike
-                                    ? AppColors.primary.withValues(alpha: .4)
-                                    : AppColors.border,
-                              ),
-                            ),
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Text(
-                                  _miLike ? '🤍' : '🤍',
-                                  style: TextStyle(
-                                    fontSize: 13,
-                                    color: _miLike
-                                        ? AppColors.primary
-                                        : AppColors.textMuted,
-                                  ),
-                                ),
-                                if (_likes > 0) ...[
-                                  const SizedBox(width: 4),
-                                  Text(
-                                    '$_likes',
-                                    style: AppTextStyles.caption.copyWith(
-                                      fontWeight: FontWeight.w700,
-                                      color: _miLike
-                                          ? AppColors.primary
-                                          : AppColors.textMuted,
+                        // ── Botón de reacción ──
+                        Wrap(
+                          spacing: AppSpacing.xs,
+                          runSpacing: AppSpacing.xs,
+                          children: [
+                            Tooltip(
+                              message: _miReaccion?.titulo ?? 'Reaccionar',
+                              child: SizedBox(
+                                height: 32,
+                                child: FilledButton.tonalIcon(
+                                  key: _reaccionKey,
+                                  style: FilledButton.styleFrom(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 10,
                                     ),
+                                    minimumSize: const Size(0, 32),
+                                    tapTargetSize:
+                                        MaterialTapTargetSize.shrinkWrap,
                                   ),
-                                ],
-                              ],
+                                  onPressed: _mostrarReacciones,
+                                  icon: _miReaccion == null
+                                      ? const Icon(
+                                          Icons.add_reaction_outlined,
+                                          size: 16,
+                                        )
+                                      : Text(
+                                          _miReaccion!.emoji,
+                                          style:
+                                              const TextStyle(fontSize: 16),
+                                        ),
+                                  label: _likes > 0
+                                      ? Text(
+                                          '$_likes',
+                                          style: AppTextStyles.caption
+                                              .copyWith(
+                                                fontWeight: FontWeight.w700,
+                                              ),
+                                        )
+                                      : const SizedBox.shrink(),
+                                ),
+                              ),
                             ),
-                          ),
+                          ],
                         ),
                       ],
                     ),
