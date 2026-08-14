@@ -1929,8 +1929,12 @@ class _FavoritosClubCardState extends State<_FavoritosClubCard> {
 
   @override
   Widget build(BuildContext context) {
-    // Ocultar si no hay datos y no está cargando
+    // Ocultar si no hay nadie con favoritos (incluida la usuaria actual)
     if (!_cargando && (_miembros == null || _miembros!.isEmpty)) {
+      return const SizedBox.shrink();
+    }
+    // También ocultar si la única entrada soy yo y no tengo favoritos
+    if (!_cargando && _miembros!.length == 1 && _miembros!.first.esTu && _miembros!.first.favoritos.isEmpty) {
       return const SizedBox.shrink();
     }
 
@@ -1988,12 +1992,17 @@ class _FavoritosClubCardState extends State<_FavoritosClubCard> {
               ),
             )
           else
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-              children: _miembros!.map((m) => _FavoritosMiembroTile(
-                miembro: m,
-                onTap: () => _verFavoritos(m),
-              )).toList(),
+            SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: Row(
+                children: _miembros!.map((m) => Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm),
+                  child: _FavoritosMiembroTile(
+                    miembro: m,
+                    onTap: () => _verFavoritos(m),
+                  ),
+                )).toList(),
+              ),
             ),
         ],
       ),
@@ -2049,7 +2058,7 @@ class _FavoritosMiembroTile extends StatelessWidget {
           ),
           const SizedBox(height: 6),
           Text(
-            miembro.nombre,
+            miembro.esTu ? 'Tú' : miembro.nombre,
             style: AppTextStyles.caption.copyWith(fontWeight: FontWeight.w600),
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
@@ -2102,7 +2111,7 @@ class _FavoritosDeUsuarioSheet extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          'Favoritos de ${miembro.nombre}',
+                          miembro.esTu ? 'Tus favoritos' : 'Favoritos de ${miembro.nombre}',
                           style: AppTextStyles.section,
                         ),
                         Text(
