@@ -79,6 +79,7 @@ class _CatalogBookDetailPageState extends State<CatalogBookDetailPage> {
       await ApiService().importarLibroCatalogo(
         book: _book,
         bookId: _book == null ? widget.bookId : null,
+        titulo: _book == null ? widget.title : null,
         prioridad: result.priority,
         formato: result.format,
         estado: result.status,

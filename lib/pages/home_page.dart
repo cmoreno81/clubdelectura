@@ -101,6 +101,8 @@ class _HomePageState extends State<HomePage> {
 
   void _selectTab(int index) {
     FocusManager.instance.primaryFocus?.unfocus();
+    // Limpiar snackbars al cambiar de pestaña para que no persistan
+    ScaffoldMessenger.of(context).clearSnackBars();
 
     if (index == currentIndex) {
       if (index == 1) _librosController.refresh();

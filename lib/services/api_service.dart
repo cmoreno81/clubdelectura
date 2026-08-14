@@ -163,6 +163,7 @@ class ApiService {
   Future<void> importarLibroCatalogo({
     CatalogBook? book,
     String? bookId,
+    String? titulo,
     required String prioridad,
     required String formato,
     String? estado,
@@ -195,6 +196,7 @@ class ApiService {
     } else if (bookId != null) {
       body['id'] = bookId;
       body['origen'] = 'CLUBREADS';
+      if (titulo != null && titulo.isNotEmpty) body['titulo'] = titulo;
     }
 
     final response = await _client.post(
