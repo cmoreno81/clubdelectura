@@ -182,17 +182,15 @@ class ApiService {
     };
 
     if (book != null) {
-      body.addAll({
-        'id': book.id,
-        'origen': book.source,
-        'titulo': book.title,
-        'autores': book.authors,
-        'coverUrl': book.coverUrl,
-        'genero': book.genre,
-        'isbn': book.isbn,
-        'paginas': book.pages,
-        'anioPublicacion': book.publicationYear,
-      });
+      body['id'] = book.id;
+      body['origen'] = book.source;
+      body['titulo'] = book.title;
+      if (book.authors.isNotEmpty) body['autores'] = book.authors;
+      if (book.coverUrl.isNotEmpty) body['coverUrl'] = book.coverUrl;
+      if (book.genre.isNotEmpty) body['genero'] = book.genre;
+      if (book.isbn.isNotEmpty) body['isbn'] = book.isbn;
+      if (book.pages != null) body['paginas'] = book.pages;
+      if (book.publicationYear != null) body['anioPublicacion'] = book.publicationYear;
     } else if (bookId != null) {
       body['id'] = bookId;
       body['origen'] = 'CLUBREADS';

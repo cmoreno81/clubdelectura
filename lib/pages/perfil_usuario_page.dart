@@ -563,26 +563,35 @@ class _PerfilUsuarioPageState extends State<PerfilUsuarioPage> {
             padding: EdgeInsets.zero,
           ),
           const SizedBox(height: AppSpacing.sm),
-          // Tarjeta a sangre completa: margen negativo compensa el padding del padre
-          Container(
-            margin: const EdgeInsets.symmetric(horizontal: -AppSpacing.md),
-            child: ClubCard(
-              elevated: false,
-              child: Wrap(
-                alignment: WrapAlignment.center,
-                spacing: AppSpacing.xs,
-                runSpacing: AppSpacing.xs,
-                children: perfil.generosFavoritos
-                    .map(
-                      (genero) => ClubChip(
-                        label:
-                            '${iconoGenero(genero.genero)} '
-                            '${genero.genero} · '
-                            '${genero.total}',
-                        variant: ClubChipVariant.primary,
-                      ),
-                    )
-                    .toList(),
+          // Tarjeta a sangre completa: LayoutBuilder + OverflowBox evita márgenes negativos
+          LayoutBuilder(
+            builder: (context, constraints) => OverflowBox(
+              maxWidth: constraints.maxWidth + 2 * AppSpacing.md,
+              alignment: Alignment.centerLeft,
+              child: Transform.translate(
+                offset: const Offset(-AppSpacing.md, 0),
+                child: SizedBox(
+                  width: constraints.maxWidth + 2 * AppSpacing.md,
+                  child: ClubCard(
+                    elevated: false,
+                    child: Wrap(
+                      alignment: WrapAlignment.center,
+                      spacing: AppSpacing.xs,
+                      runSpacing: AppSpacing.xs,
+                      children: perfil.generosFavoritos
+                          .map(
+                            (genero) => ClubChip(
+                              label:
+                                  '${iconoGenero(genero.genero)} '
+                                  '${genero.genero} · '
+                                  '${genero.total}',
+                              variant: ClubChipVariant.primary,
+                            ),
+                          )
+                          .toList(),
+                    ),
+                  ),
+                ),
               ),
             ),
           ),
