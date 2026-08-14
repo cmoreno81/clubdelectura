@@ -171,6 +171,24 @@ const List<_HelpSection> _secciones = [
             'Desde ahí puedes añadir cualquier libro directamente a tu biblioteca '
             'personal sin introducir los datos manualmente.',
       ),
+      _HelpItem(
+        pregunta: '¿Cómo marco un libro como favorito?',
+        respuesta:
+            'Desde la ficha de cualquier libro de tu biblioteca verás un icono '
+            'de corazón ♥. Púlsalo para marcarlo como favorito.\n\n'
+            'Puedes tener hasta 5 libros favoritos. La app te avisará cuando '
+            'llegues al límite. Tus favoritos aparecen en la tarjeta '
+            '"Favoritos del club" del dashboard, donde tus compañeras pueden '
+            'ver qué libros son tus preferidos.',
+      ),
+      _HelpItem(
+        pregunta: '¿Puedo ir al detalle de un libro que acabo de añadir desde el catálogo?',
+        respuesta:
+            'Sí. Justo después de añadir un libro desde la biblioteca global, '
+            'aparece un botón "Ver en mi biblioteca" en la pantalla de confirmación. '
+            'Púlsalo para ir directamente a la ficha del libro con todos sus datos: '
+            'estado, valoración, fechas y más.',
+      ),
     ],
   ),
   _HelpSection(
@@ -394,6 +412,14 @@ const List<_HelpSection> _secciones = [
             'y pulsa el campo de comentario al final. '
             'Puedes responder a comentarios de otras miembros '
             'y reaccionar con emojis.',
+      ),
+      _HelpItem(
+        pregunta: '¿Puedo reaccionar a las respuestas de un comentario?',
+        respuesta:
+            'Sí. Las respuestas tienen el mismo selector completo de reacciones '
+            'que los comentarios principales: pulsa el botón de emoji en la '
+            'respuesta para elegir tu reacción. También puedes cambiarla '
+            'o quitarla pulsando de nuevo.',
       ),
       _HelpItem(
         pregunta: '¿Qué son las citas?',
@@ -639,6 +665,19 @@ const List<_HelpSection> _secciones = [
             'leído algún libro, con las portadas colocadas en los días que las terminaste.\n\n'
             '"Logros" muestra todas tus medallas agrupadas por categoría, '
             'con barra de progreso y estado de desbloqueo.',
+      ),
+      _HelpItem(
+        pregunta: '¿Qué es la tarjeta "Favoritos del club"?',
+        respuesta:
+            'Es una tarjeta del dashboard (modo club) que muestra los 5 libros '
+            'favoritos de cada miembro de tu club.\n\n'
+            'Verás el avatar de cada compañera con las portadas de sus favoritos '
+            'encima. La tarjeta te muestra primero a "Tú" con tus propios favoritos, '
+            'y luego al resto de miembros que tengan al menos uno marcado.\n\n'
+            'Pulsa sobre el avatar de cualquier miembro para ver su lista completa '
+            'de favoritos con título, autora y género.\n\n'
+            'Para que aparezca necesitas tener al menos un libro marcado como '
+            'favorito ♥ en tu biblioteca.',
       ),
       _HelpItem(
         pregunta: '¿Cómo funcionan las notificaciones?',
