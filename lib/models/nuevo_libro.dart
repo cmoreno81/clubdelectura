@@ -13,6 +13,7 @@ class NuevoLibro {
   final String goodreads;
   final String coverUrl;
   final int? paginas;
+  final bool? confirmarNuevo;
 
   NuevoLibro({
     this.bookId,
@@ -28,6 +29,7 @@ class NuevoLibro {
     this.goodreads = '',
     this.coverUrl = '',
     this.paginas,
+    this.confirmarNuevo,
   });
 
   Map<String, dynamic> toJson() {
@@ -48,6 +50,7 @@ class NuevoLibro {
       if (coverUrl.trim().isNotEmpty) 'coverUrl': coverUrl.trim(),
       if (paginas != null && paginas! > 0)
         'paginas': paginas, // ← omitir si null o 0
+      if (confirmarNuevo == true) 'confirmarNuevo': true,
     };
   }
 }

@@ -192,27 +192,37 @@ class _NuevoLibroPageState extends State<NuevoLibroPage> {
     });
 
     try {
-      final libro = NuevoLibro(
-        bookId: esEdicion ? widget.libro!.bookId : null,
-        usuario: usuario.trim(),
-        libro: titulo,
-        autor: autorController.text.trim(),
-        genero: genero,
-        saga: autoconclusivo == 'No' ? sagaController.text.trim() : '',
-        numSaga: autoconclusivo == 'No' ? numSagaController.text.trim() : '',
-        autoconclusivo: autoconclusivo,
-        prioridad: prioridad,
-        formato: formato,
-        goodreads: goodreadsController.text.trim(),
-        coverUrl: coverUrlController.text.trim(),
-        paginas: paginas,
-      );
+      final libro = _construirLibro(usuario: usuario.trim(), titulo: titulo, paginas: paginas);
 
       final respuesta = esEdicion
           ? await ApiService().editarLibro(libro)
           : await ApiService().crearLibro(libro);
 
       if (!mounted) return;
+
+      // ── Posibles duplicados: pedir confirmación al usuario ────────────────
+      if (!esEdicion && respuesta['codigo'] == 'POSIBLES_DUPLICADOS') {
+        setState(() => guardando = false);
+        final candidatos = (respuesta['candidatos'] as List?)
+            ?.cast<Map<String, dynamic>>() ?? [];
+        final accion = await _mostrarDialogoDuplicados(
+          candidatos: candidatos,
+          usuario: usuario.trim(),
+          titulo: titulo,
+          paginas: paginas,
+        );
+        if (!mounted) return;
+        if (accion == _AccionDuplicado.cancelar) return;
+        if (accion == _AccionDuplicado.eligioExistente) {
+          // El sheet ya mostró el snackbar y actualizó la biblioteca.
+          // Cerramos también esta página.
+          Navigator.pop(context, true);
+          return;
+        }
+        // Si crearNuevo: _mostrarDialogoDuplicados lo gestionó.
+        return;
+      }
+      // ─────────────────────────────────────────────────────────────────────
 
       final ok = respuesta['ok'] == true;
       final mensaje = respuesta['mensaje']?.toString();
@@ -262,6 +272,88 @@ class _NuevoLibroPageState extends State<NuevoLibroPage> {
         });
       }
     }
+  }
+
+  // ── Helpers ────────────────────────────────────────────────────────────────
+
+  NuevoLibro _construirLibro({
+    required String usuario,
+    required String titulo,
+    int? paginas,
+    bool confirmarNuevo = false,
+  }) {
+    return NuevoLibro(
+      bookId: esEdicion ? widget.libro!.bookId : null,
+      usuario: usuario,
+      libro: titulo,
+      autor: autorController.text.trim(),
+      genero: genero,
+      saga: autoconclusivo == 'No' ? sagaController.text.trim() : '',
+      numSaga: autoconclusivo == 'No' ? numSagaController.text.trim() : '',
+      autoconclusivo: autoconclusivo,
+      prioridad: prioridad,
+      formato: formato,
+      goodreads: goodreadsController.text.trim(),
+      coverUrl: coverUrlController.text.trim(),
+      paginas: paginas,
+      confirmarNuevo: confirmarNuevo ? true : null,
+    );
+  }
+
+  Future<_AccionDuplicado?> _mostrarDialogoDuplicados({
+    required List<Map<String, dynamic>> candidatos,
+    required String usuario,
+    required String titulo,
+    required int? paginas,
+  }) async {
+    final accion = await showModalBottomSheet<_AccionDuplicado>(
+      context: context,
+      isScrollControlled: true,
+      useSafeArea: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => _DuplicadosSheet(
+        candidatos: candidatos,
+        prioridad: prioridad,
+        formato: formato,
+        usuario: usuario,
+      ),
+    );
+
+    if (!mounted) return _AccionDuplicado.cancelar;
+
+    if (accion == _AccionDuplicado.crearNuevo) {
+      // Usuario confirmó: reintentar con confirmarNuevo = true
+      setState(() => guardando = true);
+      try {
+        final libroConf = _construirLibro(
+          usuario: usuario,
+          titulo: titulo,
+          paginas: paginas,
+          confirmarNuevo: true,
+        );
+        final respuesta = await ApiService().crearLibro(libroConf);
+        if (!mounted) return _AccionDuplicado.crearNuevo;
+        final ok = respuesta['ok'] == true;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              ok
+                  ? (respuesta['mensaje']?.toString() ?? 'Libro añadido correctamente.')
+                  : (respuesta['mensaje']?.toString() ?? 'No se ha podido añadir el libro.'),
+            ),
+            backgroundColor: ok ? AppColors.success : null,
+          ),
+        );
+        if (ok) {
+          LibraryRefreshNotifier.instance.invalidate();
+          Navigator.pop(context, true);
+        }
+      } finally {
+        if (mounted) setState(() => guardando = false);
+      }
+    }
+
+    return accion ?? _AccionDuplicado.cancelar;
   }
 
   @override
@@ -1095,4 +1187,221 @@ class _GeneroOption {
   final String label;
 
   const _GeneroOption(this.emoji, this.value, this.label);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Duplicados
+// ─────────────────────────────────────────────────────────────────────────────
+
+enum _AccionDuplicado { cancelar, crearNuevo, eligioExistente }
+
+class _DuplicadosSheet extends StatefulWidget {
+  const _DuplicadosSheet({
+    required this.candidatos,
+    required this.prioridad,
+    required this.formato,
+    required this.usuario,
+  });
+
+  final List<Map<String, dynamic>> candidatos;
+  final String prioridad;
+  final String formato;
+  final String usuario;
+
+  @override
+  State<_DuplicadosSheet> createState() => _DuplicadosSheetState();
+}
+
+class _DuplicadosSheetState extends State<_DuplicadosSheet> {
+  bool _guardando = false;
+
+  Future<void> _elegirExistente(String bookId, String titulo) async {
+    setState(() => _guardando = true);
+    try {
+      final respuesta = await ApiService().anadirLibroExistente(
+        usuario: widget.usuario,
+        libro: bookId,
+        prioridad: widget.prioridad,
+        formato: widget.formato,
+      );
+      if (!mounted) return;
+      final ok = respuesta['ok'] == true;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            ok
+                ? '"$titulo" añadido a tu lista.'
+                : (respuesta['mensaje']?.toString() ?? 'Error al añadir el libro.'),
+          ),
+          backgroundColor: ok ? AppColors.success : null,
+        ),
+      );
+      if (ok) {
+        LibraryRefreshNotifier.instance.invalidate();
+        // Cierra el sheet y la página de NuevoLibro
+        Navigator.pop(context, _AccionDuplicado.eligioExistente);
+      } else {
+        setState(() => _guardando = false);
+      }
+    } catch (_) {
+      if (mounted) setState(() => _guardando = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+
+    return SafeArea(
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(
+          AppSpacing.lg,
+          AppSpacing.md,
+          AppSpacing.lg,
+          AppSpacing.lg,
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Handle
+            Center(
+              child: Container(
+                width: 40,
+                height: 4,
+                margin: const EdgeInsets.only(bottom: AppSpacing.md),
+                decoration: BoxDecoration(
+                  color: AppColors.border,
+                  borderRadius: BorderRadius.circular(AppRadius.pill),
+                ),
+              ),
+            ),
+
+            // Título
+            Text('¿Ya existe este libro?', style: AppTextStyles.section),
+            const SizedBox(height: AppSpacing.xs),
+            Text(
+              'Encontramos libros similares en la biblioteca. '
+              '¿Es alguno de estos el que quieres añadir?',
+              style: AppTextStyles.bodySecondary.copyWith(
+                color: AppColors.textSecondary,
+              ),
+            ),
+            const SizedBox(height: AppSpacing.md),
+
+            // Candidatos
+            ...widget.candidatos.map((c) {
+              final id = c['id']?.toString() ?? '';
+              final title = c['title']?.toString() ?? '';
+              final author = c['authorName']?.toString();
+              final cover = c['coverUrl']?.toString();
+
+              return Padding(
+                padding: const EdgeInsets.only(bottom: AppSpacing.sm),
+                child: InkWell(
+                  onTap: _guardando ? null : () => _elegirExistente(id, title),
+                  borderRadius: BorderRadius.circular(AppRadius.md),
+                  child: Container(
+                    padding: const EdgeInsets.all(AppSpacing.sm),
+                    decoration: BoxDecoration(
+                      border: Border.all(color: AppColors.border),
+                      borderRadius: BorderRadius.circular(AppRadius.md),
+                    ),
+                    child: Row(
+                      children: [
+                        // Portada
+                        ClipRRect(
+                          borderRadius: BorderRadius.circular(AppRadius.sm),
+                          child: cover != null && cover.isNotEmpty
+                              ? OptimizedNetworkImage(
+                                  url: cover,
+                                  width: 44,
+                                  height: 64,
+                                  fit: BoxFit.cover,
+                                )
+                              : Container(
+                                  width: 44,
+                                  height: 64,
+                                  color: cs.surfaceContainerHighest,
+                                  child: const Icon(
+                                    Icons.menu_book_rounded,
+                                    size: 24,
+                                    color: AppColors.textMuted,
+                                  ),
+                                ),
+                        ),
+                        const SizedBox(width: AppSpacing.md),
+                        // Info
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                title,
+                                style: AppTextStyles.subtitle.copyWith(
+                                  fontWeight: FontWeight.w600,
+                                ),
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                              if (author != null && author.isNotEmpty) ...[
+                                const SizedBox(height: 2),
+                                Text(
+                                  author,
+                                  style: AppTextStyles.bodySecondary.copyWith(
+                                    color: AppColors.textSecondary,
+                                  ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ],
+                            ],
+                          ),
+                        ),
+                        const SizedBox(width: AppSpacing.sm),
+                        _guardando
+                            ? const SizedBox(
+                                width: 20,
+                                height: 20,
+                                child: CircularProgressIndicator(strokeWidth: 2),
+                              )
+                            : const Icon(
+                                Icons.check_circle_outline_rounded,
+                                color: AppColors.primary,
+                                size: 24,
+                              ),
+                      ],
+                    ),
+                  ),
+                ),
+              );
+            }),
+
+            const SizedBox(height: AppSpacing.sm),
+
+            // Botón crear nuevo de todas formas
+            SizedBox(
+              width: double.infinity,
+              child: OutlinedButton(
+                onPressed: _guardando
+                    ? null
+                    : () => Navigator.pop(context, _AccionDuplicado.crearNuevo),
+                child: const Text('No, crear libro nuevo de todas formas'),
+              ),
+            ),
+            const SizedBox(height: AppSpacing.xs),
+            SizedBox(
+              width: double.infinity,
+              child: TextButton(
+                onPressed: _guardando
+                    ? null
+                    : () => Navigator.pop(context, _AccionDuplicado.cancelar),
+                child: const Text('Cancelar'),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 }
