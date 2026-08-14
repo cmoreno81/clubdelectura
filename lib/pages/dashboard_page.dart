@@ -80,6 +80,9 @@ class _DashboardPageState extends State<DashboardPage> {
   String avatarUrlActual = '';
   bool _headerLoading = true;
 
+  /// Se incrementa en cada recarga para forzar que _FavoritosClubCard se recree.
+  int _favoritosKey = 0;
+
   @override
   void initState() {
     super.initState();
@@ -175,6 +178,7 @@ class _DashboardPageState extends State<DashboardPage> {
   Future<void> _recargar() async {
     setState(() {
       dashboardFuture = _cargarDashboard();
+      _favoritosKey++;
     });
 
     await dashboardFuture;
@@ -398,7 +402,7 @@ class _DashboardPageState extends State<DashboardPage> {
                   ],
 
                   const SizedBox(height: AppSpacing.md),
-                  _FavoritosClubCard(),
+                  _FavoritosClubCard(key: ValueKey(_favoritosKey)),
 
                   if (data.libroMes.isNotEmpty) ...[
                     const SizedBox(height: AppSpacing.md),
@@ -1888,7 +1892,7 @@ class _PulsoTendenciaCardState extends State<_PulsoTendenciaCard>
 // ─────────────────────────────────────────────────────────────────────────────
 
 class _FavoritosClubCard extends StatefulWidget {
-  const _FavoritosClubCard();
+  const _FavoritosClubCard({super.key});
 
   @override
   State<_FavoritosClubCard> createState() => _FavoritosClubCardState();
