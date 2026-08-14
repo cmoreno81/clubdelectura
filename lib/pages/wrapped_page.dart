@@ -896,22 +896,13 @@ class _SlideFinal extends StatelessWidget {
           const SizedBox(height: AppSpacing.md),
           _Sub('$totalBooks ${totalBooks == 1 ? 'libro' : 'libros'} en $year.\nQue ${ year + 1} traiga muchos más.'),
           const SizedBox(height: 40),
-          GestureDetector(
-            onTap: () => Navigator.pop(context),
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xl, vertical: AppSpacing.md),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(AppRadius.pill),
-              ),
-              child: const Text(
-                'Cerrar',
-                style: TextStyle(
-                  color: Color(0xFF0D0D1A),
-                  fontWeight: FontWeight.w800,
-                  fontSize: 16,
-                ),
-              ),
+          // Sin botón Cerrar aquí: el siguiente slide es el resumen compartible
+          Text(
+            'Desliza para ver tu resumen →',
+            style: TextStyle(
+              color: Colors.white.withValues(alpha: 0.5),
+              fontSize: 13,
+              fontStyle: FontStyle.italic,
             ),
           ),
         ],
