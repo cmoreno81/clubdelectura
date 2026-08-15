@@ -9,6 +9,7 @@ import '../../theme/app_radius.dart';
 import '../../theme/app_spacing.dart';
 import '../../theme/app_text_styles.dart';
 import '../common/club_avatar.dart';
+import '../common/reaction_details_sheet.dart';
 
 class RespuestaCard extends StatefulWidget {
   final RespuestaComentario respuesta;
@@ -27,6 +28,7 @@ class RespuestaCard extends StatefulWidget {
 class _RespuestaCardState extends State<RespuestaCard> {
   late int _likes;
   late bool _miLike;
+  late Map<ReaccionComentario, int> _reacciones;
 
   /// Reacción visual local (no persiste en el modelo del servidor, pero sí
   /// se envía al endpoint para que lo procese si tiene soporte).
@@ -39,10 +41,10 @@ class _RespuestaCardState extends State<RespuestaCard> {
     super.initState();
     _likes = widget.respuesta.likes;
     _miLike = widget.respuesta.miLike;
-    // Si el servidor ya devuelve una reacción concreta, usarla; de lo
-    // contrario, mostrar el corazón genérico cuando haya like.
     _miReaccion =
-        _miLike ? ReaccionComentario.meGusta : null;
+        widget.respuesta.miReaccion ??
+        (_miLike ? ReaccionComentario.meGusta : null);
+    _reacciones = Map.of(widget.respuesta.reacciones);
   }
 
   Future<void> _toggleReaccion(ReaccionComentario reaccion) async {
@@ -74,7 +76,16 @@ class _RespuestaCardState extends State<RespuestaCard> {
       setState(() {
         _miLike = json['miLike'] as bool? ?? _miLike;
         _likes = (json['likes'] as num?)?.toInt() ?? _likes;
-        if (!_miLike) _miReaccion = null;
+        _miReaccion = ReaccionComentarioDatos.fromApi(
+          json['miReaccion']?.toString(),
+        );
+        final raw = json['reacciones'];
+        if (raw is Map) {
+          _reacciones = {
+            for (final tipo in ReaccionComentario.values)
+              tipo: (raw[tipo.apiValue] as num?)?.toInt() ?? 0,
+          };
+        }
       });
     } catch (_) {
       if (!mounted) return;
@@ -372,6 +383,21 @@ class _RespuestaCardState extends State<RespuestaCard> {
                           spacing: AppSpacing.xs,
                           runSpacing: AppSpacing.xs,
                           children: [
+                            for (final tipo in ReaccionComentario.values)
+                              if ((_reacciones[tipo] ?? 0) > 0)
+                                ActionChip(
+                                  tooltip: 'Ver quién reaccionó ${tipo.emoji}',
+                                  materialTapTargetSize:
+                                      MaterialTapTargetSize.padded,
+                                  onPressed: () => ReactionDetailsSheet.show(
+                                    context,
+                                    targetType: 'COMMENT',
+                                    targetId: widget.respuesta.id,
+                                  ),
+                                  label: Text(
+                                    '${tipo.emoji} ${_reacciones[tipo]}',
+                                  ),
+                                ),
                             Tooltip(
                               message: _miReaccion?.titulo ?? 'Reaccionar',
                               child: SizedBox(
@@ -394,16 +420,14 @@ class _RespuestaCardState extends State<RespuestaCard> {
                                         )
                                       : Text(
                                           _miReaccion!.emoji,
-                                          style:
-                                              const TextStyle(fontSize: 16),
+                                          style: const TextStyle(fontSize: 16),
                                         ),
                                   label: _likes > 0
                                       ? Text(
                                           '$_likes',
-                                          style: AppTextStyles.caption
-                                              .copyWith(
-                                                fontWeight: FontWeight.w700,
-                                              ),
+                                          style: AppTextStyles.caption.copyWith(
+                                            fontWeight: FontWeight.w700,
+                                          ),
                                         )
                                       : const SizedBox.shrink(),
                                 ),

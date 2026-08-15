@@ -8,9 +8,12 @@ import 'package:club_lectura_app/utils/app_config.dart';
 import 'package:http/http.dart' as http;
 import '../models/achievements/achievement.dart';
 import '../models/dashboard.dart';
+import '../models/reaction_details.dart';
 import '../models/libro.dart';
 import '../models/libro_finalizado.dart';
 import '../models/nuevo_libro.dart';
+import '../models/progreso_lectura_result.dart';
+import '../models/book_of_year.dart';
 import '../models/libros_data.dart';
 import '../models/ranking.dart';
 import '../models/clubvision.dart';
@@ -188,11 +191,13 @@ class ApiService {
       body['origen'] = book.source;
       body['titulo'] = book.title;
       if (book.authors.isNotEmpty) body['autores'] = book.authors;
-      if (book.coverUrl.isNotEmpty) body['coverUrl'] = book.coverUrl;
+      body['coverUrl'] = book.coverUrl;
       if (book.genre.isNotEmpty) body['genero'] = book.genre;
-      if (book.isbn.isNotEmpty) body['isbn'] = book.isbn;
+      body['isbn'] = book.isbn;
       if (book.pages != null) body['paginas'] = book.pages;
-      if (book.publicationYear != null) body['anioPublicacion'] = book.publicationYear;
+      if (book.publicationYear != null) {
+        body['anioPublicacion'] = book.publicationYear;
+      }
     } else if (bookId != null) {
       body['id'] = bookId;
       body['origen'] = 'CLUBREADS';
@@ -531,7 +536,7 @@ class ApiService {
     return _respuestaOk(response);
   }
 
-  Future<bool> actualizarProgresoLectura({
+  Future<ProgresoLecturaResult> actualizarProgresoLectura({
     required String usuario,
     required String libro,
     required int progreso,
@@ -550,7 +555,17 @@ class ApiService {
         'paginasTotales': ?paginasTotales,
       }),
     );
-    return _respuestaOk(response);
+    try {
+      final data = _decodeJson(response);
+      if (data is Map<String, dynamic>) {
+        return ProgresoLecturaResult.fromJson(data);
+      }
+    } catch (_) {}
+    return ProgresoLecturaResult.error(
+      response.statusCode == 200
+          ? 'Respuesta inesperada del servidor.'
+          : 'Error de conexión con el servidor.',
+    );
   }
 
   Future<Map<String, dynamic>> toggleProgressReaction({
@@ -569,6 +584,30 @@ class ApiService {
       return {'ok': false};
     }
     return data;
+  }
+
+  Future<ReactionDetails> getReactionDetails({
+    required String targetType,
+    required String targetId,
+  }) async {
+    final response = await _client.get(
+      Uri.parse(baseUrl).replace(
+        queryParameters: {
+          'action': 'detalleReacciones',
+          'targetType': targetType,
+          'targetId': targetId,
+        },
+      ),
+    );
+    if (response.statusCode != 200) throw ApiException.fromResponse(response);
+    final data = _decodeJson(response);
+    if (data is! Map<String, dynamic>) {
+      throw const ApiException(
+        statusCode: 500,
+        message: 'Respuesta no válida.',
+      );
+    }
+    return ReactionDetails.fromJson(data);
   }
 
   Future<ComentariosCapitulo> getComentariosCapitulo({
@@ -1709,6 +1748,21 @@ class ApiService {
     return data is Map<String, dynamic> ? data : {'ok': false};
   }
 
+  Future<Map<String, dynamic>> reemplazarFavorito(
+    String bookIdActual,
+    String bookIdNuevo,
+  ) async {
+    final response = await _postJson('reemplazarFavorito', {
+      'bookIdActual': bookIdActual,
+      'bookIdNuevo': bookIdNuevo,
+    });
+    if (response.statusCode != 200) {
+      return {'ok': false, 'mensaje': 'Error de conexión con el servidor.'};
+    }
+    final data = _decodeJson(response);
+    return data is Map<String, dynamic> ? data : {'ok': false};
+  }
+
   Future<List<LibroFavorito>> getFavoritosUsuario(String usuario) async {
     final uri = Uri.parse(baseUrl).replace(
       queryParameters: {'action': 'favoritosUsuario', 'perfil': usuario},
@@ -1724,9 +1778,9 @@ class ApiService {
   }
 
   Future<List<MiembroFavoritos>> getFavoritosDelClub() async {
-    final uri = Uri.parse(baseUrl).replace(
-      queryParameters: {'action': 'favoritosDelClub'},
-    );
+    final uri = Uri.parse(
+      baseUrl,
+    ).replace(queryParameters: {'action': 'favoritosDelClub'});
     final response = await _client.get(uri);
     if (response.statusCode != 200) return [];
     final data = _decodeJson(response);
@@ -1734,6 +1788,90 @@ class ApiService {
     return (data['miembros'] as List? ?? [])
         .whereType<Map<String, dynamic>>()
         .map(MiembroFavoritos.fromJson)
+        .toList();
+  }
+
+  Future<BookOfYearBoard> getMyBookOfYear(int year) async {
+    final response = await _client.get(
+      Uri.parse(
+        baseUrl,
+      ).replace(queryParameters: {'action': 'miLibroDelAnio', 'anio': '$year'}),
+    );
+    if (response.statusCode != 200) throw ApiException.fromResponse(response);
+    return BookOfYearBoard.fromJson(
+      _decodeJson(response) as Map<String, dynamic>,
+    );
+  }
+
+  Future<BookOfYearBoard> getPublicBookOfYear(String profile, int year) async {
+    final response = await _client.get(
+      Uri.parse(baseUrl).replace(
+        queryParameters: {
+          'action': 'libroDelAnioPublico',
+          'perfil': profile,
+          'anio': '$year',
+        },
+      ),
+    );
+    if (response.statusCode != 200) throw ApiException.fromResponse(response);
+    return BookOfYearBoard.fromJson(
+      _decodeJson(response) as Map<String, dynamic>,
+    );
+  }
+
+  Future<BookOfYearBoard> saveMonthlyBookOfYear(
+    int year,
+    int month,
+    String bookId,
+  ) async => _bookOfYearMutation('guardarSeleccionLibroDelAnio', {
+    'anio': year,
+    'mes': month,
+    'bookId': bookId,
+  });
+  Future<BookOfYearBoard> chooseBookOfYearDuel(
+    int year,
+    String phase,
+    int position,
+    String bookId,
+  ) async => _bookOfYearMutation('elegirDueloLibroDelAnio', {
+    'anio': year,
+    'fase': phase,
+    'posicion': position,
+    'bookId': bookId,
+  });
+  Future<BookOfYearBoard> chooseAnnualBookOfYear(
+    int year,
+    String bookId,
+  ) async => _bookOfYearMutation('elegirLibroDelAnio', {
+    'anio': year,
+    'bookId': bookId,
+  });
+
+  Future<BookOfYearBoard> _bookOfYearMutation(
+    String action,
+    Map<String, dynamic> body,
+  ) async {
+    final response = await _postJson(action, body);
+    if (response.statusCode != 200) throw ApiException.fromResponse(response);
+    return BookOfYearBoard.fromJson(
+      _decodeJson(response) as Map<String, dynamic>,
+    );
+  }
+
+  Future<List<ClubBookOfYearMember>> getClubBooksOfYear(int year) async {
+    final response = await _client.get(
+      Uri.parse(baseUrl).replace(
+        queryParameters: {'action': 'librosDelAnioClub', 'anio': '$year'},
+      ),
+    );
+    if (response.statusCode != 200) throw ApiException.fromResponse(response);
+    final data = _decodeJson(response) as Map<String, dynamic>;
+    return (data['miembros'] as List? ?? const [])
+        .whereType<Map>()
+        .map(
+          (item) =>
+              ClubBookOfYearMember.fromJson(Map<String, dynamic>.from(item)),
+        )
         .toList();
   }
 }

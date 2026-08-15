@@ -14,7 +14,6 @@ import 'club_logros_page.dart';
 import '../dev/dev_settings.dart';
 import '../models/dashboard_view_data.dart';
 import '../models/dashboard.dart';
-import '../services/reading_streak_service.dart';
 import '../models/auth_session.dart';
 import '../models/ranking_item.dart';
 import '../models/reaccion_comentario.dart';
@@ -29,6 +28,7 @@ import '../theme/app_text_styles.dart';
 import '../widgets/club/clubvision_card.dart';
 import '../widgets/common/club_avatar.dart';
 import '../widgets/common/club_card.dart';
+import '../widgets/dashboard/club_books_of_year_card.dart';
 import '../widgets/common/club_chip.dart';
 import '../widgets/common/club_empty_state.dart';
 import '../widgets/common/club_section_title.dart';
@@ -42,6 +42,7 @@ import '../models/perfil_usuario.dart';
 import 'ranking_page.dart';
 import 'tendencias_club_page.dart';
 import 'package:club_lectura_app/widgets/common/club_shimmer.dart';
+import '../widgets/common/reaction_details_sheet.dart';
 
 class DashboardPage extends StatefulWidget {
   const DashboardPage({
@@ -52,6 +53,7 @@ class DashboardPage extends StatefulWidget {
     this.loadData,
     this.initialUser,
     this.profilePageBuilder,
+    this.loadCheckinHistory,
   });
 
   final String clubName;
@@ -60,6 +62,7 @@ class DashboardPage extends StatefulWidget {
   final Future<DashboardViewData> Function()? loadData;
   final AuthUser? initialUser;
   final Widget Function(String userName)? profilePageBuilder;
+  final Future<Map<String, dynamic>> Function()? loadCheckinHistory;
 
   @override
   State<DashboardPage> createState() => _DashboardPageState();
@@ -99,12 +102,11 @@ class _DashboardPageState extends State<DashboardPage> {
     final notif = await mostrarNotificacionesSheet(
       context,
       titulo: 'Actividad del club',
-      filtro:
-          (n) =>
-              n.tipo == 'LIBRO_TERMINADO' ||
-              n.tipo == 'LIBRO_EMPEZADO' ||
-              n.tipo == 'LIBRO_NUEVO_BIBLIOTECA' ||
-              n.tipo == 'NUEVA_MIEMBRO',
+      filtro: (n) =>
+          n.tipo == 'LIBRO_TERMINADO' ||
+          n.tipo == 'LIBRO_EMPEZADO' ||
+          n.tipo == 'LIBRO_NUEVO_BIBLIOTECA' ||
+          n.tipo == 'NUEVA_MIEMBRO',
     );
 
     // Refrescar el servicio tras cerrar el sheet
@@ -119,7 +121,10 @@ class _DashboardPageState extends State<DashboardPage> {
     String bookTitle = '';
     for (final key in const ['bookTitle', 'titulo', 'libro']) {
       final v = extra[key]?.toString().trim() ?? '';
-      if (v.isNotEmpty) { bookTitle = v; break; }
+      if (v.isNotEmpty) {
+        bookTitle = v;
+        break;
+      }
     }
     if (bookTitle.isEmpty) {
       final match = RegExp(r'["«"]([^""»"]+)["»"]').firstMatch(n.mensaje);
@@ -261,21 +266,21 @@ class _DashboardPageState extends State<DashboardPage> {
         ),
         actions: [
           if (!widget.esPersonal)
-          ListenableBuilder(
-            listenable: NotificacionesService.instance,
-            builder: (context, _) {
-              final n = NotificacionesService.instance.noLeidasClub;
-              return IconButton(
-                tooltip: 'Actividad del club',
-                onPressed: _abrirNotificaciones,
-                icon: Badge(
-                  isLabelVisible: n > 0,
-                  label: Text(n < 10 ? '$n' : '9+'),
-                  child: const Icon(Icons.notifications_none_rounded),
-                ),
-              );
-            },
-          ),
+            ListenableBuilder(
+              listenable: NotificacionesService.instance,
+              builder: (context, _) {
+                final n = NotificacionesService.instance.noLeidasClub;
+                return IconButton(
+                  tooltip: 'Actividad del club',
+                  onPressed: _abrirNotificaciones,
+                  icon: Badge(
+                    isLabelVisible: n > 0,
+                    label: Text(n < 10 ? '$n' : '9+'),
+                    child: const Icon(Icons.notifications_none_rounded),
+                  ),
+                );
+              },
+            ),
           Padding(
             padding: const EdgeInsets.only(right: AppSpacing.md),
             child: ClubAvatar(
@@ -338,8 +343,12 @@ class _DashboardPageState extends State<DashboardPage> {
                   ],
 
                   ClubSectionTitle(
-                    title: widget.esPersonal ? 'Tu actividad lectora' : 'Así está el club',
-                    subtitle: widget.esPersonal ? 'Tu mes en números' : 'El pulso lector de este mes',
+                    title: widget.esPersonal
+                        ? 'Tu actividad lectora'
+                        : 'Así está el club',
+                    subtitle: widget.esPersonal
+                        ? 'Tu mes en números'
+                        : 'El pulso lector de este mes',
                     icon: Icons.auto_awesome_rounded,
                     padding: EdgeInsets.zero,
                   ),
@@ -352,74 +361,80 @@ class _DashboardPageState extends State<DashboardPage> {
                   _AchievementsClubCard(esPersonal: widget.esPersonal),
 
                   if (!widget.esPersonal) ...[
-                  const SizedBox(height: AppSpacing.md),
+                    const SizedBox(height: AppSpacing.md),
 
-                  IntrinsicHeight(
-                   child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      Expanded(
-                        child: _PulsoTendenciaCard(
-                          title: 'Pulso del club',
-                          value: data.mood,
-                          icon: Icons.psychology_alt_outlined,
-                          foreground: const Color(0xFFD95781),
-                          background: const Color(0xFFFFF4F7),
-                          border: const Color(0xFFF5D8E1),
-                          onTap: () => Navigator.push(
-                            context,
-                            AppPageRoute(builder: (_) => const MoodClubPage()),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: AppSpacing.sm),
-                      Expanded(
-                        child: _PulsoTendenciaCard(
-                          title: 'Tendencia',
-                          value: data.tendencia,
-                          icon: Icons.trending_up_rounded,
-                          foreground: const Color(0xFF3D7358),
-                          background: const Color(0xFFF0F7F4),
-                          border: const Color(0xFFB8D9C5),
-                          onTap: () => Navigator.push(
-                            context,
-                            AppPageRoute(
-                              builder: (_) => const TendenciasClubPage(),
+                    IntrinsicHeight(
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          Expanded(
+                            child: _PulsoTendenciaCard(
+                              title: 'Pulso del club',
+                              value: data.mood,
+                              icon: Icons.psychology_alt_outlined,
+                              foreground: const Color(0xFFD95781),
+                              background: const Color(0xFFFFF4F7),
+                              border: const Color(0xFFF5D8E1),
+                              onTap: () => Navigator.push(
+                                context,
+                                AppPageRoute(
+                                  builder: (_) => const MoodClubPage(),
+                                ),
+                              ),
                             ),
                           ),
+                          const SizedBox(width: AppSpacing.sm),
+                          Expanded(
+                            child: _PulsoTendenciaCard(
+                              title: 'Tendencia',
+                              value: data.tendencia,
+                              icon: Icons.trending_up_rounded,
+                              foreground: const Color(0xFF3D7358),
+                              background: const Color(0xFFF0F7F4),
+                              border: const Color(0xFFB8D9C5),
+                              onTap: () => Navigator.push(
+                                context,
+                                AppPageRoute(
+                                  builder: (_) => const TendenciasClubPage(),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+
+                    if (data.rankingAfinidad.isNotEmpty) ...[
+                      const SizedBox(height: AppSpacing.md),
+                      _AffinityCard(
+                        miembros: data.rankingAfinidad,
+                        miAvatarUrl: avatarUrlActual,
+                      ),
+                    ],
+
+                    const SizedBox(height: AppSpacing.md),
+                    _FavoritosClubCard(key: ValueKey(_favoritosKey)),
+                    const SizedBox(height: AppSpacing.md),
+                    ClubBooksOfYearCard(
+                      key: ValueKey('book-of-year-$_favoritosKey'),
+                    ),
+
+                    if (data.libroMes.isNotEmpty) ...[
+                      const SizedBox(height: AppSpacing.md),
+
+                      InfoCard(
+                        title: 'Libro del mes',
+                        value:
+                            '${data.libroMes.first.libro}\n'
+                            '${data.libroMes.first.puntos} puntos',
+                        icon: Icons.workspace_premium_outlined,
+                        variant: InfoCardVariant.primary,
+                        onTap: () => openBookDetail(
+                          context,
+                          title: data.libroMes.first.libro,
                         ),
                       ),
                     ],
-                  ),
-                  ),
-
-                  if (data.rankingAfinidad.isNotEmpty) ...[
-                    const SizedBox(height: AppSpacing.md),
-                    _AffinityCard(
-                      miembros: data.rankingAfinidad,
-                      miAvatarUrl: avatarUrlActual,
-                    ),
-                  ],
-
-                  const SizedBox(height: AppSpacing.md),
-                  _FavoritosClubCard(key: ValueKey(_favoritosKey)),
-
-                  if (data.libroMes.isNotEmpty) ...[
-                    const SizedBox(height: AppSpacing.md),
-
-                    InfoCard(
-                      title: 'Libro del mes',
-                      value:
-                          '${data.libroMes.first.libro}\n'
-                          '${data.libroMes.first.puntos} puntos',
-                      icon: Icons.workspace_premium_outlined,
-                      variant: InfoCardVariant.primary,
-                      onTap: () => openBookDetail(
-                        context,
-                        title: data.libroMes.first.libro,
-                      ),
-                    ),
-                  ],
                   ], // fin if (!widget.esPersonal)
 
                   const SizedBox(height: AppSpacing.lg),
@@ -431,7 +446,10 @@ class _DashboardPageState extends State<DashboardPage> {
 
                   const SizedBox(height: AppSpacing.md),
 
-                  const _RachaLectoraCard(),
+                  RachaLectoraCard(
+                    key: ValueKey('reading-streak-$_favoritosKey'),
+                    loadHistory: widget.loadCheckinHistory,
+                  ),
 
                   const SizedBox(height: AppSpacing.lg),
 
@@ -455,7 +473,9 @@ class _DashboardPageState extends State<DashboardPage> {
                       message: widget.esPersonal
                           ? 'Ve a Libros y empieza una nueva lectura.'
                           : 'Cuando alguna lectora empiece un libro, aparecerá aquí.',
-                      padding: const EdgeInsets.symmetric(vertical: AppSpacing.xl),
+                      padding: const EdgeInsets.symmetric(
+                        vertical: AppSpacing.xl,
+                      ),
                     )
                   else
                     ...data.leyendoAhora.map(
@@ -706,6 +726,11 @@ class _DashboardPageState extends State<DashboardPage> {
                     coverUrl: lectura.coverUrl,
                   ),
                   onReact: () => _reaccionarProgreso(lectura),
+                  onReactionDetails: () => ReactionDetailsSheet.show(
+                    context,
+                    targetType: 'PROGRESS',
+                    targetId: lectura.libraryId,
+                  ),
                 ),
               ),
               if (index < lecturas.length - 1)
@@ -717,7 +742,13 @@ class _DashboardPageState extends State<DashboardPage> {
     );
   }
 
+  final Set<String> _savingProgressIds = <String>{};
+
   Future<void> _editarProgreso(String usuario, LecturaAhoraItem lectura) async {
+    final progressId = lectura.libraryId.isNotEmpty
+        ? lectura.libraryId
+        : lectura.bookId;
+    if (_savingProgressIds.contains(progressId)) return;
     final resultado =
         await showDialog<
           ({
@@ -731,22 +762,42 @@ class _DashboardPageState extends State<DashboardPage> {
           builder: (_) => EditarProgresoDialog(lectura: lectura),
         );
     if (resultado == null) return;
+    if (_savingProgressIds.contains(progressId)) return;
 
-    final ok = await ApiService().actualizarProgresoLectura(
-      usuario: usuario,
-      libro: lectura.titulo,
-      progreso: resultado.progreso,
-      comentario: resultado.comentario,
-      paginaActual: resultado.paginaActual,
-      paginasTotales: resultado.paginasTotales,
-    );
-    if (!mounted) return;
-    if (ok) {
-      await _recargar();
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('No se ha podido guardar el progreso.')),
+    setState(() => _savingProgressIds.add(progressId));
+    try {
+      final guardado = await ApiService().actualizarProgresoLectura(
+        usuario: usuario,
+        libro: lectura.titulo,
+        progreso: resultado.progreso,
+        comentario: resultado.comentario,
+        paginaActual: resultado.paginaActual,
+        paginasTotales: resultado.paginasTotales,
       );
+      if (!mounted) return;
+      if (!guardado.ok) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              guardado.mensaje.isNotEmpty
+                  ? guardado.mensaje
+                  : 'No se ha podido guardar el progreso.',
+            ),
+          ),
+        );
+        return;
+      }
+      if (resultado.paginaActual != null &&
+          guardado.paginaActual != resultado.paginaActual) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('El servidor devolvió una página diferente.'),
+          ),
+        );
+      }
+      await _recargar();
+    } finally {
+      if (mounted) setState(() => _savingProgressIds.remove(progressId));
     }
   }
 
@@ -894,6 +945,7 @@ class _LecturaProgresoCard extends StatelessWidget {
   final VoidCallback onEditar;
   final VoidCallback onBookTap;
   final VoidCallback onReact;
+  final VoidCallback onReactionDetails;
 
   const _LecturaProgresoCard({
     super.key,
@@ -902,6 +954,7 @@ class _LecturaProgresoCard extends StatelessWidget {
     required this.onEditar,
     required this.onBookTap,
     required this.onReact,
+    required this.onReactionDetails,
   });
 
   @override
@@ -998,7 +1051,10 @@ class _LecturaProgresoCard extends StatelessWidget {
                     children: [
                       for (final entry in lectura.reacciones.entries)
                         if (entry.value > 0)
-                          Chip(
+                          ActionChip(
+                            tooltip: 'Ver quién ha reaccionado',
+                            onPressed: onReactionDetails,
+                            materialTapTargetSize: MaterialTapTargetSize.padded,
                             visualDensity: VisualDensity.compact,
                             padding: const EdgeInsets.symmetric(vertical: 2),
                             label: Text(
@@ -1156,7 +1212,11 @@ class _PodioPuestoVacio extends StatelessWidget {
       children: [
         // Copa o espacio arriba (igual que _PodioPuesto)
         if (destacado)
-          Icon(Icons.emoji_events_rounded, color: color.withValues(alpha: .35), size: 18)
+          Icon(
+            Icons.emoji_events_rounded,
+            color: color.withValues(alpha: .35),
+            size: 18,
+          )
         else
           const SizedBox(height: 18),
 
@@ -1216,13 +1276,8 @@ class _PodioPuestoVacio extends StatelessWidget {
           alignment: Alignment.center,
           decoration: BoxDecoration(
             color: color.withValues(alpha: .14),
-            border: Border.all(
-              color: color.withValues(alpha: .28),
-              width: 1.5,
-            ),
-            borderRadius: const BorderRadius.vertical(
-              top: Radius.circular(14),
-            ),
+            border: Border.all(color: color.withValues(alpha: .28), width: 1.5),
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(14)),
           ),
           child: Text(
             '$posicion',
@@ -1581,7 +1636,10 @@ class _AchievementsClubCard extends StatelessWidget {
               children: [
                 Text(
                   esPersonal ? 'Mis logros' : 'Logros del club',
-                  style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 16),
+                  style: const TextStyle(
+                    fontWeight: FontWeight.w800,
+                    fontSize: 16,
+                  ),
                 ),
                 const SizedBox(height: 2),
                 Text(
@@ -1601,24 +1659,27 @@ class _AchievementsClubCard extends StatelessWidget {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Racha lectora — días consecutivos abriendo la app
+// Racha lectora — check-ins diarios confirmados por el backend
 // ─────────────────────────────────────────────────────────────────────────────
 
-class _RachaLectoraCard extends StatefulWidget {
-  const _RachaLectoraCard();
+class RachaLectoraCard extends StatefulWidget {
+  const RachaLectoraCard({super.key, this.loadHistory, this.onTap});
+
+  final Future<Map<String, dynamic>> Function()? loadHistory;
+  final VoidCallback? onTap;
 
   @override
-  State<_RachaLectoraCard> createState() => _RachaLectoraCardState();
+  State<RachaLectoraCard> createState() => _RachaLectoraCardState();
 }
 
-class _RachaLectoraCardState extends State<_RachaLectoraCard> {
-  late final Future<int> _rachaFuture;
+class _RachaLectoraCardState extends State<RachaLectoraCard> {
+  late final Future<Map<String, dynamic>> _historyFuture;
 
   @override
   void initState() {
     super.initState();
-    // Registra la visita de hoy y obtiene el total actualizado
-    _rachaFuture = ReadingStreakService.registrarVisita();
+    _historyFuture =
+        widget.loadHistory?.call() ?? ApiService().getHistorialCheckin(dias: 7);
   }
 
   Future<void> _irASeguimiento(BuildContext context) async {
@@ -1627,23 +1688,23 @@ class _RachaLectoraCardState extends State<_RachaLectoraCard> {
     await Navigator.push<void>(
       context,
       AppPageRoute(
-        builder: (_) => PerfilUsuarioPage(
-          usuario: usuario,
-          scrollToSeguimiento: true,
-        ),
+        builder: (_) =>
+            PerfilUsuarioPage(usuario: usuario, scrollToSeguimiento: true),
       ),
     );
   }
 
   @override
   Widget build(BuildContext context) {
-    return FutureBuilder<int>(
-      future: _rachaFuture,
+    return FutureBuilder<Map<String, dynamic>>(
+      future: _historyFuture,
       builder: (context, snap) {
-        final racha = snap.data ?? 0;
+        final racha = (snap.data?['streak'] as num?)?.toInt() ?? 0;
+        final checkedToday = snap.data?['checkedToday'] == true;
         return _RachaLectoraTile(
           racha: racha,
-          onTap: () => _irASeguimiento(context),
+          checkedToday: checkedToday,
+          onTap: widget.onTap ?? () => _irASeguimiento(context),
         );
       },
     );
@@ -1651,105 +1712,112 @@ class _RachaLectoraCardState extends State<_RachaLectoraCard> {
 }
 
 class _RachaLectoraTile extends StatelessWidget {
-  const _RachaLectoraTile({required this.racha, this.onTap});
+  const _RachaLectoraTile({
+    required this.racha,
+    required this.checkedToday,
+    this.onTap,
+  });
 
   final int racha;
+  final bool checkedToday;
   final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
-    final (emoji, mensaje, color) = _datos(racha);
+    final (emoji, mensaje, color) = checkedToday
+        ? _datos(racha)
+        : ('📖', 'Marca que has leído hoy', AppColors.textSecondary);
 
     return GestureDetector(
       onTap: onTap,
       child: ClubCard(
-      padding: const EdgeInsets.symmetric(
-        horizontal: AppSpacing.lg,
-        vertical: AppSpacing.md,
-      ),
-      borderColor: color.withValues(alpha: 0.35),
-      child: Row(
-        children: [
-          // ── Icono de llama ──────────────────────────────────────────────
-          Container(
-            width: 52,
-            height: 52,
-            decoration: BoxDecoration(
-              color: color.withValues(alpha: 0.12),
-              borderRadius: BorderRadius.circular(16),
+        padding: const EdgeInsets.symmetric(
+          horizontal: AppSpacing.lg,
+          vertical: AppSpacing.md,
+        ),
+        borderColor: color.withValues(alpha: 0.35),
+        child: Row(
+          children: [
+            // ── Icono de llama ──────────────────────────────────────────────
+            Container(
+              width: 52,
+              height: 52,
+              decoration: BoxDecoration(
+                color: color.withValues(alpha: 0.12),
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: Center(
+                child: Text(emoji, style: const TextStyle(fontSize: 26)),
+              ),
             ),
-            child: Center(
-              child: Text(emoji, style: const TextStyle(fontSize: 26)),
-            ),
-          ),
 
-          const SizedBox(width: AppSpacing.md),
+            const SizedBox(width: AppSpacing.md),
 
-          // ── Texto central ───────────────────────────────────────────────
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Racha lectora',
-                  style: AppTextStyles.caption.copyWith(
-                    color: AppColors.textSecondary,
-                    fontWeight: FontWeight.w600,
+            // ── Texto central ───────────────────────────────────────────────
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Racha lectora',
+                    style: AppTextStyles.caption.copyWith(
+                      color: AppColors.textSecondary,
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  mensaje,
-                  style: AppTextStyles.body.copyWith(
-                    fontWeight: FontWeight.w700,
+                  const SizedBox(height: 2),
+                  Text(
+                    mensaje,
+                    style: AppTextStyles.body.copyWith(
+                      fontWeight: FontWeight.w700,
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
-          ),
 
-          // ── Contador de días ────────────────────────────────────────────
-          AnimatedSwitcher(
-            duration: const Duration(milliseconds: 400),
-            transitionBuilder: (child, anim) => ScaleTransition(
-              scale: anim,
-              child: FadeTransition(opacity: anim, child: child),
-            ),
-            child: Column(
-              key: ValueKey(racha),
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  '$racha',
-                  style: AppTextStyles.section.copyWith(
-                    fontSize: 28,
-                    fontWeight: FontWeight.w900,
-                    color: color,
+            // ── Contador de días ────────────────────────────────────────────
+            AnimatedSwitcher(
+              duration: const Duration(milliseconds: 400),
+              transitionBuilder: (child, anim) => ScaleTransition(
+                scale: anim,
+                child: FadeTransition(opacity: anim, child: child),
+              ),
+              child: Column(
+                key: ValueKey(racha),
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    '$racha',
+                    style: AppTextStyles.section.copyWith(
+                      fontSize: 28,
+                      fontWeight: FontWeight.w900,
+                      color: color,
+                    ),
                   ),
-                ),
-                Text(
-                  racha == 1 ? 'día' : 'días',
-                  style: AppTextStyles.caption.copyWith(
-                    color: color,
-                    fontWeight: FontWeight.w700,
+                  Text(
+                    racha == 1 ? 'día' : 'días',
+                    style: AppTextStyles.caption.copyWith(
+                      color: color,
+                      fontWeight: FontWeight.w700,
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
-          ),
 
-          // ── Chevron de navegación ───────────────────────────────────────
-          if (onTap != null) ...[
-            const SizedBox(width: AppSpacing.xs),
-            Icon(
-              Icons.chevron_right_rounded,
-              color: AppColors.textMuted,
-              size: 20,
-            ),
+            // ── Chevron de navegación ───────────────────────────────────────
+            if (onTap != null) ...[
+              const SizedBox(width: AppSpacing.xs),
+              Icon(
+                Icons.chevron_right_rounded,
+                color: AppColors.textMuted,
+                size: 20,
+              ),
+            ],
           ],
-        ],
+        ),
       ),
-    ),
     );
   }
 
@@ -1811,9 +1879,10 @@ class _PulsoTendenciaCardState extends State<_PulsoTendenciaCard>
       vsync: this,
       duration: const Duration(milliseconds: 1200),
     )..repeat(reverse: true);
-    _scale = Tween<double>(begin: 0.92, end: 1.08).animate(
-      CurvedAnimation(parent: _controller, curve: Curves.easeInOut),
-    );
+    _scale = Tween<double>(
+      begin: 0.92,
+      end: 1.08,
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeInOut));
   }
 
   @override
@@ -1842,11 +1911,7 @@ class _PulsoTendenciaCardState extends State<_PulsoTendenciaCard>
               children: [
                 ScaleTransition(
                   scale: _scale,
-                  child: Icon(
-                    widget.icon,
-                    color: widget.foreground,
-                    size: 16,
-                  ),
+                  child: Icon(widget.icon, color: widget.foreground, size: 16),
                 ),
                 const SizedBox(width: 6),
                 Expanded(
@@ -1938,7 +2003,10 @@ class _FavoritosClubCardState extends State<_FavoritosClubCard> {
       return const SizedBox.shrink();
     }
     // También ocultar si la única entrada soy yo y no tengo favoritos
-    if (!_cargando && _miembros!.length == 1 && _miembros!.first.esTu && _miembros!.first.favoritos.isEmpty) {
+    if (!_cargando &&
+        _miembros!.length == 1 &&
+        _miembros!.first.esTu &&
+        _miembros!.first.favoritos.isEmpty) {
       return const SizedBox.shrink();
     }
 
@@ -1999,13 +2067,19 @@ class _FavoritosClubCardState extends State<_FavoritosClubCard> {
             SingleChildScrollView(
               scrollDirection: Axis.horizontal,
               child: Row(
-                children: _miembros!.map((m) => Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm),
-                  child: _FavoritosMiembroTile(
-                    miembro: m,
-                    onTap: () => _verFavoritos(m),
-                  ),
-                )).toList(),
+                children: _miembros!
+                    .map(
+                      (m) => Padding(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: AppSpacing.sm,
+                        ),
+                        child: _FavoritosMiembroTile(
+                          miembro: m,
+                          onTap: () => _verFavoritos(m),
+                        ),
+                      ),
+                    )
+                    .toList(),
               ),
             ),
         ],
@@ -2041,7 +2115,8 @@ class _FavoritosMiembroTile extends StatelessWidget {
                   right: -6,
                   child: ClipRRect(
                     borderRadius: BorderRadius.circular(4),
-                    child: miembro.favoritos.first.coverUrl != null &&
+                    child:
+                        miembro.favoritos.first.coverUrl != null &&
                             miembro.favoritos.first.coverUrl!.isNotEmpty
                         ? OptimizedNetworkImage(
                             url: miembro.favoritos.first.coverUrl,
@@ -2053,8 +2128,11 @@ class _FavoritosMiembroTile extends StatelessWidget {
                             width: 22,
                             height: 32,
                             color: const Color(0xFFD4537E),
-                            child: const Icon(Icons.favorite_rounded,
-                                color: Colors.white, size: 10),
+                            child: const Icon(
+                              Icons.favorite_rounded,
+                              color: Colors.white,
+                              size: 10,
+                            ),
                           ),
                   ),
                 ),
@@ -2082,11 +2160,17 @@ class _FavoritosDeUsuarioSheet extends StatelessWidget {
     final cs = Theme.of(context).colorScheme;
     return Material(
       color: cs.surface,
-      borderRadius: const BorderRadius.vertical(top: Radius.circular(AppRadius.xl)),
+      borderRadius: const BorderRadius.vertical(
+        top: Radius.circular(AppRadius.xl),
+      ),
       child: SafeArea(
         child: Padding(
           padding: const EdgeInsets.fromLTRB(
-            AppSpacing.lg, AppSpacing.md, AppSpacing.lg, AppSpacing.lg),
+            AppSpacing.lg,
+            AppSpacing.md,
+            AppSpacing.lg,
+            AppSpacing.lg,
+          ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -2094,7 +2178,8 @@ class _FavoritosDeUsuarioSheet extends StatelessWidget {
               // Handle
               Center(
                 child: Container(
-                  width: 40, height: 4,
+                  width: 40,
+                  height: 4,
                   margin: const EdgeInsets.only(bottom: AppSpacing.md),
                   decoration: BoxDecoration(
                     color: AppColors.border,
@@ -2115,12 +2200,16 @@ class _FavoritosDeUsuarioSheet extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          miembro.esTu ? 'Tus favoritos' : 'Favoritos de ${miembro.nombre}',
+                          miembro.esTu
+                              ? 'Tus favoritos'
+                              : 'Favoritos de ${miembro.nombre}',
                           style: AppTextStyles.section,
                         ),
                         Text(
                           '${miembro.favoritos.length} libro${miembro.favoritos.length == 1 ? '' : 's'}',
-                          style: AppTextStyles.caption.copyWith(color: AppColors.textMuted),
+                          style: AppTextStyles.caption.copyWith(
+                            color: AppColors.textMuted,
+                          ),
                         ),
                       ],
                     ),
@@ -2153,7 +2242,8 @@ class _FavoritosDeUsuarioSheet extends StatelessWidget {
                     Navigator.push<void>(
                       context,
                       AppPageRoute(
-                        builder: (_) => PerfilUsuarioPage(usuario: miembro.nombre),
+                        builder: (_) =>
+                            PerfilUsuarioPage(usuario: miembro.nombre),
                       ),
                     );
                   },
@@ -2193,22 +2283,32 @@ class _MiniPortada extends StatelessWidget {
                         color: cs.surfaceContainerHighest,
                         child: Center(
                           child: Text(
-                            libro.title.isNotEmpty ? libro.title[0].toUpperCase() : '?',
-                            style: AppTextStyles.section.copyWith(color: AppColors.textMuted),
+                            libro.title.isNotEmpty
+                                ? libro.title[0].toUpperCase()
+                                : '?',
+                            style: AppTextStyles.section.copyWith(
+                              color: AppColors.textMuted,
+                            ),
                           ),
                         ),
                       ),
               ),
             ),
             Positioned(
-              bottom: 3, right: 3,
+              bottom: 3,
+              right: 3,
               child: Container(
-                width: 14, height: 14,
+                width: 14,
+                height: 14,
                 decoration: const BoxDecoration(
                   color: Color(0xFFD4537E),
                   shape: BoxShape.circle,
                 ),
-                child: const Icon(Icons.favorite_rounded, color: Colors.white, size: 8),
+                child: const Icon(
+                  Icons.favorite_rounded,
+                  color: Colors.white,
+                  size: 8,
+                ),
               ),
             ),
           ],

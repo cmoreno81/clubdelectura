@@ -14,6 +14,7 @@ import '../theme/app_radius.dart';
 import '../theme/app_spacing.dart';
 import '../theme/app_text_styles.dart';
 import '../utils/genero_utils.dart';
+import '../utils/wrapped_availability.dart';
 import '../widgets/common/checkin_button.dart';
 import '../widgets/common/club_avatar.dart';
 import '../widgets/common/club_card.dart';
@@ -22,6 +23,7 @@ import '../widgets/common/club_empty_state.dart';
 import '../widgets/common/club_section_title.dart';
 import '../widgets/common/mapa_calor_widget.dart';
 import '../widgets/common/optimized_network_image.dart';
+import '../widgets/profile/book_of_year_preview.dart';
 import '../widgets/error_view.dart';
 import '../services/usuario_service.dart';
 import '../widgets/perfil/editar_fechas_lectura_dialog.dart';
@@ -55,6 +57,7 @@ class PerfilUsuarioPage extends StatefulWidget {
 
   final String usuario;
   final String initialTab;
+
   /// Si es true, hace scroll automático a la sección "Seguimiento lector"
   /// una vez cargado el perfil.
   final bool scrollToSeguimiento;
@@ -146,6 +149,7 @@ class _PerfilUsuarioPageState extends State<PerfilUsuarioPage> {
   String _menuPerfil = 'RESUMEN';
 
   final _scrollController = ScrollController();
+
   /// Clave global para el título de "Seguimiento lector" — usada para scroll automático.
   final _seguimientoKey = GlobalKey();
 
@@ -277,13 +281,6 @@ class _PerfilUsuarioPageState extends State<PerfilUsuarioPage> {
         usuario.trim().toLowerCase() == widget.usuario.trim().toLowerCase()) {
       unawaited(FavoritosService.instance.cargar());
     }
-  }
-
-  /// Wrapped disponible: noviembre (11), diciembre (12) y enero (1).
-  /// En enero se muestra el Wrapped del año anterior.
-  bool _isWrappedDisponible() {
-    final month = DateTime.now().month;
-    return month == 11 || month == 12 || month == 1;
   }
 
   bool get esMiPerfil {
@@ -513,21 +510,24 @@ class _PerfilUsuarioPageState extends State<PerfilUsuarioPage> {
           const SizedBox(height: AppSpacing.sm),
           _CheckinSection(),
           const SizedBox(height: AppSpacing.md),
-          ClubCard(
-            elevated: false,
-            child: MapaCalorWidget(),
-          ),
+          ClubCard(elevated: false, child: MapaCalorWidget()),
           const SizedBox(height: AppSpacing.sm),
           _WrappedPerfilCta(
-            disponible: _isWrappedDisponible(),
+            availability: WrappedAvailability(),
             onTap: () => Navigator.push<void>(
               context,
-              AppPageRoute(builder: (_) => const WrappedPage()),
+              AppPageRoute(
+                builder: (_) =>
+                    WrappedPage(anio: WrappedAvailability().wrappedYear),
+              ),
             ),
             // Long-press siempre abre el Wrapped (acceso para pruebas)
             onLongPress: () => Navigator.push<void>(
               context,
-              AppPageRoute(builder: (_) => const WrappedPage()),
+              AppPageRoute(
+                builder: (_) =>
+                    WrappedPage(anio: WrappedAvailability().wrappedYear),
+              ),
             ),
           ),
         ],
@@ -537,7 +537,9 @@ class _PerfilUsuarioPageState extends State<PerfilUsuarioPage> {
           const SizedBox(height: AppSpacing.xl),
           ClubSectionTitle(
             title: 'Libros favoritos',
-            subtitle: esMiPerfil ? 'Tus 5 favoritos de siempre' : 'Sus 5 libros favoritos',
+            subtitle: esMiPerfil
+                ? 'Tus 5 favoritos de siempre'
+                : 'Sus 5 libros favoritos',
             icon: Icons.favorite_rounded,
             padding: EdgeInsets.zero,
           ),
@@ -545,13 +547,35 @@ class _PerfilUsuarioPageState extends State<PerfilUsuarioPage> {
           _FavoritosShelf(
             favoritos: perfil.favoritos,
             esMiPerfil: esMiPerfil,
-            todosLosLibros: esMiPerfil ? [
-              ...perfil.leyendo.map((l) => _LibroSeleccionable(bookId: l.bookId, title: l.libro, coverUrl: l.coverUrl)),
-              ...perfil.terminados.map((l) => _LibroSeleccionable(bookId: l.bookId, title: l.libro, coverUrl: l.coverUrl)),
-              ...perfil.pendientes.map((l) => _LibroSeleccionable(bookId: l.bookId, title: l.libro, coverUrl: l.coverUrl)),
-            ] : const [],
+            todosLosLibros: esMiPerfil
+                ? [
+                    ...perfil.leyendo.map(
+                      (l) => _LibroSeleccionable(
+                        bookId: l.bookId,
+                        title: l.libro,
+                        coverUrl: l.coverUrl,
+                      ),
+                    ),
+                    ...perfil.terminados.map(
+                      (l) => _LibroSeleccionable(
+                        bookId: l.bookId,
+                        title: l.libro,
+                        coverUrl: l.coverUrl,
+                      ),
+                    ),
+                    ...perfil.pendientes.map(
+                      (l) => _LibroSeleccionable(
+                        bookId: l.bookId,
+                        title: l.libro,
+                        coverUrl: l.coverUrl,
+                      ),
+                    ),
+                  ]
+                : const [],
           ),
         ],
+
+        BookOfYearPreview(profile: perfil.usuario, editable: esMiPerfil),
 
         // ── Géneros favoritos ─────────────────────────────────────────────
         if (perfil.generosFavoritos.isNotEmpty) ...[
@@ -666,7 +690,8 @@ class _PerfilUsuarioPageState extends State<PerfilUsuarioPage> {
                   path: 'c.moreno.benavente@gmail.com',
                   queryParameters: {
                     'subject': 'ClubReads · Sugerencia / Error',
-                    'body': 'Hola,\n\nQuiero reportar lo siguiente:\n\n\n'
+                    'body':
+                        'Hola,\n\nQuiero reportar lo siguiente:\n\n\n'
                         '---\n(Adjunta capturas si puedes, nos ayuda mucho 🙏)',
                   },
                 );
@@ -1810,27 +1835,18 @@ class _CheckinSectionState extends State<_CheckinSection> {
 class _WrappedPerfilCta extends StatelessWidget {
   const _WrappedPerfilCta({
     required this.onTap,
-    required this.disponible,
+    required this.availability,
     this.onLongPress,
   });
   final VoidCallback onTap;
   final VoidCallback? onLongPress;
-  final bool disponible;
-
-  /// Días hasta el 1 de noviembre
-  int _diasHastaNoviembre() {
-    final now = DateTime.now();
-    final noviembre = DateTime(now.month >= 11 ? now.year + 1 : now.year, 11, 1);
-    return noviembre.difference(DateTime(now.year, now.month, now.day)).inDays;
-  }
+  final WrappedAvailability availability;
 
   @override
   Widget build(BuildContext context) {
-    final now = DateTime.now();
-    // En enero mostramos el año anterior
-    final wrappedYear = now.month == 1 ? now.year - 1 : now.year;
+    final wrappedYear = availability.wrappedYear;
 
-    if (disponible) {
+    if (availability.isAvailable) {
       // ── Estado activo: Wrapped disponible ──────────────────────────────
       return GestureDetector(
         onTap: onTap,
@@ -1867,7 +1883,11 @@ class _WrappedPerfilCta extends StatelessWidget {
                   ],
                 ),
               ),
-              const Icon(Icons.arrow_forward_ios_rounded, color: Colors.white70, size: 16),
+              const Icon(
+                Icons.arrow_forward_ios_rounded,
+                color: Colors.white70,
+                size: 16,
+              ),
             ],
           ),
         ),
@@ -1875,51 +1895,59 @@ class _WrappedPerfilCta extends StatelessWidget {
     }
 
     // ── Estado inactivo: Wrapped no disponible todavía ──────────────────
-    final dias = _diasHastaNoviembre();
+    final dias = availability.daysUntilNovember;
     return GestureDetector(
       onLongPress: onLongPress,
       child: Container(
-      padding: const EdgeInsets.all(AppSpacing.md),
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(AppRadius.lg),
-        border: Border.all(color: AppColors.border),
+        padding: const EdgeInsets.all(AppSpacing.md),
+        decoration: BoxDecoration(
+          color: AppColors.surface,
+          borderRadius: BorderRadius.circular(AppRadius.lg),
+          border: Border.all(color: AppColors.border),
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 44,
+              height: 44,
+              decoration: BoxDecoration(
+                color: const Color(0xFF6C3FF5).withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: const Center(
+                child: Text('🎁', style: TextStyle(fontSize: 22)),
+              ),
+            ),
+            const SizedBox(width: AppSpacing.md),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Wrapped $wrappedYear',
+                    style: AppTextStyles.body.copyWith(
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  Text(
+                    dias > 0
+                        ? 'Disponible en $dias ${dias == 1 ? 'día' : 'días'} · llega en noviembre'
+                        : 'Disponible en noviembre',
+                    style: AppTextStyles.caption.copyWith(
+                      color: AppColors.textMuted,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const Icon(
+              Icons.lock_outline_rounded,
+              color: AppColors.textMuted,
+              size: 18,
+            ),
+          ],
+        ),
       ),
-      child: Row(
-        children: [
-          Container(
-            width: 44,
-            height: 44,
-            decoration: BoxDecoration(
-              color: const Color(0xFF6C3FF5).withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: const Center(
-              child: Text('🎁', style: TextStyle(fontSize: 22)),
-            ),
-          ),
-          const SizedBox(width: AppSpacing.md),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Wrapped $wrappedYear',
-                  style: AppTextStyles.body.copyWith(fontWeight: FontWeight.w700),
-                ),
-                Text(
-                  dias > 0
-                      ? 'Disponible en $dias ${dias == 1 ? 'día' : 'días'} · llega en noviembre'
-                      : 'Disponible en noviembre',
-                  style: AppTextStyles.caption.copyWith(color: AppColors.textMuted),
-                ),
-              ],
-            ),
-          ),
-          const Icon(Icons.lock_outline_rounded, color: AppColors.textMuted, size: 18),
-        ],
-      ),
-    ),
     );
   }
 }
@@ -1962,7 +1990,7 @@ class _FavoritosShelf extends StatelessWidget {
         builder: (context, _) {
           final live = FavoritosService.instance.favoritos;
           // Si el servicio ya cargó, usar esos; si no, los del perfil
-          final lista = FavoritosService.instance.total > 0 ? live : favoritos;
+          final lista = FavoritosService.instance.cargado ? live : favoritos;
           return _buildShelf(context, lista);
         },
       );
@@ -1980,6 +2008,90 @@ class _FavoritosShelf extends StatelessWidget {
     );
   }
 
+  Future<void> _mostrarAcciones(
+    BuildContext context,
+    LibroFavorito libro,
+  ) async {
+    if (FavoritosService.instance.operando) return;
+    final accion = await showModalBottomSheet<String>(
+      context: context,
+      useSafeArea: true,
+      builder: (sheetContext) => SafeArea(
+        child: Wrap(
+          children: [
+            ListTile(
+              key: const Key('cambiar_favorito'),
+              leading: const Icon(Icons.swap_horiz_rounded),
+              title: const Text('Cambiar favorito'),
+              onTap: () => Navigator.pop(sheetContext, 'cambiar'),
+            ),
+            ListTile(
+              key: const Key('quitar_favorito'),
+              leading: const Icon(Icons.favorite_border_rounded),
+              title: const Text('Quitar de favoritos'),
+              onTap: () => Navigator.pop(sheetContext, 'quitar'),
+            ),
+            ListTile(
+              key: const Key('cancelar_edicion_favorito'),
+              leading: const Icon(Icons.close_rounded),
+              title: const Text('Cancelar'),
+              onTap: () => Navigator.pop(sheetContext),
+            ),
+          ],
+        ),
+      ),
+    );
+    if (!context.mounted || accion == null) return;
+    if (accion == 'cambiar') {
+      await showModalBottomSheet<void>(
+        context: context,
+        isScrollControlled: true,
+        useSafeArea: true,
+        backgroundColor: Colors.transparent,
+        builder: (_) => _SeleccionFavoritoSheet(
+          todosLosLibros: todosLosLibros,
+          favoritoActual: libro,
+        ),
+      );
+      return;
+    }
+
+    final confirmado = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Quitar de favoritos'),
+        content: Text('¿Quieres quitar “${libro.title}” de tus favoritos?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, false),
+            child: const Text('Cancelar'),
+          ),
+          FilledButton(
+            key: const Key('confirmar_quitar_favorito'),
+            onPressed: () => Navigator.pop(dialogContext, true),
+            child: const Text('Quitar'),
+          ),
+        ],
+      ),
+    );
+    if (confirmado != true ||
+        !context.mounted ||
+        FavoritosService.instance.operando) {
+      return;
+    }
+    final resultado = await FavoritosService.instance.toggle(
+      libro.id,
+      libro.title,
+      coverUrl: libro.coverUrl,
+      authorName: libro.authorName,
+    );
+    if (!resultado.ok && context.mounted) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(resultado.mensaje)));
+    }
+  }
+
   Widget _buildShelf(BuildContext context, List<LibroFavorito> lista) {
     final slots = List<LibroFavorito?>.generate(
       _maxSlots,
@@ -1991,7 +2103,9 @@ class _FavoritosShelf extends StatelessWidget {
         padding: const EdgeInsets.symmetric(vertical: AppSpacing.md),
         child: Text(
           'Todavía no ha marcado favoritos',
-          style: AppTextStyles.bodySecondary.copyWith(color: AppColors.textMuted),
+          style: AppTextStyles.bodySecondary.copyWith(
+            color: AppColors.textMuted,
+          ),
         ),
       );
     }
@@ -2003,8 +2117,13 @@ class _FavoritosShelf extends StatelessWidget {
           child: Padding(
             padding: EdgeInsets.only(right: entry.key < _maxSlots - 1 ? 8 : 0),
             child: _FavoritoSlot(
+              key: ValueKey('favorito_${libro?.id ?? entry.key}'),
               libro: libro,
               esMiPerfil: esMiPerfil,
+              cargando: esMiPerfil && FavoritosService.instance.operando,
+              onTap: esMiPerfil && libro != null
+                  ? () => _mostrarAcciones(context, libro)
+                  : null,
               onAnadir: esMiPerfil && libro == null
                   ? () => _mostrarSelector(context)
                   : null,
@@ -2018,13 +2137,18 @@ class _FavoritosShelf extends StatelessWidget {
 
 class _FavoritoSlot extends StatelessWidget {
   const _FavoritoSlot({
+    super.key,
     required this.libro,
     required this.esMiPerfil,
+    this.cargando = false,
+    this.onTap,
     this.onAnadir,
   });
 
   final LibroFavorito? libro;
   final bool esMiPerfil;
+  final bool cargando;
+  final VoidCallback? onTap;
   final VoidCallback? onAnadir;
 
   @override
@@ -2049,7 +2173,11 @@ class _FavoritoSlot extends StatelessWidget {
                   color: Theme.of(context).colorScheme.surfaceContainerLowest,
                 ),
                 child: const Center(
-                  child: Icon(Icons.add_rounded, color: AppColors.textMuted, size: 22),
+                  child: Icon(
+                    Icons.add_rounded,
+                    color: AppColors.textMuted,
+                    size: 22,
+                  ),
                 ),
               ),
             ),
@@ -2069,51 +2197,75 @@ class _FavoritoSlot extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
-        Stack(
-          children: [
-            AspectRatio(
-              aspectRatio: 2 / 3,
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(AppRadius.sm),
-                child: libro!.coverUrl != null && libro!.coverUrl!.isNotEmpty
-                    ? OptimizedNetworkImage(
-                        url: libro!.coverUrl,
-                        width: double.infinity,
-                        height: double.infinity,
-                        fit: BoxFit.cover,
-                      )
-                    : Container(
-                        color: Theme.of(context).colorScheme.surfaceContainerHighest,
-                        child: Center(
-                          child: Text(
-                            libro!.title.isNotEmpty ? libro!.title[0].toUpperCase() : '?',
-                            style: AppTextStyles.section.copyWith(
-                              color: AppColors.textMuted,
+        GestureDetector(
+          behavior: HitTestBehavior.opaque,
+          onTap: cargando ? null : onTap,
+          child: Stack(
+            children: [
+              AspectRatio(
+                aspectRatio: 2 / 3,
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(AppRadius.sm),
+                  child: libro!.coverUrl != null && libro!.coverUrl!.isNotEmpty
+                      ? OptimizedNetworkImage(
+                          url: libro!.coverUrl,
+                          width: double.infinity,
+                          height: double.infinity,
+                          fit: BoxFit.cover,
+                        )
+                      : Container(
+                          color: Theme.of(
+                            context,
+                          ).colorScheme.surfaceContainerHighest,
+                          child: Center(
+                            child: Text(
+                              libro!.title.isNotEmpty
+                                  ? libro!.title[0].toUpperCase()
+                                  : '?',
+                              style: AppTextStyles.section.copyWith(
+                                color: AppColors.textMuted,
+                              ),
                             ),
                           ),
                         ),
+                ),
+              ),
+              // Corazoncito
+              Positioned(
+                bottom: 4,
+                right: 4,
+                child: Container(
+                  width: 18,
+                  height: 18,
+                  decoration: const BoxDecoration(
+                    color: Color(0xFFD4537E),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(
+                    Icons.favorite_rounded,
+                    color: Colors.white,
+                    size: 10,
+                  ),
+                ),
+              ),
+              if (cargando)
+                const Positioned.fill(
+                  child: ColoredBox(
+                    color: Color(0x66000000),
+                    child: Center(
+                      child: SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: Colors.white,
+                        ),
                       ),
-              ),
-            ),
-            // Corazoncito
-            Positioned(
-              bottom: 4,
-              right: 4,
-              child: Container(
-                width: 18,
-                height: 18,
-                decoration: const BoxDecoration(
-                  color: Color(0xFFD4537E),
-                  shape: BoxShape.circle,
+                    ),
+                  ),
                 ),
-                child: const Icon(
-                  Icons.favorite_rounded,
-                  color: Colors.white,
-                  size: 10,
-                ),
-              ),
-            ),
-          ],
+            ],
+          ),
         ),
         const SizedBox(height: 4),
         Text(
@@ -2133,11 +2285,16 @@ class _FavoritoSlot extends StatelessWidget {
 // ─────────────────────────────────────────────────────────────────────────────
 
 class _SeleccionFavoritoSheet extends StatefulWidget {
-  const _SeleccionFavoritoSheet({required this.todosLosLibros});
+  const _SeleccionFavoritoSheet({
+    required this.todosLosLibros,
+    this.favoritoActual,
+  });
   final List<_LibroSeleccionable> todosLosLibros;
+  final LibroFavorito? favoritoActual;
 
   @override
-  State<_SeleccionFavoritoSheet> createState() => _SeleccionFavoritoSheetState();
+  State<_SeleccionFavoritoSheet> createState() =>
+      _SeleccionFavoritoSheetState();
 }
 
 class _SeleccionFavoritoSheetState extends State<_SeleccionFavoritoSheet> {
@@ -2157,25 +2314,41 @@ class _SeleccionFavoritoSheetState extends State<_SeleccionFavoritoSheet> {
   List<_LibroSeleccionable> get _filtrados {
     if (_query.isEmpty) return _disponibles;
     final q = _query.toLowerCase();
-    return _disponibles.where((l) => l.title.toLowerCase().contains(q)).toList();
+    return _disponibles
+        .where((l) => l.title.toLowerCase().contains(q))
+        .toList();
   }
 
   Future<void> _elegir(_LibroSeleccionable libro) async {
     if (_toggling) return;
     setState(() => _toggling = true);
-    final resultado = await FavoritosService.instance.toggle(
-      libro.bookId,
-      libro.title,
-      coverUrl: libro.coverUrl.isNotEmpty ? libro.coverUrl : null,
-    );
+    final actual = widget.favoritoActual;
+    late final ({bool ok, String mensaje}) resultado;
+    if (actual == null) {
+      final toggle = await FavoritosService.instance.toggle(
+        libro.bookId,
+        libro.title,
+        coverUrl: libro.coverUrl.isNotEmpty ? libro.coverUrl : null,
+      );
+      resultado = (ok: toggle.ok, mensaje: toggle.mensaje);
+    } else {
+      resultado = await FavoritosService.instance.reemplazar(
+        actual,
+        LibroFavorito(
+          id: libro.bookId,
+          title: libro.title,
+          coverUrl: libro.coverUrl.isNotEmpty ? libro.coverUrl : null,
+        ),
+      );
+    }
     if (!mounted) return;
     if (resultado.ok) {
       Navigator.pop(context);
     } else {
       setState(() => _toggling = false);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(resultado.mensaje)),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(resultado.mensaje)));
     }
   }
 
@@ -2186,7 +2359,9 @@ class _SeleccionFavoritoSheetState extends State<_SeleccionFavoritoSheet> {
 
     return Material(
       color: cs.surface,
-      borderRadius: const BorderRadius.vertical(top: Radius.circular(AppRadius.xl)),
+      borderRadius: const BorderRadius.vertical(
+        top: Radius.circular(AppRadius.xl),
+      ),
       child: SafeArea(
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -2205,7 +2380,12 @@ class _SeleccionFavoritoSheetState extends State<_SeleccionFavoritoSheet> {
             ),
 
             Padding(
-              padding: const EdgeInsets.fromLTRB(AppSpacing.lg, 0, AppSpacing.lg, AppSpacing.sm),
+              padding: const EdgeInsets.fromLTRB(
+                AppSpacing.lg,
+                0,
+                AppSpacing.lg,
+                AppSpacing.sm,
+              ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -2213,7 +2393,9 @@ class _SeleccionFavoritoSheetState extends State<_SeleccionFavoritoSheet> {
                   const SizedBox(height: AppSpacing.xs),
                   Text(
                     'Selecciona uno de tus libros para marcarlo como favorito',
-                    style: AppTextStyles.bodySecondary.copyWith(color: AppColors.textSecondary),
+                    style: AppTextStyles.bodySecondary.copyWith(
+                      color: AppColors.textSecondary,
+                    ),
                   ),
                   const SizedBox(height: AppSpacing.md),
                   TextField(
@@ -2237,55 +2419,66 @@ class _SeleccionFavoritoSheetState extends State<_SeleccionFavoritoSheet> {
 
             Flexible(
               child: _toggling
-                  ? const Center(child: Padding(
-                      padding: EdgeInsets.all(32),
-                      child: CircularProgressIndicator(),
-                    ))
+                  ? const Center(
+                      child: Padding(
+                        padding: EdgeInsets.all(32),
+                        child: CircularProgressIndicator(),
+                      ),
+                    )
                   : filtrados.isEmpty
-                      ? Padding(
-                          padding: const EdgeInsets.all(AppSpacing.xl),
-                          child: Text(
-                            widget.todosLosLibros.isEmpty
-                                ? 'Añade libros a tu biblioteca primero'
-                                : 'No se encontraron libros',
-                            style: AppTextStyles.bodySecondary.copyWith(color: AppColors.textMuted),
-                            textAlign: TextAlign.center,
-                          ),
-                        )
-                      : ListView.separated(
-                          shrinkWrap: true,
-                          itemCount: filtrados.length,
-                          separatorBuilder: (context, i) => const Divider(height: 1, indent: 72),
-                          itemBuilder: (_, i) {
-                            final l = filtrados[i];
-                            return ListTile(
-                              leading: ClipRRect(
-                                borderRadius: BorderRadius.circular(AppRadius.xs),
-                                child: l.coverUrl.isNotEmpty
-                                    ? OptimizedNetworkImage(
-                                        url: l.coverUrl,
-                                        width: 36,
-                                        height: 52,
-                                        fit: BoxFit.cover,
-                                      )
-                                    : Container(
-                                        width: 36,
-                                        height: 52,
-                                        color: cs.surfaceContainerHighest,
-                                        child: const Icon(Icons.menu_book_rounded, size: 16),
-                                      ),
-                              ),
-                              title: Text(
-                                l.title,
-                                maxLines: 2,
-                                overflow: TextOverflow.ellipsis,
-                                style: AppTextStyles.subtitle,
-                              ),
-                              trailing: const Icon(Icons.add_rounded, color: AppColors.primary),
-                              onTap: () => _elegir(l),
-                            );
-                          },
+                  ? Padding(
+                      padding: const EdgeInsets.all(AppSpacing.xl),
+                      child: Text(
+                        widget.todosLosLibros.isEmpty
+                            ? 'Añade libros a tu biblioteca primero'
+                            : 'No se encontraron libros',
+                        style: AppTextStyles.bodySecondary.copyWith(
+                          color: AppColors.textMuted,
                         ),
+                        textAlign: TextAlign.center,
+                      ),
+                    )
+                  : ListView.separated(
+                      shrinkWrap: true,
+                      itemCount: filtrados.length,
+                      separatorBuilder: (context, i) =>
+                          const Divider(height: 1, indent: 72),
+                      itemBuilder: (_, i) {
+                        final l = filtrados[i];
+                        return ListTile(
+                          leading: ClipRRect(
+                            borderRadius: BorderRadius.circular(AppRadius.xs),
+                            child: l.coverUrl.isNotEmpty
+                                ? OptimizedNetworkImage(
+                                    url: l.coverUrl,
+                                    width: 36,
+                                    height: 52,
+                                    fit: BoxFit.cover,
+                                  )
+                                : Container(
+                                    width: 36,
+                                    height: 52,
+                                    color: cs.surfaceContainerHighest,
+                                    child: const Icon(
+                                      Icons.menu_book_rounded,
+                                      size: 16,
+                                    ),
+                                  ),
+                          ),
+                          title: Text(
+                            l.title,
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                            style: AppTextStyles.subtitle,
+                          ),
+                          trailing: const Icon(
+                            Icons.add_rounded,
+                            color: AppColors.primary,
+                          ),
+                          onTap: () => _elegir(l),
+                        );
+                      },
+                    ),
             ),
           ],
         ),

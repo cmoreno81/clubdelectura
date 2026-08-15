@@ -12,6 +12,7 @@ import '../theme/app_spacing.dart';
 import '../theme/app_text_styles.dart';
 import '../widgets/common/checkin_button.dart';
 import '../widgets/common/mapa_calor_widget.dart';
+import '../utils/wrapped_availability.dart';
 import 'mis_logros_page.dart';
 import 'wrapped_page.dart';
 
@@ -87,7 +88,10 @@ class _MiEspacioPageState extends State<MiEspacioPage>
             ),
             onVerWrapped: () => Navigator.push<void>(
               context,
-              AppPageRoute(builder: (_) => const WrappedPage()),
+              AppPageRoute(
+                builder: (_) =>
+                    WrappedPage(anio: WrappedAvailability().wrappedYear),
+              ),
             ),
           );
         },
@@ -327,7 +331,7 @@ class _Content extends StatelessWidget {
               0,
             ),
             sliver: SliverToBoxAdapter(
-              child: _WrappedCta(onTap: onVerWrapped),
+              child: MiEspacioWrappedCta(onTap: onVerWrapped),
             ),
           ),
 
@@ -357,14 +361,60 @@ class _Content extends StatelessWidget {
 // _WrappedCta
 // ────────────────────────────────────────────────────────────────────────────
 
-class _WrappedCta extends StatelessWidget {
-  const _WrappedCta({required this.onTap});
+class MiEspacioWrappedCta extends StatelessWidget {
+  const MiEspacioWrappedCta({super.key, required this.onTap, this.date});
   final VoidCallback onTap;
+  final DateTime? date;
 
   @override
   Widget build(BuildContext context) {
-    final year = DateTime.now().year;
+    final availability = WrappedAvailability(date);
+    final year = availability.wrappedYear;
+    if (!availability.isAvailable) {
+      final days = availability.daysUntilNovember;
+      return Container(
+        key: const Key('wrapped_individual_locked'),
+        padding: const EdgeInsets.all(AppSpacing.lg),
+        decoration: BoxDecoration(
+          color: AppColors.surface,
+          borderRadius: BorderRadius.circular(AppRadius.lg),
+          border: Border.all(color: AppColors.border),
+        ),
+        child: Row(
+          children: [
+            const Text('🎁', style: TextStyle(fontSize: 36)),
+            const SizedBox(width: AppSpacing.md),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Wrapped $year',
+                    style: AppTextStyles.subtitle.copyWith(
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    'Disponible en $days ${days == 1 ? 'día' : 'días'} · llega en noviembre',
+                    style: AppTextStyles.bodySecondary.copyWith(
+                      color: AppColors.textMuted,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const Icon(
+              Icons.lock_outline_rounded,
+              color: AppColors.textMuted,
+              size: 18,
+            ),
+          ],
+        ),
+      );
+    }
     return GestureDetector(
+      key: const Key('wrapped_individual_available'),
       onTap: onTap,
       child: Container(
         padding: const EdgeInsets.all(AppSpacing.lg),
@@ -1019,6 +1069,7 @@ class _SectionLabel extends StatelessWidget {
   }
 }
 
+
 // ────────────────────────────────────────────────────────────────────────────
 // _ErrorView
 // ────────────────────────────────────────────────────────────────────────────
@@ -1043,4 +1094,3 @@ class _ErrorView extends StatelessWidget {
     );
   }
 }
-

@@ -1,3 +1,5 @@
+import 'reaccion_comentario.dart';
+
 class RespuestaComentario {
   final String id;
   final String comentarioId;
@@ -10,6 +12,8 @@ class RespuestaComentario {
   final bool editado;
   final bool eliminado;
   final bool esMia;
+  final Map<ReaccionComentario, int> reacciones;
+  final ReaccionComentario? miReaccion;
 
   const RespuestaComentario({
     required this.id,
@@ -23,6 +27,8 @@ class RespuestaComentario {
     required this.editado,
     required this.eliminado,
     required this.esMia,
+    this.reacciones = const {},
+    this.miReaccion,
   });
 
   factory RespuestaComentario.fromJson(Map<String, dynamic> json) {
@@ -42,6 +48,15 @@ class RespuestaComentario {
       editado: json["editado"] as bool? ?? false,
       eliminado: json["eliminado"] as bool? ?? false,
       esMia: json["esMia"] as bool? ?? false,
+      reacciones: {
+        for (final tipo in ReaccionComentario.values)
+          tipo:
+              ((json['reacciones'] as Map?)?[tipo.apiValue] as num?)?.toInt() ??
+              0,
+      },
+      miReaccion: ReaccionComentarioDatos.fromApi(
+        json['miReaccion']?.toString(),
+      ),
     );
   }
 }

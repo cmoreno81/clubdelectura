@@ -175,23 +175,34 @@ void main() {
   });
 
   test('cambiar progreso usa POST JSON', () async {
-    final ok =
-        await apiExpecting('actualizarProgresoLectura', {
-          'libro': 'book-1',
-          'progreso': 42,
-          'comentario': 'En marcha',
-          'paginaActual': 126,
-          'paginasTotales': 300,
-        }).actualizarProgresoLectura(
+    final result =
+        await apiExpecting(
+          'actualizarProgresoLectura',
+          {
+            'libro': 'book-1',
+            'progreso': 7,
+            'comentario': 'En marcha',
+            'paginaActual': 21,
+            'paginasTotales': 300,
+          },
+          responseBody: {
+            'ok': true,
+            'mensaje': 'Progreso actualizado',
+            'progreso': 7,
+            'paginaActual': 21,
+          },
+        ).actualizarProgresoLectura(
           usuario: 'nombre-que-no-se-envia',
           libro: 'book-1',
-          progreso: 42,
+          progreso: 7,
           comentario: 'En marcha',
-          paginaActual: 126,
+          paginaActual: 21,
           paginasTotales: 300,
         );
 
-    expect(ok, isTrue);
+    expect(result.ok, isTrue);
+    expect(result.progreso, 7);
+    expect(result.paginaActual, 21);
   });
 
   test('cambiar valoración usa un único POST JSON', () async {

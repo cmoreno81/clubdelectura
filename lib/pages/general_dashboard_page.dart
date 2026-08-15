@@ -32,6 +32,7 @@ import 'home_page.dart';
 import 'explore_catalog_page.dart';
 import 'detalle_libro_page.dart';
 import 'monthly_reading_share_page.dart';
+import 'nuevo_libro_page.dart';
 import 'perfil_usuario_page.dart';
 import 'sagas_page.dart';
 import '../widgets/common/onboarding_tutorial.dart';
@@ -42,7 +43,9 @@ import '../services/usuario_service.dart';
 import 'package:club_lectura_app/widgets/common/club_shimmer.dart';
 
 class GeneralDashboardPage extends StatefulWidget {
-  const GeneralDashboardPage({super.key});
+  const GeneralDashboardPage({super.key, this.loadDashboard});
+
+  final Future<GeneralDashboard> Function()? loadDashboard;
 
   @override
   State<GeneralDashboardPage> createState() => _GeneralDashboardPageState();
@@ -52,13 +55,15 @@ class _GeneralDashboardPageState extends State<GeneralDashboardPage> {
   late Future<GeneralDashboard> _future;
   String? _openingClubId;
   bool _openingBook = false; // ← evita abrir dos fichas a la vez
+  bool _openingNewBook = false;
+  bool _savingProgress = false;
   final _scrollController = ScrollController();
   int _noLeidas = 0;
 
   @override
   void initState() {
     super.initState();
-    _future = GeneralDashboardService().load();
+    _future = _loadDashboard();
     _checkOnboarding();
     _loadNotificaciones();
   }
@@ -79,6 +84,7 @@ class _GeneralDashboardPageState extends State<GeneralDashboardPage> {
   }
 
   Future<void> _actualizarProgreso(GeneralBook book) async {
+    if (_savingProgress) return;
     final lectura = LecturaAhoraItem(
       libraryId: '',
       bookId: book.id,
@@ -106,11 +112,15 @@ class _GeneralDashboardPageState extends State<GeneralDashboardPage> {
           builder: (_) => EditarProgresoDialog(lectura: lectura),
         );
     if (resultado == null || !mounted) return;
+    if (_savingProgress) return;
 
     final usuario = (await UsuarioService().obtenerUsuario()) ?? '';
 
+    if (!mounted || _savingProgress) return;
+
+    setState(() => _savingProgress = true);
     try {
-      await ApiService().actualizarProgresoLectura(
+      final guardado = await ApiService().actualizarProgresoLectura(
         usuario: usuario,
         libro: book.title,
         progreso: resultado.progreso,
@@ -118,13 +128,36 @@ class _GeneralDashboardPageState extends State<GeneralDashboardPage> {
         paginaActual: resultado.paginaActual,
         paginasTotales: book.pages,
       );
-      if (mounted) _reload();
+      if (!mounted) return;
+      if (!guardado.ok) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              guardado.mensaje.isNotEmpty
+                  ? guardado.mensaje
+                  : 'No se ha podido guardar el progreso.',
+            ),
+          ),
+        );
+        return;
+      }
+      if (resultado.paginaActual != null &&
+          guardado.paginaActual != resultado.paginaActual) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('El servidor devolvió una página diferente.'),
+          ),
+        );
+      }
+      await _reload();
     } on ApiException catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(
           context,
         ).showSnackBar(SnackBar(content: Text(e.message)));
       }
+    } finally {
+      if (mounted) setState(() => _savingProgress = false);
     }
   }
 
@@ -144,9 +177,26 @@ class _GeneralDashboardPageState extends State<GeneralDashboardPage> {
 
   Future<void> _reload() async {
     setState(() {
-      _future = GeneralDashboardService().load();
+      _future = _loadDashboard();
     });
     await _future;
+  }
+
+  Future<GeneralDashboard> _loadDashboard() =>
+      widget.loadDashboard?.call() ?? GeneralDashboardService().load();
+
+  Future<void> _addBook() async {
+    if (_openingNewBook) return;
+    setState(() => _openingNewBook = true);
+    try {
+      final creado = await Navigator.push<bool>(
+        context,
+        AppPageRoute(builder: (_) => const NuevoLibroPage()),
+      );
+      if (creado == true && mounted) await _reload();
+    } finally {
+      if (mounted) setState(() => _openingNewBook = false);
+    }
   }
 
   Future<void> _manageClubs() async {
@@ -422,9 +472,11 @@ class _GeneralDashboardPageState extends State<GeneralDashboardPage> {
                           'Últimas incorporaciones',
                           'Lo nuevo que acaba de llegar a ClubReads',
                           Icons.new_releases_outlined,
-                          action: TextButton(
-                            onPressed: _exploreBooks,
-                            child: const Text('Ver biblioteca'),
+                          action: TextButton.icon(
+                            key: const Key('add_book_latest_additions'),
+                            onPressed: _openingNewBook ? null : _addBook,
+                            icon: const Icon(Icons.add_rounded, size: 18),
+                            label: const Text('Añadir libro'),
                           ),
                         ),
                         const SizedBox(height: AppSpacing.sm),
@@ -601,7 +653,7 @@ class _GeneralDashboardPageState extends State<GeneralDashboardPage> {
                 const SizedBox(height: 4),
                 Text(
                   data.summary.monthStreak > 0
-                      ? '🔥 ${data.summary.monthStreak} ${data.summary.monthStreak == 1 ? 'mes' : 'meses'} manteniendo tu racha'
+                      ? '🔥 ${data.summary.monthStreak} ${data.summary.monthStreak == 1 ? 'mes' : 'meses'} seguidos con libros terminados'
                       : 'Tu próxima lectura empieza hoy',
                   style: const TextStyle(color: Colors.white70),
                 ),

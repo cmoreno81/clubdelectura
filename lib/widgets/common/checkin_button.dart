@@ -18,11 +18,13 @@ class CheckinButton extends StatefulWidget {
     required this.checkedToday,
     required this.streak,
     this.onCheckinDone,
+    this.doCheckin,
   });
 
   final bool checkedToday;
   final int streak;
   final void Function(int newStreak)? onCheckinDone;
+  final Future<Map<String, dynamic>> Function()? doCheckin;
 
   @override
   State<CheckinButton> createState() => _CheckinButtonState();
@@ -59,7 +61,7 @@ class _CheckinButtonState extends State<CheckinButton>
     if (_busy || _checked) return;
     setState(() => _busy = true);
     try {
-      final data = await ApiService().doCheckin();
+      final data = await (widget.doCheckin?.call() ?? ApiService().doCheckin());
       final nuevoStreak = (data['streak'] as num?)?.toInt() ?? _streak;
       if (!mounted) return;
       HapticFeedback.mediumImpact();
