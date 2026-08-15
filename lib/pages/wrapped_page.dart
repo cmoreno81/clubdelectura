@@ -15,9 +15,10 @@ import '../theme/app_text_styles.dart';
 
 /// Pantalla Wrapped anual — resumen lector estilo Spotify.
 class WrappedPage extends StatefulWidget {
-  const WrappedPage({super.key, this.anio});
+  const WrappedPage({super.key, this.anio, this.loadData});
 
   final int? anio;
+  final Future<Map<String, dynamic>> Function(int year)? loadData;
 
   @override
   State<WrappedPage> createState() => _WrappedPageState();
@@ -37,8 +38,15 @@ class _WrappedPageState extends State<WrappedPage> {
 
   Future<void> _cargar() async {
     try {
-      final data = await ApiService().getWrappedAnual(anio: _year);
-      if (mounted) setState(() { _data = data; _loading = false; });
+      final data =
+          await (widget.loadData?.call(_year) ??
+              ApiService().getWrappedAnual(anio: _year));
+      if (mounted) {
+        setState(() {
+          _data = data;
+          _loading = false;
+        });
+      }
     } catch (_) {
       if (mounted) setState(() => _loading = false);
     }
@@ -51,7 +59,12 @@ class _WrappedPageState extends State<WrappedPage> {
       body: _loading
           ? const Center(child: CircularProgressIndicator(color: Colors.white))
           : _data == null
-          ? _ErrorView(onRetry: () { setState(() => _loading = true); _cargar(); })
+          ? _ErrorView(
+              onRetry: () {
+                setState(() => _loading = true);
+                _cargar();
+              },
+            )
           : _WrappedContent(data: _data!, year: _year),
     );
   }
@@ -81,14 +94,20 @@ class _WrappedContentState extends State<_WrappedContent> {
   void _next() {
     if (_page < _pages.length - 1) {
       HapticFeedback.selectionClick();
-      _pc.nextPage(duration: const Duration(milliseconds: 400), curve: Curves.easeInOut);
+      _pc.nextPage(
+        duration: const Duration(milliseconds: 400),
+        curve: Curves.easeInOut,
+      );
     }
   }
 
   void _prev() {
     if (_page > 0) {
       HapticFeedback.selectionClick();
-      _pc.previousPage(duration: const Duration(milliseconds: 400), curve: Curves.easeInOut);
+      _pc.previousPage(
+        duration: const Duration(milliseconds: 400),
+        curve: Curves.easeInOut,
+      );
     }
   }
 
@@ -106,17 +125,30 @@ class _WrappedContentState extends State<_WrappedContent> {
     final firstBook = d['firstBook'] as Map<String, dynamic>?;
     final diffVsPrevYear = (d['diffVsPrevYear'] as num?)?.toInt() ?? 0;
     final prevYearBooks = (d['prevYearBooks'] as num?)?.toInt() ?? 0;
-    final byMonth = (d['byMonth'] as List<dynamic>?)
-        ?.map((e) => (e as num).toInt())
-        .toList() ?? List.filled(12, 0);
+    final byMonth =
+        (d['byMonth'] as List<dynamic>?)
+            ?.map((e) => (e as num).toInt())
+            .toList() ??
+        List.filled(12, 0);
     final rawBooks = (d['books'] as List<dynamic>?) ?? [];
     final allBooks = rawBooks
         .cast<Map<String, dynamic>>()
-        .map((b) => _WrappedBook(
-              title: b['title'] as String? ?? '',
-              coverUrl: b['coverUrl'] as String? ?? '',
-            ))
+        .map(
+          (b) => _WrappedBook(
+            title: b['title'] as String? ?? '',
+            coverUrl: b['coverUrl'] as String? ?? '',
+          ),
+        )
         .toList(growable: false);
+    final favoriteBooks = ((d['favoriteBooks'] as List<dynamic>?) ?? const [])
+        .whereType<Map>()
+        .map((book) => _WrappedBook.fromMap(book))
+        .take(5)
+        .toList(growable: false);
+    final rawBookOfYear = d['bookOfYear'];
+    final bookOfYear = rawBookOfYear is Map
+        ? _WrappedBookOfYear.fromMap(rawBookOfYear)
+        : null;
 
     return [
       _SlideIntro(year: widget.year),
@@ -125,21 +157,37 @@ class _WrappedContentState extends State<_WrappedContent> {
         _SlideEstanteria(books: allBooks, year: widget.year),
       _SlideLibros(total: totalBooks, paginas: totalPages),
       _SlideDias(dias: totalActiveDays, streak: streak),
-      if (topGenre != null) _SlideGenero(genero: topGenre['name'] as String? ?? ''),
-      if (topAuthor != null) _SlideAutor(autor: topAuthor['name'] as String? ?? ''),
-      if (bestMonth != null) _SlideMes(mes: bestMonth['name'] as String? ?? '', libros: bestMonth['count'] as int? ?? 0),
+      if (topGenre != null)
+        _SlideGenero(genero: topGenre['name'] as String? ?? ''),
+      if (topAuthor != null)
+        _SlideAutor(autor: topAuthor['name'] as String? ?? ''),
+      if (favoriteBooks.isNotEmpty) _SlideFavoritos(books: favoriteBooks),
+      if (bestMonth != null)
+        _SlideMes(
+          mes: bestMonth['name'] as String? ?? '',
+          libros: bestMonth['count'] as int? ?? 0,
+        ),
       _SlideGrafico(byMonth: byMonth),
       if (avgRating != null) _SlideRating(rating: avgRating.toDouble()),
-      if (longestBook != null) _SlideLongest(
-        titulo: longestBook['title'] as String? ?? '',
-        paginas: longestBook['pages'] as int?,
-        coverUrl: longestBook['coverUrl'] as String?,
+      if (longestBook != null)
+        _SlideLongest(
+          titulo: longestBook['title'] as String? ?? '',
+          paginas: longestBook['pages'] as int?,
+          coverUrl: longestBook['coverUrl'] as String?,
+        ),
+      if (firstBook != null)
+        _SlidePrimero(
+          titulo: firstBook['title'] as String? ?? '',
+          coverUrl: firstBook['coverUrl'] as String?,
+        ),
+      _SlideComparativa(
+        totalBooks: totalBooks,
+        prevYear: prevYearBooks,
+        diff: diffVsPrevYear,
+        year: widget.year,
       ),
-      if (firstBook != null) _SlidePrimero(
-        titulo: firstBook['title'] as String? ?? '',
-        coverUrl: firstBook['coverUrl'] as String?,
-      ),
-      _SlideComparativa(totalBooks: totalBooks, prevYear: prevYearBooks, diff: diffVsPrevYear, year: widget.year),
+      if (bookOfYear != null && bookOfYear.started)
+        _SlideBookOfYear(data: bookOfYear, year: widget.year),
       _SlideFinal(totalBooks: totalBooks, year: widget.year),
       _SlideResumenCompartir(
         year: widget.year,
@@ -151,6 +199,8 @@ class _WrappedContentState extends State<_WrappedContent> {
         topAuthor: topAuthor?['name'] as String?,
         avgRating: avgRating?.toDouble(),
         bestMonth: bestMonth?['name'] as String?,
+        favoriteBooks: favoriteBooks,
+        bookOfYearWinner: bookOfYear?.winner,
       ),
     ];
   }
@@ -180,7 +230,12 @@ class _WrappedContentState extends State<_WrappedContent> {
           // ── Indicador de progreso arriba ─────────────────────────────────
           SafeArea(
             child: Padding(
-              padding: const EdgeInsets.fromLTRB(AppSpacing.md, AppSpacing.sm, AppSpacing.md, 0),
+              padding: const EdgeInsets.fromLTRB(
+                AppSpacing.md,
+                AppSpacing.sm,
+                AppSpacing.md,
+                0,
+              ),
               child: Row(
                 children: List.generate(pages.length, (i) {
                   return Expanded(
@@ -222,10 +277,7 @@ class _WrappedContentState extends State<_WrappedContent> {
 // ─────────────────────────────────────────────────────────────────────────────
 
 class _BookCover extends StatelessWidget {
-  const _BookCover({
-    required this.coverUrl,
-    this.height = 180,
-  });
+  const _BookCover({required this.coverUrl, this.height = 180});
 
   final String coverUrl;
   final double height;
@@ -254,7 +306,8 @@ class _BookCover extends StatelessWidget {
             ? Image.network(
                 coverUrl,
                 fit: BoxFit.cover,
-                errorBuilder: (_, _, _) => _PlaceholderCover(width: width, height: height),
+                errorBuilder: (_, _, _) =>
+                    _PlaceholderCover(width: width, height: height),
               )
             : _PlaceholderCover(width: width, height: height),
       ),
@@ -273,9 +326,7 @@ class _PlaceholderCover extends StatelessWidget {
       width: width,
       height: height,
       color: Colors.white12,
-      child: const Center(
-        child: Text('📖', style: TextStyle(fontSize: 36)),
-      ),
+      child: const Center(child: Text('📖', style: TextStyle(fontSize: 36))),
     );
   }
 }
@@ -322,9 +373,52 @@ class _GridPlaceholder extends StatelessWidget {
 // ─────────────────────────────────────────────────────────────────────────────
 
 class _WrappedBook {
-  const _WrappedBook({required this.title, required this.coverUrl});
+  const _WrappedBook({
+    required this.title,
+    required this.coverUrl,
+    this.id = '',
+    this.authorName = '',
+  });
+  factory _WrappedBook.fromMap(Map<dynamic, dynamic> map) => _WrappedBook(
+    id: map['id']?.toString() ?? '',
+    title: map['title']?.toString() ?? '',
+    coverUrl: map['coverUrl']?.toString() ?? '',
+    authorName: map['authorName']?.toString() ?? '',
+  );
+  final String id;
   final String title;
   final String coverUrl;
+  final String authorName;
+}
+
+class _WrappedBookOfYear {
+  const _WrappedBookOfYear({
+    required this.status,
+    required this.completedMonths,
+    required this.finalists,
+    this.winner,
+  });
+  factory _WrappedBookOfYear.fromMap(Map<dynamic, dynamic> map) =>
+      _WrappedBookOfYear(
+        status: map['status']?.toString() ?? 'NOT_STARTED',
+        completedMonths: (map['completedMonths'] as num?)?.toInt() ?? 0,
+        finalists: ((map['finalists'] as List<dynamic>?) ?? const [])
+            .whereType<Map>()
+            .map(_WrappedBook.fromMap)
+            .toList(growable: false),
+        winner: map['winner'] is Map
+            ? _WrappedBook.fromMap(map['winner'] as Map)
+            : null,
+      );
+  final String status;
+  final int completedMonths;
+  final List<_WrappedBook> finalists;
+  final _WrappedBook? winner;
+  bool get started =>
+      status != 'NOT_STARTED' ||
+      completedMonths > 0 ||
+      finalists.isNotEmpty ||
+      winner != null;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -332,11 +426,7 @@ class _WrappedBook {
 // ─────────────────────────────────────────────────────────────────────────────
 
 class _BaseSlide extends StatelessWidget {
-  const _BaseSlide({
-    required this.color,
-    required this.child,
-    this.emoji,
-  });
+  const _BaseSlide({required this.color, required this.child, this.emoji});
   final Color color;
   final Widget child;
   final String? emoji;
@@ -356,15 +446,22 @@ class _BaseSlide extends StatelessWidget {
       child: SafeArea(
         child: Padding(
           padding: const EdgeInsets.fromLTRB(32, 60, 32, 32),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              if (emoji != null)
-                Text(emoji!, style: const TextStyle(fontSize: 64)),
-              const SizedBox(height: AppSpacing.lg),
-              child,
-            ],
+          child: LayoutBuilder(
+            builder: (context, constraints) => SingleChildScrollView(
+              child: ConstrainedBox(
+                constraints: BoxConstraints(minHeight: constraints.maxHeight),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    if (emoji != null)
+                      Text(emoji!, style: const TextStyle(fontSize: 64)),
+                    const SizedBox(height: AppSpacing.lg),
+                    child,
+                  ],
+                ),
+              ),
+            ),
           ),
         ),
       ),
@@ -473,10 +570,7 @@ class _SlideEstanteria extends StatelessWidget {
                   const SizedBox(height: 6),
                   Text(
                     '$total ${total == 1 ? 'libro terminado' : 'libros terminados'}',
-                    style: const TextStyle(
-                      color: Colors.white54,
-                      fontSize: 15,
-                    ),
+                    style: const TextStyle(color: Colors.white54, fontSize: 15),
                   ),
                   if (sinPortada > 0)
                     Text(
@@ -545,7 +639,9 @@ class _SlideIntro extends StatelessWidget {
         children: [
           _Headline('Tu año\nen libros'),
           const SizedBox(height: AppSpacing.md),
-          _Sub('Este es tu Wrapped $year.\nToca para descubrir tu historia lectora.'),
+          _Sub(
+            'Este es tu Wrapped $year.\nToca para descubrir tu historia lectora.',
+          ),
         ],
       ),
     );
@@ -595,7 +691,9 @@ class _SlideDias extends StatelessWidget {
           const SizedBox(height: AppSpacing.sm),
           _Accent('$streak días'),
           const SizedBox(height: AppSpacing.md),
-          _Sub('Y en total estuviste activo $dias ${dias == 1 ? 'día' : 'días'} este año.'),
+          _Sub(
+            'Y en total estuviste activo $dias ${dias == 1 ? 'día' : 'días'} este año.',
+          ),
         ],
       ),
     );
@@ -663,7 +761,9 @@ class _SlideMes extends StatelessWidget {
           const SizedBox(height: AppSpacing.sm),
           _Accent(mes.toUpperCase(), size: 44),
           const SizedBox(height: AppSpacing.md),
-          _Sub('Terminaste $libros ${libros == 1 ? 'libro' : 'libros'} ese mes.'),
+          _Sub(
+            'Terminaste $libros ${libros == 1 ? 'libro' : 'libros'} ese mes.',
+          ),
         ],
       ),
     );
@@ -692,7 +792,20 @@ class _SlideGrafico extends StatelessWidget {
             children: List.generate(12, (i) {
               final val = byMonth[i];
               final pct = maxVal > 0 ? val / maxVal : 0.0;
-              const monthAbbr = ['E','F','M','A','M','J','J','A','S','O','N','D'];
+              const monthAbbr = [
+                'E',
+                'F',
+                'M',
+                'A',
+                'M',
+                'J',
+                'J',
+                'A',
+                'S',
+                'O',
+                'N',
+                'D',
+              ];
               return Expanded(
                 child: Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 2),
@@ -702,7 +815,10 @@ class _SlideGrafico extends StatelessWidget {
                       if (val > 0)
                         Text(
                           '$val',
-                          style: const TextStyle(color: Colors.white54, fontSize: 9),
+                          style: const TextStyle(
+                            color: Colors.white54,
+                            fontSize: 9,
+                          ),
                         ),
                       const SizedBox(height: 2),
                       AnimatedContainer(
@@ -712,13 +828,18 @@ class _SlideGrafico extends StatelessWidget {
                           color: val > 0
                               ? Colors.white.withValues(alpha: 0.2 + 0.8 * pct)
                               : Colors.white12,
-                          borderRadius: const BorderRadius.vertical(top: Radius.circular(3)),
+                          borderRadius: const BorderRadius.vertical(
+                            top: Radius.circular(3),
+                          ),
                         ),
                       ),
                       const SizedBox(height: 4),
                       Text(
                         monthAbbr[i],
-                        style: const TextStyle(color: Colors.white38, fontSize: 9),
+                        style: const TextStyle(
+                          color: Colors.white38,
+                          fontSize: 9,
+                        ),
                       ),
                     ],
                   ),
@@ -819,9 +940,7 @@ class _SlidePrimero extends StatelessWidget {
           const SizedBox(height: AppSpacing.xl),
           if (hasCover)
             // Portada horizontal centrada en la parte inferior
-            Center(
-              child: _BookCover(coverUrl: coverUrl!, height: 200),
-            )
+            Center(child: _BookCover(coverUrl: coverUrl!, height: 200))
           else
             _Accent(titulo, size: 28),
           if (hasCover) ...[
@@ -837,6 +956,158 @@ class _SlidePrimero extends StatelessWidget {
               overflow: TextOverflow.ellipsis,
             ),
           ],
+        ],
+      ),
+    );
+  }
+}
+
+class _SlideFavoritos extends StatelessWidget {
+  const _SlideFavoritos({required this.books});
+  final List<_WrappedBook> books;
+
+  @override
+  Widget build(BuildContext context) => _BaseSlide(
+    color: const Color(0xFF7A4F86),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        const _Headline('Los favoritos\nque te acompañan'),
+        const SizedBox(height: AppSpacing.xl),
+        SizedBox(
+          height: 250,
+          child: ListView.separated(
+            key: const ValueKey('wrapped-favorites'),
+            scrollDirection: Axis.horizontal,
+            itemCount: books.length,
+            separatorBuilder: (_, _) => const SizedBox(width: AppSpacing.md),
+            itemBuilder: (_, index) {
+              final book = books[index];
+              return SizedBox(
+                width: 112,
+                child: Column(
+                  children: [
+                    _BookCover(coverUrl: book.coverUrl, height: 150),
+                    const SizedBox(height: AppSpacing.sm),
+                    Text(
+                      book.title,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    if (book.authorName.isNotEmpty)
+                      Text(
+                        book.authorName,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        textAlign: TextAlign.center,
+                        style: const TextStyle(
+                          color: Colors.white60,
+                          fontSize: 12,
+                        ),
+                      ),
+                  ],
+                ),
+              );
+            },
+          ),
+        ),
+      ],
+    ),
+  );
+}
+
+class _SlideBookOfYear extends StatelessWidget {
+  const _SlideBookOfYear({required this.data, required this.year});
+  final _WrappedBookOfYear data;
+  final int year;
+
+  @override
+  Widget build(BuildContext context) {
+    final winner = data.winner;
+    if (winner != null) {
+      return _BaseSlide(
+        color: const Color(0xFF8A6832),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text('👑', style: TextStyle(fontSize: 58)),
+            const _Headline('Tu Libro del año'),
+            _Sub('$year'),
+            const SizedBox(height: AppSpacing.xl),
+            Center(child: _BookCover(coverUrl: winner.coverUrl, height: 230)),
+            const SizedBox(height: AppSpacing.md),
+            Center(
+              child: Text(
+                winner.title,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 22,
+                  fontWeight: FontWeight.w900,
+                ),
+              ),
+            ),
+            if (winner.authorName.isNotEmpty)
+              Center(
+                child: Text(
+                  winner.authorName,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(color: Colors.white60, fontSize: 15),
+                ),
+              ),
+          ],
+        ),
+      );
+    }
+    if (data.finalists.isNotEmpty) {
+      return _BaseSlide(
+        color: const Color(0xFF65518A),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const _Headline('Tu cuadro todavía\nbusca un ganador'),
+            const SizedBox(height: AppSpacing.xl),
+            Wrap(
+              spacing: AppSpacing.md,
+              runSpacing: AppSpacing.md,
+              children: [
+                for (final book in data.finalists.take(3))
+                  _BookCover(coverUrl: book.coverUrl, height: 145),
+              ],
+            ),
+          ],
+        ),
+      );
+    }
+    return _BaseSlide(
+      color: const Color(0xFF5F477A),
+      emoji: '🏆',
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const _Headline('Tu cuadro está\nen marcha'),
+          const SizedBox(height: AppSpacing.lg),
+          _Accent('${data.completedMonths} de 12', size: 46),
+          const _Sub('meses elegidos'),
+          const SizedBox(height: AppSpacing.xl),
+          const Row(
+            children: [
+              Expanded(child: Divider(color: Colors.white30)),
+              Icon(Icons.chevron_right_rounded, color: Colors.white54),
+              Expanded(child: Divider(color: Colors.white30)),
+            ],
+          ),
         ],
       ),
     );
@@ -864,7 +1135,9 @@ class _SlideComparativa extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _Headline(mejor ? 'Mejor que\nel año pasado' : 'El año pasado\nleíste más'),
+          _Headline(
+            mejor ? 'Mejor que\nel año pasado' : 'El año pasado\nleíste más',
+          ),
           const SizedBox(height: AppSpacing.md),
           if (diff != 0)
             _Accent(
@@ -894,7 +1167,9 @@ class _SlideFinal extends StatelessWidget {
         children: [
           const _Headline('Eso es todo,\nlector.'),
           const SizedBox(height: AppSpacing.md),
-          _Sub('$totalBooks ${totalBooks == 1 ? 'libro' : 'libros'} en $year.\nQue ${ year + 1} traiga muchos más.'),
+          _Sub(
+            '$totalBooks ${totalBooks == 1 ? 'libro' : 'libros'} en $year.\nQue ${year + 1} traiga muchos más.',
+          ),
           const SizedBox(height: 40),
           // Sin botón Cerrar aquí: el siguiente slide es el resumen compartible
           Text(
@@ -926,6 +1201,8 @@ class _SlideResumenCompartir extends StatefulWidget {
     this.topAuthor,
     this.avgRating,
     this.bestMonth,
+    this.favoriteBooks = const [],
+    this.bookOfYearWinner,
   });
 
   final int year;
@@ -937,6 +1214,8 @@ class _SlideResumenCompartir extends StatefulWidget {
   final String? topAuthor;
   final double? avgRating;
   final String? bestMonth;
+  final List<_WrappedBook> favoriteBooks;
+  final _WrappedBook? bookOfYearWinner;
 
   @override
   State<_SlideResumenCompartir> createState() => _SlideResumenCompartirState();
@@ -950,8 +1229,23 @@ class _SlideResumenCompartirState extends State<_SlideResumenCompartir> {
     if (_sharing) return;
     setState(() => _sharing = true);
     try {
-      final boundary = _repaintKey.currentContext?.findRenderObject()
-          as RenderRepaintBoundary?;
+      final coverUrls = [
+        if (widget.bookOfYearWinner?.coverUrl.isNotEmpty == true)
+          widget.bookOfYearWinner!.coverUrl,
+        ...widget.favoriteBooks
+            .where((book) => book.coverUrl.isNotEmpty)
+            .take(3)
+            .map((book) => book.coverUrl),
+      ];
+      await Future.wait(
+        coverUrls.map(
+          (url) => precacheImage(NetworkImage(url), context).catchError((_) {}),
+        ),
+      );
+      if (!mounted) return;
+      final boundary =
+          _repaintKey.currentContext?.findRenderObject()
+              as RenderRepaintBoundary?;
       if (boundary == null) return;
       final image = await boundary.toImage(pixelRatio: 3.0);
       final byteData = await image.toByteData(format: ui.ImageByteFormat.png);
@@ -963,7 +1257,7 @@ class _SlideResumenCompartirState extends State<_SlideResumenCompartir> {
       await SharePlus.instance.share(
         ShareParams(
           files: [XFile(file.path)],
-          text: 'Mi Wrapped ${widget.year} en ClubReads 📚✨',
+          text: 'Mi Wrapped ${widget.year} en ClubReaders 📚✨',
         ),
       );
     } finally {
@@ -988,114 +1282,166 @@ class _SlideResumenCompartirState extends State<_SlideResumenCompartir> {
       child: SafeArea(
         child: Padding(
           padding: const EdgeInsets.fromLTRB(
-              AppSpacing.lg, AppSpacing.xl, AppSpacing.lg, AppSpacing.md),
+            AppSpacing.lg,
+            AppSpacing.xl,
+            AppSpacing.lg,
+            AppSpacing.md,
+          ),
           child: Column(
             children: [
               // ── Tarjeta capturada ──────────────────────────────────────
               Expanded(
                 child: RepaintBoundary(
                   key: _repaintKey,
-                  child: Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.all(AppSpacing.xl),
-                    decoration: BoxDecoration(
-                      gradient: const LinearGradient(
-                        colors: [Color(0xFF1A0A3D), Color(0xFF0D2218)],
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
+                  child: MediaQuery.withClampedTextScaling(
+                    maxScaleFactor: 1.1,
+                    child: Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(AppSpacing.xl),
+                      decoration: BoxDecoration(
+                        gradient: const LinearGradient(
+                          colors: [Color(0xFF1A0A3D), Color(0xFF0D2218)],
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                        ),
+                        borderRadius: BorderRadius.circular(AppRadius.xl),
+                        border: Border.all(
+                          color: Colors.white.withValues(alpha: 0.12),
+                        ),
                       ),
-                      borderRadius: BorderRadius.circular(AppRadius.xl),
-                      border: Border.all(
-                          color: Colors.white.withValues(alpha: 0.12)),
-                    ),
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        // Encabezado
-                        const Text('✨',
-                            style: TextStyle(fontSize: 36)),
-                        const SizedBox(height: 8),
-                        Text(
-                          'Wrapped ${widget.year}',
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 22,
-                            fontWeight: FontWeight.w900,
-                            letterSpacing: -0.5,
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          // Encabezado
+                          const Text('✨', style: TextStyle(fontSize: 36)),
+                          const SizedBox(height: 8),
+                          Text(
+                            'Wrapped ${widget.year}',
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 22,
+                              fontWeight: FontWeight.w900,
+                              letterSpacing: -0.5,
+                            ),
                           ),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          'ClubReads',
-                          style: TextStyle(
-                            color: Colors.white.withValues(alpha: 0.4),
-                            fontSize: 12,
-                            letterSpacing: 2,
-                            fontWeight: FontWeight.w600,
+                          const SizedBox(height: 4),
+                          Text(
+                            'ClubReaders',
+                            style: TextStyle(
+                              color: Colors.white.withValues(alpha: 0.4),
+                              fontSize: 12,
+                              letterSpacing: 2,
+                              fontWeight: FontWeight.w600,
+                            ),
                           ),
-                        ),
 
-                        const SizedBox(height: AppSpacing.xl),
+                          const SizedBox(height: AppSpacing.xl),
 
-                        // ── Grid de estadísticas ──────────────────────────
-                        _StatGrid(children: [
-                          _StatCell(
-                            emoji: '📚',
-                            value: '${widget.totalBooks}',
-                            label: widget.totalBooks == 1 ? 'libro' : 'libros',
-                            accent: const Color(0xFF6C3FF5),
+                          // ── Grid de estadísticas ──────────────────────────
+                          _StatGrid(
+                            children: [
+                              _StatCell(
+                                emoji: '📚',
+                                value: '${widget.totalBooks}',
+                                label: widget.totalBooks == 1
+                                    ? 'libro'
+                                    : 'libros',
+                                accent: const Color(0xFF6C3FF5),
+                              ),
+                              _StatCell(
+                                emoji: '📄',
+                                value: '${widget.totalPages}',
+                                label: 'páginas',
+                                accent: const Color(0xFF1DB954),
+                              ),
+                              _StatCell(
+                                emoji: '📅',
+                                value: '${widget.totalActiveDays}',
+                                label: 'días activa',
+                                accent: const Color(0xFFFF6B9D),
+                              ),
+                              _StatCell(
+                                emoji: '🔥',
+                                value: '${widget.streak}',
+                                label: 'racha',
+                                accent: const Color(0xFFFFB347),
+                              ),
+                              if (widget.topGenre != null)
+                                _StatCell(
+                                  emoji: '🎭',
+                                  value: widget.topGenre!,
+                                  label: 'género fav.',
+                                  accent: const Color(0xFF64B5F6),
+                                  isText: true,
+                                ),
+                              if (widget.topAuthor != null)
+                                _StatCell(
+                                  emoji: '✍️',
+                                  value: widget.topAuthor!,
+                                  label: 'autor fav.',
+                                  accent: const Color(0xFFFFD700),
+                                  isText: true,
+                                ),
+                              if (stars != null)
+                                _StatCell(
+                                  emoji: '⭐',
+                                  value: widget.avgRating!.toStringAsFixed(1),
+                                  label: 'media de lectura',
+                                  accent: const Color(0xFFFFD700),
+                                ),
+                              if (widget.bestMonth != null)
+                                _StatCell(
+                                  emoji: '🏆',
+                                  value: widget.bestMonth!,
+                                  label: 'mejor mes',
+                                  accent: const Color(0xFFFF8A65),
+                                  isText: true,
+                                ),
+                            ],
                           ),
-                          _StatCell(
-                            emoji: '📄',
-                            value: '${widget.totalPages}',
-                            label: 'páginas',
-                            accent: const Color(0xFF1DB954),
-                          ),
-                          _StatCell(
-                            emoji: '📅',
-                            value: '${widget.totalActiveDays}',
-                            label: 'días activa',
-                            accent: const Color(0xFFFF6B9D),
-                          ),
-                          _StatCell(
-                            emoji: '🔥',
-                            value: '${widget.streak}',
-                            label: 'racha',
-                            accent: const Color(0xFFFFB347),
-                          ),
-                          if (widget.topGenre != null)
-                            _StatCell(
-                              emoji: '🎭',
-                              value: widget.topGenre!,
-                              label: 'género fav.',
-                              accent: const Color(0xFF64B5F6),
-                              isText: true,
+                          if (widget.bookOfYearWinner != null) ...[
+                            const SizedBox(height: AppSpacing.md),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                const Text(
+                                  '👑',
+                                  style: TextStyle(fontSize: 20),
+                                ),
+                                const SizedBox(width: AppSpacing.sm),
+                                Flexible(
+                                  child: Text(
+                                    widget.bookOfYearWinner!.title,
+                                    maxLines: 2,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontWeight: FontWeight.w800,
+                                    ),
+                                  ),
+                                ),
+                              ],
                             ),
-                          if (widget.topAuthor != null)
-                            _StatCell(
-                              emoji: '✍️',
-                              value: widget.topAuthor!,
-                              label: 'autor fav.',
-                              accent: const Color(0xFFFFD700),
-                              isText: true,
+                          ] else if (widget.favoriteBooks.isNotEmpty) ...[
+                            const SizedBox(height: AppSpacing.md),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                for (final book in widget.favoriteBooks.take(3))
+                                  Padding(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 3,
+                                    ),
+                                    child: _BookCover(
+                                      coverUrl: book.coverUrl,
+                                      height: 42,
+                                    ),
+                                  ),
+                              ],
                             ),
-                          if (stars != null)
-                            _StatCell(
-                              emoji: '⭐',
-                              value: widget.avgRating!.toStringAsFixed(1),
-                              label: 'media lectora',
-                              accent: const Color(0xFFFFD700),
-                            ),
-                          if (widget.bestMonth != null)
-                            _StatCell(
-                              emoji: '🏆',
-                              value: widget.bestMonth!,
-                              label: 'mejor mes',
-                              accent: const Color(0xFFFF8A65),
-                              isText: true,
-                            ),
-                        ]),
-                      ],
+                          ],
+                        ],
+                      ),
                     ),
                   ),
                 ),
@@ -1131,18 +1477,28 @@ class _SlideResumenCompartirState extends State<_SlideResumenCompartir> {
                           width: 20,
                           height: 20,
                           child: CircularProgressIndicator(
-                              strokeWidth: 2, color: Colors.white),
+                            strokeWidth: 2,
+                            color: Colors.white,
+                          ),
                         )
                       else
-                        const Icon(Icons.ios_share_rounded,
-                            color: Colors.white, size: 22),
-                      const SizedBox(width: 10),
-                      Text(
-                        _sharing ? 'Preparando imagen...' : 'Compartir mi Wrapped',
-                        style: const TextStyle(
+                        const Icon(
+                          Icons.ios_share_rounded,
                           color: Colors.white,
-                          fontSize: 16,
-                          fontWeight: FontWeight.w800,
+                          size: 22,
+                        ),
+                      const SizedBox(width: 10),
+                      Flexible(
+                        child: Text(
+                          _sharing
+                              ? 'Preparando imagen...'
+                              : 'Compartir mi Wrapped',
+                          textAlign: TextAlign.center,
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 16,
+                            fontWeight: FontWeight.w800,
+                          ),
                         ),
                       ),
                     ],
@@ -1273,11 +1629,17 @@ class _ErrorView extends StatelessWidget {
           const SizedBox(height: AppSpacing.md),
           TextButton(
             onPressed: onRetry,
-            child: const Text('Reintentar', style: TextStyle(color: Colors.white)),
+            child: const Text(
+              'Reintentar',
+              style: TextStyle(color: Colors.white),
+            ),
           ),
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Volver', style: TextStyle(color: Colors.white60)),
+            child: const Text(
+              'Volver',
+              style: TextStyle(color: Colors.white60),
+            ),
           ),
         ],
       ),

@@ -46,9 +46,10 @@ class _CheckinButtonState extends State<CheckinButton>
       vsync: this,
       duration: const Duration(milliseconds: 300),
     );
-    _scale = Tween<double>(begin: 1.0, end: 1.18).animate(
-      CurvedAnimation(parent: _ctrl, curve: Curves.elasticOut),
-    );
+    _scale = Tween<double>(
+      begin: 1.0,
+      end: 1.18,
+    ).animate(CurvedAnimation(parent: _ctrl, curve: Curves.elasticOut));
   }
 
   @override
@@ -81,7 +82,9 @@ class _CheckinButtonState extends State<CheckinButton>
   Widget build(BuildContext context) {
     return ScaleTransition(
       scale: _scale,
-      child: _checked ? _DoneCard(streak: _streak) : _CTA(busy: _busy, onTap: _hacerCheckin),
+      child: _checked
+          ? _DoneCard(streak: _streak)
+          : _CTA(busy: _busy, onTap: _hacerCheckin),
     );
   }
 }
@@ -95,7 +98,10 @@ class _DoneCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg, vertical: AppSpacing.md),
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.lg,
+        vertical: AppSpacing.md,
+      ),
       decoration: BoxDecoration(
         color: AppColors.primary.withValues(alpha: .08),
         border: Border.all(color: AppColors.primary.withValues(alpha: .25)),
@@ -129,7 +135,11 @@ class _DoneCard extends StatelessWidget {
               ],
             ),
           ),
-          const Icon(Icons.check_circle_rounded, color: AppColors.primary, size: 24),
+          const Icon(
+            Icons.check_circle_rounded,
+            color: AppColors.primary,
+            size: 24,
+          ),
         ],
       ),
     );
@@ -183,7 +193,10 @@ class _CTA extends StatelessWidget {
                 )
               else
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 6,
+                  ),
                   decoration: BoxDecoration(
                     color: AppColors.primary,
                     borderRadius: BorderRadius.circular(AppRadius.pill),

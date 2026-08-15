@@ -52,13 +52,13 @@ class DirectorEscenas {
           ),
           const SizedBox(height: AppSpacing.md),
           Text(
-            'Sin candidatas este mes',
+            'Sin libros candidatos este mes',
             style: AppTextStyles.section.copyWith(color: AppColors.textPrimary),
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: AppSpacing.sm),
           Text(
-            'Para que Clubvisión se abra, al menos dos lectoras del club deben '
+            'Para que Clubvisión se abra, al menos dos miembros del club deben '
             'tener el mismo libro en estado "En mi estantería".',
             style: AppTextStyles.bodySecondary.copyWith(height: 1.4),
             textAlign: TextAlign.center,
@@ -110,7 +110,11 @@ class DirectorEscenas {
       ),
       child: Column(
         children: [
-          const Icon(Icons.auto_awesome_rounded, color: AppColors.primary, size: 30),
+          const Icon(
+            Icons.auto_awesome_rounded,
+            color: AppColors.primary,
+            size: 30,
+          ),
 
           SizedBox(height: AppSpacing.sm),
 
@@ -123,7 +127,7 @@ class DirectorEscenas {
           SizedBox(height: AppSpacing.xs),
 
           Text(
-            'Muy pronto conoceremos las candidatas.',
+            'Muy pronto conoceremos los libros candidatos.',
             textAlign: TextAlign.center,
             style: AppTextStyles.bodySecondary,
           ),
@@ -260,12 +264,14 @@ class DirectorEscenas {
             Text(
               'Sin lectura conjunta',
               textAlign: TextAlign.center,
-              style: AppTextStyles.section.copyWith(color: AppColors.textPrimary),
+              style: AppTextStyles.section.copyWith(
+                color: AppColors.textPrimary,
+              ),
             ),
             const SizedBox(height: AppSpacing.sm),
             Text(
               'Este club no tiene una lectura oficial en común. '
-              'Cada lectora avanza con sus propios libros.',
+              'Cada miembro avanza con sus propios libros.',
               style: AppTextStyles.bodySecondary.copyWith(height: 1.4),
               textAlign: TextAlign.center,
             ),

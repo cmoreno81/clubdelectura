@@ -40,9 +40,10 @@ class _MiEspacioPageState extends State<MiEspacioPage>
       vsync: this,
       duration: const Duration(milliseconds: 1400),
     )..repeat(reverse: true);
-    _streakPulse = Tween<double>(begin: 1.0, end: 1.08).animate(
-      CurvedAnimation(parent: _streakCtrl, curve: Curves.easeInOut),
-    );
+    _streakPulse = Tween<double>(
+      begin: 1.0,
+      end: 1.08,
+    ).animate(CurvedAnimation(parent: _streakCtrl, curve: Curves.easeInOut));
   }
 
   Future<_PageData> _load() async {
@@ -190,9 +191,7 @@ class _Content extends StatelessWidget {
               AppSpacing.md,
               0,
             ),
-            sliver: SliverToBoxAdapter(
-              child: _StatsGrid(summary: summary),
-            ),
+            sliver: SliverToBoxAdapter(child: _StatsGrid(summary: summary)),
           ),
 
           // ── Progreso logros ───────────────────────────────────────────────
@@ -223,10 +222,7 @@ class _Content extends StatelessWidget {
                 0,
               ),
               sliver: SliverToBoxAdapter(
-                child: _SectionLabel(
-                  icon: '🏆',
-                  label: 'Logros conquistados',
-                ),
+                child: _SectionLabel(icon: '🏆', label: 'Logros conquistados'),
               ),
             ),
             SliverPadding(
@@ -258,10 +254,7 @@ class _Content extends StatelessWidget {
                 0,
               ),
               sliver: SliverToBoxAdapter(
-                child: _SectionLabel(
-                  icon: '🎯',
-                  label: 'Próximos retos',
-                ),
+                child: _SectionLabel(icon: '🎯', label: 'Próximos retos'),
               ),
             ),
             SliverPadding(
@@ -317,9 +310,7 @@ class _Content extends StatelessWidget {
               AppSpacing.md,
               0,
             ),
-            sliver: const SliverToBoxAdapter(
-              child: MapaCalorWidget(),
-            ),
+            sliver: const SliverToBoxAdapter(child: MapaCalorWidget()),
           ),
 
           // ── Wrapped anual ─────────────────────────────────────────────────
@@ -451,7 +442,11 @@ class MiEspacioWrappedCta extends StatelessWidget {
                 ],
               ),
             ),
-            const Icon(Icons.arrow_forward_ios_rounded, color: Colors.white70, size: 18),
+            const Icon(
+              Icons.arrow_forward_ios_rounded,
+              color: Colors.white70,
+              size: 18,
+            ),
           ],
         ),
       ),
@@ -484,7 +479,11 @@ class _HeroBanner extends StatelessWidget {
         gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [AppColors.primaryDark, Color(0xFF7B3F8F), AppColors.inkCoral],
+          colors: [
+            AppColors.primaryDark,
+            Color(0xFF7B3F8F),
+            AppColors.inkCoral,
+          ],
           stops: [0, .55, 1],
         ),
       ),
@@ -539,10 +538,7 @@ class _HeroBanner extends StatelessWidget {
                           child: Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
-                              const Text(
-                                '🔥',
-                                style: TextStyle(fontSize: 16),
-                              ),
+                              const Text('🔥', style: TextStyle(fontSize: 16)),
                               const SizedBox(width: 6),
                               Text(
                                 '$streak ${streak == 1 ? 'mes' : 'meses'} de racha',
@@ -719,7 +715,9 @@ class _LogrosProgress extends StatelessWidget {
   final VoidCallback onVerTodos;
 
   String get _motivationalText {
-    if (pct >= 1.0) return '¡Eres una lectora legendaria! Todos los logros conseguidos 🎉';
+    if (pct >= 1.0) {
+      return '¡Has alcanzado un nivel legendario! Todos los logros conseguidos 🎉';
+    }
     if (pct >= .75) return 'Casi lo tienes todo. ¡Sigue así!';
     if (pct >= .5) return 'Ya has superado la mitad. ¡Buen camino!';
     if (pct >= .25) return 'Cada libro te acerca a nuevos logros.';
@@ -741,9 +739,7 @@ class _LogrosProgress extends StatelessWidget {
           ],
         ),
         borderRadius: BorderRadius.circular(AppRadius.xl),
-        border: Border.all(
-          color: AppColors.primary.withValues(alpha: .15),
-        ),
+        border: Border.all(color: AppColors.primary.withValues(alpha: .15)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -771,10 +767,7 @@ class _LogrosProgress extends StatelessWidget {
                   ],
                 ),
               ),
-              TextButton(
-                onPressed: onVerTodos,
-                child: const Text('Ver todos'),
-              ),
+              TextButton(onPressed: onVerTodos, child: const Text('Ver todos')),
             ],
           ),
           const SizedBox(height: AppSpacing.md),
@@ -1005,9 +998,13 @@ class _MotivationalCta extends StatelessWidget {
   final int reading;
 
   String get _message {
-    if (reading > 0) return '¡Tienes $reading ${reading == 1 ? 'libro' : 'libros'} en marcha! Sigue leyendo para desbloquear más logros.';
+    if (reading > 0) {
+      return '¡Tienes $reading ${reading == 1 ? 'libro' : 'libros'} en marcha! Sigue leyendo para desbloquear más logros.';
+    }
     if (unlocked == 0) return 'Empieza tu primera lectura. Cada página cuenta.';
-    if (unlocked >= total) return '¡Eres una lectora completista! Has conquistado todos los logros disponibles.';
+    if (unlocked >= total) {
+      return '¡Has completado la colección! Has conquistado todos los logros disponibles.';
+    }
     return 'Te quedan ${total - unlocked} logros por conquistar. ¡Tú puedes!';
   }
 
@@ -1060,15 +1057,14 @@ class _SectionLabel extends StatelessWidget {
         const SizedBox(width: AppSpacing.sm),
         Text(
           label,
-          style: Theme.of(context).textTheme.titleMedium?.copyWith(
-            fontWeight: FontWeight.w800,
-          ),
+          style: Theme.of(
+            context,
+          ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800),
         ),
       ],
     );
   }
 }
-
 
 // ────────────────────────────────────────────────────────────────────────────
 // _ErrorView

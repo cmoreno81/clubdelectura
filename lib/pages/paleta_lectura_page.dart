@@ -391,7 +391,7 @@ class _PaletaLecturaPageState extends State<PaletaLecturaPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Paleta lectora')),
+      appBar: AppBar(title: const Text('Paleta de lectura')),
       body: FutureBuilder<List<_ColorLector>>(
         future: _futurePaleta,
         builder: (context, snapshot) {
@@ -466,7 +466,7 @@ class _PaletaLecturaPageState extends State<PaletaLecturaPage> {
               const ClubSectionTitle(
                 icon: Icons.auto_awesome_outlined,
                 color: Color(0xFFE49A24),
-                title: 'Leyenda lectora',
+                title: 'Leyenda de lectura',
                 subtitle: 'Una propuesta para organizar tus marcas',
               ),
 

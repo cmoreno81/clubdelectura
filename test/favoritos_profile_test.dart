@@ -3,8 +3,11 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:club_lectura_app/models/perfil_usuario.dart';
+import 'package:club_lectura_app/models/auth_session.dart';
 import 'package:club_lectura_app/services/api_service.dart';
+import 'package:club_lectura_app/services/auth_session_service.dart';
 import 'package:club_lectura_app/services/favoritos_service.dart';
+import 'package:club_lectura_app/services/token_storage.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
@@ -16,6 +19,24 @@ LibroFavorito favorito(int id) => LibroFavorito(
 );
 
 void main() {
+  late AuthSessionService session;
+
+  setUp(() async {
+    session = AuthSessionService.instance;
+    session.configureStorage(_MemoryTokenStorage());
+    await session.establish(
+      const AuthSession(
+        accessToken: 'access-test',
+        refreshToken: 'refresh-test',
+        user: AuthUser(
+          id: 'user-test',
+          nombre: 'Cuenta de prueba',
+          email: 'test@example.test',
+        ),
+      ),
+    );
+  });
+
   test(
     'quitar desde la portada actualiza inmediatamente y usa toggle',
     () async {
@@ -28,6 +49,7 @@ void main() {
             return response.future;
           }),
         ),
+        session: session,
       );
       service.establecerFavoritos([favorito(1), favorito(2)]);
 
@@ -47,6 +69,7 @@ void main() {
     final response = Completer<http.Response>();
     final service = FavoritosService.forTesting(
       ApiService(client: MockClient((_) => response.future)),
+      session: session,
     );
     service.establecerFavoritos(List.generate(5, favorito));
 
@@ -74,6 +97,7 @@ void main() {
       final originales = List.generate(5, favorito);
       final service = FavoritosService.forTesting(
         ApiService(client: MockClient((_) => response.future)),
+        session: session,
       );
       service.establecerFavoritos(originales);
 
@@ -103,4 +127,31 @@ void main() {
     expect(source, contains("'Quitar de favoritos'"));
     expect(source, contains("'Cancelar'"));
   });
+}
+
+class _MemoryTokenStorage implements TokenStorage {
+  AuthSession? value;
+
+  @override
+  Future<void> clear() async => value = null;
+
+  @override
+  Future<AuthSession?> read() async => value;
+
+  @override
+  Future<void> replaceTokens({
+    required String accessToken,
+    required String refreshToken,
+  }) async {
+    final current = value;
+    if (current == null) return;
+    value = AuthSession(
+      accessToken: accessToken,
+      refreshToken: refreshToken,
+      user: current.user,
+    );
+  }
+
+  @override
+  Future<void> write(AuthSession session) async => value = session;
 }

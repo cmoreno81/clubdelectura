@@ -124,7 +124,8 @@ class ClubvisionCard extends StatelessWidget {
 
   Widget _cabecera() {
     // Lectura oficial con libro conocido → banner "LECTURA OFICIAL"
-    final tieneLibroOficial = estadoClub.estado == EstadoClubTipo.lectura &&
+    final tieneLibroOficial =
+        estadoClub.estado == EstadoClubTipo.lectura &&
         dashboard.lecturaActual.titulo.trim().isNotEmpty;
 
     if (tieneLibroOficial) {
@@ -189,16 +190,19 @@ class ClubvisionCard extends StatelessWidget {
     }
 
     // Estado LECTURA sin libro oficial: usar título y mensaje neutros
-    final sinLibroOficial = estadoClub.estado == EstadoClubTipo.lectura &&
+    final sinLibroOficial =
+        estadoClub.estado == EstadoClubTipo.lectura &&
         dashboard.lecturaActual.titulo.trim().isEmpty;
     final titulo = sinLibroOficial ? 'Lecturas libres' : estadoClub.titulo;
     final mensaje = sinLibroOficial
-        ? 'Cada lectora avanza con sus propios libros.'
+        ? 'Cada miembro avanza con sus propios libros.'
         : estadoClub.mensaje;
-    final icono =
-        sinLibroOficial ? Icons.import_contacts_rounded : estadoClub.icono;
-    final iconColor =
-        sinLibroOficial ? AppColors.textMuted : estadoClub.iconColor;
+    final icono = sinLibroOficial
+        ? Icons.import_contacts_rounded
+        : estadoClub.icono;
+    final iconColor = sinLibroOficial
+        ? AppColors.textMuted
+        : estadoClub.iconColor;
 
     return Column(
       children: [
@@ -526,7 +530,7 @@ class _GalaResultadosCardState extends State<_GalaResultadosCard>
                       const SizedBox(height: AppSpacing.md),
 
                       const Text(
-                        'Ya tenemos ganadora',
+                        'Ya tenemos libro ganador',
                         style: TextStyle(
                           color: Color(0xFFFFD700),
                           fontSize: 20,
@@ -539,7 +543,7 @@ class _GalaResultadosCardState extends State<_GalaResultadosCard>
                       const SizedBox(height: 8),
 
                       Text(
-                        'Entra a la Gala para descubrir el libro\nelegido y ver cómo votó cada lectora.',
+                        'Entra a la Gala para descubrir el libro\nelegido y ver cómo votó cada miembro.',
                         style: TextStyle(
                           color: Colors.white.withValues(alpha: .82),
                           fontSize: 13,
@@ -581,7 +585,7 @@ class _GalaResultadosCardState extends State<_GalaResultadosCard>
                               ),
                               SizedBox(width: 8),
                               Text(
-                                'Ver la ganadora →',
+                                'Ver el libro ganador →',
                                 style: TextStyle(
                                   color: Color(0xFF3D2800),
                                   fontWeight: FontWeight.w900,

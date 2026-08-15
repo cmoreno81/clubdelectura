@@ -172,12 +172,12 @@ class _RankingPageState extends State<RankingPage> {
                   icon: Icons.bookmark_outline_rounded,
                   color: const Color(0xFFB48113),
                   title: 'Más deseados',
-                  subtitle: 'Los libros que más esperan las lectoras',
+                  subtitle: 'Los libros que más esperan los lectores',
                   items: ranking.masDeseados,
                   valueBuilder: (item) => '${item.total}',
                   unitBuilder: (item) => item.total == 1
-                      ? 'lectora interesada'
-                      : 'lectoras interesadas',
+                      ? 'lector interesado'
+                      : 'lectores interesados',
                 ),
 
                 const SizedBox(height: AppSpacing.xl),
@@ -189,7 +189,7 @@ class _RankingPageState extends State<RankingPage> {
                     color: AppColors.info,
                     title: 'Más leídos',
                     subtitle:
-                        'Las historias con más lectoras en ${ranking.anio}',
+                        'Las historias con más lectores en ${ranking.anio}',
                     items: ranking.masLeidos,
                     valueBuilder: (item) => '${item.total}',
                     unitBuilder: (item) =>
@@ -234,7 +234,7 @@ class _RankingPageState extends State<RankingPage> {
                 _RankingSection(
                   icon: Icons.groups_rounded,
                   color: AppColors.primary,
-                  title: 'Clasificación de lectoras',
+                  title: 'Clasificación de lectores',
                   subtitle: 'Libros finalizados durante ${ranking.anio}',
                   items: ranking.topLectoras,
                   valueBuilder: (item) => '${item.total}',
@@ -506,7 +506,7 @@ class _PodioHistorico extends StatelessWidget {
           icon: Icons.military_tech_rounded,
           color: Color(0xFF8B6FC2),
           title: 'Salón de honor',
-          subtitle: 'Las tres lectoras con más libros terminados en el club',
+          subtitle: 'Los tres lectores con más libros terminados en el club',
         ),
 
         const SizedBox(height: AppSpacing.md),

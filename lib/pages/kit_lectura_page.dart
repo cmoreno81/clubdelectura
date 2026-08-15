@@ -347,7 +347,7 @@ class _KitLecturaPageState extends State<KitLecturaPage> {
 
                 _KitSectionCard(
                   icon: Icons.palette_outlined,
-                  title: 'Paleta lectora',
+                  title: 'Paleta de lectura',
                   subtitle: _tienePaleta
                       ? 'Paleta preparada · Toca para cambiarla'
                       : 'Post-it inspirados en la portada',

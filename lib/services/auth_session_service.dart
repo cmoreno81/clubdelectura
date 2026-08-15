@@ -14,6 +14,7 @@ class AuthSessionService extends ChangeNotifier {
   Future<void>? _expireInProgress;
   bool _initialized = false;
   bool _sessionExpired = false;
+  final Set<VoidCallback> _sessionStateCleaners = {};
 
   bool get initialized => _initialized;
   bool get isAuthenticated => _session != null;
@@ -21,6 +22,20 @@ class AuthSessionService extends ChangeNotifier {
   AuthUser? get user => _session?.user;
   String? get accessToken => _session?.accessToken;
   String? get refreshToken => _session?.refreshToken;
+
+  void registerSessionStateCleaner(VoidCallback cleaner) {
+    _sessionStateCleaners.add(cleaner);
+  }
+
+  void unregisterSessionStateCleaner(VoidCallback cleaner) {
+    _sessionStateCleaners.remove(cleaner);
+  }
+
+  void _clearSessionScopedState() {
+    for (final cleaner in List<VoidCallback>.of(_sessionStateCleaners)) {
+      cleaner();
+    }
+  }
 
   Future<T> refreshOnce<T>(Future<T> Function() refresh) {
     final current = _refreshInProgress;
@@ -63,6 +78,9 @@ class AuthSessionService extends ChangeNotifier {
   }
 
   Future<void> establish(AuthSession session) async {
+    if (_session?.user.id != session.user.id) {
+      _clearSessionScopedState();
+    }
     await _storage.write(session);
     _session = session;
     _sessionExpired = false;
@@ -87,6 +105,7 @@ class AuthSessionService extends ChangeNotifier {
   }
 
   Future<void> clear() async {
+    _clearSessionScopedState();
     await _storage.clear();
     _session = null;
     _refreshInProgress = null;
@@ -96,6 +115,7 @@ class AuthSessionService extends ChangeNotifier {
 
   Future<void> expire() async {
     if (_session == null && _sessionExpired) return;
+    _clearSessionScopedState();
     await _storage.clear();
     _session = null;
     _sessionExpired = true;
@@ -114,6 +134,7 @@ class AuthSessionService extends ChangeNotifier {
 
   @visibleForTesting
   void configureStorage(TokenStorage storage) {
+    _clearSessionScopedState();
     _storage = storage;
     _session = null;
     _refreshInProgress = null;

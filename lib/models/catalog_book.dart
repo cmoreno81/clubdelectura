@@ -36,7 +36,7 @@ class CatalogBook {
   String get sourceLabel => switch (source) {
     'GOOGLE' => 'Google Books',
     'OPENLIBRARY' => 'Open Library',
-    _ => 'En ClubReads',
+    _ => 'En ClubReaders',
   };
 
   factory CatalogBook.fromJson(Map<String, dynamic> json) => CatalogBook(

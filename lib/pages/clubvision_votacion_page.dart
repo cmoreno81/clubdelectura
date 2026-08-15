@@ -154,7 +154,7 @@ class _ClubvisionVotacionPageState extends State<ClubvisionVotacionPage> {
 
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('No se ha podido identificar a la usuaria.'),
+          content: Text('No se ha podido identificar al usuario.'),
         ),
       );
       return;
@@ -288,7 +288,7 @@ class _ClubvisionVotacionPageState extends State<ClubvisionVotacionPage> {
                   const _SectionHeader(
                     icon: Icons.library_books_outlined,
                     color: AppColors.info,
-                    title: 'Candidatas',
+                    title: 'Libros candidatos',
                     subtitle: 'Toca cada libro para añadirlo a tu papeleta',
                   ),
 
@@ -388,7 +388,7 @@ class _CabeceraVotacion extends StatelessWidget {
             runSpacing: AppSpacing.sm,
             children: [
               ClubChip(
-                label: '${clubvision.candidatas.length} candidatas',
+                label: '${clubvision.candidatas.length} libros candidatos',
                 icon: Icons.library_books_outlined,
                 variant: ClubChipVariant.primary,
               ),
@@ -418,7 +418,7 @@ class _CabeceraVotacion extends StatelessWidget {
 
           Text(
             '${clubvision.votosRecibidos} de '
-            '${clubvision.totalUsuarios} lectoras han votado',
+            '${clubvision.totalUsuarios} miembros han votado',
             textAlign: TextAlign.center,
             style: AppTextStyles.caption,
           ),
@@ -640,7 +640,7 @@ class _PapeletaVacia extends StatelessWidget {
           SizedBox(height: AppSpacing.xs),
 
           Text(
-            'La primera candidata que selecciones recibirá 12 puntos.',
+            'El primer libro que selecciones recibirá 12 puntos.',
             textAlign: TextAlign.center,
             style: AppTextStyles.bodySecondary,
           ),
@@ -882,7 +882,7 @@ class _CandidataCard extends StatelessWidget {
             runSpacing: AppSpacing.sm,
             children: [
               ClubChip(
-                label: '${candidata.interesadas} interesadas',
+                label: '${candidata.interesadas} lectores interesados',
                 icon: Icons.people_outline_rounded,
                 variant: ClubChipVariant.info,
               ),
@@ -981,7 +981,11 @@ class _VotoRegistrado extends StatelessWidget {
       borderColor: AppColors.success.withValues(alpha: 0.24),
       child: Column(
         children: [
-          const Icon(Icons.check_circle_rounded, color: AppColors.success, size: 56),
+          const Icon(
+            Icons.check_circle_rounded,
+            color: AppColors.success,
+            size: 56,
+          ),
 
           SizedBox(height: AppSpacing.md),
 

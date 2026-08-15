@@ -29,8 +29,8 @@ class LibroValoracionesSection extends StatelessWidget {
       color: AppColors.gold,
       title: 'Valoraciones',
       subtitle: valoraciones.length == 1
-          ? 'Una lectora ha valorado este libro'
-          : '${valoraciones.length} lectoras han valorado este libro',
+          ? 'Una persona ha valorado este libro'
+          : '${valoraciones.length} personas han valorado este libro',
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [

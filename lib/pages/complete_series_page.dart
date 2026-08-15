@@ -211,7 +211,7 @@ class _CompleteSeriesPageState extends State<CompleteSeriesPage> {
                 SearchBar(
                   controller: _searchController,
                   leading: const Icon(Icons.search_rounded),
-                  hintText: 'Saga, título o autora',
+                  hintText: 'Saga, título o autor',
                   onChanged: (_) => setState(() {}),
                   onSubmitted: (_) => _search(),
                   trailing: [
@@ -254,7 +254,7 @@ class _CompleteSeriesPageState extends State<CompleteSeriesPage> {
         child: Padding(
           padding: EdgeInsets.all(AppSpacing.xl),
           child: Text(
-            'Escribe el título, la saga o la autora que quieres buscar.',
+            'Escribe el título, la saga o el autor que quieres buscar.',
             textAlign: TextAlign.center,
           ),
         ),
@@ -274,7 +274,7 @@ class _CompleteSeriesPageState extends State<CompleteSeriesPage> {
     final localBooks = _books.where((book) => !book.isExternal).toList();
     final externalBooks = _books.where((book) => book.isExternal).toList();
     final items = <Object>[
-      if (localBooks.isNotEmpty) const _ResultSection('Ya en ClubReads'),
+      if (localBooks.isNotEmpty) const _ResultSection('Ya en ClubReaders'),
       ...localBooks,
       if (externalBooks.isNotEmpty)
         const _ResultSection('Buscar en catálogos externos'),

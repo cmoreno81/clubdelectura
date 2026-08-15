@@ -4,6 +4,7 @@ import 'package:club_lectura_app/models/auth_session.dart';
 import 'package:club_lectura_app/models/dashboard.dart';
 import 'package:club_lectura_app/models/dashboard_view_data.dart';
 import 'package:club_lectura_app/pages/dashboard_page.dart';
+import 'package:club_lectura_app/widgets/dashboard/club_books_of_year_card.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -125,6 +126,27 @@ void main() {
     expect(requests, 2);
     expect(tester.state(find.byType(DashboardPage)), same(stateBefore));
   });
+
+  testWidgets(
+    'el modo individual no construye ni reserva espacio para el año del club',
+    (tester) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          home: DashboardPage(
+            clubName: 'Mi espacio',
+            esPersonal: true,
+            loadData: () async => _viewData(),
+          ),
+        ),
+      );
+      await tester.pump();
+
+      expect(find.byType(ClubBooksOfYearCard), findsNothing);
+      expect(find.text('El año del club'), findsNothing);
+      expect(find.text('Libro del año del club'), findsNothing);
+      expect(find.text('Elecciones de los miembros'), findsNothing);
+    },
+  );
 }
 
 DashboardViewData _viewData() => DashboardViewData(

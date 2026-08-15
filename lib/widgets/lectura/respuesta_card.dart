@@ -187,6 +187,13 @@ class _RespuestaCardState extends State<RespuestaCard> {
           controller: controller,
           maxLines: 5,
           autofocus: true,
+          keyboardType: TextInputType.multiline,
+          textInputAction: TextInputAction.newline,
+          textCapitalization: TextCapitalization.sentences,
+          autocorrect: true,
+          enableSuggestions: true,
+          smartDashesType: SmartDashesType.enabled,
+          smartQuotesType: SmartQuotesType.enabled,
           decoration: const InputDecoration(
             hintText: 'Escribe tu respuesta...',
           ),

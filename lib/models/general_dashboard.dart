@@ -393,6 +393,7 @@ class GeneralClub {
   final bool active;
   final int members;
   final int activeReadings;
+
   /// 'SOCIAL' o 'PERSONAL'
   final String tipo;
 

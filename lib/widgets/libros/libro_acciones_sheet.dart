@@ -9,8 +9,8 @@ import '../common/club_book_cover.dart';
 /// Acciones rápidas disponibles desde la tarjeta de libro.
 enum LibroAccion {
   anadir,
-  empezar,   // PENDIENTE → iniciarLectura
-  reanudar,  // PAUSADO → actualizarEstado(LEYENDO)
+  empezar, // PENDIENTE → iniciarLectura
+  reanudar, // PAUSADO → actualizarEstado(LEYENDO)
   pausar,
   finalizar,
   releer,
@@ -44,7 +44,8 @@ class _LibroAccionesSheet extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final propioEstado = libro.registros
+    final propioEstado =
+        libro.registros
             .where((r) => r.yaLoTengo)
             .map((r) => r.estado.toUpperCase())
             .firstOrNull ??
@@ -112,77 +113,95 @@ class _LibroAccionesSheet extends StatelessWidget {
 
     if (!libro.leidoPorMi && !libro.yaLoTengo) {
       // Libro que no está en la lista
-      tiles.add(_tile(
-        context,
-        icon: Icons.add_circle_outline_rounded,
-        label: 'Añadir a mi lista',
-        color: AppColors.primary,
-        accion: LibroAccion.anadir,
-      ));
+      tiles.add(
+        _tile(
+          context,
+          icon: Icons.add_circle_outline_rounded,
+          label: 'Añadir a mi lista',
+          color: AppColors.primary,
+          accion: LibroAccion.anadir,
+        ),
+      );
     } else if (propioEstado == 'PENDIENTE') {
-      tiles.add(_tile(
-        context,
-        icon: Icons.play_circle_outline_rounded,
-        label: 'Empezar a leer',
-        color: AppColors.success,
-        accion: LibroAccion.empezar,
-      ));
-      tiles.add(_tile(
-        context,
-        icon: Icons.remove_circle_outline_rounded,
-        label: 'Quitar de pendientes',
-        color: AppColors.danger,
-        accion: LibroAccion.quitar,
-      ));
+      tiles.add(
+        _tile(
+          context,
+          icon: Icons.play_circle_outline_rounded,
+          label: 'Empezar a leer',
+          color: AppColors.success,
+          accion: LibroAccion.empezar,
+        ),
+      );
+      tiles.add(
+        _tile(
+          context,
+          icon: Icons.remove_circle_outline_rounded,
+          label: 'Quitar de pendientes',
+          color: AppColors.danger,
+          accion: LibroAccion.quitar,
+        ),
+      );
     } else if (propioEstado == 'LEYENDO' || propioEstado == 'RELECTURA') {
-      tiles.add(_tile(
-        context,
-        icon: Icons.nights_stay_outlined,
-        label: 'Pausar lectura',
-        color: const Color(0xFFE8A020),
-        accion: LibroAccion.pausar,
-      ));
-      tiles.add(_tile(
-        context,
-        icon: Icons.check_circle_outline_rounded,
-        label: 'Marcar como finalizado',
-        color: AppColors.success,
-        accion: LibroAccion.finalizar,
-      ));
+      tiles.add(
+        _tile(
+          context,
+          icon: Icons.nights_stay_outlined,
+          label: 'Pausar lectura',
+          color: const Color(0xFFE8A020),
+          accion: LibroAccion.pausar,
+        ),
+      );
+      tiles.add(
+        _tile(
+          context,
+          icon: Icons.check_circle_outline_rounded,
+          label: 'Marcar como finalizado',
+          color: AppColors.success,
+          accion: LibroAccion.finalizar,
+        ),
+      );
     } else if (propioEstado == 'PAUSADO') {
-      tiles.add(_tile(
-        context,
-        icon: Icons.play_circle_outline_rounded,
-        label: 'Reanudar lectura',
-        color: AppColors.success,
-        accion: LibroAccion.reanudar,
-      ));
-      tiles.add(_tile(
-        context,
-        icon: Icons.check_circle_outline_rounded,
-        label: 'Marcar como finalizado',
-        color: AppColors.success,
-        accion: LibroAccion.finalizar,
-      ));
+      tiles.add(
+        _tile(
+          context,
+          icon: Icons.play_circle_outline_rounded,
+          label: 'Reanudar lectura',
+          color: AppColors.success,
+          accion: LibroAccion.reanudar,
+        ),
+      );
+      tiles.add(
+        _tile(
+          context,
+          icon: Icons.check_circle_outline_rounded,
+          label: 'Marcar como finalizado',
+          color: AppColors.success,
+          accion: LibroAccion.finalizar,
+        ),
+      );
     } else if (libro.leidoPorMi) {
       // FINALIZADO, ABANDONADO, etc.
-      tiles.add(_tile(
-        context,
-        icon: Icons.replay_rounded,
-        label: 'Volver a leer',
-        color: AppColors.primary,
-        accion: LibroAccion.releer,
-      ));
+      tiles.add(
+        _tile(
+          context,
+          icon: Icons.replay_rounded,
+          label: 'Volver a leer',
+          color: AppColors.primary,
+          accion: LibroAccion.releer,
+        ),
+      );
     }
 
     // Siempre: ver ficha
-    tiles.add(_tile(
-      context,
-      icon: Icons.info_outline_rounded,
-      label: 'Ver ficha completa',
-      color: AppColors.textSecondary,
-      accion: LibroAccion.verFicha,
-    ));
+    tiles.add(
+      _tile(
+        context,
+        icon: Icons.info_outline_rounded,
+        label: 'Ver ficha completa',
+        color: AppColors.textSecondary,
+        accion: LibroAccion.verFicha,
+      ),
+    );
 
     return tiles;
   }

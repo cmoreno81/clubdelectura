@@ -276,6 +276,11 @@ class _FinalizarLibroDialogState extends State<FinalizarLibroDialog> {
                 maxLength: 5000,
                 keyboardType: TextInputType.multiline,
                 textInputAction: TextInputAction.newline,
+                textCapitalization: TextCapitalization.sentences,
+                autocorrect: true,
+                enableSuggestions: true,
+                smartDashesType: SmartDashesType.enabled,
+                smartQuotesType: SmartQuotesType.enabled,
                 scrollPadding: const EdgeInsets.only(bottom: 140),
                 decoration: InputDecoration(
                   hintText:

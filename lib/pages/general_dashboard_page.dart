@@ -470,7 +470,7 @@ class _GeneralDashboardPageState extends State<GeneralDashboardPage> {
                         const SizedBox(height: AppSpacing.xl),
                         _sectionTitle(
                           'Últimas incorporaciones',
-                          'Lo nuevo que acaba de llegar a ClubReads',
+                          'Lo nuevo que acaba de llegar a ClubReaders',
                           Icons.new_releases_outlined,
                           action: TextButton.icon(
                             key: const Key('add_book_latest_additions'),
@@ -1616,7 +1616,7 @@ class _GeneralDashboardPageState extends State<GeneralDashboardPage> {
                   ),
                 ),
                 Text(
-                  'Lo que se mueve en ClubReads',
+                  'Lo que se mueve en ClubReaders',
                   style: AppTextStyles.caption.copyWith(
                     color: Colors.white.withValues(alpha: .75),
                   ),

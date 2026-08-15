@@ -53,9 +53,8 @@ class _LecturasPageState extends State<LecturasPage> {
     final notif = await mostrarNotificacionesSheet(
       context,
       titulo: 'Novedades en Lecturas',
-      filtro:
-          (n) =>
-              n.tipo == 'LECTURA_NUEVA' || n.tipo == 'COMENTARIO_LECTURA',
+      filtro: (n) =>
+          n.tipo == 'LECTURA_NUEVA' || n.tipo == 'COMENTARIO_LECTURA',
     );
 
     // Refrescar el servicio compartido (actualiza todos los badges)
@@ -72,7 +71,10 @@ class _LecturasPageState extends State<LecturasPage> {
     String libro = '';
     for (final key in const ['bookTitle', 'titulo', 'libro']) {
       final v = extra[key]?.toString().trim() ?? '';
-      if (v.isNotEmpty) { libro = v; break; }
+      if (v.isNotEmpty) {
+        libro = v;
+        break;
+      }
     }
     // Fallback: intentar leerlo del mensaje entre comillas
     if (libro.isEmpty) {
@@ -83,9 +85,17 @@ class _LecturasPageState extends State<LecturasPage> {
 
     // Extraer capítulo si existe (COMENTARIO_LECTURA lleva el capítulo en extra)
     String capitulo = '';
-    for (final key in const ['capitulo', 'capituloId', 'capituloNombre', 'chapter']) {
+    for (final key in const [
+      'capitulo',
+      'capituloId',
+      'capituloNombre',
+      'chapter',
+    ]) {
       final v = extra[key]?.toString().trim() ?? '';
-      if (v.isNotEmpty) { capitulo = v; break; }
+      if (v.isNotEmpty) {
+        capitulo = v;
+        break;
+      }
     }
 
     if (!mounted) return;
@@ -95,12 +105,11 @@ class _LecturasPageState extends State<LecturasPage> {
       await Navigator.push(
         context,
         AppPageRoute(
-          builder:
-              (_) => CapituloPage(
-                libro: libro,
-                capitulo: capitulo,
-                bookId: n.bookId ?? '',
-              ),
+          builder: (_) => CapituloPage(
+            libro: libro,
+            capitulo: capitulo,
+            bookId: n.bookId ?? '',
+          ),
         ),
       );
     } else {
@@ -120,9 +129,9 @@ class _LecturasPageState extends State<LecturasPage> {
     // Carga los timestamps en cuanto tengamos los títulos.
     f.then((lecturas) {
       if (!mounted) return;
-      ReadingLastSeenService.ultimasVistas(
-        lecturas.map((l) => l.libro),
-      ).then((map) {
+      ReadingLastSeenService.ultimasVistas(lecturas.map((l) => l.libro)).then((
+        map,
+      ) {
         if (mounted) setState(() => _lastSeen = map);
       });
     }).ignore();
@@ -312,7 +321,7 @@ class _LecturasPageState extends State<LecturasPage> {
                     icon: Icons.groups_2_outlined,
                     color: AppColors.info,
                     title: 'Lecturas compartidas',
-                    subtitle: 'Historias que coinciden entre lectoras',
+                    subtitle: 'Historias que coinciden entre miembros',
                   ),
 
                   const SizedBox(height: AppSpacing.md),
@@ -617,7 +626,7 @@ class _LecturaCard extends StatelessWidget {
               ClubMetric(
                 icon: Icons.people_outline_rounded,
                 value: '${lectura.lectoras}',
-                label: lectura.lectoras == 1 ? 'lectora' : 'lectoras',
+                label: lectura.lectoras == 1 ? 'lector' : 'lectores',
                 variant: ClubMetricVariant.info,
                 compact: true,
               ),

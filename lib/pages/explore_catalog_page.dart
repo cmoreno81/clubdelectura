@@ -177,7 +177,7 @@ class _ExploreCatalogPageState extends State<ExploreCatalogPage> {
             ),
             child: SearchBar(
               controller: _searchController,
-              hintText: 'Título, autora o ISBN',
+              hintText: 'Título, autor o ISBN',
               leading: const Icon(Icons.search_rounded),
               trailing: [
                 if (_searchController.text.isNotEmpty)

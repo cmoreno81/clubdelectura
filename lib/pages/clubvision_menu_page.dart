@@ -176,7 +176,7 @@ class _ClubvisionMenuPageState extends State<ClubvisionMenuPage> {
                   icon: Icons.history_rounded,
                   color: AppColors.info,
                   title: 'Historial',
-                  subtitle: 'Revive todas las ediciones y sus ganadoras',
+                  subtitle: 'Revive todas las ediciones y sus libros ganadores',
                   actionLabel: 'Ver ediciones',
                   onTap: () {
                     Navigator.push(
@@ -196,7 +196,7 @@ class _ClubvisionMenuPageState extends State<ClubvisionMenuPage> {
                     icon: Icons.ballot_outlined,
                     color: AppColors.primary,
                     title: 'Cómo votaron',
-                    subtitle: 'Descubre las puntuaciones de las lectoras',
+                    subtitle: 'Descubre las puntuaciones de los miembros',
                     actionLabel: 'Ver resultados',
                     onTap: () {
                       Navigator.push(
@@ -311,7 +311,7 @@ class _ClubvisionMenuPageState extends State<ClubvisionMenuPage> {
             ? 'Tu voto ya está dentro de la urna'
             : 'Es el momento de elegir la próxima lectura';
       case 'RESULTADOS':
-        return 'La votación ha terminado y ya hay ganadora';
+        return 'La votación ha terminado y ya hay libro ganador';
       case 'LECTURA':
         return 'El club está disfrutando de la historia elegida';
       default:
@@ -853,7 +853,7 @@ class _EstadoEnEsperaCard extends StatelessWidget {
           const SizedBox(height: AppSpacing.sm),
 
           Text(
-            'Muy pronto conoceremos las nuevas candidatas.',
+            'Muy pronto conoceremos los nuevos libros candidatos.',
             textAlign: TextAlign.center,
             style: AppTextStyles.bodySecondary,
           ),

@@ -57,11 +57,14 @@ class ClubChip extends StatelessWidget {
             ),
             const SizedBox(width: AppSpacing.xs),
           ],
-          Text(
-            label,
-            style: AppTextStyles.caption.copyWith(
-              color: selected ? colors.foregroundSelected : colors.foreground,
-              fontWeight: selected ? FontWeight.w700 : FontWeight.w600,
+          Flexible(
+            child: Text(
+              label,
+              softWrap: true,
+              style: AppTextStyles.caption.copyWith(
+                color: selected ? colors.foregroundSelected : colors.foreground,
+                fontWeight: selected ? FontWeight.w700 : FontWeight.w600,
+              ),
             ),
           ),
         ],

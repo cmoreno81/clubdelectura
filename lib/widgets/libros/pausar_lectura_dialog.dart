@@ -129,6 +129,13 @@ class _PausarLecturaDialogState extends State<PausarLecturaDialog> {
                   minLines: 2,
                   maxLines: 4,
                   maxLength: 240,
+                  keyboardType: TextInputType.multiline,
+                  textInputAction: TextInputAction.newline,
+                  textCapitalization: TextCapitalization.sentences,
+                  autocorrect: true,
+                  enableSuggestions: true,
+                  smartDashesType: SmartDashesType.enabled,
+                  smartQuotesType: SmartQuotesType.enabled,
                   decoration: const InputDecoration(
                     labelText: 'Cuéntanoslo',
                     hintText: 'Escribe el motivo, si te apetece...',

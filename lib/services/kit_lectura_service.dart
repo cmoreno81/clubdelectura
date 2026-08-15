@@ -3,12 +3,14 @@ import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../models/kit_lectura_seleccion.dart';
+import 'auth_session_service.dart';
 
 class KitLecturaService {
   static const _prefijo = 'kit_lectura_';
 
   String _clave(String bookId) {
-    return '$_prefijo${bookId.trim()}';
+    final userId = AuthSessionService.instance.user?.id.trim() ?? 'anonymous';
+    return '$_prefijo${userId}_${bookId.trim()}';
   }
 
   Future<KitLecturaSeleccion> obtener(String bookId) async {

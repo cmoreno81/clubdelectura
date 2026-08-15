@@ -12,6 +12,7 @@ class LibroFinalizado {
   final String formato;
   final String resena;
   final String coverUrl;
+  final String goodreads;
   final DateTime? fechaAlta;
   final String avatarUrl;
   final int? paginas;
@@ -30,6 +31,7 @@ class LibroFinalizado {
     this.formato = '',
     required this.resena,
     required this.coverUrl,
+    this.goodreads = '',
     required this.fechaAlta,
     required this.avatarUrl,
     required this.paginas,
@@ -50,6 +52,10 @@ class LibroFinalizado {
       formato: json['formato']?.toString() ?? '',
       resena: json['resena']?.toString() ?? json['review']?.toString() ?? '',
       coverUrl: json['coverUrl']?.toString() ?? '',
+      goodreads:
+          json['goodreads']?.toString() ??
+          json['goodreadsUrl']?.toString() ??
+          '',
       fechaAlta: DateTime.tryParse(json['fechaAlta']?.toString() ?? ''),
       avatarUrl:
           json['avatarUrl']?.toString() ??

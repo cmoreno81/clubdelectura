@@ -111,10 +111,7 @@ class _ElegirModoPageState extends State<ElegirModoPage>
               const SizedBox(height: AppSpacing.sm),
               FadeTransition(
                 opacity: _heroFade,
-                child: SlideTransition(
-                  position: _heroSlide,
-                  child: _Header(),
-                ),
+                child: SlideTransition(position: _heroSlide, child: _Header()),
               ),
               const SizedBox(height: AppSpacing.xxxl),
               // Espacio personal — opción destacada
@@ -147,8 +144,7 @@ class _ElegirModoPageState extends State<ElegirModoPage>
               _ModoCard(
                 icon: '🔑',
                 title: 'Tengo un código de invitación',
-                subtitle:
-                    'Alguien ya te ha invitado a su club lector.',
+                subtitle: 'Alguien ya te ha invitado a su club lector.',
                 onTap: _busy ? null : () => _irAClubs(joinMode: true),
               ),
               const SizedBox(height: AppSpacing.xxxl),
@@ -182,7 +178,7 @@ class _Header extends StatelessWidget {
         ),
         const SizedBox(height: AppSpacing.lg),
         Text(
-          'Bienvenida a\nClubReads',
+          'Te damos la bienvenida a\nClubReaders',
           style: Theme.of(context).textTheme.displaySmall?.copyWith(
             fontWeight: FontWeight.w900,
             color: AppColors.textPrimary,
@@ -192,10 +188,7 @@ class _Header extends StatelessWidget {
         const SizedBox(height: AppSpacing.sm),
         const Text(
           '¿Cómo quieres usar la app?',
-          style: TextStyle(
-            fontSize: 17,
-            color: AppColors.textSecondary,
-          ),
+          style: TextStyle(fontSize: 17, color: AppColors.textSecondary),
         ),
       ],
     );

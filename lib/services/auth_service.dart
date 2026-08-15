@@ -9,6 +9,7 @@ import '../utils/app_config.dart';
 import 'api_exception.dart';
 import 'auth_session_service.dart';
 import 'authenticated_http_client.dart';
+import 'notificaciones_service.dart';
 import 'http_response_handler.dart';
 
 class AuthService {
@@ -108,6 +109,7 @@ class AuthService {
         body: jsonEncode(<String, dynamic>{}),
       );
     } finally {
+      NotificacionesService.instance.limpiar();
       await _session.clear();
     }
   }

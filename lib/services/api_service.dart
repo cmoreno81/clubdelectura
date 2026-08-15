@@ -14,6 +14,7 @@ import '../models/libro_finalizado.dart';
 import '../models/nuevo_libro.dart';
 import '../models/progreso_lectura_result.dart';
 import '../models/book_of_year.dart';
+import '../models/club_book_of_year.dart';
 import '../models/libros_data.dart';
 import '../models/ranking.dart';
 import '../models/clubvision.dart';
@@ -1501,11 +1502,14 @@ class ApiService {
       Uri.parse('$baseUrl?action=notificaciones'),
     );
     if (response.statusCode != 200) {
-      return const NotificacionesData(notificaciones: [], noLeidas: 0);
+      throw ApiException.fromResponse(response);
     }
     final data = _decodeJson(response);
     if (data is! Map<String, dynamic>) {
-      return const NotificacionesData(notificaciones: [], noLeidas: 0);
+      throw const ApiException(
+        statusCode: 500,
+        message: 'La respuesta de notificaciones no es válida.',
+      );
     }
     return NotificacionesData.fromJson(data);
   }
@@ -1535,27 +1539,30 @@ class ApiService {
   }
 
   Future<void> marcarNotificacionLeida(String id) async {
-    await _client.post(
+    final response = await _client.post(
       Uri.parse('$baseUrl?action=marcarLeida'),
       headers: const {'Content-Type': 'application/json'},
       body: jsonEncode({'id': id}),
     );
+    if (!_respuestaOk(response)) throw ApiException.fromResponse(response);
   }
 
   Future<void> marcarTodasNotificacionesLeidas() async {
-    await _client.post(
+    final response = await _client.post(
       Uri.parse('$baseUrl?action=marcarTodasLeidas'),
       headers: const {'Content-Type': 'application/json'},
       body: '{}',
     );
+    if (!_respuestaOk(response)) throw ApiException.fromResponse(response);
   }
 
   Future<void> eliminarTodasNotificaciones() async {
-    await _client.post(
+    final response = await _client.post(
       Uri.parse('$baseUrl?action=eliminarTodasNotificaciones'),
       headers: const {'Content-Type': 'application/json'},
       body: '{}',
     );
+    if (!_respuestaOk(response)) throw ApiException.fromResponse(response);
   }
 
   Future<void> eliminarNotificacion(String id) async {
@@ -1873,5 +1880,60 @@ class ApiService {
               ClubBookOfYearMember.fromJson(Map<String, dynamic>.from(item)),
         )
         .toList();
+  }
+
+  Future<ClubBookOfYearEdition?> getClubBookOfYearEdition(int year) async {
+    final response = await _client.get(
+      Uri.parse(baseUrl).replace(
+        queryParameters: {'action': 'libroDelAnioClub', 'anio': '$year'},
+      ),
+    );
+    if (response.statusCode != 200) throw ApiException.fromResponse(response);
+    final data = _decodeJson(response) as Map<String, dynamic>;
+    return data['edition'] is Map
+        ? ClubBookOfYearEdition.fromJson(
+            Map<String, dynamic>.from(data['edition'] as Map),
+          )
+        : null;
+  }
+
+  Future<Map<String, dynamic>> prepareClubBookOfYear(int year) async {
+    final response = await _client.get(
+      Uri.parse(baseUrl).replace(
+        queryParameters: {
+          'action': 'prepararLibroDelAnioClub',
+          'anio': '$year',
+        },
+      ),
+    );
+    if (response.statusCode != 200) throw ApiException.fromResponse(response);
+    return _decodeJson(response) as Map<String, dynamic>;
+  }
+
+  Future<Map<String, dynamic>> linkClubBookOfYearHistoricalCandidate({
+    required int year,
+    required String resultId,
+    required String bookId,
+  }) async {
+    final response = await _postJson(
+      'vincularCandidataHistoricaLibroDelAnioClub',
+      {'anio': year, 'resultId': resultId, 'bookId': bookId},
+    );
+    if (response.statusCode != 200) throw ApiException.fromResponse(response);
+    return _decodeJson(response) as Map<String, dynamic>;
+  }
+
+  Future<ClubBookOfYearEdition?> mutateClubBookOfYear(
+    String action,
+    Map<String, dynamic> body,
+  ) async {
+    final response = await _postJson(action, body);
+    if (response.statusCode != 200) throw ApiException.fromResponse(response);
+    final data = _decodeJson(response) as Map<String, dynamic>;
+    return data['edition'] is Map
+        ? ClubBookOfYearEdition.fromJson(
+            Map<String, dynamic>.from(data['edition'] as Map),
+          )
+        : null;
   }
 }

@@ -247,7 +247,7 @@ class _AtmosferaLecturaPageState extends State<AtmosferaLecturaPage> {
     final paleta = seleccionada.paleta;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Atmósfera lectora')),
+      appBar: AppBar(title: const Text('Atmósfera de lectura')),
       body: ListView(
         padding: const EdgeInsets.fromLTRB(
           AppSpacing.md,

@@ -92,18 +92,20 @@ class MiembroFavoritos {
   final String nombre;
   final String avatarUrl;
   final List<LibroFavorito> favoritos;
+
   /// true cuando este miembro es la usuaria que hizo la petición.
   final bool esTu;
 
-  factory MiembroFavoritos.fromJson(Map<String, dynamic> json) => MiembroFavoritos(
-    nombre: json['nombre']?.toString() ?? '',
-    avatarUrl: json['avatarUrl']?.toString() ?? '',
-    esTu: json['esTu'] == true,
-    favoritos: (json['favoritos'] as List? ?? [])
-        .whereType<Map<String, dynamic>>()
-        .map(LibroFavorito.fromJson)
-        .toList(),
-  );
+  factory MiembroFavoritos.fromJson(Map<String, dynamic> json) =>
+      MiembroFavoritos(
+        nombre: json['nombre']?.toString() ?? '',
+        avatarUrl: json['avatarUrl']?.toString() ?? '',
+        esTu: json['esTu'] == true,
+        favoritos: (json['favoritos'] as List? ?? [])
+            .whereType<Map<String, dynamic>>()
+            .map(LibroFavorito.fromJson)
+            .toList(),
+      );
 }
 
 class PerfilResumen {

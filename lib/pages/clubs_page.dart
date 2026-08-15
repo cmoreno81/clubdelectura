@@ -313,8 +313,8 @@ class _ClubCard extends StatelessWidget {
   );
 
   String _rolLabel(String rol) => switch (rol) {
-    'OWNER' => 'Propietaria',
-    'ADMIN' => 'Administradora',
+    'OWNER' => 'Propiedad',
+    'ADMIN' => 'Administración',
     _ => 'Miembro',
   };
 }
@@ -534,7 +534,7 @@ class _ClubSettingsPageState extends State<_ClubSettingsPage> {
                       style: TextStyle(fontWeight: FontWeight.w700),
                     ),
                     subtitle: const Text(
-                      'Copia el código para invitar lectoras',
+                      'Copia el código para invitar a nuevos miembros',
                     ),
                     trailing: const Icon(Icons.chevron_right_rounded),
                     onTap: _busy ? null : _copyInvite,
@@ -675,8 +675,8 @@ class _MembersPage extends StatelessWidget {
   }
 
   String _rolLabel(String rol) => switch (rol) {
-    'OWNER' => 'Propietaria',
-    'ADMIN' => 'Administradora',
+    'OWNER' => 'Propiedad',
+    'ADMIN' => 'Administración',
     _ => 'Miembro',
   };
 }
@@ -724,6 +724,13 @@ class _EditClubDialogState extends State<_EditClubDialog> {
               controller: _descripcion,
               maxLength: 500,
               maxLines: 3,
+              keyboardType: TextInputType.multiline,
+              textInputAction: TextInputAction.newline,
+              textCapitalization: TextCapitalization.sentences,
+              autocorrect: true,
+              enableSuggestions: true,
+              smartDashesType: SmartDashesType.enabled,
+              smartQuotesType: SmartQuotesType.enabled,
               decoration: const InputDecoration(labelText: 'Descripción'),
             ),
           ],
@@ -782,6 +789,15 @@ class _CreateClubDialogState extends State<_CreateClubDialog> {
           TextField(
             controller: description,
             maxLength: 500,
+            minLines: 2,
+            maxLines: 4,
+            keyboardType: TextInputType.multiline,
+            textInputAction: TextInputAction.newline,
+            textCapitalization: TextCapitalization.sentences,
+            autocorrect: true,
+            enableSuggestions: true,
+            smartDashesType: SmartDashesType.enabled,
+            smartQuotesType: SmartQuotesType.enabled,
             decoration: const InputDecoration(labelText: 'Descripción'),
           ),
         ],

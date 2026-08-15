@@ -78,7 +78,7 @@ class _RegistrationPageState extends State<RegistrationPage> {
             const AuthFormHeader(
               icon: Icons.person_add_alt_1_rounded,
               eyebrow: 'Empieza tu historia',
-              title: 'Crea tu cuenta lectora',
+              title: 'Crea tu cuenta de lectura',
               message:
                   'Tu biblioteca será personal. Después podrás leer en solitario, crear un club o unirte con una invitación.',
             ),

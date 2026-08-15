@@ -68,7 +68,7 @@ class EstadoClubFactory {
       case 'SIN_CANDIDATAS':
         return const EstadoClub(
           estado: EstadoClubTipo.preparando,
-          titulo: 'Sin candidatas este mes',
+          titulo: 'Sin libros candidatos este mes',
           mensaje:
               'Ningún libro tiene suficiente interés compartido para abrir la votación.',
           icono: Icons.library_books_outlined,
@@ -80,7 +80,7 @@ class EstadoClubFactory {
       default:
         return const EstadoClub(
           estado: EstadoClubTipo.preparando,
-          titulo: 'ClubReads',
+          titulo: 'ClubReaders',
           mensaje: 'Preparando la próxima aventura.',
           icono: Icons.notification_important,
           iconColor: Colors.amber,

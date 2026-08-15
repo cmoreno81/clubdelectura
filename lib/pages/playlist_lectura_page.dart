@@ -88,7 +88,7 @@ class PlaylistLecturaPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Playlist lectora')),
+      appBar: AppBar(title: const Text('Playlist de lectura')),
       body: ListView(
         padding: const EdgeInsets.fromLTRB(
           AppSpacing.md,

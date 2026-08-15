@@ -108,7 +108,7 @@ class _NuevoLibroPageState extends State<NuevoLibroPage> {
         : 'MEDIA';
     formato = registro?.formato ?? finalizado?.formato ?? '';
 
-    goodreadsController.text = registro?.goodreads ?? '';
+    goodreadsController.text = agrupado.goodreads;
     coverUrlController.text = agrupado.coverUrl;
     paginasController.text =
         (registro?.paginas ?? finalizado?.paginas)?.toString() ?? '';
@@ -145,7 +145,7 @@ class _NuevoLibroPageState extends State<NuevoLibroPage> {
     if (usuario == null || usuario.trim().isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('No se ha podido identificar a la usuaria.'),
+          content: Text('No se ha podido identificar al usuario.'),
         ),
       );
       return;
@@ -192,7 +192,11 @@ class _NuevoLibroPageState extends State<NuevoLibroPage> {
     });
 
     try {
-      final libro = _construirLibro(usuario: usuario.trim(), titulo: titulo, paginas: paginas);
+      final libro = _construirLibro(
+        usuario: usuario.trim(),
+        titulo: titulo,
+        paginas: paginas,
+      );
 
       final respuesta = esEdicion
           ? await ApiService().editarLibro(libro)
@@ -203,8 +207,9 @@ class _NuevoLibroPageState extends State<NuevoLibroPage> {
       // ── Posibles duplicados: pedir confirmación al usuario ────────────────
       if (!esEdicion && respuesta['codigo'] == 'POSIBLES_DUPLICADOS') {
         setState(() => guardando = false);
-        final candidatos = (respuesta['candidatos'] as List?)
-            ?.cast<Map<String, dynamic>>() ?? [];
+        final candidatos =
+            (respuesta['candidatos'] as List?)?.cast<Map<String, dynamic>>() ??
+            [];
         final accion = await _mostrarDialogoDuplicados(
           candidatos: candidatos,
           usuario: usuario.trim(),
@@ -338,8 +343,10 @@ class _NuevoLibroPageState extends State<NuevoLibroPage> {
           SnackBar(
             content: Text(
               ok
-                  ? (respuesta['mensaje']?.toString() ?? 'Libro añadido correctamente.')
-                  : (respuesta['mensaje']?.toString() ?? 'No se ha podido añadir el libro.'),
+                  ? (respuesta['mensaje']?.toString() ??
+                        'Libro añadido correctamente.')
+                  : (respuesta['mensaje']?.toString() ??
+                        'No se ha podido añadir el libro.'),
             ),
             backgroundColor: ok ? AppColors.success : null,
           ),
@@ -1231,7 +1238,8 @@ class _DuplicadosSheetState extends State<_DuplicadosSheet> {
           content: Text(
             ok
                 ? '"$titulo" añadido a tu lista.'
-                : (respuesta['mensaje']?.toString() ?? 'Error al añadir el libro.'),
+                : (respuesta['mensaje']?.toString() ??
+                      'Error al añadir el libro.'),
           ),
           backgroundColor: ok ? AppColors.success : null,
         ),
@@ -1254,158 +1262,165 @@ class _DuplicadosSheetState extends State<_DuplicadosSheet> {
 
     return Material(
       color: cs.surface,
-      borderRadius: const BorderRadius.vertical(top: Radius.circular(AppRadius.xl)),
+      borderRadius: const BorderRadius.vertical(
+        top: Radius.circular(AppRadius.xl),
+      ),
       child: SafeArea(
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(
-          AppSpacing.lg,
-          AppSpacing.md,
-          AppSpacing.lg,
-          AppSpacing.lg,
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Handle
-            Center(
-              child: Container(
-                width: 40,
-                height: 4,
-                margin: const EdgeInsets.only(bottom: AppSpacing.md),
-                decoration: BoxDecoration(
-                  color: AppColors.border,
-                  borderRadius: BorderRadius.circular(AppRadius.pill),
-                ),
-              ),
-            ),
-
-            // Título
-            Text('¿Ya existe este libro?', style: AppTextStyles.section),
-            const SizedBox(height: AppSpacing.xs),
-            Text(
-              'Encontramos libros similares en la biblioteca. '
-              '¿Es alguno de estos el que quieres añadir?',
-              style: AppTextStyles.bodySecondary.copyWith(
-                color: AppColors.textSecondary,
-              ),
-            ),
-            const SizedBox(height: AppSpacing.md),
-
-            // Candidatos
-            ...widget.candidatos.map((c) {
-              final id = c['id']?.toString() ?? '';
-              final title = c['title']?.toString() ?? '';
-              final author = c['authorName']?.toString();
-              final cover = c['coverUrl']?.toString();
-
-              return Padding(
-                padding: const EdgeInsets.only(bottom: AppSpacing.sm),
-                child: InkWell(
-                  onTap: _guardando ? null : () => _elegirExistente(id, title),
-                  borderRadius: BorderRadius.circular(AppRadius.md),
-                  child: Container(
-                    padding: const EdgeInsets.all(AppSpacing.sm),
-                    decoration: BoxDecoration(
-                      border: Border.all(color: AppColors.border),
-                      borderRadius: BorderRadius.circular(AppRadius.md),
-                    ),
-                    child: Row(
-                      children: [
-                        // Portada
-                        ClipRRect(
-                          borderRadius: BorderRadius.circular(AppRadius.sm),
-                          child: cover != null && cover.isNotEmpty
-                              ? OptimizedNetworkImage(
-                                  url: cover,
-                                  width: 44,
-                                  height: 64,
-                                  fit: BoxFit.cover,
-                                )
-                              : Container(
-                                  width: 44,
-                                  height: 64,
-                                  color: cs.surfaceContainerHighest,
-                                  child: const Icon(
-                                    Icons.menu_book_rounded,
-                                    size: 24,
-                                    color: AppColors.textMuted,
-                                  ),
-                                ),
-                        ),
-                        const SizedBox(width: AppSpacing.md),
-                        // Info
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                title,
-                                style: AppTextStyles.subtitle.copyWith(
-                                  fontWeight: FontWeight.w600,
-                                ),
-                                maxLines: 2,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                              if (author != null && author.isNotEmpty) ...[
-                                const SizedBox(height: 2),
-                                Text(
-                                  author,
-                                  style: AppTextStyles.bodySecondary.copyWith(
-                                    color: AppColors.textSecondary,
-                                  ),
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                              ],
-                            ],
-                          ),
-                        ),
-                        const SizedBox(width: AppSpacing.sm),
-                        _guardando
-                            ? const SizedBox(
-                                width: 20,
-                                height: 20,
-                                child: CircularProgressIndicator(strokeWidth: 2),
-                              )
-                            : const Icon(
-                                Icons.check_circle_outline_rounded,
-                                color: AppColors.primary,
-                                size: 24,
-                              ),
-                      ],
-                    ),
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(
+            AppSpacing.lg,
+            AppSpacing.md,
+            AppSpacing.lg,
+            AppSpacing.lg,
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Handle
+              Center(
+                child: Container(
+                  width: 40,
+                  height: 4,
+                  margin: const EdgeInsets.only(bottom: AppSpacing.md),
+                  decoration: BoxDecoration(
+                    color: AppColors.border,
+                    borderRadius: BorderRadius.circular(AppRadius.pill),
                   ),
                 ),
-              );
-            }),
-
-            const SizedBox(height: AppSpacing.sm),
-
-            // Botón crear nuevo de todas formas
-            SizedBox(
-              width: double.infinity,
-              child: OutlinedButton(
-                onPressed: _guardando
-                    ? null
-                    : () => Navigator.pop(context, _AccionDuplicado.crearNuevo),
-                child: const Text('No, crear libro nuevo de todas formas'),
               ),
-            ),
-            const SizedBox(height: AppSpacing.xs),
-            SizedBox(
-              width: double.infinity,
-              child: TextButton(
-                onPressed: _guardando
-                    ? null
-                    : () => Navigator.pop(context, _AccionDuplicado.cancelar),
-                child: const Text('Cancelar'),
+
+              // Título
+              Text('¿Ya existe este libro?', style: AppTextStyles.section),
+              const SizedBox(height: AppSpacing.xs),
+              Text(
+                'Encontramos libros similares en la biblioteca. '
+                '¿Es alguno de estos el que quieres añadir?',
+                style: AppTextStyles.bodySecondary.copyWith(
+                  color: AppColors.textSecondary,
+                ),
               ),
-            ),
-          ],
+              const SizedBox(height: AppSpacing.md),
+
+              // Candidatos
+              ...widget.candidatos.map((c) {
+                final id = c['id']?.toString() ?? '';
+                final title = c['title']?.toString() ?? '';
+                final author = c['authorName']?.toString();
+                final cover = c['coverUrl']?.toString();
+
+                return Padding(
+                  padding: const EdgeInsets.only(bottom: AppSpacing.sm),
+                  child: InkWell(
+                    onTap: _guardando
+                        ? null
+                        : () => _elegirExistente(id, title),
+                    borderRadius: BorderRadius.circular(AppRadius.md),
+                    child: Container(
+                      padding: const EdgeInsets.all(AppSpacing.sm),
+                      decoration: BoxDecoration(
+                        border: Border.all(color: AppColors.border),
+                        borderRadius: BorderRadius.circular(AppRadius.md),
+                      ),
+                      child: Row(
+                        children: [
+                          // Portada
+                          ClipRRect(
+                            borderRadius: BorderRadius.circular(AppRadius.sm),
+                            child: cover != null && cover.isNotEmpty
+                                ? OptimizedNetworkImage(
+                                    url: cover,
+                                    width: 44,
+                                    height: 64,
+                                    fit: BoxFit.cover,
+                                  )
+                                : Container(
+                                    width: 44,
+                                    height: 64,
+                                    color: cs.surfaceContainerHighest,
+                                    child: const Icon(
+                                      Icons.menu_book_rounded,
+                                      size: 24,
+                                      color: AppColors.textMuted,
+                                    ),
+                                  ),
+                          ),
+                          const SizedBox(width: AppSpacing.md),
+                          // Info
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  title,
+                                  style: AppTextStyles.subtitle.copyWith(
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                  maxLines: 2,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                                if (author != null && author.isNotEmpty) ...[
+                                  const SizedBox(height: 2),
+                                  Text(
+                                    author,
+                                    style: AppTextStyles.bodySecondary.copyWith(
+                                      color: AppColors.textSecondary,
+                                    ),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ],
+                              ],
+                            ),
+                          ),
+                          const SizedBox(width: AppSpacing.sm),
+                          _guardando
+                              ? const SizedBox(
+                                  width: 20,
+                                  height: 20,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                  ),
+                                )
+                              : const Icon(
+                                  Icons.check_circle_outline_rounded,
+                                  color: AppColors.primary,
+                                  size: 24,
+                                ),
+                        ],
+                      ),
+                    ),
+                  ),
+                );
+              }),
+
+              const SizedBox(height: AppSpacing.sm),
+
+              // Botón crear nuevo de todas formas
+              SizedBox(
+                width: double.infinity,
+                child: OutlinedButton(
+                  onPressed: _guardando
+                      ? null
+                      : () =>
+                            Navigator.pop(context, _AccionDuplicado.crearNuevo),
+                  child: const Text('No, crear libro nuevo de todas formas'),
+                ),
+              ),
+              const SizedBox(height: AppSpacing.xs),
+              SizedBox(
+                width: double.infinity,
+                child: TextButton(
+                  onPressed: _guardando
+                      ? null
+                      : () => Navigator.pop(context, _AccionDuplicado.cancelar),
+                  child: const Text('Cancelar'),
+                ),
+              ),
+            ],
+          ),
         ),
-      ),
-    ), // SafeArea
-  );   // Material
+      ), // SafeArea
+    ); // Material
   }
 }

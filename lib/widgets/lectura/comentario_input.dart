@@ -160,31 +160,41 @@ class ComentarioInput extends StatelessWidget {
                 // ya ha podido leer casi todo lo escrito sin scroll interno.
                 minLines: esReflexion ? 4 : 3,
                 maxLines: esReflexion ? 10 : 8,
-                maxLength: esReflexion ? 2000 : esCita ? 500 : 1500,
+                maxLength: esReflexion
+                    ? 2000
+                    : esCita
+                    ? 500
+                    : 1500,
                 keyboardType: TextInputType.multiline,
                 textInputAction: TextInputAction.newline,
+                textCapitalization: TextCapitalization.sentences,
+                autocorrect: true,
+                enableSuggestions: true,
+                smartDashesType: SmartDashesType.enabled,
+                smartQuotesType: SmartQuotesType.enabled,
 
                 // Contador sutil: aparece solo cuando quedan menos de 200
                 // caracteres. No estorba durante la escritura normal.
-                buildCounter: (
-                  context, {
-                  required currentLength,
-                  required isFocused,
-                  maxLength,
-                }) {
-                  if (maxLength == null) return null;
-                  final restantes = maxLength - currentLength;
-                  if (restantes > 200) return null;
-                  return Text(
-                    '$restantes restantes',
-                    style: TextStyle(
-                      fontSize: 11,
-                      color: restantes < 50
-                          ? Colors.red.shade600
-                          : Colors.grey.shade500,
-                    ),
-                  );
-                },
+                buildCounter:
+                    (
+                      context, {
+                      required currentLength,
+                      required isFocused,
+                      maxLength,
+                    }) {
+                      if (maxLength == null) return null;
+                      final restantes = maxLength - currentLength;
+                      if (restantes > 200) return null;
+                      return Text(
+                        '$restantes restantes',
+                        style: TextStyle(
+                          fontSize: 11,
+                          color: restantes < 50
+                              ? Colors.red.shade600
+                              : Colors.grey.shade500,
+                        ),
+                      );
+                    },
 
                 decoration: InputDecoration(
                   hintText: esCita

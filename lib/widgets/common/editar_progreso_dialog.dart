@@ -208,6 +208,13 @@ class _EditarProgresoDialogState extends State<EditarProgresoDialog> {
               minLines: 3,
               maxLines: 6,
               maxLength: 500,
+              keyboardType: TextInputType.multiline,
+              textInputAction: TextInputAction.newline,
+              textCapitalization: TextCapitalization.sentences,
+              autocorrect: true,
+              enableSuggestions: true,
+              smartDashesType: SmartDashesType.enabled,
+              smartQuotesType: SmartQuotesType.enabled,
               decoration: const InputDecoration(
                 labelText: 'Nueva impresión (opcional)',
                 hintText: '¿Qué te está pareciendo ahora?',

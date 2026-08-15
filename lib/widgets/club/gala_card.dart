@@ -183,7 +183,7 @@ class _HeroCover extends StatelessWidget {
                       ),
                       const SizedBox(width: 6),
                       Text(
-                        'Ganadora de Clubvisión',
+                        'Libro ganador de Clubvisión',
                         style: AppTextStyles.caption.copyWith(
                           color: const Color(0xFFFFD700),
                           fontWeight: FontWeight.w800,
@@ -291,7 +291,7 @@ class _LectorasPrevias extends StatelessWidget {
           Text(
             club.lectoras.isEmpty
                 ? 'Será la primera vez que el club lee esta historia juntas.'
-                : 'Estas lectoras podrán compartir su experiencia.',
+                : 'Estos miembros podrán compartir su experiencia.',
             style: AppTextStyles.bodySecondary.copyWith(height: 1.4),
           ),
           if (club.lectoras.isNotEmpty) ...[
@@ -368,7 +368,7 @@ class _MensajeYAccion extends StatelessWidget {
           ),
           const SizedBox(height: AppSpacing.sm),
           Text(
-            'A partir de ahora, las conversaciones del club girarán alrededor de esta historia. Disfrútala con el resto de lectoras.',
+            'A partir de ahora, las conversaciones del club girarán alrededor de esta historia. Disfrútala con el resto del club.',
             textAlign: TextAlign.center,
             style: AppTextStyles.bodySecondary,
           ),

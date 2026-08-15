@@ -124,8 +124,9 @@ class _CatalogBookDetailPageState extends State<CatalogBookDetailPage> {
     setState(() => _navigating = true);
 
     try {
-      final effectiveBookId =
-          _addedBookId.isNotEmpty ? _addedBookId : widget.bookId;
+      final effectiveBookId = _addedBookId.isNotEmpty
+          ? _addedBookId
+          : widget.bookId;
 
       // Cargamos los datos reales de la biblioteca (la caché ya fue invalidada
       // por LibraryRefreshNotifier al añadir el libro).
@@ -333,7 +334,7 @@ class _CatalogBookDetailPageState extends State<CatalogBookDetailPage> {
                   const SizedBox(width: AppSpacing.sm),
                   Expanded(
                     child: Text(
-                      'Este libro está en el catálogo de ClubReads. '
+                      'Este libro está en el catálogo de ClubReaders. '
                       'Al añadirlo podrás ver quién más lo está leyendo '
                       'y participar en las lecturas del club.',
                       style: AppTextStyles.caption.copyWith(height: 1.4),

@@ -370,7 +370,7 @@ class _CabeceraConfiguracion extends StatelessWidget {
           Text(
             esOficial
                 ? 'Esta será la conversación oficial del club para esta lectura.'
-                : 'Configura los espacios donde las lectoras compartirán sus impresiones.',
+                : 'Configura los espacios donde los miembros compartirán sus impresiones.',
             textAlign: TextAlign.center,
             style: AppTextStyles.bodySecondary.copyWith(height: 1.45),
           ),

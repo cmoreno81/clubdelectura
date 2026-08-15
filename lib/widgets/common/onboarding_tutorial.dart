@@ -29,83 +29,82 @@ class _TutorialStep {
 const List<_TutorialStep> _pasos = [
   _TutorialStep(
     emoji: '📚',
-    titulo: '¡Bienvenida a ClubReads!',
+    titulo: '¡Te damos la bienvenida a ClubReaders!',
     descripcion:
         'Tu espacio para leer, ya sea en compañía o en solitario. '
-        'En este breve tutorial te enseñamos lo más importante para '
-        'que empieces con buen pie.',
-    detalle: null,
+        'Este recorrido breve te muestra lo necesario para empezar.',
   ),
   _TutorialStep(
     emoji: '🔀',
-    titulo: 'Elige cómo quieres leer',
+    titulo: 'Uso personal y clubes',
     descripcion:
-        'ClubReads tiene dos modos: puedes leer en solitario con tu '
-        '"Espacio lector personal", o unirte a un club para leer con otras personas.',
+        'Puedes usar tu espacio personal sin pertenecer a un club y, si quieres, '
+        'crear o unirte a uno o varios clubes.',
     detalle:
-        '📖 Espacio personal — biblioteca privada, racha, mapa de calor y Wrapped anual.\n'
-        '👥 Club lector — lecturas grupales, Clubvisión, conversaciones y rankings.',
+        'Tu biblioteca, progreso y Perfil son personales. Las lecturas grupales, '
+        'Clubvisión y las conversaciones solo aparecen dentro de los clubes.',
   ),
   _TutorialStep(
-    emoji: '🏛️',
-    titulo: 'Modo club: crea o únete',
+    emoji: '🌌',
+    titulo: 'Mi universo lector',
     descripcion:
-        'Desde "Mis clubes" puedes crear tu propio club de lectura o '
-        'unirte a uno con el código de invitación que te hayan compartido.',
-    detalle:
-        'Consejo: dale un nombre con personalidad y una descripción que '
-        'anime a la gente a leer contigo.',
+        'El dashboard global reúne tus lecturas actuales, calendario, '
+        'estanterías, sagas y accesos a tu biblioteca y tus clubes.',
   ),
   _TutorialStep(
     emoji: '➕',
-    titulo: 'Añade libros a tu lista',
+    titulo: 'Explora y añade libros',
     descripcion:
-        'En la pestaña "Libros" pulsa el botón + para añadir un libro. '
-        'Puedes marcarlo como pendiente, en curso o finalizado, e indicar '
-        'si pertenece a una saga.',
+        'Explora el catálogo compartido para añadir un libro a tu biblioteca. '
+        'Dentro de un club también puedes usar el botón + de la pestaña "Libros".',
     detalle:
-        'Si el libro es parte de una serie, activa "Es parte de una saga" '
-        'y escribe el nombre y el número de orden.',
+        'Para crearlo manualmente desde el dashboard global, pulsa “Añadir libro” '
+        'en “Últimas incorporaciones”.',
   ),
   _TutorialStep(
-    emoji: '🗂️',
-    titulo: 'Completa tus sagas',
+    emoji: '📖',
+    titulo: 'Estados, progreso y relecturas',
     descripcion:
-        'La pestaña "Sagas" agrupa automáticamente los libros de una misma '
-        'serie. Pulsa en una saga para añadir los volúmenes que te faltan '
-        'o enlazarlos con el catálogo.',
+        'Marca cada libro como pendiente, leyendo, pausado, terminado, '
+        'abandonado o en relectura, y actualiza sus páginas cuando quieras.',
     detalle:
-        'Usa "Completar saga" para buscar en el catálogo y vincular cada '
-        'tomo con el orden correcto.',
+        'Cada relectura conserva su propio periodo y no sustituye la lectura original.',
+  ),
+  _TutorialStep(
+    emoji: '👤',
+    titulo: 'Tu Perfil lector',
+    descripcion:
+        'El Perfil se organiza en Resumen, Historial, Favoritos, Meses lectores, '
+        'Logros y Más.',
+    detalle:
+        'Historial reúne Cronología y Libros. Favoritos reúne tus cinco favoritos, '
+        'Mi libro del año y Wrapped.',
   ),
   _TutorialStep(
     emoji: '🔥',
-    titulo: 'Tu racha lectora y actividad',
+    titulo: 'Seguimiento de lectura',
     descripcion:
-        'Desde tu perfil → "Seguimiento lector" puedes hacer check-in '
-        'diario, ver tu mapa de calor anual y acceder a tu Wrapped — '
-        'el resumen del año al estilo Spotify.',
+        'Haz check-in de forma explícita para marcar que has leído hoy y consulta '
+        'tu racha y mapa de actividad.',
     detalle:
-        'El mapa de calor combina check-ins, progreso en libros y '
-        'lecturas terminadas para mostrar tu actividad real.',
+        'Abrir ClubReaders no crea actividad. Wrapped está en Perfil → Favoritos '
+        'y permanece bloqueado fuera de su periodo disponible.',
   ),
   _TutorialStep(
-    emoji: '🗳️',
-    titulo: 'Clubvisión · Vota el próximo libro',
+    emoji: '🏛️',
+    titulo: 'Lee en comunidad',
     descripcion:
-        'En modo club, la sección Clubvisión permite votar entre '
-        'las candidatas para elegir el siguiente libro grupal. ¡La democracia lectora mola!',
-    detalle:
-        'Solo puede votar quien tenga el rol de lectura activo. '
-        'La moderadora abre y cierra la votación.',
+        'En un club puedes participar en lecturas grupales, comentar capítulos, '
+        'guardar citas, reaccionar y votar en Clubvisión.',
+    detalle: 'Estas funciones son opcionales y requieren pertenecer a un club.',
   ),
   _TutorialStep(
     emoji: '⚙️',
     titulo: 'Ayuda siempre disponible',
     descripcion:
         'En tu perfil → sección "Más" encontrarás el botón de Ayuda '
-        'con explicaciones detalladas de cada parte de la app.',
-    detalle: 'Puedes volver a este tutorial en cualquier momento desde ahí.',
+        'con explicaciones detalladas y actualizadas.',
+    detalle: 'Desde Ayuda puedes volver a abrir este tutorial cuando quieras.',
   ),
 ];
 
@@ -220,105 +219,129 @@ class _OnboardingOverlayState extends State<_OnboardingOverlay>
                   color: AppColors.surface,
                   borderRadius: BorderRadius.circular(24),
                   elevation: 0,
-                  child: Padding(
-                    padding: const EdgeInsets.all(AppSpacing.xl),
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        // ── Indicador de progreso ──
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: List.generate(_pasos.length, (i) {
-                            final activo = i == _step;
-                            return AnimatedContainer(
-                              duration: const Duration(milliseconds: 300),
-                              margin: const EdgeInsets.symmetric(horizontal: 3),
-                              width: activo ? 24 : 8,
-                              height: 8,
-                              decoration: BoxDecoration(
-                                color: activo
-                                    ? AppColors.primary
-                                    : AppColors.surfaceMuted,
-                                borderRadius: BorderRadius.circular(4),
-                              ),
-                            );
-                          }),
-                        ),
-
-                        const SizedBox(height: AppSpacing.xl),
-
-                        // ── Emoji grande ──
-                        Text(paso.emoji, style: const TextStyle(fontSize: 56)),
-
-                        const SizedBox(height: AppSpacing.md),
-
-                        // ── Título ──
-                        Text(
-                          paso.titulo,
-                          style: AppTextStyles.title.copyWith(
-                            fontSize: 20,
-                            color: AppColors.primaryDark,
-                          ),
-                          textAlign: TextAlign.center,
-                        ),
-
-                        const SizedBox(height: AppSpacing.sm),
-
-                        // ── Descripción ──
-                        Text(
-                          paso.descripcion,
-                          style: AppTextStyles.body.copyWith(
-                            color: AppColors.textSecondary,
-                            height: 1.5,
-                          ),
-                          textAlign: TextAlign.center,
-                        ),
-
-                        // ── Detalle (caja diferenciada) ──
-                        if (paso.detalle != null) ...[
-                          const SizedBox(height: AppSpacing.md),
-                          Container(
-                            width: double.infinity,
-                            padding: const EdgeInsets.all(AppSpacing.md),
-                            decoration: BoxDecoration(
-                              color: AppColors.primaryLight,
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: Row(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                const Text(
-                                  '💡',
-                                  style: TextStyle(fontSize: 16),
+                  child: SingleChildScrollView(
+                    child: Padding(
+                      padding: const EdgeInsets.all(AppSpacing.xl),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          // ── Indicador de progreso ──
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: List.generate(_pasos.length, (i) {
+                              final activo = i == _step;
+                              return AnimatedContainer(
+                                duration: const Duration(milliseconds: 300),
+                                margin: const EdgeInsets.symmetric(
+                                  horizontal: 3,
                                 ),
-                                const SizedBox(width: AppSpacing.sm),
-                                Expanded(
-                                  child: Text(
-                                    paso.detalle!,
-                                    style: AppTextStyles.caption.copyWith(
-                                      color: AppColors.primaryDark,
-                                      height: 1.4,
+                                width: activo ? 24 : 8,
+                                height: 8,
+                                decoration: BoxDecoration(
+                                  color: activo
+                                      ? AppColors.primary
+                                      : AppColors.surfaceMuted,
+                                  borderRadius: BorderRadius.circular(4),
+                                ),
+                              );
+                            }),
+                          ),
+
+                          const SizedBox(height: AppSpacing.xl),
+
+                          // ── Emoji grande ──
+                          Text(
+                            paso.emoji,
+                            style: const TextStyle(fontSize: 56),
+                          ),
+
+                          const SizedBox(height: AppSpacing.md),
+
+                          // ── Título ──
+                          Text(
+                            paso.titulo,
+                            style: AppTextStyles.title.copyWith(
+                              fontSize: 20,
+                              color: AppColors.primaryDark,
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+
+                          const SizedBox(height: AppSpacing.sm),
+
+                          // ── Descripción ──
+                          Text(
+                            paso.descripcion,
+                            style: AppTextStyles.body.copyWith(
+                              color: AppColors.textSecondary,
+                              height: 1.5,
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+
+                          // ── Detalle (caja diferenciada) ──
+                          if (paso.detalle != null) ...[
+                            const SizedBox(height: AppSpacing.md),
+                            Container(
+                              width: double.infinity,
+                              padding: const EdgeInsets.all(AppSpacing.md),
+                              decoration: BoxDecoration(
+                                color: AppColors.primaryLight,
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: Row(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  const Text(
+                                    '💡',
+                                    style: TextStyle(fontSize: 16),
+                                  ),
+                                  const SizedBox(width: AppSpacing.sm),
+                                  Expanded(
+                                    child: Text(
+                                      paso.detalle!,
+                                      style: AppTextStyles.caption.copyWith(
+                                        color: AppColors.primaryDark,
+                                        height: 1.4,
+                                      ),
                                     ),
                                   ),
-                                ),
-                              ],
+                                ],
+                              ),
                             ),
-                          ),
-                        ],
+                          ],
 
-                        const SizedBox(height: AppSpacing.xl),
+                          const SizedBox(height: AppSpacing.xl),
 
-                        // ── Botones ──
-                        Row(
-                          children: [
-                            if (_step > 0) ...[
-                              Expanded(
-                                child: OutlinedButton(
-                                  onPressed: _prev,
-                                  style: OutlinedButton.styleFrom(
-                                    side: const BorderSide(
-                                      color: AppColors.border,
+                          // ── Botones ──
+                          Row(
+                            children: [
+                              if (_step > 0) ...[
+                                Expanded(
+                                  child: OutlinedButton(
+                                    onPressed: _prev,
+                                    style: OutlinedButton.styleFrom(
+                                      side: const BorderSide(
+                                        color: AppColors.border,
+                                      ),
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(12),
+                                      ),
+                                      padding: const EdgeInsets.symmetric(
+                                        vertical: 14,
+                                      ),
                                     ),
+                                    child: const Text('Anterior'),
+                                  ),
+                                ),
+                                const SizedBox(width: AppSpacing.sm),
+                              ],
+                              Expanded(
+                                flex: 2,
+                                child: FilledButton(
+                                  onPressed: _next,
+                                  style: FilledButton.styleFrom(
+                                    backgroundColor: AppColors.primary,
                                     shape: RoundedRectangleBorder(
                                       borderRadius: BorderRadius.circular(12),
                                     ),
@@ -326,51 +349,34 @@ class _OnboardingOverlayState extends State<_OnboardingOverlay>
                                       vertical: 14,
                                     ),
                                   ),
-                                  child: const Text('Anterior'),
+                                  child: Text(
+                                    esUltimo
+                                        ? '¡Empezar a leer! 🎉'
+                                        : 'Siguiente',
+                                    style: const TextStyle(
+                                      fontWeight: FontWeight.w700,
+                                    ),
+                                  ),
                                 ),
                               ),
-                              const SizedBox(width: AppSpacing.sm),
                             ],
-                            Expanded(
-                              flex: 2,
-                              child: FilledButton(
-                                onPressed: _next,
-                                style: FilledButton.styleFrom(
-                                  backgroundColor: AppColors.primary,
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(12),
-                                  ),
-                                  padding: const EdgeInsets.symmetric(
-                                    vertical: 14,
-                                  ),
-                                ),
-                                child: Text(
-                                  esUltimo
-                                      ? '¡Empezar a leer! 🎉'
-                                      : 'Siguiente',
-                                  style: const TextStyle(
-                                    fontWeight: FontWeight.w700,
-                                  ),
+                          ),
+
+                          // ── Saltar (solo si no es el último paso) ──
+                          if (!esUltimo) ...[
+                            const SizedBox(height: AppSpacing.sm),
+                            TextButton(
+                              onPressed: () => Navigator.of(context).pop(),
+                              child: Text(
+                                'Saltar tutorial',
+                                style: AppTextStyles.caption.copyWith(
+                                  color: AppColors.textMuted,
                                 ),
                               ),
                             ),
                           ],
-                        ),
-
-                        // ── Saltar (solo si no es el último paso) ──
-                        if (!esUltimo) ...[
-                          const SizedBox(height: AppSpacing.sm),
-                          TextButton(
-                            onPressed: () => Navigator.of(context).pop(),
-                            child: Text(
-                              'Saltar tutorial',
-                              style: AppTextStyles.caption.copyWith(
-                                color: AppColors.textMuted,
-                              ),
-                            ),
-                          ),
                         ],
-                      ],
+                      ),
                     ),
                   ),
                 ),

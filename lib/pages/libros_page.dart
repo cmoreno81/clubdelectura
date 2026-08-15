@@ -362,14 +362,16 @@ class _LibrosPageState extends State<LibrosPage> with WidgetsBindingObserver {
             controller: buscadorController,
             style: AppTextStyles.body,
             textAlignVertical: TextAlignVertical.center,
+            textInputAction: TextInputAction.search,
+            autocorrect: false,
+            enableSuggestions: false,
+            smartDashesType: SmartDashesType.disabled,
+            smartQuotesType: SmartQuotesType.disabled,
             onChanged: (value) {
               _debounce?.cancel();
-              _debounce = Timer(
-                const Duration(milliseconds: 300),
-                () {
-                  if (mounted) setState(() => filtroBusqueda = value);
-                },
-              );
+              _debounce = Timer(const Duration(milliseconds: 300), () {
+                if (mounted) setState(() => filtroBusqueda = value);
+              });
             },
             decoration: InputDecoration(
               isDense: true,
@@ -403,7 +405,7 @@ class _LibrosPageState extends State<LibrosPage> with WidgetsBindingObserver {
             decoration: const InputDecoration(
               isDense: true,
               contentPadding: EdgeInsets.symmetric(vertical: 10),
-              labelText: 'Lectora',
+              labelText: 'Lector',
               prefixIconConstraints: BoxConstraints(minWidth: 42),
               prefixIcon: Icon(Icons.person_outline_rounded, size: 21),
             ),
@@ -411,7 +413,7 @@ class _LibrosPageState extends State<LibrosPage> with WidgetsBindingObserver {
               return DropdownMenuItem(
                 value: usuario,
                 child: Text(
-                  usuario == 'TODAS' ? 'Todas las lectoras' : usuario,
+                  usuario == 'TODAS' ? 'Todos los lectores' : usuario,
                 ),
               );
             }).toList(),
@@ -566,7 +568,8 @@ class _LibrosPageState extends State<LibrosPage> with WidgetsBindingObserver {
       _ => Icons.auto_stories_rounded,
     };
 
-    final heroTag = 'book-cover-${libro.bookId.isNotEmpty ? libro.bookId : libro.libro.hashCode}';
+    final heroTag =
+        'book-cover-${libro.bookId.isNotEmpty ? libro.bookId : libro.libro.hashCode}';
 
     // ── Fondo visible al deslizar hacia la izquierda ──────────────────────────
     const cardRadius = BorderRadius.only(
@@ -579,7 +582,9 @@ class _LibrosPageState extends State<LibrosPage> with WidgetsBindingObserver {
     return Padding(
       padding: const EdgeInsets.only(bottom: AppSpacing.md),
       child: Dismissible(
-        key: ValueKey('libro-${libro.bookId.isNotEmpty ? libro.bookId : libro.libro.hashCode}'),
+        key: ValueKey(
+          'libro-${libro.bookId.isNotEmpty ? libro.bookId : libro.libro.hashCode}',
+        ),
         direction: DismissDirection.endToStart,
         dismissThresholds: const {DismissDirection.endToStart: 0.25},
         confirmDismiss: (_) async {
@@ -599,7 +604,11 @@ class _LibrosPageState extends State<LibrosPage> with WidgetsBindingObserver {
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    const Icon(Icons.bolt_rounded, color: AppColors.primary, size: 28),
+                    const Icon(
+                      Icons.bolt_rounded,
+                      color: AppColors.primary,
+                      size: 28,
+                    ),
                     const SizedBox(height: 4),
                     Text(
                       'Acciones',
@@ -621,190 +630,190 @@ class _LibrosPageState extends State<LibrosPage> with WidgetsBindingObserver {
             await _navegarAlDetalle(libro);
           },
           child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Builder(
-            builder: (context) {
-              // Estado propio: registro del usuario actual (yaLoTengo)
-              final propioEstado =
-                  libro.registros
-                      .where((r) => r.yaLoTengo)
-                      .map((r) => r.estado.toUpperCase())
-                      .firstOrNull ??
-                  '';
-              final esPausado = propioEstado == 'PAUSADO';
-              final esAbandonado = propioEstado == 'ABANDONADO';
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Builder(
+                builder: (context) {
+                  // Estado propio: registro del usuario actual (yaLoTengo)
+                  final propioEstado =
+                      libro.registros
+                          .where((r) => r.yaLoTengo)
+                          .map((r) => r.estado.toUpperCase())
+                          .firstOrNull ??
+                      '';
+                  final esPausado = propioEstado == 'PAUSADO';
+                  final esAbandonado = propioEstado == 'ABANDONADO';
 
-              return GestureDetector(
-                onLongPress: () {
-                  HapticFeedback.mediumImpact();
-                  _mostrarAcciones(libro);
+                  return GestureDetector(
+                    onLongPress: () {
+                      HapticFeedback.mediumImpact();
+                      _mostrarAcciones(libro);
+                    },
+                    child: Stack(
+                      clipBehavior: Clip.none,
+                      children: [
+                        ClubBookCover(
+                          title: libro.libro,
+                          imageUrl: libro.coverUrl,
+                          width: 92,
+                          showShadow: false,
+                          heroTag: heroTag,
+                        ),
+                        // Badge en esquina superior derecha de la portada
+                        if (libro.leidoPorMi)
+                          _CoverBadge(
+                            label: 'Leído',
+                            icon: iconoPropio,
+                            color: AppColors.primary,
+                          )
+                        else if (esPausado)
+                          const _CoverBadge(
+                            label: 'Pausa',
+                            icon: Icons.nights_stay_outlined,
+                            color: Color(0xFFE8A020),
+                          )
+                        else if (esAbandonado)
+                          const _CoverBadge(
+                            label: 'Abandonado',
+                            icon: Icons.heart_broken_rounded,
+                            color: AppColors.danger,
+                          ),
+                      ],
+                    ), // Stack
+                  ); // GestureDetector
                 },
-                child: Stack(
-                  clipBehavior: Clip.none,
-                  children: [
-                  ClubBookCover(
-                    title: libro.libro,
-                    imageUrl: libro.coverUrl,
-                    width: 92,
-                    showShadow: false,
-                    heroTag: heroTag,
-                  ),
-                  // Badge en esquina superior derecha de la portada
-                  if (libro.leidoPorMi)
-                    _CoverBadge(
-                      label: 'Leído',
-                      icon: iconoPropio,
-                      color: AppColors.primary,
-                    )
-                  else if (esPausado)
-                    const _CoverBadge(
-                      label: 'Pausa',
-                      icon: Icons.nights_stay_outlined,
-                      color: Color(0xFFE8A020),
-                    )
-                  else if (esAbandonado)
-                    const _CoverBadge(
-                      label: 'Abandonado',
-                      icon: Icons.heart_broken_rounded,
-                      color: AppColors.danger,
-                    ),
-                ],
-              ),   // Stack
-              );   // GestureDetector
-            },
-          ),
+              ),
 
-          const SizedBox(width: AppSpacing.md),
+              const SizedBox(width: AppSpacing.md),
 
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
+              Expanded(
+                child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Expanded(
-                      child: Text(
-                        libro.libro,
-                        maxLines: 3,
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Expanded(
+                          child: Text(
+                            libro.libro,
+                            maxLines: 3,
+                            overflow: TextOverflow.ellipsis,
+                            style: AppTextStyles.section.copyWith(fontSize: 19),
+                          ),
+                        ),
+
+                        const SizedBox(width: AppSpacing.xs),
+
+                        if (!libro.leidoPorMi && libro.yaLoTengo)
+                          const Tooltip(
+                            message: 'Ya está en tu lista',
+                            child: Icon(
+                              Icons.check_circle_rounded,
+                              color: AppColors.success,
+                              size: 27,
+                            ),
+                          )
+                        else if (!libro.leidoPorMi)
+                          IconButton(
+                            tooltip: 'Añadir a mi lista',
+                            visualDensity: VisualDensity.compact,
+                            icon: const Icon(
+                              Icons.add_circle_outline_rounded,
+                              color: AppColors.primary,
+                            ),
+                            onPressed: () {
+                              _confirmarAgregarLibro(libro);
+                            },
+                          ),
+                      ],
+                    ),
+
+                    const SizedBox(height: AppSpacing.xs),
+
+                    Row(
+                      children: [
+                        Text(
+                          iconoGenero(libro.genero),
+                          style: const TextStyle(fontSize: 17),
+                        ),
+                        const SizedBox(width: AppSpacing.xs),
+                        Expanded(
+                          child: Text(
+                            libro.genero,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: AppTextStyles.caption.copyWith(
+                              color: AppColors.primary,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+
+                    const SizedBox(height: AppSpacing.sm),
+
+                    Wrap(
+                      spacing: AppSpacing.xs,
+                      runSpacing: AppSpacing.xs,
+                      children: [
+                        // "Leído por ti" se muestra sobre la portada (badge)
+                        if (libro.esReciente)
+                          const ClubChip(
+                            label: 'Nuevo',
+                            icon: Icons.auto_awesome_rounded,
+                            variant: ClubChipVariant.primary,
+                          ),
+                        ClubChip(
+                          label: '${libro.total} lectores interesados',
+                          icon: Icons.people_outline_rounded,
+                          variant: ClubChipVariant.info,
+                        ),
+
+                        if (libro.totalFinalizados > 0)
+                          ClubChip(
+                            label: '${libro.totalFinalizados} leídos',
+                            icon: Icons.check_circle_outline_rounded,
+                            variant: ClubChipVariant.success,
+                          ),
+
+                        if (libro.mediaValoracion > 0)
+                          ClubChip(
+                            label: libro.mediaValoracion.toStringAsFixed(1),
+                            icon: Icons.star_rounded,
+                            variant: ClubChipVariant.warning,
+                          ),
+                      ],
+                    ),
+
+                    if (libro.registros.isNotEmpty) ...[
+                      const SizedBox(height: AppSpacing.sm),
+
+                      Text(
+                        libro.registros.map((e) => e.usuario).join(' · '),
+                        maxLines: 2,
                         overflow: TextOverflow.ellipsis,
-                        style: AppTextStyles.section.copyWith(fontSize: 19),
+                        style: AppTextStyles.caption,
                       ),
-                    ),
+                    ],
 
-                    const SizedBox(width: AppSpacing.xs),
+                    if (libro.total >= 3) ...[
+                      const SizedBox(height: AppSpacing.sm),
 
-                    if (!libro.leidoPorMi && libro.yaLoTengo)
-                      const Tooltip(
-                        message: 'Ya está en tu lista',
-                        child: Icon(
-                          Icons.check_circle_rounded,
-                          color: AppColors.success,
-                          size: 27,
-                        ),
-                      )
-                    else if (!libro.leidoPorMi)
-                      IconButton(
-                        tooltip: 'Añadir a mi lista',
-                        visualDensity: VisualDensity.compact,
-                        icon: const Icon(
-                          Icons.add_circle_outline_rounded,
-                          color: AppColors.primary,
-                        ),
-                        onPressed: () {
-                          _confirmarAgregarLibro(libro);
-                        },
-                      ),
-                  ],
-                ),
-
-                const SizedBox(height: AppSpacing.xs),
-
-                Row(
-                  children: [
-                    Text(
-                      iconoGenero(libro.genero),
-                      style: const TextStyle(fontSize: 17),
-                    ),
-                    const SizedBox(width: AppSpacing.xs),
-                    Expanded(
-                      child: Text(
-                        libro.genero,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: AppTextStyles.caption.copyWith(
-                          color: AppColors.primary,
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-
-                const SizedBox(height: AppSpacing.sm),
-
-                Wrap(
-                  spacing: AppSpacing.xs,
-                  runSpacing: AppSpacing.xs,
-                  children: [
-                    // "Leído por ti" se muestra sobre la portada (badge)
-                    if (libro.esReciente)
                       const ClubChip(
-                        label: 'Nuevo',
-                        icon: Icons.auto_awesome_rounded,
-                        variant: ClubChipVariant.primary,
+                        label: 'Coincidencia del club',
+                        icon: Icons.local_fire_department_rounded,
+                        variant: ClubChipVariant.danger,
                       ),
-                    ClubChip(
-                      label: '${libro.total} interesadas',
-                      icon: Icons.people_outline_rounded,
-                      variant: ClubChipVariant.info,
-                    ),
-
-                    if (libro.totalFinalizados > 0)
-                      ClubChip(
-                        label: '${libro.totalFinalizados} leídos',
-                        icon: Icons.check_circle_outline_rounded,
-                        variant: ClubChipVariant.success,
-                      ),
-
-                    if (libro.mediaValoracion > 0)
-                      ClubChip(
-                        label: libro.mediaValoracion.toStringAsFixed(1),
-                        icon: Icons.star_rounded,
-                        variant: ClubChipVariant.warning,
-                      ),
+                    ],
                   ],
                 ),
-
-                if (libro.registros.isNotEmpty) ...[
-                  const SizedBox(height: AppSpacing.sm),
-
-                  Text(
-                    libro.registros.map((e) => e.usuario).join(' · '),
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                    style: AppTextStyles.caption,
-                  ),
-                ],
-
-                if (libro.total >= 3) ...[
-                  const SizedBox(height: AppSpacing.sm),
-
-                  const ClubChip(
-                    label: 'Coincidencia del club',
-                    icon: Icons.local_fire_department_rounded,
-                    variant: ClubChipVariant.danger,
-                  ),
-                ],
-              ],
-            ),
-          ),
-        ],
-      ),     // Row
-    ),       // ClubCard
-  ),         // Dismissible
-);           // Padding
+              ),
+            ],
+          ), // Row
+        ), // ClubCard
+      ), // Dismissible
+    ); // Padding
   }
 
   String get _labelOrden {
@@ -864,7 +873,7 @@ class _LibrosPageState extends State<LibrosPage> with WidgetsBindingObserver {
                         context: sheetContext,
                         orden: OrdenLibros.populares,
                         titulo: 'Más populares',
-                        subtitulo: 'Los que interesan a más lectoras',
+                        subtitulo: 'Los que interesan a más lectores',
                         icono: Icons.local_fire_department_outlined,
                       ),
 
@@ -1035,7 +1044,7 @@ class _LibrosPageState extends State<LibrosPage> with WidgetsBindingObserver {
       estado: 'FINALIZADO',
       valoracion: finalizado.valoracion,
       yaLoTengo: false,
-      goodreads: '',
+      goodreads: finalizado.goodreads,
       coverUrl: finalizado.coverUrl,
       fechaAlta: finalizado.fechaAlta,
       startedAt: null,
@@ -1365,7 +1374,7 @@ class _LibrosPageState extends State<LibrosPage> with WidgetsBindingObserver {
 
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('No se ha podido identificar a la usuaria.'),
+          content: Text('No se ha podido identificar al usuario.'),
         ),
       );
       return;
@@ -1421,8 +1430,9 @@ class _LibrosPageState extends State<LibrosPage> with WidgetsBindingObserver {
   Future<void> _navegarAlDetalle(LibroAgrupado libro) async {
     final heroTag =
         'book-cover-${libro.bookId.isNotEmpty ? libro.bookId : libro.libro.hashCode}';
-    final scrollOffset =
-        _scrollController.hasClients ? _scrollController.offset : 0.0;
+    final scrollOffset = _scrollController.hasClients
+        ? _scrollController.offset
+        : 0.0;
 
     await Navigator.push<bool>(
       context,
@@ -1491,7 +1501,11 @@ class _LibrosPageState extends State<LibrosPage> with WidgetsBindingObserver {
     if (ok) HapticFeedback.mediumImpact();
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text(ok ? '📖 ¡Empezando «${libro.libro}»!' : 'No se ha podido iniciar la lectura'),
+        content: Text(
+          ok
+              ? '📖 ¡Empezando «${libro.libro}»!'
+              : 'No se ha podido iniciar la lectura',
+        ),
         behavior: SnackBarBehavior.floating,
       ),
     );
@@ -1515,7 +1529,9 @@ class _LibrosPageState extends State<LibrosPage> with WidgetsBindingObserver {
     if (ok) HapticFeedback.mediumImpact();
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text(ok ? '📖 ¡Lectura reanudada!' : 'No se ha podido reanudar'),
+        content: Text(
+          ok ? '📖 ¡Lectura reanudada!' : 'No se ha podido reanudar',
+        ),
         behavior: SnackBarBehavior.floating,
       ),
     );
@@ -1581,7 +1597,9 @@ class _LibrosPageState extends State<LibrosPage> with WidgetsBindingObserver {
     if (ok) HapticFeedback.mediumImpact();
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text(ok ? '✅ ¡«${libro.libro}» finalizado!' : 'No se ha podido finalizar'),
+        content: Text(
+          ok ? '✅ ¡«${libro.libro}» finalizado!' : 'No se ha podido finalizar',
+        ),
         behavior: SnackBarBehavior.floating,
       ),
     );
@@ -1605,7 +1623,11 @@ class _LibrosPageState extends State<LibrosPage> with WidgetsBindingObserver {
     if (ok) HapticFeedback.mediumImpact();
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text(ok ? '🔄 ¡Empezando relectura!' : 'No se ha podido iniciar la relectura'),
+        content: Text(
+          ok
+              ? '🔄 ¡Empezando relectura!'
+              : 'No se ha podido iniciar la relectura',
+        ),
         behavior: SnackBarBehavior.floating,
       ),
     );
@@ -1629,9 +1651,7 @@ class _LibrosPageState extends State<LibrosPage> with WidgetsBindingObserver {
             child: const Text('Cancelar'),
           ),
           FilledButton(
-            style: FilledButton.styleFrom(
-              backgroundColor: AppColors.danger,
-            ),
+            style: FilledButton.styleFrom(backgroundColor: AppColors.danger),
             onPressed: () => Navigator.pop(ctx, true),
             child: const Text('Quitar'),
           ),

@@ -248,7 +248,7 @@ class _ClubChallengePageState extends State<ClubChallengePage> {
                 ),
                 const SizedBox(height: AppSpacing.xs),
                 Text(
-                  'Progreso de cada lectora en su reto $year',
+                  'Progreso de cada miembro en su reto $year',
                   style: AppTextStyles.bodySecondary,
                 ),
                 const SizedBox(height: AppSpacing.md),

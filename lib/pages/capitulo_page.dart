@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:club_lectura_app/models/comentarios_capitulo.dart';
 import 'package:club_lectura_app/models/comentario_lectura.dart';
 import 'package:club_lectura_app/services/usuario_service.dart';
+import 'package:club_lectura_app/services/auth_session_service.dart';
 import 'package:club_lectura_app/services/cursor_pagination_controller.dart';
 import 'package:club_lectura_app/services/chapter_initialization.dart';
 import 'package:club_lectura_app/services/conversation_scroll_policy.dart';
@@ -126,7 +127,8 @@ class _CapituloPageState extends State<CapituloPage> {
   }
 
   String? get _claveBorrador {
-    final nombreUsuario = usuario?.trim() ?? '';
+    final nombreUsuario =
+        AuthSessionService.instance.user?.id.trim() ?? usuario?.trim() ?? '';
 
     if (nombreUsuario.isEmpty) return null;
 
@@ -196,7 +198,7 @@ class _CapituloPageState extends State<CapituloPage> {
     if (usuario == null || usuario!.trim().isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('No se ha podido identificar a la usuaria.'),
+          content: Text('No se ha podido identificar al usuario.'),
         ),
       );
       return;

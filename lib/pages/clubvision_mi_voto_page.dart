@@ -90,7 +90,8 @@ class _ClubvisionMiVotoPageState extends State<ClubvisionMiVotoPage> {
                   icon: Icons.ballot_outlined,
                   color: AppColors.primary,
                   title: 'Tu clasificación',
-                  subtitle: 'Así repartiste tus puntos entre las candidatas',
+                  subtitle:
+                      'Así repartiste tus puntos entre los libros candidatos',
                 ),
 
                 const SizedBox(height: AppSpacing.md),
@@ -216,7 +217,7 @@ class _CabeceraMiVoto extends StatelessWidget {
 
           Text(
             '${voto.votosRecibidos} de '
-            '${voto.totalUsuarios} lectoras ya han votado',
+            '${voto.totalUsuarios} miembros ya han votado',
             textAlign: TextAlign.center,
             style: AppTextStyles.bodySecondary.copyWith(height: 1.4),
           ),

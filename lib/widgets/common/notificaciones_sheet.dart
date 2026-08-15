@@ -1,9 +1,8 @@
-import 'dart:async';
-
 import 'package:flutter/material.dart';
 
 import '../../models/notificacion.dart';
 import '../../services/api_service.dart';
+import '../../services/api_exception.dart';
 import '../../services/notificaciones_service.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_radius.dart';
@@ -52,6 +51,7 @@ class _NotificacionesSheetState extends State<_NotificacionesSheet> {
   List<Notificacion>? _notifs;
   bool _loading = true;
   bool _marcandoTodas = false;
+  final Set<String> _marcando = {};
 
   @override
   void initState() {
@@ -78,28 +78,58 @@ class _NotificacionesSheetState extends State<_NotificacionesSheet> {
 
   Future<void> _marcarTodas() async {
     setState(() => _marcandoTodas = true);
-    // Usar el servicio para que todos los badges se actualicen
-    await NotificacionesService.instance.marcarTodas();
-    if (!mounted) return;
-    setState(() {
-      _marcandoTodas = false;
-      _notifs = _notifs?.map((n) => n.copyWith(leida: true)).toList();
-    });
+    try {
+      await NotificacionesService.instance.marcarTodas();
+      if (!mounted) return;
+      setState(() {
+        _notifs = _notifs?.map((n) => n.copyWith(leida: true)).toList();
+      });
+    } catch (error) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              error is ApiException
+                  ? error.message
+                  : 'No se pudieron marcar las notificaciones',
+            ),
+          ),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _marcandoTodas = false);
+    }
   }
 
-  void _tocar(Notificacion n) {
-    // Marcar como leída en el servicio (actualiza todos los badges)
-    if (!n.leida) {
-      unawaited(NotificacionesService.instance.marcarLeida(n.id, tipo: n.tipo));
-      // Actualizar la lista local para que el punto desaparezca
-      setState(() {
-        _notifs = _notifs
-            ?.map((x) => x.id == n.id ? x.copyWith(leida: true) : x)
-            .toList();
-      });
+  Future<void> _tocar(Notificacion n) async {
+    if (_marcando.contains(n.id)) return;
+    _marcando.add(n.id);
+    try {
+      if (!n.leida) {
+        await NotificacionesService.instance.marcarLeida(n.id, tipo: n.tipo);
+        if (!mounted) return;
+        setState(() {
+          _notifs = _notifs
+              ?.map((x) => x.id == n.id ? x.copyWith(leida: true) : x)
+              .toList();
+        });
+      }
+      if (mounted) Navigator.pop(context, n);
+    } catch (error) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              error is ApiException
+                  ? error.message
+                  : 'No se pudo abrir la notificación',
+            ),
+          ),
+        );
+      }
+    } finally {
+      _marcando.remove(n.id);
     }
-    // Cerrar el sheet y devolver la notificación al caller para que navegue
-    Navigator.pop(context, n);
   }
 
   int get _noLeidas => _notifs?.where((n) => !n.leida).length ?? 0;
@@ -112,110 +142,112 @@ class _NotificacionesSheetState extends State<_NotificacionesSheet> {
       maxChildSize: 0.92,
       expand: false,
       builder: (_, scrollController) => ClipRRect(
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(AppRadius.xl)),
+        borderRadius: const BorderRadius.vertical(
+          top: Radius.circular(AppRadius.xl),
+        ),
         child: ColoredBox(
           color: Theme.of(context).colorScheme.surface,
           child: Column(
             children: [
-          // ── Handle ────────────────────────────────────────────────────────
-          Padding(
-            padding: const EdgeInsets.symmetric(vertical: 12),
-            child: Container(
-              width: 40,
-              height: 4,
-              decoration: BoxDecoration(
-                color: AppColors.border,
-                borderRadius: BorderRadius.circular(AppRadius.pill),
-              ),
-            ),
-          ),
-
-          // ── Cabecera ──────────────────────────────────────────────────────
-          Padding(
-            padding: const EdgeInsets.fromLTRB(
-              AppSpacing.lg,
-              0,
-              AppSpacing.md,
-              AppSpacing.sm,
-            ),
-            child: Row(
-              children: [
-                Expanded(
-                  child: Row(
-                    children: [
-                      Flexible(
-                        child: Text(
-                          widget.titulo,
-                          style: AppTextStyles.section,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
-                      if (_noLeidas > 0) ...[
-                        const SizedBox(width: AppSpacing.sm),
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 8,
-                            vertical: 2,
-                          ),
-                          decoration: BoxDecoration(
-                            color: AppColors.primary,
-                            borderRadius: BorderRadius.circular(AppRadius.pill),
-                          ),
-                          child: Text(
-                            '$_noLeidas',
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 12,
-                              fontWeight: FontWeight.w700,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ],
+              // ── Handle ────────────────────────────────────────────────────────
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 12),
+                child: Container(
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: AppColors.border,
+                    borderRadius: BorderRadius.circular(AppRadius.pill),
                   ),
                 ),
-                if (_noLeidas > 0 && !_loading)
-                  _marcandoTodas
-                      ? const SizedBox(
-                          width: 16,
-                          height: 16,
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        )
-                      : TextButton(
-                          onPressed: _marcarTodas,
-                          child: const Text('Marcar leídas'),
-                        ),
-              ],
-            ),
-          ),
+              ),
 
-          const Divider(height: 1),
+              // ── Cabecera ──────────────────────────────────────────────────────
+              Padding(
+                padding: const EdgeInsets.fromLTRB(
+                  AppSpacing.lg,
+                  0,
+                  AppSpacing.md,
+                  AppSpacing.sm,
+                ),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Row(
+                        children: [
+                          Flexible(
+                            child: Text(
+                              widget.titulo,
+                              style: AppTextStyles.section,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                          if (_noLeidas > 0) ...[
+                            const SizedBox(width: AppSpacing.sm),
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 8,
+                                vertical: 2,
+                              ),
+                              decoration: BoxDecoration(
+                                color: AppColors.primary,
+                                borderRadius: BorderRadius.circular(
+                                  AppRadius.pill,
+                                ),
+                              ),
+                              child: Text(
+                                '$_noLeidas',
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ],
+                      ),
+                    ),
+                    if (_noLeidas > 0 && !_loading)
+                      _marcandoTodas
+                          ? const SizedBox(
+                              width: 16,
+                              height: 16,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            )
+                          : TextButton(
+                              onPressed: _marcarTodas,
+                              child: const Text('Marcar leídas'),
+                            ),
+                  ],
+                ),
+              ),
 
-          // ── Cuerpo ────────────────────────────────────────────────────────
-          Expanded(
-            child: _loading
-                ? const Center(child: CircularProgressIndicator())
-                : (_notifs == null || _notifs!.isEmpty)
-                ? const _EmptyNotifs()
-                : ListView.separated(
-                    controller: scrollController,
-                    itemCount: _notifs!.length,
-                    separatorBuilder:
-                        (context, i) => const Divider(
+              const Divider(height: 1),
+
+              // ── Cuerpo ────────────────────────────────────────────────────────
+              Expanded(
+                child: _loading
+                    ? const Center(child: CircularProgressIndicator())
+                    : (_notifs == null || _notifs!.isEmpty)
+                    ? const _EmptyNotifs()
+                    : ListView.separated(
+                        controller: scrollController,
+                        itemCount: _notifs!.length,
+                        separatorBuilder: (context, i) => const Divider(
                           height: 1,
                           indent: AppSpacing.lg + 24 + AppSpacing.md,
                         ),
-                    itemBuilder:
-                        (_, i) => _NotifTile(
+                        itemBuilder: (_, i) => _NotifTile(
                           notif: _notifs![i],
                           onTap: () => _tocar(_notifs![i]),
                         ),
-                  ),
-          ),
-        ],
-      ),    // Column
-        ),  // ColoredBox
-      ),    // ClipRRect
+                      ),
+              ),
+            ],
+          ), // Column
+        ), // ColoredBox
+      ), // ClipRRect
     );
   }
 }
@@ -235,7 +267,9 @@ class _NotifTile extends StatelessWidget {
     return InkWell(
       onTap: onTap,
       child: ColoredBox(
-        color: leida ? Colors.transparent : AppColors.primary.withValues(alpha: .04),
+        color: leida
+            ? Colors.transparent
+            : AppColors.primary.withValues(alpha: .04),
         child: Padding(
           padding: const EdgeInsets.symmetric(
             horizontal: AppSpacing.lg,
@@ -269,12 +303,12 @@ class _NotifTile extends StatelessWidget {
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                             style: AppTextStyles.subtitle.copyWith(
-                              fontWeight:
-                                  leida ? FontWeight.w500 : FontWeight.w700,
-                              color:
-                                  leida
-                                      ? AppColors.textSecondary
-                                      : AppColors.textPrimary,
+                              fontWeight: leida
+                                  ? FontWeight.w500
+                                  : FontWeight.w700,
+                              color: leida
+                                  ? AppColors.textSecondary
+                                  : AppColors.textPrimary,
                             ),
                           ),
                         ),
@@ -298,7 +332,9 @@ class _NotifTile extends StatelessWidget {
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                       style: AppTextStyles.bodySecondary.copyWith(
-                        color: leida ? AppColors.textMuted : AppColors.textSecondary,
+                        color: leida
+                            ? AppColors.textMuted
+                            : AppColors.textSecondary,
                         height: 1.4,
                       ),
                     ),

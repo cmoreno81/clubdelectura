@@ -5,6 +5,7 @@ import '../navigation/app_page_route.dart';
 import '../navigation/book_detail_navigation.dart';
 import '../services/api_exception.dart';
 import '../services/api_service.dart';
+import '../services/notificaciones_service.dart';
 import '../services/club_context_controller.dart';
 import '../services/club_service.dart';
 import '../services/cursor_pagination_controller.dart';
@@ -49,8 +50,12 @@ class _NotificacionesPageState extends State<NotificacionesPage> {
   }
 
   Future<void> _marcarTodas() async {
-    await ApiService().marcarTodasNotificacionesLeidas();
-    await _pagination.loadFirst();
+    try {
+      await NotificacionesService.instance.marcarTodas();
+      await _pagination.loadFirst();
+    } catch (error) {
+      _mostrarError(error, 'No se pudieron marcar las notificaciones');
+    }
   }
 
   Future<void> _eliminarTodas() async {
@@ -73,14 +78,23 @@ class _NotificacionesPageState extends State<NotificacionesPage> {
       ),
     );
     if (confirmar != true || !mounted) return;
-    await ApiService().eliminarTodasNotificaciones();
-    if (mounted) await _pagination.loadFirst();
+    try {
+      await NotificacionesService.instance.eliminarTodas();
+      _eliminadas.clear();
+      if (mounted) await _pagination.loadFirst();
+    } catch (error) {
+      _mostrarError(error, 'No se pudieron eliminar las notificaciones');
+    }
   }
 
-  Future<void> _marcarLeida(String id) async {
-    await ApiService().marcarNotificacionLeida(id);
+  Future<void> _marcarLeida(Notificacion notification) async {
+    await NotificacionesService.instance.marcarLeida(
+      notification.id,
+      tipo: notification.tipo,
+      yaLeida: notification.leida,
+    );
     _pagination.replace(
-      id,
+      notification.id,
       (notification) => notification.copyWith(leida: true),
     );
   }
@@ -94,7 +108,7 @@ class _NotificacionesPageState extends State<NotificacionesPage> {
 
   Future<bool> _eliminar(Notificacion notificacion) async {
     try {
-      await ApiService().eliminarNotificacion(notificacion.id);
+      await NotificacionesService.instance.eliminar(notificacion);
       return true;
     } catch (error) {
       if (mounted) {
@@ -110,6 +124,13 @@ class _NotificacionesPageState extends State<NotificacionesPage> {
       }
       return false;
     }
+  }
+
+  void _mostrarError(Object error, String fallback) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(error is ApiException ? error.message : fallback)),
+    );
   }
 
   @override
@@ -229,7 +250,7 @@ class _NotificacionesPageState extends State<NotificacionesPage> {
                         if (_abriendo.contains(n.id)) return;
                         setState(() => _abriendo.add(n.id));
                         try {
-                          if (!n.leida) await _marcarLeida(n.id);
+                          if (!n.leida) await _marcarLeida(n);
                           if (mounted) await _navegarA(n);
                         } finally {
                           if (mounted) setState(() => _abriendo.remove(n.id));

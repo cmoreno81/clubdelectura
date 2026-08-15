@@ -12,7 +12,16 @@ import '../widgets/error_view.dart';
 import 'package:club_lectura_app/widgets/common/club_shimmer.dart';
 
 class HiddenSeriesSection extends StatefulWidget {
-  const HiddenSeriesSection({super.key});
+  const HiddenSeriesSection({
+    super.key,
+    this.loadHiddenSeries,
+    this.restoreSeries,
+    this.onSeriesRestored,
+  });
+
+  final Future<List<SagaOculta>> Function()? loadHiddenSeries;
+  final Future<void> Function(String sagaId)? restoreSeries;
+  final VoidCallback? onSeriesRestored;
 
   @override
   State<HiddenSeriesSection> createState() => _HiddenSeriesSectionState();
@@ -25,11 +34,14 @@ class _HiddenSeriesSectionState extends State<HiddenSeriesSection> {
   @override
   void initState() {
     super.initState();
-    _future = ApiService().getSagasOcultas();
+    _future = _load();
   }
 
+  Future<List<SagaOculta>> _load() =>
+      widget.loadHiddenSeries?.call() ?? ApiService().getSagasOcultas();
+
   Future<void> _reload() async {
-    final next = ApiService().getSagasOcultas();
+    final next = _load();
     if (!mounted) return;
     setState(() {
       _future = next;
@@ -41,10 +53,20 @@ class _HiddenSeriesSectionState extends State<HiddenSeriesSection> {
     if (_restoringIds.contains(saga.id)) return;
     setState(() => _restoringIds.add(saga.id));
     try {
-      await ApiService().mostrarSaga(sagaId: saga.id);
+      await (widget.restoreSeries?.call(saga.id) ??
+          ApiService().mostrarSaga(sagaId: saga.id));
       if (!mounted) return;
-      SeriesRefreshNotifier.instance.invalidate();
-      await _reload();
+      widget.onSeriesRestored?.call();
+      if (widget.onSeriesRestored == null) {
+        SeriesRefreshNotifier.instance.invalidate();
+      }
+      final current = await _future;
+      if (!mounted) return;
+      setState(() {
+        _future = Future.value(
+          current.where((item) => item.id != saga.id).toList(growable: false),
+        );
+      });
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('${saga.nombre} vuelve a estar visible.')),
@@ -65,7 +87,7 @@ class _HiddenSeriesSectionState extends State<HiddenSeriesSection> {
       future: _future,
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
-          return const CardListSkeleton();
+          return const SizedBox(height: 360, child: CardListSkeleton(count: 3));
         }
         if (snapshot.hasError) return ErrorView(onRetry: _reload);
 
@@ -84,7 +106,7 @@ class _HiddenSeriesSectionState extends State<HiddenSeriesSection> {
             const Padding(
               padding: EdgeInsets.only(bottom: AppSpacing.md),
               child: Text(
-                'Puedes volver a mostrar una saga cuando quieras. Tus libros nunca se eliminan al ocultarla.',
+                'Ocultar una saga no elimina sus libros ni tu progreso.',
                 style: TextStyle(color: AppColors.textSecondary),
               ),
             ),
@@ -94,36 +116,88 @@ class _HiddenSeriesSectionState extends State<HiddenSeriesSection> {
                 child: ClubCard(
                   elevated: false,
                   padding: EdgeInsets.zero,
-                  child: ListTile(
-                    leading: const CircleAvatar(
-                      backgroundColor: AppColors.primaryLight,
-                      child: Icon(
-                        Icons.visibility_off_outlined,
-                        color: AppColors.primary,
-                      ),
-                    ),
-                    title: Text(
-                      saga.nombre.isEmpty ? 'Saga sin nombre' : saga.nombre,
-                      style: const TextStyle(fontWeight: FontWeight.w800),
-                    ),
-                    subtitle: const Text('Oculta en tu perfil'),
-                    trailing: _restoringIds.contains(saga.id)
-                        ? const SizedBox(
-                            width: 22,
-                            height: 22,
-                            child: CircularProgressIndicator(strokeWidth: 2),
-                          )
-                        : TextButton.icon(
-                            onPressed: () => _restore(saga),
-                            icon: const Icon(Icons.visibility_outlined),
-                            label: const Text('Mostrar'),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      ListTile(
+                        leading: const CircleAvatar(
+                          backgroundColor: AppColors.primaryLight,
+                          child: Icon(
+                            Icons.visibility_off_outlined,
+                            color: AppColors.primary,
                           ),
+                        ),
+                        title: Text(
+                          saga.nombre.isEmpty ? 'Saga sin nombre' : saga.nombre,
+                          style: const TextStyle(fontWeight: FontWeight.w800),
+                        ),
+                        subtitle: const Text('Oculta en tu perfil'),
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.fromLTRB(
+                          AppSpacing.md,
+                          0,
+                          AppSpacing.md,
+                          AppSpacing.sm,
+                        ),
+                        child: Align(
+                          alignment: Alignment.centerRight,
+                          child: _restoringIds.contains(saga.id)
+                              ? const SizedBox(
+                                  width: 22,
+                                  height: 22,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                  ),
+                                )
+                              : TextButton.icon(
+                                  onPressed: () => _restore(saga),
+                                  icon: const Icon(Icons.visibility_outlined),
+                                  label: const Text('Volver a mostrar'),
+                                ),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ),
           ],
         );
       },
+    );
+  }
+}
+
+class HiddenSeriesPage extends StatelessWidget {
+  const HiddenSeriesPage({
+    super.key,
+    this.loadHiddenSeries,
+    this.restoreSeries,
+    this.onSeriesRestored,
+    this.contentBuilder,
+  });
+
+  final Future<List<SagaOculta>> Function()? loadHiddenSeries;
+  final Future<void> Function(String sagaId)? restoreSeries;
+  final VoidCallback? onSeriesRestored;
+  final Widget Function()? contentBuilder;
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: const Text('Sagas ocultas')),
+      body: SafeArea(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(AppSpacing.md),
+          child:
+              contentBuilder?.call() ??
+              HiddenSeriesSection(
+                loadHiddenSeries: loadHiddenSeries,
+                restoreSeries: restoreSeries,
+                onSeriesRestored: onSeriesRestored,
+              ),
+        ),
+      ),
     );
   }
 }

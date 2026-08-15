@@ -15,6 +15,7 @@ class LibroHeader extends StatelessWidget {
   final LibroAgrupado libro;
   final Libro? referencia;
   final VoidCallback? onAbrirGoodreads;
+
   /// Tag Hero de la portada; debe coincidir con el usado en la lista de origen.
   final String? heroTag;
 
@@ -28,7 +29,7 @@ class LibroHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final tieneGoodreads = referencia?.goodreads.trim().isNotEmpty ?? false;
+    final tieneGoodreads = libro.goodreads.isNotEmpty;
 
     return Column(
       children: [
@@ -113,7 +114,7 @@ class LibroHeader extends StatelessWidget {
                     child: ClubMetric(
                       icon: Icons.people_outline_rounded,
                       value: '${libro.total}',
-                      label: 'interesadas',
+                      label: 'lectores interesados',
                       variant: ClubMetricVariant.info,
                       compact: true,
                     ),

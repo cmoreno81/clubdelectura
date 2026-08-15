@@ -30,11 +30,11 @@ const List<_HelpSection> _secciones = [
     titulo: 'Modos de lectura',
     items: [
       _HelpItem(
-        pregunta: '¿Qué modos de lectura tiene ClubReads?',
+        pregunta: '¿Qué modos de lectura tiene ClubReaders?',
         respuesta:
-            'ClubReads tiene dos modos:\n\n'
+            'ClubReaders puede usarse de dos formas:\n\n'
             '📖 Espacio lector personal — para quien quiere leer en solitario. '
-            'Tienes tu biblioteca privada, racha lectora, mapa de calor anual '
+            'Tienes tu biblioteca privada, racha de lectura, mapa de calor anual '
             'y Wrapped (resumen del año). No necesitas unirte a ningún club.\n\n'
             '👥 Club lector — para leer en compañía. Incluye lecturas grupales, '
             'Clubvisión (votaciones), comentarios por capítulo, rankings, '
@@ -65,9 +65,9 @@ const List<_HelpSection> _secciones = [
             '• Logros desbloqueados y progreso hacia los siguientes\n'
             '• Check-in lector diario con racha de días\n'
             '• Mapa de calor anual con tu actividad\n'
-            '• Acceso a tu Wrapped del año\n\n'
-            'En modo club, estas mismas funcionalidades están en tu Perfil → '
-            'sección "Seguimiento lector".',
+            '• Acceso a tu Perfil lector\n\n'
+            'El Perfil mantiene la misma estructura tengas o no clubes. En Resumen '
+            'encontrarás el seguimiento de lectura; Wrapped está en Favoritos.',
       ),
     ],
   ),
@@ -79,7 +79,7 @@ const List<_HelpSection> _secciones = [
         pregunta: '¿Cómo creo un club?',
         respuesta:
             'En "Mis clubes" pulsa el botón "Crear club". Escribe un nombre '
-            'y una descripción. Al crearlo serás la administradora y podrás '
+            'y una descripción. Al crearlo tendrás permisos de administración y podrás '
             'invitar a más personas con el código que te genera la app.',
       ),
       _HelpItem(
@@ -102,7 +102,7 @@ const List<_HelpSection> _secciones = [
             'En "Mis clubes" pulsa el icono de ajustes ⚙️ del club. '
             'Desde ahí puedes editar el nombre y la descripción, y cambiar la foto '
             'del club desde la galería o con una URL. '
-            'Solo la propietaria y las administradoras pueden editar el club.',
+            'Solo quien creó el club y sus administradores pueden editarlo.',
       ),
       _HelpItem(
         pregunta: '¿Cómo veo quién está en el club?',
@@ -116,12 +116,12 @@ const List<_HelpSection> _secciones = [
         respuesta:
             'Sí, desde los ajustes del club verás la opción "Salir del club". '
             'Perderás acceso a las lecturas y conversaciones de ese club. '
-            'La propietaria no puede salir — tendría que transferir la propiedad primero.',
+            'Quien tenga la propiedad no puede salir: antes debe transferirla.',
       ),
       _HelpItem(
-        pregunta: '¿Qué diferencia hay entre administradora y miembro?',
+        pregunta: '¿Qué diferencia hay entre administrador y miembro?',
         respuesta:
-            'La administradora puede abrir y cerrar votaciones de Clubvisión, '
+            'Quien administra el club puede abrir y cerrar votaciones de Clubvisión, '
             'gestionar la lectura activa del club y obtener el código de invitación. '
             'Los miembros pueden votar, comentar y proponer libros según las '
             'reglas de cada sección.',
@@ -135,11 +135,12 @@ const List<_HelpSection> _secciones = [
       _HelpItem(
         pregunta: '¿Cómo añado un libro?',
         respuesta:
-            'Hay dos formas. La primera: en la pestaña "Libros" pulsa el botón + '
-            'y rellena los datos manualmente (título, autor, género, saga, formato '
-            'y prioridad). La segunda: explora la biblioteca global desde "Mi universo '
-            'lector" → "Explorar la biblioteca", busca el libro y añádelo desde ahí '
-            'sin tener que introducir los datos a mano.',
+            'Puedes explorar el catálogo compartido desde "Mi universo lector" → '
+            '"Explorar la biblioteca" y añadir una ficha existente a tu biblioteca personal.\n\n'
+            'Para crear una ficha manualmente, pulsa "Añadir libro" en "Últimas '
+            'incorporaciones" del dashboard global. Si estás dentro de un club, '
+            'también puedes usar el botón + de la pestaña "Libros"; ambos accesos '
+            'abren el mismo formulario.',
       ),
       _HelpItem(
         pregunta: '¿Qué significa "autoconclusivo"?',
@@ -164,9 +165,19 @@ const List<_HelpSection> _secciones = [
             'Puedes cambiar el estado en cualquier momento desde la ficha del libro.',
       ),
       _HelpItem(
+        pregunta: '¿Cómo funcionan las relecturas y el progreso?',
+        respuesta:
+            'Desde la ficha de un libro terminado puedes iniciar “Otra vuelta”. '
+            'La relectura tiene sus propias fechas y progreso, sin sobrescribir la '
+            'lectura original. Puedes introducir o corregir la página actual, incluso '
+            'a una cifra menor. Al terminar, la relectura aparece como un registro '
+            'propio en Historial, en el calendario mensual y entre las opciones de '
+            'Libro del año del mes correspondiente.',
+      ),
+      _HelpItem(
         pregunta: '¿Qué es la biblioteca global?',
         respuesta:
-            'Es el catálogo compartido de todos los libros que existen en ClubReads. '
+            'Es el catálogo compartido de todos los libros que existen en ClubReaders. '
             'Puedes explorarla desde "Mi universo lector" usando el icono de búsqueda. '
             'Desde ahí puedes añadir cualquier libro directamente a tu biblioteca '
             'personal sin introducir los datos manualmente.',
@@ -176,13 +187,15 @@ const List<_HelpSection> _secciones = [
         respuesta:
             'Desde la ficha de cualquier libro de tu biblioteca verás un icono '
             'de corazón ♥. Púlsalo para marcarlo como favorito.\n\n'
-            'Puedes tener hasta 5 libros favoritos. La app te avisará cuando '
-            'llegues al límite. Tus favoritos aparecen en la tarjeta '
-            '"Favoritos del club" del dashboard, donde tus compañeras pueden '
-            'ver qué libros son tus preferidos.',
+            'Puedes tener hasta 5. En tu Perfil → Favoritos también puedes añadirlos '
+            'desde los huecos disponibles. Al pulsar una portada puedes quitarla o '
+            'sustituirla conservando su posición. En perfiles ajenos solo se consultan.\n\n'
+            'Si perteneces a un club, la tarjeta "Favoritos del club" permite ver '
+            'los favoritos compartidos por sus miembros.',
       ),
       _HelpItem(
-        pregunta: '¿Puedo ir al detalle de un libro que acabo de añadir desde el catálogo?',
+        pregunta:
+            '¿Puedo ir al detalle de un libro que acabo de añadir desde el catálogo?',
         respuesta:
             'Sí. Justo después de añadir un libro desde la biblioteca global, '
             'aparece un botón "Ver en mi biblioteca" en la pantalla de confirmación. '
@@ -201,7 +214,7 @@ const List<_HelpSection> _secciones = [
             'Ve a Perfil → Más y elige "Importar desde Bookmory" o '
             '"Importar desde Goodreads". Para Bookmory selecciona el archivo '
             '.xlsx exportado directamente por la aplicación; para Goodreads, '
-            'su archivo .csv. ClubReads revisará el contenido antes de guardar '
+            'su archivo .csv. ClubReaders revisará el contenido antes de guardar '
             'nada y te permitirá confirmar los libros seleccionados.',
       ),
       _HelpItem(
@@ -209,7 +222,7 @@ const List<_HelpSection> _secciones = [
         respuesta:
             'Solo se importan los libros terminados que tengan valoración. '
             'Los pendientes, los que estás leyendo y los terminados sin valorar '
-            'se omiten. Si falta la fecha de finalización, ClubReads asigna una '
+            'se omiten. Si falta la fecha de finalización, ClubReaders asigna una '
             'fecha segura para poder conservar el libro en tu historial.',
       ),
       _HelpItem(
@@ -217,14 +230,14 @@ const List<_HelpSection> _secciones = [
         respuesta:
             '"Nuevos" son libros que todavía no existen en el catálogo: se '
             'crearán y se añadirán a tu biblioteca. "Para añadir" ya existen '
-            'en ClubReads, pero no están en tu biblioteca: se reutilizará su '
+            'en ClubReaders, pero no están en tu biblioteca: se reutilizará su '
             'ficha. Ambos aparecen seleccionados automáticamente; puedes '
             'desmarcar cualquier libro que no quieras importar.',
       ),
       _HelpItem(
         pregunta: '¿Qué significa "Protegidos"?',
         respuesta:
-            'Son libros que ya tienes en ClubReads. No tienes que hacer nada: '
+            'Son libros que ya tienes en ClubReaders. No tienes que hacer nada: '
             'la importación no sustituirá tus estados, fechas, valoraciones, '
             'reseñas, prioridades, formatos, sagas ni historial guardado. Por '
             'eso no se incluyen entre los libros seleccionados para importar.',
@@ -232,7 +245,7 @@ const List<_HelpSection> _secciones = [
       _HelpItem(
         pregunta: '¿Qué hago con los libros "Para revisar"?',
         respuesta:
-            'ClubReads ha encontrado varias coincidencias posibles y no puede '
+            'ClubReaders ha encontrado varias coincidencias posibles y no puede '
             'decidir con seguridad cuál es la correcta. Esos libros no se '
             'importan automáticamente. Termina primero la importación y después '
             'búscalos en la biblioteca global para añadir la ficha correcta. '
@@ -306,15 +319,15 @@ const List<_HelpSection> _secciones = [
             'Sí. En la card de cada saga verás el icono ⇅ si tienes al menos '
             '2 volúmenes. Al pulsarlo, los tomos se convierten en una lista '
             'arrastrable: arrastra y suelta para cambiar el orden visual. '
-            'Este orden es tuyo personal — no afecta a otras lectoras, '
+            'Este orden es personal: no afecta a otros lectores, '
             'ni a tus fechas ni valoraciones. Pulsa "Guardar orden" para '
             'confirmar o la X para cancelar sin cambios.',
       ),
       _HelpItem(
-        pregunta: '¿Y si un tomo no está en ClubReads o no quiero leerlo?',
+        pregunta: '¿Y si un tomo no está en ClubReaders o no quiero leerlo?',
         respuesta:
             'Desde el hueco correspondiente de la saga puedes marcarlo como '
-            '"Leído fuera de ClubReads" u "Omitido". Si más adelante añades '
+            '"Leído fuera de ClubReaders" u "Omitido". Si más adelante añades '
             'el volumen real con "Completar saga", esa marca se elimina '
             'automáticamente.',
       ),
@@ -331,10 +344,10 @@ const List<_HelpSection> _secciones = [
         respuesta:
             'Sí, desde la card de cada saga tienes dos opciones:\n\n'
             '👁️ Ocultar — la saga desaparece de tu lista pero puedes '
-            'recuperarla desde Perfil → Sagas ocultas. Útil si no quieres '
+            'recuperarla desde Perfil → Más → Sagas ocultas. Útil si no quieres '
             'verla pero podrías retomarla en el futuro.\n\n'
             '🗑️ Eliminar — la saga desaparece de tu lista de forma permanente '
-            'hasta que la recuperes desde Perfil → Sagas ocultas. '
+            'hasta que la recuperes desde Perfil → Más → Sagas ocultas. '
             'Importante: tus libros, lecturas, fechas, valoraciones y reseñas '
             'se conservan intactos en tu biblioteca. Solo desaparece '
             'la agrupación visual de la saga.',
@@ -350,31 +363,31 @@ const List<_HelpSection> _secciones = [
         respuesta:
             'Es el sistema de votación del club para elegir el próximo libro '
             'de lectura grupal. Funciona por ediciones mensuales: se abre una '
-            'votación, las miembros votan entre las candidatas y la ganadora '
+            'votación, los miembros votan entre los libros candidatos y el libro ganador '
             'se convierte en la siguiente lectura del club.',
       ),
       _HelpItem(
-        pregunta: '¿Cómo se eligen las candidatas?',
+        pregunta: '¿Cómo se eligen los libros candidatos?',
         respuesta:
-            'Las candidatas se generan automáticamente. Para que un libro '
-            'aparezca como candidata tiene que cumplir tres condiciones: '
+            'Los libros candidatos se generan automáticamente. Para que un libro '
+            'aparezca como candidato tiene que cumplir tres condiciones: '
             'que al menos 2 miembros del club lo tengan en su biblioteca personal, '
             'que no haya sido ya leído por el club, y que no haya ganado '
             'una edición anterior de Clubvisión.',
       ),
       _HelpItem(
-        pregunta: '¿Qué pasa si no hay candidatas?',
+        pregunta: '¿Qué pasa si no hay libros candidatos?',
         respuesta:
             'Si ningún libro cumple las condiciones, Clubvisión no se abre '
             'ese mes y verás un aviso en la pantalla del club explicando '
-            'el motivo. Para que haya candidatas, al menos dos miembros '
+            'el motivo. Para que haya libros candidatos, al menos dos miembros '
             'tienen que tener el mismo libro en "En mi estantería".',
       ),
       _HelpItem(
         pregunta: '¿Cómo voto?',
         respuesta:
             'Cuando la votación está abierta, entra en Clubvisión '
-            'y ordena las candidatas según tus preferencias arrastrándolas. '
+            'y ordena los libros candidatos según tus preferencias arrastrándolos. '
             'Tu voto se guarda al confirmar. Solo puedes votar una vez por edición.',
       ),
       _HelpItem(
@@ -388,9 +401,46 @@ const List<_HelpSection> _secciones = [
       _HelpItem(
         pregunta: '¿Quién abre y cierra la votación?',
         respuesta:
-            'Solo la administradora del club puede abrir y cerrar cada edición '
+            'Solo quien administra el club puede abrir y cerrar cada edición '
             'de Clubvisión. El resto de miembros solo pueden votar mientras '
             'la votación esté abierta.',
+      ),
+    ],
+  ),
+  _HelpSection(
+    icono: '🏆',
+    titulo: 'Libros del año',
+    items: [
+      _HelpItem(
+        pregunta: '¿En qué se diferencian los Libros del año?',
+        respuesta:
+            'Tu Libro del año personal es un cuadro privado construido con tus '
+            'lecturas mensuales. Las Elecciones de los miembros permiten consultar '
+            'esos cuadros personales dentro del club. El Libro del año del club es '
+            'una votación colectiva independiente y nunca modifica las elecciones personales.',
+      ),
+      _HelpItem(
+        pregunta: '¿Qué libros participan en la elección del club?',
+        respuesta:
+            'Solo las lecturas oficiales del club terminadas durante el año. '
+            'Quien administra revisa y congela las candidaturas antes de iniciar. '
+            'Las lecturas personales, abandonadas o todavía abiertas no participan.',
+      ),
+      _HelpItem(
+        pregunta: '¿Cómo funcionan las fases y los desempates?',
+        respuesta:
+            'Si hace falta, primero se celebra una clasificación. Después se abre '
+            'un cuadro con cuartos, semifinales y final según el número de libros. '
+            'Cada miembro puede votar una vez por duelo y cambiar su voto mientras '
+            'la ronda esté abierta. Un empate se resuelve mediante una votación específica; '
+            'nunca se elige un libro automáticamente.',
+      ),
+      _HelpItem(
+        pregunta: '¿Quién gestiona la elección?',
+        respuesta:
+            'Solo los roles de administración pueden iniciar la edición y abrir o '
+            'cerrar fases. Su voto vale exactamente lo mismo que el del resto. '
+            'Los miembros actuales pueden consultar también las ediciones anteriores.',
       ),
     ],
   ),
@@ -403,15 +453,16 @@ const List<_HelpSection> _secciones = [
         respuesta:
             'En la pestaña "Lecturas" encontrarás el libro actual del club '
             'dividido por capítulos. Pulsa en un capítulo para leer los '
-            'comentarios de las demás miembros y añadir el tuyo.',
+            'comentarios de otros miembros y añadir el tuyo.',
       ),
       _HelpItem(
         pregunta: '¿Cómo comento en un capítulo?',
         respuesta:
             'Entra en la lectura activa, selecciona el capítulo '
             'y pulsa el campo de comentario al final. '
-            'Puedes responder a comentarios de otras miembros '
-            'y reaccionar con emojis.',
+            'Puedes responder a comentarios de otros miembros '
+            'y reaccionar con emojis. También puedes guardar una cita o añadir '
+            'un comentario al actualizar tu progreso.',
       ),
       _HelpItem(
         pregunta: '¿Puedo reaccionar a las respuestas de un comentario?',
@@ -419,7 +470,8 @@ const List<_HelpSection> _secciones = [
             'Sí. Las respuestas tienen el mismo selector completo de reacciones '
             'que los comentarios principales: pulsa el botón de emoji en la '
             'respuesta para elegir tu reacción. También puedes cambiarla '
-            'o quitarla pulsando de nuevo.',
+            'o quitarla pulsando de nuevo. Pulsa el resumen de reacciones para '
+            'ver quién ha reaccionado con cada emoji.',
       ),
       _HelpItem(
         pregunta: '¿Qué son las citas?',
@@ -452,22 +504,22 @@ const List<_HelpSection> _secciones = [
             'desde tu perfil lector → sección Logros.',
       ),
       _HelpItem(
-        pregunta: '📚 Categoría Lectora — ¿cómo se desbloquea?',
+        pregunta: '📚 Categoría Lector — ¿cómo se desbloquea?',
         respuesta:
             'Estos logros se consiguen terminando libros:\n\n'
             '📖 Primer libro — completa 1 lectura\n'
-            '📚 Lectora en marcha — llega a 5 libros terminados\n'
-            '🔟 Lectora habitual — alcanza 10 libros finalizados\n'
-            '🌟 Voraz lectora (Raro) — 25 libros en tu historial\n'
+            '📚 Lector en marcha — llega a 5 libros terminados\n'
+            '🔟 Lector habitual — alcanza 10 libros finalizados\n'
+            '🌟 Lector voraz (Raro) — 25 libros en tu historial\n'
             '🏆 Biblióvora (Épico) — 50 libros completados\n'
-            '💯 Centenaria lectora (Legendario) — 100 libros. Una hazaña.',
+            '💯 Lector centenario (Legendario) — 100 libros. Una hazaña.',
       ),
       _HelpItem(
         pregunta: '📄 Categoría Páginas — ¿cómo se desbloquea?',
         respuesta:
             'Se calculan sumando las páginas de todos tus libros terminados:\n\n'
             '📄 Mil páginas — supera las 1.000 páginas leídas\n'
-            '📃 Lectora resistente (Raro) — 5.000 páginas\n'
+            '📃 Lector resistente (Raro) — 5.000 páginas\n'
             '📜 Maratoniana de páginas (Épico) — 10.000 páginas\n'
             '🗺️ Leyenda de las páginas (Legendario) — 50.000 páginas',
       ),
@@ -517,7 +569,7 @@ const List<_HelpSection> _secciones = [
       _HelpItem(
         pregunta: '🔥 Categoría Constancia — ¿cómo se desbloquea?',
         respuesta:
-            'Premian la intensidad lectora en períodos cortos:\n\n'
+            'Premian la intensidad de lectura en períodos cortos:\n\n'
             '🔥 Mes intenso (Raro) — 5 libros en un mismo mes\n'
             '⚡ Maratoniana (Épico) — 10 libros en un mes\n'
             '🗓️ Gran año lector (Raro) — 50 libros en un año\n'
@@ -526,11 +578,11 @@ const List<_HelpSection> _secciones = [
       _HelpItem(
         pregunta: '¿Qué es el Reto lector del club?',
         respuesta:
-            'En "El Club" → "Reto lector" cada lectora puede marcarse un '
+            'En "El Club" → "Reto lector" cada miembro puede marcarse un '
             'objetivo personal de libros para el año en curso. '
             'El progreso se actualiza automáticamente según vas finalizando libros.\n\n'
-            'Puedes ver el avance de todas las compañeras ordenado por porcentaje '
-            'de cumplimiento. Las que han superado su reto aparecen con 🏆.\n\n'
+            'Puedes ver el avance de todos los miembros ordenado por porcentaje '
+            'de cumplimiento. Quienes han superado su reto aparecen con 🏆.\n\n'
             'Además existe un reto colectivo: la suma de todos los objetivos '
             'individuales del club. Si entre todas lo superáis, '
             'se celebra con un logro especial.\n\n'
@@ -546,15 +598,15 @@ const List<_HelpSection> _secciones = [
       _HelpItem(
         pregunta: '¿Qué es el check-in lector diario?',
         respuesta:
-            'Es un botón para marcar que has leído hoy. Cada vez que lo pulsas, '
-            'se suma un día a tu racha lectora. Si olvidas hacerlo un día, '
-            'la racha se mantiene si el día anterior ya lo registraste.\n\n'
+            'Es el botón con el que confirmas expresamente que has leído hoy. '
+            'Abrir la aplicación, visitar el dashboard o actualizar una pantalla '
+            'no hace check-in ni aumenta la racha.\n\n'
             'Lo encontrarás en:\n'
             '• Modo personal → pestaña "Mi espacio"\n'
-            '• Cualquier modo → tu Perfil → sección "Seguimiento lector"',
+            '• Cualquier modo → tu Perfil → sección "Seguimiento de lectura"',
       ),
       _HelpItem(
-        pregunta: '¿Cómo funciona la racha lectora?',
+        pregunta: '¿Cómo funciona la racha de lectura?',
         respuesta:
             'La racha cuenta los días consecutivos en los que has hecho '
             'check-in. Si hoy ya lo hiciste, o si ayer lo hiciste y hoy '
@@ -567,7 +619,7 @@ const List<_HelpSection> _secciones = [
         pregunta: '¿Qué es el mapa de calor anual?',
         respuesta:
             'Es un calendario visual estilo GitHub que muestra tu actividad '
-            'lectora durante el año: cada cuadrado representa un día y su '
+            'de lectura durante el año: cada cuadrado representa un día y su '
             'color indica el nivel de actividad (del gris al verde oscuro).\n\n'
             'El mapa combina tres fuentes:\n'
             '• Check-ins explícitos que tú marcas\n'
@@ -589,15 +641,18 @@ const List<_HelpSection> _secciones = [
             '• El libro más largo que terminaste\n'
             '• El primer libro del año\n'
             '• Comparativa con el año anterior\n\n'
-            'Toca a la derecha para avanzar y a la izquierda para retroceder.',
+            'Toca a la derecha para avanzar y a la izquierda para retroceder. '
+            'Se abre desde Perfil → Favoritos. La tarjeta solo está activa durante '
+            'su periodo de disponibilidad; fuera de él aparece con candado. En enero '
+            'muestra el resumen del año anterior. La regla es igual con o sin club.',
       ),
       _HelpItem(
         pregunta: '¿Están disponibles en modo club también?',
         respuesta:
-            'Sí. El check-in, el mapa de calor y el Wrapped son funcionalidades '
-            'personales: aparecen en tu Perfil → sección "Seguimiento lector" '
-            'independientemente de si estás en modo club o personal.\n\n'
-            'En modo lector personal también aparecen en la pestaña "Mi espacio".',
+            'Sí. Son funciones personales y no requieren pertenecer a un club. '
+            'El check-in, la racha y el mapa de calor están en Perfil → Resumen → '
+            'Seguimiento de lectura y también en "Mi espacio". Wrapped está en '
+            'Perfil → Favoritos y mantiene las mismas reglas de disponibilidad.',
       ),
     ],
   ),
@@ -609,7 +664,7 @@ const List<_HelpSection> _secciones = [
         pregunta: '¿Qué son las atmósferas?',
         respuesta:
             'Son temas visuales que cambian los colores y el ambiente de '
-            'la app según el libro que está leyendo el club. La administradora '
+            'la app según el libro que está leyendo el club. Quien administra el club '
             'puede activar una atmósfera para toda la comunidad desde '
             'la sección Atmósferas dentro de la lectura activa.',
       ),
@@ -623,7 +678,7 @@ const List<_HelpSection> _secciones = [
         pregunta: '¿Puedo personalizar mi perfil?',
         respuesta:
             'Sí. En tu perfil puedes editar tu avatar, ver tus estadísticas '
-            'lectoras, tu timeline de lecturas, los géneros favoritos, '
+            'de lectura, tu historial, los géneros favoritos, '
             'los meses lectores y todos los libros que has terminado o abandonado.',
       ),
     ],
@@ -657,25 +712,46 @@ const List<_HelpSection> _secciones = [
       _HelpItem(
         pregunta: '¿Qué son las secciones del perfil?',
         respuesta:
-            '"Resumen" muestra tus métricas, la biblioteca anual y tus géneros favoritos.\n\n'
-            '"Timeline" muestra tu historial de lecturas ordenado por fecha.\n\n'
-            '"Finalizados" lista todos los libros terminados y abandonados '
-            'agrupados por año.\n\n'
+            'El Perfil usa las mismas secciones con o sin club: Resumen, Historial, '
+            'Favoritos, Meses lectores, Logros y Más.\n\n'
+            '"Resumen" reúne Mi biblioteca, Historia lectora, Seguimiento de lectura '
+            'y Géneros favoritos.\n\n'
+            '"Historial" tiene dos vistas. Cronología muestra libros, relecturas, '
+            'hitos y sagas completadas; Libros reúne las lecturas finalizadas y '
+            'abandonadas. El selector de año permite revisar periodos anteriores. '
+            'En tu perfil puedes abrir y editar cada lectura concreta, incluidas las '
+            'relecturas; en perfiles ajenos todo es de consulta.\n\n'
+            '"Favoritos" reúne Libros favoritos, Mi libro del año y Wrapped.\n\n'
             '"Meses lectores" muestra un calendario por cada mes en el que has '
             'leído algún libro, con las portadas colocadas en los días que las terminaste.\n\n'
             '"Logros" muestra todas tus medallas agrupadas por categoría, '
-            'con barra de progreso y estado de desbloqueo.',
+            'con barra de progreso y estado de desbloqueo. "Más" contiene opciones '
+            'secundarias como Sagas ocultas, importaciones, Ayuda y ajustes.',
+      ),
+      _HelpItem(
+        pregunta: '¿Cómo funciona “Mi libro del año”?',
+        respuesta:
+            'En Perfil → Favoritos → Mi libro del año puedes elegir, para cada mes, '
+            'entre los libros que terminaste durante ese mes. Las relecturas '
+            'finalizadas también son válidas y un mismo libro solo aparece una vez '
+            'por mes. Los meses futuros permanecen bloqueados.\n\n'
+            'Las elecciones mensuales forman un cuadro eliminatorio. Cuando una ronda '
+            'esté disponible, debes elegir expresamente cada libro ganador; ninguno '
+            'avanza solo. Si cambias una selección anterior, se te avisará antes de '
+            'invalidar las decisiones posteriores que dependan de ella.\n\n'
+            'Puedes cambiar de año en el cuadro completo. En perfiles ajenos se muestra '
+            'en modo de consulta y se oculta si todavía no hay ninguna selección.',
       ),
       _HelpItem(
         pregunta: '¿Qué es la tarjeta "Favoritos del club"?',
         respuesta:
             'Es una tarjeta del dashboard (modo club) que muestra los 5 libros '
             'favoritos de cada miembro de tu club.\n\n'
-            'Verás el avatar de cada compañera con las portadas de sus favoritos '
+            'Verás el avatar de cada miembro con las portadas de sus favoritos '
             'encima. La tarjeta te muestra primero a "Tú" con tus propios favoritos, '
             'y luego al resto de miembros que tengan al menos uno marcado.\n\n'
             'Pulsa sobre el avatar de cualquier miembro para ver su lista completa '
-            'de favoritos con título, autora y género.\n\n'
+            'de favoritos con título, autor y género.\n\n'
             'Para que aparezca necesitas tener al menos un libro marcado como '
             'favorito ♥ en tu biblioteca.',
       ),
@@ -684,15 +760,15 @@ const List<_HelpSection> _secciones = [
         respuesta:
             'Recibirás notificaciones dentro de la app (campanita en el dashboard) '
             'cuando ocurra algo relevante en tu club: nueva lectura oficial, '
-            'nueva miembro, resultado de Clubvisión, nuevo libro en la biblioteca '
+            'nuevo miembro, resultado de Clubvisión, nuevo libro en la biblioteca '
             'o cuando alguien comenta en una lectura en la que participas.',
       ),
       _HelpItem(
-        pregunta: '¿Qué es "Seguimiento lector" en el perfil?',
+        pregunta: '¿Qué es "Seguimiento de lectura" en el perfil?',
         respuesta:
-            'Es la sección de tu perfil (solo visible en tu propio perfil) '
-            'que agrupa el check-in diario, el mapa de calor anual y el '
-            'botón para ver tu Wrapped. Disponible en modo club y personal.',
+            'Es un bloque de Resumen, visible en tu propio perfil, que agrupa el '
+            'check-in diario, la racha y el mapa de calor anual. Está disponible '
+            'con o sin club. Wrapped no está aquí: se encuentra en Favoritos.',
       ),
     ],
   ),
@@ -748,7 +824,7 @@ class AyudaPage extends StatelessWidget {
                       ),
                       const SizedBox(height: 2),
                       Text(
-                        'Aquí encontrarás explicaciones de todas las partes de ClubReads.',
+                        'Aquí encontrarás explicaciones de todas las partes de ClubReaders.',
                         style: AppTextStyles.caption.copyWith(
                           color: AppColors.textSecondary,
                         ),
@@ -820,46 +896,49 @@ class _SeccionAyuda extends StatelessWidget {
       child: ClubCard(
         elevated: false,
         padding: EdgeInsets.zero,
-        child: Theme(
-          data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
-          child: ExpansionTile(
-            initiallyExpanded: false,
-            tilePadding: const EdgeInsets.symmetric(
-              horizontal: AppSpacing.md,
-              vertical: AppSpacing.xs,
-            ),
-            childrenPadding: const EdgeInsets.fromLTRB(
-              AppSpacing.md,
-              0,
-              AppSpacing.md,
-              AppSpacing.md,
-            ),
-            leading: Container(
-              width: 40,
-              height: 40,
-              decoration: BoxDecoration(
-                color: AppColors.primaryLight,
-                borderRadius: BorderRadius.circular(10),
+        child: Material(
+          color: Colors.transparent,
+          child: Theme(
+            data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
+            child: ExpansionTile(
+              initiallyExpanded: false,
+              tilePadding: const EdgeInsets.symmetric(
+                horizontal: AppSpacing.md,
+                vertical: AppSpacing.xs,
               ),
-              child: Center(
-                child: Text(
-                  seccion.icono,
-                  style: const TextStyle(fontSize: 20),
+              childrenPadding: const EdgeInsets.fromLTRB(
+                AppSpacing.md,
+                0,
+                AppSpacing.md,
+                AppSpacing.md,
+              ),
+              leading: Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  color: AppColors.primaryLight,
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Center(
+                  child: Text(
+                    seccion.icono,
+                    style: const TextStyle(fontSize: 20),
+                  ),
                 ),
               ),
-            ),
-            title: Text(
-              seccion.titulo,
-              style: AppTextStyles.title.copyWith(
-                fontSize: 15,
-                color: AppColors.textPrimary,
+              title: Text(
+                seccion.titulo,
+                style: AppTextStyles.title.copyWith(
+                  fontSize: 15,
+                  color: AppColors.textPrimary,
+                ),
               ),
+              iconColor: AppColors.primary,
+              collapsedIconColor: AppColors.textMuted,
+              children: seccion.items
+                  .map((item) => _PreguntaRespuesta(item: item))
+                  .toList(),
             ),
-            iconColor: AppColors.primary,
-            collapsedIconColor: AppColors.textMuted,
-            children: seccion.items
-                .map((item) => _PreguntaRespuesta(item: item))
-                .toList(),
           ),
         ),
       ),
@@ -880,11 +959,9 @@ class _PreguntaRespuesta extends StatelessWidget {
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.only(bottom: AppSpacing.sm),
-      child: Container(
-        decoration: BoxDecoration(
-          color: AppColors.surfaceSoft,
-          borderRadius: BorderRadius.circular(12),
-        ),
+      child: Material(
+        color: AppColors.surfaceSoft,
+        borderRadius: BorderRadius.circular(12),
         child: Theme(
           data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
           child: ExpansionTile(

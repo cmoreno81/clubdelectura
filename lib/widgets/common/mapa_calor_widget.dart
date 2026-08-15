@@ -11,9 +11,10 @@ import '../../theme/app_text_styles.dart';
 ///
 /// Carga los datos de forma autónoma desde el API.
 class MapaCalorWidget extends StatefulWidget {
-  const MapaCalorWidget({super.key, this.anio});
+  const MapaCalorWidget({super.key, this.anio, this.loadData});
 
   final int? anio;
+  final Future<Map<String, dynamic>> Function(int? year)? loadData;
 
   @override
   State<MapaCalorWidget> createState() => _MapaCalorWidgetState();
@@ -32,7 +33,9 @@ class _MapaCalorWidgetState extends State<MapaCalorWidget> {
 
   Future<void> _cargar() async {
     try {
-      final data = await ApiService().getMapaCalor(anio: widget.anio);
+      final data =
+          await (widget.loadData?.call(widget.anio) ??
+              ApiService().getMapaCalor(anio: widget.anio));
       final days = data['days'] as List<dynamic>? ?? [];
       final map = <String, int>{};
       for (final d in days) {
@@ -67,13 +70,7 @@ class _MapaCalorWidgetState extends State<MapaCalorWidget> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Row(
-          children: [
-            Text('Actividad lectora $year', style: AppTextStyles.subtitle),
-            const Spacer(),
-            _PillStat(value: _totalDias, label: 'días leídos'),
-          ],
-        ),
+        _ActivityHeader(year: year, totalDays: _totalDias),
         const SizedBox(height: AppSpacing.md),
         _CalendarioMeses(year: year, levels: _levels!),
         const SizedBox(height: AppSpacing.sm),
@@ -87,10 +84,66 @@ class _MapaCalorWidgetState extends State<MapaCalorWidget> {
 // Stat pill
 // ─────────────────────────────────────────────────────────────────────────────
 
+class _ActivityHeader extends StatelessWidget {
+  const _ActivityHeader({required this.year, required this.totalDays});
+
+  final int year;
+  final int totalDays;
+
+  @override
+  Widget build(BuildContext context) {
+    final title = 'Actividad de lectura $year';
+    final textScaler = MediaQuery.textScalerOf(context);
+    final direction = Directionality.of(context);
+    final titlePainter = TextPainter(
+      text: TextSpan(text: title, style: AppTextStyles.subtitle),
+      textDirection: direction,
+      textScaler: textScaler,
+      maxLines: 1,
+    )..layout();
+    final pillPainter = TextPainter(
+      text: TextSpan(
+        text: '$totalDays ${totalDays == 1 ? 'día leído' : 'días leídos'}',
+        style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w800),
+      ),
+      textDirection: direction,
+      textScaler: textScaler,
+      maxLines: 1,
+    )..layout();
+
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        const spacing = AppSpacing.sm;
+        final pillWidth = pillPainter.width + 20;
+        final fitsInOneLine =
+            titlePainter.width + spacing + pillWidth <= constraints.maxWidth;
+
+        if (!fitsInOneLine) {
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(title, style: AppTextStyles.subtitle),
+              const SizedBox(height: AppSpacing.sm),
+              _PillStat(value: totalDays),
+            ],
+          );
+        }
+
+        return Row(
+          children: [
+            Expanded(child: Text(title, style: AppTextStyles.subtitle)),
+            const SizedBox(width: spacing),
+            _PillStat(value: totalDays),
+          ],
+        );
+      },
+    );
+  }
+}
+
 class _PillStat extends StatelessWidget {
-  const _PillStat({required this.value, required this.label});
+  const _PillStat({required this.value});
   final int value;
-  final String label;
 
   @override
   Widget build(BuildContext context) {
@@ -100,27 +153,27 @@ class _PillStat extends StatelessWidget {
         color: AppColors.primary.withValues(alpha: .12),
         borderRadius: BorderRadius.circular(20),
       ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Text(
-            '$value',
-            style: TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.w800,
-              color: AppColors.primary,
+      child: Text.rich(
+        TextSpan(
+          children: [
+            TextSpan(
+              text: '$value ',
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w800,
+                color: AppColors.primary,
+              ),
             ),
-          ),
-          const SizedBox(width: 4),
-          Text(
-            label,
-            style: TextStyle(
-              fontSize: 11,
-              color: AppColors.primary.withValues(alpha: .8),
-              fontWeight: FontWeight.w500,
+            TextSpan(
+              text: value == 1 ? 'día leído' : 'días leídos',
+              style: TextStyle(
+                fontSize: 11,
+                color: AppColors.primary.withValues(alpha: .8),
+                fontWeight: FontWeight.w500,
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -136,7 +189,20 @@ class _CalendarioMeses extends StatelessWidget {
   final int year;
   final Map<String, int> levels;
 
-  static const _months = ['E', 'F', 'M', 'A', 'M', 'J', 'J', 'A', 'S', 'O', 'N', 'D'];
+  static const _months = [
+    'E',
+    'F',
+    'M',
+    'A',
+    'M',
+    'J',
+    'J',
+    'A',
+    'S',
+    'O',
+    'N',
+    'D',
+  ];
 
   @override
   Widget build(BuildContext context) {
@@ -146,18 +212,31 @@ class _CalendarioMeses extends StatelessWidget {
 
     return LayoutBuilder(
       builder: (context, constraints) {
-        // Celda: dejamos 20px para la etiqueta de día (izq) + 12 columnas de mes
+        // Dejamos espacio para la etiqueta lateral y descontamos también las
+        // separaciones: no deben sumarse después al ancho ya distribuido.
         const labelW = 20.0;
-        final available = constraints.maxWidth - labelW;
-        final cellW = (available / 12).clamp(10.0, 28.0);
-        const cellH = 10.0;
         const gap = 1.5;
+        const minCellW = 10.0;
+        const maxCellW = 28.0;
+        const cellH = 10.0;
+        const columns = 12;
+        final maxWidth = constraints.maxWidth.isFinite
+            ? constraints.maxWidth
+            : labelW + columns * (maxCellW + gap);
+        final cellW = ((maxWidth - labelW - columns * gap) / columns).clamp(
+          minCellW,
+          maxCellW,
+        );
+        final contentWidth = labelW + columns * (cellW + gap);
+        final needsScroll = contentWidth > maxWidth;
 
         return SingleChildScrollView(
           scrollDirection: Axis.horizontal,
-          physics: const NeverScrollableScrollPhysics(),
+          physics: needsScroll
+              ? const ClampingScrollPhysics()
+              : const NeverScrollableScrollPhysics(),
           child: SizedBox(
-            width: labelW + 12 * (cellW + gap),
+            width: contentWidth,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -188,8 +267,14 @@ class _CalendarioMeses extends StatelessWidget {
                 // ── Filas de días ─────────────────────────────────────────────
                 ...List.generate(31, (di) {
                   final day = di + 1;
-                  final showLabel = day == 1 || day == 5 || day == 10 ||
-                      day == 15 || day == 20 || day == 25 || day == 31;
+                  final showLabel =
+                      day == 1 ||
+                      day == 5 ||
+                      day == 10 ||
+                      day == 15 ||
+                      day == 20 ||
+                      day == 25 ||
+                      day == 31;
                   return Padding(
                     padding: const EdgeInsets.only(bottom: gap),
                     child: Row(
@@ -222,7 +307,8 @@ class _CalendarioMeses extends StatelessWidget {
                           final key =
                               '$year-${month.toString().padLeft(2, '0')}-${day.toString().padLeft(2, '0')}';
                           final level = levels[key] ?? 0;
-                          final isFuture = !isPast ||
+                          final isFuture =
+                              !isPast ||
                               (year == now.year &&
                                   month == now.month &&
                                   day > now.day);
@@ -284,7 +370,13 @@ class _Cell extends StatelessWidget {
   String _label() {
     final day = '${date.day}/${date.month}/${date.year}';
     if (level == 0) return day;
-    const labels = ['', 'Algo de actividad', 'Día lector', 'Muy activa', '¡Día increíble!'];
+    const labels = [
+      '',
+      'Algo de actividad',
+      'Día lector',
+      'Muy activa',
+      '¡Día increíble!',
+    ];
     return '$day — ${labels[level.clamp(0, 4)]}';
   }
 
@@ -293,9 +385,7 @@ class _Cell extends StatelessWidget {
 
     if (isFuture) {
       // Días futuros: muy sutil, distinguibles de los pasados sin actividad
-      return isDark
-          ? const Color(0xFF1A1A1A)
-          : const Color(0xFFF0F0F0);
+      return isDark ? const Color(0xFF1A1A1A) : const Color(0xFFF0F0F0);
     }
 
     if (level == 0) {
@@ -321,22 +411,32 @@ class _Cell extends StatelessWidget {
 class _Leyenda extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    return Row(
+    return Wrap(
+      crossAxisAlignment: WrapCrossAlignment.center,
+      spacing: AppSpacing.xs,
+      runSpacing: AppSpacing.xs,
       children: [
-        Text('Sin actividad', style: AppTextStyles.caption.copyWith(color: AppColors.textMuted)),
-        const SizedBox(width: AppSpacing.xs),
-        ...List.generate(4, (i) => Padding(
-          padding: const EdgeInsets.only(left: 3),
-          child: _Cell(
-            level: i + 1,
-            isFuture: false,
-            cellW: 11,
-            cellH: 11,
-            date: DateTime.now(),
+        Text(
+          'Sin actividad',
+          style: AppTextStyles.caption.copyWith(color: AppColors.textMuted),
+        ),
+        Wrap(
+          spacing: 3,
+          children: List.generate(
+            4,
+            (i) => _Cell(
+              level: i + 1,
+              isFuture: false,
+              cellW: 11,
+              cellH: 11,
+              date: DateTime.now(),
+            ),
           ),
-        )),
-        const SizedBox(width: AppSpacing.xs),
-        Text('Muy activa', style: AppTextStyles.caption.copyWith(color: AppColors.textMuted)),
+        ),
+        Text(
+          'Muy activa',
+          style: AppTextStyles.caption.copyWith(color: AppColors.textMuted),
+        ),
       ],
     );
   }

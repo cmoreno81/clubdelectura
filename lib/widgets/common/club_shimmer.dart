@@ -35,9 +35,10 @@ class _ClubShimmerState extends State<ClubShimmer>
       vsync: this,
       duration: const Duration(milliseconds: 1500),
     )..repeat();
-    _anim = Tween<double>(begin: -1.5, end: 2.5).animate(
-      CurvedAnimation(parent: _ctrl, curve: Curves.easeInOut),
-    );
+    _anim = Tween<double>(
+      begin: -1.5,
+      end: 2.5,
+    ).animate(CurvedAnimation(parent: _ctrl, curve: Curves.easeInOut));
   }
 
   @override
@@ -50,8 +51,9 @@ class _ClubShimmerState extends State<ClubShimmer>
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final base = isDark ? const Color(0xFF2C2C2E) : const Color(0xFFE5E5EA);
-    final highlight =
-        isDark ? const Color(0xFF3A3A3C) : const Color(0xFFF2F2F7);
+    final highlight = isDark
+        ? const Color(0xFF3A3A3C)
+        : const Color(0xFFF2F2F7);
 
     return AnimatedBuilder(
       animation: _anim,
@@ -213,11 +215,7 @@ class CardListSkeleton extends StatelessWidget {
   final int count;
   final EdgeInsetsGeometry? padding;
 
-  const CardListSkeleton({
-    super.key,
-    this.count = 6,
-    this.padding,
-  });
+  const CardListSkeleton({super.key, this.count = 6, this.padding});
 
   @override
   Widget build(BuildContext context) {
@@ -225,9 +223,8 @@ class CardListSkeleton extends StatelessWidget {
       padding: padding ?? const EdgeInsets.fromLTRB(16, 16, 16, 110),
       physics: const NeverScrollableScrollPhysics(),
       itemCount: count,
-      itemBuilder: (context, index) => _CardSkeleton(
-        lines: index % 3 == 0 ? 2 : 3,
-      ),
+      itemBuilder: (context, index) =>
+          _CardSkeleton(lines: index % 3 == 0 ? 2 : 3),
     );
   }
 }
@@ -317,16 +314,19 @@ class DashboardSkeleton extends StatelessWidget {
           const SizedBox(height: 14),
           // Fila de tiles de estadísticas
           Row(
-            children: List.generate(3, (i) => Expanded(
-              child: Container(
-                margin: EdgeInsets.only(left: i > 0 ? 10 : 0),
-                child: ClubShimmer(
-                  width: double.infinity,
-                  height: 80,
-                  borderRadius: BorderRadius.circular(AppRadius.lg),
+            children: List.generate(
+              3,
+              (i) => Expanded(
+                child: Container(
+                  margin: EdgeInsets.only(left: i > 0 ? 10 : 0),
+                  child: ClubShimmer(
+                    width: double.infinity,
+                    height: 80,
+                    borderRadius: BorderRadius.circular(AppRadius.lg),
+                  ),
                 ),
               ),
-            )),
+            ),
           ),
           const SizedBox(height: 14),
           // Tarjeta mediana
@@ -415,16 +415,19 @@ class ProfileSkeleton extends StatelessWidget {
           // Fila de stats
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
-            children: List.generate(3, (i) => Expanded(
-              child: Container(
-                margin: EdgeInsets.only(left: i > 0 ? 10 : 0),
-                child: ClubShimmer(
-                  width: double.infinity,
-                  height: 72,
-                  borderRadius: BorderRadius.circular(AppRadius.lg),
+            children: List.generate(
+              3,
+              (i) => Expanded(
+                child: Container(
+                  margin: EdgeInsets.only(left: i > 0 ? 10 : 0),
+                  child: ClubShimmer(
+                    width: double.infinity,
+                    height: 72,
+                    borderRadius: BorderRadius.circular(AppRadius.lg),
+                  ),
                 ),
               ),
-            )),
+            ),
           ),
           const SizedBox(height: 16),
           // Tabs placeholder

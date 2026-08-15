@@ -26,6 +26,18 @@ class LibroAgrupado {
 
   int get totalFinalizados => finalizados.length;
 
+  String get goodreads {
+    for (final registro in registros) {
+      final value = registro.goodreads.trim();
+      if (value.isNotEmpty) return value;
+    }
+    for (final finalizado in finalizados) {
+      final value = finalizado.goodreads.trim();
+      if (value.isNotEmpty) return value;
+    }
+    return '';
+  }
+
   double get mediaValoracion {
     if (finalizados.isEmpty) {
       return 0;

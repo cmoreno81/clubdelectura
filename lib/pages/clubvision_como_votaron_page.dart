@@ -84,7 +84,7 @@ class _ClubvisionComoVotaronPageState extends State<ClubvisionComoVotaronPage> {
                   icon: Icons.groups_2_outlined,
                   color: AppColors.primary,
                   title: 'Las papeletas del club',
-                  subtitle: 'Así repartió sus puntos cada lectora',
+                  subtitle: 'Así repartió sus puntos cada miembro',
                 ),
 
                 const SizedBox(height: AppSpacing.md),
@@ -147,8 +147,8 @@ class _ComoVotaronHeader extends StatelessWidget {
                 const SizedBox(height: 2),
                 Text(
                   totalLectoras == 1
-                      ? 'Una lectora dejó registrada su clasificación.'
-                      : '$totalLectoras lectoras dejaron registrada su clasificación.',
+                      ? 'Una persona dejó registrada su clasificación.'
+                      : '$totalLectoras personas dejaron registrada su clasificación.',
                   style: AppTextStyles.bodySecondary.copyWith(height: 1.3),
                 ),
                 const SizedBox(height: AppSpacing.sm),
@@ -437,7 +437,7 @@ class _VotacionesVacias extends StatelessWidget {
                     const SizedBox(height: AppSpacing.sm),
 
                     Text(
-                      'Cuando las lectoras voten, sus clasificaciones aparecerán aquí.',
+                      'Cuando los miembros voten, sus clasificaciones aparecerán aquí.',
                       textAlign: TextAlign.center,
                       style: AppTextStyles.bodySecondary,
                     ),

@@ -1,7 +1,9 @@
 import 'package:shared_preferences/shared_preferences.dart';
+import 'auth_session_service.dart';
 
 class VotacionLocalService {
-  static const _clave = 'ultima_votacion';
+  String get _clave =>
+      'ultima_votacion_${AuthSessionService.instance.user?.id ?? 'anonymous'}';
 
   Future<void> guardarVoto(String idVotacion) async {
     final prefs = await SharedPreferences.getInstance();

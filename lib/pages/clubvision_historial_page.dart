@@ -235,10 +235,10 @@ class _HistorialHeader extends StatelessWidget {
                 const SizedBox(height: AppSpacing.sm),
                 ClubChip(
                   label: totalEdiciones == 1
-                      ? '1 ganadora'
+                      ? '1 libro ganador'
                       : totalEdiciones == null
-                      ? 'Ganadoras'
-                      : '$totalEdiciones ganadoras',
+                      ? 'Libros ganadores'
+                      : '$totalEdiciones libros ganadores',
                   icon: Icons.emoji_events_outlined,
                   variant: ClubChipVariant.warning,
                 ),
@@ -424,7 +424,7 @@ class _EdicionCard extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'Ganadora',
+                        'Libro ganador',
                         style: AppTextStyles.caption.copyWith(
                           color: const Color(0xFFB48113),
                           fontWeight: FontWeight.w800,
@@ -584,7 +584,7 @@ class _HistorialVacio extends StatelessWidget {
                     const SizedBox(height: AppSpacing.sm),
 
                     Text(
-                      'Las futuras ganadoras de Clubvisión aparecerán aquí.',
+                      'Los futuros libros ganadores de Clubvisión aparecerán aquí.',
                       textAlign: TextAlign.center,
                       style: AppTextStyles.bodySecondary,
                     ),

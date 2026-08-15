@@ -12,7 +12,7 @@ class AchievementService {
   ];
 
   static const Map<String, String> categoryLabels = {
-    'lectora': '📚 Lectora',
+    'lectora': '📚 Lector',
     'paginas': '📄 Páginas',
     'sagas': '🌀 Sagas',
     'generos': '🎭 Géneros',

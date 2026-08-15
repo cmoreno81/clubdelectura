@@ -26,6 +26,7 @@ import 'nuevo_libro_page.dart';
 
 class DetalleLibroPage extends StatefulWidget {
   final LibroAgrupado libro;
+
   /// Tag Hero que coincide con el de la portada en la pantalla de origen.
   final String? heroTag;
 
@@ -267,9 +268,7 @@ class _DetalleLibroPageState extends State<DetalleLibroPage> {
   }
 
   Future<void> _abrirGoodreads() async {
-    if (libro.registros.isEmpty) return;
-
-    var url = libro.registros.first.goodreads.trim();
+    var url = libro.goodreads;
 
     if (url.isEmpty) return;
 
@@ -297,9 +296,9 @@ class _DetalleLibroPageState extends State<DetalleLibroPage> {
     if (!mounted) return;
     setState(() => _toggling = false);
     if (!resultado.ok) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(resultado.mensaje)),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(resultado.mensaje)));
     }
   }
 
@@ -373,9 +372,13 @@ class _DetalleLibroPageState extends State<DetalleLibroPage> {
               ListenableBuilder(
                 listenable: FavoritosService.instance,
                 builder: (context, _) {
-                  final esFavorito = FavoritosService.instance.isFavorito(libro.bookId);
+                  final esFavorito = FavoritosService.instance.isFavorito(
+                    libro.bookId,
+                  );
                   return IconButton(
-                    tooltip: esFavorito ? 'Quitar de favoritos' : 'Añadir a favoritos',
+                    tooltip: esFavorito
+                        ? 'Quitar de favoritos'
+                        : 'Añadir a favoritos',
                     onPressed: _toggling ? null : _toggleFavorito,
                     icon: _toggling
                         ? const SizedBox(
@@ -384,7 +387,9 @@ class _DetalleLibroPageState extends State<DetalleLibroPage> {
                             child: CircularProgressIndicator(strokeWidth: 2),
                           )
                         : Icon(
-                            esFavorito ? Icons.favorite_rounded : Icons.favorite_border_rounded,
+                            esFavorito
+                                ? Icons.favorite_rounded
+                                : Icons.favorite_border_rounded,
                             color: esFavorito ? const Color(0xFFD4537E) : null,
                           ),
                   );

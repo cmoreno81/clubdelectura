@@ -251,7 +251,7 @@ class _SagasPageState extends State<SagasPage> {
                     size: 20,
                   ),
                 ),
-                title: const Text('Lo he leído (no está en ClubReads)'),
+                title: const Text('Lo he leído (no está en ClubReaders)'),
                 subtitle: const Text(
                   'Cuenta como leído en el progreso de la saga',
                 ),
@@ -677,6 +677,10 @@ class _SagasPageState extends State<SagasPage> {
                     textAlignVertical: TextAlignVertical.center,
                     onChanged: (value) => setState(() => _query = value),
                     textInputAction: TextInputAction.search,
+                    autocorrect: false,
+                    enableSuggestions: false,
+                    smartDashesType: SmartDashesType.disabled,
+                    smartQuotesType: SmartQuotesType.disabled,
                     decoration: InputDecoration(
                       isDense: true,
                       contentPadding: const EdgeInsets.symmetric(vertical: 10),

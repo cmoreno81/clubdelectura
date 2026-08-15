@@ -74,8 +74,8 @@ class _KitExportPageState extends State<KitExportPage> {
         ShareParams(
           files: [XFile(file.path)],
           text: widget.tipo == KitExportTipo.story
-              ? 'Mi próxima lectura: ${widget.libro} · ClubReads'
-              : 'Mi fondo lector de ${widget.libro} · ClubReads',
+              ? 'Mi próxima lectura: ${widget.libro} · ClubReaders'
+              : 'Mi fondo lector de ${widget.libro} · ClubReaders',
           sharePositionOrigin: box == null
               ? null
               : box.localToGlobal(Offset.zero) & box.size,
@@ -99,7 +99,7 @@ class _KitExportPageState extends State<KitExportPage> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(story ? 'Story lectora' : 'Fondo de pantalla'),
+        title: Text(story ? 'Story de lectura' : 'Fondo de pantalla'),
       ),
       body: ListView(
         padding: const EdgeInsets.fromLTRB(
@@ -285,7 +285,7 @@ class _WallpaperComposition extends StatelessWidget {
           ),
           const Spacer(),
           Text(
-            'ClubReads',
+            'ClubReaders',
             style: TextStyle(
               color: foreground.withValues(alpha: 0.62),
               fontSize: 13,

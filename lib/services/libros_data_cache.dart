@@ -1,7 +1,10 @@
 import '../models/libros_data.dart';
+import 'auth_session_service.dart';
 
 class LibrosDataCache {
-  LibrosDataCache._();
+  LibrosDataCache._() {
+    AuthSessionService.instance.registerSessionStateCleaner(invalidate);
+  }
   static final LibrosDataCache instance = LibrosDataCache._();
 
   Future<LibrosData>? _inFlight;

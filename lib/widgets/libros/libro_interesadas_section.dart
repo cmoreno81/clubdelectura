@@ -162,9 +162,9 @@ class LibroInteresadasSection extends StatelessWidget {
     return LibroSection(
       icon: Icons.people_outline_rounded,
       color: AppColors.info,
-      title: 'Interesadas',
+      title: 'Lectores interesados',
       subtitle:
-          '${registros.length} lectoras tienen este libro en su biblioteca',
+          '${registros.length} miembros tienen este libro en su biblioteca',
       child: Column(
         children: registros.map((registro) {
           final usuarioNormalizado = registro.usuario.trim().toLowerCase();

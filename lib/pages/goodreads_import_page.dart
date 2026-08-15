@@ -186,7 +186,7 @@ class _GoodreadsImportPageState extends State<GoodreadsImportPage> {
         children: [
           const ClubSectionTitle(
             title: 'Trae tu historia lectora',
-            subtitle: 'Sin perder nada de lo que ya tienes en ClubReads',
+            subtitle: 'Sin perder nada de lo que ya tienes en ClubReaders',
             icon: Icons.import_export_rounded,
             padding: EdgeInsets.zero,
           ),
@@ -380,7 +380,7 @@ class _ProtectionCard extends StatelessWidget {
               SizedBox(width: AppSpacing.sm),
               Expanded(
                 child: Text(
-                  'Tus datos de ClubReads tienen prioridad',
+                  'Tus datos de ClubReaders tienen prioridad',
                   style: TextStyle(
                     color: Colors.white,
                     fontSize: 18,
@@ -980,7 +980,7 @@ class _ImportFinished extends StatelessWidget {
           const SizedBox(height: AppSpacing.sm),
           Text(
             '${summary.imported} libros añadidos · '
-            '${summary.protected} libros de ClubReads protegidos',
+            '${summary.protected} libros de ClubReaders protegidos',
             textAlign: TextAlign.center,
             style: const TextStyle(color: AppColors.textSecondary),
           ),

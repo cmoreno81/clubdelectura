@@ -1,24 +1,32 @@
 import 'package:flutter/foundation.dart';
 import '../models/perfil_usuario.dart';
 import 'api_service.dart';
-import 'usuario_service.dart';
+import 'auth_session_service.dart';
 
 /// Singleton que mantiene los libros favoritos del usuario actual en memoria.
 /// Usar [ListenableBuilder] para reaccionar a cambios.
 class FavoritosService extends ChangeNotifier {
-  FavoritosService._({ApiService? apiService})
-    : _apiService = apiService ?? ApiService();
+  FavoritosService._({ApiService? apiService, AuthSessionService? session})
+    : _apiService = apiService ?? ApiService(),
+      _session = session ?? AuthSessionService.instance {
+    _session.registerSessionStateCleaner(resetear);
+  }
   static final FavoritosService instance = FavoritosService._();
 
   @visibleForTesting
-  factory FavoritosService.forTesting(ApiService apiService) =>
-      FavoritosService._(apiService: apiService);
+  factory FavoritosService.forTesting(
+    ApiService apiService, {
+    AuthSessionService? session,
+  }) => FavoritosService._(apiService: apiService, session: session);
 
   final ApiService _apiService;
+  final AuthSessionService _session;
 
   List<LibroFavorito> _favoritos = [];
   bool _cargado = false;
   bool _operando = false;
+  String? _ownerUserId;
+  int _requestVersion = 0;
 
   List<LibroFavorito> get favoritos => List.unmodifiable(_favoritos);
 
@@ -29,14 +37,44 @@ class FavoritosService extends ChangeNotifier {
   bool get lleno => _favoritos.length >= 5;
   bool get operando => _operando;
   bool get cargado => _cargado;
+  String? get ownerUserId => _ownerUserId;
+  bool get perteneceASesionActual =>
+      _ownerUserId != null && _ownerUserId == _session.user?.id;
+
+  String? _currentUserId() {
+    final id = _session.user?.id.trim() ?? '';
+    return id.isEmpty ? null : id;
+  }
+
+  void _adoptOwner(String userId) {
+    if (_ownerUserId == userId) return;
+    _requestVersion++;
+    _favoritos = [];
+    _cargado = false;
+    _operando = false;
+    _ownerUserId = userId;
+    notifyListeners();
+  }
 
   /// Carga los favoritos del usuario actual (solo si no están ya cargados).
   Future<void> cargar({bool forzar = false}) async {
+    final userId = _currentUserId();
+    if (userId == null) {
+      resetear();
+      return;
+    }
+    _adoptOwner(userId);
     if (_cargado && !forzar) return;
+    final requestVersion = ++_requestVersion;
     try {
-      final usuario = await UsuarioService().obtenerUsuario();
-      if (usuario == null || usuario.trim().isEmpty) return;
-      final lista = await _apiService.getFavoritosUsuario(usuario.trim());
+      final userName = _session.user?.nombre.trim() ?? '';
+      if (userName.isEmpty) return;
+      final lista = await _apiService.getFavoritosUsuario(userName);
+      if (_currentUserId() != userId ||
+          _ownerUserId != userId ||
+          requestVersion != _requestVersion) {
+        return;
+      }
       _favoritos = lista;
       _cargado = true;
       notifyListeners();
@@ -51,6 +89,10 @@ class FavoritosService extends ChangeNotifier {
     String? coverUrl,
     String? authorName,
   }) async {
+    final owner = _currentUserId();
+    if (owner == null || owner != _ownerUserId) {
+      return (ok: false, mensaje: 'La sesión ha cambiado.', isFavorite: false);
+    }
     if (_operando) {
       return (
         ok: false,
@@ -69,6 +111,7 @@ class FavoritosService extends ChangeNotifier {
     }
 
     final anteriores = List<LibroFavorito>.of(_favoritos);
+    final requestVersion = ++_requestVersion;
     _operando = true;
     // Optimistic update
     if (eraFavorito) {
@@ -88,6 +131,15 @@ class FavoritosService extends ChangeNotifier {
 
     try {
       final respuesta = await _apiService.toggleFavorito(bookId);
+      if (_currentUserId() != owner ||
+          _ownerUserId != owner ||
+          requestVersion != _requestVersion) {
+        return (
+          ok: false,
+          mensaje: 'La sesión ha cambiado.',
+          isFavorite: false,
+        );
+      }
       final ok = respuesta['ok'] == true;
       final mensaje = respuesta['mensaje']?.toString() ?? '';
 
@@ -102,6 +154,15 @@ class FavoritosService extends ChangeNotifier {
       notifyListeners();
       return (ok: true, mensaje: mensaje, isFavorite: !eraFavorito);
     } catch (e) {
+      if (_currentUserId() != owner ||
+          _ownerUserId != owner ||
+          requestVersion != _requestVersion) {
+        return (
+          ok: false,
+          mensaje: 'La sesión ha cambiado.',
+          isFavorite: false,
+        );
+      }
       _favoritos = anteriores;
       _operando = false;
       notifyListeners();
@@ -115,6 +176,10 @@ class FavoritosService extends ChangeNotifier {
     LibroFavorito actual,
     LibroFavorito nuevo,
   ) async {
+    final owner = _currentUserId();
+    if (owner == null || owner != _ownerUserId) {
+      return (ok: false, mensaje: 'La sesión ha cambiado.');
+    }
     if (_operando) {
       return (ok: false, mensaje: 'Hay una operación en curso.');
     }
@@ -130,6 +195,7 @@ class FavoritosService extends ChangeNotifier {
     }
 
     final anteriores = List<LibroFavorito>.of(_favoritos);
+    final requestVersion = ++_requestVersion;
     _operando = true;
     _favoritos = List<LibroFavorito>.of(_favoritos)..[index] = nuevo;
     notifyListeners();
@@ -139,6 +205,11 @@ class FavoritosService extends ChangeNotifier {
         actual.id,
         nuevo.id,
       );
+      if (_currentUserId() != owner ||
+          _ownerUserId != owner ||
+          requestVersion != _requestVersion) {
+        return (ok: false, mensaje: 'La sesión ha cambiado.');
+      }
       if (respuesta['ok'] != true) {
         _favoritos = anteriores;
         _operando = false;
@@ -162,6 +233,11 @@ class FavoritosService extends ChangeNotifier {
         mensaje: respuesta['mensaje']?.toString() ?? 'Favorito actualizado',
       );
     } catch (_) {
+      if (_currentUserId() != owner ||
+          _ownerUserId != owner ||
+          requestVersion != _requestVersion) {
+        return (ok: false, mensaje: 'La sesión ha cambiado.');
+      }
       _favoritos = anteriores;
       _operando = false;
       notifyListeners();
@@ -171,6 +247,7 @@ class FavoritosService extends ChangeNotifier {
 
   @visibleForTesting
   void establecerFavoritos(List<LibroFavorito> favoritos) {
+    _ownerUserId = _currentUserId();
     _favoritos = List.of(favoritos);
     _cargado = true;
     _operando = false;
@@ -178,8 +255,11 @@ class FavoritosService extends ChangeNotifier {
   }
 
   void resetear() {
+    _requestVersion++;
     _favoritos = [];
+    _ownerUserId = null;
     _cargado = false;
+    _operando = false;
     notifyListeners();
   }
 }

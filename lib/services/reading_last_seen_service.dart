@@ -1,4 +1,5 @@
 import 'package:shared_preferences/shared_preferences.dart';
+import 'auth_session_service.dart';
 
 /// Guarda el momento en que el usuario abrió cada lectura por última vez.
 ///
@@ -11,7 +12,7 @@ class ReadingLastSeenService {
   static const _prefix = 'reading_seen_';
 
   static String _key(String titulo) =>
-      '$_prefix${titulo.trim().toLowerCase().replaceAll(' ', '_')}';
+      '$_prefix${AuthSessionService.instance.user?.id ?? 'anonymous'}_${titulo.trim().toLowerCase().replaceAll(' ', '_')}';
 
   /// Registra que el usuario acaba de abrir [titulo].
   static Future<void> marcarVista(String titulo) async {

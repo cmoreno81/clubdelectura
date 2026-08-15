@@ -4,6 +4,7 @@ import 'package:club_lectura_app/models/catalog_book.dart';
 import 'package:club_lectura_app/models/perfil_usuario.dart';
 import 'package:club_lectura_app/pages/complete_series_page.dart';
 import 'package:club_lectura_app/services/api_exception.dart';
+import 'package:club_lectura_app/widgets/common/club_shimmer.dart';
 import 'package:club_lectura_app/widgets/sagas/series_volume_details_dialog.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -116,7 +117,7 @@ void main() {
       await tester.scrollUntilVisible(
         find.widgetWithText(FilledButton, 'Añadir a la saga'),
         180,
-      scrollable: find.byType(Scrollable).last,
+        scrollable: find.byType(Scrollable).last,
       );
 
       expect(find.text('Añadir a la saga'), findsWidgets);
@@ -139,7 +140,7 @@ void main() {
         ),
       ),
     );
-    expect(find.byType(CircularProgressIndicator), findsOneWidget);
+    expect(find.byType(CardListSkeleton), findsOneWidget);
 
     pending.completeError(
       const ApiException(statusCode: 500, message: 'Error simulado'),

@@ -38,7 +38,7 @@ class TecnologiaCreditosPage extends StatelessWidget {
                 ),
                 SizedBox(height: AppSpacing.xs),
                 Text(
-                  'Diseño, desarrollo y evolución de ClubReads.',
+                  'Diseño, desarrollo y evolución de ClubReaders.',
                   textAlign: TextAlign.center,
                   style: AppTextStyles.bodySecondary,
                 ),
@@ -65,7 +65,7 @@ class TecnologiaCreditosPage extends StatelessWidget {
             tecnologias: [
               _Tecnologia('Node.js', 'Entorno de ejecución del backend'),
               _Tecnologia('TypeScript', 'Código tipado del servidor'),
-              _Tecnologia('Express', 'API y rutas de ClubReads'),
+              _Tecnologia('Express', 'API y rutas de ClubReaders'),
               _Tecnologia('Zod', 'Validación de datos'),
             ],
           ),

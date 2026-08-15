@@ -49,6 +49,7 @@ class Notificacion {
   String get emoji => switch (tipo) {
     'CLUBVISION_ABIERTA' => '🗳️',
     'CLUBVISION_RESULTADOS' => '🏆',
+    'CLUB_BOOK_OF_YEAR' => '🏆',
     'LECTURA_NUEVA' => '📖',
     'COMENTARIO_LECTURA' => '💬',
     'LIBRO_TERMINADO' => '✅',
@@ -58,6 +59,17 @@ class Notificacion {
     _ => '🔔',
   };
 }
+
+enum NotificationBadgeCategory { club, lecturas, clubvision }
+
+NotificationBadgeCategory notificationBadgeCategory(String tipo) =>
+    switch (tipo) {
+      'LECTURA_NUEVA' ||
+      'COMENTARIO_LECTURA' => NotificationBadgeCategory.lecturas,
+      'CLUBVISION_ABIERTA' ||
+      'CLUBVISION_RESULTADOS' => NotificationBadgeCategory.clubvision,
+      _ => NotificationBadgeCategory.club,
+    };
 
 class NotificacionesData {
   const NotificacionesData({
@@ -80,7 +92,8 @@ class NotificacionesData {
       .where(
         (n) =>
             !n.leida &&
-            (n.tipo == 'LECTURA_NUEVA' || n.tipo == 'COMENTARIO_LECTURA'),
+            notificationBadgeCategory(n.tipo) ==
+                NotificationBadgeCategory.lecturas,
       )
       .length;
 
@@ -89,8 +102,8 @@ class NotificacionesData {
       .where(
         (n) =>
             !n.leida &&
-            (n.tipo == 'CLUBVISION_ABIERTA' ||
-                n.tipo == 'CLUBVISION_RESULTADOS'),
+            notificationBadgeCategory(n.tipo) ==
+                NotificationBadgeCategory.clubvision,
       )
       .length;
 
@@ -99,10 +112,7 @@ class NotificacionesData {
       .where(
         (n) =>
             !n.leida &&
-            (n.tipo == 'LIBRO_TERMINADO' ||
-                n.tipo == 'LIBRO_EMPEZADO' ||
-                n.tipo == 'LIBRO_NUEVO_BIBLIOTECA' ||
-                n.tipo == 'NUEVA_MIEMBRO'),
+            notificationBadgeCategory(n.tipo) == NotificationBadgeCategory.club,
       )
       .length;
 

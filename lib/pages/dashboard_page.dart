@@ -41,6 +41,7 @@ import 'perfil_usuario_page.dart';
 import '../models/perfil_usuario.dart';
 import 'ranking_page.dart';
 import 'tendencias_club_page.dart';
+import 'club_book_of_year_page.dart';
 import 'package:club_lectura_app/widgets/common/club_shimmer.dart';
 import '../widgets/common/reaction_details_sheet.dart';
 
@@ -94,8 +95,11 @@ class _DashboardPageState extends State<DashboardPage> {
     avatarUrlActual = sessionUser?.avatarUrl.trim() ?? '';
     widget.controller?._refresh = _recargar;
     dashboardFuture = _cargarDashboard();
-    // Carga inicial de notificaciones en el servicio compartido
-    unawaited(NotificacionesService.instance.cargar());
+    // Las funciones sociales —incluidas sus notificaciones— no se construyen
+    // ni consultan dentro del espacio personal.
+    if (!widget.esPersonal) {
+      unawaited(NotificacionesService.instance.cargar());
+    }
   }
 
   Future<void> _abrirNotificaciones() async {
@@ -106,7 +110,8 @@ class _DashboardPageState extends State<DashboardPage> {
           n.tipo == 'LIBRO_TERMINADO' ||
           n.tipo == 'LIBRO_EMPEZADO' ||
           n.tipo == 'LIBRO_NUEVO_BIBLIOTECA' ||
-          n.tipo == 'NUEVA_MIEMBRO',
+          n.tipo == 'NUEVA_MIEMBRO' ||
+          n.tipo == 'CLUB_BOOK_OF_YEAR',
     );
 
     // Refrescar el servicio tras cerrar el sheet
@@ -144,6 +149,21 @@ class _DashboardPageState extends State<DashboardPage> {
             bookId: n.bookId?.trim() ?? '',
           );
         }
+      case 'CLUB_BOOK_OF_YEAR':
+        if (widget.esPersonal) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Esta edición pertenece a un club social.'),
+            ),
+          );
+          return;
+        }
+        final year = int.tryParse(extra['year']?.toString() ?? '');
+        await Navigator.push<void>(
+          context,
+          AppPageRoute(builder: (_) => ClubBookOfYearPage(initialYear: year)),
+        );
+        if (mounted) await _recargar();
       default:
         break;
     }
@@ -254,7 +274,7 @@ class _DashboardPageState extends State<DashboardPage> {
                     ),
                   ),
                   Text(
-                    'ClubReads',
+                    'ClubReaders',
                     style: AppTextStyles.caption.copyWith(
                       color: AppColors.textSecondary,
                     ),
@@ -344,7 +364,7 @@ class _DashboardPageState extends State<DashboardPage> {
 
                   ClubSectionTitle(
                     title: widget.esPersonal
-                        ? 'Tu actividad lectora'
+                        ? 'Tu actividad de lectura'
                         : 'Así está el club',
                     subtitle: widget.esPersonal
                         ? 'Tu mes en números'
@@ -417,6 +437,7 @@ class _DashboardPageState extends State<DashboardPage> {
                     const SizedBox(height: AppSpacing.md),
                     ClubBooksOfYearCard(
                       key: ValueKey('book-of-year-$_favoritosKey'),
+                      currentUserName: usuarioActual,
                     ),
 
                     if (data.libroMes.isNotEmpty) ...[
@@ -457,7 +478,7 @@ class _DashboardPageState extends State<DashboardPage> {
                     title: 'Leyendo ahora',
                     subtitle: widget.esPersonal
                         ? 'Tus lecturas activas'
-                        : 'Qué tienen entre manos las lectoras',
+                        : 'Qué tienen entre manos los miembros',
                     icon: Icons.menu_book_rounded,
                     padding: EdgeInsets.zero,
                   ),
@@ -472,7 +493,7 @@ class _DashboardPageState extends State<DashboardPage> {
                           : 'El club está entre lecturas',
                       message: widget.esPersonal
                           ? 'Ve a Libros y empieza una nueva lectura.'
-                          : 'Cuando alguna lectora empiece un libro, aparecerá aquí.',
+                          : 'Cuando alguien empiece un libro, aparecerá aquí.',
                       padding: const EdgeInsets.symmetric(
                         vertical: AppSpacing.xl,
                       ),
@@ -1339,7 +1360,7 @@ class _AffinityCard extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Compañeras de lectura',
+                      'Compañeros de lectura',
                       style: AppTextStyles.subtitle.copyWith(
                         fontWeight: FontWeight.w800,
                         color: AppColors.primaryDark,
@@ -1578,7 +1599,7 @@ class _LogrosClubCard extends StatelessWidget {
                 Text(
                   esPersonal
                       ? 'Tu progreso lector este año'
-                      : 'Ve el progreso de todas las lectoras',
+                      : 'Ve el progreso de todos los miembros',
                   style: AppTextStyles.bodySecondary.copyWith(
                     color: AppColors.textSecondary,
                   ),
@@ -1759,7 +1780,7 @@ class _RachaLectoraTile extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Racha lectora',
+                    'Racha de lectura',
                     style: AppTextStyles.caption.copyWith(
                       color: AppColors.textSecondary,
                       fontWeight: FontWeight.w600,
@@ -2043,7 +2064,7 @@ class _FavoritosClubCardState extends State<_FavoritosClubCard> {
                       ),
                     ),
                     Text(
-                      'Los 5 libros favoritos de tus compañeras',
+                      'Los 5 libros favoritos de los miembros',
                       style: AppTextStyles.caption.copyWith(
                         color: AppColors.textMuted,
                       ),

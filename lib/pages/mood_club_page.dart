@@ -386,7 +386,7 @@ class _MoodVoteCard extends StatelessWidget {
           Text(
             mood.total == 0
                 ? 'Estrena el pulso de esta semana.'
-                : '${mood.total} lectoras han compartido su mood esta semana.',
+                : '${mood.total} personas han compartido su mood esta semana.',
             style: AppTextStyles.bodySecondary,
           ),
           const SizedBox(height: AppSpacing.lg),
