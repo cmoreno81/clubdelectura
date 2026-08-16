@@ -230,35 +230,11 @@ class _PerfilUsuarioPageState extends State<PerfilUsuarioPage> {
   Future<void> _editarFrase(PerfilUsuario perfil) async {
     if (!esMiPerfil) return;
 
-    final controller = TextEditingController(text: perfil.bio);
     final nueva = await showDialog<String>(
       context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Tu frase lectora'),
-        content: TextField(
-          controller: controller,
-          maxLength: 160,
-          maxLines: 3,
-          autofocus: true,
-          decoration: const InputDecoration(
-            hintText: 'Escribe una frase que te represente como lectora…',
-            border: OutlineInputBorder(),
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text('Cancelar'),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, controller.text.trim()),
-            child: const Text('Guardar'),
-          ),
-        ],
-      ),
+      builder: (ctx) => _EditarFraseDialog(bioActual: perfil.bio),
     );
 
-    controller.dispose();
     if (nueva == null || !mounted) return;
 
     final respuesta = await ApiService().actualizarFrasePerfil(bio: nueva);
@@ -2908,6 +2884,63 @@ class _SeleccionFavoritoSheetState extends State<_SeleccionFavoritoSheet> {
           ],
         ),
       ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Diálogo editar frase lectora
+// El controller vive en el State para que dispose() se llame cuando el widget
+// salga del árbol (tras la animación de cierre), no antes.
+// ─────────────────────────────────────────────────────────────────────────────
+
+class _EditarFraseDialog extends StatefulWidget {
+  const _EditarFraseDialog({required this.bioActual});
+  final String bioActual;
+
+  @override
+  State<_EditarFraseDialog> createState() => _EditarFraseDialogState();
+}
+
+class _EditarFraseDialogState extends State<_EditarFraseDialog> {
+  late final TextEditingController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = TextEditingController(text: widget.bioActual);
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: const Text('Tu frase lectora'),
+      content: TextField(
+        controller: _controller,
+        maxLength: 160,
+        maxLines: 3,
+        autofocus: true,
+        decoration: const InputDecoration(
+          hintText: 'Escribe una frase que te represente como lectora…',
+          border: OutlineInputBorder(),
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: const Text('Cancelar'),
+        ),
+        TextButton(
+          onPressed: () => Navigator.pop(context, _controller.text.trim()),
+          child: const Text('Guardar'),
+        ),
+      ],
     );
   }
 }
