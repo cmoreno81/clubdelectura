@@ -834,12 +834,13 @@ class _DashboardPageState extends State<DashboardPage> {
     }
     final reaccion = await showModalBottomSheet<ReaccionComentario>(
       context: context,
-      builder: (context) => SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(AppSpacing.lg),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
+      isScrollControlled: true,
+      useSafeArea: true,
+      builder: (context) => Padding(
+        padding: const EdgeInsets.all(AppSpacing.lg),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
               Text('Reaccionar a esta impresión', style: AppTextStyles.section),
               const SizedBox(height: AppSpacing.md),
               Wrap(
@@ -881,7 +882,6 @@ class _DashboardPageState extends State<DashboardPage> {
             ],
           ),
         ),
-      ),
     );
     if (reaccion == null || !mounted) return;
     final previous = _effectiveReading(lectura);
