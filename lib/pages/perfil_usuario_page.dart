@@ -2752,20 +2752,20 @@ class _SeleccionFavoritoSheetState extends State<_SeleccionFavoritoSheet> {
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
     final filtrados = _filtrados;
-    final keyboardHeight = MediaQuery.viewInsetsOf(context).bottom;
+    // En Android con adjustResize la ventana ya se reduce y viewInsetsOf = 0.
+    // En iOS (ajustPan / sin resize) viewInsetsOf da la altura del teclado.
+    final keyboardInset = MediaQuery.viewInsetsOf(context).bottom;
 
-    return Padding(
-      // Sube el sheet cuando aparece el teclado para que la lista quede visible
-      padding: EdgeInsets.only(bottom: keyboardHeight),
-      child: Material(
-        color: cs.surface,
-        borderRadius: const BorderRadius.vertical(
-          top: Radius.circular(AppRadius.xl),
-        ),
+    return Material(
+      color: cs.surface,
+      borderRadius: const BorderRadius.vertical(
+        top: Radius.circular(AppRadius.xl),
+      ),
+      child: Padding(
+        // Solo actúa en iOS; en Android es 0 porque la ventana ya encogió.
+        padding: EdgeInsets.only(bottom: keyboardInset),
         child: SafeArea(
-          // Si el teclado está visible ya ocupamos ese espacio con el Padding,
-          // no queremos que SafeArea añada otro padding al bottom
-          bottom: keyboardHeight == 0,
+          bottom: keyboardInset == 0,
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
@@ -2825,7 +2825,12 @@ class _SeleccionFavoritoSheetState extends State<_SeleccionFavoritoSheet> {
 
             const Divider(height: 1),
 
-            Flexible(
+            // La lista se limita a la mitad de la pantalla para que siempre
+            // quede por encima del teclado (funciona con adjustResize en Android).
+            ConstrainedBox(
+              constraints: BoxConstraints(
+                maxHeight: MediaQuery.sizeOf(context).height * 0.5,
+              ),
               child: _toggling
                   ? const Center(
                       child: Padding(
@@ -2892,7 +2897,7 @@ class _SeleccionFavoritoSheetState extends State<_SeleccionFavoritoSheet> {
         ),
       ),
     ),
-    );
+  );
   }
 }
 

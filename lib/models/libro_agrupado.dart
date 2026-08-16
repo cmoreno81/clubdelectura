@@ -12,6 +12,10 @@ class LibroAgrupado {
   bool leidoPorMi;
   String coverUrl;
 
+  /// bookId fijo para libros que no tienen registros ni finalizados
+  /// (p.ej. libros de catálogo aún no añadidos a la biblioteca).
+  final String? _bookIdOverride;
+
   LibroAgrupado({
     required this.libro,
     required this.genero,
@@ -20,7 +24,8 @@ class LibroAgrupado {
     required this.yaLoTengo,
     this.leidoPorMi = false,
     required this.coverUrl,
-  });
+    String? bookId,
+  }) : _bookIdOverride = (bookId?.trim().isNotEmpty == true) ? bookId!.trim() : null;
 
   int get total => registros.length;
 
@@ -77,6 +82,7 @@ class LibroAgrupado {
   }
 
   String get bookId {
+    if (_bookIdOverride != null) return _bookIdOverride;
     for (final registro in registros) {
       if (registro.bookId.trim().isNotEmpty) {
         return registro.bookId.trim();

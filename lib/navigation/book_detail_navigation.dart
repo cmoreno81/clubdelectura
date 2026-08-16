@@ -87,15 +87,20 @@ Future<bool> openBookDetail(
       if (!context.mounted) return false;
 
       if (result == null) {
-        // El libro no existe o error → ficha de catálogo
+        // El libro no está en la biblioteca → abre la ficha completa igualmente
         await Navigator.push<void>(
           context,
           BookDetailPageRoute(
-            builder: (_) => CatalogBookDetailPage(
-              bookId: bookId,
-              title: title,
-              coverUrl: coverUrl,
-              genre: genre,
+            builder: (_) => DetalleLibroPage(
+              libro: LibroAgrupado(
+                libro: title,
+                genero: genre,
+                registros: const [],
+                finalizados: const [],
+                yaLoTengo: false,
+                coverUrl: coverUrl,
+                bookId: bookId,
+              ),
             ),
           ),
         );
@@ -122,11 +127,16 @@ Future<bool> openBookDetail(
       await Navigator.push<void>(
         context,
         BookDetailPageRoute(
-          builder: (_) => CatalogBookDetailPage(
-            bookId: bookId,
-            title: title,
-            coverUrl: coverUrl,
-            genre: genre,
+          builder: (_) => DetalleLibroPage(
+            libro: LibroAgrupado(
+              libro: title,
+              genero: genre,
+              registros: const [],
+              finalizados: const [],
+              yaLoTengo: false,
+              coverUrl: coverUrl,
+              bookId: bookId,
+            ),
           ),
         ),
       );
@@ -186,20 +196,24 @@ Future<bool> openCatalogBookDetail(
       if (!context.mounted) return false;
 
       if (result == null) {
-        var changed = false;
+        // Libro no está en la biblioteca → abre la ficha completa igualmente
         await Navigator.push<void>(
           context,
           BookDetailPageRoute(
-            builder: (_) => CatalogBookDetailPage(
-              bookId: bookId,
-              title: title,
-              coverUrl: coverUrl,
-              genre: genre,
-              onLibraryChanged: () => changed = true,
+            builder: (_) => DetalleLibroPage(
+              libro: LibroAgrupado(
+                libro: title,
+                genero: genre,
+                registros: const [],
+                finalizados: const [],
+                yaLoTengo: false,
+                coverUrl: coverUrl,
+                bookId: bookId,
+              ),
             ),
           ),
         );
-        return changed;
+        return true; // puede que el usuario lo haya añadido, recargamos siempre
       }
 
       registros = result.libros
