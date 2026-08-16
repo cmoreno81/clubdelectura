@@ -11,6 +11,13 @@ class CatalogBook {
     required this.status,
     this.pages,
     this.publicationYear,
+    this.description = '',
+    this.goodreadsUrl = '',
+    this.publisher = '',
+    this.language = '',
+    this.publicationDate = '',
+    this.series = '',
+    this.seriesPosition = '',
     this.startedAt,
     this.finishedAt,
   });
@@ -26,6 +33,13 @@ class CatalogBook {
   final String status;
   final int? pages;
   final int? publicationYear;
+  final String description;
+  final String goodreadsUrl;
+  final String publisher;
+  final String language;
+  final String publicationDate;
+  final String series;
+  final String seriesPosition;
   final DateTime? startedAt;
   final DateTime? finishedAt;
 
@@ -54,6 +68,23 @@ class CatalogBook {
     status: json['estado']?.toString() ?? '',
     pages: _intOrNull(json['paginas']),
     publicationYear: _intOrNull(json['anioPublicacion']),
+    description:
+        json['sinopsis']?.toString() ?? json['descripcion']?.toString() ?? '',
+    goodreadsUrl:
+        json['goodreadsUrl']?.toString() ?? json['goodreads']?.toString() ?? '',
+    publisher:
+        json['editorial']?.toString() ?? json['publisher']?.toString() ?? '',
+    language: json['idioma']?.toString() ?? json['language']?.toString() ?? '',
+    publicationDate:
+        json['fechaPublicacion']?.toString() ??
+        json['publicationDate']?.toString() ??
+        '',
+    series: json['saga']?.toString() ?? json['series']?.toString() ?? '',
+    seriesPosition:
+        json['numSaga']?.toString() ??
+        json['posicionSaga']?.toString() ??
+        json['seriesPosition']?.toString() ??
+        '',
     startedAt: json['fechaInicio'] != null
         ? DateTime.tryParse(json['fechaInicio'].toString())
         : null,
@@ -79,6 +110,13 @@ class CatalogBook {
     status: status ?? this.status,
     pages: pages,
     publicationYear: publicationYear,
+    description: description,
+    goodreadsUrl: goodreadsUrl,
+    publisher: publisher,
+    language: language,
+    publicationDate: publicationDate,
+    series: series,
+    seriesPosition: seriesPosition,
     startedAt: startedAt ?? this.startedAt,
     finishedAt: finishedAt ?? this.finishedAt,
   );

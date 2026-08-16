@@ -209,7 +209,7 @@ class _DashboardPageState extends State<DashboardPage> {
     await dashboardFuture;
   }
 
-  void _abrirPerfil(String usuario) {
+  void _abrirPerfil(String usuario, {String? profileUserId}) {
     final limpio = usuario.trim();
 
     if (limpio.isEmpty) return;
@@ -219,20 +219,24 @@ class _DashboardPageState extends State<DashboardPage> {
       AppPageRoute(
         builder: (_) =>
             widget.profilePageBuilder?.call(limpio) ??
-            PerfilUsuarioPage(usuario: limpio),
+            PerfilUsuarioPage(usuario: limpio, profileUserId: profileUserId),
       ),
     );
   }
 
   Future<void> _abrirMiPerfil() async {
     final nombre = usuarioActual?.trim() ?? '';
+    final userId = AuthSessionService.instance.user?.id.trim() ?? '';
     if (nombre.isEmpty) return;
     await Navigator.push<void>(
       context,
       AppPageRoute(
         builder: (_) =>
             widget.profilePageBuilder?.call(nombre) ??
-            PerfilUsuarioPage(usuario: nombre),
+            PerfilUsuarioPage(
+              usuario: nombre,
+              profileUserId: userId.isEmpty ? null : userId,
+            ),
       ),
     );
     if (mounted) await _recargar();
@@ -438,6 +442,7 @@ class _DashboardPageState extends State<DashboardPage> {
                     ClubBooksOfYearCard(
                       key: ValueKey('book-of-year-$_favoritosKey'),
                       currentUserName: usuarioActual,
+                      currentUserId: AuthSessionService.instance.user?.id,
                     ),
 
                     if (data.libroMes.isNotEmpty) ...[
@@ -1709,8 +1714,11 @@ class _RachaLectoraCardState extends State<RachaLectoraCard> {
     await Navigator.push<void>(
       context,
       AppPageRoute(
-        builder: (_) =>
-            PerfilUsuarioPage(usuario: usuario, scrollToSeguimiento: true),
+        builder: (_) => PerfilUsuarioPage(
+          usuario: usuario,
+          profileUserId: AuthSessionService.instance.user?.id,
+          scrollToSeguimiento: true,
+        ),
       ),
     );
   }
@@ -2263,8 +2271,12 @@ class _FavoritosDeUsuarioSheet extends StatelessWidget {
                     Navigator.push<void>(
                       context,
                       AppPageRoute(
-                        builder: (_) =>
-                            PerfilUsuarioPage(usuario: miembro.nombre),
+                        builder: (_) => PerfilUsuarioPage(
+                          usuario: miembro.nombre,
+                          profileUserId: miembro.userId.isEmpty
+                              ? null
+                              : miembro.userId,
+                        ),
                       ),
                     );
                   },

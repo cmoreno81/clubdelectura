@@ -52,25 +52,51 @@ class _ComentarioCardState extends State<ComentarioCard> {
   }
 
   Future<void> _toggleReaccion(ReaccionComentario reaccion) async {
-    final json = await ApiService().toggleLikeComentario(
-      comentarioId: widget.comentario.id,
-      reaccion: reaccion.apiValue,
-    );
-
-    if (!mounted) return;
-
+    final reaccionAnterior = miReaccion;
+    final reaccionesAnteriores = Map<ReaccionComentario, int>.of(reacciones);
     setState(() {
-      miReaccion = ReaccionComentarioDatos.fromApi(
-        json['miReaccion']?.toString(),
-      );
-      final raw = json['reacciones'];
-      if (raw is Map) {
-        reacciones = {
-          for (final tipo in ReaccionComentario.values)
-            tipo: (raw[tipo.apiValue] as num?)?.toInt() ?? 0,
-        };
+      if (miReaccion != null) {
+        reacciones[miReaccion!] = ((reacciones[miReaccion!] ?? 0) - 1).clamp(
+          0,
+          9999,
+        );
+      }
+
+      if (miReaccion == reaccion) {
+        miReaccion = null;
+      } else {
+        miReaccion = reaccion;
+        reacciones[reaccion] = (reacciones[reaccion] ?? 0) + 1;
       }
     });
+
+    try {
+      final json = await ApiService().toggleLikeComentario(
+        comentarioId: widget.comentario.id,
+        reaccion: reaccion.apiValue,
+      );
+
+      if (!mounted) return;
+
+      setState(() {
+        miReaccion = ReaccionComentarioDatos.fromApi(
+          json['miReaccion']?.toString(),
+        );
+        final raw = json['reacciones'];
+        if (raw is Map) {
+          reacciones = {
+            for (final tipo in ReaccionComentario.values)
+              tipo: (raw[tipo.apiValue] as num?)?.toInt() ?? 0,
+          };
+        }
+      });
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        miReaccion = reaccionAnterior;
+        reacciones = reaccionesAnteriores;
+      });
+    }
   }
 
   Future<void> _mostrarReacciones() async {
@@ -476,20 +502,48 @@ class _ComentarioCardState extends State<ComentarioCard> {
             const SizedBox(height: AppSpacing.md),
 
             Wrap(
-              spacing: AppSpacing.sm,
+              spacing: AppSpacing.xs,
               runSpacing: AppSpacing.xs,
               children: [
+                for (final tipo in ReaccionComentario.values)
+                  if ((reacciones[tipo] ?? 0) > 0)
+                    Semantics(
+                      button: true,
+                      label:
+                          'Ver ${reacciones[tipo]} reacciones ${tipo.titulo}',
+                      child: ActionChip(
+                        tooltip: 'Ver quién reaccionó ${tipo.emoji}',
+                        materialTapTargetSize: MaterialTapTargetSize.padded,
+                        backgroundColor: miReaccion == tipo
+                            ? AppColors.primaryLight
+                            : AppColors.surfaceSoft,
+                        side: const BorderSide(color: AppColors.border),
+                        onPressed: () => ReactionDetailsSheet.show(
+                          context,
+                          targetType: 'COMMENT',
+                          targetId: widget.comentario.id,
+                        ),
+                        label: Text('${tipo.emoji} ${reacciones[tipo]}'),
+                      ),
+                    ),
                 Tooltip(
                   message: miReaccion?.titulo ?? 'Reaccionar',
-                  child: IconButton.filledTonal(
-                    key: _reaccionKey,
-                    onPressed: _mostrarReacciones,
-                    icon: miReaccion == null
-                        ? const Icon(Icons.add_reaction_outlined, size: 22)
-                        : Text(
-                            miReaccion!.emoji,
-                            style: const TextStyle(fontSize: 21),
-                          ),
+                  child: SizedBox(
+                    height: 44,
+                    child: FilledButton.tonal(
+                      key: _reaccionKey,
+                      style: FilledButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(horizontal: 12),
+                        minimumSize: const Size(44, 44),
+                      ),
+                      onPressed: _mostrarReacciones,
+                      child: miReaccion == null
+                          ? const Icon(Icons.add_reaction_outlined, size: 20)
+                          : Text(
+                              miReaccion!.emoji,
+                              style: const TextStyle(fontSize: 19),
+                            ),
+                    ),
                   ),
                 ),
 
@@ -507,58 +561,6 @@ class _ComentarioCardState extends State<ComentarioCard> {
                 ),
               ],
             ),
-
-            if (reacciones.values.any((total) => total > 0)) ...[
-              const SizedBox(height: AppSpacing.sm),
-              Wrap(
-                spacing: AppSpacing.xs,
-                runSpacing: AppSpacing.xs,
-                children: ReaccionComentario.values
-                    .where((tipo) => (reacciones[tipo] ?? 0) > 0)
-                    .map(
-                      (tipo) => Semantics(
-                        button: true,
-                        label:
-                            'Ver ${reacciones[tipo]} reacciones ${tipo.titulo}',
-                        child: InkWell(
-                          borderRadius: BorderRadius.circular(AppRadius.pill),
-                          onTap: () => ReactionDetailsSheet.show(
-                            context,
-                            targetType: 'COMMENT',
-                            targetId: widget.comentario.id,
-                          ),
-                          child: Container(
-                            constraints: const BoxConstraints(
-                              minHeight: 44,
-                              minWidth: 48,
-                            ),
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: AppSpacing.sm,
-                              vertical: 5,
-                            ),
-                            alignment: Alignment.center,
-                            decoration: BoxDecoration(
-                              color: miReaccion == tipo
-                                  ? AppColors.primaryLight
-                                  : AppColors.surfaceSoft,
-                              borderRadius: BorderRadius.circular(
-                                AppRadius.pill,
-                              ),
-                              border: Border.all(color: AppColors.border),
-                            ),
-                            child: Text(
-                              '${tipo.emoji} ${reacciones[tipo]}',
-                              style: AppTextStyles.caption.copyWith(
-                                fontWeight: FontWeight.w800,
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
-                    )
-                    .toList(),
-              ),
-            ],
 
             if (respondiendo) ...[
               const SizedBox(height: AppSpacing.md),

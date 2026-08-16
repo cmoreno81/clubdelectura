@@ -69,7 +69,10 @@ class FavoritosService extends ChangeNotifier {
     try {
       final userName = _session.user?.nombre.trim() ?? '';
       if (userName.isEmpty) return;
-      final lista = await _apiService.getFavoritosUsuario(userName);
+      final lista = await _apiService.getFavoritosUsuario(
+        userName,
+        profileUserId: userId,
+      );
       if (_currentUserId() != userId ||
           _ownerUserId != userId ||
           requestVersion != _requestVersion) {

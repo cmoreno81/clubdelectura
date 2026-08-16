@@ -1,4 +1,5 @@
 import 'package:club_lectura_app/utils/genero_utils.dart';
+import 'package:club_lectura_app/utils/lector_count_utils.dart';
 import 'package:club_lectura_app/widgets/error_view.dart';
 import 'package:flutter/material.dart';
 
@@ -882,7 +883,8 @@ class _CandidataCard extends StatelessWidget {
             runSpacing: AppSpacing.sm,
             children: [
               ClubChip(
-                label: '${candidata.interesadas} lectores interesados',
+                label:
+                    '${candidata.interesadas} ${lectoresInteresadosLabel(candidata.interesadas)}',
                 icon: Icons.people_outline_rounded,
                 variant: ClubChipVariant.info,
               ),

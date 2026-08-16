@@ -13,6 +13,7 @@ class BookOfYearPage extends StatefulWidget {
   const BookOfYearPage({
     super.key,
     this.profile,
+    this.profileUserId,
     this.initialYear,
     this.loadBoard,
     this.saveMonth,
@@ -20,6 +21,7 @@ class BookOfYearPage extends StatefulWidget {
     this.chooseWinner,
   });
   final String? profile;
+  final String? profileUserId;
   final int? initialYear;
   final Future<BookOfYearBoard> Function(int year, bool editable)? loadBoard;
   final Future<BookOfYearBoard> Function(int year, int month, String bookId)?
@@ -71,7 +73,11 @@ class _BookOfYearPageState extends State<BookOfYearPage> {
       widget.loadBoard?.call(_year, widget.editable) ??
       (widget.editable
           ? ApiService().getMyBookOfYear(_year)
-          : ApiService().getPublicBookOfYear(widget.profile!, _year));
+          : ApiService().getPublicBookOfYear(
+              widget.profile!,
+              _year,
+              profileUserId: widget.profileUserId,
+            ));
   void _changeYear(int year) {
     if (_scrollController.hasClients) _scrollController.jumpTo(0);
     if (_horizontalScrollController.hasClients) {

@@ -10,6 +10,7 @@ import '../services/cursor_pagination_controller.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_spacing.dart';
 import '../widgets/common/optimized_network_image.dart';
+import '../widgets/libros/add_book_sheet.dart';
 import 'package:club_lectura_app/widgets/common/club_shimmer.dart';
 
 class ExploreCatalogPage extends StatefulWidget {
@@ -118,10 +119,11 @@ class _ExploreCatalogPageState extends State<ExploreCatalogPage> {
   }
 
   Future<void> _add(CatalogBook book) async {
-    final preferences = await showModalBottomSheet<_BookPreferences>(
-      context: context,
-      isScrollControlled: true,
-      builder: (_) => const _AddBookSheet(),
+    final preferences = await showAddBookSheet(
+      context,
+      title: book.title,
+      author: book.authorLabel,
+      coverUrl: book.coverUrl,
     );
     if (preferences == null || !mounted) return;
     setState(() => _addingId = book.id);
@@ -375,117 +377,6 @@ class _ExploreCatalogPageState extends State<ExploreCatalogPage> {
                 onPressed: () => _add(book),
                 icon: const Icon(Icons.add_rounded),
               ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _BookPreferences {
-  const _BookPreferences(this.priority, this.format);
-  final String priority;
-  final String format;
-}
-
-class _AddBookSheet extends StatefulWidget {
-  const _AddBookSheet();
-
-  @override
-  State<_AddBookSheet> createState() => _AddBookSheetState();
-}
-
-class _AddBookSheetState extends State<_AddBookSheet> {
-  String _priority = 'MEDIA';
-  String _format = '';
-
-  @override
-  Widget build(BuildContext context) {
-    return SafeArea(
-      child: Padding(
-        padding: EdgeInsets.fromLTRB(
-          AppSpacing.lg,
-          AppSpacing.lg,
-          AppSpacing.lg,
-          AppSpacing.lg + MediaQuery.viewInsetsOf(context).bottom,
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Añadir a mi biblioteca',
-              style: Theme.of(context).textTheme.titleLarge,
-            ),
-            const SizedBox(height: AppSpacing.lg),
-            const Text('Prioridad'),
-            const SizedBox(height: AppSpacing.xs),
-            Wrap(
-              spacing: AppSpacing.xs,
-              children: ['ALTA', 'MEDIA', 'BAJA']
-                  .map(
-                    (value) => ChoiceChip(
-                      label: Text(value[0] + value.substring(1).toLowerCase()),
-                      selected: _priority == value,
-                      selectedColor: AppColors.primaryDark,
-                      checkmarkColor: Colors.white,
-                      labelStyle: TextStyle(
-                        color: _priority == value
-                            ? Colors.white
-                            : AppColors.textPrimary,
-                        fontWeight: _priority == value
-                            ? FontWeight.w800
-                            : FontWeight.w500,
-                      ),
-                      onSelected: (_) => setState(() => _priority = value),
-                    ),
-                  )
-                  .toList(),
-            ),
-            const SizedBox(height: AppSpacing.md),
-            const Text('Formato (puedes decidirlo más tarde)'),
-            const SizedBox(height: AppSpacing.xs),
-            Wrap(
-              spacing: AppSpacing.xs,
-              children:
-                  const {
-                        '': 'Sin decidir',
-                        'FISICO': 'Físico',
-                        'DIGITAL': 'Digital',
-                        'AUDIOLIBRO': 'Audiolibro',
-                      }.entries
-                      .map(
-                        (entry) => ChoiceChip(
-                          label: Text(entry.value),
-                          selected: _format == entry.key,
-                          selectedColor: AppColors.primaryDark,
-                          checkmarkColor: Colors.white,
-                          labelStyle: TextStyle(
-                            color: _format == entry.key
-                                ? Colors.white
-                                : AppColors.textPrimary,
-                            fontWeight: _format == entry.key
-                                ? FontWeight.w800
-                                : FontWeight.w500,
-                          ),
-                          onSelected: (_) =>
-                              setState(() => _format = entry.key),
-                        ),
-                      )
-                      .toList(),
-            ),
-            const SizedBox(height: AppSpacing.xl),
-            SizedBox(
-              width: double.infinity,
-              child: FilledButton.icon(
-                onPressed: () => Navigator.pop(
-                  context,
-                  _BookPreferences(_priority, _format),
-                ),
-                icon: const Icon(Icons.add_rounded),
-                label: const Text('Añadir'),
-              ),
-            ),
           ],
         ),
       ),

@@ -117,15 +117,68 @@ void main() {
     },
   );
 
-  test('los perfiles ajenos no conectan una acción a las portadas', () {
-    final source = File(
-      'lib/pages/perfil_usuario_page.dart',
-    ).readAsStringSync();
-    expect(source, contains('onTap: esMiPerfil && libro != null'));
-    expect(source, contains("? () => _mostrarAcciones(context, libro)"));
-    expect(source, contains("'Cambiar favorito'"));
-    expect(source, contains("'Quitar de favoritos'"));
-    expect(source, contains("'Cancelar'"));
+  test(
+    'los perfiles ajenos abren la ficha y el propio conserva la gestión',
+    () {
+      final source = File(
+        'lib/pages/perfil_usuario_page.dart',
+      ).readAsStringSync();
+      expect(source, contains('onOpen(libro)'));
+      expect(source, contains('_mostrarAcciones(context, libro)'));
+      expect(source, contains("'Ver ficha completa'"));
+      expect(source, contains("'Cambiar favorito'"));
+      expect(source, contains("'Quitar de favoritos'"));
+      expect(source, contains("'Cancelar'"));
+    },
+  );
+
+  test(
+    'favoritos públicos usan profileUserId y no el nombre duplicado',
+    () async {
+      late Uri requested;
+      final api = ApiService(
+        client: MockClient((request) async {
+          requested = request.url;
+          return http.Response(jsonEncode({'favoritos': []}), 200);
+        }),
+      );
+
+      await api.getFavoritosUsuario('Cristina', profileUserId: 'user-b');
+
+      expect(requested.queryParameters['profileUserId'], 'user-b');
+      expect(requested.queryParameters.containsKey('perfil'), isFalse);
+    },
+  );
+
+  test(
+    'un fallo público de favoritos no se convierte en lista vacía',
+    () async {
+      final api = ApiService(
+        client: MockClient((_) async => http.Response('denegado', 403)),
+      );
+
+      expect(
+        () => api.getFavoritosUsuario('Cristina', profileUserId: 'user-b'),
+        throwsA(isA<Exception>()),
+      );
+    },
+  );
+
+  test('Libro del año público usa la misma identidad estable', () async {
+    late Uri requested;
+    final api = ApiService(
+      client: MockClient((request) async {
+        requested = request.url;
+        return http.Response('denegado', 403);
+      }),
+    );
+
+    await expectLater(
+      api.getPublicBookOfYear('Cristina', 2026, profileUserId: 'user-a'),
+      throwsA(isA<Exception>()),
+    );
+    expect(requested.queryParameters['profileUserId'], 'user-a');
+    expect(requested.queryParameters.containsKey('perfil'), isFalse);
   });
 }
 

@@ -18,14 +18,19 @@ class ClubBooksOfYearCard extends StatefulWidget {
   const ClubBooksOfYearCard({
     super.key,
     this.currentUserName,
+    this.currentUserId,
     this.loadMembers,
     this.pageBuilder,
+    this.pageBuilderWithId,
     this.loadEdition,
     this.collectivePageBuilder,
   });
   final String? currentUserName;
+  final String? currentUserId;
   final Future<List<ClubBookOfYearMember>> Function(int year)? loadMembers;
   final Widget Function(String? profile, int year)? pageBuilder;
+  final Widget Function(String? profile, String? profileUserId, int year)?
+  pageBuilderWithId;
   final Future<ClubBookOfYearEdition?> Function(int year)? loadEdition;
   final Widget Function(int year)? collectivePageBuilder;
   @override
@@ -42,7 +47,10 @@ class _ClubBooksOfYearCardState extends State<ClubBooksOfYearCard> {
   List<ClubBookOfYearMember> _ordered(List<ClubBookOfYearMember> source) {
     final unique = <String, ClubBookOfYearMember>{};
     for (final member in source) {
-      unique.putIfAbsent(member.userName.trim().toLowerCase(), () => member);
+      final key = member.userId.trim().isNotEmpty
+          ? 'id:${member.userId.trim()}'
+          : 'name:${member.userName.trim().toLowerCase()}';
+      unique.putIfAbsent(key, () => member);
     }
     final result = unique.values.toList(growable: false);
     final current = widget.currentUserName?.trim().toLowerCase();
@@ -58,8 +66,11 @@ class _ClubBooksOfYearCardState extends State<ClubBooksOfYearCard> {
   }
 
   bool _isCurrent(ClubBookOfYearMember member) =>
-      widget.currentUserName?.trim().toLowerCase() ==
-      member.userName.trim().toLowerCase();
+      widget.currentUserId?.trim().isNotEmpty == true &&
+          member.userId.trim().isNotEmpty
+      ? widget.currentUserId!.trim() == member.userId.trim()
+      : widget.currentUserName?.trim().toLowerCase() ==
+            member.userName.trim().toLowerCase();
 
   Future<void> _open(ClubBookOfYearMember member) async {
     final own = _isCurrent(member);
@@ -67,14 +78,22 @@ class _ClubBooksOfYearCardState extends State<ClubBooksOfYearCard> {
       context,
       AppPageRoute(
         builder: (_) =>
+            widget.pageBuilderWithId?.call(
+              own ? null : member.userName,
+              own ? null : member.userId,
+              year,
+            ) ??
             widget.pageBuilder?.call(own ? null : member.userName, year) ??
             BookOfYearPage(
               profile: own ? null : member.userName,
+              profileUserId: own || member.userId.isEmpty
+                  ? null
+                  : member.userId,
               initialYear: year,
             ),
       ),
     );
-    if (!mounted || !own) return;
+    if (!mounted) return;
     setState(() {
       _future = _load();
     });
@@ -497,6 +516,7 @@ class _MemberCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final winner = member.winner;
+    final preview = member.previewSlots;
     final started = member.completedMonths > 0 || member.selections.isNotEmpty;
     final semantics = [
       'Abrir Libro del año de ${member.userName}',
@@ -568,8 +588,8 @@ class _MemberCard extends StatelessWidget {
                   const Spacer(),
                   if (winner != null)
                     Center(child: _WinnerCover(book: winner))
-                  else if (member.finalists.isNotEmpty)
-                    _FinalistCovers(books: member.finalists.take(2).toList())
+                  else if (preview.isNotEmpty)
+                    _AdvancedCovers(items: preview)
                   else if (!started)
                     const Expanded(
                       child: Center(
@@ -582,6 +602,15 @@ class _MemberCard extends StatelessWidget {
                     )
                   else
                     const _EmptyCovers(),
+                  if (member.pendingDuels > 0)
+                    Text(
+                      '${member.pendingDuels} ${member.pendingDuels == 1 ? 'duelo pendiente' : 'duelos pendientes'}',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      ),
+                    ),
                   const Spacer(),
                   Text(
                     'Ver cuadro',
@@ -600,21 +629,48 @@ class _MemberCard extends StatelessWidget {
   }
 }
 
-class _FinalistCovers extends StatelessWidget {
-  const _FinalistCovers({required this.books});
-  final List<BookOfYearBook> books;
+class _AdvancedCovers extends StatelessWidget {
+  const _AdvancedCovers({required this.items});
+  final List<ClubBookOfYearPreviewBook> items;
+
   @override
   Widget build(BuildContext context) => SizedBox(
     height: 61,
     child: Row(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        for (final book in books)
+        for (final item in items.take(2))
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 3),
-            child: _Cover(book, width: 38, height: 56),
+            child: item.book == null
+                ? const _PendingCover()
+                : _Cover(item.book!, width: 38, height: 56),
           ),
       ],
+    ),
+  );
+}
+
+class _PendingCover extends StatelessWidget {
+  const _PendingCover();
+
+  @override
+  Widget build(BuildContext context) => Container(
+    key: const ValueKey('book-of-year-preview-pending'),
+    width: 38,
+    height: 56,
+    alignment: Alignment.center,
+    decoration: BoxDecoration(
+      color: Theme.of(context).colorScheme.surface.withValues(alpha: .62),
+      borderRadius: BorderRadius.circular(6),
+      border: Border.all(color: AppColors.border),
+    ),
+    child: const RotatedBox(
+      quarterTurns: 3,
+      child: Text(
+        'Pendiente',
+        style: TextStyle(fontSize: 9, fontWeight: FontWeight.w700),
+      ),
     ),
   );
 }

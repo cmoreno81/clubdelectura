@@ -18,6 +18,7 @@ import '../navigation/app_page_route.dart';
 import '../navigation/book_detail_page_route.dart';
 import '../widgets/libros/finalizar_libro_dialog.dart';
 import '../widgets/libros/libro_acciones_sheet.dart';
+import '../widgets/libros/add_book_sheet.dart';
 import '../widgets/libros/pausar_lectura_dialog.dart';
 
 import '../models/libro_agrupado.dart';
@@ -29,6 +30,7 @@ import '../services/auth_session_service.dart';
 import '../services/library_order_preferences.dart';
 import '../services/library_refresh_notifier.dart';
 import '../utils/genero_utils.dart';
+import '../utils/lector_count_utils.dart';
 import '../utils/reading_status_copy.dart';
 import 'detalle_libro_page.dart';
 import 'nuevo_libro_page.dart';
@@ -765,14 +767,16 @@ class _LibrosPageState extends State<LibrosPage> with WidgetsBindingObserver {
                             variant: ClubChipVariant.primary,
                           ),
                         ClubChip(
-                          label: '${libro.total} lectores interesados',
+                          label:
+                              '${libro.total} ${lectoresInteresadosLabel(libro.total)}',
                           icon: Icons.people_outline_rounded,
                           variant: ClubChipVariant.info,
                         ),
 
                         if (libro.totalFinalizados > 0)
                           ClubChip(
-                            label: '${libro.totalFinalizados} leídos',
+                            label:
+                                '${libro.totalFinalizados} ${librosLeidosLabel(libro.totalFinalizados)}',
                             icon: Icons.check_circle_outline_rounded,
                             variant: ClubChipVariant.success,
                           ),
@@ -1271,98 +1275,12 @@ class _LibrosPageState extends State<LibrosPage> with WidgetsBindingObserver {
   }
 
   Future<void> _confirmarAgregarLibro(LibroAgrupado libro) async {
-    final preferencias = await showDialog<({String prioridad, String formato})>(
-      context: context,
-      builder: (dialogContext) {
-        var prioridad = 'MEDIA';
-        String? formato;
-        return StatefulBuilder(
-          builder: (context, setDialogState) => AlertDialog(
-            title: const Text('Añadir a mi biblioteca'),
-            content: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(libro.libro),
-                const SizedBox(height: 20),
-                const Text('¿Qué prioridad tiene para ti?'),
-                const SizedBox(height: 8),
-                Wrap(
-                  spacing: 8,
-                  runSpacing: 8,
-                  children: [
-                    for (final opcion in const [
-                      ('ALTA', '🔴 Alta'),
-                      ('MEDIA', '🟡 Media'),
-                      ('BAJA', '🟢 Baja'),
-                    ])
-                      ChoiceChip(
-                        label: Text(opcion.$2),
-                        selected: prioridad == opcion.$1,
-                        selectedColor: AppColors.primary,
-                        labelStyle: TextStyle(
-                          color: prioridad == opcion.$1
-                              ? Colors.white
-                              : AppColors.textPrimary,
-                          fontWeight: prioridad == opcion.$1
-                              ? FontWeight.w800
-                              : FontWeight.w500,
-                        ),
-                        showCheckmark: false,
-                        onSelected: (_) =>
-                            setDialogState(() => prioridad = opcion.$1),
-                      ),
-                  ],
-                ),
-                const SizedBox(height: 20),
-                const Text('¿En qué formato lo tienes?'),
-                const SizedBox(height: 8),
-                Wrap(
-                  spacing: 8,
-                  children: [
-                    for (final opcion in const [
-                      ('FISICO', '📖 Físico'),
-                      ('DIGITAL', '📱 Digital'),
-                      ('AUDIOLIBRO', '🎧 Audio'),
-                    ])
-                      ChoiceChip(
-                        label: Text(opcion.$2),
-                        selected: formato == opcion.$1,
-                        selectedColor: AppColors.primary,
-                        checkmarkColor: Colors.white,
-                        labelStyle: TextStyle(
-                          color: formato == opcion.$1
-                              ? Colors.white
-                              : AppColors.textPrimary,
-                          fontWeight: formato == opcion.$1
-                              ? FontWeight.w800
-                              : FontWeight.w500,
-                        ),
-                        onSelected: (_) =>
-                            setDialogState(() => formato = opcion.$1),
-                      ),
-                  ],
-                ),
-              ],
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(dialogContext),
-                child: const Text('Cancelar'),
-              ),
-              FilledButton(
-                onPressed: formato == null
-                    ? null
-                    : () => Navigator.pop(dialogContext, (
-                        prioridad: prioridad,
-                        formato: formato!,
-                      )),
-                child: const Text('Añadir'),
-              ),
-            ],
-          ),
-        );
-      },
+    final referencia = libro.referencia;
+    final preferencias = await showAddBookSheet(
+      context,
+      title: libro.libro,
+      author: referencia?.autor ?? '',
+      coverUrl: libro.coverUrl,
     );
 
     if (preferencias == null) return;
@@ -1383,8 +1301,8 @@ class _LibrosPageState extends State<LibrosPage> with WidgetsBindingObserver {
     final respuesta = await ApiService().anadirLibroExistente(
       usuario: usuario,
       libro: libro.libro,
-      prioridad: preferencias.prioridad,
-      formato: preferencias.formato,
+      prioridad: preferencias.priority,
+      formato: preferencias.format,
     );
 
     if (!mounted) return;

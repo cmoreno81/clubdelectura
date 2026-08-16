@@ -1,5 +1,6 @@
 import 'package:club_lectura_app/services/library_refresh_notifier.dart';
 import 'package:flutter/material.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../models/catalog_book.dart';
 import '../models/libro_agrupado.dart';
@@ -11,6 +12,7 @@ import '../theme/app_spacing.dart';
 import '../theme/app_text_styles.dart';
 import '../widgets/common/club_book_cover.dart';
 import '../widgets/common/club_card.dart';
+import '../widgets/libros/add_book_sheet.dart';
 import 'detalle_libro_page.dart';
 
 class CatalogBookDetailPage extends StatefulWidget {
@@ -20,12 +22,22 @@ class CatalogBookDetailPage extends StatefulWidget {
     required this.title,
     required this.coverUrl,
     required this.genre,
+    this.loadBook,
+    this.addBook,
+    this.onLibraryChanged,
   });
 
   final String bookId;
   final String title;
   final String coverUrl;
   final String genre;
+  final Future<CatalogBook?> Function(String bookId, String title)? loadBook;
+  final Future<String> Function(
+    CatalogBook? book,
+    AddBookPreferences preferences,
+  )?
+  addBook;
+  final VoidCallback? onLibraryChanged;
 
   @override
   State<CatalogBookDetailPage> createState() => _CatalogBookDetailPageState();
@@ -37,6 +49,7 @@ class _CatalogBookDetailPageState extends State<CatalogBookDetailPage> {
   bool _adding = false;
   bool _added = false;
   bool _navigating = false;
+  bool _sheetOpen = false;
 
   /// bookId devuelto por el servidor al añadir (puede diferir del widget.bookId
   /// si el servidor redirige a un libro canónico).
@@ -50,18 +63,29 @@ class _CatalogBookDetailPageState extends State<CatalogBookDetailPage> {
 
   Future<void> _loadBook() async {
     try {
-      final books = await ApiService().getCatalogoGeneral(query: widget.title);
-      final match = books
-          .where(
-            (b) =>
-                b.id == widget.bookId ||
-                b.title.trim().toLowerCase() ==
-                    widget.title.trim().toLowerCase(),
-          )
-          .firstOrNull;
+      final supplied = widget.loadBook;
+      final CatalogBook? match;
+      if (supplied != null) {
+        match = await supplied(widget.bookId, widget.title);
+      } else {
+        final books = await ApiService().getCatalogoGeneral(
+          query: widget.title,
+        );
+        match = widget.bookId.isNotEmpty
+            ? books.where((book) => book.id == widget.bookId).firstOrNull
+            : books
+                  .where(
+                    (book) =>
+                        book.title.trim().toLowerCase() ==
+                        widget.title.trim().toLowerCase(),
+                  )
+                  .firstOrNull;
+      }
       if (mounted) {
         setState(() {
           _book = match;
+          _added = match?.inMyLibrary == true;
+          if (_added) _addedBookId = match!.id;
           _loading = false;
         });
       }
@@ -71,37 +95,44 @@ class _CatalogBookDetailPageState extends State<CatalogBookDetailPage> {
   }
 
   Future<void> _addToLibrary() async {
-    final result = await showModalBottomSheet<_LibraryPrefs>(
-      context: context,
-      isScrollControlled: true,
-      useSafeArea: true,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (_) => _AddToLibrarySheet(title: widget.title),
-    );
+    if (_adding || _added || _sheetOpen) return;
+    _sheetOpen = true;
+    final AddBookPreferences? result;
+    try {
+      result = await showAddBookSheet(
+        context,
+        title: _book?.title ?? widget.title,
+        author: _book?.authorLabel ?? '',
+        coverUrl: _book?.coverUrl.isNotEmpty == true
+            ? _book!.coverUrl
+            : widget.coverUrl,
+      );
+    } finally {
+      _sheetOpen = false;
+    }
     if (result == null || !mounted) return;
 
     setState(() => _adding = true);
     try {
-      final addedId = await ApiService().importarLibroCatalogo(
-        book: _book,
-        bookId: _book == null ? widget.bookId : null,
-        titulo: _book == null ? widget.title : null,
-        prioridad: result.priority,
-        formato: result.format,
-        estado: result.status,
-        fechaInicio: result.startDate,
-        fechaFin: result.endDate,
-        valoracion: result.rating,
-      );
+      final addedId = widget.addBook != null
+          ? await widget.addBook!(_book, result)
+          : await ApiService().importarLibroCatalogo(
+              book: _book,
+              bookId: _book == null ? widget.bookId : null,
+              titulo: _book == null ? widget.title : null,
+              prioridad: result.priority,
+              formato: result.format,
+              estado: 'PENDIENTE',
+            );
       if (mounted) {
         LibraryRefreshNotifier.instance.invalidate();
+        widget.onLibraryChanged?.call();
 
         setState(() {
           _added = true;
           _adding = false;
           _addedBookId = addedId.isNotEmpty ? addedId : widget.bookId;
+          _book = _book?.copyWith(inMyLibrary: true, status: 'PENDIENTE');
         });
       }
       if (mounted) {
@@ -187,6 +218,18 @@ class _CatalogBookDetailPageState extends State<CatalogBookDetailPage> {
     }
   }
 
+  Future<void> _abrirGoodreads() async {
+    var value = _book?.goodreadsUrl.trim() ?? '';
+    if (value.isEmpty) return;
+    if (!value.startsWith('http://') && !value.startsWith('https://')) {
+      value = 'https://$value';
+    }
+    final uri = Uri.tryParse(value);
+    if (uri == null) return;
+    final opened = await launchUrl(uri, mode: LaunchMode.externalApplication);
+    if (!opened) await launchUrl(uri, mode: LaunchMode.platformDefault);
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -201,55 +244,81 @@ class _CatalogBookDetailPageState extends State<CatalogBookDetailPage> {
           100,
         ),
         children: [
-          // ── Portada + info básica ──
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              ClubBookCover(
-                title: widget.title,
-                imageUrl: widget.coverUrl,
-                width: 110,
-                highResolution: true,
-                height: 160,
-              ),
-              const SizedBox(width: AppSpacing.md),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      widget.title,
-                      style: AppTextStyles.title.copyWith(fontSize: 18),
-                    ),
-                    if (widget.genre.isNotEmpty) ...[
-                      const SizedBox(height: AppSpacing.xs),
-                      Text(widget.genre, style: AppTextStyles.bodySecondary),
-                    ],
-                    if (_loading) ...[
-                      const SizedBox(height: AppSpacing.md),
-                      const SizedBox(
-                        width: 20,
-                        height: 20,
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      ),
-                    ] else if (_book != null) ...[
-                      const SizedBox(height: AppSpacing.xs),
-                      Text(
-                        _book!.authorLabel,
-                        style: AppTextStyles.bodySecondary,
-                      ),
-                      if (_book!.pages != null) ...[
-                        const SizedBox(height: AppSpacing.xs),
-                        Text(
-                          '${_book!.pages} páginas',
-                          style: AppTextStyles.caption,
-                        ),
-                      ],
-                    ],
-                  ],
+          ClubCard(
+            padding: const EdgeInsets.all(AppSpacing.lg),
+            gradient: const LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [AppColors.surfaceSoft, Color(0xFFF0E5FF)],
+            ),
+            borderColor: AppColors.primaryLight,
+            child: Column(
+              children: [
+                ClubBookCover(
+                  title: _book?.title ?? widget.title,
+                  imageUrl: _book?.coverUrl.isNotEmpty == true
+                      ? _book!.coverUrl
+                      : widget.coverUrl,
+                  width: 164,
+                  highResolution: true,
+                  showShadow: true,
                 ),
-              ),
-            ],
+                const SizedBox(height: AppSpacing.lg),
+                Text(
+                  _book?.title ?? widget.title,
+                  textAlign: TextAlign.center,
+                  style: AppTextStyles.title.copyWith(
+                    fontSize: 26,
+                    height: 1.15,
+                  ),
+                ),
+                if (_book?.authors.isNotEmpty == true) ...[
+                  const SizedBox(height: AppSpacing.xs),
+                  Text(
+                    _book!.authorLabel,
+                    textAlign: TextAlign.center,
+                    style: AppTextStyles.bodySecondary.copyWith(
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
+                if ((_book?.genre ?? widget.genre).trim().isNotEmpty) ...[
+                  const SizedBox(height: AppSpacing.sm),
+                  Text(
+                    (_book?.genre ?? widget.genre).trim(),
+                    textAlign: TextAlign.center,
+                    style: AppTextStyles.bodySecondary.copyWith(
+                      color: AppColors.primary,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ],
+                if (_loading) ...[
+                  const SizedBox(height: AppSpacing.md),
+                  const CircularProgressIndicator(strokeWidth: 2),
+                ] else if (_book != null &&
+                    (_book!.pages != null || _book!.series.isNotEmpty)) ...[
+                  const SizedBox(height: AppSpacing.md),
+                  Wrap(
+                    spacing: AppSpacing.sm,
+                    runSpacing: AppSpacing.xs,
+                    alignment: WrapAlignment.center,
+                    children: [
+                      if (_book!.pages != null)
+                        Chip(label: Text('${_book!.pages} páginas')),
+                      if (_book!.series.isNotEmpty)
+                        Chip(
+                          label: Text(
+                            _book!.seriesPosition.isEmpty
+                                ? _book!.series
+                                : '${_book!.series} · Libro ${_book!.seriesPosition}',
+                          ),
+                        ),
+                    ],
+                  ),
+                ],
+              ],
+            ),
           ),
 
           const SizedBox(height: AppSpacing.xl),
@@ -320,8 +389,77 @@ class _CatalogBookDetailPageState extends State<CatalogBookDetailPage> {
 
           const SizedBox(height: AppSpacing.md),
 
+          if (_book?.description.trim().isNotEmpty == true) ...[
+            ClubCard(
+              elevated: false,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('Sinopsis', style: AppTextStyles.subtitle),
+                  const SizedBox(height: AppSpacing.sm),
+                  Text(
+                    _book!.description.trim(),
+                    style: AppTextStyles.body.copyWith(height: 1.5),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: AppSpacing.md),
+          ],
+
+          if (_book != null &&
+              (_book!.publisher.isNotEmpty ||
+                  _book!.isbn.isNotEmpty ||
+                  _book!.language.isNotEmpty ||
+                  _book!.publicationDate.isNotEmpty ||
+                  _book!.publicationYear != null)) ...[
+            ClubCard(
+              elevated: false,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('Datos editoriales', style: AppTextStyles.subtitle),
+                  if (_book!.publisher.isNotEmpty)
+                    _MetadataRow(label: 'Editorial', value: _book!.publisher),
+                  if (_book!.publicationDate.isNotEmpty)
+                    _MetadataRow(
+                      label: 'Publicación',
+                      value: _book!.publicationDate,
+                    )
+                  else if (_book!.publicationYear != null)
+                    _MetadataRow(
+                      label: 'Publicación',
+                      value: '${_book!.publicationYear}',
+                    ),
+                  if (_book!.language.isNotEmpty)
+                    _MetadataRow(label: 'Idioma', value: _book!.language),
+                  if (_book!.isbn.isNotEmpty)
+                    _MetadataRow(label: 'ISBN', value: _book!.isbn),
+                ],
+              ),
+            ),
+            const SizedBox(height: AppSpacing.md),
+          ],
+
+          if (_book?.goodreadsUrl.trim().isNotEmpty == true) ...[
+            ClubCard(
+              elevated: false,
+              child: Material(
+                color: Colors.transparent,
+                child: ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  leading: const Icon(Icons.open_in_new_rounded),
+                  title: const Text('Ver ficha en Goodreads'),
+                  trailing: const Icon(Icons.chevron_right_rounded),
+                  onTap: _abrirGoodreads,
+                ),
+              ),
+            ),
+            const SizedBox(height: AppSpacing.md),
+          ],
+
           // ── Info de que el libro existe en ClubReads ──
-          if (!_loading)
+          if (!_loading && !_added)
             ClubCard(
               elevated: false,
               child: Row(
@@ -335,8 +473,8 @@ class _CatalogBookDetailPageState extends State<CatalogBookDetailPage> {
                   Expanded(
                     child: Text(
                       'Este libro está en el catálogo de ClubReaders. '
-                      'Al añadirlo podrás ver quién más lo está leyendo '
-                      'y participar en las lecturas del club.',
+                      'Al añadirlo podrás organizarlo en tu biblioteca y '
+                      'gestionar tu estado de lectura.',
                       style: AppTextStyles.caption.copyWith(height: 1.4),
                     ),
                   ),
@@ -347,6 +485,32 @@ class _CatalogBookDetailPageState extends State<CatalogBookDetailPage> {
       ),
     );
   }
+}
+
+class _MetadataRow extends StatelessWidget {
+  const _MetadataRow({required this.label, required this.value});
+
+  final String label;
+  final String value;
+
+  @override
+  Widget build(BuildContext context) => Padding(
+    padding: const EdgeInsets.only(top: AppSpacing.sm),
+    child: Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        SizedBox(width: 96, child: Text(label, style: AppTextStyles.caption)),
+        Expanded(
+          child: Text(
+            value,
+            style: AppTextStyles.bodySecondary.copyWith(
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ),
+      ],
+    ),
+  );
 }
 
 // ─── Sheet de añadir ─────────────────────────────────────────────

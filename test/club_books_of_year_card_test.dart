@@ -152,6 +152,294 @@ void main() {
     semantics.dispose();
   });
 
+  testWidgets('ganadores avanzados sobreviven a un duelo pendiente', (
+    tester,
+  ) async {
+    await _pump(
+      tester,
+      members: [
+        _member(
+          'Bea',
+          months: 7,
+          previewBooks: [
+            _advanced('advanced-1', phase: 'SEMIFINAL', position: 1),
+          ],
+          pendingDuels: 1,
+        ),
+      ],
+    );
+
+    expect(find.text('7/12 meses'), findsOneWidget);
+    expect(find.text('1 duelo pendiente'), findsOneWidget);
+    expect(
+      find.byKey(const ValueKey('book-of-year-preview-pending')),
+      findsOneWidget,
+    );
+    expect(find.byIcon(Icons.menu_book), findsOneWidget);
+  });
+
+  test('prioriza ganador, finalistas, avances y después elecciones', () {
+    final advanced = _member(
+      'Bea',
+      months: 7,
+      previewBooks: [
+        _advanced('quarter', phase: 'QUARTERFINAL', position: 1),
+        _advanced('semi', phase: 'SEMIFINAL', position: 2),
+      ],
+    );
+    expect(advanced.previewSlots.map((item) => item.book?.id), ['semi']);
+
+    final finalists = _member(
+      'Bea',
+      finalists: [_book('final-1'), _book('final-2')],
+      previewBooks: [_advanced('old', phase: 'SEMIFINAL')],
+    );
+    expect(finalists.previewSlots.map((item) => item.book?.id), [
+      'final-1',
+      'final-2',
+    ]);
+
+    final winner = _member(
+      'Bea',
+      winner: _book('winner'),
+      finalists: [_book('final')],
+    );
+    expect(winner.previewSlots.single.book?.id, 'winner');
+
+    final monthly = _member('Bea', months: 2);
+    expect(monthly.previewSlots.single.book?.id, 'selection-Bea');
+    expect(_member('Bea').previewSlots, isEmpty);
+  });
+
+  test('selecciona estrictamente la ronda resuelta más avanzada', () {
+    ClubBookOfYearMember parsed(Map<String, Object?> values) =>
+        ClubBookOfYearMember.fromJson({
+          'userId': 'bea-id',
+          'usuario': 'Bea',
+          'completedMonths': 7,
+          'selections': [
+            {'bookId': 'enero', 'title': 'Enero'},
+            {'bookId': 'febrero', 'title': 'Febrero'},
+          ],
+          ...values,
+        });
+
+    final noResolved = parsed({
+      'duels': [
+        {
+          'phase': 'FIRST_ROUND',
+          'position': 1,
+          'candidates': [
+            {'bookId': 'enero', 'title': 'Enero'},
+            {'bookId': 'febrero', 'title': 'Febrero'},
+          ],
+        },
+      ],
+    });
+    expect(noResolved.previewSlots.map((item) => item.book?.id), [
+      'enero',
+      'febrero',
+    ]);
+
+    final partiallyResolved = parsed({
+      'duels': [
+        {
+          'phase': 'FIRST_ROUND',
+          'position': 1,
+          'candidates': [
+            {'bookId': 'enero', 'title': 'Enero'},
+            {'bookId': 'febrero', 'title': 'Febrero'},
+          ],
+        },
+        {
+          'phase': 'FIRST_ROUND',
+          'position': 2,
+          'winner': {'bookId': 'ciudad', 'title': 'Ciudad de Jade'},
+        },
+        {
+          'phase': 'FIRST_ROUND',
+          'position': 3,
+          'winner': {'bookId': 'legado', 'title': 'Legado de Jade'},
+        },
+      ],
+    });
+    expect(partiallyResolved.pendingDuels, 1);
+    expect(partiallyResolved.previewSlots.map((item) => item.book?.id), [
+      'ciudad',
+      'legado',
+    ]);
+
+    final rounds = parsed({
+      'previewBooks': [
+        {
+          'bookId': 'first-a',
+          'title': 'Primera A',
+          'phase': 'FIRST_ROUND',
+          'position': 1,
+        },
+        {
+          'bookId': 'first-b',
+          'title': 'Primera B',
+          'phase': 'FIRST_ROUND',
+          'position': 2,
+        },
+      ],
+    });
+    expect(rounds.previewSlots.map((item) => item.book?.id), [
+      'first-a',
+      'first-b',
+    ]);
+
+    final semifinal = parsed({
+      'previewBooks': [
+        {'bookId': 'first', 'title': 'Primera', 'phase': 'FIRST_ROUND'},
+        {
+          'bookId': 'semi-a',
+          'title': 'Semi A',
+          'phase': 'SEMIFINAL',
+          'position': 1,
+        },
+        {
+          'bookId': 'semi-b',
+          'title': 'Semi B',
+          'phase': 'SEMIFINAL',
+          'position': 2,
+        },
+      ],
+    });
+    expect(semifinal.previewSlots.map((item) => item.book?.id), [
+      'semi-a',
+      'semi-b',
+    ]);
+
+    final finalists = parsed({
+      'finalists': [
+        {'bookId': 'final-a', 'title': 'Final A'},
+        {'bookId': 'final-b', 'title': 'Final B'},
+      ],
+      'previewBooks': [
+        {'bookId': 'semi', 'title': 'Semi', 'phase': 'SEMIFINAL'},
+      ],
+    });
+    expect(finalists.previewSlots.map((item) => item.book?.id), [
+      'final-a',
+      'final-b',
+    ]);
+
+    final winner = parsed({
+      'winner': {'bookId': 'winner', 'title': 'Ganador'},
+      'finalists': [
+        {'bookId': 'final', 'title': 'Final'},
+      ],
+    });
+    expect(winner.previewSlots.single.book?.id, 'winner');
+  });
+
+  testWidgets('recarga los avances al volver de resolver el último duelo', (
+    tester,
+  ) async {
+    var resolved = false;
+    var loads = 0;
+    Future<List<ClubBookOfYearMember>> load(_) async {
+      loads++;
+      return [
+        _member(
+          'Bea',
+          months: 7,
+          previewBooks: [
+            _advanced('ciudad', phase: 'FIRST_ROUND', position: 1),
+            if (resolved)
+              _advanced('legado', phase: 'FIRST_ROUND', position: 2),
+          ],
+          pendingDuels: resolved ? 0 : 1,
+        ),
+      ];
+    }
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: ClubBooksOfYearCard(
+            loadEdition: (_) async => null,
+            loadMembers: load,
+            pageBuilder: (_, _) => Scaffold(
+              body: TextButton(
+                onPressed: () {
+                  resolved = true;
+                  Navigator.pop(tester.element(find.text('Resolver')));
+                },
+                child: const Text('Resolver'),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(find.text('1 duelo pendiente'), findsOneWidget);
+
+    await tester.tap(find.text('Bea'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Resolver'));
+    await tester.pumpAndSettle();
+
+    expect(loads, 2);
+    expect(find.text('1 duelo pendiente'), findsNothing);
+    expect(find.byType(LinearProgressIndicator), findsOneWidget);
+  });
+
+  test(
+    'payload nuevo separa homónimos por userId e ignora avances invalidados',
+    () {
+      final first = ClubBookOfYearMember.fromJson({
+        'userId': 'user-a',
+        'usuario': 'Bea',
+        'completedMonths': 7,
+        'previewBooks': [
+          {
+            'bookId': 'valid',
+            'title': 'Válido',
+            'phase': 'SEMIFINAL',
+            'position': 1,
+            'status': 'CHOSEN',
+          },
+          {
+            'bookId': 'invalidated',
+            'title': 'Invalidado',
+            'phase': 'FINAL',
+            'position': 1,
+            'status': 'CHOSEN',
+            'invalidated': true,
+          },
+          {
+            'bookId': 'automatic',
+            'title': 'Automático',
+            'phase': 'FINAL',
+            'position': 2,
+            'status': 'CHOSEN',
+            'automatic': true,
+          },
+        ],
+      });
+      final second = ClubBookOfYearMember.fromJson({
+        'userId': 'user-b',
+        'usuario': 'Bea',
+        'previewBooks': [
+          {
+            'bookId': 'different',
+            'title': 'Distinto',
+            'phase': 'MONTH_PAIR',
+            'position': 1,
+            'status': 'CHOSEN',
+          },
+        ],
+      });
+      expect(first.userId, isNot(second.userId));
+      expect(first.previewSlots.single.book?.id, 'valid');
+      expect(second.previewSlots.single.book?.id, 'different');
+    },
+  );
+
   testWidgets('más de diez participantes usa carrusel y acción Ver todos', (
     tester,
   ) async {
@@ -208,7 +496,7 @@ void main() {
     expect(opened, [null, 'Álex']);
     await tester.tap(find.text('Cerrar'));
     await tester.pumpAndSettle();
-    expect(loads, 2);
+    expect(loads, 3);
   });
 
   testWidgets(
@@ -279,13 +567,27 @@ ClubBookOfYearMember _member(
   int months = 0,
   List<BookOfYearBook> finalists = const [],
   BookOfYearBook? winner,
+  List<ClubBookOfYearPreviewBook> previewBooks = const [],
+  int pendingDuels = 0,
 }) => ClubBookOfYearMember(
   userName: name,
   avatarUrl: '',
   completedMonths: months,
   selections: months == 0 ? const [] : [_book('selection-$name')],
   finalists: finalists,
+  previewBooks: previewBooks,
+  pendingDuels: pendingDuels,
   winner: winner,
+);
+
+ClubBookOfYearPreviewBook _advanced(
+  String id, {
+  String phase = 'SEMIFINAL',
+  int position = 1,
+}) => ClubBookOfYearPreviewBook.chosen(
+  _book(id),
+  phase: phase,
+  position: position,
 );
 
 BookOfYearBook _book(String id, {String? title}) => BookOfYearBook(

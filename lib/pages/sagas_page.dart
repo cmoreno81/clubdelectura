@@ -18,6 +18,7 @@ import '../widgets/common/club_empty_state.dart';
 import '../widgets/common/club_section_title.dart';
 import '../widgets/error_view.dart';
 import '../widgets/perfil/perfil_saga_card.dart';
+import '../widgets/libros/add_book_sheet.dart';
 import '../widgets/common/onboarding_tutorial.dart';
 import 'complete_series_page.dart';
 import 'detalle_libro_page.dart';
@@ -549,13 +550,10 @@ class _SagasPageState extends State<SagasPage> {
     PerfilSaga saga,
     PerfilSagaVolumen volumen,
   ) async {
-    final result = await showModalBottomSheet<_LibraryPreferences>(
-      context: context,
-      isScrollControlled: true,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (_) => _AddVolumeToLibrarySheet(titulo: volumen.titulo),
+    final result = await showAddBookSheet(
+      context,
+      title: volumen.titulo,
+      coverUrl: volumen.coverUrl,
     );
     if (result == null || !mounted) return;
 
@@ -565,10 +563,7 @@ class _SagasPageState extends State<SagasPage> {
         bookId: volumen.bookId,
         prioridad: result.priority,
         formato: result.format,
-        estado: result.status,
-        fechaInicio: result.startDate,
-        fechaFin: result.endDate,
-        valoracion: result.rating,
+        estado: 'PENDIENTE',
       );
       LibraryRefreshNotifier.instance.invalidate();
 

@@ -65,6 +65,7 @@ class UserAchievement {
 
 class ClubAchievementEvent {
   const ClubAchievementEvent({
+    this.userId = '',
     required this.userName,
     required this.avatarUrl,
     required this.achievementTitle,
@@ -73,6 +74,7 @@ class ClubAchievementEvent {
   });
 
   final String userName;
+  final String userId;
   final String avatarUrl;
   final String achievementTitle;
   final String achievementIcon;
@@ -80,6 +82,7 @@ class ClubAchievementEvent {
 
   factory ClubAchievementEvent.fromJson(Map<String, dynamic> json) =>
       ClubAchievementEvent(
+        userId: json['userId']?.toString() ?? '',
         userName: json['userName']?.toString() ?? '',
         avatarUrl: json['avatarUrl']?.toString() ?? '',
         achievementTitle: json['achievementTitle']?.toString() ?? '',

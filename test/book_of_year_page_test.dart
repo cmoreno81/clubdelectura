@@ -79,21 +79,13 @@ void main() {
     final source = File(
       'lib/pages/perfil_usuario_page.dart',
     ).readAsStringSync();
-    expect(
-      source,
-      contains(
-        'BookOfYearPreview(profile: perfil.usuario, editable: esMiPerfil)',
-      ),
-    );
+    expect(source, contains('BookOfYearPreview('));
+    expect(source, contains('profileUserId:'));
+    expect(source, contains('editable: esMiPerfil'));
     final preview = File(
       'lib/widgets/profile/book_of_year_preview.dart',
     ).readAsStringSync();
-    expect(
-      preview,
-      contains(
-        'if (board == null || (!widget.editable && !board.hasSelections))',
-      ),
-    );
+    expect(preview, contains("ValueKey('book-of-year-empty-state')"));
     expect(
       preview,
       contains('profile: widget.editable ? null : widget.profile'),
@@ -179,15 +171,10 @@ void main() {
       );
       await tester.pumpAndSettle();
       expect(loads, 1);
-      expect(find.byType(BookOfYearBracketPreview), findsOneWidget);
-      expect(
-        find.byKey(const ValueKey('book-of-year-preview-connections')),
-        findsOneWidget,
-      );
+      expect(find.byType(BookOfYearBracketPreview), findsNothing);
+      expect(find.text('Empezar mi Libro del año'), findsOneWidget);
 
-      await tester.tap(
-        find.byKey(const ValueKey('book-of-year-bracket-preview')),
-      );
+      await tester.tap(find.text('Empezar mi Libro del año'));
       await tester.pumpAndSettle();
       await tester.tap(find.text('Volver'));
       await tester.pumpAndSettle();
@@ -254,27 +241,162 @@ void main() {
     },
   );
 
-  testWidgets('un cuadro vacío conserva el estado introductorio', (
+  testWidgets(
+    'un cuadro propio vacío ofrece empezar sin mostrar el cuadrante',
+    (tester) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: BookOfYearPreview(
+              profile: 'Ada',
+              editable: true,
+              loadBoard: (_, _) async =>
+                  _boardWithSelections(DateTime.now().year, editable: true),
+              pageBuilder: (_, _) =>
+                  const Scaffold(body: Text('Configuración')),
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(find.byType(BookOfYearBracketPreview), findsNothing);
+      expect(find.text('Empezar mi Libro del año'), findsOneWidget);
+      await tester.tap(find.text('Empezar mi Libro del año'));
+      await tester.pumpAndSettle();
+      expect(find.text('Configuración'), findsOneWidget);
+    },
+  );
+
+  testWidgets('un cuadro público vacío permanece visible y es de consulta', (
     tester,
   ) async {
+    final year = DateTime.now().year;
     await tester.pumpWidget(
       MaterialApp(
         home: Scaffold(
           body: BookOfYearPreview(
-            profile: 'Ada',
-            editable: true,
-            loadBoard: (_, _) async =>
-                _boardWithSelections(DateTime.now().year, editable: true),
+            profile: 'Bea',
+            profileUserId: 'bea-id',
+            editable: false,
+            loadBoard: (_, _) async => _board(year, editable: false),
           ),
         ),
       ),
     );
     await tester.pumpAndSettle();
-    expect(find.byType(BookOfYearBracketPreview), findsOneWidget);
-    expect(find.byKey(const ValueKey('preview-locked-slot')), findsWidgets);
-    expect(find.byKey(const ValueKey('preview-pending-slot')), findsWidgets);
-    expect(find.byKey(const ValueKey('preview-book-default')), findsNothing);
-    expect(find.text('Ver cuadro completo'), findsOneWidget);
+
+    expect(find.text('Libro del año'), findsOneWidget);
+    expect(
+      find.text('Todavía no ha comenzado su Libro del año $year'),
+      findsOneWidget,
+    );
+    expect(find.byType(BookOfYearBracketPreview), findsNothing);
+    expect(find.text('Empezar mi Libro del año'), findsNothing);
+    expect(find.text('Ver cuadro completo'), findsNothing);
+  });
+
+  testWidgets('carga, error y reintento no se confunden con el estado vacío', (
+    tester,
+  ) async {
+    final first = Completer<BookOfYearBoard>();
+    var loads = 0;
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: BookOfYearPreview(
+            profile: 'Bea',
+            profileUserId: 'bea-id',
+            editable: false,
+            loadBoard: (_, _) {
+              loads++;
+              if (loads == 1) return first.future;
+              return Future.value(_board(DateTime.now().year, editable: false));
+            },
+          ),
+        ),
+      ),
+    );
+    expect(find.byType(CircularProgressIndicator), findsOneWidget);
+    expect(find.textContaining('Todavía no ha comenzado'), findsNothing);
+
+    first.completeError(Exception('sin conexión'));
+    await tester.pumpAndSettle();
+    expect(find.text('No se pudo cargar Libro del año'), findsOneWidget);
+    expect(find.text('Reintentar'), findsOneWidget);
+    expect(find.textContaining('Todavía no ha comenzado'), findsNothing);
+
+    await tester.tap(find.text('Reintentar'));
+    await tester.pumpAndSettle();
+    expect(loads, 2);
+    expect(find.textContaining('Todavía no ha comenzado'), findsOneWidget);
+  });
+
+  testWidgets(
+    'parcial, finalistas y ganador muestran la previsualización real',
+    (tester) async {
+      final year = DateTime.now().year;
+      final partial = _boardWithSelections(
+        year,
+        editable: false,
+        selections: {1: _book('jan', 'Enero')},
+      );
+      final finalists = _boardWithSelections(
+        year,
+        editable: false,
+        finalists: [_book('f1', 'Finalista 1'), _book('f2', 'Finalista 2')],
+      );
+      final winner = _boardWithSelections(
+        year,
+        editable: false,
+        winner: _book('winner', 'Ganador'),
+      );
+
+      for (final board in [partial, finalists, winner]) {
+        await tester.pumpWidget(
+          MaterialApp(
+            home: Scaffold(
+              body: BookOfYearPreview(
+                profile: 'Bea',
+                profileUserId: 'bea-id',
+                editable: false,
+                loadBoard: (_, _) async => board,
+              ),
+            ),
+          ),
+        );
+        await tester.pumpAndSettle();
+        expect(find.byType(BookOfYearBracketPreview), findsOneWidget);
+        expect(find.text('Ver cuadro completo'), findsOneWidget);
+      }
+    },
+  );
+
+  testWidgets('dos perfiles homónimos recargan siempre mediante su userId', (
+    tester,
+  ) async {
+    final loaded = <String>[];
+    Widget app(String id) => MaterialApp(
+      home: Scaffold(
+        body: BookOfYearPreview(
+          profile: 'Bea',
+          profileUserId: id,
+          editable: false,
+          loadBoard: (_, _) async {
+            loaded.add(id);
+            return _board(DateTime.now().year, editable: false);
+          },
+        ),
+      ),
+    );
+
+    await tester.pumpWidget(app('bea-a'));
+    await tester.pumpAndSettle();
+    await tester.pumpWidget(app('bea-b'));
+    await tester.pumpAndSettle();
+    await tester.pumpWidget(app('bea-a'));
+    await tester.pumpAndSettle();
+
+    expect(loaded, ['bea-a', 'bea-b', 'bea-a']);
   });
 
   testWidgets(

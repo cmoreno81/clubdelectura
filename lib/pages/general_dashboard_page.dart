@@ -36,16 +36,30 @@ import 'nuevo_libro_page.dart';
 import 'perfil_usuario_page.dart';
 import 'sagas_page.dart';
 import '../widgets/common/onboarding_tutorial.dart';
+import '../widgets/libros/libro_acciones_rapidas.dart';
 import 'mis_logros_page.dart';
 import '../models/achievements/achievement.dart';
 import '../services/achievement_service.dart';
 import '../services/usuario_service.dart';
 import 'package:club_lectura_app/widgets/common/club_shimmer.dart';
 
+typedef DashboardQuickActions = Future<bool> Function({
+  required String title,
+  required String bookId,
+  required String coverUrl,
+  required String genre,
+  required String author,
+});
+
 class GeneralDashboardPage extends StatefulWidget {
-  const GeneralDashboardPage({super.key, this.loadDashboard});
+  const GeneralDashboardPage({
+    super.key,
+    this.loadDashboard,
+    this.quickActions,
+  });
 
   final Future<GeneralDashboard> Function()? loadDashboard;
+  final DashboardQuickActions? quickActions;
 
   @override
   State<GeneralDashboardPage> createState() => _GeneralDashboardPageState();
@@ -57,7 +71,11 @@ class _GeneralDashboardPageState extends State<GeneralDashboardPage> {
   bool _openingBook = false; // ← evita abrir dos fichas a la vez
   bool _openingNewBook = false;
   bool _savingProgress = false;
+  bool _openingBookActions = false;
   final _scrollController = ScrollController();
+  final _latestScrollController = ScrollController();
+  final _personalLibraryScrollController = ScrollController();
+  final _trendingScrollController = ScrollController();
   int _noLeidas = 0;
 
   @override
@@ -164,6 +182,9 @@ class _GeneralDashboardPageState extends State<GeneralDashboardPage> {
   @override
   void dispose() {
     _scrollController.dispose();
+    _latestScrollController.dispose();
+    _personalLibraryScrollController.dispose();
+    _trendingScrollController.dispose();
     super.dispose();
   }
 
@@ -176,10 +197,17 @@ class _GeneralDashboardPageState extends State<GeneralDashboardPage> {
   }
 
   Future<void> _reload() async {
-    setState(() {
-      _future = _loadDashboard();
-    });
-    await _future;
+    final refresh = _loadDashboard();
+    try {
+      final data = await refresh;
+      if (!mounted) return;
+      setState(() => _future = Future.value(data));
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('No se ha podido actualizar el panel.')),
+      );
+    }
   }
 
   Future<GeneralDashboard> _loadDashboard() =>
@@ -255,16 +283,54 @@ class _GeneralDashboardPageState extends State<GeneralDashboardPage> {
     if (_openingBook) return;
     setState(() => _openingBook = true);
     try {
-      await openCatalogBookDetail(
+      final changed = await openCatalogBookDetail(
         context,
         title: title,
         bookId: bookId,
         coverUrl: coverUrl,
         genre: genre,
       );
-      if (mounted) await _reload();
+      if (changed && mounted) await _reload();
     } finally {
       if (mounted) setState(() => _openingBook = false);
+    }
+  }
+
+  Future<void> _openQuickActions({
+    required String title,
+    required String bookId,
+    required String coverUrl,
+    required String genre,
+    String author = '',
+  }) async {
+    if (_openingBookActions) return;
+    _openingBookActions = true;
+    try {
+      final changed = widget.quickActions != null
+          ? await widget.quickActions!(
+              title: title,
+              bookId: bookId,
+              coverUrl: coverUrl,
+              genre: genre,
+              author: author,
+            )
+          : await mostrarAccionesRapidasLibro(
+              context,
+              bookId: bookId,
+              titulo: title,
+              autor: author,
+              genero: genre,
+              coverUrl: coverUrl,
+              abrirFicha: (_) => _openCatalogBook(
+                title: title,
+                bookId: bookId,
+                coverUrl: coverUrl,
+                genre: genre,
+              ),
+            );
+      if (changed && mounted) await _reload();
+    } finally {
+      _openingBookActions = false;
     }
   }
   // ─────────────────────────────────────────────────────────────────────────
@@ -316,10 +382,15 @@ class _GeneralDashboardPageState extends State<GeneralDashboardPage> {
     if (mounted) await _reload();
   }
 
-  Future<void> _openMyProfile(String userName) async {
+  Future<void> _openMyProfile(String userName, String userId) async {
     await Navigator.push<void>(
       context,
-      AppPageRoute(builder: (_) => PerfilUsuarioPage(usuario: userName)),
+      AppPageRoute(
+        builder: (_) => PerfilUsuarioPage(
+          usuario: userName,
+          profileUserId: userId.isEmpty ? null : userId,
+        ),
+      ),
     );
     if (mounted) await _reload();
   }
@@ -366,7 +437,8 @@ class _GeneralDashboardPageState extends State<GeneralDashboardPage> {
       body: FutureBuilder<GeneralDashboard>(
         future: _future,
         builder: (context, snapshot) {
-          if (snapshot.connectionState != ConnectionState.done) {
+          if (snapshot.connectionState != ConnectionState.done &&
+              !snapshot.hasData) {
             return const DashboardSkeleton();
           }
           if (snapshot.hasError) {
@@ -627,7 +699,7 @@ class _GeneralDashboardPageState extends State<GeneralDashboardPage> {
   Widget _hero(GeneralDashboard data) {
     final clubvisionReminder = data.clubvisionNotice?.message;
     return ClubCard(
-      onTap: () => _openMyProfile(data.userName),
+      onTap: () => _openMyProfile(data.userName, data.userId),
       gradient: const LinearGradient(
         begin: Alignment.topLeft,
         end: Alignment.bottomRight,
@@ -1042,6 +1114,8 @@ class _GeneralDashboardPageState extends State<GeneralDashboardPage> {
     return SizedBox(
       height: 224,
       child: ListView.separated(
+        key: const PageStorageKey('dashboard-personal-library'),
+        controller: _personalLibraryScrollController,
         scrollDirection: Axis.horizontal,
         padding: const EdgeInsets.only(right: AppSpacing.sm),
         itemCount: books.length,
@@ -1053,17 +1127,26 @@ class _GeneralDashboardPageState extends State<GeneralDashboardPage> {
             child: InkWell(
               borderRadius: BorderRadius.circular(16),
               onTap: () => _openPersonalBook(book, userName),
+              onLongPress: () => _openQuickActions(
+                title: book.title,
+                bookId: book.id,
+                coverUrl: book.coverUrl,
+                genre: book.genre,
+              ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Stack(
                     clipBehavior: Clip.none,
                     children: [
-                      ClubBookCover(
-                        title: book.title,
-                        imageUrl: book.coverUrl,
-                        width: 110,
-                        height: 158,
+                      Semantics(
+                        hint: 'Mantén pulsado para abrir acciones rápidas',
+                        child: ClubBookCover(
+                          title: book.title,
+                          imageUrl: book.coverUrl,
+                          width: 110,
+                          height: 158,
+                        ),
                       ),
                       Positioned(
                         top: 8,
@@ -1120,6 +1203,8 @@ class _GeneralDashboardPageState extends State<GeneralDashboardPage> {
     return SizedBox(
       height: 218,
       child: ListView.separated(
+        key: const PageStorageKey('dashboard-latest-additions'),
+        controller: _latestScrollController,
         scrollDirection: Axis.horizontal,
         padding: const EdgeInsets.symmetric(horizontal: 2),
         itemCount: books.length,
@@ -1135,17 +1220,27 @@ class _GeneralDashboardPageState extends State<GeneralDashboardPage> {
                 bookId: book.id,
                 coverUrl: book.coverUrl,
               ),
+              onLongPress: () => _openQuickActions(
+                title: book.title,
+                bookId: book.id,
+                coverUrl: book.coverUrl,
+                genre: book.genre,
+                author: book.author,
+              ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Stack(
                     clipBehavior: Clip.none,
                     children: [
-                      ClubBookCover(
-                        title: book.title,
-                        imageUrl: book.coverUrl,
-                        width: 108,
-                        height: 158,
+                      Semantics(
+                        hint: 'Mantén pulsado para abrir acciones rápidas',
+                        child: ClubBookCover(
+                          title: book.title,
+                          imageUrl: book.coverUrl,
+                          width: 108,
+                          height: 158,
+                        ),
                       ),
                       Positioned(
                         right: -2,
@@ -1331,6 +1426,8 @@ class _GeneralDashboardPageState extends State<GeneralDashboardPage> {
     return SizedBox(
       height: 190,
       child: ListView.separated(
+        key: const PageStorageKey('dashboard-trending-books'),
+        controller: _trendingScrollController,
         scrollDirection: Axis.horizontal,
         itemCount: books.length,
         separatorBuilder: (_, _) => const SizedBox(width: AppSpacing.md),
@@ -1345,16 +1442,25 @@ class _GeneralDashboardPageState extends State<GeneralDashboardPage> {
                 bookId: book.id,
                 coverUrl: book.coverUrl,
               ),
+              onLongPress: () => _openQuickActions(
+                title: book.title,
+                bookId: book.id,
+                coverUrl: book.coverUrl,
+                genre: '',
+              ),
               child: Column(
                 children: [
                   Stack(
                     clipBehavior: Clip.none,
                     children: [
-                      ClubBookCover(
-                        title: book.title,
-                        imageUrl: book.coverUrl,
-                        width: 92,
-                        height: 132,
+                      Semantics(
+                        hint: 'Mantén pulsado para abrir acciones rápidas',
+                        child: ClubBookCover(
+                          title: book.title,
+                          imageUrl: book.coverUrl,
+                          width: 92,
+                          height: 132,
+                        ),
                       ),
                       Positioned(
                         right: -4,

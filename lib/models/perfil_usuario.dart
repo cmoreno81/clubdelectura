@@ -1,6 +1,7 @@
 // models/perfil_usuario.dart
 
 class PerfilUsuario {
+  final String userId;
   final String usuario;
   final String avatarUrl;
   final PerfilResumen resumen;
@@ -14,6 +15,7 @@ class PerfilUsuario {
   final List<LibroFavorito> favoritos;
 
   PerfilUsuario({
+    this.userId = '',
     required this.usuario,
     required this.avatarUrl,
     required this.resumen,
@@ -36,6 +38,7 @@ class PerfilUsuario {
     }
 
     return PerfilUsuario(
+      userId: json['userId']?.toString() ?? json['usuarioId']?.toString() ?? '',
       usuario: json['usuario']?.toString() ?? '',
       avatarUrl: json['avatarUrl']?.toString() ?? '',
       resumen: PerfilResumen.fromJson(
@@ -51,6 +54,21 @@ class PerfilUsuario {
       favoritos: parseList('favoritos', LibroFavorito.fromJson),
     );
   }
+
+  PerfilUsuario copyWith({List<LibroFavorito>? favoritos}) => PerfilUsuario(
+    userId: userId,
+    usuario: usuario,
+    avatarUrl: avatarUrl,
+    resumen: resumen,
+    leyendo: leyendo,
+    terminados: terminados,
+    abandonados: abandonados,
+    pendientes: pendientes,
+    generosFavoritos: generosFavoritos,
+    sagas: sagas,
+    historicoMeses: historicoMeses,
+    favoritos: favoritos ?? this.favoritos,
+  );
 }
 
 // ─────────────────────────────────────────────
@@ -67,29 +85,33 @@ class LibroFavorito {
   });
 
   final String id;
+  String get bookId => id;
   final String title;
   final String? authorName;
   final String? coverUrl;
   final String genreName;
 
   factory LibroFavorito.fromJson(Map<String, dynamic> json) => LibroFavorito(
-    id: json['id']?.toString() ?? '',
-    title: json['title']?.toString() ?? '',
+    id: json['bookId']?.toString() ?? json['id']?.toString() ?? '',
+    title: json['title']?.toString() ?? json['titulo']?.toString() ?? '',
     authorName: json['authorName']?.toString(),
     coverUrl: json['coverUrl']?.toString(),
-    genreName: json['genreName']?.toString() ?? '',
+    genreName:
+        json['genreName']?.toString() ?? json['genero']?.toString() ?? '',
   );
 }
 
 class MiembroFavoritos {
   const MiembroFavoritos({
     required this.nombre,
+    this.userId = '',
     required this.avatarUrl,
     required this.favoritos,
     this.esTu = false,
   });
 
   final String nombre;
+  final String userId;
   final String avatarUrl;
   final List<LibroFavorito> favoritos;
 
@@ -99,6 +121,8 @@ class MiembroFavoritos {
   factory MiembroFavoritos.fromJson(Map<String, dynamic> json) =>
       MiembroFavoritos(
         nombre: json['nombre']?.toString() ?? '',
+        userId:
+            json['userId']?.toString() ?? json['usuarioId']?.toString() ?? '',
         avatarUrl: json['avatarUrl']?.toString() ?? '',
         esTu: json['esTu'] == true,
         favoritos: (json['favoritos'] as List? ?? [])

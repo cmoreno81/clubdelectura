@@ -10,6 +10,7 @@ import '../utils/genero_utils.dart';
 import '../widgets/common/club_book_cover.dart';
 import '../widgets/common/club_card.dart';
 import '../widgets/common/optimized_network_image.dart';
+import '../widgets/libros/libro_acciones_rapidas.dart';
 import '../widgets/error_view.dart';
 import 'package:club_lectura_app/widgets/common/club_shimmer.dart';
 
@@ -31,11 +32,31 @@ class AutorLibrosPage extends StatefulWidget {
 
 class _AutorLibrosPageState extends State<AutorLibrosPage> {
   late Future<Map<String, dynamic>> _future;
+  bool _openingBookActions = false;
+  final _scrollController = ScrollController();
 
   @override
   void initState() {
     super.initState();
     _future = ApiService().getLibrosPorAutor(widget.autorId);
+  }
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _reloadBooks() async {
+    try {
+      final data = await ApiService().getLibrosPorAutor(widget.autorId);
+      if (mounted) setState(() => _future = Future.value(data));
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('No se han podido actualizar los libros.')),
+      );
+    }
   }
 
   String _initials(String nombre) {
@@ -50,13 +71,45 @@ class _AutorLibrosPageState extends State<AutorLibrosPage> {
     return nombre.isNotEmpty ? nombre[0].toUpperCase() : '?';
   }
 
+  Future<void> _mostrarAcciones(Map<String, dynamic> data) async {
+    if (_openingBookActions) return;
+    _openingBookActions = true;
+    final titulo = data['titulo']?.toString() ?? '';
+    final bookId = data['id']?.toString() ?? '';
+    final coverUrl = data['coverUrl']?.toString() ?? '';
+    final genero = data['genero']?.toString() ?? '';
+    try {
+      final changed = await mostrarAccionesRapidasLibro(
+        context,
+        bookId: bookId,
+        titulo: titulo,
+        autor: widget.nombre,
+        genero: genero,
+        coverUrl: coverUrl,
+        abrirFicha: (_) => openBookDetail(
+          context,
+          title: titulo,
+          bookId: bookId,
+          coverUrl: coverUrl,
+          genre: genero,
+        ),
+      );
+      if (changed && mounted) {
+        await _reloadBooks();
+      }
+    } finally {
+      _openingBookActions = false;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       body: FutureBuilder<Map<String, dynamic>>(
         future: _future,
         builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
+          if (snapshot.connectionState == ConnectionState.waiting &&
+              !snapshot.hasData) {
             return const CoverListSkeleton();
           }
           if (snapshot.hasError ||
@@ -78,6 +131,8 @@ class _AutorLibrosPageState extends State<AutorLibrosPage> {
               .cast<Map<String, dynamic>>();
 
           return CustomScrollView(
+            key: const PageStorageKey('author-books-scroll'),
+            controller: _scrollController,
             slivers: [
               // ── AppBar con foto del autor ──
               SliverAppBar(
@@ -269,18 +324,23 @@ class _AutorLibrosPageState extends State<AutorLibrosPage> {
                             coverUrl: coverUrl,
                             genre: genero,
                           ),
+                          onLongPress: () => _mostrarAcciones(libro),
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              ClubBookCover(
-                                title: titulo,
-                                imageUrl: coverUrl,
-                                width: double.infinity,
-                                height: 140,
-                                borderRadius: BorderRadius.circular(
-                                  AppRadius.md,
+                              Semantics(
+                                hint:
+                                    'Mantén pulsado para abrir acciones rápidas',
+                                child: ClubBookCover(
+                                  title: titulo,
+                                  imageUrl: coverUrl,
+                                  width: double.infinity,
+                                  height: 140,
+                                  borderRadius: BorderRadius.circular(
+                                    AppRadius.md,
+                                  ),
+                                  showShadow: true,
                                 ),
-                                showShadow: true,
                               ),
                               const SizedBox(height: 6),
                               Text(

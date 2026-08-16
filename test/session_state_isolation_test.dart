@@ -23,8 +23,8 @@ void main() {
     final service = FavoritosService.forTesting(
       ApiService(
         client: MockClient((request) {
-          final profile = request.url.queryParameters['perfil'];
-          if (profile == 'Cuenta A') return responseA.future;
+          final profile = request.url.queryParameters['profileUserId'];
+          if (profile == 'a') return responseA.future;
           return Future.value(_favoritesResponse(const []));
         }),
       ),
@@ -57,8 +57,8 @@ void main() {
       final service = FavoritosService.forTesting(
         ApiService(
           client: MockClient((request) {
-            final profile = request.url.queryParameters['perfil'];
-            if (profile == 'Cuenta A') return responseA.future;
+            final profile = request.url.queryParameters['profileUserId'];
+            if (profile == 'a') return responseA.future;
             return Future.value(
               _favoritesResponse([_favorite('b-1', 'Libro B')]),
             );
@@ -84,9 +84,9 @@ void main() {
     final service = FavoritosService.forTesting(
       ApiService(
         client: MockClient((request) async {
-          final profile = request.url.queryParameters['perfil'];
+          final profile = request.url.queryParameters['profileUserId'];
           return _favoritesResponse([
-            _favorite(profile == 'Cuenta A' ? 'a-1' : 'b-1', 'Libro $profile'),
+            _favorite(profile == 'a' ? 'a-1' : 'b-1', 'Libro $profile'),
           ]);
         }),
       ),

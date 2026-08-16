@@ -149,7 +149,7 @@ Future<bool> openBookDetail(
         ),
       ),
     );
-    return true;
+    return false;
   } catch (e) {
     debugPrint('openBookDetail error: $e');
     if (!context.mounted) return false;
@@ -186,6 +186,7 @@ Future<bool> openCatalogBookDetail(
       if (!context.mounted) return false;
 
       if (result == null) {
+        var changed = false;
         await Navigator.push<void>(
           context,
           BookDetailPageRoute(
@@ -194,10 +195,11 @@ Future<bool> openCatalogBookDetail(
               title: title,
               coverUrl: coverUrl,
               genre: genre,
+              onLibraryChanged: () => changed = true,
             ),
           ),
         );
-        return true;
+        return changed;
       }
 
       registros = result.libros
@@ -244,6 +246,7 @@ Future<bool> openCatalogBookDetail(
     }
 
     if (registros.isEmpty && finalizados.isEmpty) {
+      var changed = false;
       await Navigator.push<void>(
         context,
         BookDetailPageRoute(
@@ -252,10 +255,11 @@ Future<bool> openCatalogBookDetail(
             title: title,
             coverUrl: coverUrl,
             genre: genre,
+            onLibraryChanged: () => changed = true,
           ),
         ),
       );
-      return true;
+      return changed;
     }
 
     await Navigator.push<void>(
@@ -274,7 +278,7 @@ Future<bool> openCatalogBookDetail(
         ),
       ),
     );
-    return true;
+    return false;
   } catch (_) {
     if (!context.mounted) return false;
     ScaffoldMessenger.of(context).showSnackBar(

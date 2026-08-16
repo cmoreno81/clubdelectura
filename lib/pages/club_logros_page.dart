@@ -18,6 +18,7 @@ import 'package:club_lectura_app/widgets/common/club_shimmer.dart';
 
 class _MemberRankingEntry {
   const _MemberRankingEntry({
+    this.userId = '',
     required this.userName,
     required this.avatarUrl,
     required this.total,
@@ -25,12 +26,14 @@ class _MemberRankingEntry {
   });
 
   final String userName;
+  final String userId;
   final String avatarUrl;
   final int total;
   final List<ClubAchievementEvent> logros;
 
   factory _MemberRankingEntry.fromJson(Map<String, dynamic> json) {
     return _MemberRankingEntry(
+      userId: json['userId']?.toString() ?? '',
       userName: json['userName']?.toString() ?? '',
       avatarUrl: json['avatarUrl']?.toString() ?? '',
       total: (json['total'] as num?)?.toInt() ?? 0,
@@ -168,6 +171,7 @@ class _RankingList extends StatelessWidget {
             AppPageRoute(
               builder: (_) => PerfilUsuarioPage(
                 usuario: entry.userName,
+                profileUserId: entry.userId.isEmpty ? null : entry.userId,
                 initialTab: 'LOGROS',
               ),
             ),
@@ -280,7 +284,10 @@ class _RecentList extends StatelessWidget {
           onTap: () => Navigator.push<void>(
             context,
             AppPageRoute(
-              builder: (_) => PerfilUsuarioPage(usuario: e.userName),
+              builder: (_) => PerfilUsuarioPage(
+                usuario: e.userName,
+                profileUserId: e.userId.isEmpty ? null : e.userId,
+              ),
             ),
           ),
           child: Row(

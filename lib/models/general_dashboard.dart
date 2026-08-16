@@ -1,6 +1,7 @@
 class GeneralDashboard {
   const GeneralDashboard({
     required this.userName,
+    this.userId = '',
     required this.avatarUrl,
     required this.summary,
     required this.clubs,
@@ -17,6 +18,7 @@ class GeneralDashboard {
   });
 
   final String userName;
+  final String userId;
   final String avatarUrl;
   final GeneralSummary summary;
   final List<GeneralClub> clubs;
@@ -49,6 +51,7 @@ class GeneralDashboard {
     );
     return GeneralDashboard(
       userName: user['nombre']?.toString() ?? '',
+      userId: user['id']?.toString() ?? user['userId']?.toString() ?? '',
       avatarUrl: user['avatarUrl']?.toString() ?? '',
       summary: GeneralSummary.fromJson(
         Map<String, dynamic>.from(json['resumen'] as Map? ?? {}),

@@ -39,6 +39,7 @@ import 'change_password_page.dart';
 import 'goodreads_import_page.dart';
 import 'hidden_series_page.dart';
 import '../services/auth_service.dart';
+import '../services/auth_session_service.dart';
 import '../services/favoritos_service.dart';
 import '../widgets/dashboard/year_reading_shelf.dart';
 import '../models/general_dashboard.dart' show YearShelfBook;
@@ -51,10 +52,13 @@ class PerfilUsuarioPage extends StatefulWidget {
   const PerfilUsuarioPage({
     super.key,
     required this.usuario,
+    this.profileUserId,
     this.initialTab = 'RESUMEN',
     this.scrollToSeguimiento = false,
     this.loadProfile,
     this.loadCurrentUser,
+    this.loadPublicFavorites,
+    this.onOpenFavorite,
     this.onEditReading,
     this.bookOfYearPreviewBuilder,
     this.trackingContentBuilder,
@@ -62,6 +66,7 @@ class PerfilUsuarioPage extends StatefulWidget {
   });
 
   final String usuario;
+  final String? profileUserId;
   final String initialTab;
 
   /// Si es true, hace scroll automático a la sección "Seguimiento lector"
@@ -69,6 +74,9 @@ class PerfilUsuarioPage extends StatefulWidget {
   final bool scrollToSeguimiento;
   final Future<PerfilUsuario> Function()? loadProfile;
   final Future<String?> Function()? loadCurrentUser;
+  final Future<List<LibroFavorito>> Function(String userId, String userName)?
+  loadPublicFavorites;
+  final Future<void> Function(LibroFavorito favorite)? onOpenFavorite;
   final Future<void> Function(PerfilLibroTerminado book)? onEditReading;
   final Widget Function(String profile, bool editable)?
   bookOfYearPreviewBuilder;
@@ -162,6 +170,9 @@ class _PerfilUsuarioPageState extends State<PerfilUsuarioPage> {
   String _menuPerfil = 'RESUMEN';
   String _historialVista = 'CRONOLOGIA';
   int? _historialYear;
+  Future<List<LibroFavorito>>? _publicFavoritesFuture;
+  String? _publicFavoritesOwner;
+  bool _openingFavoriteBook = false;
 
   final _scrollController = ScrollController();
 
@@ -180,6 +191,19 @@ class _PerfilUsuarioPageState extends State<PerfilUsuarioPage> {
       future = _cargarPerfil();
     }
     _cargarUsuarioActual();
+  }
+
+  @override
+  void didUpdateWidget(covariant PerfilUsuarioPage oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.profileUserId != widget.profileUserId ||
+        oldWidget.usuario != widget.usuario) {
+      _publicFavoritesFuture = null;
+      _publicFavoritesOwner = null;
+      usuarioActual = null;
+      future = _cargarPerfil();
+      _cargarUsuarioActual();
+    }
   }
 
   @override
@@ -311,6 +335,11 @@ class _PerfilUsuarioPageState extends State<PerfilUsuarioPage> {
   }
 
   bool get esMiPerfil {
+    final targetId = widget.profileUserId?.trim() ?? '';
+    final sessionId = AuthSessionService.instance.user?.id.trim() ?? '';
+    if (targetId.isNotEmpty && sessionId.isNotEmpty) {
+      return targetId == sessionId;
+    }
     return usuarioActual != null &&
         usuarioActual!.trim().isNotEmpty &&
         usuarioActual!.toLowerCase() == widget.usuario.trim().toLowerCase();
@@ -318,7 +347,25 @@ class _PerfilUsuarioPageState extends State<PerfilUsuarioPage> {
 
   Future<PerfilUsuario> _cargarPerfil() {
     return widget.loadProfile?.call() ??
-        ApiService().getPerfilUsuarioCompleto(widget.usuario);
+        ApiService().getPerfilUsuarioCompleto(
+          widget.usuario,
+          profileUserId: widget.profileUserId,
+        );
+  }
+
+  Future<List<LibroFavorito>> _favoritosPublicos(PerfilUsuario perfil) {
+    final owner = (widget.profileUserId ?? perfil.userId).trim();
+    final key = owner.isNotEmpty ? 'id:$owner' : 'name:${perfil.usuario}';
+    if (_publicFavoritesFuture == null || _publicFavoritesOwner != key) {
+      _publicFavoritesOwner = key;
+      _publicFavoritesFuture =
+          widget.loadPublicFavorites?.call(owner, perfil.usuario) ??
+          ApiService().getFavoritosUsuario(
+            perfil.usuario,
+            profileUserId: owner.isEmpty ? null : owner,
+          );
+    }
+    return _publicFavoritesFuture!;
   }
 
   Future<void> _recargar() async {
@@ -552,49 +599,80 @@ class _PerfilUsuarioPageState extends State<PerfilUsuarioPage> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        if (esMiPerfil || perfil.favoritos.isNotEmpty) ...[
-          const SizedBox(height: AppSpacing.sm),
-          ClubSectionTitle(
-            title: 'Libros favoritos',
-            subtitle: esMiPerfil
-                ? 'Tus 5 favoritos de siempre'
-                : 'Sus 5 libros favoritos',
-            icon: Icons.favorite_rounded,
-            padding: EdgeInsets.zero,
-          ),
-          const SizedBox(height: AppSpacing.sm),
+        const SizedBox(height: AppSpacing.sm),
+        ClubSectionTitle(
+          title: 'Libros favoritos',
+          subtitle: esMiPerfil
+              ? 'Tus 5 favoritos de siempre'
+              : 'Sus 5 libros favoritos',
+          icon: Icons.favorite_rounded,
+          padding: EdgeInsets.zero,
+        ),
+        const SizedBox(height: AppSpacing.sm),
+        if (esMiPerfil)
           _FavoritosShelf(
             favoritos: perfil.favoritos,
-            esMiPerfil: esMiPerfil,
-            todosLosLibros: esMiPerfil
-                ? [
-                    ...perfil.leyendo.map(
-                      (book) => _LibroSeleccionable(
-                        bookId: book.bookId,
-                        title: book.libro,
-                        coverUrl: book.coverUrl,
-                      ),
-                    ),
-                    ...perfil.terminados.map(
-                      (book) => _LibroSeleccionable(
-                        bookId: book.bookId,
-                        title: book.libro,
-                        coverUrl: book.coverUrl,
-                      ),
-                    ),
-                    ...perfil.pendientes.map(
-                      (book) => _LibroSeleccionable(
-                        bookId: book.bookId,
-                        title: book.libro,
-                        coverUrl: book.coverUrl,
-                      ),
-                    ),
-                  ]
-                : const [],
+            esMiPerfil: true,
+            onOpen: _abrirFavorito,
+            todosLosLibros: [
+              ...perfil.leyendo.map(
+                (book) => _LibroSeleccionable(
+                  bookId: book.bookId,
+                  title: book.libro,
+                  coverUrl: book.coverUrl,
+                ),
+              ),
+              ...perfil.terminados.map(
+                (book) => _LibroSeleccionable(
+                  bookId: book.bookId,
+                  title: book.libro,
+                  coverUrl: book.coverUrl,
+                ),
+              ),
+              ...perfil.pendientes.map(
+                (book) => _LibroSeleccionable(
+                  bookId: book.bookId,
+                  title: book.libro,
+                  coverUrl: book.coverUrl,
+                ),
+              ),
+            ],
+          )
+        else
+          FutureBuilder<List<LibroFavorito>>(
+            future: _favoritosPublicos(perfil),
+            builder: (context, snapshot) {
+              if (snapshot.connectionState != ConnectionState.done) {
+                return const Center(
+                  child: Padding(
+                    padding: EdgeInsets.all(AppSpacing.md),
+                    child: CircularProgressIndicator(),
+                  ),
+                );
+              }
+              if (snapshot.hasError) {
+                return ErrorView(
+                  onRetry: () {
+                    setState(() {
+                      _publicFavoritesFuture = null;
+                      _publicFavoritesOwner = null;
+                    });
+                  },
+                );
+              }
+              return _FavoritosShelf(
+                favoritos: snapshot.data ?? const [],
+                esMiPerfil: false,
+                onOpen: _abrirFavorito,
+              );
+            },
           ),
-        ],
         widget.bookOfYearPreviewBuilder?.call(perfil.usuario, esMiPerfil) ??
-            BookOfYearPreview(profile: perfil.usuario, editable: esMiPerfil),
+            BookOfYearPreview(
+              profile: perfil.usuario,
+              profileUserId: (widget.profileUserId ?? perfil.userId).trim(),
+              editable: esMiPerfil,
+            ),
         if (esMiPerfil) ...[
           const SizedBox(height: AppSpacing.xl),
           _WrappedPerfilCta(
@@ -617,6 +695,26 @@ class _PerfilUsuarioPageState extends State<PerfilUsuarioPage> {
         ],
       ],
     );
+  }
+
+  Future<void> _abrirFavorito(LibroFavorito libro) async {
+    if (_openingFavoriteBook) return;
+    _openingFavoriteBook = true;
+    try {
+      if (widget.onOpenFavorite != null) {
+        await widget.onOpenFavorite!(libro);
+        return;
+      }
+      await openBookDetail(
+        context,
+        title: libro.title,
+        bookId: libro.bookId,
+        coverUrl: libro.coverUrl ?? '',
+        genre: libro.genreName,
+      );
+    } finally {
+      _openingFavoriteBook = false;
+    }
   }
 
   Widget _seccionResumen(PerfilUsuario perfil) {
@@ -2199,11 +2297,13 @@ class _FavoritosShelf extends StatelessWidget {
   const _FavoritosShelf({
     required this.favoritos,
     required this.esMiPerfil,
+    required this.onOpen,
     this.todosLosLibros = const [],
   });
 
   final List<LibroFavorito> favoritos;
   final bool esMiPerfil;
+  final ValueChanged<LibroFavorito> onOpen;
   final List<_LibroSeleccionable> todosLosLibros;
 
   static const int _maxSlots = 5;
@@ -2250,6 +2350,12 @@ class _FavoritosShelf extends StatelessWidget {
         child: Wrap(
           children: [
             ListTile(
+              key: const Key('ver_ficha_favorito'),
+              leading: const Icon(Icons.info_outline_rounded),
+              title: const Text('Ver ficha completa'),
+              onTap: () => Navigator.pop(sheetContext, 'ver'),
+            ),
+            ListTile(
               key: const Key('cambiar_favorito'),
               leading: const Icon(Icons.swap_horiz_rounded),
               title: const Text('Cambiar favorito'),
@@ -2272,6 +2378,10 @@ class _FavoritosShelf extends StatelessWidget {
       ),
     );
     if (!context.mounted || accion == null) return;
+    if (accion == 'ver') {
+      onOpen(libro);
+      return;
+    }
     if (accion == 'cambiar') {
       await showModalBottomSheet<void>(
         context: context,
@@ -2351,9 +2461,11 @@ class _FavoritosShelf extends StatelessWidget {
               libro: libro,
               esMiPerfil: esMiPerfil,
               cargando: esMiPerfil && FavoritosService.instance.operando,
-              onTap: esMiPerfil && libro != null
+              onTap: libro == null
+                  ? null
+                  : esMiPerfil
                   ? () => _mostrarAcciones(context, libro)
-                  : null,
+                  : () => onOpen(libro),
               onAnadir: esMiPerfil && libro == null
                   ? () => _mostrarSelector(context)
                   : null,

@@ -6,6 +6,7 @@ import '../../theme/app_colors.dart';
 import '../../theme/app_spacing.dart';
 import '../../theme/app_text_styles.dart';
 import '../../utils/genero_utils.dart';
+import '../../utils/lector_count_utils.dart';
 import '../common/club_book_cover.dart';
 import '../common/club_card.dart';
 import '../ui/club_metric.dart';
@@ -108,30 +109,44 @@ class LibroHeader extends StatelessWidget {
 
               const SizedBox(height: AppSpacing.lg),
 
-              Row(
-                children: [
-                  Expanded(
-                    child: ClubMetric(
+              LayoutBuilder(
+                builder: (context, constraints) {
+                  final textScale = MediaQuery.textScalerOf(context).scale(1);
+                  final apilar = constraints.maxWidth < 360 || textScale > 1.2;
+                  final metricas = [
+                    ClubMetric(
                       icon: Icons.people_outline_rounded,
                       value: '${libro.total}',
-                      label: 'lectores interesados',
+                      label: lectoresInteresadosLabel(libro.total),
                       variant: ClubMetricVariant.info,
                       compact: true,
                     ),
-                  ),
-
-                  const SizedBox(width: AppSpacing.sm),
-
-                  Expanded(
-                    child: ClubMetric(
+                    ClubMetric(
                       icon: Icons.check_circle_outline_rounded,
                       value: '${libro.totalFinalizados}',
-                      label: 'leídos',
+                      label: librosLeidosLabel(libro.totalFinalizados),
                       variant: ClubMetricVariant.success,
                       compact: true,
                     ),
-                  ),
-                ],
+                  ];
+
+                  if (apilar) {
+                    return Wrap(
+                      spacing: AppSpacing.sm,
+                      runSpacing: AppSpacing.sm,
+                      alignment: WrapAlignment.center,
+                      children: metricas,
+                    );
+                  }
+
+                  return Row(
+                    children: [
+                      Expanded(child: metricas[0]),
+                      const SizedBox(width: AppSpacing.sm),
+                      Expanded(child: metricas[1]),
+                    ],
+                  );
+                },
               ),
 
               const SizedBox(height: AppSpacing.sm),
