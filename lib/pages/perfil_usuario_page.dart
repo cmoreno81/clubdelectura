@@ -2752,17 +2752,24 @@ class _SeleccionFavoritoSheetState extends State<_SeleccionFavoritoSheet> {
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
     final filtrados = _filtrados;
+    final keyboardHeight = MediaQuery.viewInsetsOf(context).bottom;
 
-    return Material(
-      color: cs.surface,
-      borderRadius: const BorderRadius.vertical(
-        top: Radius.circular(AppRadius.xl),
-      ),
-      child: SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            // Handle
+    return Padding(
+      // Sube el sheet cuando aparece el teclado para que la lista quede visible
+      padding: EdgeInsets.only(bottom: keyboardHeight),
+      child: Material(
+        color: cs.surface,
+        borderRadius: const BorderRadius.vertical(
+          top: Radius.circular(AppRadius.xl),
+        ),
+        child: SafeArea(
+          // Si el teclado está visible ya ocupamos ese espacio con el Padding,
+          // no queremos que SafeArea añada otro padding al bottom
+          bottom: keyboardHeight == 0,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // Handle
             Padding(
               padding: const EdgeInsets.symmetric(vertical: 12),
               child: Container(
@@ -2884,6 +2891,7 @@ class _SeleccionFavoritoSheetState extends State<_SeleccionFavoritoSheet> {
           ],
         ),
       ),
+    ),
     );
   }
 }
