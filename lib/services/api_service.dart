@@ -1258,10 +1258,19 @@ class ApiService {
     return _decodeJson(response);
   }
 
-  Future<PerfilUsuario> getPerfilUsuario(String usuario) async {
-    final uri = Uri.parse(
-      baseUrl,
-    ).replace(queryParameters: {'action': 'perfilUsuario', 'perfil': usuario});
+  Future<PerfilUsuario> getPerfilUsuario(
+    String usuario, {
+    String? profileUserId,
+  }) async {
+    final uri = Uri.parse(baseUrl).replace(
+      queryParameters: {
+        'action': 'perfilUsuario',
+        if (profileUserId?.trim().isNotEmpty == true)
+          'profileUserId': profileUserId!.trim()
+        else
+          'perfil': usuario,
+      },
+    );
 
     final response = await _client.get(uri);
 
@@ -1284,8 +1293,14 @@ class ApiService {
     return PerfilUsuario.fromJson(data);
   }
 
-  Future<PerfilUsuario> getPerfilUsuarioCompleto(String usuario) async {
-    final metadata = await getPerfilUsuario(usuario);
+  Future<PerfilUsuario> getPerfilUsuarioCompleto(
+    String usuario, {
+    String? profileUserId,
+  }) async {
+    final metadata = await getPerfilUsuario(
+      usuario,
+      profileUserId: profileUserId,
+    );
     final terminados = <PerfilLibroTerminado>[];
     String? cursor;
     do {
@@ -1293,7 +1308,10 @@ class ApiService {
         Uri.parse(baseUrl).replace(
           queryParameters: {
             'action': 'perfilUsuario',
-            'perfil': usuario,
+            if (profileUserId?.trim().isNotEmpty == true)
+              'profileUserId': profileUserId!.trim()
+            else
+              'perfil': usuario,
             'limit': '50',
             if (cursor?.isNotEmpty == true) 'cursor': cursor!,
           },
@@ -1313,6 +1331,7 @@ class ApiService {
     } while (cursor?.isNotEmpty == true);
 
     return PerfilUsuario(
+      userId: metadata.userId,
       usuario: metadata.usuario,
       avatarUrl: metadata.avatarUrl,
       resumen: metadata.resumen,
@@ -1323,6 +1342,7 @@ class ApiService {
       generosFavoritos: metadata.generosFavoritos,
       sagas: metadata.sagas,
       historicoMeses: metadata.historicoMeses,
+      favoritos: metadata.favoritos,
     );
   }
 
@@ -1770,14 +1790,28 @@ class ApiService {
     return data is Map<String, dynamic> ? data : {'ok': false};
   }
 
-  Future<List<LibroFavorito>> getFavoritosUsuario(String usuario) async {
+  Future<List<LibroFavorito>> getFavoritosUsuario(
+    String usuario, {
+    String? profileUserId,
+  }) async {
     final uri = Uri.parse(baseUrl).replace(
-      queryParameters: {'action': 'favoritosUsuario', 'perfil': usuario},
+      queryParameters: {
+        'action': 'favoritosUsuario',
+        if (profileUserId?.trim().isNotEmpty == true)
+          'profileUserId': profileUserId!.trim()
+        else
+          'perfil': usuario,
+      },
     );
     final response = await _client.get(uri);
-    if (response.statusCode != 200) return [];
+    if (response.statusCode != 200) throw ApiException.fromResponse(response);
     final data = _decodeJson(response);
-    if (data is! Map<String, dynamic>) return [];
+    if (data is! Map<String, dynamic>) {
+      throw const ApiException(
+        statusCode: 500,
+        message: 'Respuesta de favoritos no válida.',
+      );
+    }
     return (data['favoritos'] as List? ?? [])
         .whereType<Map<String, dynamic>>()
         .map(LibroFavorito.fromJson)
@@ -1810,12 +1844,20 @@ class ApiService {
     );
   }
 
-  Future<BookOfYearBoard> getPublicBookOfYear(String profile, int year) async {
+  Future<BookOfYearBoard> getPublicBookOfYear(
+    String profile,
+    int year, {
+    String? profileUserId,
+  }) async {
     final response = await _client.get(
       Uri.parse(baseUrl).replace(
         queryParameters: {
           'action': 'libroDelAnioPublico',
+          // Siempre enviamos perfil (nombre) para satisfacer la validación;
+          // profileUserId permite al backend hacer lookup por ID estable.
           'perfil': profile,
+          if (profileUserId?.trim().isNotEmpty == true)
+            'profileUserId': profileUserId!.trim(),
           'anio': '$year',
         },
       ),

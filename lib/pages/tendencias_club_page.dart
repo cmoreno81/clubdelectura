@@ -44,14 +44,19 @@ class _TendenciasClubPageState extends State<TendenciasClubPage> {
     await future;
   }
 
-  void _abrirPerfil(String usuario) {
+  void _abrirPerfil(String usuario, {String? userId}) {
     final nombre = usuario.trim();
 
     if (nombre.isEmpty) return;
 
     Navigator.push(
       context,
-      AppPageRoute(builder: (_) => PerfilUsuarioPage(usuario: nombre)),
+      AppPageRoute(
+        builder: (_) => PerfilUsuarioPage(
+          usuario: nombre,
+          profileUserId: userId?.trim().isEmpty == true ? null : userId?.trim(),
+        ),
+      ),
     );
   }
 
@@ -190,7 +195,7 @@ class _TendenciasClubPageState extends State<TendenciasClubPage> {
                         posicion: index,
                         item: data.lectoras[index],
                         maximo: _max(data.lectoras),
-                        onTap: () => _abrirPerfil(data.lectoras[index].nombre),
+                        onTap: () => _abrirPerfil(data.lectoras[index].nombre, userId: data.lectoras[index].id),
                       ),
                     ),
                   ),
