@@ -1797,10 +1797,9 @@ class ApiService {
     final uri = Uri.parse(baseUrl).replace(
       queryParameters: {
         'action': 'favoritosUsuario',
+        'perfil': usuario, // Siempre enviamos el nombre para evitar fallback al usuario autenticado
         if (profileUserId?.trim().isNotEmpty == true)
-          'profileUserId': profileUserId!.trim()
-        else
-          'perfil': usuario,
+          'profileUserId': profileUserId!.trim(), // ID estable para lookup más robusto
       },
     );
     final response = await _client.get(uri);
