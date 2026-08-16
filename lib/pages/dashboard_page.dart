@@ -2253,7 +2253,20 @@ class _FavoritosDeUsuarioSheet extends StatelessWidget {
                       child: Padding(
                         padding: EdgeInsets.only(right: i < 4 ? 8 : 0),
                         child: i < miembro.favoritos.length
-                            ? _MiniPortada(libro: miembro.favoritos[i])
+                            ? _MiniPortada(
+                                libro: miembro.favoritos[i],
+                                onTap: () {
+                                  final libro = miembro.favoritos[i];
+                                  Navigator.pop(context);
+                                  openBookDetail(
+                                    context,
+                                    title: libro.title,
+                                    bookId: libro.bookId,
+                                    coverUrl: libro.coverUrl ?? '',
+                                    genre: libro.genreName,
+                                  );
+                                },
+                              )
                             : const _MiniSlotVacio(),
                       ),
                     ),
@@ -2291,13 +2304,16 @@ class _FavoritosDeUsuarioSheet extends StatelessWidget {
 }
 
 class _MiniPortada extends StatelessWidget {
-  const _MiniPortada({required this.libro});
+  const _MiniPortada({required this.libro, this.onTap});
   final LibroFavorito libro;
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
-    return Column(
+    return GestureDetector(
+      onTap: onTap,
+      child: Column(
       children: [
         Stack(
           children: [
@@ -2355,7 +2371,8 @@ class _MiniPortada extends StatelessWidget {
           overflow: TextOverflow.ellipsis,
         ),
       ],
-    );
+    ),  // Column
+    );  // GestureDetector
   }
 }
 
