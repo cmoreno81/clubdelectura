@@ -1265,10 +1265,9 @@ class ApiService {
     final uri = Uri.parse(baseUrl).replace(
       queryParameters: {
         'action': 'perfilUsuario',
+        'perfil': usuario, // siempre enviamos el nombre
         if (profileUserId?.trim().isNotEmpty == true)
-          'profileUserId': profileUserId!.trim()
-        else
-          'perfil': usuario,
+          'profileUserId': profileUserId!.trim(),
       },
     );
 
@@ -1308,10 +1307,9 @@ class ApiService {
         Uri.parse(baseUrl).replace(
           queryParameters: {
             'action': 'perfilUsuario',
+            'perfil': usuario, // siempre enviamos el nombre
             if (profileUserId?.trim().isNotEmpty == true)
-              'profileUserId': profileUserId!.trim()
-            else
-              'perfil': usuario,
+              'profileUserId': profileUserId!.trim(),
             'limit': '50',
             if (cursor?.isNotEmpty == true) 'cursor': cursor!,
           },
