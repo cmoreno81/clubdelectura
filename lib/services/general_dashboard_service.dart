@@ -25,7 +25,9 @@ class GeneralDashboardService {
   }
 
   Future<void> _completeSeriesPreview(Map<String, dynamic> dashboard) async {
-    final user = Map<String, dynamic>.from(dashboard['usuario'] as Map? ?? {});
+    final user = Map<String, dynamic>.from(
+      (dashboard['usuarioActual'] ?? dashboard['usuario']) as Map? ?? {},
+    );
     final userName = user['nombre']?.toString().trim() ?? '';
     if (userName.isEmpty) return;
 

@@ -202,7 +202,8 @@ class _GeneralDashboardPageState extends State<GeneralDashboardPage> {
       final data = await refresh;
       if (!mounted) return;
       setState(() => _future = Future.value(data));
-    } catch (_) {
+    } catch (error, stack) {
+      debugPrint('[dashboard] _reload falló: $error\n$stack');
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('No se ha podido actualizar el panel.')),
