@@ -212,7 +212,7 @@ class _BookOfYearPreviewState extends State<BookOfYearPreview> {
                       style: const TextStyle(fontWeight: FontWeight.w700),
                     ),
                     const SizedBox(height: AppSpacing.sm),
-                    BookOfYearBracketPreview(board: board!, onTap: _openBoard),
+                    BookOfYearBracketPreview(board: board, onTap: _openBoard),
                     const SizedBox(height: AppSpacing.xs),
                     Align(
                       alignment: Alignment.centerRight,

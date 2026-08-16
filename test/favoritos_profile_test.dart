@@ -133,7 +133,7 @@ void main() {
   );
 
   test(
-    'favoritos públicos usan profileUserId y no el nombre duplicado',
+    'favoritos públicos envían siempre perfil (nombre) y opcionalmente profileUserId',
     () async {
       late Uri requested;
       final api = ApiService(
@@ -145,8 +145,9 @@ void main() {
 
       await api.getFavoritosUsuario('Cristina', profileUserId: 'user-b');
 
+      // Nuevo contrato: siempre se envían ambos parámetros.
+      expect(requested.queryParameters['perfil'], 'Cristina');
       expect(requested.queryParameters['profileUserId'], 'user-b');
-      expect(requested.queryParameters.containsKey('perfil'), isFalse);
     },
   );
 
@@ -164,7 +165,7 @@ void main() {
     },
   );
 
-  test('Libro del año público usa la misma identidad estable', () async {
+  test('Libro del año público envía siempre perfil y opcionalmente profileUserId', () async {
     late Uri requested;
     final api = ApiService(
       client: MockClient((request) async {
@@ -177,8 +178,9 @@ void main() {
       api.getPublicBookOfYear('Cristina', 2026, profileUserId: 'user-a'),
       throwsA(isA<Exception>()),
     );
+    // Nuevo contrato: siempre se envían ambos parámetros.
+    expect(requested.queryParameters['perfil'], 'Cristina');
     expect(requested.queryParameters['profileUserId'], 'user-a');
-    expect(requested.queryParameters.containsKey('perfil'), isFalse);
   });
 }
 
