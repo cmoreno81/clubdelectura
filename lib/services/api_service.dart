@@ -1334,6 +1334,7 @@ class ApiService {
       userId: metadata.userId,
       usuario: metadata.usuario,
       avatarUrl: metadata.avatarUrl,
+      bio: metadata.bio,
       resumen: metadata.resumen,
       leyendo: metadata.leyendo,
       terminados: terminados,
