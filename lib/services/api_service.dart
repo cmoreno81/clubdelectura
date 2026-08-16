@@ -1420,6 +1420,34 @@ class ApiService {
     return data;
   }
 
+  Future<Map<String, dynamic>> actualizarFrasePerfil({
+    required String bio,
+  }) async {
+    final response = await _client.post(
+      Uri.parse('$baseUrl?action=actualizarFrasePerfil'),
+      headers: const {'Content-Type': 'application/json'},
+      body: jsonEncode({'bio': bio}),
+    );
+
+    if (response.statusCode != 200) {
+      return {
+        'ok': false,
+        'mensaje': 'No se ha podido conectar con el servidor.',
+      };
+    }
+
+    final data = _decodeJson(response);
+
+    if (data is! Map<String, dynamic>) {
+      return {
+        'ok': false,
+        'mensaje': 'La respuesta del servidor no es válida.',
+      };
+    }
+
+    return data;
+  }
+
   Future<MoodClub> getMoodClub() async {
     final uri = Uri.parse(baseUrl).replace(
       queryParameters: {

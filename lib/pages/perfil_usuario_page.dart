@@ -227,6 +227,57 @@ class _PerfilUsuarioPageState extends State<PerfilUsuarioPage> {
     }
   }
 
+  Future<void> _editarFrase(PerfilUsuario perfil) async {
+    if (!esMiPerfil) return;
+
+    final controller = TextEditingController(text: perfil.bio);
+    final nueva = await showDialog<String>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Tu frase lectora'),
+        content: TextField(
+          controller: controller,
+          maxLength: 160,
+          maxLines: 3,
+          autofocus: true,
+          decoration: const InputDecoration(
+            hintText: 'Escribe una frase que te represente como lectora…',
+            border: OutlineInputBorder(),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Cancelar'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, controller.text.trim()),
+            child: const Text('Guardar'),
+          ),
+        ],
+      ),
+    );
+
+    controller.dispose();
+    if (nueva == null || !mounted) return;
+
+    final respuesta = await ApiService().actualizarFrasePerfil(bio: nueva);
+
+    if (!mounted) return;
+
+    final ok = respuesta['ok'] == true;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          respuesta['mensaje']?.toString() ??
+              (ok ? 'Frase actualizada' : 'No se ha podido actualizar la frase'),
+        ),
+      ),
+    );
+
+    if (ok) await _recargar();
+  }
+
   Future<void> _editarAvatar(PerfilUsuario perfil) async {
     if (!esMiPerfil) return;
 
@@ -1235,16 +1286,43 @@ class _PerfilUsuarioPageState extends State<PerfilUsuarioPage> {
             style: AppTextStyles.title,
           ),
 
-          const SizedBox(height: AppSpacing.sm),
-
-          Text(
-            'Cada lector vive mil vidas entre páginas.',
-            textAlign: TextAlign.center,
-            style: AppTextStyles.bodySecondary.copyWith(
-              fontStyle: FontStyle.italic,
-              height: 1.45,
+          if (esMiPerfil || perfil.bio.isNotEmpty) ...[
+            const SizedBox(height: AppSpacing.sm),
+            GestureDetector(
+              onTap: esMiPerfil ? () => _editarFrase(perfil) : null,
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  Flexible(
+                    child: Text(
+                      perfil.bio.isNotEmpty
+                          ? perfil.bio
+                          : 'Añade tu frase lectora…',
+                      textAlign: TextAlign.center,
+                      style: AppTextStyles.bodySecondary.copyWith(
+                        fontStyle: FontStyle.italic,
+                        height: 1.45,
+                        color: perfil.bio.isEmpty
+                            ? AppTextStyles.bodySecondary.color
+                                ?.withValues(alpha: 0.5)
+                            : null,
+                      ),
+                    ),
+                  ),
+                  if (esMiPerfil) ...[
+                    const SizedBox(width: 6),
+                    Icon(
+                      Icons.edit_outlined,
+                      size: 14,
+                      color: AppTextStyles.bodySecondary.color
+                          ?.withValues(alpha: 0.6),
+                    ),
+                  ],
+                ],
+              ),
             ),
-          ),
+          ],
 
           if (perfil.resumen.clubes > 0) ...[
             const SizedBox(height: AppSpacing.md),

@@ -4,6 +4,7 @@ class PerfilUsuario {
   final String userId;
   final String usuario;
   final String avatarUrl;
+  final String bio;
   final PerfilResumen resumen;
   final List<PerfilLibro> leyendo;
   final List<PerfilLibroTerminado> terminados;
@@ -18,6 +19,7 @@ class PerfilUsuario {
     this.userId = '',
     required this.usuario,
     required this.avatarUrl,
+    this.bio = '',
     required this.resumen,
     required this.leyendo,
     required this.terminados,
@@ -41,6 +43,7 @@ class PerfilUsuario {
       userId: json['userId']?.toString() ?? json['usuarioId']?.toString() ?? '',
       usuario: json['usuario']?.toString() ?? '',
       avatarUrl: json['avatarUrl']?.toString() ?? '',
+      bio: json['bio']?.toString() ?? '',
       resumen: PerfilResumen.fromJson(
         json['resumen'] as Map<String, dynamic>? ?? const {},
       ),
@@ -55,10 +58,12 @@ class PerfilUsuario {
     );
   }
 
-  PerfilUsuario copyWith({List<LibroFavorito>? favoritos}) => PerfilUsuario(
+  PerfilUsuario copyWith({List<LibroFavorito>? favoritos, String? bio}) =>
+      PerfilUsuario(
     userId: userId,
     usuario: usuario,
     avatarUrl: avatarUrl,
+    bio: bio ?? this.bio,
     resumen: resumen,
     leyendo: leyendo,
     terminados: terminados,
