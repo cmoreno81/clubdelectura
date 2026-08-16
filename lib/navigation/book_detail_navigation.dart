@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import '../models/libro.dart';
 import '../models/libro_agrupado.dart';
 import '../models/libro_finalizado.dart';
+import '../pages/catalog_book_detail_page.dart';
 import '../pages/detalle_libro_page.dart';
 import '../services/api_service.dart';
 import '../services/libros_data_cache.dart';
@@ -86,24 +87,19 @@ Future<bool> openBookDetail(
       if (!context.mounted) return false;
 
       if (result == null) {
-        // El libro no está en la biblioteca → abre la ficha completa igualmente
+        // El libro no existe o error → ficha de catálogo
         await Navigator.push<void>(
           context,
           BookDetailPageRoute(
-            builder: (_) => DetalleLibroPage(
-              libro: LibroAgrupado(
-                libro: title,
-                genero: genre,
-                registros: const [],
-                finalizados: const [],
-                yaLoTengo: false,
-                coverUrl: coverUrl,
-                bookId: bookId,
-              ),
+            builder: (_) => CatalogBookDetailPage(
+              bookId: bookId,
+              title: title,
+              coverUrl: coverUrl,
+              genre: genre,
             ),
           ),
         );
-        return true;
+        return false;
       }
       registros = result.libros;
       finalizados = result.finalizados;
@@ -126,20 +122,15 @@ Future<bool> openBookDetail(
       await Navigator.push<void>(
         context,
         BookDetailPageRoute(
-          builder: (_) => DetalleLibroPage(
-            libro: LibroAgrupado(
-              libro: title,
-              genero: genre,
-              registros: const [],
-              finalizados: const [],
-              yaLoTengo: false,
-              coverUrl: coverUrl,
-              bookId: bookId,
-            ),
+          builder: (_) => CatalogBookDetailPage(
+            bookId: bookId,
+            title: title,
+            coverUrl: coverUrl,
+            genre: genre,
           ),
         ),
       );
-      return true;
+      return false;
     }
 
     await Navigator.push<void>(
@@ -170,6 +161,13 @@ Future<bool> openBookDetail(
 }
 
 // ── openCatalogBookDetail ─────────────────────────────────────────────────────
+//
+// [forceFullDetail] = false (por defecto, tap simple):
+//   Si el libro no está en la biblioteca del usuario, abre CatalogBookDetailPage
+//   con "Añadir a mi biblioteca". Si ya lo tiene, abre DetalleLibroPage.
+//
+// [forceFullDetail] = true (pulsación larga → "Ver ficha completa"):
+//   Siempre abre DetalleLibroPage con todos los datos disponibles.
 
 Future<bool> openCatalogBookDetail(
   BuildContext context, {
@@ -177,6 +175,7 @@ Future<bool> openCatalogBookDetail(
   String bookId = '',
   String coverUrl = '',
   String genre = '',
+  bool forceFullDetail = false,
 }) async {
   final normalizedTitle = title.trim().toLowerCase();
   if (normalizedTitle.isEmpty) return false;
@@ -195,24 +194,43 @@ Future<bool> openCatalogBookDetail(
       if (!context.mounted) return false;
 
       if (result == null) {
-        // Libro no está en la biblioteca → abre la ficha completa igualmente
-        await Navigator.push<void>(
-          context,
-          BookDetailPageRoute(
-            builder: (_) => DetalleLibroPage(
-              libro: LibroAgrupado(
-                libro: title,
-                genero: genre,
-                registros: const [],
-                finalizados: const [],
-                yaLoTengo: false,
-                coverUrl: coverUrl,
-                bookId: bookId,
+        // Libro no encontrado en servidor
+        if (forceFullDetail) {
+          // Pulsación larga → ficha completa aunque no haya datos de biblioteca
+          await Navigator.push<void>(
+            context,
+            BookDetailPageRoute(
+              builder: (_) => DetalleLibroPage(
+                libro: LibroAgrupado(
+                  libro: title,
+                  genero: genre,
+                  registros: const [],
+                  finalizados: const [],
+                  yaLoTengo: false,
+                  coverUrl: coverUrl,
+                  bookId: bookId,
+                ),
               ),
             ),
-          ),
-        );
-        return true; // puede que el usuario lo haya añadido, recargamos siempre
+          );
+          return true;
+        } else {
+          // Tap simple → ficha de catálogo con "Añadir a mi biblioteca"
+          var changed = false;
+          await Navigator.push<void>(
+            context,
+            BookDetailPageRoute(
+              builder: (_) => CatalogBookDetailPage(
+                bookId: bookId,
+                title: title,
+                coverUrl: coverUrl,
+                genre: genre,
+                onLibraryChanged: () => changed = true,
+              ),
+            ),
+          );
+          return changed;
+        }
       }
 
       registros = result.libros
@@ -258,6 +276,47 @@ Future<bool> openCatalogBookDetail(
           .toList();
     }
 
+    // Si el usuario no tiene el libro en su biblioteca
+    if (registros.isEmpty && finalizados.isEmpty) {
+      if (forceFullDetail) {
+        // Pulsación larga → ficha completa con datos de comunidad
+        await Navigator.push<void>(
+          context,
+          BookDetailPageRoute(
+            builder: (_) => DetalleLibroPage(
+              libro: LibroAgrupado(
+                libro: title,
+                genero: genre,
+                registros: const [],
+                finalizados: const [],
+                yaLoTengo: false,
+                coverUrl: coverUrl,
+                bookId: bookId,
+              ),
+            ),
+          ),
+        );
+        return true;
+      } else {
+        // Tap simple → ficha de catálogo con "Añadir a mi biblioteca"
+        var changed = false;
+        await Navigator.push<void>(
+          context,
+          BookDetailPageRoute(
+            builder: (_) => CatalogBookDetailPage(
+              bookId: bookId,
+              title: title,
+              coverUrl: coverUrl,
+              genre: genre,
+              onLibraryChanged: () => changed = true,
+            ),
+          ),
+        );
+        return changed;
+      }
+    }
+
+    // El usuario ya tiene el libro → ficha completa siempre
     await Navigator.push<void>(
       context,
       BookDetailPageRoute(

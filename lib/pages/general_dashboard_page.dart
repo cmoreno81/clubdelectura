@@ -280,6 +280,7 @@ class _GeneralDashboardPageState extends State<GeneralDashboardPage> {
     String bookId = '',
     String coverUrl = '',
     String genre = '',
+    bool forceFullDetail = false,
   }) async {
     if (_openingBook) return;
     setState(() => _openingBook = true);
@@ -290,6 +291,7 @@ class _GeneralDashboardPageState extends State<GeneralDashboardPage> {
         bookId: bookId,
         coverUrl: coverUrl,
         genre: genre,
+        forceFullDetail: forceFullDetail,
       );
       if (changed && mounted) await _reload();
     } finally {
@@ -322,11 +324,13 @@ class _GeneralDashboardPageState extends State<GeneralDashboardPage> {
               autor: author,
               genero: genre,
               coverUrl: coverUrl,
+              // "Ver ficha completa" desde pulsación larga → siempre DetalleLibroPage
               abrirFicha: (_) => _openCatalogBook(
                 title: title,
                 bookId: bookId,
                 coverUrl: coverUrl,
                 genre: genre,
+                forceFullDetail: true,
               ),
             );
       if (changed && mounted) await _reload();
