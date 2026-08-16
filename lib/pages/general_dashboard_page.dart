@@ -201,7 +201,7 @@ class _GeneralDashboardPageState extends State<GeneralDashboardPage> {
     try {
       final data = await refresh;
       if (!mounted) return;
-      setState(() => _future = Future.value(data));
+      setState(() { _future = Future.value(data); });
     } catch (error, stack) {
       debugPrint('[dashboard] _reload falló: $error\n$stack');
       if (!mounted) return;
