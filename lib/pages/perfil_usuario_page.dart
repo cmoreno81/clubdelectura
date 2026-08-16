@@ -2752,152 +2752,153 @@ class _SeleccionFavoritoSheetState extends State<_SeleccionFavoritoSheet> {
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
     final filtrados = _filtrados;
-    // En Android con adjustResize la ventana ya se reduce y viewInsetsOf = 0.
-    // En iOS (ajustPan / sin resize) viewInsetsOf da la altura del teclado.
-    final keyboardInset = MediaQuery.viewInsetsOf(context).bottom;
 
-    return Material(
-      color: cs.surface,
-      borderRadius: const BorderRadius.vertical(
-        top: Radius.circular(AppRadius.xl),
-      ),
-      child: Padding(
-        // Solo actúa en iOS; en Android es 0 porque la ventana ya encogió.
-        padding: EdgeInsets.only(bottom: keyboardInset),
+    // En iOS viewInsetsOf devuelve la altura del teclado.
+    // En Android con adjustResize la ventana ya se reduce, así que viewInsetsOf = 0
+    // pero la altura disponible (sizeOf.height) ya excluye el teclado.
+    // Limitar el Sheet al 95 % del espacio disponible funciona en ambas plataformas.
+    final bottom = MediaQuery.viewInsetsOf(context).bottom;
+    final screenH = MediaQuery.sizeOf(context).height;
+    final maxSheetH = (screenH - bottom) * 0.95;
+
+    return SizedBox(
+      height: maxSheetH,
+      child: Material(
+        color: cs.surface,
+        borderRadius: const BorderRadius.vertical(
+          top: Radius.circular(AppRadius.xl),
+        ),
         child: SafeArea(
-          bottom: keyboardInset == 0,
+          bottom: bottom == 0,
           child: Column(
-            mainAxisSize: MainAxisSize.min,
             children: [
               // Handle
-            Padding(
-              padding: const EdgeInsets.symmetric(vertical: 12),
-              child: Container(
-                width: 40,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: AppColors.border,
-                  borderRadius: BorderRadius.circular(AppRadius.pill),
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 12),
+                child: Container(
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: AppColors.border,
+                    borderRadius: BorderRadius.circular(AppRadius.pill),
+                  ),
                 ),
               ),
-            ),
 
-            Padding(
-              padding: const EdgeInsets.fromLTRB(
-                AppSpacing.lg,
-                0,
-                AppSpacing.lg,
-                AppSpacing.sm,
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text('Elige un favorito', style: AppTextStyles.section),
-                  const SizedBox(height: AppSpacing.xs),
-                  Text(
-                    'Selecciona uno de tus libros para marcarlo como favorito',
-                    style: AppTextStyles.bodySecondary.copyWith(
-                      color: AppColors.textSecondary,
-                    ),
-                  ),
-                  const SizedBox(height: AppSpacing.md),
-                  TextField(
-                    autofocus: false,
-                    textInputAction: TextInputAction.search,
-                    autocorrect: false,
-                    enableSuggestions: false,
-                    smartDashesType: SmartDashesType.disabled,
-                    smartQuotesType: SmartQuotesType.disabled,
-                    decoration: InputDecoration(
-                      hintText: 'Buscar libro…',
-                      prefixIcon: const Icon(Icons.search_rounded, size: 20),
-                      isDense: true,
-                      contentPadding: const EdgeInsets.symmetric(vertical: 10),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(AppRadius.md),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(
+                  AppSpacing.lg,
+                  0,
+                  AppSpacing.lg,
+                  AppSpacing.sm,
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('Elige un favorito', style: AppTextStyles.section),
+                    const SizedBox(height: AppSpacing.xs),
+                    Text(
+                      'Selecciona uno de tus libros para marcarlo como favorito',
+                      style: AppTextStyles.bodySecondary.copyWith(
+                        color: AppColors.textSecondary,
                       ),
                     ),
-                    onChanged: (v) => setState(() => _query = v),
-                  ),
-                ],
-              ),
-            ),
-
-            const Divider(height: 1),
-
-            // La lista se limita a la mitad de la pantalla para que siempre
-            // quede por encima del teclado (funciona con adjustResize en Android).
-            ConstrainedBox(
-              constraints: BoxConstraints(
-                maxHeight: MediaQuery.sizeOf(context).height * 0.5,
-              ),
-              child: _toggling
-                  ? const Center(
-                      child: Padding(
-                        padding: EdgeInsets.all(32),
-                        child: CircularProgressIndicator(),
-                      ),
-                    )
-                  : filtrados.isEmpty
-                  ? Padding(
-                      padding: const EdgeInsets.all(AppSpacing.xl),
-                      child: Text(
-                        widget.todosLosLibros.isEmpty
-                            ? 'Añade libros a tu biblioteca primero'
-                            : 'No se encontraron libros',
-                        style: AppTextStyles.bodySecondary.copyWith(
-                          color: AppColors.textMuted,
+                    const SizedBox(height: AppSpacing.md),
+                    TextField(
+                      autofocus: false,
+                      textInputAction: TextInputAction.search,
+                      autocorrect: false,
+                      enableSuggestions: false,
+                      smartDashesType: SmartDashesType.disabled,
+                      smartQuotesType: SmartQuotesType.disabled,
+                      decoration: InputDecoration(
+                        hintText: 'Buscar libro…',
+                        prefixIcon: const Icon(Icons.search_rounded, size: 20),
+                        isDense: true,
+                        contentPadding:
+                            const EdgeInsets.symmetric(vertical: 10),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(AppRadius.md),
                         ),
-                        textAlign: TextAlign.center,
                       ),
-                    )
-                  : ListView.separated(
-                      shrinkWrap: true,
-                      itemCount: filtrados.length,
-                      separatorBuilder: (context, i) =>
-                          const Divider(height: 1, indent: 72),
-                      itemBuilder: (_, i) {
-                        final l = filtrados[i];
-                        return ListTile(
-                          leading: ClipRRect(
-                            borderRadius: BorderRadius.circular(AppRadius.xs),
-                            child: l.coverUrl.isNotEmpty
-                                ? OptimizedNetworkImage(
-                                    url: l.coverUrl,
-                                    width: 36,
-                                    height: 52,
-                                    fit: BoxFit.cover,
-                                  )
-                                : Container(
-                                    width: 36,
-                                    height: 52,
-                                    color: cs.surfaceContainerHighest,
-                                    child: const Icon(
-                                      Icons.menu_book_rounded,
-                                      size: 16,
-                                    ),
-                                  ),
-                          ),
-                          title: Text(
-                            l.title,
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
-                            style: AppTextStyles.subtitle,
-                          ),
-                          trailing: const Icon(
-                            Icons.add_rounded,
-                            color: AppColors.primary,
-                          ),
-                          onTap: () => _elegir(l),
-                        );
-                      },
+                      onChanged: (v) => setState(() => _query = v),
                     ),
-            ),
-          ],
+                  ],
+                ),
+              ),
+
+              const Divider(height: 1),
+
+              // Expanded ocupa todo el espacio restante del Sheet y permite
+              // que el ListView sea desplazable sin desbordarse fuera del Sheet.
+              Expanded(
+                child: _toggling
+                    ? const Center(
+                        child: Padding(
+                          padding: EdgeInsets.all(32),
+                          child: CircularProgressIndicator(),
+                        ),
+                      )
+                    : filtrados.isEmpty
+                    ? Padding(
+                        padding: const EdgeInsets.all(AppSpacing.xl),
+                        child: Text(
+                          widget.todosLosLibros.isEmpty
+                              ? 'Añade libros a tu biblioteca primero'
+                              : 'No se encontraron libros',
+                          style: AppTextStyles.bodySecondary.copyWith(
+                            color: AppColors.textMuted,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                      )
+                    : ListView.separated(
+                        itemCount: filtrados.length,
+                        separatorBuilder: (context, i) =>
+                            const Divider(height: 1, indent: 72),
+                        itemBuilder: (_, i) {
+                          final l = filtrados[i];
+                          return ListTile(
+                            leading: ClipRRect(
+                              borderRadius:
+                                  BorderRadius.circular(AppRadius.xs),
+                              child: l.coverUrl.isNotEmpty
+                                  ? OptimizedNetworkImage(
+                                      url: l.coverUrl,
+                                      width: 36,
+                                      height: 52,
+                                      fit: BoxFit.cover,
+                                    )
+                                  : Container(
+                                      width: 36,
+                                      height: 52,
+                                      color: cs.surfaceContainerHighest,
+                                      child: const Icon(
+                                        Icons.menu_book_rounded,
+                                        size: 16,
+                                      ),
+                                    ),
+                            ),
+                            title: Text(
+                              l.title,
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                              style: AppTextStyles.subtitle,
+                            ),
+                            trailing: const Icon(
+                              Icons.add_rounded,
+                              color: AppColors.primary,
+                            ),
+                            onTap: () => _elegir(l),
+                          );
+                        },
+                      ),
+              ),
+            ],
+          ),
         ),
       ),
-    ),
-  );
+    );
   }
 }
 

@@ -836,11 +836,18 @@ class _DashboardPageState extends State<DashboardPage> {
       context: context,
       isScrollControlled: true,
       useSafeArea: true,
-      builder: (context) => Padding(
-        padding: const EdgeInsets.all(AppSpacing.lg),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
+      builder: (context) {
+        final bottomPad = MediaQuery.viewPaddingOf(context).bottom;
+        return SingleChildScrollView(
+          padding: EdgeInsets.fromLTRB(
+            AppSpacing.lg,
+            AppSpacing.lg,
+            AppSpacing.lg,
+            AppSpacing.lg + bottomPad,
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
               Text('Reaccionar a esta impresión', style: AppTextStyles.section),
               const SizedBox(height: AppSpacing.md),
               Wrap(
@@ -881,7 +888,8 @@ class _DashboardPageState extends State<DashboardPage> {
               ),
             ],
           ),
-        ),
+        );
+      },
     );
     if (reaccion == null || !mounted) return;
     final previous = _effectiveReading(lectura);

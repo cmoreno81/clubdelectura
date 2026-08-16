@@ -195,6 +195,16 @@ const List<_HelpSection> _secciones = [
       ),
       _HelpItem(
         pregunta:
+            '¿Puedo ver la ficha de un libro que aparece en el panel pero no tengo en mi biblioteca?',
+        respuesta:
+            'Sí. Mantén pulsado cualquier portada del panel (secciones "Últimas '
+            'incorporaciones" o "Se está leyendo mucho") y elige "Ver ficha completa". '
+            'Se abrirá la ficha detallada del libro con su Kit de lectura, enlace a '
+            'Goodreads y estadísticas del club, aunque todavía no lo hayas añadido '
+            'a tu biblioteca.',
+      ),
+      _HelpItem(
+        pregunta:
             '¿Puedo ir al detalle de un libro que acabo de añadir desde el catálogo?',
         respuesta:
             'Sí. Justo después de añadir un libro desde la biblioteca global, '
