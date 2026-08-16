@@ -5,7 +5,6 @@ import '../models/libro.dart';
 import '../models/libro_agrupado.dart';
 import '../models/libro_finalizado.dart';
 import '../pages/detalle_libro_page.dart';
-import '../pages/catalog_book_detail_page.dart';
 import '../services/api_service.dart';
 import '../services/libros_data_cache.dart';
 import 'book_detail_page_route.dart';
@@ -259,23 +258,6 @@ Future<bool> openCatalogBookDetail(
           .toList();
     }
 
-    if (registros.isEmpty && finalizados.isEmpty) {
-      var changed = false;
-      await Navigator.push<void>(
-        context,
-        BookDetailPageRoute(
-          builder: (_) => CatalogBookDetailPage(
-            bookId: bookId,
-            title: title,
-            coverUrl: coverUrl,
-            genre: genre,
-            onLibraryChanged: () => changed = true,
-          ),
-        ),
-      );
-      return changed;
-    }
-
     await Navigator.push<void>(
       context,
       BookDetailPageRoute(
@@ -288,11 +270,12 @@ Future<bool> openCatalogBookDetail(
             yaLoTengo: registros.any((item) => item.yaLoTengo),
             leidoPorMi: finalizados.any((item) => item.yaLoTengo),
             coverUrl: _resolvedCover(coverUrl, registros, finalizados),
+            bookId: bookId,
           ),
         ),
       ),
     );
-    return false;
+    return true; // recargamos siempre por si el usuario añadió el libro
   } catch (_) {
     if (!context.mounted) return false;
     ScaffoldMessenger.of(context).showSnackBar(
