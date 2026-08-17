@@ -1,0 +1,54 @@
+name: SonarCloud
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main]
+
+jobs:
+  sonar:
+    name: Análisis de calidad
+    runs-on: ubuntu-latest
+
+    steps:
+      # 1. Checkout completo (necesario para el blame y el historial de SonarCloud)
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      # 2. Instalar Flutter
+      - name: Flutter SDK
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.44.4'
+          channel: stable
+          cache: true
+
+      # 3. Instalar dependencias
+      - name: flutter pub get
+        run: flutter pub get
+
+      # 4. Ejecutar tests con coverage
+      - name: Tests con coverage
+        run: flutter test --coverage
+
+      # 5. Limpiar lcov (quitar archivos generados y tests)
+      - name: Limpiar lcov
+        run: |
+          sudo apt-get install -y lcov
+          lcov \
+            --remove coverage/lcov.info \
+            '*.g.dart' \
+            '*.freezed.dart' \
+            '*/generated/*' \
+            '*/test/*' \
+            -o coverage/lcov_cleaned.info
+
+      # 6. Enviar a SonarCloud
+      - name: SonarCloud Scan
+        uses: SonarSource/sonarcloud-github-action@master
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
