@@ -292,7 +292,7 @@ class _LecturasPageState extends State<LecturasPage> {
                   titulo: 'Las lecturas del club',
                   tips: [
                     ScreenHintTip('🔔', 'La campana (arriba a la derecha) avisa de nuevos comentarios, debates y cambios de lectura'),
-                    ScreenHintTip('🏆', '"Lectura oficial" es la elegida por el administrador del club para leer juntos'),
+                    ScreenHintTip('🏆', '"Lectura oficial" es el libro ganador de la votación de ClubVisión'),
                     ScreenHintTip('📖', 'Pulsa "Abrir lectura" para entrar en la sala de comentarios y debate del club'),
                     ScreenHintTip('🤝', '"Lecturas compartidas" muestra los libros que coinciden entre varios miembros del club'),
                   ],
