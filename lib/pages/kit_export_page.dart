@@ -74,8 +74,8 @@ class _KitExportPageState extends State<KitExportPage> {
         ShareParams(
           files: [XFile(file.path)],
           text: widget.tipo == KitExportTipo.story
-              ? 'Mi próxima lectura: ${widget.libro} · ClubReaders'
-              : 'Mi fondo lector de ${widget.libro} · ClubReaders',
+              ? 'Mi próxima lectura: ${widget.libro} · ClubReads'
+              : 'Mi fondo lector de ${widget.libro} · ClubReads',
           sharePositionOrigin: box == null
               ? null
               : box.localToGlobal(Offset.zero) & box.size,
@@ -285,7 +285,7 @@ class _WallpaperComposition extends StatelessWidget {
           ),
           const Spacer(),
           Text(
-            'ClubReaders',
+            'ClubReads',
             style: TextStyle(
               color: foreground.withValues(alpha: 0.62),
               fontSize: 13,

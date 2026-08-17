@@ -254,7 +254,7 @@ class _SagasPageState extends State<SagasPage> {
                     size: 20,
                   ),
                 ),
-                title: const Text('Lo he leído (no está en ClubReaders)'),
+                title: const Text('Lo he leído (no está en ClubReads)'),
                 subtitle: const Text(
                   'Cuenta como leído en el progreso de la saga',
                 ),

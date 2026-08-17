@@ -29,7 +29,7 @@ class _TutorialStep {
 const List<_TutorialStep> _pasos = [
   _TutorialStep(
     emoji: '📚',
-    titulo: '¡Te damos la bienvenida a ClubReaders!',
+    titulo: '¡Te damos la bienvenida a ClubReads!',
     descripcion:
         'Tu espacio para leer, ya sea en compañía o en solitario. '
         'Este recorrido breve te muestra lo necesario para empezar.',
@@ -87,7 +87,7 @@ const List<_TutorialStep> _pasos = [
         'Haz check-in de forma explícita para marcar que has leído hoy y consulta '
         'tu racha y mapa de actividad.',
     detalle:
-        'Abrir ClubReaders no crea actividad. Wrapped está en Perfil → Favoritos '
+        'Abrir ClubReads no crea actividad. Wrapped está en Perfil → Favoritos '
         'y permanece bloqueado fuera de su periodo disponible.',
   ),
   _TutorialStep(

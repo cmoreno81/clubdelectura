@@ -472,7 +472,7 @@ class _CatalogBookDetailPageState extends State<CatalogBookDetailPage> {
                   const SizedBox(width: AppSpacing.sm),
                   Expanded(
                     child: Text(
-                      'Este libro está en el catálogo de ClubReaders. '
+                      'Este libro está en el catálogo de ClubReads. '
                       'Al añadirlo podrás organizarlo en tu biblioteca y '
                       'gestionar tu estado de lectura.',
                       style: AppTextStyles.caption.copyWith(height: 1.4),

@@ -7,7 +7,7 @@ import '../../theme/app_colors.dart';
 import '../../theme/app_spacing.dart';
 import '../../theme/app_text_styles.dart';
 
-// ── Colores del confeti en la paleta de ClubReaders ──────────────────────────
+// ── Colores del confeti en la paleta de ClubReads ──────────────────────────
 
 const _confettiColors = [
   AppColors.primary,       // morado

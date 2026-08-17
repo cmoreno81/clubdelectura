@@ -80,7 +80,7 @@ class EstadoClubFactory {
       default:
         return const EstadoClub(
           estado: EstadoClubTipo.preparando,
-          titulo: 'ClubReaders',
+          titulo: 'ClubReads',
           mensaje: 'Preparando la próxima aventura.',
           icono: Icons.notification_important,
           iconColor: Colors.amber,

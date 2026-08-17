@@ -907,7 +907,7 @@ class _PerfilUsuarioPageState extends State<PerfilUsuarioPage> {
               leading: const Icon(Icons.import_export_rounded),
               title: const Text('Importar desde Goodreads'),
               subtitle: const Text(
-                'Trae tus libros sin sobrescribir ClubReaders',
+                'Trae tus libros sin sobrescribir ClubReads',
               ),
               trailing: const Icon(Icons.chevron_right_rounded),
               onTap: () async {
@@ -955,7 +955,7 @@ class _PerfilUsuarioPageState extends State<PerfilUsuarioPage> {
                   scheme: 'mailto',
                   path: 'c.moreno.benavente@gmail.com',
                   queryParameters: {
-                    'subject': 'ClubReaders · Sugerencia / Error',
+                    'subject': 'ClubReads · Sugerencia / Error',
                     'body':
                         'Hola,\n\nQuiero reportar lo siguiente:\n\n\n'
                         '---\n(Adjunta capturas si puedes, nos ayuda mucho 🙏)',
@@ -1001,7 +1001,7 @@ class _PerfilUsuarioPageState extends State<PerfilUsuarioPage> {
             color: Colors.transparent,
             child: ListTile(
               leading: const Icon(Icons.info_outline_rounded),
-              title: const Text('Acerca de ClubReaders'),
+              title: const Text('Acerca de ClubReads'),
               subtitle: const Text('Versión, créditos, privacidad y contacto'),
               trailing: const Icon(Icons.chevron_right_rounded),
               onTap: () => Navigator.push<void>(
@@ -1225,8 +1225,8 @@ class _PerfilUsuarioPageState extends State<PerfilUsuarioPage> {
       await SharePlus.instance.share(
         ShareParams(
           files: [XFile(file.path, mimeType: 'text/csv')],
-          subject: 'Mi biblioteca ClubReaders',
-          text: 'Exportación de mi biblioteca en ClubReaders',
+          subject: 'Mi biblioteca ClubReads',
+          text: 'Exportación de mi biblioteca en ClubReads',
         ),
       );
     } catch (e) {

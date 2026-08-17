@@ -96,7 +96,7 @@ class _YearReadingSharePageState extends State<YearReadingSharePage> {
         ShareParams(
           files: files,
           text:
-              'Mi año lector ${widget.year} en ClubReaders: '
+              'Mi año lector ${widget.year} en ClubReads: '
               '${widget.books.length} '
               '${widget.books.length == 1 ? 'libro' : 'libros'} 📚',
           sharePositionOrigin: box == null

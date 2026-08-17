@@ -178,7 +178,7 @@ class _Header extends StatelessWidget {
         ),
         const SizedBox(height: AppSpacing.lg),
         Text(
-          'Te damos la bienvenida a\nClubReaders',
+          'Te damos la bienvenida a\nClubReads',
           style: Theme.of(context).textTheme.displaySmall?.copyWith(
             fontWeight: FontWeight.w900,
             color: AppColors.textPrimary,

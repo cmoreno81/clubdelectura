@@ -30,9 +30,9 @@ const List<_HelpSection> _secciones = [
     titulo: 'Modos de lectura',
     items: [
       _HelpItem(
-        pregunta: '¿Qué modos de lectura tiene ClubReaders?',
+        pregunta: '¿Qué modos de lectura tiene ClubReads?',
         respuesta:
-            'ClubReaders puede usarse de dos formas:\n\n'
+            'ClubReads puede usarse de dos formas:\n\n'
             '📖 Espacio lector personal — para quien quiere leer en solitario. '
             'Tienes tu biblioteca privada, racha de lectura, mapa de calor anual '
             'y Wrapped (resumen del año). No necesitas unirte a ningún club.\n\n'
@@ -198,7 +198,7 @@ const List<_HelpSection> _secciones = [
       _HelpItem(
         pregunta: '¿Qué es la biblioteca global?',
         respuesta:
-            'Es el catálogo compartido de todos los libros que existen en ClubReaders. '
+            'Es el catálogo compartido de todos los libros que existen en ClubReads. '
             'Puedes explorarla desde "Mi universo lector" usando el icono de búsqueda. '
             'Desde ahí puedes añadir cualquier libro directamente a tu biblioteca '
             'personal sin introducir los datos manualmente.',
@@ -245,7 +245,7 @@ const List<_HelpSection> _secciones = [
             'Ve a Perfil → Más y elige "Importar desde Bookmory" o '
             '"Importar desde Goodreads". Para Bookmory selecciona el archivo '
             '.xlsx exportado directamente por la aplicación; para Goodreads, '
-            'su archivo .csv. ClubReaders revisará el contenido antes de guardar '
+            'su archivo .csv. ClubReads revisará el contenido antes de guardar '
             'nada y te permitirá confirmar los libros seleccionados.',
       ),
       _HelpItem(
@@ -253,7 +253,7 @@ const List<_HelpSection> _secciones = [
         respuesta:
             'Solo se importan los libros terminados que tengan valoración. '
             'Los pendientes, los que estás leyendo y los terminados sin valorar '
-            'se omiten. Si falta la fecha de finalización, ClubReaders asigna una '
+            'se omiten. Si falta la fecha de finalización, ClubReads asigna una '
             'fecha segura para poder conservar el libro en tu historial.',
       ),
       _HelpItem(
@@ -261,14 +261,14 @@ const List<_HelpSection> _secciones = [
         respuesta:
             '"Nuevos" son libros que todavía no existen en el catálogo: se '
             'crearán y se añadirán a tu biblioteca. "Para añadir" ya existen '
-            'en ClubReaders, pero no están en tu biblioteca: se reutilizará su '
+            'en ClubReads, pero no están en tu biblioteca: se reutilizará su '
             'ficha. Ambos aparecen seleccionados automáticamente; puedes '
             'desmarcar cualquier libro que no quieras importar.',
       ),
       _HelpItem(
         pregunta: '¿Qué significa "Protegidos"?',
         respuesta:
-            'Son libros que ya tienes en ClubReaders. No tienes que hacer nada: '
+            'Son libros que ya tienes en ClubReads. No tienes que hacer nada: '
             'la importación no sustituirá tus estados, fechas, valoraciones, '
             'reseñas, prioridades, formatos, sagas ni historial guardado. Por '
             'eso no se incluyen entre los libros seleccionados para importar.',
@@ -276,7 +276,7 @@ const List<_HelpSection> _secciones = [
       _HelpItem(
         pregunta: '¿Qué hago con los libros "Para revisar"?',
         respuesta:
-            'ClubReaders ha encontrado varias coincidencias posibles y no puede '
+            'ClubReads ha encontrado varias coincidencias posibles y no puede '
             'decidir con seguridad cuál es la correcta. Esos libros no se '
             'importan automáticamente. Termina primero la importación y después '
             'búscalos en la biblioteca global para añadir la ficha correcta. '
@@ -355,10 +355,10 @@ const List<_HelpSection> _secciones = [
             'confirmar o la X para cancelar sin cambios.',
       ),
       _HelpItem(
-        pregunta: '¿Y si un tomo no está en ClubReaders o no quiero leerlo?',
+        pregunta: '¿Y si un tomo no está en ClubReads o no quiero leerlo?',
         respuesta:
             'Desde el hueco correspondiente de la saga puedes marcarlo como '
-            '"Leído fuera de ClubReaders" u "Omitido". Si más adelante añades '
+            '"Leído fuera de ClubReads" u "Omitido". Si más adelante añades '
             'el volumen real con "Completar saga", esa marca se elimina '
             'automáticamente.',
       ),
@@ -872,7 +872,7 @@ class AyudaPage extends StatelessWidget {
                       ),
                       const SizedBox(height: 2),
                       Text(
-                        'Aquí encontrarás explicaciones de todas las partes de ClubReaders.',
+                        'Aquí encontrarás explicaciones de todas las partes de ClubReads.',
                         style: AppTextStyles.caption.copyWith(
                           color: AppColors.textSecondary,
                         ),

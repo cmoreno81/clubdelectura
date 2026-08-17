@@ -31,7 +31,7 @@ class _AcercaDePageState extends State<AcercaDePage> {
     final uri = Uri(
       scheme: 'mailto',
       path: 'c.moreno.benavente@gmail.com',
-      queryParameters: {'subject': 'Contacto desde ClubReaders'},
+      queryParameters: {'subject': 'Contacto desde ClubReads'},
     );
     final abierto = await launchUrl(uri);
     if (!abierto && mounted) {
@@ -44,7 +44,7 @@ class _AcercaDePageState extends State<AcercaDePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Acerca de ClubReaders')),
+      appBar: AppBar(title: const Text('Acerca de ClubReads')),
       body: ListView(
         padding: const EdgeInsets.fromLTRB(
           AppSpacing.md,
@@ -74,7 +74,7 @@ class _AcercaDePageState extends State<AcercaDePage> {
                     ),
                   ),
                   const SizedBox(height: AppSpacing.md),
-                  Text('ClubReaders', style: AppTextStyles.title),
+                  Text('ClubReads', style: AppTextStyles.title),
                   const SizedBox(height: AppSpacing.xs),
                   Text(
                     'Nuestro rincón para compartir cada lectura.',
@@ -108,7 +108,7 @@ class _AcercaDePageState extends State<AcercaDePage> {
                     leading: const Icon(Icons.code_rounded),
                     title: const Text('Tecnología y créditos'),
                     subtitle: const Text(
-                      'Cómo está construida ClubReaders y quién la hace posible',
+                      'Cómo está construida ClubReads y quién la hace posible',
                     ),
                     trailing: const Icon(Icons.chevron_right_rounded),
                     onTap: () => Navigator.push<void>(

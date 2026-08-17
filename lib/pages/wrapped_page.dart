@@ -1257,7 +1257,7 @@ class _SlideResumenCompartirState extends State<_SlideResumenCompartir> {
       await SharePlus.instance.share(
         ShareParams(
           files: [XFile(file.path)],
-          text: 'Mi Wrapped ${widget.year} en ClubReaders 📚✨',
+          text: 'Mi Wrapped ${widget.year} en ClubReads 📚✨',
         ),
       );
     } finally {
@@ -1326,7 +1326,7 @@ class _SlideResumenCompartirState extends State<_SlideResumenCompartir> {
                           ),
                           const SizedBox(height: 4),
                           Text(
-                            'ClubReaders',
+                            'ClubReads',
                             style: TextStyle(
                               color: Colors.white.withValues(alpha: 0.4),
                               fontSize: 12,

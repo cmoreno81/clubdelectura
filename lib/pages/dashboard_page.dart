@@ -278,7 +278,7 @@ class _DashboardPageState extends State<DashboardPage> {
                     ),
                   ),
                   Text(
-                    'ClubReaders',
+                    'ClubReads',
                     style: AppTextStyles.caption.copyWith(
                       color: AppColors.textSecondary,
                     ),

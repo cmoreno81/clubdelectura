@@ -67,7 +67,7 @@ class _MonthlyReadingSharePageState extends State<MonthlyReadingSharePage> {
         ShareParams(
           files: [XFile(file.path)],
           text:
-              'Mi mes lector en ClubReaders: '
+              'Mi mes lector en ClubReads: '
               '${widget.calendar.finishedBooks.length} '
               '${widget.calendar.finishedBooks.length == 1 ? 'libro' : 'libros'} 📚',
           sharePositionOrigin: box == null

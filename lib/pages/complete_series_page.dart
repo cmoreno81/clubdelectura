@@ -274,7 +274,7 @@ class _CompleteSeriesPageState extends State<CompleteSeriesPage> {
     final localBooks = _books.where((book) => !book.isExternal).toList();
     final externalBooks = _books.where((book) => book.isExternal).toList();
     final items = <Object>[
-      if (localBooks.isNotEmpty) const _ResultSection('Ya en ClubReaders'),
+      if (localBooks.isNotEmpty) const _ResultSection('Ya en ClubReads'),
       ...localBooks,
       if (externalBooks.isNotEmpty)
         const _ResultSection('Buscar en catálogos externos'),

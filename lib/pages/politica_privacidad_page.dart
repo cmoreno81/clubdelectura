@@ -11,7 +11,7 @@ class PoliticaPrivacidadPage extends StatelessWidget {
     final uri = Uri(
       scheme: 'mailto',
       path: 'c.moreno.benavente@gmail.com',
-      queryParameters: {'subject': 'Privacidad en ClubReaders'},
+      queryParameters: {'subject': 'Privacidad en ClubReads'},
     );
     final abierto = await launchUrl(uri);
     if (!abierto && context.mounted) {
@@ -41,17 +41,17 @@ class PoliticaPrivacidadPage extends StatelessWidget {
           const _Apartado(
             titulo: 'Responsable',
             texto:
-                'ClubReaders es una aplicación gestionada por Cristina Moreno para la actividad privada del club de lectura.',
+                'ClubReads es una aplicación gestionada por Cristina Moreno para la actividad privada del club de lectura.',
           ),
           const _Apartado(
-            titulo: 'Datos que utiliza ClubReaders',
+            titulo: 'Datos que utiliza ClubReads',
             texto:
                 'La aplicación guarda los datos necesarios para identificar tu perfil y prestar sus funciones: nombre, correo, avatar, biblioteca, fechas y progreso de lectura, valoraciones, reseñas, comentarios, reacciones y votos de Clubvisión.',
           ),
           const _Apartado(
             titulo: 'Para qué se utilizan',
             texto:
-                'Estos datos se utilizan exclusivamente para que el club pueda organizar y compartir su actividad de lectura. ClubReaders no vende tus datos ni los utiliza con fines publicitarios.',
+                'Estos datos se utilizan exclusivamente para que el club pueda organizar y compartir su actividad de lectura. ClubReads no vende tus datos ni los utiliza con fines publicitarios.',
           ),
           const _Apartado(
             titulo: 'Almacenamiento y servicios',

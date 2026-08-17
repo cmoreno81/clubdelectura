@@ -86,7 +86,7 @@ class _MyAppState extends State<MyApp> {
             scaffoldMessengerKey: scaffoldMessengerKey,
             navigatorObservers: [routeObserver],
             debugShowCheckedModeBanner: false,
-            title: 'ClubReaders',
+            title: 'ClubReads',
             theme: theme,
 
             themeAnimationDuration: Duration.zero,
