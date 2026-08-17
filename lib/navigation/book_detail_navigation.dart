@@ -10,18 +10,18 @@ import '../services/api_service.dart';
 import '../services/libros_data_cache.dart';
 import 'book_detail_page_route.dart';
 
-// ── Modelo mínimo de la respuesta de libroPorId ───────────────────────────────
+// ── Modelo de respuesta de libroPorId (público para inyección en tests) ────────
 
-class _LibroPorIdData {
+class LibroPorIdData {
   final List<Libro> libros;
   final List<LibroFinalizado> finalizados;
 
-  const _LibroPorIdData({required this.libros, required this.finalizados});
+  const LibroPorIdData({required this.libros, required this.finalizados});
 }
 
 // ── Fetch del nuevo endpoint rápido ──────────────────────────────────────────
 
-Future<_LibroPorIdData?> _fetchLibroPorId(String bookId) async {
+Future<LibroPorIdData?> _fetchLibroPorId(String bookId) async {
   try {
     final data = await ApiService().getLibroPorId(bookId);
     if (data['ok'] != true) return null;
@@ -35,11 +35,15 @@ Future<_LibroPorIdData?> _fetchLibroPorId(String bookId) async {
         )
         .toList();
 
-    return _LibroPorIdData(libros: libros, finalizados: finalizados);
+    return LibroPorIdData(libros: libros, finalizados: finalizados);
   } catch (_) {
     return null;
   }
 }
+
+/// Tipo de la función de fetch inyectable para tests.
+@visibleForTesting
+typedef FetchLibroPorId = Future<LibroPorIdData?> Function(String bookId);
 
 // ── Helpers compartidos ───────────────────────────────────────────────────────
 
@@ -73,7 +77,9 @@ Future<bool> openBookDetail(
   String bookId = '',
   String coverUrl = '',
   String genre = '',
+  @visibleForTesting FetchLibroPorId? fetchForTesting,
 }) async {
+  final fetch = fetchForTesting ?? _fetchLibroPorId;
   final normalizedTitle = title.trim().toLowerCase();
   if (normalizedTitle.isEmpty) return false;
 
@@ -83,7 +89,7 @@ Future<bool> openBookDetail(
 
     if (bookId.isNotEmpty) {
       // Ruta rápida: endpoint específico por bookId
-      final result = await _fetchLibroPorId(bookId);
+      final result = await fetch(bookId);
       if (!context.mounted) return false;
 
       if (result == null) {
@@ -186,7 +192,10 @@ Future<bool> openCatalogBookDetail(
   String genre = '',
   bool forceFullDetail = false,
   bool globalStats = false,
+  @visibleForTesting FetchLibroPorId? fetchForTesting,
+  @visibleForTesting String? usuarioActualForTesting,
 }) async {
+  final fetch = fetchForTesting ?? _fetchLibroPorId;
   final normalizedTitle = title.trim().toLowerCase();
   if (normalizedTitle.isEmpty) return false;
 
@@ -196,11 +205,10 @@ Future<bool> openCatalogBookDetail(
 
     if (bookId.isNotEmpty) {
       // Ruta rápida: endpoint específico por bookId
-      final usuarioActual = ((await UsuarioService().obtenerUsuario()) ?? '')
-          .trim()
-          .toLowerCase();
+      final usuarioActual = usuarioActualForTesting ??
+          ((await UsuarioService().obtenerUsuario()) ?? '').trim().toLowerCase();
 
-      final result = await _fetchLibroPorId(bookId);
+      final result = await fetch(bookId);
       if (!context.mounted) return false;
 
       if (result == null) {
@@ -408,9 +416,8 @@ Future<bool> openCatalogBookDetail(
       return true;
     } else {
       // Fallback sin bookId
-      final usuarioActual = ((await UsuarioService().obtenerUsuario()) ?? '')
-          .trim()
-          .toLowerCase();
+      final usuarioActual = usuarioActualForTesting ??
+          ((await UsuarioService().obtenerUsuario()) ?? '').trim().toLowerCase();
 
       final data = await LibrosDataCache.instance.get(
         () => ApiService().getLibrosData(),
