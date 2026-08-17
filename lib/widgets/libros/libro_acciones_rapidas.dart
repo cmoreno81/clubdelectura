@@ -6,6 +6,7 @@ import '../../services/api_service.dart';
 import '../../services/library_refresh_notifier.dart';
 import '../../services/usuario_service.dart';
 import '../../theme/app_colors.dart';
+import '../common/libro_finalizado_celebration.dart';
 import 'finalizar_libro_dialog.dart';
 import 'add_book_sheet.dart';
 import 'libro_acciones_sheet.dart';
@@ -118,14 +119,29 @@ Future<bool> mostrarAccionesRapidasLibro(
   }
 
   if (!context.mounted) return false;
-  ScaffoldMessenger.of(context).showSnackBar(
-    SnackBar(
-      content: Text(
-        ok ? 'Biblioteca actualizada' : 'No se ha podido actualizar',
-      ),
-    ),
-  );
-  if (ok) LibraryRefreshNotifier.instance.invalidate();
+
+  if (!ok) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('No se ha podido actualizar')),
+    );
+    return false;
+  }
+
+  LibraryRefreshNotifier.instance.invalidate();
+
+  // Celebración solo cuando se finaliza un libro
+  if (accion == LibroAccion.finalizar && context.mounted) {
+    await mostrarCelebracionFinalizado(
+      context,
+      titulo: libro.libro,
+      coverUrl: libro.coverUrl,
+    );
+  } else if (context.mounted) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Biblioteca actualizada')),
+    );
+  }
+
   return ok;
 }
 

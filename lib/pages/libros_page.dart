@@ -18,6 +18,7 @@ import '../navigation/app_page_route.dart';
 import '../navigation/book_detail_page_route.dart';
 import '../widgets/libros/finalizar_libro_dialog.dart';
 import '../widgets/libros/libro_acciones_sheet.dart';
+import '../widgets/common/libro_finalizado_celebration.dart';
 import '../widgets/libros/add_book_sheet.dart';
 import '../widgets/libros/pausar_lectura_dialog.dart';
 
@@ -1512,19 +1513,28 @@ class _LibrosPageState extends State<LibrosPage> with WidgetsBindingObserver {
     );
     if (!mounted) return;
 
-    if (ok) HapticFeedback.mediumImpact();
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          ok ? '✅ ¡«${libro.libro}» finalizado!' : 'No se ha podido finalizar',
+    if (!mounted) return;
+
+    if (!ok) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('No se ha podido finalizar'),
+          behavior: SnackBarBehavior.floating,
         ),
-        behavior: SnackBarBehavior.floating,
-      ),
-    );
-    if (ok) {
-      LibraryRefreshNotifier.instance.invalidate();
-      _recargar();
+      );
+      return;
     }
+
+    HapticFeedback.mediumImpact();
+    LibraryRefreshNotifier.instance.invalidate();
+    _recargar();
+
+    if (!mounted) return;
+    await mostrarCelebracionFinalizado(
+      context,
+      titulo: libro.libro,
+      coverUrl: libro.coverUrl,
+    );
   }
 
   Future<void> _releer(LibroAgrupado libro) async {

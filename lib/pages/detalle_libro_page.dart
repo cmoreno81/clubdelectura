@@ -15,6 +15,7 @@ import '../services/kit_lectura_service.dart';
 import '../services/usuario_service.dart';
 import '../services/library_refresh_notifier.dart';
 import '../theme/app_spacing.dart';
+import '../widgets/common/libro_finalizado_celebration.dart';
 import '../widgets/libros/conversaciones_libro_card.dart';
 import '../widgets/libros/finalizar_libro_dialog.dart';
 import '../widgets/libros/kit_lectura_card.dart';
@@ -184,9 +185,18 @@ class _DetalleLibroPageState extends State<DetalleLibroPage> {
 
       if (!mounted) return;
 
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('Estado actualizado')));
+      if (nuevoEstado == 'FINALIZADO') {
+        // Vibración + pantalla de celebración
+        await mostrarCelebracionFinalizado(
+          context,
+          titulo: libro.libro,
+          coverUrl: libro.coverUrl,
+        );
+      } else {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('Estado actualizado')));
+      }
     } catch (error) {
       if (!mounted) return;
 
