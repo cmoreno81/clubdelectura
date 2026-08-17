@@ -10,6 +10,7 @@ import '../widgets/common/club_avatar.dart';
 import '../widgets/common/club_card.dart';
 import '../widgets/error_view.dart';
 import 'package:club_lectura_app/widgets/common/club_shimmer.dart';
+import '../widgets/common/screen_hint_banner.dart';
 
 class ClubChallengePage extends StatefulWidget {
   const ClubChallengePage({super.key});
@@ -28,8 +29,9 @@ class _ClubChallengePageState extends State<ClubChallengePage> {
   }
 
   Future<void> _reload() async {
-    setState(() => _future = ApiService().getClubChallenges());
-    await _future;
+    final newFuture = ApiService().getClubChallenges();
+    setState(() { _future = newFuture; });
+    await newFuture;
   }
 
   Future<void> _setChallenge(int? current) async {
@@ -76,14 +78,38 @@ class _ClubChallengePageState extends State<ClubChallengePage> {
       ),
     );
     if (result == null || !mounted) return;
+
+    // Guardar el reto
     try {
       await ApiService().setReadingChallenge(target: result);
-      if (mounted) await _reload();
     } on ApiException catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text(e.message)));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(e.message)),
+        );
+      }
+      return;
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('No se pudo guardar el reto. Comprueba tu conexión.'),
+          ),
+        );
+      }
+      return;
+    }
+
+    // Recargar la página con los nuevos datos
+    if (!mounted) return;
+    try {
+      await _reload();
+    } catch (_) {
+      // El reto se guardó aunque la recarga falle;
+      // forzar reinicio del futuro
+      if (mounted) {
+        final newFuture = ApiService().getClubChallenges();
+        setState(() { _future = newFuture; });
       }
     }
   }
@@ -123,18 +149,30 @@ class _ClubChallengePageState extends State<ClubChallengePage> {
               : null;
           final myRead = (myChallenge['read'] as num? ?? 0).toInt();
 
-          return RefreshIndicator(
-            onRefresh: _reload,
-            child: ListView(
-              physics: const AlwaysScrollableScrollPhysics(),
-              padding: const EdgeInsets.fromLTRB(
-                AppSpacing.md,
-                AppSpacing.sm,
-                AppSpacing.md,
-                100,
+          return Column(
+            children: [
+              ScreenHintBanner(
+                featureKey: 'hint_reto_lector_v1',
+                titulo: 'Tu reto lector anual',
+                tips: const [
+                  ScreenHintTip('🎯', 'Pulsa tu nombre para fijar tu objetivo de libros para el año'),
+                  ScreenHintTip('📈', 'El progreso se actualiza solo al finalizar libros en tu biblioteca'),
+                  ScreenHintTip('👥', 'En cuentas de club puedes ver el reto de todos los miembros'),
+                ],
               ),
-              children: [
-                // ── Reto colectivo del club ──
+              Expanded(
+                child: RefreshIndicator(
+                  onRefresh: _reload,
+                  child: ListView(
+                    physics: const AlwaysScrollableScrollPhysics(),
+                    padding: const EdgeInsets.fromLTRB(
+                      AppSpacing.md,
+                      AppSpacing.sm,
+                      AppSpacing.md,
+                      100,
+                    ),
+                    children: [
+                      // ── Reto colectivo del club ──
                 if (clubTarget > 0) ...[
                   _ClubCollectiveCard(
                     year: year,
@@ -264,7 +302,10 @@ class _ClubChallengePageState extends State<ClubChallengePage> {
                 ],
               ],
             ),
-          );
+          ),
+        ),
+      ],
+    );
         },
       ),
     );

@@ -77,6 +77,35 @@ class _ClubsPageState extends State<ClubsPage> {
     await _run(() => ClubService().joinClub(code));
   }
 
+  Future<void> _crearEspacioPersonal() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: const Text('Crear espacio personal'),
+        content: const Text(
+          'Tu espacio lector personal te permite llevar tu biblioteca, '
+          'reto lector y estadísticas de forma individual, sin compartirlos '
+          'con ningún club.\n\n'
+          'Todos tus libros actuales estarán disponibles desde el primer momento.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancelar'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Crear espacio'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true) return;
+    await _run(() async {
+      await ClubService().crearEspacioPersonal();
+    });
+  }
+
   Future<void> _run(Future<void> Function() action) async {
     setState(() => _busy = true);
     try {
@@ -186,6 +215,15 @@ class _ClubsPageState extends State<ClubsPage> {
                   label: const Text('Entrar con invitación'),
                 ),
               ),
+              // Mostrar solo si el usuario NO tiene aún espacio personal
+              if (!clubs.any((c) => c.esPersonal)) ...[
+                const SizedBox(height: AppSpacing.sm),
+                OutlinedButton.icon(
+                  onPressed: _busy ? null : _crearEspacioPersonal,
+                  icon: const Icon(Icons.person_outline_rounded),
+                  label: const Text('Crear mi espacio personal'),
+                ),
+              ],
             ],
           );
         },

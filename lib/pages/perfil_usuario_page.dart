@@ -28,6 +28,7 @@ import '../widgets/common/mapa_calor_widget.dart';
 import '../widgets/common/optimized_network_image.dart';
 import '../widgets/profile/book_of_year_preview.dart';
 import '../widgets/error_view.dart';
+import '../widgets/common/screen_hint_banner.dart';
 import '../services/usuario_service.dart';
 import '../widgets/perfil/editar_fechas_lectura_dialog.dart';
 import '../utils/lectura_fecha_utils.dart';
@@ -1105,6 +1106,20 @@ class _PerfilUsuarioPageState extends State<PerfilUsuarioPage> {
               controller: _scrollController,
               physics: const AlwaysScrollableScrollPhysics(),
               slivers: [
+                // ── Tutorial primera visita ──
+                SliverToBoxAdapter(
+                  child: ScreenHintBanner(
+                    featureKey: 'hint_perfil_v1',
+                    titulo: 'Tu perfil lector',
+                    tips: const [
+                      ScreenHintTip('📷', 'Pulsa tu avatar para cambiar la foto de perfil'),
+                      ScreenHintTip('📤', 'Exporta toda tu biblioteca en CSV desde la pestaña "Más"'),
+                      ScreenHintTip('📊', 'Consulta estadísticas, logros y tu mapa de calor de lectura'),
+                      ScreenHintTip('❤️', 'Guarda libros en favoritos desde el catálogo o los detalles'),
+                    ],
+                  ),
+                ),
+
                 // ── Cabecera ──
                 SliverToBoxAdapter(
                   child: Padding(

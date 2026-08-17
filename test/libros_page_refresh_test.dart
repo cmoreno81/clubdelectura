@@ -13,7 +13,7 @@ void main() {
   testWidgets('filtrar y reconstruir no vuelve a llamar a la API', (
     tester,
   ) async {
-    SharedPreferences.setMockInitialValues({});
+    SharedPreferences.setMockInitialValues({'screen_hint_v1_hint_biblioteca_v1': true});
     final atmosfera = AtmosferaController();
     var requests = 0;
 
@@ -57,7 +57,7 @@ void main() {
   testWidgets(
     'muestra un libro nuevo al regresar a Libros sin perder la búsqueda',
     (tester) async {
-      SharedPreferences.setMockInitialValues({});
+      SharedPreferences.setMockInitialValues({'screen_hint_v1_hint_biblioteca_v1': true});
       final controller = LibrosPageController();
       final atmosfera = AtmosferaController();
       final refreshResult = Completer<LibrosData>();

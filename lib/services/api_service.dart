@@ -1416,7 +1416,11 @@ class ApiService {
   }) async {
     final response = await _client.post(
       Uri.parse('$baseUrl?action=actualizarAvatarPerfil'),
-      headers: const {'Content-Type': 'application/json'},
+      headers: const {
+        'Content-Type': 'application/json',
+        // La subida a Cloudinary puede tardar; usamos el timeout largo (90 s)
+        AuthenticatedHttpClient.longTimeoutHeader: 'true',
+      },
       body: jsonEncode({'avatarUrl': avatarUrl}),
     );
 

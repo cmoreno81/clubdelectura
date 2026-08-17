@@ -105,6 +105,9 @@ void main() {
     final carousel = find.byKey(
       const PageStorageKey('dashboard-trending-books'),
     );
+    // Deslizar el carousel para traer 'Tendencia 4' al viewport antes del longPress.
+    await tester.drag(carousel, const Offset(-320, 0));
+    await tester.pumpAndSettle();
     await tester.longPress(find.text('Tendencia 4').first);
     await tester.pumpAndSettle();
 
@@ -146,6 +149,12 @@ void main() {
       500,
       scrollable: find.byType(Scrollable).first,
     );
+    final carousel2 = find.byKey(
+      const PageStorageKey('dashboard-trending-books'),
+    );
+    // Deslizar el carousel para traer 'Tendencia 4' al viewport antes del longPress.
+    await tester.drag(carousel2, const Offset(-320, 0));
+    await tester.pumpAndSettle();
     await tester.longPress(find.text('Tendencia 4').first);
     await tester.pump();
     await tester.pumpWidget(const MaterialApp(home: SizedBox()));

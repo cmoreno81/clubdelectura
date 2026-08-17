@@ -8,7 +8,10 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
   setUp(() {
-    SharedPreferences.setMockInitialValues({'onboarding_v1_done': true});
+    SharedPreferences.setMockInitialValues({
+      'onboarding_v1_done': true,
+      'screen_hint_v1_hint_dashboard_v1': true,
+    });
   });
 
   testWidgets(

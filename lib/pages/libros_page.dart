@@ -37,6 +37,7 @@ import 'detalle_libro_page.dart';
 import 'nuevo_libro_page.dart';
 import '../services/atmosfera_scope.dart';
 import '../widgets/common/onboarding_tutorial.dart';
+import '../widgets/common/screen_hint_banner.dart';
 
 enum OrdenLibros { populares, recientes, tituloAsc, tituloDesc, mejorValorados }
 
@@ -291,6 +292,16 @@ class _LibrosPageState extends State<LibrosPage> with WidgetsBindingObserver {
             children: [
               Column(
                 children: [
+                  ScreenHintBanner(
+                    featureKey: 'hint_biblioteca_v1',
+                    titulo: 'Cómo sacar el máximo a tu biblioteca',
+                    tips: const [
+                      ScreenHintTip('📖', 'Mantén pulsado un libro para ver acciones rápidas'),
+                      ScreenHintTip('✅', 'Marca "Finalizar" cuando termines un libro para registrarlo en tu historial'),
+                      ScreenHintTip('🔍', 'Filtra por estado: leyendo, pausado, pendiente o finalizado'),
+                      ScreenHintTip('⭐', 'Puntúa y añade reseñas a los libros que terminas'),
+                    ],
+                  ),
                   _cabeceraFiltros(
                     usuariosFiltro: usuariosFiltro,
                     totalResultados: resultado.length,

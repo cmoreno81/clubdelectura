@@ -36,6 +36,7 @@ import 'nuevo_libro_page.dart';
 import 'perfil_usuario_page.dart';
 import 'sagas_page.dart';
 import '../widgets/common/onboarding_tutorial.dart';
+import '../widgets/common/screen_hint_banner.dart';
 import '../widgets/libros/libro_acciones_rapidas.dart';
 import 'mis_logros_page.dart';
 import '../models/achievements/achievement.dart';
@@ -516,6 +517,20 @@ class _GeneralDashboardPageState extends State<GeneralDashboardPage> {
                     ),
                   ],
                 ),
+                // ── Tutorial primera visita ──
+                SliverToBoxAdapter(
+                  child: ScreenHintBanner(
+                    featureKey: 'hint_dashboard_v1',
+                    titulo: 'Tu universo lector de un vistazo',
+                    tips: const [
+                      ScreenHintTip('📊', 'Aquí ves tu resumen de lecturas del mes y el año'),
+                      ScreenHintTip('🎯', 'Pulsa "Reto lector" (tab inferior) para fijar tu objetivo anual'),
+                      ScreenHintTip('🧭', 'Usa el icono de exploración (arriba) para descubrir libros del catálogo'),
+                      ScreenHintTip('📚', 'Pulsa cualquier portada para ver el detalle del libro'),
+                    ],
+                  ),
+                ),
+
                 SliverPadding(
                   padding: const EdgeInsets.fromLTRB(
                     AppSpacing.md,

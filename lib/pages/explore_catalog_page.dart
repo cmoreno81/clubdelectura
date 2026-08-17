@@ -12,6 +12,7 @@ import '../theme/app_spacing.dart';
 import '../widgets/common/optimized_network_image.dart';
 import '../widgets/libros/add_book_sheet.dart';
 import 'package:club_lectura_app/widgets/common/club_shimmer.dart';
+import '../widgets/common/screen_hint_banner.dart';
 
 class ExploreCatalogPage extends StatefulWidget {
   const ExploreCatalogPage({super.key, this.initialQuery = ''});
@@ -199,6 +200,15 @@ class _ExploreCatalogPageState extends State<ExploreCatalogPage> {
                 _load(value);
               },
             ),
+          ),
+          ScreenHintBanner(
+            featureKey: 'hint_catalogo_v1',
+            titulo: 'Explorar el catálogo',
+            tips: const [
+              ScreenHintTip('🔍', 'Busca por título, autor o ISBN para encontrar cualquier libro'),
+              ScreenHintTip('📚', 'Pulsa un libro para ver detalles y añadirlo a tu biblioteca'),
+              ScreenHintTip('❤️', 'Guarda libros en favoritos para no perderlos de vista'),
+            ],
           ),
           Expanded(
             child: AnimatedBuilder(

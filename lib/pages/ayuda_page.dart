@@ -58,6 +58,17 @@ const List<_HelpSection> _secciones = [
             'La pestaña activa cambia según el modo seleccionado.',
       ),
       _HelpItem(
+        pregunta: '¿Cómo creo mi espacio personal si ya pertenezco a un club?',
+        respuesta:
+            'Si ya tienes una cuenta de club y quieres añadir tu espacio lector '
+            'personal, ve a "Mis clubes" y pulsa el botón "Crear mi espacio '
+            'personal" que aparece al final de la lista (solo visible si aún '
+            'no tienes uno).\n\n'
+            'Tu espacio personal hereda toda tu biblioteca individual: libros, '
+            'historial, valoraciones, sagas, favoritos y estadísticas. '
+            'Es completamente independiente del club y solo tú puedes verlo.',
+      ),
+      _HelpItem(
         pregunta: '¿Qué es "Mi espacio lector"?',
         respuesta:
             'Es una pantalla exclusiva del modo personal que muestra:\n\n'
@@ -155,6 +166,16 @@ const List<_HelpSection> _secciones = [
             'Abre el detalle del libro y cambia su estado a "Historia terminada" '
             'en el selector de estado. Podrás añadir tu valoración, '
             'las fechas de lectura y una reseña personal.',
+      ),
+      _HelpItem(
+        pregunta: '¿Qué pasa cuando termino un libro?',
+        respuesta:
+            'Al marcar un libro como "Historia terminada" se abre un panel '
+            'para guardar tu valoración (1–5 estrellas), las fechas de lectura '
+            'y una reseña personal opcional.\n\n'
+            '🎉 Una vez guardado, la app muestra una pequeña celebración con '
+            'confeti. El libro aparece inmediatamente en tu historial, en la '
+            'estantería del mes y cuenta para el reto lector si tienes uno activo.',
       ),
       _HelpItem(
         pregunta: '¿Qué estados puede tener un libro?',
@@ -586,18 +607,20 @@ const List<_HelpSection> _secciones = [
             '🏅 Año legendario (Legendario) — 100 libros en un solo año',
       ),
       _HelpItem(
-        pregunta: '¿Qué es el Reto lector del club?',
+        pregunta: '¿Qué es el Reto lector?',
         respuesta:
-            'En "El Club" → "Reto lector" cada miembro puede marcarse un '
-            'objetivo personal de libros para el año en curso. '
-            'El progreso se actualiza automáticamente según vas finalizando libros.\n\n'
-            'Puedes ver el avance de todos los miembros ordenado por porcentaje '
-            'de cumplimiento. Quienes han superado su reto aparecen con 🏆.\n\n'
-            'Además existe un reto colectivo: la suma de todos los objetivos '
-            'individuales del club. Si entre todas lo superáis, '
-            'se celebra con un logro especial.\n\n'
+            'El Reto lector te permite marcarte un objetivo personal de libros '
+            'para el año en curso. El progreso se actualiza automáticamente '
+            'según vas finalizando libros en tu biblioteca.\n\n'
+            '📖 En modo personal — el reto es tuyo y privado. Ves tu progreso '
+            'y puedes modificar el objetivo en cualquier momento.\n\n'
+            '👥 En modo club — cada miembro tiene su propio reto. Puedes ver '
+            'el avance de todos ordenado por porcentaje de cumplimiento. '
+            'Quienes han superado su reto aparecen con 🏆.\n\n'
+            'Además existe un reto colectivo de club: la suma de todos los objetivos '
+            'individuales. Si entre todas lo superáis, se celebra con un logro especial.\n\n'
             'Para crear o cambiar tu reto, entra en "Reto lector" y pulsa '
-            '"Crear reto" o "Cambiar". Puedes modificarlo en cualquier momento.',
+            '"Crear reto" o "Cambiar objetivo".',
       ),
     ],
   ),
@@ -679,10 +702,14 @@ const List<_HelpSection> _secciones = [
             'la sección Atmósferas dentro de la lectura activa.',
       ),
       _HelpItem(
-        pregunta: '¿Cómo cambio mi avatar?',
+        pregunta: '¿Cómo cambio mi avatar o foto de perfil?',
         respuesta:
             'Ve a tu perfil y pulsa sobre tu avatar. Podrás elegir '
-            'un color y un icono, o subir una foto desde tu galería.',
+            'un color y un icono, o subir una foto desde tu galería.\n\n'
+            'Al subir una foto desde la galería, la carga puede tardar '
+            'unos segundos porque la imagen se optimiza antes de guardarse. '
+            'Espera hasta que aparezca el mensaje de confirmación antes '
+            'de cerrar la pantalla.',
       ),
       _HelpItem(
         pregunta: '¿Puedo personalizar mi perfil?',
@@ -764,6 +791,17 @@ const List<_HelpSection> _secciones = [
             'de favoritos con título, autor y género.\n\n'
             'Para que aparezca necesitas tener al menos un libro marcado como '
             'favorito ♥ en tu biblioteca.',
+      ),
+      _HelpItem(
+        pregunta: '¿Puedo exportar mi biblioteca?',
+        respuesta:
+            'Sí. Ve a Perfil → pestaña "Más" → "Exportar mi biblioteca". '
+            'Se generará un archivo CSV con todos tus libros: título, autor, '
+            'saga, estado, género, formato, páginas, tu valoración, reseña, '
+            'fechas de inicio y fin, y si es relectura.\n\n'
+            'El archivo se puede abrir en Excel, Google Sheets o cualquier '
+            'aplicación de hojas de cálculo. También puedes compartirlo '
+            'directamente desde el selector de apps del sistema.',
       ),
       _HelpItem(
         pregunta: '¿Cómo funcionan las notificaciones?',

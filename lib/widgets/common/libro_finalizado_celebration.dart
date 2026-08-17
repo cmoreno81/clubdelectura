@@ -374,7 +374,7 @@ class _CoverCard extends StatelessWidget {
             ? Image.network(
                 coverUrl,
                 fit: BoxFit.cover,
-                errorBuilder: (_, __, ___) => _placeholder(),
+                errorBuilder: (_, _, _) => _placeholder(),
               )
             : _placeholder(),
       ),
@@ -427,11 +427,11 @@ Future<void> mostrarCelebracionFinalizado(
       opaque: false,
       barrierDismissible: false,
       transitionDuration: const Duration(milliseconds: 300),
-      pageBuilder: (_, __, ___) => LibroFinalizadoCelebration(
+      pageBuilder: (_, _, _) => LibroFinalizadoCelebration(
         titulo: titulo,
         coverUrl: coverUrl,
       ),
-      transitionsBuilder: (_, animation, __, child) => FadeTransition(
+      transitionsBuilder: (_, animation, _, child) => FadeTransition(
         opacity: animation,
         child: child,
       ),
