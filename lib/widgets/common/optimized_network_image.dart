@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 
 import '../../theme/app_colors.dart';
@@ -31,6 +33,27 @@ class OptimizedNetworkImage extends StatelessWidget {
   Widget build(BuildContext context) {
     final trimmedUrl = url?.trim() ?? '';
     if (trimmedUrl.isEmpty) return _fallback();
+
+    // Data URIs (e.g. data:image/jpeg;base64,...) — no son URLs de red.
+    // Las decodificamos directamente con Image.memory.
+    if (trimmedUrl.startsWith('data:image/')) {
+      final commaIdx = trimmedUrl.indexOf(',');
+      if (commaIdx != -1) {
+        try {
+          final bytes = base64Decode(trimmedUrl.substring(commaIdx + 1));
+          return Image.memory(
+            bytes,
+            width: width,
+            height: height,
+            fit: fit,
+            errorBuilder: (_, _, _) => _fallback(),
+          );
+        } catch (_) {
+          return _fallback();
+        }
+      }
+      return _fallback();
+    }
 
     final pixelRatio = MediaQuery.devicePixelRatioOf(context);
     final cacheWidth = highResolution
