@@ -292,6 +292,8 @@ class _GeneralDashboardPageState extends State<GeneralDashboardPage> {
         coverUrl: coverUrl,
         genre: genre,
         forceFullDetail: forceFullDetail,
+        // Dashboard global: usar stats de toda la comunidad, no solo del usuario
+        globalStats: true,
       );
       if (changed && mounted) await _reload();
     } finally {

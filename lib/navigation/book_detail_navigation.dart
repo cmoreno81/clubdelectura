@@ -168,6 +168,15 @@ Future<bool> openBookDetail(
 //
 // [forceFullDetail] = true (pulsación larga → "Ver ficha completa"):
 //   Siempre abre DetalleLibroPage con todos los datos disponibles.
+//
+// [globalStats] = false (por defecto, contexto de club):
+//   Filtra registros/finalizados al usuario actual → stats del propio usuario.
+//
+// [globalStats] = true (dashboard global, fuera de un club):
+//   Usa TODOS los registros/finalizados para los contadores y la valoración media.
+//   Los flags personales (yaLoTengo, leidoPorMi) siguen calculándose solo con
+//   los datos del usuario actual. La sección "Lectores interesados" muestra a
+//   todos los lectores pero solo permite editar el registro propio.
 
 Future<bool> openCatalogBookDetail(
   BuildContext context, {
@@ -176,6 +185,7 @@ Future<bool> openCatalogBookDetail(
   String coverUrl = '',
   String genre = '',
   bool forceFullDetail = false,
+  bool globalStats = false,
 }) async {
   final normalizedTitle = title.trim().toLowerCase();
   if (normalizedTitle.isEmpty) return false;
@@ -185,7 +195,7 @@ Future<bool> openCatalogBookDetail(
     List<LibroFinalizado> finalizados;
 
     if (bookId.isNotEmpty) {
-      // Ruta rápida: endpoint específico por bookId, filtrado por usuaria actual
+      // Ruta rápida: endpoint específico por bookId
       final usuarioActual = ((await UsuarioService().obtenerUsuario()) ?? '')
           .trim()
           .toLowerCase();
@@ -233,20 +243,169 @@ Future<bool> openCatalogBookDetail(
         }
       }
 
-      registros = result.libros
-          .where(
-            (item) =>
-                usuarioActual.isEmpty ||
-                item.usuario.trim().toLowerCase() == usuarioActual,
-          )
-          .toList();
-      finalizados = result.finalizados
-          .where(
-            (item) =>
-                usuarioActual.isEmpty ||
-                item.usuario.trim().toLowerCase() == usuarioActual,
-          )
-          .toList();
+      if (globalStats) {
+        // Dashboard global: stats de todos los usuarios.
+        // Se pasan todos los registros/finalizados para contadores y valoración,
+        // pero yaLoTengo/leidoPorMi se calculan solo del usuario actual.
+        registros = result.libros;
+        finalizados = result.finalizados;
+      } else {
+        // Contexto de club: filtrar al usuario actual.
+        registros = result.libros
+            .where(
+              (item) =>
+                  usuarioActual.isEmpty ||
+                  item.usuario.trim().toLowerCase() == usuarioActual,
+            )
+            .toList();
+        finalizados = result.finalizados
+            .where(
+              (item) =>
+                  usuarioActual.isEmpty ||
+                  item.usuario.trim().toLowerCase() == usuarioActual,
+            )
+            .toList();
+      }
+
+      // Flags personales siempre del usuario actual
+      final misRegistros = globalStats
+          ? result.libros
+              .where(
+                (item) =>
+                    usuarioActual.isEmpty ||
+                    item.usuario.trim().toLowerCase() == usuarioActual,
+              )
+              .toList()
+          : registros;
+      final misFinalizados = globalStats
+          ? result.finalizados
+              .where(
+                (item) =>
+                    usuarioActual.isEmpty ||
+                    item.usuario.trim().toLowerCase() == usuarioActual,
+              )
+              .toList()
+          : finalizados;
+
+      // Si en modo filtrado el usuario no tiene el libro → CatalogBookDetailPage
+      if (!globalStats && registros.isEmpty && finalizados.isEmpty) {
+        if (forceFullDetail) {
+          await Navigator.push<void>(
+            context,
+            BookDetailPageRoute(
+              builder: (_) => DetalleLibroPage(
+                libro: LibroAgrupado(
+                  libro: title,
+                  genero: genre,
+                  registros: const [],
+                  finalizados: const [],
+                  yaLoTengo: false,
+                  coverUrl: coverUrl,
+                  bookId: bookId,
+                ),
+              ),
+            ),
+          );
+          return true;
+        } else {
+          var changed = false;
+          await Navigator.push<void>(
+            context,
+            BookDetailPageRoute(
+              builder: (_) => CatalogBookDetailPage(
+                bookId: bookId,
+                title: title,
+                coverUrl: coverUrl,
+                genre: genre,
+                onLibraryChanged: () => changed = true,
+              ),
+            ),
+          );
+          return changed;
+        }
+      }
+
+      // En modo globalStats con forceFullDetail, siempre DetalleLibroPage
+      if (globalStats && forceFullDetail) {
+        await Navigator.push<void>(
+          context,
+          BookDetailPageRoute(
+            builder: (_) => DetalleLibroPage(
+              libro: LibroAgrupado(
+                libro: title,
+                genero: _resolvedGenre(genre, registros, finalizados),
+                registros: registros,
+                finalizados: finalizados,
+                yaLoTengo: misRegistros.any((item) => item.yaLoTengo),
+                leidoPorMi: misFinalizados.any((item) => item.yaLoTengo),
+                coverUrl: _resolvedCover(coverUrl, registros, finalizados),
+                bookId: bookId,
+              ),
+            ),
+          ),
+        );
+        return true;
+      }
+
+      // En modo globalStats con tap simple → CatalogBookDetailPage si el usuario
+      // no tiene el libro; DetalleLibroPage si ya lo tiene.
+      if (globalStats && !forceFullDetail) {
+        if (misRegistros.isEmpty && misFinalizados.isEmpty) {
+          var changed = false;
+          await Navigator.push<void>(
+            context,
+            BookDetailPageRoute(
+              builder: (_) => CatalogBookDetailPage(
+                bookId: bookId,
+                title: title,
+                coverUrl: coverUrl,
+                genre: genre,
+                onLibraryChanged: () => changed = true,
+              ),
+            ),
+          );
+          return changed;
+        }
+        // Usuario tiene el libro → ficha completa con stats globales
+        await Navigator.push<void>(
+          context,
+          BookDetailPageRoute(
+            builder: (_) => DetalleLibroPage(
+              libro: LibroAgrupado(
+                libro: title,
+                genero: _resolvedGenre(genre, registros, finalizados),
+                registros: registros,
+                finalizados: finalizados,
+                yaLoTengo: misRegistros.any((item) => item.yaLoTengo),
+                leidoPorMi: misFinalizados.any((item) => item.yaLoTengo),
+                coverUrl: _resolvedCover(coverUrl, registros, finalizados),
+                bookId: bookId,
+              ),
+            ),
+          ),
+        );
+        return true;
+      }
+
+      // Modo club, usuario tiene el libro → ficha completa
+      await Navigator.push<void>(
+        context,
+        BookDetailPageRoute(
+          builder: (_) => DetalleLibroPage(
+            libro: LibroAgrupado(
+              libro: title,
+              genero: _resolvedGenre(genre, registros, finalizados),
+              registros: registros,
+              finalizados: finalizados,
+              yaLoTengo: registros.any((item) => item.yaLoTengo),
+              leidoPorMi: finalizados.any((item) => item.yaLoTengo),
+              coverUrl: _resolvedCover(coverUrl, registros, finalizados),
+              bookId: bookId,
+            ),
+          ),
+        ),
+      );
+      return true;
     } else {
       // Fallback sin bookId
       final usuarioActual = ((await UsuarioService().obtenerUsuario()) ?? '')
@@ -258,83 +417,113 @@ Future<bool> openCatalogBookDetail(
       );
       if (!context.mounted) return false;
 
-      registros = data.libros
-          .where(
-            (item) =>
-                item.libro.trim().toLowerCase() == normalizedTitle &&
-                (usuarioActual.isEmpty ||
-                    item.usuario.trim().toLowerCase() == usuarioActual),
-          )
-          .toList();
-      finalizados = data.finalizados
-          .where(
-            (item) =>
-                item.libro.trim().toLowerCase() == normalizedTitle &&
-                (usuarioActual.isEmpty ||
-                    item.usuario.trim().toLowerCase() == usuarioActual),
-          )
-          .toList();
-    }
+      if (globalStats) {
+        registros = data.libros
+            .where(
+              (item) => item.libro.trim().toLowerCase() == normalizedTitle,
+            )
+            .toList();
+        finalizados = data.finalizados
+            .where(
+              (item) => item.libro.trim().toLowerCase() == normalizedTitle,
+            )
+            .toList();
+      } else {
+        registros = data.libros
+            .where(
+              (item) =>
+                  item.libro.trim().toLowerCase() == normalizedTitle &&
+                  (usuarioActual.isEmpty ||
+                      item.usuario.trim().toLowerCase() == usuarioActual),
+            )
+            .toList();
+        finalizados = data.finalizados
+            .where(
+              (item) =>
+                  item.libro.trim().toLowerCase() == normalizedTitle &&
+                  (usuarioActual.isEmpty ||
+                      item.usuario.trim().toLowerCase() == usuarioActual),
+            )
+            .toList();
+      }
 
-    // Si el usuario no tiene el libro en su biblioteca
-    if (registros.isEmpty && finalizados.isEmpty) {
-      if (forceFullDetail) {
-        // Pulsación larga → ficha completa con datos de comunidad
-        await Navigator.push<void>(
-          context,
-          BookDetailPageRoute(
-            builder: (_) => DetalleLibroPage(
-              libro: LibroAgrupado(
-                libro: title,
-                genero: genre,
-                registros: const [],
-                finalizados: const [],
-                yaLoTengo: false,
-                coverUrl: coverUrl,
-                bookId: bookId,
+      final misRegistros = globalStats
+          ? registros
+              .where(
+                (item) =>
+                    usuarioActual.isEmpty ||
+                    item.usuario.trim().toLowerCase() == usuarioActual,
+              )
+              .toList()
+          : registros;
+      final misFinalizados = globalStats
+          ? finalizados
+              .where(
+                (item) =>
+                    usuarioActual.isEmpty ||
+                    item.usuario.trim().toLowerCase() == usuarioActual,
+              )
+              .toList()
+          : finalizados;
+
+      // Si el usuario no tiene el libro en su biblioteca
+      if (misRegistros.isEmpty && misFinalizados.isEmpty) {
+        if (forceFullDetail) {
+          await Navigator.push<void>(
+            context,
+            BookDetailPageRoute(
+              builder: (_) => DetalleLibroPage(
+                libro: LibroAgrupado(
+                  libro: title,
+                  genero: genre,
+                  registros: globalStats ? registros : const [],
+                  finalizados: globalStats ? finalizados : const [],
+                  yaLoTengo: false,
+                  coverUrl: coverUrl,
+                  bookId: bookId,
+                ),
               ),
             ),
-          ),
-        );
-        return true;
-      } else {
-        // Tap simple → ficha de catálogo con "Añadir a mi biblioteca"
-        var changed = false;
-        await Navigator.push<void>(
-          context,
-          BookDetailPageRoute(
-            builder: (_) => CatalogBookDetailPage(
+          );
+          return true;
+        } else {
+          var changed = false;
+          await Navigator.push<void>(
+            context,
+            BookDetailPageRoute(
+              builder: (_) => CatalogBookDetailPage(
+                bookId: bookId,
+                title: title,
+                coverUrl: coverUrl,
+                genre: genre,
+                onLibraryChanged: () => changed = true,
+              ),
+            ),
+          );
+          return changed;
+        }
+      }
+
+      // El usuario ya tiene el libro → ficha completa con stats adecuados
+      await Navigator.push<void>(
+        context,
+        BookDetailPageRoute(
+          builder: (_) => DetalleLibroPage(
+            libro: LibroAgrupado(
+              libro: title,
+              genero: _resolvedGenre(genre, registros, finalizados),
+              registros: registros,
+              finalizados: finalizados,
+              yaLoTengo: misRegistros.any((item) => item.yaLoTengo),
+              leidoPorMi: misFinalizados.any((item) => item.yaLoTengo),
+              coverUrl: _resolvedCover(coverUrl, registros, finalizados),
               bookId: bookId,
-              title: title,
-              coverUrl: coverUrl,
-              genre: genre,
-              onLibraryChanged: () => changed = true,
             ),
           ),
-        );
-        return changed;
-      }
-    }
-
-    // El usuario ya tiene el libro → ficha completa siempre
-    await Navigator.push<void>(
-      context,
-      BookDetailPageRoute(
-        builder: (_) => DetalleLibroPage(
-          libro: LibroAgrupado(
-            libro: title,
-            genero: _resolvedGenre(genre, registros, finalizados),
-            registros: registros,
-            finalizados: finalizados,
-            yaLoTengo: registros.any((item) => item.yaLoTengo),
-            leidoPorMi: finalizados.any((item) => item.yaLoTengo),
-            coverUrl: _resolvedCover(coverUrl, registros, finalizados),
-            bookId: bookId,
-          ),
         ),
-      ),
-    );
-    return true; // recargamos siempre por si el usuario añadió el libro
+      );
+      return true;
+    }
   } catch (_) {
     if (!context.mounted) return false;
     ScaffoldMessenger.of(context).showSnackBar(
