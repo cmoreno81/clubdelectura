@@ -1019,11 +1019,17 @@ class ApiService {
     });
   }
 
-  Future<Map<String, dynamic>> getLibroPorId(String bookId) async {
+  Future<Map<String, dynamic>> getLibroPorId(
+    String bookId, {
+    bool global = false,
+  }) async {
+    final params = <String, String>{
+      'action': 'libroPorId',
+      'bookId': bookId,
+      if (global) 'global': 'true',
+    };
     final response = await _client.get(
-      Uri.parse(
-        baseUrl,
-      ).replace(queryParameters: {'action': 'libroPorId', 'bookId': bookId}),
+      Uri.parse(baseUrl).replace(queryParameters: params),
     );
     if (response.statusCode != 200) return {'ok': false};
     final data = _decodeJson(response);

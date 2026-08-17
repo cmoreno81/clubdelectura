@@ -21,9 +21,18 @@ class LibroPorIdData {
 
 // ── Fetch del nuevo endpoint rápido ──────────────────────────────────────────
 
-Future<LibroPorIdData?> _fetchLibroPorId(String bookId) async {
+Future<LibroPorIdData?> _fetchLibroPorId(String bookId) async =>
+    _fetchLibroPorIdInternal(bookId, global: false);
+
+Future<LibroPorIdData?> _fetchLibroPorIdGlobal(String bookId) async =>
+    _fetchLibroPorIdInternal(bookId, global: true);
+
+Future<LibroPorIdData?> _fetchLibroPorIdInternal(
+  String bookId, {
+  required bool global,
+}) async {
   try {
-    final data = await ApiService().getLibroPorId(bookId);
+    final data = await ApiService().getLibroPorId(bookId, global: global);
     if (data['ok'] != true) return null;
 
     final libros = (data['libros'] as List? ?? [])
@@ -195,7 +204,8 @@ Future<bool> openCatalogBookDetail(
   @visibleForTesting FetchLibroPorId? fetchForTesting,
   @visibleForTesting String? usuarioActualForTesting,
 }) async {
-  final fetch = fetchForTesting ?? _fetchLibroPorId;
+  // Cuando globalStats=true usamos el fetch global (sin filtro de club)
+  final fetch = fetchForTesting ?? (globalStats ? _fetchLibroPorIdGlobal : _fetchLibroPorId);
   final normalizedTitle = title.trim().toLowerCase();
   if (normalizedTitle.isEmpty) return false;
 
