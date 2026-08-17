@@ -1,7 +1,10 @@
 import 'dart:async';
+import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:share_plus/share_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../navigation/app_page_route.dart';
@@ -925,6 +928,23 @@ class _PerfilUsuarioPageState extends State<PerfilUsuarioPage> {
           child: Material(
             color: Colors.transparent,
             child: ListTile(
+              leading: const Icon(Icons.download_outlined),
+              title: const Text('Exportar mi biblioteca'),
+              subtitle: const Text(
+                'Descarga tus libros en formato CSV para guardarlos o migrarlos',
+              ),
+              trailing: const Icon(Icons.chevron_right_rounded),
+              onTap: _exportarBiblioteca,
+            ),
+          ),
+        ),
+        const SizedBox(height: AppSpacing.sm),
+        ClubCard(
+          elevated: false,
+          padding: EdgeInsets.zero,
+          child: Material(
+            color: Colors.transparent,
+            child: ListTile(
               leading: const Icon(Icons.feedback_outlined),
               title: const Text('Sugerencias y errores'),
               subtitle: const Text('Cuéntanos qué mejorar o qué no funciona'),
@@ -1132,6 +1152,74 @@ class _PerfilUsuarioPageState extends State<PerfilUsuarioPage> {
   Future<void> _cerrarSesion() async {
     await AuthService().logout();
     if (mounted) Navigator.popUntil(context, (route) => route.isFirst);
+  }
+
+  Future<void> _exportarBiblioteca() async {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Generando exportación…'),
+        duration: Duration(seconds: 2),
+      ),
+    );
+
+    try {
+      final libros = await ApiService().exportarBiblioteca();
+      if (libros.isEmpty) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Tu biblioteca está vacía.')),
+        );
+        return;
+      }
+
+      // Build CSV
+      const columns = [
+        'titulo', 'autor', 'genero', 'saga', 'numSaga', 'autoconclusivo',
+        'estado', 'formato', 'prioridad', 'paginas', 'paginaActual',
+        'favorito', 'fechaInicio', 'fechaFin', 'valoracion', 'resena',
+        'goodreads', 'fechaAnadido',
+      ];
+
+      String escapeCsv(dynamic value) {
+        final s = value?.toString() ?? '';
+        if (s.contains(',') || s.contains('"') || s.contains('\n')) {
+          return '"${s.replaceAll('"', '""')}"';
+        }
+        return s;
+      }
+
+      final buffer = StringBuffer();
+      buffer.writeln(columns.join(','));
+      for (final libro in libros) {
+        buffer.writeln(
+          columns.map((c) => escapeCsv(libro[c])).join(','),
+        );
+      }
+
+      // Write to temp file and share
+      final dir = await getTemporaryDirectory();
+      final fecha = DateTime.now()
+          .toIso8601String()
+          .substring(0, 10)
+          .replaceAll('-', '');
+      final file = File('${dir.path}/biblioteca_clubreaders_$fecha.csv');
+      await file.writeAsString(buffer.toString(), flush: true);
+
+      if (!mounted) return;
+      await SharePlus.instance.share(
+        ShareParams(
+          files: [XFile(file.path, mimeType: 'text/csv')],
+          subject: 'Mi biblioteca ClubReaders',
+          text: 'Exportación de mi biblioteca en ClubReaders',
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('No se pudo exportar la biblioteca.')),
+      );
+    }
   }
 
   DateTime? _parseFecha(String fecha) {

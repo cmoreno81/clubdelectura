@@ -1037,6 +1037,20 @@ class ApiService {
     return data;
   }
 
+  Future<List<Map<String, dynamic>>> exportarBiblioteca() async {
+    final response = await _client.get(
+      Uri.parse(baseUrl).replace(
+        queryParameters: {'action': 'exportBiblioteca'},
+      ),
+    );
+    if (response.statusCode != 200) return [];
+    final data = _decodeJson(response);
+    if (data is! Map<String, dynamic>) return [];
+    final libros = data['libros'];
+    if (libros is! List) return [];
+    return libros.cast<Map<String, dynamic>>();
+  }
+
   List<LibroFinalizado> _deduplicarFinalizados(
     List<LibroFinalizado> finalizados,
   ) {

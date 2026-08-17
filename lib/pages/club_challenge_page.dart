@@ -104,6 +104,7 @@ class _ClubChallengePageState extends State<ClubChallengePage> {
 
           final data = snap.data!;
           final year = data['year'] as int;
+          final isPersonal = data['isPersonal'] == true;
           final clubTotal = (data['clubTotal'] as num? ?? 0).toInt();
           final clubTarget = (data['clubTarget'] as num? ?? 0).toInt();
           final challenges = (data['challenges'] as List<dynamic>)
@@ -237,28 +238,30 @@ class _ClubChallengePageState extends State<ClubChallengePage> {
                   ),
                 ),
 
-                const SizedBox(height: AppSpacing.lg),
+                // ── Ranking del club (solo si no es cuenta personal) ──
+                if (!isPersonal) ...[
+                  const SizedBox(height: AppSpacing.lg),
 
-                // ── Ranking del club ──
-                Text(
-                  'El club lee',
-                  style: AppTextStyles.subtitle.copyWith(
-                    fontWeight: FontWeight.w800,
+                  Text(
+                    'El club lee',
+                    style: AppTextStyles.subtitle.copyWith(
+                      fontWeight: FontWeight.w800,
+                    ),
                   ),
-                ),
-                const SizedBox(height: AppSpacing.xs),
-                Text(
-                  'Progreso de cada miembro en su reto $year',
-                  style: AppTextStyles.bodySecondary,
-                ),
-                const SizedBox(height: AppSpacing.md),
+                  const SizedBox(height: AppSpacing.xs),
+                  Text(
+                    'Progreso de cada miembro en su reto $year',
+                    style: AppTextStyles.bodySecondary,
+                  ),
+                  const SizedBox(height: AppSpacing.md),
 
-                for (var i = 0; i < challenges.length; i++)
-                  _ChallengeRow(
-                    position: i + 1,
-                    challenge: challenges[i],
-                    isFirst: i == 0,
-                  ),
+                  for (var i = 0; i < challenges.length; i++)
+                    _ChallengeRow(
+                      position: i + 1,
+                      challenge: challenges[i],
+                      isFirst: i == 0,
+                    ),
+                ],
               ],
             ),
           );
