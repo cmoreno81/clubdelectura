@@ -520,11 +520,11 @@ class _GeneralDashboardPageState extends State<GeneralDashboardPage> {
                 // ── Tutorial primera visita ──
                 SliverToBoxAdapter(
                   child: ScreenHintBanner(
-                    featureKey: 'hint_dashboard_v1',
+                    featureKey: 'hint_dashboard_v2',
                     titulo: 'Tu universo lector de un vistazo',
                     tips: const [
                       ScreenHintTip('📊', 'Aquí ves tu resumen de lecturas del mes y el año'),
-                      ScreenHintTip('🎯', 'Pulsa "Reto lector" (tab inferior) para fijar tu objetivo anual'),
+                      ScreenHintTip('📖', 'Pulsa el botón + (abajo a la derecha) para añadir un libro a tu biblioteca'),
                       ScreenHintTip('🧭', 'Usa el icono de exploración (arriba) para descubrir libros del catálogo'),
                       ScreenHintTip('📚', 'Pulsa cualquier portada para ver el detalle del libro'),
                     ],

@@ -250,15 +250,19 @@ class _PerfilSagaCardState extends State<PerfilSagaCard> {
                       final vol = _volumeAt(index + 1);
 
                       // Caso 1: hueco real (no en ClubReads, o marcado especial)
+                      // Un volumen con bookId real y estado NO_ANADIDO NO es hueco:
+                      // está en el catálogo pero aún no está en la biblioteca.
                       final esHueco =
                           vol == null ||
-                          vol.esNoAnadido ||
+                          vol.bookId.isEmpty ||
                           vol.esLeidoExterno ||
                           vol.esOmitido;
 
                       // Caso 2: en ClubReads pero NO en mi biblioteca
                       final enClubReadsNoEnBiblioteca =
-                          vol != null && !esHueco && vol.estado.trim().isEmpty;
+                          vol != null &&
+                          vol.bookId.isNotEmpty &&
+                          vol.esNoAnadido;
 
                       VoidCallback? tapCallback;
                       if (vol != null &&
@@ -306,7 +310,7 @@ class _PerfilSagaCardState extends State<PerfilSagaCard> {
             const SizedBox(height: AppSpacing.md),
             FeatureTooltip(
               featureKey: 'ft_complete_saga',
-              message: 'Busca los tomos que te faltan en el catálogo',
+              message: 'Añade de golpe todos los tomos que aún no tienes en tu biblioteca',
               icon: Icons.auto_awesome_rounded,
               position: FeatureTooltipPosition.above,
               child: OutlinedButton.icon(

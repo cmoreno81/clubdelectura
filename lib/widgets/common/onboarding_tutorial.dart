@@ -463,7 +463,8 @@ enum FeatureTooltipPosition { above, below }
 
 class _FeatureTooltipState extends State<FeatureTooltip>
     with SingleTickerProviderStateMixin {
-  bool _visible = false;
+  final _layerLink = LayerLink();
+  OverlayEntry? _entry;
   late final AnimationController _ctrl;
   late final Animation<double> _fade;
   late final Animation<Offset> _slide;
@@ -487,7 +488,6 @@ class _FeatureTooltipState extends State<FeatureTooltip>
   }
 
   Future<void> _check() async {
-    // Solo se muestra si el onboarding principal ya terminó
     final onboardingDone = !(await deberiaMostrarOnboarding());
     if (!onboardingDone) return;
 
@@ -498,7 +498,7 @@ class _FeatureTooltipState extends State<FeatureTooltip>
     await Future<void>.delayed(const Duration(milliseconds: 800));
     if (!mounted) return;
 
-    setState(() => _visible = true);
+    _showOverlay();
     _ctrl.forward();
     await FeatureTooltipStore.marcarMostrado(widget.featureKey);
 
@@ -507,34 +507,72 @@ class _FeatureTooltipState extends State<FeatureTooltip>
     if (mounted) _dismiss();
   }
 
+  void _showOverlay() {
+    final isAbove = widget.position == FeatureTooltipPosition.above;
+    // Offset vertical respecto al borde del target: encima o debajo
+    final followerOffset = isAbove
+        ? const Offset(0, -8)   // justo encima, la burbuja crece hacia arriba
+        : const Offset(0, 0);   // alineado con el borde inferior del target
+
+    _entry = OverlayEntry(
+      builder: (_) => Positioned(
+        // Cubrimos toda la pantalla para poder usar CompositedTransformFollower
+        left: 0,
+        top: 0,
+        right: 0,
+        bottom: 0,
+        child: IgnorePointer(
+          // Solo el bubble es interactivo; el resto ignora eventos
+          ignoring: false,
+          child: Stack(
+            children: [
+              CompositedTransformFollower(
+                link: _layerLink,
+                showWhenUnlinked: false,
+                targetAnchor: isAbove
+                    ? Alignment.topLeft
+                    : Alignment.bottomLeft,
+                followerAnchor: isAbove
+                    ? Alignment.bottomLeft
+                    : Alignment.topLeft,
+                offset: followerOffset,
+                child: _TooltipBubble(
+                  message: widget.message,
+                  icon: widget.icon,
+                  position: widget.position,
+                  fade: _fade,
+                  slide: _slide,
+                  onDismiss: _dismiss,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+    Overlay.of(context).insert(_entry!);
+  }
+
   Future<void> _dismiss() async {
-    if (!_visible) return;
+    if (_entry == null) return;
     await _ctrl.reverse();
-    if (mounted) setState(() => _visible = false);
+    _entry?.remove();
+    _entry = null;
   }
 
   @override
   void dispose() {
+    _entry?.remove();
+    _entry = null;
     _ctrl.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    return Stack(
-      clipBehavior: Clip.none,
-      children: [
-        widget.child,
-        if (_visible)
-          _TooltipBubble(
-            message: widget.message,
-            icon: widget.icon,
-            position: widget.position,
-            fade: _fade,
-            slide: _slide,
-            onDismiss: _dismiss,
-          ),
-      ],
+    return CompositedTransformTarget(
+      link: _layerLink,
+      child: widget.child,
     );
   }
 }
@@ -624,20 +662,17 @@ class _TooltipBubble extends StatelessWidget {
       ),
     );
 
+    // La flecha señala hacia el widget: si el bubble está arriba, la flecha
+    // apunta hacia abajo (pointUp: false); si está abajo, apunta arriba.
     final column = position == FeatureTooltipPosition.below
         ? Column(mainAxisSize: MainAxisSize.min, children: [arrow, bubble])
         : Column(mainAxisSize: MainAxisSize.min, children: [bubble, arrow]);
 
-    final top = position == FeatureTooltipPosition.below ? null : -(80.0);
-    final topBelow = position == FeatureTooltipPosition.below ? 42.0 : null;
-
-    return Positioned(
-      top: top ?? topBelow,
-      left: 0,
-      child: FadeTransition(
-        opacity: fade,
-        child: SlideTransition(position: slide, child: column),
-      ),
+    // El posicionamiento ya lo gestiona CompositedTransformFollower en el
+    // Overlay; aquí solo aplicamos la animación.
+    return FadeTransition(
+      opacity: fade,
+      child: SlideTransition(position: slide, child: column),
     );
   }
 }

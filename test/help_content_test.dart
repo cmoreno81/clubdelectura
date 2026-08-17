@@ -53,7 +53,7 @@ void main() {
     );
     await tester.tap(find.text('Abrir'));
     await tester.pumpAndSettle();
-    expect(find.text('¡Te damos la bienvenida a ClubReaders!'), findsOneWidget);
+    expect(find.text('¡Te damos la bienvenida a ClubReads!'), findsOneWidget);
 
     for (var step = 0; step < 5; step++) {
       await tester.tap(find.text('Siguiente'));

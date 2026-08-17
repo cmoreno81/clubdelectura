@@ -553,34 +553,139 @@ class _SagasPageState extends State<SagasPage> {
     PerfilSaga saga,
     PerfilSagaVolumen volumen,
   ) async {
-    final result = await showAddBookSheet(
-      context,
-      title: volumen.titulo,
-      coverUrl: volumen.coverUrl,
+    final posicion = volumen.posicion;
+
+    // Bottom sheet con las 3 opciones disponibles para un libro que existe
+    // en ClubReads pero aún no está en la biblioteca del usuario.
+    final accion = await showModalBottomSheet<String>(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (ctx) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const SizedBox(height: 8),
+            Container(
+              width: 40,
+              height: 4,
+              decoration: BoxDecoration(
+                color: Colors.grey[300],
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            const SizedBox(height: 12),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: Text(
+                volumen.titulo.isNotEmpty
+                    ? volumen.titulo
+                    : 'Tomo ${volumen.posicion ?? ""}',
+                style: const TextStyle(
+                  fontWeight: FontWeight.w800,
+                  fontSize: 16,
+                ),
+              ),
+            ),
+            const SizedBox(height: 8),
+            ListTile(
+              leading: const CircleAvatar(
+                backgroundColor: Color(0xFFEDE7F6),
+                child: Icon(
+                  Icons.add_rounded,
+                  color: Color(0xFF6A1B9A),
+                  size: 20,
+                ),
+              ),
+              title: const Text('Añadir a mi biblioteca'),
+              subtitle: const Text(
+                'Registra tu progreso y valóralo cuando lo termines',
+              ),
+              onTap: () => Navigator.pop(ctx, 'ANADIR'),
+            ),
+            ListTile(
+              leading: const CircleAvatar(
+                backgroundColor: Color(0xFFE8F4E8),
+                child: Icon(
+                  Icons.history_edu_rounded,
+                  color: Colors.green,
+                  size: 20,
+                ),
+              ),
+              title: const Text('Lo he leído (fuera de la app)'),
+              subtitle: const Text(
+                'Cuenta como leído en el progreso de la saga',
+              ),
+              onTap: () => Navigator.pop(ctx, 'LEIDO_EXTERNO'),
+            ),
+            ListTile(
+              leading: CircleAvatar(
+                backgroundColor: Colors.grey[100],
+                child: const Icon(
+                  Icons.block_rounded,
+                  color: Colors.grey,
+                  size: 20,
+                ),
+              ),
+              title: const Text('Omitir este tomo'),
+              subtitle: const Text(
+                'Para subsagas o tomos que no quieres leer',
+              ),
+              onTap: () => Navigator.pop(ctx, 'OMITIDO'),
+            ),
+            const SizedBox(height: 8),
+          ],
+        ),
+      ),
     );
-    if (result == null || !mounted) return;
+
+    if (accion == null || !mounted) return;
 
     try {
-      // Construimos un CatalogBook mínimo con el bookId del volumen
-      await ApiService().importarLibroCatalogo(
-        bookId: volumen.bookId,
-        prioridad: result.priority,
-        formato: result.format,
-        estado: 'PENDIENTE',
-      );
-      LibraryRefreshNotifier.instance.invalidate();
-
-      if (!mounted) return;
-      await _reload();
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('${volumen.titulo} añadido a tu biblioteca')),
-      );
+      if (accion == 'ANADIR') {
+        // Abre la hoja de añadir con formato/prioridad
+        final addResult = await showAddBookSheet(
+          context,
+          title: volumen.titulo,
+          coverUrl: volumen.coverUrl,
+        );
+        if (addResult == null || !mounted) return;
+        await ApiService().importarLibroCatalogo(
+          bookId: volumen.bookId,
+          prioridad: addResult.priority,
+          formato: addResult.format,
+          estado: 'PENDIENTE',
+        );
+        LibraryRefreshNotifier.instance.invalidate();
+        if (!mounted) return;
+        await _reload();
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('${volumen.titulo} añadido a tu biblioteca')),
+        );
+      } else if (posicion != null) {
+        // LEIDO_EXTERNO u OMITIDO → marca de posición en la saga
+        await ApiService().setSeriesOverride(
+          seriesId: saga.id,
+          posicion: posicion,
+          tipo: accion,
+        );
+        final latest = await _load();
+        if (!mounted) return;
+        setState(() => _future = Future.value(latest));
+      }
     } on ApiException catch (error) {
       if (!mounted) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(error.message)));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(error.message)),
+      );
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('No se pudo guardar el cambio')),
+        );
+      }
     }
   }
 
@@ -710,13 +815,14 @@ class _SagasPageState extends State<SagasPage> {
                   onSelected: (value) => setState(() => _filter = value),
                 ),
                 const ScreenHintBanner(
-                  featureKey: 'hint_sagas_v1',
+                  featureKey: 'hint_sagas_v2',
                   titulo: 'Cómo leer los tomos de una saga',
                   tips: [
-                    ScreenHintTip('🟠', 'Icono naranja = pendiente (está en tu biblioteca pero aún no lo has leído)'),
-                    ScreenHintTip('💜', 'Tick morado = leído · Icono de libro = leyendo ahora'),
-                    ScreenHintTip('⬜', 'Sin icono = no está en tu biblioteca; púlsalo para añadirlo, marcarlo como leído fuera de ClubReads u omitirlo'),
-                    ScreenHintTip('✨', 'Pulsa "Completar saga" para añadir de golpe todos los tomos que te faltan'),
+                    ScreenHintTip('🟠', 'Naranja = pendiente · ✅ Tick morado = leído · 📖 Libro abierto = leyendo ahora'),
+                    ScreenHintTip('➕', 'Portada con + = está en el catálogo pero no en tu biblioteca; púlsalo para añadir, marcar como leído u omitir'),
+                    ScreenHintTip('🔲', 'Cuadro gris con número = hueco sin datos en el catálogo; márcalo manualmente o usa "Completar saga"'),
+                    ScreenHintTip('✨', '"Completar saga" añade de golpe todos los tomos que aún no tienes en tu biblioteca'),
+                    ScreenHintTip('↕️', 'Las flechas reordenan tomos · El lápiz edita la saga · El ojo la oculta · La papelera la elimina'),
                   ],
                 ),
                 if (visibleSagas.isEmpty)
