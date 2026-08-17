@@ -3,6 +3,7 @@ import 'package:club_lectura_app/pages/notificaciones_page.dart';
 import 'package:club_lectura_app/theme/app_radius.dart';
 import 'package:club_lectura_app/widgets/common/editar_progreso_dialog.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import '../navigation/app_page_route.dart';
 import 'autor_libros_page.dart';
@@ -311,6 +312,7 @@ class _GeneralDashboardPageState extends State<GeneralDashboardPage> {
   }) async {
     if (_openingBookActions) return;
     _openingBookActions = true;
+    HapticFeedback.mediumImpact();
     try {
       final changed = widget.quickActions != null
           ? await widget.quickActions!(
@@ -520,13 +522,13 @@ class _GeneralDashboardPageState extends State<GeneralDashboardPage> {
                 // ── Tutorial primera visita ──
                 SliverToBoxAdapter(
                   child: ScreenHintBanner(
-                    featureKey: 'hint_dashboard_v2',
+                    featureKey: 'hint_dashboard_v3',
                     titulo: 'Tu universo lector de un vistazo',
                     tips: const [
                       ScreenHintTip('📊', 'Aquí ves tu resumen de lecturas del mes y el año'),
                       ScreenHintTip('📖', 'Pulsa el botón + (abajo a la derecha) para añadir un libro a tu biblioteca'),
                       ScreenHintTip('🧭', 'Usa el icono de exploración (arriba) para descubrir libros del catálogo'),
-                      ScreenHintTip('📚', 'Pulsa cualquier portada para ver el detalle del libro'),
+                      ScreenHintTip('📚', 'Pulsa una portada para ver el detalle · Mantén pulsado para acciones rápidas según el estado del libro'),
                     ],
                   ),
                 ),
@@ -1126,6 +1128,12 @@ class _GeneralDashboardPageState extends State<GeneralDashboardPage> {
                 coverUrl: book.coverUrl,
               ),
               onUpdateProgress: () => _actualizarProgreso(book),
+              onLongPress: () => _openQuickActions(
+                title: book.title,
+                bookId: book.id,
+                coverUrl: book.coverUrl,
+                genre: book.genre,
+              ),
             ),
           ),
       ],
@@ -2079,11 +2087,13 @@ class _CurrentBookCard extends StatelessWidget {
     required this.book,
     required this.onTap,
     required this.onUpdateProgress,
+    this.onLongPress,
   });
 
   final GeneralBook book;
   final VoidCallback onTap;
   final VoidCallback onUpdateProgress;
+  final VoidCallback? onLongPress;
 
   @override
   Widget build(BuildContext context) {
@@ -2099,6 +2109,7 @@ class _CurrentBookCard extends StatelessWidget {
       color: Colors.transparent,
       child: InkWell(
         onTap: onTap,
+        onLongPress: onLongPress,
         borderRadius: BorderRadius.circular(AppRadius.lg),
         child: Container(
           padding: const EdgeInsets.all(AppSpacing.sm),

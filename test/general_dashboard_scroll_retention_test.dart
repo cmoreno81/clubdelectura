@@ -6,7 +6,10 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
   setUp(() {
-    SharedPreferences.setMockInitialValues({'onboarding_v1_done': true});
+    SharedPreferences.setMockInitialValues({
+      'onboarding_v1_done': true,
+      'screen_hint_v1_hint_dashboard_v3': true,
+    });
   });
 
   testWidgets('cancelar acciones conserva el scroll vertical y de tendencias', (

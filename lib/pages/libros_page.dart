@@ -234,6 +234,8 @@ class _LibrosPageState extends State<LibrosPage> with WidgetsBindingObserver {
               featureKey: 'ft_add_book',
               message: '¡Pulsa aquí para añadir tu primer libro!',
               icon: Icons.menu_book_outlined,
+              position: FeatureTooltipPosition.below,
+              align: FeatureTooltipAlign.end,
               child: Material(
                 color: colorScheme.primary,
                 shape: const CircleBorder(),

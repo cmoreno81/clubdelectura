@@ -10,7 +10,7 @@ void main() {
   setUp(() {
     SharedPreferences.setMockInitialValues({
       'onboarding_v1_done': true,
-      'screen_hint_v1_hint_dashboard_v2': true,
+      'screen_hint_v1_hint_dashboard_v3': true,
     });
   });
 

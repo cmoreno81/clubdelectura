@@ -447,6 +447,7 @@ class FeatureTooltip extends StatefulWidget {
     required this.child,
     this.icon,
     this.position = FeatureTooltipPosition.below,
+    this.align = FeatureTooltipAlign.start,
   });
 
   final String featureKey;
@@ -454,12 +455,17 @@ class FeatureTooltip extends StatefulWidget {
   final Widget child;
   final IconData? icon;
   final FeatureTooltipPosition position;
+  /// Horizontal alignment of the bubble relative to the target widget.
+  /// [start] = bubble starts at target's left edge (default).
+  /// [end]   = bubble ends at target's right edge (use near right screen edge).
+  final FeatureTooltipAlign align;
 
   @override
   State<FeatureTooltip> createState() => _FeatureTooltipState();
 }
 
 enum FeatureTooltipPosition { above, below }
+enum FeatureTooltipAlign { start, end }
 
 class _FeatureTooltipState extends State<FeatureTooltip>
     with SingleTickerProviderStateMixin {
@@ -509,10 +515,20 @@ class _FeatureTooltipState extends State<FeatureTooltip>
 
   void _showOverlay() {
     final isAbove = widget.position == FeatureTooltipPosition.above;
+    final isEnd = widget.align == FeatureTooltipAlign.end;
     // Offset vertical respecto al borde del target: encima o debajo
     final followerOffset = isAbove
         ? const Offset(0, -8)   // justo encima, la burbuja crece hacia arriba
         : const Offset(0, 0);   // alineado con el borde inferior del target
+
+    // Alineación horizontal: start = izquierda del target, end = derecha del target
+    final hTarget = isEnd ? Alignment.centerRight : Alignment.centerLeft;
+    final targetAnchor = isAbove
+        ? Alignment(hTarget.x, -1.0)   // borde superior
+        : Alignment(hTarget.x, 1.0);   // borde inferior
+    final followerAnchor = isAbove
+        ? Alignment(hTarget.x, 1.0)    // pie de burbuja
+        : Alignment(hTarget.x, -1.0);  // cabeza de burbuja
 
     _entry = OverlayEntry(
       builder: (_) => Positioned(
@@ -529,12 +545,8 @@ class _FeatureTooltipState extends State<FeatureTooltip>
               CompositedTransformFollower(
                 link: _layerLink,
                 showWhenUnlinked: false,
-                targetAnchor: isAbove
-                    ? Alignment.topLeft
-                    : Alignment.bottomLeft,
-                followerAnchor: isAbove
-                    ? Alignment.bottomLeft
-                    : Alignment.topLeft,
+                targetAnchor: targetAnchor,
+                followerAnchor: followerAnchor,
                 offset: followerOffset,
                 child: _TooltipBubble(
                   message: widget.message,

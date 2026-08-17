@@ -24,6 +24,7 @@ import 'capitulo_page.dart';
 import 'configurar_lectura_page.dart';
 import 'lectura_page.dart';
 import 'package:club_lectura_app/widgets/common/club_shimmer.dart';
+import '../widgets/common/screen_hint_banner.dart';
 
 class LecturasPage extends StatefulWidget {
   const LecturasPage({super.key, this.onBackToClub});
@@ -283,6 +284,19 @@ class _LecturasPageState extends State<LecturasPage> {
               ),
               children: [
                 _CabeceraLecturas(total: lecturas.length),
+
+                const SizedBox(height: AppSpacing.sm),
+
+                const ScreenHintBanner(
+                  featureKey: 'hint_lecturas_v1',
+                  titulo: 'Las lecturas del club',
+                  tips: [
+                    ScreenHintTip('🔔', 'La campana (arriba a la derecha) avisa de nuevos comentarios, debates y cambios de lectura'),
+                    ScreenHintTip('🏆', '"Lectura oficial" es la elegida por el administrador del club para leer juntos'),
+                    ScreenHintTip('📖', 'Pulsa "Abrir lectura" para entrar en la sala de comentarios y debate del club'),
+                    ScreenHintTip('🤝', '"Lecturas compartidas" muestra los libros que coinciden entre varios miembros del club'),
+                  ],
+                ),
 
                 const SizedBox(height: AppSpacing.md),
 

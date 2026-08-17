@@ -152,10 +152,10 @@ class _ClubChallengePageState extends State<ClubChallengePage> {
           return Column(
             children: [
               ScreenHintBanner(
-                featureKey: 'hint_reto_lector_v1',
+                featureKey: 'hint_reto_lector_v2',
                 titulo: 'Tu reto lector anual',
                 tips: const [
-                  ScreenHintTip('🎯', 'Pulsa tu nombre para fijar tu objetivo de libros para el año'),
+                  ScreenHintTip('🎯', 'Pulsa "Cambiar" (o "Fijar objetivo" si aún no tienes uno) para establecer tu meta de libros del año'),
                   ScreenHintTip('📈', 'El progreso se actualiza solo al finalizar libros en tu biblioteca'),
                   ScreenHintTip('👥', 'En cuentas de club puedes ver el reto de todos los miembros'),
                 ],
