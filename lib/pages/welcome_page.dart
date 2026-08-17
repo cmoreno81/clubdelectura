@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 
 import '../navigation/app_page_route.dart';
 
-import 'activation_email_page.dart';
 import 'login_page.dart';
 import 'registration_page.dart';
 import '../theme/app_colors.dart';
@@ -115,14 +114,6 @@ class WelcomePage extends StatelessWidget {
                       icon: const Icon(Icons.person_add_alt_1_rounded),
                       label: const Text('Crear una cuenta'),
                     ),
-                  ),
-                  const SizedBox(height: AppSpacing.xs),
-                  TextButton(
-                    onPressed: () => Navigator.push<void>(
-                      context,
-                      AppPageRoute(builder: (_) => const ActivationEmailPage()),
-                    ),
-                    child: const Text('Ya estaba en un club · Activar cuenta'),
                   ),
                 ],
               ),

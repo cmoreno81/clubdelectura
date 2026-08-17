@@ -20,6 +20,7 @@ import '../widgets/error_view.dart';
 import '../widgets/perfil/perfil_saga_card.dart';
 import '../widgets/libros/add_book_sheet.dart';
 import '../widgets/common/onboarding_tutorial.dart';
+import '../widgets/common/screen_hint_banner.dart';
 import 'complete_series_page.dart';
 import 'detalle_libro_page.dart';
 import 'explore_catalog_page.dart';
@@ -242,6 +243,22 @@ class _SagasPageState extends State<SagasPage> {
               ),
             ),
             const SizedBox(height: 8),
+            // ── Añadir a biblioteca (solo si no está ya) ──────────────
+            if (current == 'NO_ANADIDO')
+              ListTile(
+                leading: const CircleAvatar(
+                  backgroundColor: Color(0xFFEEF1FB),
+                  child: Icon(
+                    Icons.library_add_rounded,
+                    color: Color(0xFF3B5FC0),
+                    size: 20,
+                  ),
+                ),
+                title: const Text('Añadir a mi biblioteca'),
+                subtitle: const Text('Elige prioridad y formato'),
+                onTap: () => Navigator.pop(context, 'AÑADIR'),
+              ),
+            // ── Marcas externas ───────────────────────────────────────
             if (current != 'LEIDO_EXTERNO')
               ListTile(
                 leading: const CircleAvatar(
@@ -291,6 +308,40 @@ class _SagasPageState extends State<SagasPage> {
 
     if (result == null || !mounted) return;
 
+    // ── Añadir a biblioteca ──────────────────────────────────────────
+    if (result == 'AÑADIR') {
+      final prefs = await showAddBookSheet(
+        context,
+        title: volumen.titulo,
+        author: saga.nombre,
+        coverUrl: volumen.coverUrl,
+      );
+      if (prefs == null || !mounted) return;
+      try {
+        await ApiService().importarLibroCatalogo(
+          bookId: volumen.bookId,
+          titulo: volumen.titulo,
+          prioridad: prefs.priority,
+          formato: prefs.format,
+        );
+        LibraryRefreshNotifier.instance.invalidate();
+        final latest = await _load();
+        if (!mounted) return;
+        setState(() => _future = Future.value(latest));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('${volumen.titulo} añadido a tu biblioteca')),
+        );
+      } catch (_) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('No se pudo añadir el libro')),
+          );
+        }
+      }
+      return;
+    }
+
+    // ── Marcas externas / OMITIDO / QUITAR ──────────────────────────
     try {
       if (result == 'QUITAR') {
         await ApiService().removeSeriesOverride(
@@ -705,6 +756,16 @@ class _SagasPageState extends State<SagasPage> {
                   completed: completed.length,
                   abandoned: abandoned.length,
                   onSelected: (value) => setState(() => _filter = value),
+                ),
+                const ScreenHintBanner(
+                  featureKey: 'hint_sagas_v1',
+                  titulo: 'Cómo gestionar tus sagas',
+                  tips: [
+                    ScreenHintTip('📖', 'Pulsa un tomo con borde naranja (sin leer) para añadirlo a tu biblioteca, marcarlo como leído fuera de ClubReads u omitirlo'),
+                    ScreenHintTip('✨', 'Pulsa "Completar saga" para añadir de golpe todos los tomos que te faltan'),
+                    ScreenHintTip('👁️', 'El icono del ojo oculta una saga de la lista sin eliminarla'),
+                    ScreenHintTip('🗑️', 'Eliminar una saga solo la quita de aquí; los libros siguen en tu biblioteca'),
+                  ],
                 ),
                 if (visibleSagas.isEmpty)
                   Padding(
