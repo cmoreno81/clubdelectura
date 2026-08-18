@@ -14,6 +14,7 @@ import '../widgets/error_view.dart';
 import 'clubvision_votacion_page.dart';
 import 'clubvision_como_votaron_page.dart';
 import 'clubvision_gala_page.dart';
+import 'clubvision_estadisticas_page.dart';
 import 'clubvision_historial_page.dart';
 import 'clubvision_mi_voto_page.dart';
 import 'configurar_lectura_page.dart';
@@ -208,6 +209,24 @@ class _ClubvisionMenuPageState extends State<ClubvisionMenuPage> {
                     },
                   ),
                 ],
+
+                const SizedBox(height: AppSpacing.md),
+
+                _MenuCard(
+                  icon: Icons.bar_chart_rounded,
+                  color: const Color(0xFF4A6FBF),
+                  title: 'Estadísticas',
+                  subtitle: 'Gráficas y datos de todas las ediciones del club',
+                  actionLabel: 'Ver estadísticas',
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      AppPageRoute(
+                        builder: (_) => const ClubvisionEstadisticasPage(),
+                      ),
+                    );
+                  },
+                ),
               ],
             ),
           );

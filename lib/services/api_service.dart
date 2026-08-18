@@ -19,6 +19,7 @@ import '../models/libros_data.dart';
 import '../models/ranking.dart';
 import '../models/clubvision.dart';
 import '../models/historial_clubvision.dart';
+import '../models/clubvision_estadisticas.dart';
 import '../models/usuario.dart';
 import 'authenticated_http_client.dart';
 import '../models/como_votaron.dart';
@@ -2063,5 +2064,13 @@ class ApiService {
     return list
         .map((e) => PersonalidadMiembro.fromJson(Map<String, dynamic>.from(e as Map)))
         .toList();
+  }
+
+  Future<ClubvisionEstadisticas> getClubvisionEstadisticas() async {
+    final response = await _client.get(
+      Uri.parse('$baseUrl?action=clubvisionEstadisticas'),
+    );
+    final data = _decodeJson(response) as Map<String, dynamic>;
+    return ClubvisionEstadisticas.fromJson(data);
   }
 }
