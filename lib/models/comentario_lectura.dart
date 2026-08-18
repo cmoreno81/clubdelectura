@@ -26,6 +26,11 @@ class ComentarioLectura {
 
   final bool esMio;
 
+  /// `true` si este comentario se publicó después de la última visita
+  /// del usuario actual al capítulo. Solo se rellena al abrir el capítulo
+  /// (primera carga); no persiste entre sesiones.
+  final bool esNuevo;
+
   final List<RespuestaComentario> respuestas;
 
   const ComentarioLectura({
@@ -45,6 +50,7 @@ class ComentarioLectura {
     required this.editado,
     required this.eliminado,
     required this.esMio,
+    this.esNuevo = false,
     required this.respuestas,
   });
 
@@ -73,6 +79,7 @@ class ComentarioLectura {
       editado: json["editado"] as bool? ?? false,
       eliminado: json["eliminado"] as bool? ?? false,
       esMio: json["esMio"] as bool? ?? false,
+      esNuevo: json["esNuevo"] as bool? ?? false,
       respuestas: (json["respuestas"] as List? ?? [])
           .map(
             (e) => RespuestaComentario.fromJson(

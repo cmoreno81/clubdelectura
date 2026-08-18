@@ -359,22 +359,29 @@ class _ComentarioCardState extends State<ComentarioCard> {
       );
     }
 
+    final colorPrincipal = Theme.of(context).colorScheme.primary;
+    final esNuevo = comentario.esNuevo;
+
     return Padding(
       padding: const EdgeInsets.symmetric(
         horizontal: AppSpacing.md,
         vertical: AppSpacing.sm,
       ),
       child: ClubCard(
-        elevated: false,
+        elevated: esNuevo,
         padding: const EdgeInsets.all(AppSpacing.md),
         backgroundColor: comentario.esCita
             ? Color.alphaBlend(
                 colorCita.withValues(alpha: .18),
                 AppColors.surface,
               )
+            : esNuevo
+            ? colorPrincipal.withValues(alpha: .045)
             : null,
         borderColor: comentario.esCita
             ? colorCita.withValues(alpha: .55)
+            : esNuevo
+            ? colorPrincipal.withValues(alpha: .36)
             : null,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -394,14 +401,42 @@ class _ComentarioCardState extends State<ComentarioCard> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
-                        comentario.usuario,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: AppTextStyles.subtitle.copyWith(
-                          color: AppColors.textPrimary,
-                          fontWeight: FontWeight.w800,
-                        ),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              comentario.usuario,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: AppTextStyles.subtitle.copyWith(
+                                color: AppColors.textPrimary,
+                                fontWeight: FontWeight.w800,
+                              ),
+                            ),
+                          ),
+                          if (esNuevo) ...[
+                            const SizedBox(width: AppSpacing.xs),
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 7,
+                                vertical: 3,
+                              ),
+                              decoration: BoxDecoration(
+                                color: colorPrincipal,
+                                borderRadius: BorderRadius.circular(AppRadius.pill),
+                              ),
+                              child: Text(
+                                'NUEVO',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.w900,
+                                  letterSpacing: .5,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ],
                       ),
 
                       const SizedBox(height: AppSpacing.xxs),

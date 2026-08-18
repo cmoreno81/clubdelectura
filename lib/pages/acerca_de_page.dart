@@ -30,7 +30,7 @@ class _AcercaDePageState extends State<AcercaDePage> {
   Future<void> _contactar() async {
     final uri = Uri(
       scheme: 'mailto',
-      path: 'c.moreno.benavente@gmail.com',
+      path: 'clubreads.app@gmail.com',
       queryParameters: {'subject': 'Contacto desde ClubReads'},
     );
     final abierto = await launchUrl(uri);
@@ -134,7 +134,7 @@ class _AcercaDePageState extends State<AcercaDePage> {
                   ListTile(
                     leading: const Icon(Icons.mail_outline_rounded),
                     title: const Text('Contacto'),
-                    subtitle: const Text('c.moreno.benavente@gmail.com'),
+                    subtitle: const Text('clubreads.app@gmail.com'),
                     trailing: const Icon(Icons.open_in_new_rounded, size: 20),
                     onTap: _contactar,
                   ),

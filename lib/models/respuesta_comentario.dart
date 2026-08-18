@@ -12,6 +12,11 @@ class RespuestaComentario {
   final bool editado;
   final bool eliminado;
   final bool esMia;
+
+  /// `true` si esta respuesta se publicó después de la última visita
+  /// del usuario actual al capítulo.
+  final bool esNueva;
+
   final Map<ReaccionComentario, int> reacciones;
   final ReaccionComentario? miReaccion;
 
@@ -27,6 +32,7 @@ class RespuestaComentario {
     required this.editado,
     required this.eliminado,
     required this.esMia,
+    this.esNueva = false,
     this.reacciones = const {},
     this.miReaccion,
   });
@@ -48,6 +54,7 @@ class RespuestaComentario {
       editado: json["editado"] as bool? ?? false,
       eliminado: json["eliminado"] as bool? ?? false,
       esMia: json["esMia"] as bool? ?? false,
+      esNueva: json["esNueva"] as bool? ?? false,
       reacciones: {
         for (final tipo in ReaccionComentario.values)
           tipo:

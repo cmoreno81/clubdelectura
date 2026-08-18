@@ -79,7 +79,10 @@ class _GoodreadsImportPageState extends State<GoodreadsImportPage> {
       if (rows.isEmpty) {
         throw const FormatException('El archivo no contiene ningún libro.');
       }
-      final preview = await _api.previsualizarImportacionGoodreads(rows);
+      final preview = await _api.previsualizarImportacionGoodreads(
+        rows,
+        source: _isBookmory ? 'BOOKMORY' : 'GOODREADS',
+      );
       if (!mounted) return;
       setState(() {
         _rows = rows;
@@ -142,6 +145,7 @@ class _GoodreadsImportPageState extends State<GoodreadsImportPage> {
       final result = await _api.confirmarImportacionGoodreads(
         selectedRows,
         resolutions: resolutions,
+        source: _isBookmory ? 'BOOKMORY' : 'GOODREADS',
       );
       if (!mounted) return;
       setState(() => _result = result);

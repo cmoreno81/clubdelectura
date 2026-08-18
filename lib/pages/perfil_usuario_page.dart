@@ -47,6 +47,8 @@ import '../services/auth_session_service.dart';
 import '../services/favoritos_service.dart';
 import '../widgets/dashboard/year_reading_shelf.dart';
 import '../models/general_dashboard.dart' show YearShelfBook;
+import 'personalidad_lectora_page.dart';
+import 'share_reader_card_page.dart';
 import 'year_reading_share_page.dart';
 import '../models/achievements/achievement.dart';
 import '../services/achievement_service.dart';
@@ -706,6 +708,15 @@ class _PerfilUsuarioPageState extends State<PerfilUsuarioPage> {
             ),
         if (esMiPerfil) ...[
           const SizedBox(height: AppSpacing.xl),
+          _PerfilQuizCta(
+            onTap: () => Navigator.push<void>(
+              context,
+              AppPageRoute(
+                builder: (_) => const PersonalidadLectoraPage(),
+              ),
+            ),
+          ),
+          const SizedBox(height: AppSpacing.md),
           _WrappedPerfilCta(
             availability: WrappedAvailability(),
             onTap: () => Navigator.push<void>(
@@ -722,6 +733,40 @@ class _PerfilUsuarioPageState extends State<PerfilUsuarioPage> {
                     WrappedPage(anio: WrappedAvailability().wrappedYear),
               ),
             ),
+          ),
+          const SizedBox(height: AppSpacing.md),
+          _PerfilShareCardCta(
+            onTap: () {
+              // Libros terminados en el año en curso
+              final thisYear = DateTime.now().year;
+              final terminadosAnio = perfil.terminados
+                  .where(
+                    (b) =>
+                        LecturaFechaUtils.parse(b.fechaFin)?.year == thisYear,
+                  )
+                  .toList();
+              Navigator.push<void>(
+                context,
+                AppPageRoute(
+                  builder: (_) => ShareReaderCardPage(
+                    data: ReaderCardData(
+                      userName: perfil.usuario,
+                      avatarUrl: perfil.avatarUrl,
+                      booksFinished: terminadosAnio.length,
+                      booksReading: perfil.resumen.leyendo,
+                      topGenre: perfil.generosFavoritos.isNotEmpty
+                          ? perfil.generosFavoritos.first.genero
+                          : '',
+                      coverUrls: terminadosAnio
+                          .where((b) => b.coverUrl.trim().isNotEmpty)
+                          .take(4)
+                          .map((b) => b.coverUrl)
+                          .toList(),
+                    ),
+                  ),
+                ),
+              );
+            },
           ),
         ],
       ],
@@ -953,7 +998,7 @@ class _PerfilUsuarioPageState extends State<PerfilUsuarioPage> {
               onTap: () async {
                 final uri = Uri(
                   scheme: 'mailto',
-                  path: 'c.moreno.benavente@gmail.com',
+                  path: 'clubreads.app@gmail.com',
                   queryParameters: {
                     'subject': 'ClubReads · Sugerencia / Error',
                     'body':
@@ -1109,13 +1154,15 @@ class _PerfilUsuarioPageState extends State<PerfilUsuarioPage> {
                 // ── Tutorial primera visita ──
                 SliverToBoxAdapter(
                   child: ScreenHintBanner(
-                    featureKey: 'hint_perfil_v1',
+                    featureKey: 'hint_perfil_v2',
                     titulo: 'Tu perfil lector',
                     tips: const [
                       ScreenHintTip('📷', 'Pulsa tu avatar para cambiar la foto de perfil'),
                       ScreenHintTip('📤', 'Exporta toda tu biblioteca en CSV desde la pestaña "Más"'),
                       ScreenHintTip('📊', 'Consulta estadísticas, logros y tu mapa de calor de lectura'),
                       ScreenHintTip('❤️', 'Guarda libros en favoritos desde el catálogo o los detalles'),
+                      ScreenHintTip('✨', 'Genera y comparte tu tarjeta lectora personalizada desde la sección Favoritos'),
+                      ScreenHintTip('🌈', 'En la estantería anual prueba el orden Arcoíris para ordenar tus portadas por color'),
                     ],
                   ),
                 ),
@@ -1435,9 +1482,9 @@ class _PerfilUsuarioPageState extends State<PerfilUsuarioPage> {
           crossAxisCount: 2,
           shrinkWrap: true,
           physics: const NeverScrollableScrollPhysics(),
-          crossAxisSpacing: AppSpacing.md,
-          mainAxisSpacing: AppSpacing.md,
-          childAspectRatio: 1.32,
+          crossAxisSpacing: AppSpacing.sm,
+          mainAxisSpacing: AppSpacing.sm,
+          childAspectRatio: 1.7,
           children: [
             _statCard(
               titulo: 'Terminados',
@@ -1531,11 +1578,11 @@ class _PerfilUsuarioPageState extends State<PerfilUsuarioPage> {
         fit: StackFit.expand,
         children: [
           Positioned(
-            right: -13,
-            top: -11,
+            right: -10,
+            top: -8,
             child: Icon(
               icono,
-              size: 82,
+              size: 62,
               color: foreground.withValues(alpha: .075),
             ),
           ),
@@ -1564,13 +1611,13 @@ class _PerfilUsuarioPageState extends State<PerfilUsuarioPage> {
                 Row(
                   children: [
                     Container(
-                      width: 34,
-                      height: 34,
+                      width: 28,
+                      height: 28,
                       decoration: BoxDecoration(
                         color: iconBackground,
-                        borderRadius: BorderRadius.circular(AppRadius.md),
+                        borderRadius: BorderRadius.circular(AppRadius.sm),
                       ),
-                      child: Icon(icono, color: foreground, size: 19),
+                      child: Icon(icono, color: foreground, size: 15),
                     ),
                     const Spacer(),
                     Row(
@@ -1597,7 +1644,7 @@ class _PerfilUsuarioPageState extends State<PerfilUsuarioPage> {
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: AppTextStyles.section.copyWith(
-                    fontSize: 23,
+                    fontSize: 19,
                     color: AppColors.textPrimary,
                     height: 1,
                   ),
@@ -3058,6 +3105,141 @@ class _EditarFraseDialogState extends State<_EditarFraseDialog> {
           child: const Text('Guardar'),
         ),
       ],
+    );
+  }
+}
+
+// ────────────────────────────────────────────────────────────────────────────
+// _PerfilQuizCta
+// ────────────────────────────────────────────────────────────────────────────
+
+class _PerfilQuizCta extends StatelessWidget {
+  const _PerfilQuizCta({required this.onTap});
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.all(AppSpacing.lg),
+        decoration: BoxDecoration(
+          gradient: const LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [Color(0xFF2E1A4A), Color(0xFF5E3A7A), Color(0xFF9E5FBF)],
+          ),
+          borderRadius: BorderRadius.circular(AppRadius.lg),
+          boxShadow: [
+            BoxShadow(
+              color: const Color(0xFF5E3A7A).withValues(alpha: .35),
+              blurRadius: 14,
+              offset: const Offset(0, 5),
+            ),
+          ],
+        ),
+        child: Row(
+          children: [
+            const Text('🧬', style: TextStyle(fontSize: 32)),
+            const SizedBox(width: AppSpacing.md),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    '¿Qué tipo de lectora eres?',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 16,
+                      fontWeight: FontWeight.w900,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    '6 preguntas · Descubre tu personalidad lectora y compártela',
+                    style: TextStyle(
+                      color: Colors.white.withValues(alpha: .75),
+                      fontSize: 13,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Icon(
+              Icons.arrow_forward_ios_rounded,
+              color: Colors.white.withValues(alpha: .70),
+              size: 18,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ────────────────────────────────────────────────────────────────────────────
+// _PerfilShareCardCta
+// ────────────────────────────────────────────────────────────────────────────
+
+class _PerfilShareCardCta extends StatelessWidget {
+  const _PerfilShareCardCta({required this.onTap});
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.all(AppSpacing.lg),
+        decoration: BoxDecoration(
+          gradient: const LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [Color(0xFF5A3470), Color(0xFFBE4D4A)],
+          ),
+          borderRadius: BorderRadius.circular(AppRadius.lg),
+          boxShadow: [
+            BoxShadow(
+              color: AppColors.primary.withValues(alpha: .28),
+              blurRadius: 14,
+              offset: const Offset(0, 5),
+            ),
+          ],
+        ),
+        child: Row(
+          children: [
+            const Text('✨', style: TextStyle(fontSize: 32)),
+            const SizedBox(width: AppSpacing.md),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'Comparte tu perfil lector',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 16,
+                      fontWeight: FontWeight.w900,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    'Genera una tarjeta con tus estadísticas y compártela',
+                    style: TextStyle(
+                      color: Colors.white.withValues(alpha: .75),
+                      fontSize: 13,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Icon(
+              Icons.ios_share_rounded,
+              color: Colors.white.withValues(alpha: .80),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

@@ -79,6 +79,12 @@ String _resolvedGenre(
 }
 
 // ── openBookDetail ────────────────────────────────────────────────────────────
+//
+// Contexto de club: muestra los datos de TODOS los miembros del club.
+// Siempre usa la caché del club (getLibrosData) que devuelve datos de todos
+// los miembros, filtrando por bookId cuando está disponible y por título como
+// fallback. NO usa el endpoint personal (global:false) que solo devuelve el
+// registro del usuario actual.
 
 Future<bool> openBookDetail(
   BuildContext context, {
@@ -88,43 +94,41 @@ Future<bool> openBookDetail(
   String genre = '',
   @visibleForTesting FetchLibroPorId? fetchForTesting,
 }) async {
-  final fetch = fetchForTesting ?? _fetchLibroPorId;
   final normalizedTitle = title.trim().toLowerCase();
   if (normalizedTitle.isEmpty) return false;
 
   try {
+    // Siempre usamos la caché del club, que contiene registros de todos los
+    // miembros. El endpoint personal (global:false) solo devuelve el propio
+    // usuario y rompería la sección "Lectores interesados".
+    final data = await LibrosDataCache.instance.get(
+      () => ApiService().getLibrosData(),
+    );
+    if (!context.mounted) return false;
+
     List<Libro> registros;
     List<LibroFinalizado> finalizados;
 
     if (bookId.isNotEmpty) {
-      // Ruta rápida: endpoint específico por bookId
-      final result = await fetch(bookId);
-      if (!context.mounted) return false;
+      // Filtrar por bookId (más preciso que por título)
+      registros = data.libros
+          .where((item) => item.bookId == bookId)
+          .toList();
+      finalizados = data.finalizados
+          .where((item) => item.bookId == bookId)
+          .toList();
 
-      if (result == null) {
-        // El libro no existe o error → ficha de catálogo
-        await Navigator.push<void>(
-          context,
-          BookDetailPageRoute(
-            builder: (_) => CatalogBookDetailPage(
-              bookId: bookId,
-              title: title,
-              coverUrl: coverUrl,
-              genre: genre,
-            ),
-          ),
-        );
-        return false;
+      // Si la caché no tiene datos con ese bookId (caché antigua sin bookId),
+      // caer en filtro por título
+      if (registros.isEmpty && finalizados.isEmpty) {
+        registros = data.libros
+            .where((item) => item.libro.trim().toLowerCase() == normalizedTitle)
+            .toList();
+        finalizados = data.finalizados
+            .where((item) => item.libro.trim().toLowerCase() == normalizedTitle)
+            .toList();
       }
-      registros = result.libros;
-      finalizados = result.finalizados;
     } else {
-      // Fallback sin bookId: usar caché de biblioteca completa
-      final data = await LibrosDataCache.instance.get(
-        () => ApiService().getLibrosData(),
-      );
-      if (!context.mounted) return false;
-
       registros = data.libros
           .where((item) => item.libro.trim().toLowerCase() == normalizedTitle)
           .toList();
@@ -160,6 +164,7 @@ Future<bool> openBookDetail(
             yaLoTengo: registros.any((item) => item.yaLoTengo),
             leidoPorMi: finalizados.any((item) => item.yaLoTengo),
             coverUrl: _resolvedCover(coverUrl, registros, finalizados),
+            bookId: bookId,
           ),
         ),
       ),
@@ -190,8 +195,8 @@ Future<bool> openBookDetail(
 // [globalStats] = true (dashboard global, fuera de un club):
 //   Usa TODOS los registros/finalizados para los contadores y la valoración media.
 //   Los flags personales (yaLoTengo, leidoPorMi) siguen calculándose solo con
-//   los datos del usuario actual. La sección "Lectores interesados" muestra a
-//   todos los lectores pero solo permite editar el registro propio.
+//   los datos del usuario actual. La ficha muestra estadísticas anónimas
+//   (media, contadores, distribución) sin exponer nombres ni fotos de nadie.
 
 Future<bool> openCatalogBookDetail(
   BuildContext context, {
@@ -229,6 +234,7 @@ Future<bool> openCatalogBookDetail(
             context,
             BookDetailPageRoute(
               builder: (_) => DetalleLibroPage(
+                globalStats: globalStats,
                 libro: LibroAgrupado(
                   libro: title,
                   genero: genre,
@@ -349,6 +355,7 @@ Future<bool> openCatalogBookDetail(
           context,
           BookDetailPageRoute(
             builder: (_) => DetalleLibroPage(
+              globalStats: true,
               libro: LibroAgrupado(
                 libro: title,
                 genero: _resolvedGenre(genre, registros, finalizados),
@@ -389,6 +396,7 @@ Future<bool> openCatalogBookDetail(
           context,
           BookDetailPageRoute(
             builder: (_) => DetalleLibroPage(
+              globalStats: true,
               libro: LibroAgrupado(
                 libro: title,
                 genero: _resolvedGenre(genre, registros, finalizados),
@@ -490,6 +498,7 @@ Future<bool> openCatalogBookDetail(
             context,
             BookDetailPageRoute(
               builder: (_) => DetalleLibroPage(
+                globalStats: globalStats,
                 libro: LibroAgrupado(
                   libro: title,
                   genero: genre,
@@ -526,6 +535,7 @@ Future<bool> openCatalogBookDetail(
         context,
         BookDetailPageRoute(
           builder: (_) => DetalleLibroPage(
+            globalStats: globalStats,
             libro: LibroAgrupado(
               libro: title,
               genero: _resolvedGenre(genre, registros, finalizados),

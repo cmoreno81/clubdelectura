@@ -484,7 +484,10 @@ const List<_HelpSection> _secciones = [
         respuesta:
             'En la pestaña "Lecturas" encontrarás el libro actual del club '
             'dividido por capítulos. Pulsa en un capítulo para leer los '
-            'comentarios de otros miembros y añadir el tuyo.',
+            'comentarios de otros miembros y añadir el tuyo.\n\n'
+            'Si hay comentarios que aún no has visto, la app los marca con una '
+            'etiqueta "Nuevos" y se desplaza automáticamente hasta ellos al abrir '
+            'el capítulo, para que no tengas que bajar a buscarlos.',
       ),
       _HelpItem(
         pregunta: '¿Cómo comento en un capítulo?',
@@ -817,6 +820,98 @@ const List<_HelpSection> _secciones = [
             'Es un bloque de Resumen, visible en tu propio perfil, que agrupa el '
             'check-in diario, la racha y el mapa de calor anual. Está disponible '
             'con o sin club. Wrapped no está aquí: se encuentra en Favoritos.',
+      ),
+    ],
+  ),
+  _HelpSection(
+    icono: '✨',
+    titulo: 'Funciones especiales',
+    items: [
+      _HelpItem(
+        pregunta: '¿Qué es la Ruleta del TBR?',
+        respuesta:
+            'La Ruleta del TBR es una tarjeta en "Mi universo lector" que elige '
+            'al azar un libro de tu lista de pendientes. Es perfecta para '
+            'cuando tienes muchos libros en la pila y no sabes cuál leer a continuación.\n\n'
+            'Pulsa "Girar la ruleta" y la animación tipo tragaperras irá pasando '
+            'portadas hasta detenerse en tu siguiente lectura. Después puedes '
+            'abrir la ficha del libro o volver a girar si no te convence.',
+      ),
+      _HelpItem(
+        pregunta: '¿En qué se diferencia el modo Tarro?',
+        respuesta:
+            'El Tarro es la versión más artesanal de la ruleta. Imagina un tarro '
+            'de cristal con papelitos doblados dentro: al agitarlo, uno sale al azar.\n\n'
+            'En la animación verás los papelitos moviéndose dentro del tarro '
+            'mientras se revuelve, y el resultado aparece escrito a mano en un '
+            'papelito de papel rayado.\n\n'
+            'Cambia entre Ruleta y Tarro con el selector que hay en la parte '
+            'superior de la tarjeta. Ambos modos eligen el mismo libro al azar; '
+            'solo cambia la experiencia visual.',
+      ),
+      _HelpItem(
+        pregunta: '¿Qué es el Vibe Reader?',
+        respuesta:
+            'El Vibe Reader es un filtro de estado de ánimo que aparece en tu '
+            'biblioteca cuando tienes activa la pestaña "Pendientes".\n\n'
+            'Elige un vibe — oscuro, ligero, romántico, de pensar, intenso o de llorar — '
+            'y la biblioteca filtra automáticamente los libros pendientes cuyos géneros '
+            'encajan con ese estado de ánimo. Es una forma de encontrar la lectura '
+            'perfecta para cómo te sientes ahora mismo.\n\n'
+            'Pulsa "Quitar filtro" para ver todos los pendientes de nuevo. '
+            'El filtro se limpia solo al cambiar de pestaña.',
+      ),
+      _HelpItem(
+        pregunta: '¿Qué es el Quiz de Personalidad Lectora?',
+        respuesta:
+            'Es un cuestionario de 6 preguntas que descubre tu arquetipo lector. '
+            'Responde sobre tus hábitos, preferencias y momentos de lectura, y la app '
+            'calcula cuál de estos seis perfiles te define mejor:\n\n'
+            '🌙 Lectora Nocturna · 📚 Maratonista · 💕 Romántica Empedernida · '
+            '🧠 Lectora Reflexiva · ⚡ Imparable · 🎨 Estética\n\n'
+            'Cada resultado incluye una descripción y una tarjeta compartible con '
+            'tu arquetipo. Puedes compartirla directamente desde el resultado.\n\n'
+            'Tu resultado se guarda automáticamente; la próxima vez que abras el quiz '
+            'verás tu arquetipo directamente sin repetir las preguntas. '
+            'Pulsa "Repetir" si quieres volver a hacerlo.\n\n'
+            'Lo encontrarás en "Mi espacio" → sección central, o en tu perfil → '
+            'pestaña Favoritos.',
+      ),
+      _HelpItem(
+        pregunta: '¿Qué son las Personalidades del club?',
+        respuesta:
+            'Es una tarjeta en "El Club" que reúne los arquetipos lectores de '
+            'todas las miembros que han completado el Quiz de Personalidad.\n\n'
+            'Verás el arquetipo más común del club (el "arquetipo del club"), '
+            'cuántas miembros lo comparten, y un scroll horizontal con el avatar, '
+            'el emoji del arquetipo y el nombre de cada una.\n\n'
+            'Si nadie ha hecho el quiz aún, aparece un banner invitándote a ser la '
+            'primera. Cuando hagas el quiz, tu resultado aparecerá automáticamente '
+            'en esta tarjeta la próxima vez que abras el dashboard del club.',
+      ),
+      _HelpItem(
+        pregunta: '¿Cómo funciona el orden Arcoíris en la estantería anual?',
+        respuesta:
+            'El orden Arcoíris reorganiza tu estantería anual ordenando las portadas '
+            'por su color dominante: de los rojos al naranja, amarillo, verde, azul '
+            'y morado, creando un degradado de colores con tus propias lecturas.\n\n'
+            'Para activarlo, abre el menú ⋮ de la estantería anual (en tu perfil, '
+            'pestaña Resumen) y elige "🌈 Arcoíris". La primera vez extrae los '
+            'colores de todas las portadas, lo que puede tardar unos segundos; '
+            'después se guarda en caché y es instantáneo.',
+      ),
+      _HelpItem(
+        pregunta: '¿Cómo comparto mi tarjeta lectora?',
+        respuesta:
+            'La tarjeta lectora es una imagen personalizada con tu nombre, '
+            'estadísticas clave (libros leídos, racha, género favorito) y una '
+            'tira de tus portadas recientes. Puedes compartirla en redes sociales '
+            'o enviarla por donde quieras.\n\n'
+            'Para generarla, ve a:\n'
+            '• "Mi espacio" → botón "Comparte tu perfil lector"\n'
+            '• Tu perfil → pestaña Favoritos → "Comparte tu perfil lector"\n\n'
+            'Pulsa "Compartir tarjeta" y elige la app con la que enviarla. '
+            'La imagen se genera automáticamente con tus datos actuales.',
       ),
     ],
   ),

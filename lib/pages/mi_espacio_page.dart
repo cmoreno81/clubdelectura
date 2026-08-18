@@ -14,6 +14,8 @@ import '../widgets/common/checkin_button.dart';
 import '../widgets/common/mapa_calor_widget.dart';
 import '../utils/wrapped_availability.dart';
 import 'mis_logros_page.dart';
+import 'personalidad_lectora_page.dart';
+import 'share_reader_card_page.dart';
 import 'wrapped_page.dart';
 
 /// Pantalla de logros y estadísticas personales para el modo lector solitario.
@@ -94,6 +96,36 @@ class _MiEspacioPageState extends State<MiEspacioPage>
                     WrappedPage(anio: WrappedAvailability().wrappedYear),
               ),
             ),
+            onOpenQuiz: () => Navigator.push<void>(
+              context,
+              AppPageRoute(
+                builder: (_) => const PersonalidadLectoraPage(),
+              ),
+            ),
+            onShareCard: () {
+              final d = snapshot.data!;
+              final summary = d.dashboard.summary;
+              Navigator.push<void>(
+                context,
+                AppPageRoute(
+                  builder: (_) => ShareReaderCardPage(
+                    data: ReaderCardData(
+                      userName: d.dashboard.userName,
+                      // Libros terminados en el año en curso (no histórico)
+                      booksFinished: d.dashboard.yearShelf.length,
+                      booksReading: summary.reading,
+                      monthStreak: summary.monthStreak,
+                      pagesRead: summary.pagesRead,
+                      coverUrls: d.dashboard.personalLibrary
+                          .where((b) => b.coverUrl.trim().isNotEmpty)
+                          .take(4)
+                          .map((b) => b.coverUrl)
+                          .toList(),
+                    ),
+                  ),
+                ),
+              );
+            },
           );
         },
       ),
@@ -124,12 +156,16 @@ class _Content extends StatelessWidget {
     required this.streakPulse,
     required this.onVerTodos,
     required this.onVerWrapped,
+    required this.onOpenQuiz,
+    required this.onShareCard,
   });
 
   final _PageData data;
   final Animation<double> streakPulse;
   final VoidCallback onVerTodos;
   final VoidCallback onVerWrapped;
+  final VoidCallback onOpenQuiz;
+  final VoidCallback onShareCard;
 
   @override
   Widget build(BuildContext context) {
@@ -192,6 +228,19 @@ class _Content extends StatelessWidget {
               0,
             ),
             sliver: SliverToBoxAdapter(child: _StatsGrid(summary: summary)),
+          ),
+
+          // ── Quiz de personalidad ──────────────────────────────────────────
+          SliverPadding(
+            padding: const EdgeInsets.fromLTRB(
+              AppSpacing.md,
+              AppSpacing.lg,
+              AppSpacing.md,
+              0,
+            ),
+            sliver: SliverToBoxAdapter(
+              child: _QuizCta(onTap: onOpenQuiz),
+            ),
           ),
 
           // ── Progreso logros ───────────────────────────────────────────────
@@ -323,6 +372,19 @@ class _Content extends StatelessWidget {
             ),
             sliver: SliverToBoxAdapter(
               child: MiEspacioWrappedCta(onTap: onVerWrapped),
+            ),
+          ),
+
+          // ── Tarjeta compartible ───────────────────────────────────────────
+          SliverPadding(
+            padding: const EdgeInsets.fromLTRB(
+              AppSpacing.md,
+              AppSpacing.md,
+              AppSpacing.md,
+              0,
+            ),
+            sliver: SliverToBoxAdapter(
+              child: _ShareCardCta(onTap: onShareCard),
             ),
           ),
 
@@ -1062,6 +1124,137 @@ class _SectionLabel extends StatelessWidget {
           ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800),
         ),
       ],
+    );
+  }
+}
+
+// ────────────────────────────────────────────────────────────────────────────
+// _ShareCardCta
+// ────────────────────────────────────────────────────────────────────────────
+
+class _QuizCta extends StatelessWidget {
+  const _QuizCta({required this.onTap});
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.all(AppSpacing.lg),
+        decoration: BoxDecoration(
+          gradient: const LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [Color(0xFF2E1A4A), Color(0xFF5E3A7A), Color(0xFF9E5FBF)],
+          ),
+          borderRadius: BorderRadius.circular(AppRadius.lg),
+          boxShadow: [
+            BoxShadow(
+              color: const Color(0xFF5E3A7A).withValues(alpha: .35),
+              blurRadius: 14,
+              offset: const Offset(0, 5),
+            ),
+          ],
+        ),
+        child: Row(
+          children: [
+            const Text('🧬', style: TextStyle(fontSize: 32)),
+            const SizedBox(width: AppSpacing.md),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    '¿Qué tipo de lectora eres?',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 16,
+                      fontWeight: FontWeight.w900,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    '6 preguntas · Descubre tu personalidad lectora y compártela',
+                    style: TextStyle(
+                      color: Colors.white.withValues(alpha: .75),
+                      fontSize: 13,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Icon(
+              Icons.arrow_forward_ios_rounded,
+              color: Colors.white.withValues(alpha: .70),
+              size: 18,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _ShareCardCta extends StatelessWidget {
+  const _ShareCardCta({required this.onTap});
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.all(AppSpacing.lg),
+        decoration: BoxDecoration(
+          gradient: const LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [Color(0xFF5A3470), Color(0xFFBE4D4A)],
+          ),
+          borderRadius: BorderRadius.circular(AppRadius.lg),
+          boxShadow: [
+            BoxShadow(
+              color: AppColors.primary.withValues(alpha: .28),
+              blurRadius: 14,
+              offset: const Offset(0, 5),
+            ),
+          ],
+        ),
+        child: Row(
+          children: [
+            const Text('✨', style: TextStyle(fontSize: 32)),
+            const SizedBox(width: AppSpacing.md),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'Comparte tu perfil lector',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 16,
+                      fontWeight: FontWeight.w900,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    'Genera una tarjeta con tus estadísticas y compártela',
+                    style: TextStyle(
+                      color: Colors.white.withValues(alpha: .75),
+                      fontSize: 13,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Icon(
+              Icons.ios_share_rounded,
+              color: Colors.white.withValues(alpha: .80),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

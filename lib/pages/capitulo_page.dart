@@ -11,6 +11,7 @@ import 'package:club_lectura_app/services/comment_publication.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../theme/app_colors.dart';
+import '../theme/app_radius.dart';
 import '../theme/app_spacing.dart';
 import '../theme/app_text_styles.dart';
 import '../widgets/common/club_card.dart';
@@ -47,6 +48,10 @@ class _CapituloPageState extends State<CapituloPage> {
   String? usuario;
   bool enviando = false;
   bool editorReflexionVisible = false;
+
+  /// Key asignada al divisor "Nuevos" para poder hacer scroll automático.
+  final GlobalKey _newsDividerKey = GlobalKey();
+  bool _scrolledToNew = false; // solo scrolleamos una vez por apertura
   bool editorEsCita = false;
   List<Color> coloresCita = const [];
   Color? colorCita;
@@ -63,6 +68,8 @@ class _CapituloPageState extends State<CapituloPage> {
         libro: widget.libro,
         capitulo: widget.capitulo,
         cursor: cursor,
+        // En páginas 2+ propagamos el corte capturado en la primera página.
+        cutoff: cursor != null ? _pagination.cutoffDate : null,
       ),
       keyOf: (comment) => comment.id,
     )..addListener(_onPaginationChanged);
@@ -123,7 +130,30 @@ class _CapituloPageState extends State<CapituloPage> {
 
     if (mounted) {
       setState(() {});
+      _scrollToFirstNew();
     }
+  }
+
+  /// Desplaza la lista hasta el divisor "Nuevos" si hay comentarios nuevos
+  /// y aún no hemos hecho el scroll automático en esta apertura.
+  void _scrollToFirstNew() {
+    if (_scrolledToNew) return;
+    final hasNew = _pagination.items.any((c) => c.esNuevo);
+    if (!hasNew) return;
+    _scrolledToNew = true;
+
+    // Esperamos a que el frame se pinte para que el key tenga contexto.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final ctx = _newsDividerKey.currentContext;
+      if (ctx == null || !scrollController.hasClients) return;
+      Scrollable.ensureVisible(
+        ctx,
+        duration: const Duration(milliseconds: 500),
+        curve: Curves.easeInOut,
+        // alignment 0 = alinea el widget con el borde superior visible
+        alignment: 0.0,
+      );
+    });
   }
 
   String? get _claveBorrador {
@@ -525,35 +555,17 @@ class _CapituloPageState extends State<CapituloPage> {
             ),
           )
         else
-          SliverPadding(
-            padding: const EdgeInsets.only(bottom: 20),
-            sliver: SliverList(
-              delegate: SliverChildBuilderDelegate((context, index) {
-                final comentarioCard = ComentarioCard(
-                  key: ValueKey(data.comentarios[index].id),
-                  comentario: data.comentarios[index],
-                  usuarioActual: usuario ?? '',
-                  onActualizar: () {
-                    if (!mounted) return;
-                    _recargar();
-                  },
-                  onEdited: (text) => _pagination.replace(
-                    data.comentarios[index].id,
-                    (comment) =>
-                        comment.copyWith(comentario: text, editado: true),
-                  ),
-                  onDeleted: () =>
-                      _pagination.remove(data.comentarios[index].id),
-                );
-
-                if (!esReflexion) return comentarioCard;
-
-                return _ReflexionProtegida(
-                  key: ValueKey(data.comentarios[index].id),
-                  child: comentarioCard,
-                );
-              }, childCount: data.comentarios.length),
+          _ComentariosList(
+            comentarios: data.comentarios,
+            usuarioActual: usuario ?? '',
+            esReflexion: esReflexion,
+            newsDividerKey: _newsDividerKey,
+            onRecargar: _recargar,
+            onEdited: (id, text) => _pagination.replace(
+              id,
+              (comment) => comment.copyWith(comentario: text, editado: true),
             ),
+            onDeleted: _pagination.remove,
           ),
         if (_pagination.loadingMore || _pagination.loadMoreError != null)
           SliverToBoxAdapter(
@@ -668,6 +680,125 @@ class _CapituloPageState extends State<CapituloPage> {
     super.dispose();
   }
 }
+
+// ---------------------------------------------------------------------------
+// Lista de comentarios con divisor "Nuevos"
+// ---------------------------------------------------------------------------
+
+class _ComentariosList extends StatelessWidget {
+  const _ComentariosList({
+    required this.comentarios,
+    required this.usuarioActual,
+    required this.esReflexion,
+    required this.newsDividerKey,
+    required this.onRecargar,
+    required this.onEdited,
+    required this.onDeleted,
+  });
+
+  final List<ComentarioLectura> comentarios;
+  final String usuarioActual;
+  final bool esReflexion;
+  final GlobalKey newsDividerKey;
+  final VoidCallback onRecargar;
+  final void Function(String id, String text) onEdited;
+  final void Function(String id) onDeleted;
+
+  @override
+  Widget build(BuildContext context) {
+    // Construimos la lista de items intercalando el divisor antes del primer
+    // comentario marcado como nuevo.
+    final items = <Widget>[];
+    bool divisorInsertado = false;
+
+    for (final comentario in comentarios) {
+      if (!divisorInsertado && comentario.esNuevo) {
+        divisorInsertado = true;
+        items.add(_NuevosDivisor(key: newsDividerKey));
+      }
+
+      final card = ComentarioCard(
+        key: ValueKey(comentario.id),
+        comentario: comentario,
+        usuarioActual: usuarioActual,
+        onActualizar: onRecargar,
+        onEdited: (text) => onEdited(comentario.id, text),
+        onDeleted: () => onDeleted(comentario.id),
+      );
+
+      items.add(
+        esReflexion
+            ? _ReflexionProtegida(key: ValueKey('p_${comentario.id}'), child: card)
+            : card,
+      );
+    }
+
+    return SliverPadding(
+      padding: const EdgeInsets.only(bottom: 20),
+      sliver: SliverList(
+        delegate: SliverChildBuilderDelegate(
+          (context, index) => items[index],
+          childCount: items.length,
+        ),
+      ),
+    );
+  }
+}
+
+class _NuevosDivisor extends StatelessWidget {
+  const _NuevosDivisor({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    final color = Theme.of(context).colorScheme.primary;
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(
+        AppSpacing.md,
+        AppSpacing.md,
+        AppSpacing.md,
+        AppSpacing.xs,
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: Divider(color: color.withValues(alpha: .35), height: 1),
+          ),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+              decoration: BoxDecoration(
+                color: color.withValues(alpha: .1),
+                borderRadius: BorderRadius.circular(AppRadius.pill),
+                border: Border.all(color: color.withValues(alpha: .28)),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(Icons.fiber_new_rounded, size: 16, color: color),
+                  const SizedBox(width: 4),
+                  Text(
+                    'Nuevos desde tu última visita',
+                    style: TextStyle(
+                      color: color,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          Expanded(
+            child: Divider(color: color.withValues(alpha: .35), height: 1),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
 
 class _ReflexionProtegida extends StatefulWidget {
   final Widget child;

@@ -10,7 +10,7 @@ class PoliticaPrivacidadPage extends StatelessWidget {
   Future<void> _contactar(BuildContext context) async {
     final uri = Uri(
       scheme: 'mailto',
-      path: 'c.moreno.benavente@gmail.com',
+      path: 'clubreads.app@gmail.com',
       queryParameters: {'subject': 'Privacidad en ClubReads'},
     );
     final abierto = await launchUrl(uri);

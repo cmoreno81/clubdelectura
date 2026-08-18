@@ -28,8 +28,14 @@ class CursorPaginationController<T> extends ChangeNotifier {
   int _generation = 0;
   bool _disposed = false;
 
+  /// Corte de novedad recibido del backend en la primera página.
+  /// `null` hasta que se complete la primera carga o si el backend
+  /// no devolvió corte (el usuario no tenía visitas anteriores).
+  String? _cutoffDate;
+
   List<T> get items => List.unmodifiable([..._items, ..._localTail]);
   bool get hasMore => _hasMore;
+  String? get cutoffDate => _cutoffDate;
   bool get initialLoading => _initialLoading;
   bool get loadingMore => _loadingMore;
   Object? get initialError => _initialError;
@@ -61,6 +67,7 @@ class CursorPaginationController<T> extends ChangeNotifier {
       _removeLocalItemsPresentInPages();
       _nextCursor = page.nextCursor;
       _hasMore = page.hasMore && page.nextCursor != null;
+      if (page.cutoffDate != null) _cutoffDate = page.cutoffDate;
     } catch (error) {
       if (generation != _generation) return;
       _initialError = error;

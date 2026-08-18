@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 
@@ -14,13 +15,16 @@ import '../services/favoritos_service.dart';
 import '../services/kit_lectura_service.dart';
 import '../services/usuario_service.dart';
 import '../services/library_refresh_notifier.dart';
+import '../theme/app_colors.dart';
 import '../theme/app_spacing.dart';
+import '../theme/app_text_styles.dart';
 import '../widgets/common/libro_finalizado_celebration.dart';
 import '../widgets/libros/conversaciones_libro_card.dart';
 import '../widgets/libros/finalizar_libro_dialog.dart';
 import '../widgets/libros/kit_lectura_card.dart';
 import '../widgets/libros/libro_header.dart';
 import '../widgets/libros/libro_interesadas_section.dart';
+import '../widgets/libros/libro_section.dart';
 import '../widgets/libros/libro_valoraciones_section.dart';
 import 'kit_lectura_page.dart';
 import 'nuevo_libro_page.dart';
@@ -31,7 +35,17 @@ class DetalleLibroPage extends StatefulWidget {
   /// Tag Hero que coincide con el de la portada en la pantalla de origen.
   final String? heroTag;
 
-  const DetalleLibroPage({super.key, required this.libro, this.heroTag});
+  /// Cuando es `true` (abierto desde el dashboard global), sustituye
+  /// "Lectores interesados" y "Valoraciones" por estadísticas anónimas
+  /// (media, contadores, gráfica de distribución) sin mostrar nombres ni fotos.
+  final bool globalStats;
+
+  const DetalleLibroPage({
+    super.key,
+    required this.libro,
+    this.heroTag,
+    this.globalStats = false,
+  });
 
   @override
   State<DetalleLibroPage> createState() => _DetalleLibroPageState();
@@ -358,6 +372,30 @@ class _DetalleLibroPageState extends State<DetalleLibroPage> {
   Widget build(BuildContext context) {
     final referencia = registros.isNotEmpty ? registros.first : null;
 
+    // En modo global, calculamos el estado personal del usuario buscando
+    // primero en registros (PENDIENTE/LEYENDO/PAUSADO…) y luego en finalizados.
+    // Los registros en modo global contienen a TODOS los usuarios, así que
+    // hay que filtrar por el usuario actual.
+    final String? miEstado;
+    if (!widget.globalStats) {
+      miEstado = referencia?.estado;
+    } else if (usuarioActual != null) {
+      final normalizado = usuarioActual!.trim().toLowerCase();
+      final enRegistros = registros
+          .where((r) => r.usuario.trim().toLowerCase() == normalizado)
+          .firstOrNull;
+      if (enRegistros != null) {
+        miEstado = enRegistros.estado;
+      } else {
+        final enFinalizados = libro.finalizados
+            .where((f) => f.usuario.trim().toLowerCase() == normalizado)
+            .firstOrNull;
+        miEstado = enFinalizados != null ? 'FINALIZADO' : null;
+      }
+    } else {
+      miEstado = null;
+    }
+
     return PopScope(
       onPopInvokedWithResult: (didPop, result) {
         if (didPop) {
@@ -442,15 +480,25 @@ class _DetalleLibroPageState extends State<DetalleLibroPage> {
                 referencia: referencia,
                 heroTag: widget.heroTag,
                 onAbrirGoodreads: _abrirGoodreads,
+                globalStats: widget.globalStats,
+                miEstado: miEstado,
               ),
 
               const SizedBox(height: AppSpacing.lg),
 
-              KitLecturaCard(onTap: _abrirKitLectura),
+              // Kit de lectura: solo tiene sentido si el usuario tiene el libro
+              // en su biblioteca. En vista global sin estado propio, se omite.
+              if (!widget.globalStats || miEstado != null)
+                KitLecturaCard(onTap: _abrirKitLectura),
 
-              if (registros.isNotEmpty) ...[
+              // ── Sección de lectores / estadísticas ────────────────────────
+              if (widget.globalStats) ...[
+                // Vista global: estadísticas anónimas sin nombres ni fotos
                 const SizedBox(height: AppSpacing.lg),
-
+                _EstadisticasGlobalesSection(libro: libro),
+              ] else if (registros.isNotEmpty) ...[
+                // Vista de club: tarjetas de cada lector con controles
+                const SizedBox(height: AppSpacing.lg),
                 LibroInteresadasSection(
                   registros: registros,
                   usuariosConFinalizacion: libro.finalizados
@@ -482,7 +530,9 @@ class _DetalleLibroPageState extends State<DetalleLibroPage> {
                 coverUrl: libro.coverUrl,
               ),
 
-              if (libro.finalizados.isNotEmpty) ...[
+              // En vista global las valoraciones ya están integradas en
+              // _EstadisticasGlobalesSection; solo mostramos aquí en modo club.
+              if (!widget.globalStats && libro.finalizados.isNotEmpty) ...[
                 const SizedBox(height: AppSpacing.lg),
 
                 LibroValoracionesSection(
@@ -503,5 +553,491 @@ class _DetalleLibroPageState extends State<DetalleLibroPage> {
   void dispose() {
     _cerrarAtmosferaDelLibro();
     super.dispose();
+  }
+}
+
+// ─── Estadísticas globales anónimas ────────────────────────────────────────────
+//
+// Muestra media de valoración, número de personas que lo tienen en biblioteca
+// y número de lecturas finalizadas, más una gráfica de barras con la
+// distribución de puntuaciones. No expone nombres ni fotos de ningún usuario.
+
+class _EstadisticasGlobalesSection extends StatelessWidget {
+  const _EstadisticasGlobalesSection({required this.libro});
+
+  final LibroAgrupado libro;
+
+  /// Convierte la cadena de valoración a double (misma lógica que LibroAgrupado).
+  static double _parseRating(String valoracion) {
+    final texto = valoracion.trim().replaceAll('⭐️', '⭐').replaceAll(',', '.');
+    if (texto.isEmpty || texto == '😞') return 0;
+    final num = double.tryParse(texto);
+    if (num != null) return ((num.clamp(0, 5)) * 2).round() / 2;
+    final stars = RegExp('⭐').allMatches(texto).length;
+    final half = texto.contains('½');
+    return (((stars + (half ? 0.5 : 0)).clamp(0, 5)) * 2).round() / 2;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final media = libro.mediaValoracion;
+    final totalBiblioteca = libro.registros.length;
+    final totalLeidos = libro.finalizados.length;
+
+    // ── Distribución de puntuaciones ────────────────────────────────────────
+    final counts = <int, int>{1: 0, 2: 0, 3: 0, 4: 0, 5: 0};
+    for (final fin in libro.finalizados) {
+      final val = _parseRating(fin.valoracion);
+      if (val > 0) {
+        final rounded = val.round().clamp(1, 5);
+        counts[rounded] = (counts[rounded] ?? 0) + 1;
+      }
+    }
+    final maxCount = counts.values.fold(0, math.max);
+    final hayPuntuaciones = maxCount > 0;
+
+    // ── Formato de lectura ───────────────────────────────────────────────────
+    // Combinamos registros (no finalizados) y finalizados para ver el formato
+    // en el que cada persona tiene o leyó el libro.
+    final formatCounts = <String, int>{};
+    for (final r in libro.registros) {
+      final f = r.formato.trim().toUpperCase();
+      if (f.isNotEmpty) formatCounts[f] = (formatCounts[f] ?? 0) + 1;
+    }
+    for (final f in libro.finalizados) {
+      final fmt = f.formato.trim().toUpperCase();
+      if (fmt.isNotEmpty) formatCounts[fmt] = (formatCounts[fmt] ?? 0) + 1;
+    }
+    final hayFormatos = formatCounts.isNotEmpty;
+
+    // ── Reflexiones compartidas ──────────────────────────────────────────────
+    final conResena = libro.finalizados
+        .where((f) => f.resena.trim().isNotEmpty)
+        .length;
+    final hayResenas = totalLeidos > 0 && conResena > 0;
+
+    return LibroSection(
+      icon: Icons.bar_chart_rounded,
+      color: AppColors.primary,
+      title: 'Estadísticas',
+      subtitle: 'Datos globales de la comunidad',
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          // ── Chips de resumen ─────────────────────────────────────────────
+          Row(
+            children: [
+              Expanded(
+                child: _StatChip(
+                  icon: Icons.star_rounded,
+                  iconColor: AppColors.gold,
+                  value: media > 0 ? media.toStringAsFixed(1) : '—',
+                  label: 'Valoración\nmedia',
+                ),
+              ),
+              const SizedBox(width: AppSpacing.sm),
+              Expanded(
+                child: _StatChip(
+                  icon: Icons.bookmark_outline_rounded,
+                  iconColor: AppColors.info,
+                  value: '$totalBiblioteca',
+                  label: 'En\nbiblioteca',
+                ),
+              ),
+              const SizedBox(width: AppSpacing.sm),
+              Expanded(
+                child: _StatChip(
+                  icon: Icons.check_circle_outline_rounded,
+                  iconColor: AppColors.success,
+                  value: '$totalLeidos',
+                  label: 'Han\nleído',
+                ),
+              ),
+            ],
+          ),
+
+          // ── Gráfica de distribución de puntuaciones ──────────────────────
+          if (hayPuntuaciones) ...[
+            const SizedBox(height: AppSpacing.lg),
+            _RatingBarChart(counts: counts, maxCount: maxCount),
+          ],
+
+          // ── Formato de lectura ────────────────────────────────────────────
+          if (hayFormatos) ...[
+            const SizedBox(height: AppSpacing.lg),
+            _FormatoSection(formatCounts: formatCounts),
+          ],
+
+          // ── Reflexiones compartidas ───────────────────────────────────────
+          if (hayResenas) ...[
+            const SizedBox(height: AppSpacing.lg),
+            _ResenasSection(total: totalLeidos, conResena: conResena),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+/// Chip de estadística con icono, valor grande y etiqueta pequeña.
+class _StatChip extends StatelessWidget {
+  const _StatChip({
+    required this.icon,
+    required this.iconColor,
+    required this.value,
+    required this.label,
+  });
+
+  final IconData icon;
+  final Color iconColor;
+  final String value;
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(
+        vertical: AppSpacing.md,
+        horizontal: AppSpacing.sm,
+      ),
+      decoration: BoxDecoration(
+        color: AppColors.surfaceSoft,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppColors.border),
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, color: iconColor, size: 22),
+          const SizedBox(height: 6),
+          Text(
+            value,
+            style: AppTextStyles.section.copyWith(
+              fontSize: 22,
+              color: AppColors.textPrimary,
+            ),
+          ),
+          const SizedBox(height: 3),
+          Text(
+            label,
+            textAlign: TextAlign.center,
+            style: AppTextStyles.caption.copyWith(
+              color: AppColors.textMuted,
+              height: 1.2,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ─── Formato de lectura ────────────────────────────────────────────────────────
+
+class _FormatoSection extends StatelessWidget {
+  const _FormatoSection({required this.formatCounts});
+
+  final Map<String, int> formatCounts;
+
+  static const _formatos = [
+    (key: 'FISICO',      emoji: '📖', label: 'Físico'),
+    (key: 'DIGITAL',     emoji: '📱', label: 'Digital'),
+    (key: 'AUDIOLIBRO',  emoji: '🎧', label: 'Audiolibro'),
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    final total = formatCounts.values.fold(0, (a, b) => a + b);
+
+    return Container(
+      padding: const EdgeInsets.all(AppSpacing.md),
+      decoration: BoxDecoration(
+        color: AppColors.surfaceSoft,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppColors.border),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Formato de lectura',
+            style: AppTextStyles.caption.copyWith(
+              fontWeight: FontWeight.w700,
+              color: AppColors.textSecondary,
+              letterSpacing: .3,
+            ),
+          ),
+          const SizedBox(height: AppSpacing.md),
+          Row(
+            children: _formatos
+                .where((f) => (formatCounts[f.key] ?? 0) > 0)
+                .map((f) {
+              final count = formatCounts[f.key]!;
+              final pct = total > 0 ? (count / total * 100).round() : 0;
+              return Expanded(
+                flex: count,
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 4),
+                  child: _FormatoPill(
+                    emoji: f.emoji,
+                    label: f.label,
+                    count: count,
+                    pct: pct,
+                  ),
+                ),
+              );
+            }).toList(),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _FormatoPill extends StatelessWidget {
+  const _FormatoPill({
+    required this.emoji,
+    required this.label,
+    required this.count,
+    required this.pct,
+  });
+
+  final String emoji;
+  final String label;
+  final int count;
+  final int pct;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm, horizontal: AppSpacing.sm),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: AppColors.border),
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(emoji, style: const TextStyle(fontSize: 22)),
+          const SizedBox(height: 4),
+          Text(
+            '$pct%',
+            style: AppTextStyles.body.copyWith(
+              fontWeight: FontWeight.w800,
+              color: AppColors.textPrimary,
+            ),
+          ),
+          Text(
+            label,
+            style: AppTextStyles.caption.copyWith(color: AppColors.textMuted),
+          ),
+          Text(
+            count == 1 ? '1 lector' : '$count lectores',
+            style: AppTextStyles.caption.copyWith(
+              color: AppColors.textMuted,
+              fontSize: 10,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ─── Reflexiones compartidas ───────────────────────────────────────────────────
+
+class _ResenasSection extends StatelessWidget {
+  const _ResenasSection({required this.total, required this.conResena});
+
+  final int total;
+  final int conResena;
+
+  @override
+  Widget build(BuildContext context) {
+    final ratio = total > 0 ? conResena / total : 0.0;
+    final pct = (ratio * 100).round();
+
+    return Container(
+      padding: const EdgeInsets.all(AppSpacing.md),
+      decoration: BoxDecoration(
+        color: AppColors.surfaceSoft,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppColors.border),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Text('💬', style: TextStyle(fontSize: 18)),
+              const SizedBox(width: AppSpacing.sm),
+              Expanded(
+                child: Text(
+                  'Reflexiones compartidas',
+                  style: AppTextStyles.caption.copyWith(
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.textSecondary,
+                    letterSpacing: .3,
+                  ),
+                ),
+              ),
+              Text(
+                '$conResena de $total',
+                style: AppTextStyles.caption.copyWith(
+                  fontWeight: FontWeight.w800,
+                  color: AppColors.primary,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: AppSpacing.sm),
+          // Barra de progreso
+          ClipRRect(
+            borderRadius: BorderRadius.circular(6),
+            child: LinearProgressIndicator(
+              value: ratio,
+              minHeight: 10,
+              backgroundColor: AppColors.border.withValues(alpha: .5),
+              valueColor: AlwaysStoppedAnimation<Color>(
+                AppColors.primary.withValues(alpha: .7),
+              ),
+            ),
+          ),
+          const SizedBox(height: AppSpacing.xs),
+          Text(
+            '$pct% de los lectores escribió su opinión',
+            style: AppTextStyles.caption.copyWith(color: AppColors.textMuted),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Gráfica de barras horizontal con la distribución de puntuaciones 1-5.
+class _RatingBarChart extends StatelessWidget {
+  const _RatingBarChart({
+    required this.counts,
+    required this.maxCount,
+  });
+
+  final Map<int, int> counts;
+  final int maxCount;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(AppSpacing.md),
+      decoration: BoxDecoration(
+        color: AppColors.surfaceSoft,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppColors.border),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Distribución de puntuaciones',
+            style: AppTextStyles.caption.copyWith(
+              fontWeight: FontWeight.w700,
+              color: AppColors.textSecondary,
+              letterSpacing: .3,
+            ),
+          ),
+          const SizedBox(height: AppSpacing.md),
+          for (int stars = 5; stars >= 1; stars--) ...[
+            _BarRow(
+              stars: stars,
+              count: counts[stars] ?? 0,
+              maxCount: maxCount,
+            ),
+            if (stars > 1) const SizedBox(height: AppSpacing.sm),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+class _BarRow extends StatelessWidget {
+  const _BarRow({
+    required this.stars,
+    required this.count,
+    required this.maxCount,
+  });
+
+  final int stars;
+  final int count;
+  final int maxCount;
+
+  @override
+  Widget build(BuildContext context) {
+    final ratio = maxCount > 0 ? count / maxCount : 0.0;
+    return Row(
+      children: [
+        // Etiqueta de estrellas
+        SizedBox(
+          width: 28,
+          child: Row(
+            children: [
+              Text(
+                '$stars',
+                style: AppTextStyles.caption.copyWith(
+                  fontWeight: FontWeight.w700,
+                  color: AppColors.textSecondary,
+                ),
+              ),
+              const SizedBox(width: 2),
+              const Icon(Icons.star_rounded, color: AppColors.gold, size: 12),
+            ],
+          ),
+        ),
+        const SizedBox(width: AppSpacing.sm),
+        // Barra
+        Expanded(
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              return Stack(
+                children: [
+                  // Fondo
+                  Container(
+                    height: 18,
+                    decoration: BoxDecoration(
+                      color: AppColors.border.withValues(alpha: .5),
+                      borderRadius: BorderRadius.circular(9),
+                    ),
+                  ),
+                  // Relleno
+                  AnimatedContainer(
+                    duration: const Duration(milliseconds: 400),
+                    curve: Curves.easeOut,
+                    height: 18,
+                    width: constraints.maxWidth * ratio,
+                    decoration: BoxDecoration(
+                      color: AppColors.gold.withValues(alpha: .75),
+                      borderRadius: BorderRadius.circular(9),
+                    ),
+                  ),
+                ],
+              );
+            },
+          ),
+        ),
+        const SizedBox(width: AppSpacing.sm),
+        // Contador
+        SizedBox(
+          width: 24,
+          child: Text(
+            '$count',
+            textAlign: TextAlign.end,
+            style: AppTextStyles.caption.copyWith(
+              fontWeight: FontWeight.w700,
+              color: count > 0 ? AppColors.textSecondary : AppColors.textMuted,
+            ),
+          ),
+        ),
+      ],
+    );
   }
 }

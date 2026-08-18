@@ -33,6 +33,7 @@ import '../models/catalog_book.dart';
 import '../models/goodreads_import.dart';
 import '../models/saga_oculta.dart';
 import '../models/cursor_page.dart';
+import '../models/personalidad_miembro.dart';
 import 'api_exception.dart';
 import 'http_response_handler.dart';
 
@@ -229,15 +230,19 @@ class ApiService {
   }
 
   Future<GoodreadsImportPreview> previsualizarImportacionGoodreads(
-    List<GoodreadsImportRow> books,
-  ) async {
+    List<GoodreadsImportRow> books, {
+    String source = 'GOODREADS',
+  }) async {
     final response = await _client.post(
       Uri.parse('$baseUrl?action=previsualizarImportacionGoodreads'),
       headers: const {
         'Content-Type': 'application/json',
         AuthenticatedHttpClient.longTimeoutHeader: 'true',
       },
-      body: jsonEncode({'libros': books.map((book) => book.toJson()).toList()}),
+      body: jsonEncode({
+        'libros': books.map((book) => book.toJson()).toList(),
+        'source': source,
+      }),
     );
     if (response.statusCode != 200) {
       throw ApiException.fromResponse(response);
@@ -257,6 +262,7 @@ class ApiService {
   Future<GoodreadsImportSummary> confirmarImportacionGoodreads(
     List<GoodreadsImportRow> books, {
     Map<int, String> resolutions = const {},
+    String source = 'GOODREADS',
   }) async {
     final response = await _client.post(
       Uri.parse('$baseUrl?action=confirmarImportacionGoodreads'),
@@ -266,6 +272,7 @@ class ApiService {
       },
       body: jsonEncode({
         'libros': books.map((book) => book.toJson()).toList(),
+        'source': source,
         if (resolutions.isNotEmpty)
           'resoluciones': resolutions.entries
               .map((entry) => {'index': entry.key, 'bookId': entry.value})
@@ -643,6 +650,9 @@ class ApiService {
     required String capitulo,
     int limit = 20,
     String? cursor,
+    /// Corte de novedad ISO. Solo se envía en páginas 2+ para que el backend
+    /// pueda seguir usando el mismo corte que en la primera página.
+    String? cutoff,
   }) async {
     final response = await _client.get(
       Uri.parse(baseUrl).replace(
@@ -652,6 +662,7 @@ class ApiService {
           'capitulo': capitulo,
           'limit': '$limit',
           if (cursor?.isNotEmpty == true) 'cursor': cursor!,
+          if (cutoff?.isNotEmpty == true) 'cutoff': cutoff!,
         },
       ),
     );
@@ -2027,5 +2038,30 @@ class ApiService {
             Map<String, dynamic>.from(data['edition'] as Map),
           )
         : null;
+  }
+
+  // ── Personalidad lectora ──────────────────────────────────────────────────
+
+  /// Guarda el arquetipo del quiz lector en el servidor.
+  /// Falla silenciosamente: si hay error de red, el resultado ya está en prefs.
+  Future<void> guardarPersonalidadLectora(String arquetipo) async {
+    try {
+      await _postJson('guardarPersonalidadLectora', {'arquetipo': arquetipo});
+    } catch (_) {
+      // silencioso: la persistencia local ya lo guardó
+    }
+  }
+
+  /// Devuelve las personalidades lectoras de los miembros del club activo
+  /// que han completado el quiz.
+  Future<List<PersonalidadMiembro>> getPersonalidadesClub() async {
+    final uri = Uri.parse('$baseUrl?action=getPersonalidadesClub');
+    final response = await _client.get(uri);
+    if (response.statusCode != 200) throw ApiException.fromResponse(response);
+    final data = _decodeJson(response) as Map<String, dynamic>;
+    final list = data['personalidades'] as List? ?? [];
+    return list
+        .map((e) => PersonalidadMiembro.fromJson(Map<String, dynamic>.from(e as Map)))
+        .toList();
   }
 }

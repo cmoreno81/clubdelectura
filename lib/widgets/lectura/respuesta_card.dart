@@ -327,6 +327,30 @@ class _RespuestaCardState extends State<RespuestaCard> {
                               ),
                             ),
 
+                            if (respuesta.esNueva) ...[
+                              const SizedBox(width: 6),
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 6,
+                                  vertical: 2,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: AppColors.primary,
+                                  borderRadius: BorderRadius.circular(AppRadius.pill),
+                                ),
+                                child: const Text(
+                                  'NUEVO',
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 9,
+                                    fontWeight: FontWeight.w900,
+                                    letterSpacing: .5,
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 4),
+                            ],
+
                             if (respuesta.esMia)
                               PopupMenuButton<String>(
                                 padding: EdgeInsets.zero,

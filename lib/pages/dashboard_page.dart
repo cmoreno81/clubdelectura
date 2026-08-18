@@ -1,5 +1,7 @@
 import 'dart:async';
 
+import 'package:shared_preferences/shared_preferences.dart';
+
 import 'package:club_lectura_app/widgets/common/editar_progreso_dialog.dart';
 import 'package:flutter/material.dart';
 
@@ -44,6 +46,8 @@ import 'tendencias_club_page.dart';
 import 'club_book_of_year_page.dart';
 import 'package:club_lectura_app/widgets/common/club_shimmer.dart';
 import '../widgets/common/reaction_details_sheet.dart';
+import '../models/personalidad_miembro.dart';
+import 'personalidad_lectora_page.dart';
 
 class DashboardPage extends StatefulWidget {
   const DashboardPage({
@@ -435,6 +439,9 @@ class _DashboardPageState extends State<DashboardPage> {
                         miAvatarUrl: avatarUrlActual,
                       ),
                     ],
+
+                    const SizedBox(height: AppSpacing.md),
+                    const _PersonalidadesClubCard(),
 
                     const SizedBox(height: AppSpacing.md),
                     _FavoritosClubCard(key: ValueKey(_favoritosKey)),
@@ -2397,6 +2404,345 @@ class _MiniSlotVacio extends StatelessWidget {
           borderRadius: BorderRadius.circular(AppRadius.sm),
           color: Theme.of(context).colorScheme.surfaceContainerLowest,
         ),
+      ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// _PersonalidadesClubCard
+// ─────────────────────────────────────────────────────────────────────────────
+
+class _PersonalidadesClubCard extends StatefulWidget {
+  const _PersonalidadesClubCard();
+
+  @override
+  State<_PersonalidadesClubCard> createState() => _PersonalidadesClubCardState();
+}
+
+class _PersonalidadesClubCardState extends State<_PersonalidadesClubCard> {
+  late Future<List<PersonalidadMiembro>> _future;
+
+  @override
+  void initState() {
+    super.initState();
+    _future = _syncAndLoad();
+  }
+
+  /// Si hay un resultado guardado en local (quiz hecho antes de que el campo
+  /// existiera en el servidor), lo re-sube antes de pedir la lista del club.
+  Future<List<PersonalidadMiembro>> _syncAndLoad() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final saved = prefs.getString('quiz_personalidad_result');
+      if (saved != null && saved.isNotEmpty) {
+        await ApiService().guardarPersonalidadLectora(saved);
+      }
+    } catch (_) {
+      // Fallo silencioso — la carga del club continúa igual
+    }
+    return ApiService().getPersonalidadesClub();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return FutureBuilder<List<PersonalidadMiembro>>(
+      future: _future,
+      builder: (context, snap) {
+        // Nada que mostrar mientras carga o si hay error silencioso
+        if (snap.connectionState != ConnectionState.done) return const SizedBox.shrink();
+        final miembros = snap.data ?? [];
+        if (miembros.isEmpty) return const _SinPersonalidadesYet();
+        return _PersonalidadesContent(miembros: miembros);
+      },
+    );
+  }
+}
+
+/// Teaser para cuando nadie ha hecho el quiz aún — anima a ser el primero.
+class _SinPersonalidadesYet extends StatelessWidget {
+  const _SinPersonalidadesYet();
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: () => Navigator.push<void>(
+        context,
+        AppPageRoute(builder: (_) => const PersonalidadLectoraPage()),
+      ),
+      child: Container(
+        padding: const EdgeInsets.all(AppSpacing.md),
+        decoration: BoxDecoration(
+          gradient: const LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [Color(0xFF2E1A4A), Color(0xFF5E3A7A), Color(0xFF9E5FBF)],
+          ),
+          borderRadius: BorderRadius.circular(AppRadius.lg),
+        ),
+        child: Row(
+          children: [
+            const Text('🧬', style: TextStyle(fontSize: 28)),
+            const SizedBox(width: AppSpacing.sm),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'Personalidades del club',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 15,
+                      fontWeight: FontWeight.w900,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    'Sé la primera en descubrir tu arquetipo lector',
+                    style: TextStyle(
+                      color: Colors.white.withValues(alpha: .75),
+                      fontSize: 13,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Icon(
+              Icons.arrow_forward_ios_rounded,
+              color: Colors.white.withValues(alpha: .70),
+              size: 16,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Vista con las personalidades de los miembros que han completado el quiz.
+class _PersonalidadesContent extends StatelessWidget {
+  const _PersonalidadesContent({required this.miembros});
+  final List<PersonalidadMiembro> miembros;
+
+  @override
+  Widget build(BuildContext context) {
+    // Agrupar por arquetipo para el resumen
+    final conteo = <String, int>{};
+    for (final m in miembros) {
+      conteo[m.arquetipo] = (conteo[m.arquetipo] ?? 0) + 1;
+    }
+    final masComun = conteo.entries.reduce((a, b) => a.value >= b.value ? a : b);
+    final ejemplar = miembros.first; // para el color del gradiente
+
+    return Container(
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(AppRadius.lg),
+        border: Border.all(color: AppColors.border),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // ── Cabecera ──────────────────────────────────────────────────────
+          Padding(
+            padding: const EdgeInsets.fromLTRB(
+              AppSpacing.md,
+              AppSpacing.md,
+              AppSpacing.md,
+              AppSpacing.sm,
+            ),
+            child: Row(
+              children: [
+                const Text('🧬', style: TextStyle(fontSize: 20)),
+                const SizedBox(width: AppSpacing.xs),
+                Text(
+                  'Personalidades del club',
+                  style: AppTextStyles.subtitle.copyWith(
+                    fontWeight: FontWeight.w900,
+                    fontSize: 15,
+                  ),
+                ),
+                const Spacer(),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                  decoration: BoxDecoration(
+                    color: AppColors.primaryLight,
+                    borderRadius: BorderRadius.circular(AppRadius.pill),
+                  ),
+                  child: Text(
+                    '${miembros.length} ${miembros.length == 1 ? 'lectora' : 'lectoras'}',
+                    style: TextStyle(
+                      color: AppColors.primary,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+          // ── Arquetipo más común del club ─────────────────────────────────
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
+            child: Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(
+                horizontal: AppSpacing.md,
+                vertical: AppSpacing.sm,
+              ),
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [
+                    Color(ejemplar.colores.start),
+                    Color(ejemplar.colores.end),
+                  ],
+                ),
+                borderRadius: BorderRadius.circular(AppRadius.md),
+              ),
+              child: Row(
+                children: [
+                  Text(
+                    PersonalidadMiembro(
+                      usuario: '',
+                      avatarUrl: '',
+                      arquetipo: masComun.key,
+                    ).emoji,
+                    style: const TextStyle(fontSize: 22),
+                  ),
+                  const SizedBox(width: AppSpacing.sm),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Arquetipo del club',
+                          style: TextStyle(
+                            color: Colors.white.withValues(alpha: .70),
+                            fontSize: 11,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        Text(
+                          PersonalidadMiembro(
+                            usuario: '',
+                            avatarUrl: '',
+                            arquetipo: masComun.key,
+                          ).nombreArquetipo,
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 14,
+                            fontWeight: FontWeight.w900,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  Text(
+                    '×${masComun.value}',
+                    style: TextStyle(
+                      color: Colors.white.withValues(alpha: .80),
+                      fontSize: 16,
+                      fontWeight: FontWeight.w900,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+
+          const SizedBox(height: AppSpacing.sm),
+
+          // ── Lista horizontal de miembros ──────────────────────────────────
+          SizedBox(
+            height: 90,
+            child: ListView.separated(
+              scrollDirection: Axis.horizontal,
+              padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
+              itemCount: miembros.length,
+              separatorBuilder: (_, _) => const SizedBox(width: AppSpacing.sm),
+              itemBuilder: (context, i) => _MiembroPersonalidadChip(miembro: miembros[i]),
+            ),
+          ),
+
+          // ── CTA si el usuario aún no ha hecho el quiz ────────────────────
+          Padding(
+            padding: const EdgeInsets.fromLTRB(
+              AppSpacing.md,
+              AppSpacing.xs,
+              AppSpacing.md,
+              AppSpacing.md,
+            ),
+            child: GestureDetector(
+              onTap: () => Navigator.push<void>(
+                context,
+                AppPageRoute(builder: (_) => const PersonalidadLectoraPage()),
+              ),
+              child: Text(
+                '¿Cuál es el tuyo? Hacer el quiz →',
+                style: TextStyle(
+                  color: AppColors.primary,
+                  fontSize: 13,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _MiembroPersonalidadChip extends StatelessWidget {
+  const _MiembroPersonalidadChip({required this.miembro});
+  final PersonalidadMiembro miembro;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 70,
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [
+            Color(miembro.colores.start).withValues(alpha: .15),
+            Color(miembro.colores.end).withValues(alpha: .08),
+          ],
+        ),
+        borderRadius: BorderRadius.circular(AppRadius.md),
+        border: Border.all(
+          color: Color(miembro.colores.end).withValues(alpha: .30),
+        ),
+      ),
+      padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 4),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // Avatar
+          ClubAvatar(
+            nombre: miembro.usuario,
+            imageUrl: miembro.avatarUrl.isEmpty ? null : miembro.avatarUrl,
+            size: 34,
+          ),
+          const SizedBox(height: 3),
+          // Emoji arquetipo
+          Text(miembro.emoji, style: const TextStyle(fontSize: 13)),
+          const SizedBox(height: 2),
+          // Nombre de usuario
+          Text(
+            miembro.usuario,
+            style: const TextStyle(
+              fontSize: 9,
+              fontWeight: FontWeight.w700,
+            ),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            textAlign: TextAlign.center,
+          ),
+        ],
       ),
     );
   }

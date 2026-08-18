@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:club_lectura_app/services/libros_data_cache.dart';
 import 'package:club_lectura_app/services/usuario_service.dart';
 import 'package:club_lectura_app/theme/app_colors.dart';
+import 'package:club_lectura_app/theme/app_radius.dart';
 import 'package:club_lectura_app/theme/app_spacing.dart';
 import 'package:club_lectura_app/theme/app_text_styles.dart';
 import 'package:club_lectura_app/widgets/common/club_book_cover.dart';
@@ -81,6 +82,7 @@ class _LibrosPageState extends State<LibrosPage> with WidgetsBindingObserver {
   String filtroBusqueda = '';
   String filtroEstado = 'TODOS';
   String filtroUsuario = 'TODAS';
+  String? filtroVibe; // null = sin filtro de vibe
   List<Libro>? _cachedBooks;
   List<LibroFinalizado>? _cachedFinishedBooks;
   String? _cachedFilterKey;
@@ -295,19 +297,27 @@ class _LibrosPageState extends State<LibrosPage> with WidgetsBindingObserver {
               Column(
                 children: [
                   ScreenHintBanner(
-                    featureKey: 'hint_biblioteca_v1',
+                    featureKey: 'hint_biblioteca_v2',
                     titulo: 'Cómo sacar el máximo a tu biblioteca',
                     tips: const [
                       ScreenHintTip('📖', 'Mantén pulsado un libro para ver acciones rápidas'),
                       ScreenHintTip('✅', 'Marca "Finalizar" cuando termines un libro para registrarlo en tu historial'),
                       ScreenHintTip('🔍', 'Filtra por estado: leyendo, pausado, pendiente o finalizado'),
                       ScreenHintTip('⭐', 'Puntúa y añade reseñas a los libros que terminas'),
+                      ScreenHintTip('🌈', 'En la pestaña Pendientes aparece el Vibe Reader para filtrar por estado de ánimo lector'),
                     ],
                   ),
                   _cabeceraFiltros(
                     usuariosFiltro: usuariosFiltro,
                     totalResultados: resultado.length,
                   ),
+                  // ── Vibe Reader (solo en modo PENDIENTE) ───────────────
+                  if (filtroEstado == 'PENDIENTE')
+                    _VibeBanner(
+                      vibeSeleccionado: filtroVibe,
+                      onVibeChanged: (vibe) =>
+                          setState(() => filtroVibe = vibe),
+                    ),
                   Expanded(
                     child: resultado.isEmpty
                         ? ClubEmptyState(
@@ -538,6 +548,8 @@ class _LibrosPageState extends State<LibrosPage> with WidgetsBindingObserver {
         HapticFeedback.selectionClick();
         setState(() {
           filtroEstado = estado;
+          // Limpiar vibe al cambiar de estado (solo aplica en PENDIENTE)
+          if (estado != 'PENDIENTE') filtroVibe = null;
         });
       },
     );
@@ -1079,15 +1091,16 @@ class _LibrosPageState extends State<LibrosPage> with WidgetsBindingObserver {
   }) {
     final filterKey =
         '$filtroBusqueda\u0000$filtroEstado\u0000$filtroUsuario\u0000$ordenSeleccionado';
+    final filterKeyFull = '$filterKey|${filtroVibe ?? ''}';
     if (identical(_cachedBooks, libros) &&
         identical(_cachedFinishedBooks, finalizados) &&
-        _cachedFilterKey == filterKey) {
+        _cachedFilterKey == filterKeyFull) {
       return _cachedResult!;
     }
     final result = _calcularResultado(libros: libros, finalizados: finalizados);
     _cachedBooks = libros;
     _cachedFinishedBooks = finalizados;
-    _cachedFilterKey = filterKey;
+    _cachedFilterKey = filterKeyFull;
     _cachedResult = result;
     return result;
   }
@@ -1110,7 +1123,12 @@ class _LibrosPageState extends State<LibrosPage> with WidgetsBindingObserver {
         final coincideEstado =
             filtroEstado == 'TODOS' || libro.estado == filtroEstado;
 
-        return coincideBusqueda && coincideUsuario && coincideEstado;
+        final coincideVibe = filtroVibe == null ||
+            _vibeGeneros(filtroVibe!).any(
+              (g) => normalizar(libro.genero).contains(g),
+            );
+
+        return coincideBusqueda && coincideUsuario && coincideEstado && coincideVibe;
       }).toList();
 
       final agrupados = <String, LibroAgrupado>{};
@@ -1278,6 +1296,27 @@ class _LibrosPageState extends State<LibrosPage> with WidgetsBindingObserver {
     return resultado;
   }
 
+  /// Devuelve las palabras clave de género (normalizadas) que corresponden
+  /// al vibe seleccionado. Se compara con `contains` en el género del libro.
+  static List<String> _vibeGeneros(String vibe) {
+    switch (vibe) {
+      case '🌙 Oscuro':
+        return ['thriller', 'terror', 'misterio', 'crimen', 'horror', 'noir', 'suspense', 'policíac', 'policiaco'];
+      case '☀️ Ligero':
+        return ['comedia', 'humor', 'cozy', 'chick', 'ligero', 'contemporary', 'contemporan'];
+      case '💕 Romántico':
+        return ['romance', 'amor', 'romantico', 'erotico', 'erotica'];
+      case '🌟 Aventura':
+        return ['fantasia', 'aventura', 'accion', 'ciencia ficcion', 'sci-fi', 'distopia', 'epico', 'epica', 'fantasyado'];
+      case '🧠 Reflexivo':
+        return ['ensayo', 'psicolog', 'filosofia', 'no ficcion', 'autobiograf', 'memorias', 'historic', 'biograf'];
+      case '💔 Emotivo':
+        return ['drama', 'literaria', 'literario', 'ficcion literaria', 'contemporan', 'realista'];
+      default:
+        return [];
+    }
+  }
+
   void _limpiarFiltros() {
     buscadorController.clear();
 
@@ -1285,6 +1324,7 @@ class _LibrosPageState extends State<LibrosPage> with WidgetsBindingObserver {
       filtroBusqueda = '';
       filtroEstado = 'TODOS';
       filtroUsuario = 'TODAS';
+      filtroVibe = null;
     });
   }
 
@@ -1683,6 +1723,163 @@ class _CoverBadge extends StatelessWidget {
                 fontSize: 10,
                 fontWeight: FontWeight.w800,
                 height: 1,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// _VibeBanner — selector de «vibe lector» para filtrar libros pendientes
+// ─────────────────────────────────────────────────────────────────────────────
+
+class _VibeBanner extends StatelessWidget {
+  const _VibeBanner({
+    required this.vibeSeleccionado,
+    required this.onVibeChanged,
+  });
+
+  final String? vibeSeleccionado;
+  final void Function(String? vibe) onVibeChanged;
+
+  static const _vibes = [
+    ('🌙 Oscuro', '🌙'),
+    ('☀️ Ligero', '☀️'),
+    ('💕 Romántico', '💕'),
+    ('🌟 Aventura', '🌟'),
+    ('🧠 Reflexivo', '🧠'),
+    ('💔 Emotivo', '💔'),
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: const Color(0xFFF5EDF8),
+        border: Border(
+          bottom: BorderSide(color: AppColors.border, width: .8),
+        ),
+      ),
+      padding: const EdgeInsets.fromLTRB(
+        AppSpacing.md,
+        AppSpacing.xs,
+        AppSpacing.md,
+        AppSpacing.sm,
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Text(
+                '¿Qué te apetece leer hoy?',
+                style: TextStyle(
+                  color: AppColors.primary,
+                  fontSize: 13,
+                  fontWeight: FontWeight.w800,
+                  letterSpacing: -.1,
+                ),
+              ),
+              if (vibeSeleccionado != null) ...[
+                const Spacer(),
+                GestureDetector(
+                  onTap: () => onVibeChanged(null),
+                  child: Text(
+                    'Quitar filtro',
+                    style: TextStyle(
+                      color: AppColors.primary.withValues(alpha: .65),
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+              ],
+            ],
+          ),
+          const SizedBox(height: AppSpacing.xs),
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: Row(
+              children: _vibes.map((pair) {
+                final (label, emoji) = pair;
+                final selected = vibeSeleccionado == label;
+                return Padding(
+                  padding: const EdgeInsets.only(right: AppSpacing.xs),
+                  child: _VibeChip(
+                    emoji: emoji,
+                    label: label.replaceFirst('$emoji ', ''),
+                    selected: selected,
+                    onTap: () =>
+                        onVibeChanged(selected ? null : label),
+                  ),
+                );
+              }).toList(),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _VibeChip extends StatelessWidget {
+  const _VibeChip({
+    required this.emoji,
+    required this.label,
+    required this.selected,
+    required this.onTap,
+  });
+
+  final String emoji;
+  final String label;
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: () {
+        HapticFeedback.selectionClick();
+        onTap();
+      },
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 180),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+        decoration: BoxDecoration(
+          color: selected
+              ? AppColors.primary
+              : AppColors.surface,
+          borderRadius: BorderRadius.circular(AppRadius.pill),
+          border: Border.all(
+            color: selected
+                ? AppColors.primary
+                : AppColors.border,
+            width: selected ? 1.5 : 1.0,
+          ),
+          boxShadow: selected
+              ? [
+                  BoxShadow(
+                    color: AppColors.primary.withValues(alpha: .25),
+                    blurRadius: 6,
+                    offset: const Offset(0, 2),
+                  ),
+                ]
+              : null,
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(emoji, style: const TextStyle(fontSize: 16)),
+            const SizedBox(width: 5),
+            Text(
+              label,
+              style: TextStyle(
+                color: selected ? Colors.white : AppColors.textPrimary,
+                fontSize: 13,
+                fontWeight: FontWeight.w700,
               ),
             ),
           ],

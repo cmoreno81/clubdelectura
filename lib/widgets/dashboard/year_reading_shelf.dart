@@ -1,6 +1,7 @@
 import 'dart:math';
 
 import 'package:flutter/material.dart';
+import 'package:palette_generator_plus/palette_generator_plus.dart';
 
 import '../../main.dart' show routeObserver;
 import '../../models/general_dashboard.dart';
@@ -8,7 +9,7 @@ import '../../theme/app_colors.dart';
 import '../../theme/app_radius.dart';
 import '../common/club_book_cover.dart';
 
-enum _YearShelfOrder { random, firstRead, latestFirst }
+enum _YearShelfOrder { random, firstRead, latestFirst, rainbow }
 
 class YearReadingShelf extends StatefulWidget {
   const YearReadingShelf({
@@ -35,6 +36,8 @@ class _YearReadingShelfState extends State<YearReadingShelf>
   _YearShelfOrder _order = _YearShelfOrder.random;
   final _random = Random();
   final Map<String, double> _randomRanks = {};
+  final Map<String, double> _colorHues = {}; // coverUrl → hue (0..360)
+  bool _extractingColors = false;
   late final AnimationController _ctrl;
 
   @override
@@ -74,6 +77,46 @@ class _YearReadingShelfState extends State<YearReadingShelf>
     _seedRandomRanks(widget.books);
   }
 
+  Future<void> _activateRainbow() async {
+    setState(() {
+      _order = _YearShelfOrder.rainbow;
+      _extractingColors = true;
+    });
+
+    final booksWithCovers = widget.books
+        .where((b) => b.coverUrl.trim().isNotEmpty)
+        .toList();
+
+    await Future.wait(booksWithCovers.map((book) async {
+      final url = book.coverUrl;
+      if (_colorHues.containsKey(url)) return;
+      try {
+        final provider = ResizeImage(NetworkImage(url), width: 80);
+        final palette = await PaletteGenerator.fromImageProvider(
+          provider,
+          maximumColorCount: 24,
+        );
+        // Prefiere el color vibrante (más representativo visualmente)
+        // sobre el dominante (que suele ser el color más frecuente, a menudo
+        // blanco, negro o gris del fondo/texto).
+        final color = palette.vibrantColor?.color ??
+            palette.lightVibrantColor?.color ??
+            palette.dominantColor?.color ??
+            palette.lightMutedColor?.color ??
+            palette.mutedColor?.color;
+        if (color != null && mounted) {
+          _colorHues[url] = HSLColor.fromColor(color).hue;
+        }
+      } catch (_) {
+        if (mounted) _colorHues[url] = 360;
+      }
+    }));
+
+    if (!mounted) return;
+    setState(() => _extractingColors = false);
+    _ctrl.forward(from: 0);
+  }
+
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
@@ -108,6 +151,11 @@ class _YearReadingShelfState extends State<YearReadingShelf>
           final leftRank = _randomRanks[_randomKey(left.$2, left.$1)] ?? 0;
           final rightRank = _randomRanks[_randomKey(right.$2, right.$1)] ?? 0;
           return leftRank.compareTo(rightRank);
+        }
+        if (_order == _YearShelfOrder.rainbow) {
+          final leftHue = _colorHues[left.$2.coverUrl] ?? 360;
+          final rightHue = _colorHues[right.$2.coverUrl] ?? 360;
+          return leftHue.compareTo(rightHue);
         }
         final leftDate = DateTime.tryParse(left.$2.finishedAt);
         final rightDate = DateTime.tryParse(right.$2.finishedAt);
@@ -183,11 +231,15 @@ class _YearReadingShelfState extends State<YearReadingShelf>
                   tooltip: 'Ordenar biblioteca anual',
                   initialValue: _order,
                   onSelected: (value) {
-                    setState(() {
-                      if (value == _YearShelfOrder.random) _reshuffle();
-                      _order = value;
-                    });
-                    _ctrl.forward(from: 0);
+                    if (value == _YearShelfOrder.rainbow) {
+                      _activateRainbow();
+                    } else {
+                      setState(() {
+                        if (value == _YearShelfOrder.random) _reshuffle();
+                        _order = value;
+                      });
+                      _ctrl.forward(from: 0);
+                    }
                   },
                   icon: const Icon(
                     Icons.swap_vert_rounded,
@@ -209,6 +261,23 @@ class _YearReadingShelfState extends State<YearReadingShelf>
                       value: _YearShelfOrder.latestFirst,
                       checked: _order == _YearShelfOrder.latestFirst,
                       child: const Text('Más recientes primero'),
+                    ),
+                    CheckedPopupMenuItem(
+                      value: _YearShelfOrder.rainbow,
+                      checked: _order == _YearShelfOrder.rainbow,
+                      child: Row(
+                        children: [
+                          const Text('🌈  Arcoíris'),
+                          if (_extractingColors) ...[
+                            const Spacer(),
+                            const SizedBox(
+                              width: 14,
+                              height: 14,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            ),
+                          ],
+                        ],
+                      ),
                     ),
                   ],
                 ),

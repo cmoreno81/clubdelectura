@@ -27,6 +27,7 @@ import '../widgets/common/club_card.dart';
 import '../widgets/common/reading_cover_calendar.dart';
 import '../widgets/common/optimized_network_image.dart';
 import '../widgets/dashboard/monthly_reading_shelf.dart';
+import '../widgets/dashboard/tbr_roulette_card.dart';
 import 'clubs_page.dart';
 import 'elegir_modo_page.dart';
 import 'home_page.dart';
@@ -522,13 +523,14 @@ class _GeneralDashboardPageState extends State<GeneralDashboardPage> {
                 // ── Tutorial primera visita ──
                 SliverToBoxAdapter(
                   child: ScreenHintBanner(
-                    featureKey: 'hint_dashboard_v3',
+                    featureKey: 'hint_dashboard_v4',
                     titulo: 'Tu universo lector de un vistazo',
                     tips: const [
                       ScreenHintTip('📊', 'Aquí ves tu resumen de lecturas del mes y el año'),
                       ScreenHintTip('📖', 'Pulsa el botón + (abajo a la derecha) para añadir un libro a tu biblioteca'),
                       ScreenHintTip('🧭', 'Usa el icono de exploración (arriba) para descubrir libros del catálogo'),
                       ScreenHintTip('📚', 'Pulsa una portada para ver el detalle · Mantén pulsado para acciones rápidas según el estado del libro'),
+                      ScreenHintTip('🎲', 'La Ruleta del TBR elige un libro pendiente al azar · Cambia a modo 🫙 Tarro para una experiencia más artesanal'),
                     ],
                   ),
                 ),
@@ -650,6 +652,12 @@ class _GeneralDashboardPageState extends State<GeneralDashboardPage> {
                         ),
                         const SizedBox(height: AppSpacing.sm),
                         _personalLibrary(data.personalLibrary, data.userName),
+                        const SizedBox(height: AppSpacing.md),
+                        TbrRouletteCard(
+                          books: data.personalLibrary,
+                          onOpenBook: (book) =>
+                              _openPersonalBook(book, data.userName),
+                        ),
                       ],
                       const SizedBox(height: AppSpacing.xl),
                       _sectionTitle(
