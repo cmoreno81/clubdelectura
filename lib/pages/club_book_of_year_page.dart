@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 
 import '../models/club_book_of_year.dart';
+import '../models/clubvision_estadisticas.dart';
+import '../navigation/app_page_route.dart';
 import '../services/api_exception.dart';
 import '../services/api_service.dart';
 import '../theme/app_colors.dart';
@@ -8,6 +10,7 @@ import '../theme/app_spacing.dart';
 import '../widgets/common/club_card.dart';
 import '../widgets/common/club_shimmer.dart';
 import '../widgets/common/optimized_network_image.dart';
+import 'clubvision_estadisticas_page.dart';
 
 class ClubBookOfYearPage extends StatefulWidget {
   const ClubBookOfYearPage({super.key, this.initialYear});
@@ -307,7 +310,7 @@ class _ClubBookOfYearPageState extends State<ClubBookOfYearPage> {
   }
 }
 
-class _PreparingEdition extends StatelessWidget {
+class _PreparingEdition extends StatefulWidget {
   const _PreparingEdition({
     required this.edition,
     required this.saving,
@@ -322,66 +325,227 @@ class _PreparingEdition extends StatelessWidget {
   final VoidCallback onOpen;
 
   @override
+  State<_PreparingEdition> createState() => _PreparingEditionState();
+}
+
+class _PreparingEditionState extends State<_PreparingEdition> {
+  late final Future<ClubvisionEstadisticas?> _statsFuture =
+      ApiService().getClubvisionEstadisticas().then<ClubvisionEstadisticas?>(
+        (s) => s,
+        onError: (_) => null,
+      );
+
+  @override
   Widget build(BuildContext context) => Padding(
     padding: const EdgeInsets.only(top: AppSpacing.md),
     child: ClubCard(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'Edición en preparación',
-            style: Theme.of(context).textTheme.titleMedium,
-          ),
-          const Text(
-            'Las nuevas lecturas oficiales se añadirán hasta que abras la votación.',
-          ),
-          if (edition.candidatesSyncedAt != null)
-            Text(
-              'Última actualización: ${edition.candidatesSyncedAt!.toLocal().day}/${edition.candidatesSyncedAt!.toLocal().month}/${edition.candidatesSyncedAt!.toLocal().year}',
-              style: Theme.of(context).textTheme.bodySmall,
-            ),
-          const SizedBox(height: AppSpacing.md),
-          for (final candidate in edition.candidates)
-            ListTile(
-              contentPadding: EdgeInsets.zero,
-              leading: _Cover(candidate: candidate),
-              title: Text(candidate.title),
-              subtitle: Text(
-                candidate.needsReview
-                    ? 'Revisión administrativa pendiente'
-                    : candidate.source == 'CLUBVISION'
-                    ? 'Clubvisión · ${candidate.clubvisionEdition ?? ''}'
-                    : 'Lectura oficial',
+      child: FutureBuilder<ClubvisionEstadisticas?>(
+        future: _statsFuture,
+        builder: (context, snap) {
+          final stats = snap.data;
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Edición en preparación',
+                style: Theme.of(context).textTheme.titleMedium,
               ),
-              trailing: candidate.needsReview
-                  ? const Icon(Icons.warning_amber_rounded)
-                  : null,
-            ),
-          if (edition.canAdmin)
-            Wrap(
-              spacing: AppSpacing.sm,
-              runSpacing: AppSpacing.sm,
-              children: [
-                OutlinedButton.icon(
-                  onPressed: saving ? null : onSync,
-                  icon: const Icon(Icons.refresh_rounded),
-                  label: const Text('Actualizar candidatas'),
+              const Text(
+                'Las nuevas lecturas oficiales se añadirán hasta que abras la votación.',
+              ),
+              if (widget.edition.candidatesSyncedAt != null)
+                Text(
+                  'Última actualización: ${widget.edition.candidatesSyncedAt!.toLocal().day}/${widget.edition.candidatesSyncedAt!.toLocal().month}/${widget.edition.candidatesSyncedAt!.toLocal().year}',
+                  style: Theme.of(context).textTheme.bodySmall,
                 ),
-                TextButton.icon(
-                  onPressed: saving ? null : onReview,
-                  icon: const Icon(Icons.fact_check_outlined),
-                  label: const Text('Revisar candidatas'),
-                ),
-                FilledButton(
-                  onPressed: saving || edition.candidates.length < 2
-                      ? null
-                      : onOpen,
-                  child: const Text('Abrir votación'),
+              const SizedBox(height: AppSpacing.md),
+              for (final candidate in widget.edition.candidates) ...[
+                _CandidateRow(
+                  candidate: candidate,
+                  ganador: stats?.ganadores
+                      .where((g) => g.bookId == candidate.bookId)
+                      .firstOrNull,
                 ),
               ],
+              const SizedBox(height: AppSpacing.sm),
+              // ── Enlace a estadísticas ─────────────────────────────────
+              Row(
+                children: [
+                  TextButton.icon(
+                    onPressed: () => Navigator.push(
+                      context,
+                      AppPageRoute(
+                        builder: (_) => const ClubvisionEstadisticasPage(),
+                      ),
+                    ),
+                    icon: const Icon(Icons.bar_chart_rounded, size: 18),
+                    label: const Text('Ver estadísticas completas'),
+                    style: TextButton.styleFrom(
+                      padding: EdgeInsets.zero,
+                      visualDensity: VisualDensity.compact,
+                    ),
+                  ),
+                ],
+              ),
+              if (widget.edition.canAdmin) ...[
+                const SizedBox(height: AppSpacing.sm),
+                Wrap(
+                  spacing: AppSpacing.sm,
+                  runSpacing: AppSpacing.sm,
+                  children: [
+                    OutlinedButton.icon(
+                      onPressed: widget.saving ? null : widget.onSync,
+                      icon: const Icon(Icons.refresh_rounded),
+                      label: const Text('Actualizar candidatas'),
+                    ),
+                    TextButton.icon(
+                      onPressed: widget.saving ? null : widget.onReview,
+                      icon: const Icon(Icons.fact_check_outlined),
+                      label: const Text('Revisar candidatas'),
+                    ),
+                    FilledButton(
+                      onPressed:
+                          widget.saving || widget.edition.candidates.length < 2
+                          ? null
+                          : widget.onOpen,
+                      child: const Text('Abrir votación'),
+                    ),
+                  ],
+                ),
+              ],
+            ],
+          );
+        },
+      ),
+    ),
+  );
+}
+
+// ── Fila individual de candidata con mini-stats ───────────────────────────────
+
+class _CandidateRow extends StatelessWidget {
+  const _CandidateRow({required this.candidate, this.ganador});
+  final ClubBookOfYearCandidate candidate;
+  final ClubvisionGanadorStats? ganador;
+
+  @override
+  Widget build(BuildContext context) {
+    final label = candidate.needsReview
+        ? 'Revisión pendiente'
+        : candidate.source == 'CLUBVISION'
+        ? 'Clubvisión · ${candidate.clubvisionEdition ?? ''}'
+        : 'Lectura oficial';
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: AppSpacing.sm),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _Cover(candidate: candidate),
+          const SizedBox(width: AppSpacing.md),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        candidate.title,
+                        style: const TextStyle(fontWeight: FontWeight.w700),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                    if (candidate.needsReview)
+                      const Icon(
+                        Icons.warning_amber_rounded,
+                        size: 18,
+                        color: AppColors.warning,
+                      ),
+                  ],
+                ),
+                Text(
+                  label,
+                  style: Theme.of(context).textTheme.bodySmall,
+                ),
+                if (ganador != null) ...[
+                  const SizedBox(height: 5),
+                  _MiniStats(ganador: ganador!),
+                ],
+              ],
             ),
+          ),
         ],
       ),
+    );
+  }
+}
+
+class _MiniStats extends StatelessWidget {
+  const _MiniStats({required this.ganador});
+  final ClubvisionGanadorStats ganador;
+
+  @override
+  Widget build(BuildContext context) {
+    return Wrap(
+      spacing: 6,
+      children: [
+        _StatChip(
+          icon: '📖',
+          label:
+              '${ganador.lectoras}/${ganador.totalMiembros} lo leyeron',
+          color: const Color(0xFF4A9E4A),
+        ),
+        if (ganador.valoracionMedia != null)
+          _StatChip(
+            icon: '⭐',
+            label: '${ganador.valoracionMedia!.toStringAsFixed(1)}/5',
+            color: const Color(0xFFB48113),
+          ),
+        if (ganador.totalComentarios > 0)
+          _StatChip(
+            icon: '💬',
+            label: '${ganador.totalComentarios}',
+            color: const Color(0xFF4A6FBF),
+          ),
+      ],
+    );
+  }
+}
+
+class _StatChip extends StatelessWidget {
+  const _StatChip({
+    required this.icon,
+    required this.label,
+    required this.color,
+  });
+  final String icon;
+  final String label;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) => Container(
+    padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+    decoration: BoxDecoration(
+      color: color.withValues(alpha: .10),
+      borderRadius: BorderRadius.circular(20),
+      border: Border.all(color: color.withValues(alpha: .20)),
+    ),
+    child: Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Text(icon, style: const TextStyle(fontSize: 10)),
+        const SizedBox(width: 3),
+        Text(
+          label,
+          style: TextStyle(
+            color: color,
+            fontSize: 11,
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+      ],
     ),
   );
 }
@@ -658,57 +822,130 @@ class _Qualifying extends StatefulWidget {
 
 class _QualifyingState extends State<_Qualifying> {
   late final Set<String> selected = {...widget.edition.myQualifyingVotes};
+  late final Future<ClubvisionEstadisticas?> _statsFuture =
+      ApiService().getClubvisionEstadisticas().then<ClubvisionEstadisticas?>(
+        (s) => s,
+        onError: (_) => null,
+      );
+
   @override
   Widget build(BuildContext context) {
     final maxChoices = widget.edition.status == 'TIEBREAK' ? 1 : 3;
     return ClubCard(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'Votación clasificatoria',
-            style: Theme.of(context).textTheme.titleMedium,
-          ),
-          Text(
-            widget.edition.status == 'TIEBREAK'
-                ? 'Hay un empate en el corte. Elige un libro para resolverlo.'
-                : 'Elige hasta tres libros. Los resultados permanecerán ocultos hasta el cierre.',
-          ),
-          const SizedBox(height: AppSpacing.md),
-          for (final candidate in widget.edition.candidates)
-            CheckboxListTile(
-              value: selected.contains(candidate.id),
-              title: Text(candidate.title),
-              subtitle: Text(candidate.authorName),
-              onChanged: widget.saving
-                  ? null
-                  : (checked) => setState(() {
-                      if (checked == true && selected.length < maxChoices) {
-                        selected.add(candidate.id);
-                      } else if (checked == false) {
-                        selected.remove(candidate.id);
-                      }
-                    }),
-            ),
-          Row(
+      child: FutureBuilder<ClubvisionEstadisticas?>(
+        future: _statsFuture,
+        builder: (context, snap) {
+          final stats = snap.data;
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              FilledButton(
-                onPressed: widget.saving || selected.isEmpty
-                    ? null
-                    : () => widget.onVote(selected.toList()),
-                child: const Text('Guardar voto'),
+              Text(
+                'Votación clasificatoria',
+                style: Theme.of(context).textTheme.titleMedium,
               ),
-              if (widget.onClose != null) ...[
-                const Spacer(),
-                TextButton(
-                  onPressed: widget.saving ? null : widget.onClose,
-                  child: const Text('Cerrar clasificación'),
+              Text(
+                widget.edition.status == 'TIEBREAK'
+                    ? 'Hay un empate en el corte. Elige un libro para resolverlo.'
+                    : 'Elige hasta tres libros. Los resultados permanecerán ocultos hasta el cierre.',
+              ),
+              const SizedBox(height: AppSpacing.sm),
+              // Acceso a estadísticas
+              TextButton.icon(
+                onPressed: () => Navigator.push(
+                  context,
+                  AppPageRoute(
+                    builder: (_) => const ClubvisionEstadisticasPage(),
+                  ),
+                ),
+                icon: const Icon(Icons.bar_chart_rounded, size: 16),
+                label: const Text('Ver estadísticas para decidir'),
+                style: TextButton.styleFrom(
+                  padding: EdgeInsets.zero,
+                  visualDensity: VisualDensity.compact,
+                ),
+              ),
+              const SizedBox(height: AppSpacing.sm),
+              for (final candidate in widget.edition.candidates) ...[
+                _QualifyingCandidate(
+                  candidate: candidate,
+                  selected: selected.contains(candidate.id),
+                  enabled: !widget.saving,
+                  maxChoices: maxChoices,
+                  selectedCount: selected.length,
+                  ganador: stats?.ganadores
+                      .where((g) => g.bookId == candidate.bookId)
+                      .firstOrNull,
+                  onChanged: (checked) => setState(() {
+                    if (checked == true && selected.length < maxChoices) {
+                      selected.add(candidate.id);
+                    } else if (checked == false) {
+                      selected.remove(candidate.id);
+                    }
+                  }),
                 ),
               ],
+              const SizedBox(height: AppSpacing.sm),
+              Row(
+                children: [
+                  FilledButton(
+                    onPressed: widget.saving || selected.isEmpty
+                        ? null
+                        : () => widget.onVote(selected.toList()),
+                    child: const Text('Guardar voto'),
+                  ),
+                  if (widget.onClose != null) ...[
+                    const Spacer(),
+                    TextButton(
+                      onPressed: widget.saving ? null : widget.onClose,
+                      child: const Text('Cerrar clasificación'),
+                    ),
+                  ],
+                ],
+              ),
             ],
-          ),
+          );
+        },
+      ),
+    );
+  }
+}
+
+class _QualifyingCandidate extends StatelessWidget {
+  const _QualifyingCandidate({
+    required this.candidate,
+    required this.selected,
+    required this.enabled,
+    required this.maxChoices,
+    required this.selectedCount,
+    required this.onChanged,
+    this.ganador,
+  });
+  final ClubBookOfYearCandidate candidate;
+  final bool selected;
+  final bool enabled;
+  final int maxChoices;
+  final int selectedCount;
+  final ClubvisionGanadorStats? ganador;
+  final ValueChanged<bool?> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    final canSelect = selected || selectedCount < maxChoices;
+    return CheckboxListTile(
+      value: selected,
+      contentPadding: EdgeInsets.zero,
+      title: Text(candidate.title),
+      subtitle: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(candidate.authorName),
+          if (ganador != null) ...[
+            const SizedBox(height: 4),
+            _MiniStats(ganador: ganador!),
+          ],
         ],
       ),
+      onChanged: (enabled && (canSelect || selected)) ? onChanged : null,
     );
   }
 }
