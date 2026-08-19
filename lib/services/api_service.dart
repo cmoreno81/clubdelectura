@@ -2073,4 +2073,24 @@ class ApiService {
     final data = _decodeJson(response) as Map<String, dynamic>;
     return ClubvisionEstadisticas.fromJson(data);
   }
+
+  /// Envía feedback/bug desde la app → crea ticket en Jira y manda email de confirmación.
+  /// Devuelve el código del ticket (ej: "CLUB-12") o null si Jira no está configurado.
+  Future<String?> enviarFeedback({
+    required String category,
+    required String titulo,
+    required String descripcion,
+    required String email,
+    String nombre = '',
+  }) async {
+    final response = await _postJson('enviarFeedback', {
+      'category': category,
+      'titulo': titulo,
+      'descripcion': descripcion,
+      'email': email,
+      'nombre': nombre,
+    });
+    final data = _decodeJson(response) as Map<String, dynamic>;
+    return data['ticketKey'] as String?;
+  }
 }

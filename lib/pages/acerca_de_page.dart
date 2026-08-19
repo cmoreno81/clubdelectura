@@ -2,12 +2,11 @@ import 'package:flutter/material.dart';
 
 import '../navigation/app_page_route.dart';
 import 'package:package_info_plus/package_info_plus.dart';
-import 'package:url_launcher/url_launcher.dart';
-
 import '../theme/app_colors.dart';
 import '../theme/app_spacing.dart';
 import '../theme/app_text_styles.dart';
 import '../widgets/common/club_card.dart';
+import 'feedback_page.dart';
 import 'politica_privacidad_page.dart';
 import 'tecnologia_creditos_page.dart';
 
@@ -25,20 +24,6 @@ class _AcercaDePageState extends State<AcercaDePage> {
   void initState() {
     super.initState();
     _packageInfo = PackageInfo.fromPlatform();
-  }
-
-  Future<void> _contactar() async {
-    final uri = Uri(
-      scheme: 'mailto',
-      path: 'clubreads.app@gmail.com',
-      queryParameters: {'subject': 'Contacto desde ClubReads'},
-    );
-    final abierto = await launchUrl(uri);
-    if (!abierto && mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('No se ha podido abrir el correo.')),
-      );
-    }
   }
 
   @override
@@ -132,11 +117,16 @@ class _AcercaDePageState extends State<AcercaDePage> {
                   ),
                   const Divider(height: 1),
                   ListTile(
-                    leading: const Icon(Icons.mail_outline_rounded),
-                    title: const Text('Contacto'),
-                    subtitle: const Text('clubreads.app@gmail.com'),
-                    trailing: const Icon(Icons.open_in_new_rounded, size: 20),
-                    onTap: _contactar,
+                    leading: const Icon(Icons.bug_report_outlined),
+                    title: const Text('Reportar error o sugerencia'),
+                    subtitle: const Text(
+                      'Cuéntanos qué falla o qué mejorarías',
+                    ),
+                    trailing: const Icon(Icons.chevron_right_rounded),
+                    onTap: () => Navigator.push<void>(
+                      context,
+                      AppPageRoute(builder: (_) => const FeedbackPage()),
+                    ),
                   ),
                 ],
               ),
