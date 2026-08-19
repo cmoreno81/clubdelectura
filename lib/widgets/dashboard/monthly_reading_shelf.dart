@@ -85,7 +85,7 @@ class _MonthlyReadingShelfState extends State<MonthlyReadingShelf>
     if (!mounted || _hasPlayed) return;
     final box = _selfKey.currentContext?.findRenderObject() as RenderBox?;
     if (box == null || !box.attached) return;
-    final screenHeight = MediaQuery.of(context).size.height;
+    final screenHeight = MediaQuery.sizeOf(context).height;
     final pos = box.localToGlobal(Offset.zero);
     // Visible si el widget empieza antes del borde inferior de la pantalla
     // y su borde superior está por encima del borde inferior

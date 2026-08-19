@@ -210,7 +210,7 @@ class _WrappedContentState extends State<_WrappedContent> {
     final pages = _pages;
     return GestureDetector(
       onTapDown: (details) {
-        final half = MediaQuery.of(context).size.width / 2;
+        final half = MediaQuery.sizeOf(context).width / 2;
         if (details.localPosition.dx > half) {
           _next();
         } else {
@@ -306,6 +306,8 @@ class _BookCover extends StatelessWidget {
             ? Image.network(
                 coverUrl,
                 fit: BoxFit.cover,
+                cacheWidth: (width * MediaQuery.devicePixelRatioOf(context)).ceil(),
+                cacheHeight: (height * MediaQuery.devicePixelRatioOf(context)).ceil(),
                 errorBuilder: (_, _, _) =>
                     _PlaceholderCover(width: width, height: height),
               )
@@ -597,8 +599,10 @@ class _SlideEstanteria extends StatelessWidget {
                     childAspectRatio: 2 / 3,
                   ),
                   itemCount: total,
-                  itemBuilder: (_, i) {
+                  itemBuilder: (context, i) {
                     final book = books[i];
+                    // maxCrossAxisExtent=90 lógicos → 90*dpr píxeles de caché
+                    final cachePx = (90 * MediaQuery.devicePixelRatioOf(context)).ceil();
                     return Tooltip(
                       message: book.title,
                       child: ClipRRect(
@@ -607,6 +611,7 @@ class _SlideEstanteria extends StatelessWidget {
                             ? Image.network(
                                 book.coverUrl,
                                 fit: BoxFit.cover,
+                                cacheWidth: cachePx,
                                 errorBuilder: (_, _, _) =>
                                     _GridPlaceholder(title: book.title),
                               )

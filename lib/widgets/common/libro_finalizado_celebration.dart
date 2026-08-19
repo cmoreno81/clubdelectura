@@ -374,6 +374,9 @@ class _CoverCard extends StatelessWidget {
             ? Image.network(
                 coverUrl,
                 fit: BoxFit.cover,
+                // Portada de 180×260 lógicos — limitamos decodificación al tamaño real
+                cacheWidth: (180 * MediaQuery.devicePixelRatioOf(context)).ceil(),
+                cacheHeight: (260 * MediaQuery.devicePixelRatioOf(context)).ceil(),
                 errorBuilder: (_, _, _) => _placeholder(),
               )
             : _placeholder(),
