@@ -1,9 +1,11 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:image_picker/image_picker.dart';
 
 import '../services/api_exception.dart';
 import '../services/api_service.dart';
-import '../services/auth_session_service.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_radius.dart';
 import '../theme/app_spacing.dart';
@@ -26,16 +28,9 @@ class _FeedbackPageState extends State<FeedbackPage> {
   bool _loading = false;
   String? _ticketKey;
 
-  @override
-  void initState() {
-    super.initState();
-    _prefillEmail(); // síncrono, sin await
-  }
-
-  void _prefillEmail() {
-    final email = AuthSessionService.instance.user?.email ?? '';
-    if (email.isNotEmpty) _emailController.text = email;
-  }
+  // Adjunto de imagen
+  Uint8List? _imageBytes;
+  String? _imageName;
 
   @override
   void dispose() {
@@ -45,15 +40,41 @@ class _FeedbackPageState extends State<FeedbackPage> {
     super.dispose();
   }
 
+  Future<void> _pickImage() async {
+    final picker = ImagePicker();
+    final xfile = await picker.pickImage(
+      source: ImageSource.gallery,
+      imageQuality: 80,
+      maxWidth: 1920,
+    );
+    if (xfile == null) return;
+    final bytes = await xfile.readAsBytes();
+    if (mounted) {
+      setState(() {
+        _imageBytes = bytes;
+        _imageName = xfile.name;
+      });
+    }
+  }
+
+  void _clearImage() => setState(() {
+        _imageBytes = null;
+        _imageName = null;
+      });
+
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
     setState(() => _loading = true);
     try {
+      final imageBase64 =
+          _imageBytes != null ? base64Encode(_imageBytes!) : null;
       final ticket = await ApiService().enviarFeedback(
         category: _category.apiKey,
         titulo: _tituloController.text.trim(),
         descripcion: _descripcionController.text.trim(),
         email: _emailController.text.trim(),
+        imageBase64: imageBase64,
+        imageFileName: _imageName,
       );
       if (mounted) setState(() => _ticketKey = ticket ?? '✓');
     } on ApiException catch (e) {
@@ -82,6 +103,10 @@ class _FeedbackPageState extends State<FeedbackPage> {
               emailController: _emailController,
               loading: _loading,
               onSubmit: _submit,
+              imageBytes: _imageBytes,
+              imageName: _imageName,
+              onPickImage: _pickImage,
+              onClearImage: _clearImage,
             ),
     );
   }
@@ -101,6 +126,10 @@ class _FormView extends StatelessWidget {
     required this.emailController,
     required this.loading,
     required this.onSubmit,
+    required this.onPickImage,
+    required this.onClearImage,
+    this.imageBytes,
+    this.imageName,
   });
 
   final GlobalKey<FormState> formKey;
@@ -111,6 +140,10 @@ class _FormView extends StatelessWidget {
   final TextEditingController emailController;
   final bool loading;
   final VoidCallback onSubmit;
+  final Uint8List? imageBytes;
+  final String? imageName;
+  final VoidCallback onPickImage;
+  final VoidCallback onClearImage;
 
   @override
   Widget build(BuildContext context) {
@@ -164,6 +197,17 @@ class _FormView extends StatelessWidget {
             validator: (v) => (v?.trim().isEmpty ?? true)
                 ? 'Añade más detalles'
                 : null,
+          ),
+          const SizedBox(height: AppSpacing.lg),
+
+          // Adjunto de imagen
+          Text('Adjuntar evidencia (opcional)', style: AppTextStyles.caption),
+          const SizedBox(height: AppSpacing.sm),
+          _ImagePickerRow(
+            imageBytes: imageBytes,
+            imageName: imageName,
+            onPick: onPickImage,
+            onClear: onClearImage,
           ),
           const SizedBox(height: AppSpacing.lg),
 
@@ -230,6 +274,79 @@ class _FormView extends StatelessWidget {
           'Explica qué te gustaría poder hacer y por qué crees que sería útil para el club…',
         _Category.pregunta => 'Cuéntanos tu duda con el mayor detalle posible…',
       };
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Fila de adjunto de imagen
+// ─────────────────────────────────────────────────────────────────────────────
+
+class _ImagePickerRow extends StatelessWidget {
+  const _ImagePickerRow({
+    required this.onPick,
+    required this.onClear,
+    this.imageBytes,
+    this.imageName,
+  });
+
+  final Uint8List? imageBytes;
+  final String? imageName;
+  final VoidCallback onPick;
+  final VoidCallback onClear;
+
+  @override
+  Widget build(BuildContext context) {
+    if (imageBytes != null) {
+      return Row(
+        children: [
+          // Miniatura
+          ClipRRect(
+            borderRadius: BorderRadius.circular(AppRadius.md),
+            child: Image.memory(
+              imageBytes!,
+              width: 72,
+              height: 72,
+              fit: BoxFit.cover,
+            ),
+          ),
+          const SizedBox(width: AppSpacing.md),
+          // Nombre y botón eliminar
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  imageName ?? 'imagen.jpg',
+                  style: AppTextStyles.bodySecondary,
+                  overflow: TextOverflow.ellipsis,
+                  maxLines: 1,
+                ),
+                const SizedBox(height: AppSpacing.xs),
+                TextButton.icon(
+                  onPressed: onClear,
+                  icon: const Icon(Icons.close_rounded, size: 16),
+                  label: const Text('Quitar imagen'),
+                  style: TextButton.styleFrom(
+                    foregroundColor: AppColors.textSecondary,
+                    padding: EdgeInsets.zero,
+                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      );
+    }
+
+    return OutlinedButton.icon(
+      onPressed: onPick,
+      icon: const Icon(Icons.image_outlined),
+      label: const Text('Adjuntar captura de pantalla'),
+      style: OutlinedButton.styleFrom(
+        minimumSize: const Size.fromHeight(48),
+      ),
+    );
+  }
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

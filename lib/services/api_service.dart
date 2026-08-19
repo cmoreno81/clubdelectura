@@ -2082,6 +2082,8 @@ class ApiService {
     required String descripcion,
     required String email,
     String nombre = '',
+    String? imageBase64,
+    String? imageFileName,
   }) async {
     final response = await _postJson('enviarFeedback', {
       'category': category,
@@ -2089,6 +2091,8 @@ class ApiService {
       'descripcion': descripcion,
       'email': email,
       'nombre': nombre,
+      'imageBase64': imageBase64,
+      'imageFileName': imageFileName,
     });
     final data = _decodeJson(response) as Map<String, dynamic>;
     return data['ticketKey'] as String?;
