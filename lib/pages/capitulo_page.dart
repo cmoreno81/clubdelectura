@@ -141,18 +141,31 @@ class _CapituloPageState extends State<CapituloPage> {
     final hasNew = _pagination.items.any((c) => c.esNuevo);
     if (!hasNew) return;
     _scrolledToNew = true;
+    _tryScrollToNew(attemptsLeft: 8);
+  }
 
-    // Esperamos a que el frame se pinte para que el key tenga contexto.
+  /// Reintenta el scroll hasta [attemptsLeft] veces con 120 ms entre intentos.
+  /// Es necesario porque SliverChildListDelegate, aunque eager, puede tardar
+  /// varios frames en asignar un contexto al GlobalKey cuando el divisor
+  /// está fuera del viewport inicial.
+  void _tryScrollToNew({required int attemptsLeft}) {
+    if (attemptsLeft <= 0 || !mounted) return;
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
       final ctx = _newsDividerKey.currentContext;
-      if (ctx == null || !scrollController.hasClients) return;
-      Scrollable.ensureVisible(
-        ctx,
-        duration: const Duration(milliseconds: 500),
-        curve: Curves.easeInOut,
-        // alignment 0 = alinea el widget con el borde superior visible
-        alignment: 0.0,
-      );
+      if (ctx != null && scrollController.hasClients) {
+        Scrollable.ensureVisible(
+          ctx,
+          duration: const Duration(milliseconds: 450),
+          curve: Curves.easeInOut,
+          alignment: 0.0,
+        );
+      } else {
+        Future.delayed(
+          const Duration(milliseconds: 120),
+          () => _tryScrollToNew(attemptsLeft: attemptsLeft - 1),
+        );
+      }
     });
   }
 
@@ -736,10 +749,10 @@ class _ComentariosList extends StatelessWidget {
     return SliverPadding(
       padding: const EdgeInsets.only(bottom: 20),
       sliver: SliverList(
-        delegate: SliverChildBuilderDelegate(
-          (context, index) => items[index],
-          childCount: items.length,
-        ),
+        // SliverChildListDelegate construye todos los hijos de forma eager,
+        // lo que garantiza que el GlobalKey del divisor "Nuevos" tenga
+        // contexto desde el primer frame y el scroll automático funcione.
+        delegate: SliverChildListDelegate(items),
       ),
     );
   }
