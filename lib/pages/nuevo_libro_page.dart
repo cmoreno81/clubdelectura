@@ -57,6 +57,7 @@ class _NuevoLibroPageState extends State<NuevoLibroPage> {
     _GeneroOption('💕', 'Romance', 'Romance'),
     _GeneroOption('🔪', 'Thriller', 'Thriller'),
     _GeneroOption('🖤', 'Dark Romance', 'Dark Romance'),
+    _GeneroOption('🌹🔫', 'Mafia Romance', 'Mafia Romance'),
     _GeneroOption('🎓', 'Dark Academia', 'Dark Academia'),
     _GeneroOption('🎭', 'Drama', 'Drama'),
     _GeneroOption('📜', 'Clásicos', 'Clásicos'),
