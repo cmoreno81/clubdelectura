@@ -22,6 +22,8 @@ String iconoGenero(String genero) {
       return '🎭';
     case 'dark romance':
       return '🖤';
+    case 'mafia romance':
+      return '🌹🔫';
     case 'drama':
       return '😭';
     case 'clásicos':

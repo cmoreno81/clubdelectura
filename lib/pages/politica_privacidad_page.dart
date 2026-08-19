@@ -16,7 +16,10 @@ class PoliticaPrivacidadPage extends StatelessWidget {
     final abierto = await launchUrl(uri);
     if (!abierto && context.mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('No se ha podido abrir el correo.')),
+        const SnackBar(
+          content: Text('Escríbenos a clubreads.app@gmail.com'),
+          duration: Duration(seconds: 5),
+        ),
       );
     }
   }

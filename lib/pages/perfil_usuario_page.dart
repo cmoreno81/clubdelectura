@@ -5,7 +5,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
-import 'package:url_launcher/url_launcher.dart';
 
 import '../navigation/app_page_route.dart';
 import '../navigation/book_detail_navigation.dart';
@@ -53,6 +52,7 @@ import 'year_reading_share_page.dart';
 import '../models/achievements/achievement.dart';
 import '../services/achievement_service.dart';
 import 'package:club_lectura_app/widgets/common/club_shimmer.dart';
+import 'feedback_page.dart';
 
 class PerfilUsuarioPage extends StatefulWidget {
   const PerfilUsuarioPage({
@@ -995,26 +995,10 @@ class _PerfilUsuarioPageState extends State<PerfilUsuarioPage> {
               title: const Text('Sugerencias y errores'),
               subtitle: const Text('Cuéntanos qué mejorar o qué no funciona'),
               trailing: const Icon(Icons.chevron_right_rounded),
-              onTap: () async {
-                final uri = Uri(
-                  scheme: 'mailto',
-                  path: 'clubreads.app@gmail.com',
-                  queryParameters: {
-                    'subject': 'ClubReads · Sugerencia / Error',
-                    'body':
-                        'Hola,\n\nQuiero reportar lo siguiente:\n\n\n'
-                        '---\n(Adjunta capturas si puedes, nos ayuda mucho 🙏)',
-                  },
-                );
-                final abierto = await launchUrl(uri);
-                if (!abierto && mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('No se ha podido abrir el correo.'),
-                    ),
-                  );
-                }
-              },
+              onTap: () => Navigator.push<void>(
+                context,
+                AppPageRoute(builder: (_) => const FeedbackPage()),
+              ),
             ),
           ),
         ),
