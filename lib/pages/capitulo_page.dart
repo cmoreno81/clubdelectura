@@ -134,36 +134,64 @@ class _CapituloPageState extends State<CapituloPage> {
     }
   }
 
-  /// Desplaza la lista hasta el divisor "Nuevos" si hay comentarios nuevos
-  /// y aún no hemos hecho el scroll automático en esta apertura.
+  /// Desplaza la lista hasta el divisor "Nuevos" si hay comentarios nuevos.
+  ///
+  /// SliverList es siempre lazy: solo asigna contexto a los widgets visibles
+  /// o dentro del cacheExtent. Si el divisor está fuera del viewport inicial,
+  /// _newsDividerKey.currentContext es null y ensureVisible no hace nada.
+  ///
+  /// Estrategia en dos fases:
+  ///   1. Si el divisor ya está en viewport → ensureVisible directo.
+  ///   2. Si no → animamos hasta la posición aproximada por ratio de índice
+  ///      (lo que lleva el divisor al viewport), luego ensureVisible refina.
   void _scrollToFirstNew() {
     if (_scrolledToNew) return;
-    final hasNew = _pagination.items.any((c) => c.esNuevo);
-    if (!hasNew) return;
+    final items = _pagination.items;
+    final firstNewIndex = items.indexWhere((c) => c.esNuevo);
+    if (firstNewIndex < 0) return;
     _scrolledToNew = true;
-    _tryScrollToNew(attemptsLeft: 8);
-  }
 
-  /// Reintenta el scroll hasta [attemptsLeft] veces con 120 ms entre intentos.
-  /// Es necesario porque SliverChildListDelegate, aunque eager, puede tardar
-  /// varios frames en asignar un contexto al GlobalKey cuando el divisor
-  /// está fuera del viewport inicial.
-  void _tryScrollToNew({required int attemptsLeft}) {
-    if (attemptsLeft <= 0 || !mounted) return;
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted) return;
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      if (!mounted || !scrollController.hasClients) return;
+
+      // Fase 1: el divisor ya está cerca del viewport (pocos comentarios previos)
       final ctx = _newsDividerKey.currentContext;
-      if (ctx != null && scrollController.hasClients) {
+      if (ctx != null) {
         Scrollable.ensureVisible(
           ctx,
           duration: const Duration(milliseconds: 450),
           curve: Curves.easeInOut,
           alignment: 0.0,
         );
-      } else {
-        Future.delayed(
-          const Duration(milliseconds: 120),
-          () => _tryScrollToNew(attemptsLeft: attemptsLeft - 1),
+        return;
+      }
+
+      // Fase 2: el divisor está fuera del viewport.
+      // Hacemos un scroll aproximado por ratio para acercarnos.
+      final max = scrollController.position.maxScrollExtent;
+      if (max <= 0) return;
+
+      // El divisor se inserta antes del comentario en firstNewIndex,
+      // por eso restamos un poco para no pasarnos.
+      final ratio = ((firstNewIndex - 0.5) / (items.length + 1)).clamp(0.0, 0.95);
+      await scrollController.animateTo(
+        max * ratio,
+        duration: const Duration(milliseconds: 380),
+        curve: Curves.easeInOut,
+      );
+
+      if (!mounted || !scrollController.hasClients) return;
+
+      // Refinamos con ensureVisible ahora que el divisor debería estar en viewport
+      // Capturamos el contexto antes del siguiente punto de suspensión.
+      final ctx2 = _newsDividerKey.currentContext;
+      if (ctx2 != null && ctx2.mounted) {
+        // ignore: use_build_context_synchronously — ctx2 verificado con ctx2.mounted
+        Scrollable.ensureVisible(
+          ctx2,
+          duration: const Duration(milliseconds: 200),
+          curve: Curves.easeOut,
+          alignment: 0.0,
         );
       }
     });
