@@ -693,9 +693,22 @@ class _SagasPageState extends State<SagasPage> {
     PerfilSaga saga,
     List<PerfilSagaVolumen> newOrder,
   ) async {
+    // Recogemos los slots naturales (seriesOrder) de los libros que existen,
+    // ordenados de menor a mayor. Así los huecos de la saga (tomos no publicados
+    // aún) se preservan: si la saga tiene slots [1,2,4,5,6,7] (falta el 3),
+    // el primer libro del nuevo orden va al slot 1, el segundo al 2, el tercero
+    // al 4, etc. — el hueco en 3 permanece aunque el usuario reordene.
+    // Sin esta lógica, asignar i+1 secuencial rellenaría el slot 3 y el hueco
+    // aparecería al final (slot 7), que es el bug que se corrige aquí.
+    final naturalSlots =
+        (newOrder.map((v) => v.posicion).whereType<int>().toList()..sort());
+
     final order = [
       for (var i = 0; i < newOrder.length; i++)
-        (bookId: newOrder[i].bookId, posicion: i + 1),
+        (
+          bookId: newOrder[i].bookId,
+          posicion: i < naturalSlots.length ? naturalSlots[i] : i + 1,
+        ),
     ];
 
     await ApiService().guardarOrdenPersonalSaga(sagaId: saga.id, order: order);
