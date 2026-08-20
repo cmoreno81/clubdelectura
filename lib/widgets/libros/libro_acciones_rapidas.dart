@@ -114,6 +114,28 @@ Future<bool> mostrarAccionesRapidasLibro(
         libro: libro.libro,
       );
       ok = respuesta['ok'] == true;
+    case LibroAccion.editarFechaInicio:
+      final registroActivo = libro.registros
+          .where((r) => r.yaLoTengo)
+          .firstOrNull;
+      final fechaActual = registroActivo?.startedAt ?? DateTime.now();
+      final nuevaFecha = await showDatePicker(
+        context: context,
+        initialDate: fechaActual.isAfter(DateTime.now())
+            ? DateTime.now()
+            : fechaActual,
+        firstDate: DateTime(1950),
+        lastDate: DateTime.now(),
+        helpText: 'Fecha en que empezaste a leer',
+        confirmText: 'Guardar',
+        cancelText: 'Cancelar',
+      );
+      if (nuevaFecha == null || !context.mounted) return false;
+      ok = await ApiService().editarFechaInicioLectura(
+        usuario: usuario,
+        libro: libro.libro,
+        fechaInicio: nuevaFecha,
+      );
     case LibroAccion.verFicha:
       break;
   }
@@ -135,6 +157,10 @@ Future<bool> mostrarAccionesRapidasLibro(
       context,
       titulo: libro.libro,
       coverUrl: libro.coverUrl,
+    );
+  } else if (accion == LibroAccion.editarFechaInicio && context.mounted) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Fecha de inicio actualizada')),
     );
   } else if (context.mounted) {
     ScaffoldMessenger.of(context).showSnackBar(
