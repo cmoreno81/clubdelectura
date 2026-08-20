@@ -1168,6 +1168,7 @@ class _GeneralDashboardPageState extends State<GeneralDashboardPage> {
         key: const PageStorageKey('dashboard-personal-library'),
         controller: _personalLibraryScrollController,
         scrollDirection: Axis.horizontal,
+        physics: const ClampingScrollPhysics(),
         padding: const EdgeInsets.only(right: AppSpacing.sm),
         itemCount: books.length,
         separatorBuilder: (_, _) => const SizedBox(width: AppSpacing.md),
@@ -1257,6 +1258,7 @@ class _GeneralDashboardPageState extends State<GeneralDashboardPage> {
         key: const PageStorageKey('dashboard-latest-additions'),
         controller: _latestScrollController,
         scrollDirection: Axis.horizontal,
+        physics: const ClampingScrollPhysics(),
         padding: const EdgeInsets.symmetric(horizontal: 2),
         itemCount: books.length,
         separatorBuilder: (_, _) => const SizedBox(width: AppSpacing.md),
@@ -1361,6 +1363,7 @@ class _GeneralDashboardPageState extends State<GeneralDashboardPage> {
       height: 154,
       child: ListView.separated(
         scrollDirection: Axis.horizontal,
+        physics: const ClampingScrollPhysics(),
         itemCount: series.length,
         separatorBuilder: (_, _) => const SizedBox(width: AppSpacing.md),
         itemBuilder: (context, index) =>
@@ -1486,6 +1489,7 @@ class _GeneralDashboardPageState extends State<GeneralDashboardPage> {
         key: const PageStorageKey('dashboard-trending-books'),
         controller: _trendingScrollController,
         scrollDirection: Axis.horizontal,
+        physics: const ClampingScrollPhysics(),
         itemCount: books.length,
         separatorBuilder: (_, _) => const SizedBox(width: AppSpacing.md),
         itemBuilder: (context, index) {
@@ -1778,6 +1782,7 @@ class _GeneralDashboardPageState extends State<GeneralDashboardPage> {
       height: 150,
       child: ListView.separated(
         scrollDirection: Axis.horizontal,
+        physics: const ClampingScrollPhysics(),
         itemCount: authors.length,
         separatorBuilder: (_, _) => const SizedBox(width: AppSpacing.md),
         itemBuilder: (context, index) {
