@@ -71,6 +71,8 @@ class GeneralDashboardPage extends StatefulWidget {
 
 class _GeneralDashboardPageState extends State<GeneralDashboardPage> {
   late Future<GeneralDashboard> _future;
+  // Se arranca en paralelo con el dashboard para evitar el layout-shift de logros.
+  late Future<List<UserAchievement>> _achievementsFuture;
   String? _openingClubId;
   bool _openingBook = false; // ← evita abrir dos fichas a la vez
   bool _openingNewBook = false;
@@ -86,6 +88,9 @@ class _GeneralDashboardPageState extends State<GeneralDashboardPage> {
   void initState() {
     super.initState();
     _future = _loadDashboard();
+    // Los logros se piden en paralelo: llegan aproximadamente igual que el
+    // dashboard y no causan un salto de layout secundario.
+    _achievementsFuture = ApiService().getAchievements();
     _checkOnboarding();
     _loadNotificaciones();
   }
@@ -202,10 +207,14 @@ class _GeneralDashboardPageState extends State<GeneralDashboardPage> {
 
   Future<void> _reload() async {
     final refresh = _loadDashboard();
+    final achievementsRefresh = ApiService().getAchievements();
     try {
       final data = await refresh;
       if (!mounted) return;
-      setState(() { _future = Future.value(data); });
+      setState(() {
+        _future = Future.value(data);
+        _achievementsFuture = achievementsRefresh;
+      });
     } catch (error, stack) {
       debugPrint('[dashboard] _reload falló: $error\n$stack');
       if (!mounted) return;
@@ -600,7 +609,10 @@ class _GeneralDashboardPageState extends State<GeneralDashboardPage> {
                         ...data.clubs.map(_clubCard),
 
                       const SizedBox(height: AppSpacing.xl),
-                      _LogrosDashboardSection(userName: data.userName),
+                      _LogrosDashboardSection(
+                        userName: data.userName,
+                        future: _achievementsFuture,
+                      ),
 
                       if (data.calendar.finishedBooks.isNotEmpty) ...[
                         const SizedBox(height: AppSpacing.xl),
@@ -1889,33 +1901,21 @@ class _DashboardError extends StatelessWidget {
   }
 }
 
-class _LogrosDashboardSection extends StatefulWidget {
-  const _LogrosDashboardSection({required this.userName});
+class _LogrosDashboardSection extends StatelessWidget {
+  const _LogrosDashboardSection({
+    required this.userName,
+    required this.future,
+  });
   final String userName;
-
-  @override
-  State<_LogrosDashboardSection> createState() =>
-      _LogrosDashboardSectionState();
-}
-
-class _LogrosDashboardSectionState extends State<_LogrosDashboardSection> {
-  late Future<List<UserAchievement>> _future;
-
-  @override
-  void initState() {
-    super.initState();
-    _future = ApiService().getAchievements(
-      user: widget.userName.isEmpty ? null : widget.userName,
-    );
-  }
+  final Future<List<UserAchievement>> future;
 
   @override
   Widget build(BuildContext context) {
     return FutureBuilder<List<UserAchievement>>(
-      future: _future,
+      future: future,
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
-          return const SizedBox.shrink();
+          return _LogrosSkeleton();
         }
         final achievements = snapshot.data ?? const [];
         if (achievements.isEmpty) return const SizedBox.shrink();
@@ -2004,6 +2004,57 @@ class _LogrosDashboardSectionState extends State<_LogrosDashboardSection> {
           ],
         );
       },
+    );
+  }
+}
+
+/// Placeholder de logros con las mismas dimensiones que la sección cargada.
+/// Evita el layout-shift mientras el future de achievements está en vuelo.
+class _LogrosSkeleton extends StatelessWidget {
+  static BorderRadius _r(double r) => BorderRadius.circular(r);
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            ClubShimmer(width: 24, height: 24, borderRadius: _r(4)),
+            const SizedBox(width: AppSpacing.xs),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  ClubShimmer(width: 140, height: 14, borderRadius: _r(4)),
+                  const SizedBox(height: 4),
+                  ClubShimmer(width: 100, height: 11, borderRadius: _r(4)),
+                ],
+              ),
+            ),
+            ClubShimmer(width: 60, height: 28, borderRadius: _r(8)),
+          ],
+        ),
+        const SizedBox(height: AppSpacing.xs),
+        ClubShimmer(width: double.infinity, height: 6, borderRadius: _r(3)),
+        const SizedBox(height: AppSpacing.md),
+        GridView.builder(
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: 3,
+            crossAxisSpacing: AppSpacing.sm,
+            mainAxisSpacing: AppSpacing.sm,
+            childAspectRatio: 0.9,
+          ),
+          itemCount: 6,
+          itemBuilder: (_, i) => ClubShimmer(
+            width: double.infinity,
+            height: double.infinity,
+            borderRadius: _r(AppRadius.md),
+          ),
+        ),
+      ],
     );
   }
 }
