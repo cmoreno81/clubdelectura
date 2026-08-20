@@ -1355,9 +1355,26 @@ class _GeneralDashboardPageState extends State<GeneralDashboardPage> {
   }
 
   Widget _openSeries(List<GeneralOpenSeries> series) {
-    // Con una sola saga ocupamos el ancho completo; con varias, scroll horizontal.
+    // Siempre usamos ListView con ClampingScrollPhysics para que los gestos
+    // verticales no queden atrapados, incluso con una sola saga.
+    // Con una saga usamos LayoutBuilder para que la tarjeta ocupe todo el ancho.
     if (series.length == 1) {
-      return _openSeriesCard(series.first, fullWidth: true);
+      return LayoutBuilder(
+        builder: (context, constraints) => SizedBox(
+          height: 154,
+          child: ListView(
+            scrollDirection: Axis.horizontal,
+            physics: const ClampingScrollPhysics(),
+            children: [
+              _openSeriesCard(
+                series.first,
+                fullWidth: true,
+                cardWidth: constraints.maxWidth,
+              ),
+            ],
+          ),
+        ),
+      );
     }
     return SizedBox(
       height: 154,
@@ -1372,7 +1389,11 @@ class _GeneralDashboardPageState extends State<GeneralDashboardPage> {
     );
   }
 
-  Widget _openSeriesCard(GeneralOpenSeries item, {required bool fullWidth}) {
+  Widget _openSeriesCard(
+    GeneralOpenSeries item, {
+    required bool fullWidth,
+    double? cardWidth,
+  }) {
     final card = Card(
       child: InkWell(
         borderRadius: BorderRadius.circular(18),
@@ -1442,7 +1463,7 @@ class _GeneralDashboardPageState extends State<GeneralDashboardPage> {
       ),
     );
 
-    if (fullWidth) return SizedBox(height: 154, child: card);
+    if (fullWidth) return SizedBox(width: cardWidth, height: 154, child: card);
     return SizedBox(width: 260, height: 154, child: card);
   }
 
