@@ -474,6 +474,7 @@ class ReadingCalendar {
 class MonthlyReadingSpan {
   const MonthlyReadingSpan({
     required this.id,
+    required this.libraryId,
     required this.bookId,
     required this.title,
     required this.coverUrl,
@@ -481,16 +482,26 @@ class MonthlyReadingSpan {
     required this.finishedAt,
   });
 
+  /// Formato: `completion:<id>` o `library:<id>`
   final String id;
+
+  /// Library.id — siempre presente (necesario para actualizarFechasLectura).
+  final String libraryId;
+
   final String bookId;
   final String title;
   final String coverUrl;
   final String startedAt;
   final String finishedAt;
 
+  bool get isCompleted => id.startsWith('completion:');
+  String get completionId =>
+      isCompleted ? id.replaceFirst('completion:', '') : '';
+
   factory MonthlyReadingSpan.fromJson(Map<String, dynamic> json) =>
       MonthlyReadingSpan(
         id: json['id']?.toString() ?? '',
+        libraryId: json['libraryId']?.toString() ?? '',
         bookId: json['bookId']?.toString() ?? '',
         title: json['titulo']?.toString() ?? '',
         coverUrl: json['coverUrl']?.toString() ?? '',

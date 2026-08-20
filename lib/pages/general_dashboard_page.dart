@@ -24,6 +24,7 @@ import '../theme/app_text_styles.dart';
 import '../widgets/common/club_avatar.dart';
 import '../widgets/common/club_book_cover.dart';
 import '../widgets/common/club_card.dart';
+import '../widgets/common/calendar_edit_fechas_sheet.dart';
 import '../widgets/common/reading_cover_calendar.dart';
 import '../widgets/common/optimized_network_image.dart';
 import '../widgets/dashboard/monthly_reading_shelf.dart';
@@ -1439,7 +1440,7 @@ class _GeneralDashboardPageState extends State<GeneralDashboardPage> {
         children: [
           ReadingCoverCalendar(
             calendar: calendar,
-            onBookTap: (reading) => _openCalendarBooks([reading.title]),
+            onBookTap: (reading) => _editarFechasCalendario(reading),
           ),
           const SizedBox(height: AppSpacing.md),
           Row(
@@ -1543,38 +1544,19 @@ class _GeneralDashboardPageState extends State<GeneralDashboardPage> {
     );
   }
 
-  Future<void> _openCalendarBooks(List<String> books) async {
-    if (books.isEmpty) return;
-    if (books.length == 1) {
-      await _openBook(title: books.first);
-      return;
-    }
-    final selected = await showModalBottomSheet<String>(
-      context: context,
-      builder: (context) => SafeArea(
-        child: ListView(
-          shrinkWrap: true,
-          padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
-          children: [
-            const ListTile(
-              title: Text(
-                'Libros de este día',
-                style: TextStyle(fontWeight: FontWeight.w800),
-              ),
-            ),
-            for (final book in books)
-              ListTile(
-                leading: const Icon(Icons.menu_book_outlined),
-                title: Text(book),
-                trailing: const Icon(Icons.chevron_right_rounded),
-                onTap: () => Navigator.pop(context, book),
-              ),
-          ],
-        ),
-      ),
+  Future<void> _editarFechasCalendario(MonthlyReadingSpan reading) async {
+    final usuario = await UsuarioService().obtenerUsuario();
+    if (usuario == null || usuario.trim().isEmpty || !mounted) return;
+    final actualizado = await showCalendarEditFechasSheet(
+      context,
+      reading: reading,
+      usuario: usuario,
     );
-    if (selected != null && mounted) {
-      await _openBook(title: selected);
+    if (actualizado && mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Fechas de lectura actualizadas')),
+      );
+      _reload();
     }
   }
 

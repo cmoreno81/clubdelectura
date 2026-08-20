@@ -232,6 +232,7 @@ class _MesCard extends StatelessWidget {
         .map(
           (l) => MonthlyReadingSpan(
             id: l.id,
+            libraryId: '',
             bookId: l.bookId,
             title: l.titulo,
             coverUrl: l.coverUrl,
