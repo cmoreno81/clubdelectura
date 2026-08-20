@@ -1457,7 +1457,48 @@ class _LibrosPageState extends State<LibrosPage> with WidgetsBindingObserver {
         await _quitarPendientes(libro);
       case LibroAccion.verFicha:
         await _navegarAlDetalle(libro);
+      case LibroAccion.editarFechaInicio:
+        await _editarFechaInicio(libro);
     }
+  }
+
+  Future<void> _editarFechaInicio(LibroAgrupado libro) async {
+    final registroActivo = libro.registros
+        .where((r) => r.yaLoTengo)
+        .firstOrNull;
+    final fechaActual = registroActivo?.startedAt ?? DateTime.now();
+    if (!mounted) return;
+
+    final nuevaFecha = await showDatePicker(
+      context: context,
+      initialDate:
+          fechaActual.isAfter(DateTime.now()) ? DateTime.now() : fechaActual,
+      firstDate: DateTime(1950),
+      lastDate: DateTime.now(),
+      helpText: 'Fecha en que empezaste a leer',
+      confirmText: 'Guardar',
+      cancelText: 'Cancelar',
+    );
+    if (nuevaFecha == null || !mounted) return;
+
+    final usuario = await UsuarioService().obtenerUsuario();
+    if (usuario == null || usuario.trim().isEmpty || !mounted) return;
+
+    final ok = await ApiService().editarFechaInicioLectura(
+      usuario: usuario,
+      libro: libro.libro,
+      fechaInicio: nuevaFecha,
+    );
+    if (!mounted) return;
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          ok ? 'Fecha de inicio actualizada' : 'No se ha podido actualizar',
+        ),
+      ),
+    );
+    if (ok) setState(() {});
   }
 
   Future<void> _iniciarLectura(LibroAgrupado libro) async {
