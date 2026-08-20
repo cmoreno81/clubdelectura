@@ -1991,6 +1991,7 @@ class _LogrosDashboardSection extends StatelessWidget {
               GridView.builder(
                 shrinkWrap: true,
                 physics: const NeverScrollableScrollPhysics(),
+                padding: EdgeInsets.zero,
                 gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                   crossAxisCount: 3,
                   crossAxisSpacing: AppSpacing.sm,
@@ -2064,10 +2065,10 @@ class _LogroMiniTile extends StatelessWidget {
   final UserAchievement achievement;
 
   Color get _color => switch (achievement.rarity) {
-    'legendary' => const Color(0xFFD97706),
-    'epic' => const Color(0xFF7C3AED),
-    'rare' => const Color(0xFF2563EB),
-    _ => AppColors.primary,
+    'legendary' => AppColors.gold,           // dorado — cálido, especial
+    'epic'      => AppColors.primary,        // ciruela — color principal de la app
+    'rare'      => AppColors.info,           // azul apagado — discreto
+    _           => AppColors.textSecondary,  // marrón grisáceo — común
   };
 
   @override
@@ -2078,13 +2079,13 @@ class _LogroMiniTile extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.all(AppSpacing.sm),
         decoration: BoxDecoration(
-          color: color.withValues(alpha: .05),
+          color: color.withValues(alpha: .10),
           borderRadius: BorderRadius.circular(AppRadius.md),
-          border: Border.all(color: color.withValues(alpha: .18), width: 1),
+          border: Border.all(color: color.withValues(alpha: .22), width: 1),
           boxShadow: [
             BoxShadow(
               color: color.withValues(alpha: .08),
-              blurRadius: 8,
+              blurRadius: 6,
               offset: const Offset(0, 2),
             ),
           ],
