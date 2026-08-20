@@ -1340,88 +1340,94 @@ class _GeneralDashboardPageState extends State<GeneralDashboardPage> {
   }
 
   Widget _openSeries(List<GeneralOpenSeries> series) {
+    // Con una sola saga ocupamos el ancho completo; con varias, scroll horizontal.
+    if (series.length == 1) {
+      return _openSeriesCard(series.first, fullWidth: true);
+    }
     return SizedBox(
       height: 154,
       child: ListView.separated(
         scrollDirection: Axis.horizontal,
         itemCount: series.length,
         separatorBuilder: (_, _) => const SizedBox(width: AppSpacing.md),
-        itemBuilder: (context, index) {
-          final item = series[index];
-          return SizedBox(
-            width: 260,
-            child: Card(
-              child: InkWell(
-                borderRadius: BorderRadius.circular(18),
-                onTap: item.next == null
-                    ? _openMySeries
-                    : () => _openBook(
-                        title: item.next!.title,
-                        bookId: item.next!.id,
-                        coverUrl: item.next!.coverUrl,
+        itemBuilder: (context, index) =>
+            _openSeriesCard(series[index], fullWidth: false),
+      ),
+    );
+  }
+
+  Widget _openSeriesCard(GeneralOpenSeries item, {required bool fullWidth}) {
+    final card = Card(
+      child: InkWell(
+        borderRadius: BorderRadius.circular(18),
+        onTap: item.next == null
+            ? _openMySeries
+            : () => _openBook(
+                title: item.next!.title,
+                bookId: item.next!.id,
+                coverUrl: item.next!.coverUrl,
+              ),
+        child: Padding(
+          padding: const EdgeInsets.all(AppSpacing.md),
+          child: Row(
+            children: [
+              ClubBookCover(
+                title: item.next?.title ?? item.name,
+                imageUrl: item.next?.coverUrl.trim().isNotEmpty == true
+                    ? item.next!.coverUrl
+                    : item.coverUrl,
+                width: 62,
+                height: 92,
+                showShadow: false,
+              ),
+              const SizedBox(width: AppSpacing.md),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(
+                      item.name,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        fontWeight: FontWeight.w900,
                       ),
-                child: Padding(
-                  padding: const EdgeInsets.all(AppSpacing.md),
-                  child: Row(
-                    children: [
-                      ClubBookCover(
-                        title: item.next?.title ?? item.name,
-                        imageUrl: item.next?.coverUrl.trim().isNotEmpty == true
-                            ? item.next!.coverUrl
-                            : item.coverUrl,
-                        width: 62,
-                        height: 92,
-                        showShadow: false,
-                      ),
-                      const SizedBox(width: AppSpacing.md),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Text(
-                              item.name,
-                              maxLines: 2,
-                              overflow: TextOverflow.ellipsis,
-                              style: const TextStyle(
-                                fontWeight: FontWeight.w900,
-                              ),
-                            ),
-                            const SizedBox(height: 8),
-                            LinearProgressIndicator(
-                              value: item.progress.clamp(0, 1),
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            const SizedBox(height: 6),
-                            Text(
-                              '${item.read} de ${item.total} leídos',
-                              style: Theme.of(context).textTheme.bodySmall,
-                            ),
-                            if (item.next != null) ...[
-                              const SizedBox(height: 5),
-                              Text(
-                                'Siguiente: ${item.next!.title}',
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                                style: const TextStyle(
-                                  color: AppColors.primary,
-                                  fontSize: 11,
-                                  fontWeight: FontWeight.w700,
-                                ),
-                              ),
-                            ],
-                          ],
+                    ),
+                    const SizedBox(height: 8),
+                    LinearProgressIndicator(
+                      value: item.progress.clamp(0, 1),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      '${item.read} de ${item.total} leídos',
+                      style: Theme.of(context).textTheme.bodySmall,
+                    ),
+                    if (item.next != null) ...[
+                      const SizedBox(height: 5),
+                      Text(
+                        'Siguiente: ${item.next!.title}',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          color: AppColors.primary,
+                          fontSize: 11,
+                          fontWeight: FontWeight.w700,
                         ),
                       ),
                     ],
-                  ),
+                  ],
                 ),
               ),
-            ),
-          );
-        },
+            ],
+          ),
+        ),
       ),
     );
+
+    if (fullWidth) return SizedBox(height: 154, child: card);
+    return SizedBox(width: 260, height: 154, child: card);
   }
 
   Widget _calendar(ReadingCalendar calendar) {
