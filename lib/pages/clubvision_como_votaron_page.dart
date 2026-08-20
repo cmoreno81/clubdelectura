@@ -223,72 +223,124 @@ class _SectionHeader extends StatelessWidget {
   }
 }
 
-class _VotanteCard extends StatelessWidget {
+class _VotanteCard extends StatefulWidget {
   final ComoVotaron persona;
 
   const _VotanteCard({required this.persona});
 
   @override
+  State<_VotanteCard> createState() => _VotanteCardState();
+}
+
+class _VotanteCardState extends State<_VotanteCard> {
+  bool _expanded = false;
+
+  @override
   Widget build(BuildContext context) {
     return ClubCard(
       elevated: false,
-      padding: const EdgeInsets.all(AppSpacing.lg),
+      padding: EdgeInsets.zero,
       borderColor: AppColors.border,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            children: [
-              ClubAvatar(
-                nombre: persona.usuaria,
-                imageUrl: persona.avatarUrl,
-                size: 56,
-              ),
+          // ── Cabecera táctil ──────────────────────────────────────────
+          InkWell(
+            onTap: () => setState(() => _expanded = !_expanded),
+            borderRadius: BorderRadius.circular(AppRadius.lg),
+            child: Padding(
+              padding: const EdgeInsets.all(AppSpacing.lg),
+              child: Row(
+                children: [
+                  ClubAvatar(
+                    nombre: widget.persona.usuaria,
+                    imageUrl: widget.persona.avatarUrl,
+                    size: 56,
+                  ),
 
-              const SizedBox(width: AppSpacing.md),
+                  const SizedBox(width: AppSpacing.md),
 
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      persona.usuaria,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                      style: AppTextStyles.section.copyWith(
-                        color: AppColors.textPrimary,
-                        fontWeight: FontWeight.w800,
-                      ),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          widget.persona.usuaria,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          style: AppTextStyles.section.copyWith(
+                            color: AppColors.textPrimary,
+                            fontWeight: FontWeight.w800,
+                          ),
+                        ),
+
+                        const SizedBox(height: AppSpacing.xs),
+
+                        Text(
+                          widget.persona.votos.length == 1
+                              ? '1 libro clasificado'
+                              : '${widget.persona.votos.length} libros clasificados',
+                          style: AppTextStyles.bodySecondary,
+                        ),
+                      ],
                     ),
+                  ),
 
-                    const SizedBox(height: AppSpacing.xs),
+                  const SizedBox(width: AppSpacing.sm),
 
-                    Text(
-                      persona.votos.length == 1
-                          ? '1 libro clasificado'
-                          : '${persona.votos.length} libros clasificados',
-                      style: AppTextStyles.bodySecondary,
+                  const ClubChip(
+                    label: 'Papeleta',
+                    icon: Icons.ballot_outlined,
+                    variant: ClubChipVariant.primary,
+                  ),
+
+                  const SizedBox(width: AppSpacing.sm),
+
+                  // Chevron animado
+                  AnimatedRotation(
+                    turns: _expanded ? 0.5 : 0,
+                    duration: const Duration(milliseconds: 250),
+                    curve: Curves.easeInOut,
+                    child: Icon(
+                      Icons.keyboard_arrow_down_rounded,
+                      color: AppColors.textSecondary,
                     ),
-                  ],
-                ),
+                  ),
+                ],
               ),
-
-              const ClubChip(
-                label: 'Papeleta',
-                icon: Icons.ballot_outlined,
-                variant: ClubChipVariant.primary,
-              ),
-            ],
+            ),
           ),
 
-          const SizedBox(height: AppSpacing.lg),
-
-          for (var index = 0; index < persona.votos.length; index++) ...[
-            _VotoEmitidoRow(posicion: index, voto: persona.votos[index]),
-
-            if (index < persona.votos.length - 1)
-              const SizedBox(height: AppSpacing.sm),
-          ],
+          // ── Votos (expandibles animados) ─────────────────────────────
+          AnimatedSize(
+            duration: const Duration(milliseconds: 280),
+            curve: Curves.easeInOut,
+            child: _expanded
+                ? Padding(
+                    padding: const EdgeInsets.only(
+                      left: AppSpacing.lg,
+                      right: AppSpacing.lg,
+                      bottom: AppSpacing.lg,
+                    ),
+                    child: Column(
+                      children: [
+                        const Divider(height: 1),
+                        const SizedBox(height: AppSpacing.md),
+                        for (var i = 0;
+                            i < widget.persona.votos.length;
+                            i++) ...[
+                          _VotoEmitidoRow(
+                            posicion: i,
+                            voto: widget.persona.votos[i],
+                          ),
+                          if (i < widget.persona.votos.length - 1)
+                            const SizedBox(height: AppSpacing.sm),
+                        ],
+                      ],
+                    ),
+                  )
+                : const SizedBox.shrink(),
+          ),
         ],
       ),
     );
