@@ -1008,6 +1008,21 @@ class ApiService {
     return _respuestaOk(response);
   }
 
+  Future<bool> editarFechaInicioLectura({
+    required String usuario,
+    required String libro,
+    required DateTime fechaInicio,
+  }) async {
+    final mes = fechaInicio.month.toString().padLeft(2, '0');
+    final dia = fechaInicio.day.toString().padLeft(2, '0');
+    final fechaStr = '${fechaInicio.year}-$mes-$dia';
+    final response = await _postJson('editarFechaInicioLectura', {
+      'libro': libro,
+      'fechaInicio': fechaStr,
+    });
+    return _respuestaOk(response);
+  }
+
   Future<bool> actualizarValoracion({
     required String usuario,
     required String libro,

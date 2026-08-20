@@ -16,6 +16,7 @@ enum LibroAccion {
   releer,
   quitar,
   verFicha,
+  editarFechaInicio, // LEYENDO/RELECTURA/PAUSADO → editar startedAt
 }
 
 /// Muestra el bottom sheet de acciones y devuelve la acción elegida (o null).
@@ -160,6 +161,15 @@ class _LibroAccionesSheet extends StatelessWidget {
           accion: LibroAccion.finalizar,
         ),
       );
+      tiles.add(
+        _tile(
+          context,
+          icon: Icons.edit_calendar_outlined,
+          label: 'Editar fecha de inicio',
+          color: AppColors.primary,
+          accion: LibroAccion.editarFechaInicio,
+        ),
+      );
     } else if (propioEstado == 'PAUSADO') {
       tiles.add(
         _tile(
@@ -177,6 +187,15 @@ class _LibroAccionesSheet extends StatelessWidget {
           label: 'Marcar como finalizado',
           color: AppColors.success,
           accion: LibroAccion.finalizar,
+        ),
+      );
+      tiles.add(
+        _tile(
+          context,
+          icon: Icons.edit_calendar_outlined,
+          label: 'Editar fecha de inicio',
+          color: AppColors.primary,
+          accion: LibroAccion.editarFechaInicio,
         ),
       );
     } else if (libro.leidoPorMi) {
