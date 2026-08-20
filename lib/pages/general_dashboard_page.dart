@@ -468,6 +468,16 @@ class _GeneralDashboardPageState extends State<GeneralDashboardPage> {
           final data = snapshot.data!;
           return RefreshIndicator(
             onRefresh: _reload,
+            // Solo activar con arrastre lento (velocity ≈ 0).
+            // Un fling rápido hacia arriba puede overshoot la posición 0 y
+            // disparar el refresh involuntariamente, bloqueando la UI.
+            notificationPredicate: (notification) {
+              if (notification.depth != 0) return false;
+              if (notification is OverscrollNotification) {
+                return notification.velocity.abs() < 50.0;
+              }
+              return true;
+            },
             child: CustomScrollView(
               controller: _scrollController,
               physics: const AlwaysScrollableScrollPhysics(),
@@ -2068,6 +2078,7 @@ class _LogrosSkeleton extends StatelessWidget {
         GridView.builder(
           shrinkWrap: true,
           physics: const NeverScrollableScrollPhysics(),
+          padding: EdgeInsets.zero,
           gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
             crossAxisCount: 3,
             crossAxisSpacing: AppSpacing.sm,
