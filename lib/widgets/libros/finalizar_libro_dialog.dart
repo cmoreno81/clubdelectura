@@ -23,6 +23,7 @@ class _FinalizarLibroDialogState extends State<FinalizarLibroDialog> {
   late DateTime fechaFin;
 
   final TextEditingController controller = TextEditingController();
+  final _resenaKey = GlobalKey();
 
   bool get esDecepcion => valoracion == 0;
 
@@ -108,9 +109,25 @@ class _FinalizarLibroDialogState extends State<FinalizarLibroDialog> {
   }
 
   void _seleccionarValoracion(double nuevaValoracion) {
+    final esPrimeraVez = valoracion == null;
     setState(() {
       valoracion = nuevaValoracion;
     });
+    // Al elegir valoración por primera vez, desplazarse a la reseña
+    // para que el usuario la vea y no la deje en blanco sin querer.
+    if (esPrimeraVez) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        final ctx = _resenaKey.currentContext;
+        if (ctx != null) {
+          Scrollable.ensureVisible(
+            ctx,
+            duration: const Duration(milliseconds: 400),
+            curve: Curves.easeInOut,
+            alignment: 0.1, // deja algo de margen arriba
+          );
+        }
+      });
+    }
   }
 
   void _finalizar() {
@@ -253,14 +270,30 @@ class _FinalizarLibroDialogState extends State<FinalizarLibroDialog> {
                     fontWeight: esDecepcion ? FontWeight.w800 : FontWeight.w500,
                   ),
                   onSelected: (seleccionado) {
+                    final esPrimeraVez = valoracion == null;
                     setState(() {
                       valoracion = seleccionado ? 0 : null;
                     });
+                    if (seleccionado && esPrimeraVez) {
+                      WidgetsBinding.instance.addPostFrameCallback((_) {
+                        final ctx = _resenaKey.currentContext;
+                        if (ctx != null) {
+                          Scrollable.ensureVisible(
+                            ctx,
+                            duration: const Duration(milliseconds: 400),
+                            curve: Curves.easeInOut,
+                            alignment: 0.1,
+                          );
+                        }
+                      });
+                    }
                   },
                 ),
               ),
 
               const SizedBox(height: 28),
+
+              SizedBox(key: _resenaKey, height: 0),
 
               const Text(
                 '💭 Tu reseña (opcional)',
