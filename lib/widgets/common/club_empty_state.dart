@@ -26,54 +26,67 @@ class ClubEmptyState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding:
-          padding ??
-          const EdgeInsets.symmetric(
-            horizontal: AppSpacing.xl,
-            vertical: AppSpacing.xxl,
-          ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Container(
-            width: 76,
-            height: 76,
-            decoration: BoxDecoration(
-              color: AppColors.primaryLight,
-              borderRadius: BorderRadius.circular(AppRadius.xl),
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        // Reducir el padding vertical cuando el espacio es pequeño
+        // para evitar el overflow en contenedores con altura acotada.
+        final verticalPadding = constraints.maxHeight < 300
+            ? AppSpacing.md
+            : AppSpacing.xxl;
+
+        return SingleChildScrollView(
+          physics: const ClampingScrollPhysics(),
+          child: Padding(
+            padding:
+                padding ??
+                EdgeInsets.symmetric(
+                  horizontal: AppSpacing.xl,
+                  vertical: verticalPadding,
+                ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  width: 76,
+                  height: 76,
+                  decoration: BoxDecoration(
+                    color: AppColors.primaryLight,
+                    borderRadius: BorderRadius.circular(AppRadius.xl),
+                  ),
+                  child: Icon(icon, size: 36, color: AppColors.primary),
+                ),
+
+                const SizedBox(height: AppSpacing.lg),
+
+                Text(
+                  title,
+                  textAlign: TextAlign.center,
+                  style: AppTextStyles.section,
+                ),
+
+                const SizedBox(height: AppSpacing.sm),
+
+                Text(
+                  message,
+                  textAlign: TextAlign.center,
+                  style: AppTextStyles.bodySecondary,
+                ),
+
+                if (actionLabel != null && onAction != null) ...[
+                  const SizedBox(height: AppSpacing.lg),
+
+                  ClubButton(
+                    label: actionLabel!,
+                    onPressed: onAction,
+                    expanded: false,
+                    icon: Icons.arrow_forward_rounded,
+                  ),
+                ],
+              ],
             ),
-            child: Icon(icon, size: 36, color: AppColors.primary),
           ),
-
-          const SizedBox(height: AppSpacing.lg),
-
-          Text(
-            title,
-            textAlign: TextAlign.center,
-            style: AppTextStyles.section,
-          ),
-
-          const SizedBox(height: AppSpacing.sm),
-
-          Text(
-            message,
-            textAlign: TextAlign.center,
-            style: AppTextStyles.bodySecondary,
-          ),
-
-          if (actionLabel != null && onAction != null) ...[
-            const SizedBox(height: AppSpacing.lg),
-
-            ClubButton(
-              label: actionLabel!,
-              onPressed: onAction,
-              expanded: false,
-              icon: Icons.arrow_forward_rounded,
-            ),
-          ],
-        ],
-      ),
+        );
+      },
     );
   }
 }
