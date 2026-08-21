@@ -9,6 +9,7 @@ import '../services/api_service.dart';
 import '../services/cursor_pagination_controller.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_spacing.dart';
+import '../navigation/book_detail_navigation.dart';
 import '../widgets/common/optimized_network_image.dart';
 import '../widgets/libros/add_book_sheet.dart';
 import 'package:club_lectura_app/widgets/common/club_shimmer.dart';
@@ -317,9 +318,24 @@ class _ExploreCatalogPageState extends State<ExploreCatalogPage> {
     );
   }
 
+  Future<void> _openDetail(CatalogBook book) async {
+    final changed = await openCatalogBookDetail(
+      context,
+      title: book.title,
+      bookId: book.id,
+      coverUrl: book.coverUrl,
+      genre: book.genre,
+      globalStats: true,
+    );
+    if (changed && mounted) _pagination.loadFirst();
+  }
+
   Widget _bookCard(CatalogBook book) {
     return Card(
-      child: Padding(
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: () => _openDetail(book),
+        child: Padding(
         padding: const EdgeInsets.all(AppSpacing.sm),
         child: Row(
           children: [
@@ -389,6 +405,7 @@ class _ExploreCatalogPageState extends State<ExploreCatalogPage> {
               ),
           ],
         ),
+      ),
       ),
     );
   }
