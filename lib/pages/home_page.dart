@@ -10,6 +10,7 @@ import 'mi_espacio_page.dart';
 import 'sagas_page.dart';
 import '../models/club_membership.dart';
 import '../services/notificaciones_service.dart';
+import '../utils/app_breakpoints.dart';
 
 typedef HomePageBuilder = Widget Function();
 
@@ -219,51 +220,178 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
     unawaited(_dashboardController.refresh());
   }
 
+  // ── Build ──────────────────────────────────────────────────────────────────
+
   @override
   Widget build(BuildContext context) {
+    final tablet = AppBreakpoints.isTablet(context);
+
     return PopScope(
       canPop: currentIndex == 0,
       onPopInvokedWithResult: (didPop, _) {
-        if (!didPop && currentIndex != 0) {
-          _volverAlClub();
-        }
+        if (!didPop && currentIndex != 0) _volverAlClub();
       },
-      child: Scaffold(
-        extendBody: false,
+      child: tablet ? _buildTablet(context) : _buildMobile(context),
+    );
+  }
 
-        // Stack + AnimatedOpacity preserva el estado de cada pestaña
-        // (scroll, datos cargados) mientras anima la transición.
-        body: Stack(
-          children: [
-            for (int i = 0; i < _pageBuilders.length; i++)
-              AnimatedOpacity(
-                key: ValueKey(i),
-                opacity: i == currentIndex ? 1.0 : 0.0,
-                duration: const Duration(milliseconds: 200),
-                curve: Curves.easeInOut,
-                child: IgnorePointer(
-                  ignoring: i != currentIndex,
-                  child: _pages[i] ?? const SizedBox.shrink(),
-                ),
-              ),
-          ],
-        ),
+  // ── Layout móvil (NavigationBar inferior) ──────────────────────────────────
 
-        bottomNavigationBar: _esPersonal
-            ? NavigationBar(
+  Widget _buildMobile(BuildContext context) {
+    return Scaffold(
+      extendBody: false,
+      body: _pageStack(),
+      bottomNavigationBar: _esPersonal
+          ? NavigationBar(
+              selectedIndex: currentIndex,
+              onDestinationSelected: _selectTab,
+              destinations: _personalDestinations(),
+            )
+          : ListenableBuilder(
+              listenable: _notifications,
+              builder: (context, _) => NavigationBar(
                 selectedIndex: currentIndex,
                 onDestinationSelected: _selectTab,
-                destinations: _personalDestinations(),
-              )
-            : ListenableBuilder(
-                listenable: _notifications,
-                builder: (context, _) => NavigationBar(
-                  selectedIndex: currentIndex,
-                  onDestinationSelected: _selectTab,
-                  destinations: _socialDestinations(),
-                ),
+                destinations: _socialDestinations(),
               ),
+            ),
+    );
+  }
+
+  // ── Layout tablet (NavigationRail lateral) ─────────────────────────────────
+
+  Widget _buildTablet(BuildContext context) {
+    final extended = AppBreakpoints.isExpanded(context);
+
+    // Rail para modo personal (sin notificaciones)
+    NavigationRail personalRail() => NavigationRail(
+      selectedIndex: currentIndex,
+      onDestinationSelected: _selectTab,
+      extended: extended,
+      minWidth: 72,
+      minExtendedWidth: 180,
+      labelType: extended
+          ? NavigationRailLabelType.none
+          : NavigationRailLabelType.all,
+      destinations: _railPersonalDestinations(),
+    );
+
+    return Scaffold(
+      body: Row(
+        children: [
+          SafeArea(
+            child: _esPersonal
+                ? personalRail()
+                : ListenableBuilder(
+                    listenable: _notifications,
+                    builder: (context, _) {
+                      // Reconstruir el rail cuando cambian las notificaciones
+                      // para actualizar los badges.
+                      final updatedDestinations =
+                          _railSocialDestinations();
+                      return NavigationRail(
+                        selectedIndex: currentIndex,
+                        onDestinationSelected: _selectTab,
+                        extended: extended,
+                        minWidth: 72,
+                        minExtendedWidth: 180,
+                        labelType: extended
+                            ? NavigationRailLabelType.none
+                            : NavigationRailLabelType.all,
+                        destinations: updatedDestinations,
+                      );
+                    },
+                  ),
+          ),
+          const VerticalDivider(width: 1, thickness: 1),
+          Expanded(child: _pageStack()),
+        ],
       ),
     );
   }
+
+  // ── Stack de páginas compartido ────────────────────────────────────────────
+
+  Widget _pageStack() {
+    return Stack(
+      children: [
+        for (int i = 0; i < _pageBuilders.length; i++)
+          AnimatedOpacity(
+            key: ValueKey(i),
+            opacity: i == currentIndex ? 1.0 : 0.0,
+            duration: const Duration(milliseconds: 200),
+            curve: Curves.easeInOut,
+            child: IgnorePointer(
+              ignoring: i != currentIndex,
+              child: _pages[i] ?? const SizedBox.shrink(),
+            ),
+          ),
+      ],
+    );
+  }
+
+  // ── Destinations para NavigationRail ──────────────────────────────────────
+
+  List<NavigationRailDestination> _railSocialDestinations() => [
+    NavigationRailDestination(
+      icon: Badge(
+        isLabelVisible: _notifications.noLeidasClub > 0,
+        label: Text(_badge(_notifications.noLeidasClub)),
+        child: const Icon(Icons.dashboard_outlined),
+      ),
+      selectedIcon: const Icon(Icons.dashboard_rounded),
+      label: const Text('El Club'),
+    ),
+    const NavigationRailDestination(
+      icon: Icon(Icons.menu_book_outlined),
+      selectedIcon: Icon(Icons.menu_book_rounded),
+      label: Text('Libros'),
+    ),
+    const NavigationRailDestination(
+      icon: Icon(Icons.view_week_outlined),
+      selectedIcon: Icon(Icons.view_week_rounded),
+      label: Text('Sagas'),
+    ),
+    NavigationRailDestination(
+      icon: Badge(
+        isLabelVisible: _notifications.noLeidasLecturas > 0,
+        label: Text(_badge(_notifications.noLeidasLecturas)),
+        child: const Icon(Icons.auto_stories_outlined),
+      ),
+      selectedIcon: const Icon(Icons.auto_stories_rounded),
+      label: const Text('Lecturas'),
+    ),
+    NavigationRailDestination(
+      icon: Badge(
+        isLabelVisible: _notifications.noLeidasClubvision > 0,
+        label: Text(_badge(_notifications.noLeidasClubvision)),
+        child: const Icon(Icons.mic_none_outlined),
+      ),
+      selectedIcon: const Icon(Icons.mic_rounded),
+      label: const Text('Clubvisión'),
+    ),
+  ];
+
+  List<NavigationRailDestination> _railPersonalDestinations() => const [
+    NavigationRailDestination(
+      icon: Icon(Icons.home_outlined),
+      selectedIcon: Icon(Icons.home_rounded),
+      label: Text('Inicio'),
+    ),
+    NavigationRailDestination(
+      icon: Icon(Icons.menu_book_outlined),
+      selectedIcon: Icon(Icons.menu_book_rounded),
+      label: Text('Libros'),
+    ),
+    NavigationRailDestination(
+      icon: Icon(Icons.view_week_outlined),
+      selectedIcon: Icon(Icons.view_week_rounded),
+      label: Text('Sagas'),
+    ),
+    NavigationRailDestination(
+      icon: Icon(Icons.emoji_events_outlined),
+      selectedIcon: Icon(Icons.emoji_events_rounded),
+      label: Text('Mi espacio'),
+    ),
+  ];
 }
