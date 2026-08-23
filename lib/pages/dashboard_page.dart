@@ -2891,12 +2891,19 @@ class _ClubWishlistCardState extends State<_ClubWishlistCard> {
                     padding: const EdgeInsets.only(bottom: 8),
                     child: Row(
                       children: [
-                        // Icono novedad o disponible
-                        Text(
-                          group.isUpcoming ? '🗓' : '📖',
-                          style: const TextStyle(fontSize: 13),
+                        // Portada real; si falta, el componente conserva un
+                        // fallback de libro legible.
+                        ClipRRect(
+                          borderRadius: BorderRadius.circular(4),
+                          child: ClubBookCover(
+                            title: group.title,
+                            imageUrl: group.coverUrl ?? '',
+                            width: 28,
+                            height: 40,
+                            fit: BoxFit.cover,
+                          ),
                         ),
-                        const SizedBox(width: 6),
+                        const SizedBox(width: 8),
                         // Título
                         Expanded(
                           child: Text(
