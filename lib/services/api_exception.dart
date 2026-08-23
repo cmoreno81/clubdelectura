@@ -86,6 +86,7 @@ class ApiException implements Exception {
     };
     final mayUseServerMessage = switch (type) {
       ApiErrorType.validation ||
+      ApiErrorType.sessionExpired ||
       ApiErrorType.forbidden ||
       ApiErrorType.conflict => true,
       _ => false,
