@@ -53,6 +53,9 @@ import '../models/achievements/achievement.dart';
 import '../services/achievement_service.dart';
 import 'package:club_lectura_app/widgets/common/club_shimmer.dart';
 import 'feedback_page.dart';
+import '../models/wishlist.dart';
+import '../services/wishlist_service.dart';
+import 'wishlist_page.dart';
 
 class PerfilUsuarioPage extends StatefulWidget {
   const PerfilUsuarioPage({
@@ -876,6 +879,13 @@ class _PerfilUsuarioPageState extends State<PerfilUsuarioPage> {
         ),
         const SizedBox(height: AppSpacing.sm),
         ProfileFavoriteGenresContent(genres: perfil.generosFavoritos),
+
+        // ── Lista de adquisición (solo propio perfil) ─────────────────────
+        if (esMiPerfil) ...[
+          const SizedBox(height: AppSpacing.xl),
+          const _WishlistPerfilSection(),
+        ],
+
         const SizedBox(height: AppSpacing.md),
       ],
     );
@@ -1442,6 +1452,29 @@ class _PerfilUsuarioPageState extends State<PerfilUsuarioPage> {
                   : 'Miembro de ${perfil.resumen.clubes} clubes',
               icon: Icons.local_library_outlined,
               variant: ClubChipVariant.primary,
+            ),
+          ],
+
+          // ── Acceso rápido a lista de adquisición (solo propio perfil) ────────
+          if (esMiPerfil) ...[
+            const SizedBox(height: AppSpacing.md),
+            OutlinedButton.icon(
+              onPressed: () => Navigator.push<void>(
+                context,
+                AppPageRoute(builder: (_) => const WishlistPage()),
+              ),
+              icon: const Icon(Icons.shopping_cart_outlined, size: 16),
+              label: const Text('Mis adquisiciones'),
+              style: OutlinedButton.styleFrom(
+                foregroundColor: AppColors.primary,
+                side: BorderSide(
+                  color: AppColors.primary.withValues(alpha: .4),
+                ),
+                padding: const EdgeInsets.symmetric(
+                    horizontal: AppSpacing.md, vertical: 6),
+                textStyle: const TextStyle(
+                    fontSize: 12, fontWeight: FontWeight.w700),
+              ),
             ),
           ],
         ],
@@ -3224,6 +3257,103 @@ class _PerfilShareCardCta extends StatelessWidget {
           ],
         ),
       ),
+    );
+  }
+}
+
+// ─── Sección de adquisición en el perfil propio ───────────────────────────────
+
+class _WishlistPerfilSection extends StatefulWidget {
+  const _WishlistPerfilSection();
+
+  @override
+  State<_WishlistPerfilSection> createState() => _WishlistPerfilSectionState();
+}
+
+class _WishlistPerfilSectionState extends State<_WishlistPerfilSection> {
+  late Future<WishlistData> _future;
+
+  @override
+  void initState() {
+    super.initState();
+    _future = WishlistService().getWishlist();
+  }
+
+  void _openWishlist() {
+    Navigator.push<void>(
+      context,
+      AppPageRoute(builder: (_) => const WishlistPage()),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        ClubSectionTitle(
+          title: 'Quiero comprar',
+          subtitle: 'Tu lista de adquisición de libros',
+          icon: Icons.shopping_cart_outlined,
+          padding: EdgeInsets.zero,
+          trailing: TextButton(
+            onPressed: _openWishlist,
+            child: const Text('Ver todo'),
+          ),
+        ),
+        const SizedBox(height: AppSpacing.sm),
+        FutureBuilder<WishlistData>(
+          future: _future,
+          builder: (context, snap) {
+            if (snap.connectionState == ConnectionState.waiting) {
+              return ClubShimmer(
+                width: double.infinity,
+                height: 80,
+                borderRadius: BorderRadius.circular(AppRadius.xl),
+              );
+            }
+
+            final data = snap.data ?? WishlistData.empty;
+
+            if (data.totalItems == 0) {
+              return GestureDetector(
+                onTap: _openWishlist,
+                child: Container(
+                  padding: const EdgeInsets.all(AppSpacing.md),
+                  decoration: BoxDecoration(
+                    border: Border.all(
+                      color: AppColors.primary.withValues(alpha: .2),
+                    ),
+                    borderRadius: BorderRadius.circular(AppRadius.xl),
+                    color: AppColors.primaryLight.withValues(alpha: .2),
+                  ),
+                  child: Row(
+                    children: [
+                      const Text('🛒', style: TextStyle(fontSize: 22)),
+                      const SizedBox(width: AppSpacing.sm),
+                      Expanded(
+                        child: Text(
+                          'Añade libros que quieres comprar',
+                          style: AppTextStyles.body.copyWith(
+                            color: AppColors.primary,
+                          ),
+                        ),
+                      ),
+                      const Icon(
+                        Icons.arrow_forward_ios_rounded,
+                        size: 14,
+                        color: AppColors.primary,
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            }
+
+            return WishlistSummaryCard(data: data, onTap: _openWishlist);
+          },
+        ),
+      ],
     );
   }
 }

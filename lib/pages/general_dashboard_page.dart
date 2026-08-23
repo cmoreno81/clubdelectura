@@ -46,6 +46,9 @@ import '../models/achievements/achievement.dart';
 import '../services/achievement_service.dart';
 import '../services/usuario_service.dart';
 import 'package:club_lectura_app/widgets/common/club_shimmer.dart';
+import '../models/wishlist.dart';
+import '../services/wishlist_service.dart';
+import 'wishlist_page.dart';
 
 typedef DashboardQuickActions = Future<bool> Function({
   required String title,
@@ -617,6 +620,9 @@ class _GeneralDashboardPageState extends State<GeneralDashboardPage> {
                         _emptyClubs()
                       else
                         ...data.clubs.map(_clubCard),
+
+                      const SizedBox(height: AppSpacing.xl),
+                      _WishlistPreviewSection(userName: data.userName),
 
                       const SizedBox(height: AppSpacing.xl),
                       _LogrosDashboardSection(
@@ -1365,24 +1371,18 @@ class _GeneralDashboardPageState extends State<GeneralDashboardPage> {
   }
 
   Widget _openSeries(List<GeneralOpenSeries> series) {
-    // Siempre usamos ListView con ClampingScrollPhysics para que los gestos
-    // verticales no queden atrapados, incluso con una sola saga.
-    // Con una saga usamos LayoutBuilder para que la tarjeta ocupe todo el ancho.
+    // Con una sola saga no hay scroll horizontal posible: el ítem ocupa el
+    // ancho completo. En ese caso un ListView con cualquier física (incluso
+    // ClampingScrollPhysics) sigue compitiendo por los gestos verticales y
+    // puede absorberlos, impidiendo que el CustomScrollView padre reciba el
+    // scroll hacia arriba. Se renderiza la tarjeta directamente para que los
+    // gestos lleguen sin obstáculos al ancestro.
     if (series.length == 1) {
       return LayoutBuilder(
-        builder: (context, constraints) => SizedBox(
-          height: 154,
-          child: ListView(
-            scrollDirection: Axis.horizontal,
-            physics: const ClampingScrollPhysics(),
-            children: [
-              _openSeriesCard(
-                series.first,
-                fullWidth: true,
-                cardWidth: constraints.maxWidth,
-              ),
-            ],
-          ),
+        builder: (context, constraints) => _openSeriesCard(
+          series.first,
+          fullWidth: true,
+          cardWidth: constraints.maxWidth,
         ),
       );
     }
@@ -2262,6 +2262,105 @@ class _CurrentBookCard extends StatelessWidget {
           ),
         ),
       ),
+    );
+  }
+}
+
+// ─── Widget de acceso rápido a Mis adquisiciones ──────────────────────────────
+
+class _WishlistPreviewSection extends StatefulWidget {
+  const _WishlistPreviewSection({required this.userName});
+  final String userName;
+
+  @override
+  State<_WishlistPreviewSection> createState() =>
+      _WishlistPreviewSectionState();
+}
+
+class _WishlistPreviewSectionState extends State<_WishlistPreviewSection> {
+  late Future<WishlistData> _future;
+
+  @override
+  void initState() {
+    super.initState();
+    _future = WishlistService().getWishlist();
+  }
+
+  void _openWishlist() {
+    Navigator.push<void>(
+      context,
+      AppPageRoute(builder: (_) => const WishlistPage()),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return FutureBuilder<WishlistData>(
+      future: _future,
+      builder: (context, snap) {
+        // Skeleton mientras carga
+        if (snap.connectionState == ConnectionState.waiting) {
+          return ClubShimmer(
+            width: double.infinity,
+            height: 80,
+            borderRadius: BorderRadius.circular(AppRadius.xl),
+          );
+        }
+
+        // Si no hay datos o hay error, mostramos el acceso rápido vacío
+        final data = snap.data ?? WishlistData.empty;
+
+        if (data.totalItems == 0) {
+          // Empty-state compacto: invitación a añadir
+          return GestureDetector(
+            onTap: _openWishlist,
+            child: Container(
+              padding: const EdgeInsets.symmetric(
+                horizontal: AppSpacing.md,
+                vertical: AppSpacing.sm,
+              ),
+              decoration: BoxDecoration(
+                border: Border.all(
+                  color: AppColors.primary.withValues(alpha: .2),
+                ),
+                borderRadius: BorderRadius.circular(AppRadius.xl),
+                color: AppColors.primaryLight.withValues(alpha: .25),
+              ),
+              child: Row(
+                children: [
+                  const Text('🛒', style: TextStyle(fontSize: 22)),
+                  const SizedBox(width: AppSpacing.sm),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Quiero comprar',
+                          style: AppTextStyles.subtitle.copyWith(
+                            fontWeight: FontWeight.w800,
+                            color: AppColors.primaryDark,
+                          ),
+                        ),
+                        Text(
+                          'Tu lista de libros pendientes de comprar',
+                          style: AppTextStyles.caption,
+                        ),
+                      ],
+                    ),
+                  ),
+                  const Icon(
+                    Icons.arrow_forward_ios_rounded,
+                    size: 14,
+                    color: AppColors.primary,
+                  ),
+                ],
+              ),
+            ),
+          );
+        }
+
+        return WishlistSummaryCard(data: data, onTap: _openWishlist);
+      },
     );
   }
 }

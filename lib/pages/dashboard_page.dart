@@ -48,6 +48,9 @@ import 'package:club_lectura_app/widgets/common/club_shimmer.dart';
 import '../widgets/common/reaction_details_sheet.dart';
 import '../models/personalidad_miembro.dart';
 import 'personalidad_lectora_page.dart';
+import '../models/wishlist.dart';
+import '../services/wishlist_service.dart';
+import 'wishlist_page.dart';
 
 class DashboardPage extends StatefulWidget {
   const DashboardPage({
@@ -342,6 +345,19 @@ class _DashboardPageState extends State<DashboardPage> {
 
           return RefreshIndicator(
             onRefresh: _recargar,
+            // Solo activar con arrastre lento (velocity ≈ 0).
+            // Un fling rápido hacia arriba puede sobrepasar la posición 0 y
+            // disparar el refresh involuntariamente, bloqueando la UI y
+            // dejando el scroll sin poder volver al inicio (especialmente
+            // cuando el contenido es corto, como en cuentas personales
+            // con pocas sagas).
+            notificationPredicate: (notification) {
+              if (notification.depth != 0) return false;
+              if (notification is OverscrollNotification) {
+                return notification.velocity.abs() < 50.0;
+              }
+              return true;
+            },
             child: SingleChildScrollView(
               physics: const AlwaysScrollableScrollPhysics(),
               padding: const EdgeInsets.fromLTRB(
@@ -439,6 +455,9 @@ class _DashboardPageState extends State<DashboardPage> {
                         miAvatarUrl: avatarUrlActual,
                       ),
                     ],
+
+                    const SizedBox(height: AppSpacing.md),
+                    const _ClubWishlistCard(),
 
                     const SizedBox(height: AppSpacing.md),
                     const _PersonalidadesClubCard(),
@@ -2744,6 +2763,163 @@ class _MiembroPersonalidadChip extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+// ─── Club wishlist card (entre Compañeros y Personalidades) ───────────────────
+
+class _ClubWishlistCard extends StatefulWidget {
+  const _ClubWishlistCard();
+
+  @override
+  State<_ClubWishlistCard> createState() => _ClubWishlistCardState();
+}
+
+class _ClubWishlistCardState extends State<_ClubWishlistCard> {
+  late Future<ClubWishlistData> _future;
+
+  @override
+  void initState() {
+    super.initState();
+    _future = WishlistService().getClubWishlist();
+  }
+
+  void _openWishlist() {
+    Navigator.push<void>(
+      context,
+      AppPageRoute(builder: (_) => const WishlistPage()),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return FutureBuilder<ClubWishlistData>(
+      future: _future,
+      builder: (context, snap) {
+        if (snap.connectionState == ConnectionState.waiting) {
+          return ClubShimmer(
+            width: double.infinity,
+            height: 96,
+            borderRadius: BorderRadius.circular(AppRadius.xl),
+          );
+        }
+
+        // Si error o sin datos, no mostramos nada para no estorbar
+        if (snap.hasError || snap.data == null) return const SizedBox.shrink();
+
+        final data = snap.data!;
+
+        // Si nadie tiene ítems en el club, no mostrar el widget
+        if (data.items.isEmpty) return const SizedBox.shrink();
+
+        // Mostrar hasta 3 libros más deseados por el club
+        final preview = data.items.take(3).toList();
+
+        return GestureDetector(
+          onTap: _openWishlist,
+          child: Container(
+            padding: const EdgeInsets.all(AppSpacing.md),
+            decoration: BoxDecoration(
+              color: AppColors.primaryLight.withValues(alpha: .2),
+              border: Border.all(
+                color: AppColors.primary.withValues(alpha: .2),
+              ),
+              borderRadius: BorderRadius.circular(AppRadius.xl),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    const Icon(
+                      Icons.shopping_cart_outlined,
+                      size: 18,
+                      color: AppColors.primary,
+                    ),
+                    const SizedBox(width: AppSpacing.xs),
+                    Text(
+                      'Lo que quiere el club',
+                      style: AppTextStyles.subtitle.copyWith(
+                        fontWeight: FontWeight.w800,
+                        color: AppColors.primaryDark,
+                      ),
+                    ),
+                    const Spacer(),
+                    if (data.membersWithWishlist > 0)
+                      Text(
+                        '${data.membersWithWishlist} miembro${data.membersWithWishlist > 1 ? 's' : ''}',
+                        style: AppTextStyles.caption.copyWith(
+                          color: AppColors.primary,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                  ],
+                ),
+                const SizedBox(height: AppSpacing.xs),
+                ...preview.map(
+                  (group) => Padding(
+                    padding: const EdgeInsets.only(top: 5),
+                    child: Row(
+                      children: [
+                        if (group.isUpcoming)
+                          const Text('🗓', style: TextStyle(fontSize: 12))
+                        else
+                          const Text('🛒', style: TextStyle(fontSize: 12)),
+                        const SizedBox(width: 5),
+                        Expanded(
+                          child: Text(
+                            group.title,
+                            style: AppTextStyles.body.copyWith(fontSize: 13),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                        if (group.members.length > 1)
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 5, vertical: 1),
+                            decoration: BoxDecoration(
+                              color: AppColors.primaryLight,
+                              borderRadius: BorderRadius.circular(5),
+                            ),
+                            child: Text(
+                              '×${group.members.length}',
+                              style: TextStyle(
+                                fontSize: 10,
+                                fontWeight: FontWeight.w700,
+                                color: AppColors.primary,
+                              ),
+                            ),
+                          ),
+                      ],
+                    ),
+                  ),
+                ),
+                if (data.items.length > 3) ...[
+                  const SizedBox(height: AppSpacing.xs),
+                  Text(
+                    '+${data.items.length - 3} más · Ver todo →',
+                    style: AppTextStyles.caption.copyWith(
+                      color: AppColors.primary,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ] else ...[
+                  const SizedBox(height: AppSpacing.xs),
+                  Text(
+                    'Ver lista completa →',
+                    style: AppTextStyles.caption.copyWith(
+                      color: AppColors.primary,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 }
