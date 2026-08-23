@@ -14,8 +14,19 @@ import 'wishlist_page.dart';
 // ─── Helpers de formato ────────────────────────────────────────────────────────
 
 const _shortMonths = [
-  '', 'ene', 'feb', 'mar', 'abr', 'may', 'jun',
-  'jul', 'ago', 'sep', 'oct', 'nov', 'dic',
+  '',
+  'ene',
+  'feb',
+  'mar',
+  'abr',
+  'may',
+  'jun',
+  'jul',
+  'ago',
+  'sep',
+  'oct',
+  'nov',
+  'dic',
 ];
 
 String _fmtDate(DateTime d) {
@@ -92,14 +103,15 @@ class _ClubWishlistPageState extends State<ClubWishlistPage> {
           return CustomScrollView(
             slivers: [
               // ── Cabecera-resumen ──────────────────────────────────────────
-              SliverToBoxAdapter(
-                child: _Header(data: data),
-              ),
+              SliverToBoxAdapter(child: _Header(data: data)),
 
               // ── Lista de libros ───────────────────────────────────────────
               SliverPadding(
                 padding: const EdgeInsets.fromLTRB(
-                  AppSpacing.md, 0, AppSpacing.md, AppSpacing.xl,
+                  AppSpacing.md,
+                  0,
+                  AppSpacing.md,
+                  AppSpacing.xl,
                 ),
                 sliver: SliverList.separated(
                   itemCount: data.items.length,
@@ -179,14 +191,18 @@ class _Header extends StatelessWidget {
           const SizedBox(height: AppSpacing.sm),
           Row(
             children: [
-              _Pill('${data.membersWithWishlist} miembro${data.membersWithWishlist != 1 ? 's' : ''}'),
+              _Pill(
+                '${data.membersWithWishlist} miembro${data.membersWithWishlist != 1 ? 's' : ''}',
+              ),
               const SizedBox(width: AppSpacing.xs),
-              _Pill('${data.totalItems} libro${data.totalItems != 1 ? 's' : ''}'),
+              _Pill(
+                '${data.totalItems} libro${data.totalItems != 1 ? 's' : ''}',
+              ),
             ],
           ),
           const SizedBox(height: AppSpacing.xs),
           Text(
-            'Libros que las miembros queréis comprar. Toca cualquiera para añadirlo a tu propia lista.',
+            'Libros que los miembros queréis comprar. Toca cualquiera para añadirlo a tu propia lista.',
             style: AppTextStyles.caption.copyWith(
               color: Colors.white.withValues(alpha: .70),
             ),
@@ -440,14 +456,17 @@ class _Skeleton extends StatelessWidget {
             borderRadius: BorderRadius.circular(AppRadius.xl),
           ),
           const SizedBox(height: AppSpacing.md),
-          ...List.generate(4, (_) => Padding(
-            padding: const EdgeInsets.only(bottom: AppSpacing.sm),
-            child: ClubShimmer(
-              width: double.infinity,
-              height: 100,
-              borderRadius: BorderRadius.circular(AppRadius.lg),
+          ...List.generate(
+            4,
+            (_) => Padding(
+              padding: const EdgeInsets.only(bottom: AppSpacing.sm),
+              child: ClubShimmer(
+                width: double.infinity,
+                height: 100,
+                borderRadius: BorderRadius.circular(AppRadius.lg),
+              ),
             ),
-          )),
+          ),
         ],
       ),
     );

@@ -164,7 +164,9 @@ class _WishlistPageState extends State<WishlistPage> {
       await _offerAddToLibrary(item);
     } on ApiException catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.message)));
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(e.message)));
     }
   }
 
@@ -216,7 +218,9 @@ class _WishlistPageState extends State<WishlistPage> {
             id: 'wishlist-${item.id}',
             source: 'GOOGLE',
             title: item.title,
-            authors: item.author?.trim().isNotEmpty == true ? [item.author!.trim()] : const [],
+            authors: item.author?.trim().isNotEmpty == true
+                ? [item.author!.trim()]
+                : const [],
             coverUrl: item.coverUrl ?? '',
             genre: '',
             isbn: item.isbn ?? '',
@@ -232,10 +236,14 @@ class _WishlistPageState extends State<WishlistPage> {
       LibraryRefreshNotifier.instance.invalidate();
       ScaffoldMessenger.of(context)
         ..hideCurrentSnackBar()
-        ..showSnackBar(SnackBar(content: Text('📚 "${item.title}" está en tu biblioteca')));
+        ..showSnackBar(
+          SnackBar(content: Text('📚 "${item.title}" está en tu biblioteca')),
+        );
     } on ApiException catch (error) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(error.message)));
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(error.message)));
     }
   }
 
@@ -245,7 +253,9 @@ class _WishlistPageState extends State<WishlistPage> {
       await _reload();
     } on ApiException catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.message)));
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(e.message)));
     }
   }
 
@@ -256,7 +266,10 @@ class _WishlistPageState extends State<WishlistPage> {
         title: const Text('Eliminar libro'),
         content: Text('¿Quitar "${item.title}" de tu lista?'),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancelar')),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Cancelar'),
+          ),
           TextButton(
             onPressed: () => Navigator.pop(ctx, true),
             style: TextButton.styleFrom(foregroundColor: AppColors.danger),
@@ -271,7 +284,9 @@ class _WishlistPageState extends State<WishlistPage> {
       await _reload();
     } on ApiException catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.message)));
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(e.message)));
     }
   }
 
@@ -341,7 +356,8 @@ class _WishlistPageState extends State<WishlistPage> {
                       summary: data.summary,
                       purchased: data.purchased,
                       purchasedSelected: _tab == _WishlistTab.purchased,
-                      onOpenPurchased: () => setState(() => _tab = _WishlistTab.purchased),
+                      onOpenPurchased: () =>
+                          setState(() => _tab = _WishlistTab.purchased),
                     ),
                   ),
                 ),
@@ -390,7 +406,8 @@ class _WishlistPageState extends State<WishlistPage> {
                       ),
                       sliver: SliverList.separated(
                         itemCount: data.purchased.length,
-                        separatorBuilder: (_, _) => const SizedBox(height: AppSpacing.sm),
+                        separatorBuilder: (_, _) =>
+                            const SizedBox(height: AppSpacing.sm),
                         itemBuilder: (_, i) => _PurchasedTile(
                           item: data.purchased[i],
                           onUnmark: () => _unmarkPurchased(data.purchased[i]),
@@ -433,10 +450,16 @@ class _WishlistPageState extends State<WishlistPage> {
                   )
                 else
                   SliverPadding(
-                    padding: EdgeInsets.fromLTRB(AppSpacing.md, AppSpacing.sm, AppSpacing.md, 120),
+                    padding: EdgeInsets.fromLTRB(
+                      AppSpacing.md,
+                      AppSpacing.sm,
+                      AppSpacing.md,
+                      120,
+                    ),
                     sliver: SliverList.separated(
                       itemCount: visibleItems.length,
-                      separatorBuilder: (_, _) => const SizedBox(height: AppSpacing.sm),
+                      separatorBuilder: (_, _) =>
+                          const SizedBox(height: AppSpacing.sm),
                       itemBuilder: (_, i) => _SwipeableTile(
                         key: ValueKey(visibleItems[i].id),
                         item: visibleItems[i],
@@ -479,7 +502,10 @@ class _BudgetCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final priceStr = _fmtPrice(summary.totalPrice);
-    final totalSpent = purchased.fold<double>(0, (sum, item) => sum + (item.price ?? 0));
+    final totalSpent = purchased.fold<double>(
+      0,
+      (sum, item) => sum + (item.price ?? 0),
+    );
     return Container(
       margin: const EdgeInsets.only(bottom: AppSpacing.sm),
       padding: const EdgeInsets.all(AppSpacing.md),
@@ -492,54 +518,54 @@ class _BudgetCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(AppRadius.xl),
       ),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Row(
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Presupuesto pendiente',
-                      style: AppTextStyles.caption.copyWith(
-                        color: Colors.white70,
-                        letterSpacing: 0.5,
-                      ),
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      '$priceStr €',
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 28,
-                        fontWeight: FontWeight.w800,
-                        letterSpacing: -0.5,
-                      ),
-                    ),
-                    Text(
-                      '${summary.totalItems} ${summary.totalItems == 1 ? 'libro' : 'libros'} en lista',
-                      style: AppTextStyles.caption.copyWith(color: Colors.white60),
-                    ),
-                  ],
+              Text(
+                'Presupuesto pendiente',
+                textAlign: TextAlign.center,
+                style: AppTextStyles.caption.copyWith(
+                  color: Colors.white70,
+                  letterSpacing: 0.5,
                 ),
               ),
+              const SizedBox(height: 2),
+              Text(
+                '$priceStr €',
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 28,
+                  fontWeight: FontWeight.w800,
+                  letterSpacing: -0.5,
+                ),
+              ),
+              Text(
+                '${summary.totalItems} ${summary.totalItems == 1 ? 'libro' : 'libros'} en lista',
+                textAlign: TextAlign.center,
+                style: AppTextStyles.caption.copyWith(color: Colors.white60),
+              ),
               if (summary.thisMonthPrice > 0)
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: AppSpacing.sm,
-                    vertical: AppSpacing.xxs,
-                  ),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: .18),
-                    borderRadius: BorderRadius.circular(AppRadius.sm),
-                  ),
-                  child: Text(
-                    '${_fmtPrice(summary.thisMonthPrice)} € este mes',
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 11,
-                      fontWeight: FontWeight.w700,
+                Padding(
+                  padding: const EdgeInsets.only(top: AppSpacing.xs),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: AppSpacing.sm,
+                      vertical: AppSpacing.xxs,
+                    ),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: .18),
+                      borderRadius: BorderRadius.circular(AppRadius.sm),
+                    ),
+                    child: Text(
+                      '${_fmtPrice(summary.thisMonthPrice)} € este mes',
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 11,
+                        fontWeight: FontWeight.w700,
+                      ),
                     ),
                   ),
                 ),
@@ -547,15 +573,25 @@ class _BudgetCard extends StatelessWidget {
           ),
           const SizedBox(height: AppSpacing.sm),
           Wrap(
+            alignment: WrapAlignment.center,
+            runAlignment: WrapAlignment.center,
             spacing: 6,
+            runSpacing: 6,
             children: [
               if (summary.physicalCount > 0)
-                _pill('📕 ${summary.physicalCount} físico${summary.physicalCount > 1 ? 's' : ''}'),
+                _pill(
+                  '📕 ${summary.physicalCount} físico${summary.physicalCount > 1 ? 's' : ''}',
+                ),
               if (summary.digitalCount > 0)
-                _pill('📱 ${summary.digitalCount} digital${summary.digitalCount > 1 ? 'es' : ''}'),
-              if (summary.audiobookCount > 0) _pill('🎧 ${summary.audiobookCount} audio'),
+                _pill(
+                  '📱 ${summary.digitalCount} digital${summary.digitalCount > 1 ? 'es' : ''}',
+                ),
+              if (summary.audiobookCount > 0)
+                _pill('🎧 ${summary.audiobookCount} audio'),
               if (summary.upcomingCount > 0)
-                _pill('🗓 ${summary.upcomingCount} próximo${summary.upcomingCount > 1 ? 's' : ''}'),
+                _pill(
+                  '🗓 ${summary.upcomingCount} próximo${summary.upcomingCount > 1 ? 's' : ''}',
+                ),
             ],
           ),
           const SizedBox(height: AppSpacing.sm),
@@ -570,13 +606,21 @@ class _BudgetCard extends StatelessWidget {
                   vertical: AppSpacing.sm,
                 ),
                 decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: purchasedSelected ? .24 : .12),
+                  color: Colors.white.withValues(
+                    alpha: purchasedSelected ? .24 : .12,
+                  ),
                   borderRadius: BorderRadius.circular(AppRadius.md),
-                  border: Border.all(color: Colors.white.withValues(alpha: .22)),
+                  border: Border.all(
+                    color: Colors.white.withValues(alpha: .22),
+                  ),
                 ),
                 child: Row(
                   children: [
-                    const Icon(Icons.shopping_bag_outlined, color: Colors.white, size: 19),
+                    const Icon(
+                      Icons.shopping_bag_outlined,
+                      color: Colors.white,
+                      size: 19,
+                    ),
                     const SizedBox(width: AppSpacing.sm),
                     Expanded(
                       child: Column(
@@ -594,7 +638,10 @@ class _BudgetCard extends StatelessWidget {
                             totalSpent > 0
                                 ? '${_fmtPrice(totalSpent)} € gastados en total'
                                 : 'Consulta tu historial de compras',
-                            style: const TextStyle(color: Colors.white70, fontSize: 10),
+                            style: const TextStyle(
+                              color: Colors.white70,
+                              fontSize: 10,
+                            ),
                           ),
                         ],
                       ),
@@ -608,7 +655,11 @@ class _BudgetCard extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(width: 3),
-                    const Icon(Icons.arrow_forward_rounded, color: Colors.white, size: 16),
+                    const Icon(
+                      Icons.arrow_forward_rounded,
+                      color: Colors.white,
+                      size: 16,
+                    ),
                   ],
                 ),
               ),
@@ -627,7 +678,11 @@ class _BudgetCard extends StatelessWidget {
     ),
     child: Text(
       text,
-      style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.w600),
+      style: const TextStyle(
+        color: Colors.white,
+        fontSize: 10,
+        fontWeight: FontWeight.w600,
+      ),
     ),
   );
 }
@@ -696,7 +751,12 @@ class _TabsDelegate extends SliverPersistentHeaderDelegate {
             color: selected ? Colors.white : Colors.transparent,
             borderRadius: BorderRadius.circular(8),
             boxShadow: selected
-                ? [BoxShadow(color: Colors.black.withValues(alpha: .06), blurRadius: 4)]
+                ? [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: .06),
+                      blurRadius: 4,
+                    ),
+                  ]
                 : null,
           ),
           child: Row(
@@ -713,9 +773,14 @@ class _TabsDelegate extends SliverPersistentHeaderDelegate {
               if (count != null && count > 0) ...[
                 const SizedBox(width: 3),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 5,
+                    vertical: 1,
+                  ),
                   decoration: BoxDecoration(
-                    color: selected ? AppColors.primaryLight : AppColors.surfaceSoft,
+                    color: selected
+                        ? AppColors.primaryLight
+                        : AppColors.surfaceSoft,
                     borderRadius: BorderRadius.circular(4),
                   ),
                   child: Text(
@@ -723,7 +788,9 @@ class _TabsDelegate extends SliverPersistentHeaderDelegate {
                     style: TextStyle(
                       fontSize: 10,
                       fontWeight: FontWeight.w700,
-                      color: selected ? AppColors.primary : AppColors.textSecondary,
+                      color: selected
+                          ? AppColors.primary
+                          : AppColors.textSecondary,
                     ),
                   ),
                 ),
@@ -737,13 +804,19 @@ class _TabsDelegate extends SliverPersistentHeaderDelegate {
 
   @override
   bool shouldRebuild(_TabsDelegate old) =>
-      tab != old.tab || upcomingCount != old.upcomingCount || availableCount != old.availableCount;
+      tab != old.tab ||
+      upcomingCount != old.upcomingCount ||
+      availableCount != old.availableCount;
 }
 
 // ─── Vista Planificar ──────────────────────────────────────────────────────────
 
 class _PlanView extends StatelessWidget {
-  const _PlanView({required this.items, required this.onEdit, required this.onDelete});
+  const _PlanView({
+    required this.items,
+    required this.onEdit,
+    required this.onDelete,
+  });
 
   final List<WishlistItem> items;
   final Future<void> Function(WishlistItem) onEdit;
@@ -799,7 +872,10 @@ class _PlanView extends StatelessWidget {
         if (unplanned.isNotEmpty) ...[
           _SectionLabel('Sin mes asignado'),
           const SizedBox(height: AppSpacing.xs),
-          Text('Toca un libro para asignarle un mes de compra.', style: AppTextStyles.caption),
+          Text(
+            'Toca un libro para asignarle un mes de compra.',
+            style: AppTextStyles.caption,
+          ),
           const SizedBox(height: AppSpacing.sm),
           ...unplanned.map(
             (item) => Padding(
@@ -826,11 +902,18 @@ class _MonthHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     final total = items.fold<double>(0, (sum, i) => sum + (i.price ?? 0));
     final label = _fmtMonthYear(month);
-    final isThisMonth = month.year == DateTime.now().year && month.month == DateTime.now().month;
-    final isPast = month.isBefore(DateTime(DateTime.now().year, DateTime.now().month));
+    final isThisMonth =
+        month.year == DateTime.now().year &&
+        month.month == DateTime.now().month;
+    final isPast = month.isBefore(
+      DateTime(DateTime.now().year, DateTime.now().month),
+    );
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm, vertical: AppSpacing.xs),
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.sm,
+        vertical: AppSpacing.xs,
+      ),
       decoration: BoxDecoration(
         color: isPast
             ? AppColors.surfaceMuted
@@ -839,7 +922,9 @@ class _MonthHeader extends StatelessWidget {
             : AppColors.background,
         borderRadius: BorderRadius.circular(AppRadius.sm),
         border: Border.all(
-          color: isThisMonth ? AppColors.primary.withValues(alpha: .4) : AppColors.paperLine,
+          color: isThisMonth
+              ? AppColors.primary.withValues(alpha: .4)
+              : AppColors.paperLine,
         ),
       ),
       child: Row(
@@ -853,7 +938,9 @@ class _MonthHeader extends StatelessWidget {
             style: AppTextStyles.subtitle.copyWith(
               fontWeight: FontWeight.w700,
               fontSize: 13,
-              color: isThisMonth ? AppColors.primaryDark : AppColors.textPrimary,
+              color: isThisMonth
+                  ? AppColors.primaryDark
+                  : AppColors.textPrimary,
             ),
           ),
           const Spacer(),
@@ -862,7 +949,9 @@ class _MonthHeader extends StatelessWidget {
               '${_fmtPrice(total)} €',
               style: AppTextStyles.caption.copyWith(
                 fontWeight: FontWeight.w700,
-                color: isThisMonth ? AppColors.primary : AppColors.textSecondary,
+                color: isThisMonth
+                    ? AppColors.primary
+                    : AppColors.textSecondary,
               ),
             ),
         ],
@@ -891,7 +980,11 @@ class _SectionLabel extends StatelessWidget {
 // ─── Tile de ítem ──────────────────────────────────────────────────────────────
 
 class _WishlistTile extends StatelessWidget {
-  const _WishlistTile({required this.item, required this.onEdit, required this.onDelete});
+  const _WishlistTile({
+    required this.item,
+    required this.onEdit,
+    required this.onDelete,
+  });
 
   final WishlistItem item;
   final VoidCallback onEdit;
@@ -904,12 +997,17 @@ class _WishlistTile extends StatelessWidget {
 
     return ClubCard(
       elevated: false,
-      borderColor: isUpcoming ? AppColors.primary.withValues(alpha: .25) : AppColors.paperLine,
+      borderColor: isUpcoming
+          ? AppColors.primary.withValues(alpha: .25)
+          : AppColors.paperLine,
       gradient: isUpcoming
           ? LinearGradient(
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
-              colors: [AppColors.primaryLight.withValues(alpha: .3), AppColors.background],
+              colors: [
+                AppColors.primaryLight.withValues(alpha: .3),
+                AppColors.background,
+              ],
             )
           : null,
       onTap: onEdit,
@@ -927,7 +1025,10 @@ class _WishlistTile extends StatelessWidget {
               children: [
                 Text(
                   item.title,
-                  style: AppTextStyles.subtitle.copyWith(fontWeight: FontWeight.w700, fontSize: 14),
+                  style: AppTextStyles.subtitle.copyWith(
+                    fontWeight: FontWeight.w700,
+                    fontSize: 14,
+                  ),
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                 ),
@@ -1047,10 +1148,17 @@ class _Chip extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-      decoration: BoxDecoration(color: bg, borderRadius: BorderRadius.circular(5)),
+      decoration: BoxDecoration(
+        color: bg,
+        borderRadius: BorderRadius.circular(5),
+      ),
       child: Text(
         label,
-        style: TextStyle(fontSize: 10, fontWeight: FontWeight.w600, color: color),
+        style: TextStyle(
+          fontSize: 10,
+          fontWeight: FontWeight.w600,
+          color: color,
+        ),
       ),
     );
   }
@@ -1108,7 +1216,11 @@ class _SwipeableTile extends StatelessWidget {
         ),
         child: Row(
           children: [
-            const Icon(Icons.check_circle_outline_rounded, color: AppColors.success, size: 22),
+            const Icon(
+              Icons.check_circle_outline_rounded,
+              color: AppColors.success,
+              size: 22,
+            ),
             const SizedBox(width: 8),
             Text(
               '¡Comprado!',
@@ -1138,7 +1250,10 @@ class _PurchasedHeader extends StatelessWidget {
       children: [
         const Text('✅', style: TextStyle(fontSize: 16)),
         const SizedBox(width: AppSpacing.xs),
-        Text('Comprados', style: AppTextStyles.subtitle.copyWith(fontWeight: FontWeight.w800)),
+        Text(
+          'Comprados',
+          style: AppTextStyles.subtitle.copyWith(fontWeight: FontWeight.w800),
+        ),
         const Spacer(),
         if (totalSpent > 0)
           Container(
@@ -1163,7 +1278,11 @@ class _PurchasedHeader extends StatelessWidget {
 // ─── Tile de comprado ──────────────────────────────────────────────────────────
 
 class _PurchasedTile extends StatelessWidget {
-  const _PurchasedTile({required this.item, required this.onUnmark, required this.onDelete});
+  const _PurchasedTile({
+    required this.item,
+    required this.onUnmark,
+    required this.onDelete,
+  });
 
   final WishlistItem item;
   final VoidCallback onUnmark;
@@ -1190,7 +1309,11 @@ class _PurchasedTile extends StatelessWidget {
               children: [
                 Row(
                   children: [
-                    const Icon(Icons.check_circle_rounded, size: 13, color: AppColors.success),
+                    const Icon(
+                      Icons.check_circle_rounded,
+                      size: 13,
+                      color: AppColors.success,
+                    ),
                     const SizedBox(width: 4),
                     Expanded(
                       child: Text(
@@ -1226,7 +1349,9 @@ class _PurchasedTile extends StatelessWidget {
                 if (item.price != null)
                   Text(
                     '${_fmtPrice(item.price!)} €',
-                    style: AppTextStyles.caption.copyWith(fontWeight: FontWeight.w600),
+                    style: AppTextStyles.caption.copyWith(
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
               ],
             ),
@@ -1240,7 +1365,11 @@ class _PurchasedTile extends StatelessWidget {
                 onTap: onUnmark,
                 child: const Tooltip(
                   message: 'Volver a lista',
-                  child: Icon(Icons.undo_rounded, size: 18, color: AppColors.textSecondary),
+                  child: Icon(
+                    Icons.undo_rounded,
+                    size: 18,
+                    color: AppColors.textSecondary,
+                  ),
                 ),
               ),
               const SizedBox(height: AppSpacing.sm),
@@ -1483,9 +1612,9 @@ class _WishlistAddSheetState extends State<WishlistAddSheet> {
   Future<void> _save() async {
     final title = _titleCtrl.text.trim();
     if (title.isEmpty) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('El título es obligatorio.')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('El título es obligatorio.')),
+      );
       return;
     }
     setState(() => _saving = true);
@@ -1495,7 +1624,9 @@ class _WishlistAddSheetState extends State<WishlistAddSheet> {
         await _service.updateItem(
           widget.editItem!.id,
           title: title,
-          author: _authorCtrl.text.trim().isEmpty ? null : _authorCtrl.text.trim(),
+          author: _authorCtrl.text.trim().isEmpty
+              ? null
+              : _authorCtrl.text.trim(),
           coverUrl: _coverUrl,
           isbn: _isbn,
           format: _format,
@@ -1513,7 +1644,9 @@ class _WishlistAddSheetState extends State<WishlistAddSheet> {
         await _service.addItem(
           bookId: _bookId,
           title: title,
-          author: _authorCtrl.text.trim().isEmpty ? null : _authorCtrl.text.trim(),
+          author: _authorCtrl.text.trim().isEmpty
+              ? null
+              : _authorCtrl.text.trim(),
           coverUrl: _coverUrl,
           plannedMonth: _plannedMonth,
           isbn: _isbn,
@@ -1528,11 +1661,15 @@ class _WishlistAddSheetState extends State<WishlistAddSheet> {
     } on ApiException catch (e) {
       if (!mounted) return;
       setState(() => _saving = false);
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.message)));
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(e.message)));
     } catch (e) {
       if (!mounted) return;
       setState(() => _saving = false);
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error al guardar: $e')));
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Error al guardar: $e')));
     }
   }
 
@@ -1575,7 +1712,10 @@ class _WishlistAddSheetState extends State<WishlistAddSheet> {
 
           // Título del sheet
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: AppSpacing.xs),
+            padding: const EdgeInsets.symmetric(
+              horizontal: AppSpacing.md,
+              vertical: AppSpacing.xs,
+            ),
             child: Row(
               children: [
                 Expanded(
@@ -1593,7 +1733,10 @@ class _WishlistAddSheetState extends State<WishlistAddSheet> {
                 else
                   TextButton(
                     onPressed: _save,
-                    child: const Text('Guardar', style: TextStyle(fontWeight: FontWeight.w700)),
+                    child: const Text(
+                      'Guardar',
+                      style: TextStyle(fontWeight: FontWeight.w700),
+                    ),
                   ),
               ],
             ),
@@ -1625,12 +1768,16 @@ class _WishlistAddSheetState extends State<WishlistAddSheet> {
                                 child: SizedBox(
                                   width: 16,
                                   height: 16,
-                                  child: CircularProgressIndicator(strokeWidth: 2),
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                  ),
                                 ),
                               )
                             : null,
                         isDense: true,
-                        contentPadding: const EdgeInsets.symmetric(vertical: 10),
+                        contentPadding: const EdgeInsets.symmetric(
+                          vertical: 10,
+                        ),
                       ),
                       onChanged: _onSearchChanged,
                     ),
@@ -1646,8 +1793,11 @@ class _WishlistAddSheetState extends State<WishlistAddSheet> {
                           shrinkWrap: true,
                           physics: const NeverScrollableScrollPhysics(),
                           itemCount: _searchResults.length,
-                          separatorBuilder: (_, _) =>
-                              const Divider(height: 1, indent: 12, endIndent: 12),
+                          separatorBuilder: (_, _) => const Divider(
+                            height: 1,
+                            indent: 12,
+                            endIndent: 12,
+                          ),
                           itemBuilder: (_, i) {
                             final r = _searchResults[i];
                             return ListTile(
@@ -1669,7 +1819,10 @@ class _WishlistAddSheetState extends State<WishlistAddSheet> {
                                   : const Icon(Icons.book_rounded, size: 28),
                               title: Text(
                                 r.title,
-                                style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
+                                style: const TextStyle(
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w600,
+                                ),
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
                               ),
@@ -1689,7 +1842,9 @@ class _WishlistAddSheetState extends State<WishlistAddSheet> {
                           },
                         ),
                       )
-                    else if (_searchDone && !_searching && _searchCtrl.text.trim().length >= 3)
+                    else if (_searchDone &&
+                        !_searching &&
+                        _searchCtrl.text.trim().length >= 3)
                       Padding(
                         padding: const EdgeInsets.only(top: AppSpacing.xs),
                         child: Text(
@@ -1710,7 +1865,10 @@ class _WishlistAddSheetState extends State<WishlistAddSheet> {
                     decoration: const InputDecoration(
                       hintText: 'Título del libro',
                       isDense: true,
-                      contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                      contentPadding: EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 10,
+                      ),
                     ),
                     textCapitalization: TextCapitalization.sentences,
                   ),
@@ -1723,7 +1881,10 @@ class _WishlistAddSheetState extends State<WishlistAddSheet> {
                     decoration: const InputDecoration(
                       hintText: 'Opcional',
                       isDense: true,
-                      contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                      contentPadding: EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 10,
+                      ),
                     ),
                   ),
                   const SizedBox(height: AppSpacing.sm),
@@ -1741,23 +1902,32 @@ class _WishlistAddSheetState extends State<WishlistAddSheet> {
                             margin: const EdgeInsets.only(right: 6),
                             padding: const EdgeInsets.symmetric(vertical: 8),
                             decoration: BoxDecoration(
-                              color: sel ? AppColors.primaryLight : AppColors.surfaceSoft,
+                              color: sel
+                                  ? AppColors.primaryLight
+                                  : AppColors.surfaceSoft,
                               borderRadius: BorderRadius.circular(AppRadius.sm),
                               border: Border.all(
-                                color: sel ? AppColors.primary : AppColors.paperLine,
+                                color: sel
+                                    ? AppColors.primary
+                                    : AppColors.paperLine,
                                 width: sel ? 1.5 : 1,
                               ),
                             ),
                             child: Column(
                               children: [
-                                Text(f.emoji, style: const TextStyle(fontSize: 18)),
+                                Text(
+                                  f.emoji,
+                                  style: const TextStyle(fontSize: 18),
+                                ),
                                 const SizedBox(height: 2),
                                 Text(
                                   f.label,
                                   style: TextStyle(
                                     fontSize: 11,
                                     fontWeight: FontWeight.w600,
-                                    color: sel ? AppColors.primary : AppColors.textSecondary,
+                                    color: sel
+                                        ? AppColors.primary
+                                        : AppColors.textSecondary,
                                   ),
                                 ),
                               ],
@@ -1780,14 +1950,22 @@ class _WishlistAddSheetState extends State<WishlistAddSheet> {
                             _Label('Precio (€)'),
                             TextField(
                               controller: _priceCtrl,
-                              keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                              keyboardType:
+                                  const TextInputType.numberWithOptions(
+                                    decimal: true,
+                                  ),
                               inputFormatters: [
-                                FilteringTextInputFormatter.allow(RegExp(r'[\d,.]')),
+                                FilteringTextInputFormatter.allow(
+                                  RegExp(r'[\d,.]'),
+                                ),
                               ],
                               decoration: const InputDecoration(
                                 hintText: 'Ej: 18,90',
                                 isDense: true,
-                                contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                                contentPadding: EdgeInsets.symmetric(
+                                  horizontal: 12,
+                                  vertical: 10,
+                                ),
                               ),
                             ),
                           ],
@@ -1803,10 +1981,17 @@ class _WishlistAddSheetState extends State<WishlistAddSheet> {
                               onTap: _pickReleaseDate,
                               borderRadius: BorderRadius.circular(AppRadius.sm),
                               child: Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 12,
+                                  vertical: 10,
+                                ),
                                 decoration: BoxDecoration(
-                                  border: Border.all(color: AppColors.paperLine),
-                                  borderRadius: BorderRadius.circular(AppRadius.sm),
+                                  border: Border.all(
+                                    color: AppColors.paperLine,
+                                  ),
+                                  borderRadius: BorderRadius.circular(
+                                    AppRadius.sm,
+                                  ),
                                   color: AppColors.surfaceSoft,
                                 ),
                                 child: Row(
@@ -1814,7 +1999,10 @@ class _WishlistAddSheetState extends State<WishlistAddSheet> {
                                     Expanded(
                                       child: Text(
                                         _releaseDate != null
-                                            ? _fmtDateShort(_releaseDate!, includeYear: true)
+                                            ? _fmtDateShort(
+                                                _releaseDate!,
+                                                includeYear: true,
+                                              )
                                             : 'Ya disponible',
                                         style: TextStyle(
                                           fontSize: 13,
@@ -1826,7 +2014,8 @@ class _WishlistAddSheetState extends State<WishlistAddSheet> {
                                     ),
                                     if (_releaseDate != null)
                                       GestureDetector(
-                                        onTap: () => setState(() => _releaseDate = null),
+                                        onTap: () =>
+                                            setState(() => _releaseDate = null),
                                         child: const Icon(
                                           Icons.close_rounded,
                                           size: 16,
@@ -1868,7 +2057,9 @@ class _WishlistAddSheetState extends State<WishlistAddSheet> {
                             margin: const EdgeInsets.only(right: 6),
                             padding: const EdgeInsets.symmetric(vertical: 8),
                             decoration: BoxDecoration(
-                              color: sel ? color.withValues(alpha: .1) : AppColors.surfaceSoft,
+                              color: sel
+                                  ? color.withValues(alpha: .1)
+                                  : AppColors.surfaceSoft,
                               borderRadius: BorderRadius.circular(AppRadius.sm),
                               border: Border.all(
                                 color: sel ? color : AppColors.paperLine,
@@ -1897,7 +2088,10 @@ class _WishlistAddSheetState extends State<WishlistAddSheet> {
                     onTap: _pickPlannedMonth,
                     borderRadius: BorderRadius.circular(AppRadius.sm),
                     child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 10,
+                      ),
                       decoration: BoxDecoration(
                         border: Border.all(color: AppColors.paperLine),
                         borderRadius: BorderRadius.circular(AppRadius.sm),
@@ -1947,7 +2141,10 @@ class _WishlistAddSheetState extends State<WishlistAddSheet> {
                     decoration: const InputDecoration(
                       hintText: 'Para la lista de cumple, regalo…',
                       isDense: true,
-                      contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                      contentPadding: EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 10,
+                      ),
                     ),
                     textCapitalization: TextCapitalization.sentences,
                   ),
@@ -1971,7 +2168,10 @@ class _Label extends StatelessWidget {
       padding: const EdgeInsets.only(bottom: 5),
       child: Text(
         text,
-        style: AppTextStyles.caption.copyWith(fontWeight: FontWeight.w700, letterSpacing: 0.04),
+        style: AppTextStyles.caption.copyWith(
+          fontWeight: FontWeight.w700,
+          letterSpacing: 0.04,
+        ),
       ),
     );
   }
@@ -2018,7 +2218,9 @@ class _MonthPickerDialogState extends State<_MonthPickerDialog> {
     final now = DateTime.now();
 
     return Dialog(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.xl)),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(AppRadius.xl),
+      ),
       backgroundColor: AppColors.background,
       child: Padding(
         padding: const EdgeInsets.all(AppSpacing.md),
@@ -2031,12 +2233,21 @@ class _MonthPickerDialogState extends State<_MonthPickerDialog> {
               children: [
                 IconButton(
                   icon: const Icon(Icons.chevron_left_rounded),
-                  onPressed: _year > now.year ? () => setState(() => _year--) : null,
+                  onPressed: _year > now.year
+                      ? () => setState(() => _year--)
+                      : null,
                 ),
-                Text('$_year', style: AppTextStyles.section.copyWith(fontWeight: FontWeight.w800)),
+                Text(
+                  '$_year',
+                  style: AppTextStyles.section.copyWith(
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
                 IconButton(
                   icon: const Icon(Icons.chevron_right_rounded),
-                  onPressed: _year < now.year + 3 ? () => setState(() => _year++) : null,
+                  onPressed: _year < now.year + 3
+                      ? () => setState(() => _year++)
+                      : null,
                 ),
               ],
             ),
@@ -2093,11 +2304,17 @@ class _MonthPickerDialogState extends State<_MonthPickerDialog> {
             Row(
               mainAxisAlignment: MainAxisAlignment.end,
               children: [
-                TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancelar')),
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text('Cancelar'),
+                ),
                 const SizedBox(width: AppSpacing.xs),
                 FilledButton(
-                  onPressed: () => Navigator.pop(context, DateTime(_year, _month)),
-                  style: FilledButton.styleFrom(backgroundColor: AppColors.primary),
+                  onPressed: () =>
+                      Navigator.pop(context, DateTime(_year, _month)),
+                  style: FilledButton.styleFrom(
+                    backgroundColor: AppColors.primary,
+                  ),
                   child: const Text('Confirmar'),
                 ),
               ],
@@ -2112,7 +2329,11 @@ class _MonthPickerDialogState extends State<_MonthPickerDialog> {
 // ─── Widget compacto para dashboards (acceso rápido) ──────────────────────────
 
 class WishlistSummaryCard extends StatelessWidget {
-  const WishlistSummaryCard({super.key, required this.data, required this.onTap});
+  const WishlistSummaryCard({
+    super.key,
+    required this.data,
+    required this.onTap,
+  });
 
   final WishlistData data;
   final VoidCallback onTap;
@@ -2127,7 +2348,10 @@ class WishlistSummaryCard extends StatelessWidget {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: AppSpacing.md),
+        padding: const EdgeInsets.symmetric(
+          horizontal: AppSpacing.md,
+          vertical: AppSpacing.md,
+        ),
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(AppRadius.xl),
           gradient: const LinearGradient(
@@ -2156,7 +2380,9 @@ class WishlistSummaryCard extends StatelessWidget {
                     color: Colors.white.withValues(alpha: .18),
                     borderRadius: BorderRadius.circular(10),
                   ),
-                  child: const Center(child: Text('🛍️', style: TextStyle(fontSize: 18))),
+                  child: const Center(
+                    child: Text('🛍️', style: TextStyle(fontSize: 18)),
+                  ),
                 ),
                 const SizedBox(width: AppSpacing.sm),
                 Text(
@@ -2169,7 +2395,10 @@ class WishlistSummaryCard extends StatelessWidget {
                 const Spacer(),
                 if (data.summary.totalPrice > 0)
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 10,
+                      vertical: 4,
+                    ),
                     decoration: BoxDecoration(
                       color: Colors.white.withValues(alpha: .18),
                       borderRadius: BorderRadius.circular(20),
@@ -2191,7 +2420,9 @@ class WishlistSummaryCard extends StatelessWidget {
             if (preview.isEmpty)
               Text(
                 'Sin libros en lista aún',
-                style: AppTextStyles.caption.copyWith(color: Colors.white.withValues(alpha: .70)),
+                style: AppTextStyles.caption.copyWith(
+                  color: Colors.white.withValues(alpha: .70),
+                ),
               )
             else
               ...preview.map(
@@ -2232,7 +2463,9 @@ class WishlistSummaryCard extends StatelessWidget {
               const SizedBox(height: AppSpacing.xs),
               Text(
                 '+${data.totalItems - 3} más',
-                style: AppTextStyles.caption.copyWith(color: Colors.white.withValues(alpha: .70)),
+                style: AppTextStyles.caption.copyWith(
+                  color: Colors.white.withValues(alpha: .70),
+                ),
               ),
             ],
 
