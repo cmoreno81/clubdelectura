@@ -31,7 +31,6 @@ String _fmtPrice(double price) {
   }
   return '${buf.toString()},${decPart}';
 }
-
 const _shortMonths = [
   '', 'ene', 'feb', 'mar', 'abr', 'may', 'jun',
   'jul', 'ago', 'sep', 'oct', 'nov', 'dic',
@@ -59,6 +58,8 @@ class WishlistPage extends StatefulWidget {
 class _WishlistPageState extends State<WishlistPage> {
   late final WishlistService _service;
   late Future<WishlistData> _future;
+  ScaffoldFeatureController<SnackBar, SnackBarClosedReason>? _purchaseNotice;
+  Timer? _purchaseNoticeTimer;
   _WishlistTab _tab = _WishlistTab.all;
 
   @override
@@ -66,6 +67,41 @@ class _WishlistPageState extends State<WishlistPage> {
     super.initState();
     _service = widget.service ?? WishlistService();
     _future = _service.getWishlist();
+  }
+
+  @override
+  void dispose() {
+    _purchaseNoticeTimer?.cancel();
+    _purchaseNotice?.close();
+    super.dispose();
+  }
+
+  void _showPurchasedNotice(WishlistItem item) {
+    _purchaseNoticeTimer?.cancel();
+    _purchaseNotice?.close();
+
+    final messenger = ScaffoldMessenger.of(context);
+    messenger.hideCurrentSnackBar();
+    _purchaseNotice = messenger.showSnackBar(
+      SnackBar(
+        content: Text('✅ "${item.title}" marcado como comprado'),
+        action: SnackBarAction(
+          label: 'Deshacer',
+          onPressed: () async {
+            _purchaseNoticeTimer?.cancel();
+            await _service.unmarkPurchased(item.id);
+            await _reload();
+          },
+        ),
+        duration: const Duration(seconds: 4),
+      ),
+    );
+
+    // Los avisos con acción pueden no caducar con navegación accesible.
+    _purchaseNoticeTimer = Timer(const Duration(seconds: 4), () {
+      _purchaseNotice?.close();
+      _purchaseNotice = null;
+    });
   }
 
   Future<void> _reload() async {
@@ -110,19 +146,7 @@ class _WishlistPageState extends State<WishlistPage> {
       await _service.markPurchased(item.id);
       await _reload();
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('✅ "${item.title}" marcado como comprado'),
-          action: SnackBarAction(
-            label: 'Deshacer',
-            onPressed: () async {
-              await _service.unmarkPurchased(item.id);
-              await _reload();
-            },
-          ),
-          duration: const Duration(seconds: 5),
-        ),
-      );
+      _showPurchasedNotice(item);
     } on ApiException catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
