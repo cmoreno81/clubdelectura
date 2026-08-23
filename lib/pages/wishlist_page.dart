@@ -1000,16 +1000,12 @@ class _WishlistAddSheetState extends State<WishlistAddSheet> {
 
   Future<void> _pickPlannedMonth() async {
     final now = DateTime.now();
-    final picked = await showDatePicker(
+    final initial = _plannedMonth ?? now;
+    final result = await showDialog<DateTime>(
       context: context,
-      initialDate: _plannedMonth ?? now,
-      firstDate: DateTime(now.year, now.month),
-      lastDate: DateTime(now.year + 2, 12),
-      helpText: 'Mes de compra planificado',
+      builder: (ctx) => _MonthPickerDialog(initial: initial),
     );
-    if (picked != null) {
-      setState(() => _plannedMonth = DateTime(picked.year, picked.month));
-    }
+    if (result != null) setState(() => _plannedMonth = result);
   }
 
   Future<void> _save() async {
@@ -1063,9 +1059,12 @@ class _WishlistAddSheetState extends State<WishlistAddSheet> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(e.message)),
       );
-    } catch (_) {
+    } catch (e) {
       if (!mounted) return;
       setState(() => _saving = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error al guardar: $e')),
+      );
     }
   }
 
@@ -1507,6 +1506,146 @@ class _Label extends StatelessWidget {
         style: AppTextStyles.caption.copyWith(
           fontWeight: FontWeight.w700,
           letterSpacing: 0.04,
+        ),
+      ),
+    );
+  }
+}
+
+// ─── Selector personalizado de mes/año ────────────────────────────────────────
+
+class _MonthPickerDialog extends StatefulWidget {
+  const _MonthPickerDialog({required this.initial});
+  final DateTime initial;
+
+  @override
+  State<_MonthPickerDialog> createState() => _MonthPickerDialogState();
+}
+
+class _MonthPickerDialogState extends State<_MonthPickerDialog> {
+  late int _year;
+  late int _month;
+
+  static const _monthLabels = [
+    'Ene', 'Feb', 'Mar', 'Abr',
+    'May', 'Jun', 'Jul', 'Ago',
+    'Sep', 'Oct', 'Nov', 'Dic',
+  ];
+
+  @override
+  void initState() {
+    super.initState();
+    _year = widget.initial.year;
+    _month = widget.initial.month;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final now = DateTime.now();
+
+    return Dialog(
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(AppRadius.xl),
+      ),
+      backgroundColor: AppColors.background,
+      child: Padding(
+        padding: const EdgeInsets.all(AppSpacing.md),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // ── Selector de año ──────────────────────────────────────────
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                IconButton(
+                  icon: const Icon(Icons.chevron_left_rounded),
+                  onPressed: _year > now.year
+                      ? () => setState(() => _year--)
+                      : null,
+                ),
+                Text(
+                  '$_year',
+                  style: AppTextStyles.section.copyWith(
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+                IconButton(
+                  icon: const Icon(Icons.chevron_right_rounded),
+                  onPressed: _year < now.year + 3
+                      ? () => setState(() => _year++)
+                      : null,
+                ),
+              ],
+            ),
+            const SizedBox(height: AppSpacing.xs),
+
+            // ── Grid de meses ────────────────────────────────────────────
+            GridView.builder(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: 4,
+                mainAxisSpacing: 6,
+                crossAxisSpacing: 6,
+                childAspectRatio: 1.6,
+              ),
+              itemCount: 12,
+              itemBuilder: (_, i) {
+                final m = i + 1;
+                final isPast = _year == now.year && m < now.month;
+                final isSelected = _month == m;
+
+                return GestureDetector(
+                  onTap: isPast ? null : () => setState(() => _month = m),
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 150),
+                    decoration: BoxDecoration(
+                      color: isSelected
+                          ? AppColors.primary
+                          : isPast
+                              ? AppColors.surfaceMuted
+                              : AppColors.surfaceSoft,
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    alignment: Alignment.center,
+                    child: Text(
+                      _monthLabels[i],
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                        color: isSelected
+                            ? Colors.white
+                            : isPast
+                                ? AppColors.textMuted
+                                : AppColors.textPrimary,
+                      ),
+                    ),
+                  ),
+                );
+              },
+            ),
+            const SizedBox(height: AppSpacing.md),
+
+            // ── Botones ──────────────────────────────────────────────────
+            Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text('Cancelar'),
+                ),
+                const SizedBox(width: AppSpacing.xs),
+                FilledButton(
+                  onPressed: () =>
+                      Navigator.pop(context, DateTime(_year, _month)),
+                  style: FilledButton.styleFrom(
+                    backgroundColor: AppColors.primary,
+                  ),
+                  child: const Text('Confirmar'),
+                ),
+              ],
+            ),
+          ],
         ),
       ),
     );

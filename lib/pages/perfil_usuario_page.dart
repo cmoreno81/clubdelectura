@@ -1458,22 +1458,45 @@ class _PerfilUsuarioPageState extends State<PerfilUsuarioPage> {
           // ── Acceso rápido a lista de adquisición (solo propio perfil) ────────
           if (esMiPerfil) ...[
             const SizedBox(height: AppSpacing.md),
-            OutlinedButton.icon(
-              onPressed: () => Navigator.push<void>(
+            GestureDetector(
+              onTap: () => Navigator.push<void>(
                 context,
                 AppPageRoute(builder: (_) => const WishlistPage()),
               ),
-              icon: const Icon(Icons.shopping_cart_outlined, size: 16),
-              label: const Text('Mis adquisiciones'),
-              style: OutlinedButton.styleFrom(
-                foregroundColor: AppColors.primary,
-                side: BorderSide(
-                  color: AppColors.primary.withValues(alpha: .4),
-                ),
+              child: Container(
                 padding: const EdgeInsets.symmetric(
-                    horizontal: AppSpacing.md, vertical: 6),
-                textStyle: const TextStyle(
-                    fontSize: 12, fontWeight: FontWeight.w700),
+                  horizontal: AppSpacing.md, vertical: 10,
+                ),
+                decoration: BoxDecoration(
+                  gradient: const LinearGradient(
+                    colors: [Color(0xFF7B4E92), Color(0xFF40254F)],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                  borderRadius: BorderRadius.circular(AppRadius.xl),
+                  boxShadow: [
+                    BoxShadow(
+                      color: AppColors.primary.withValues(alpha: .30),
+                      blurRadius: 8,
+                      offset: const Offset(0, 3),
+                    ),
+                  ],
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: const [
+                    Text('🛍️', style: TextStyle(fontSize: 16)),
+                    SizedBox(width: 6),
+                    Text(
+                      'Mi wishlist',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 13,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
           ],
