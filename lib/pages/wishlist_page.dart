@@ -95,6 +95,44 @@ class _WishlistPageState extends State<WishlistPage> {
     await _reload();
   }
 
+  Future<void> _markPurchased(WishlistItem item) async {
+    try {
+      await _service.markPurchased(item.id);
+      await _reload();
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('✅ "${item.title}" marcado como comprado'),
+          action: SnackBarAction(
+            label: 'Deshacer',
+            onPressed: () async {
+              await _service.unmarkPurchased(item.id);
+              await _reload();
+            },
+          ),
+          duration: const Duration(seconds: 5),
+        ),
+      );
+    } on ApiException catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(e.message)),
+      );
+    }
+  }
+
+  Future<void> _unmarkPurchased(WishlistItem item) async {
+    try {
+      await _service.unmarkPurchased(item.id);
+      await _reload();
+    } on ApiException catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(e.message)),
+      );
+    }
+  }
+
   Future<void> _confirmDelete(WishlistItem item) async {
     final confirmed = await showDialog<bool>(
       context: context,
@@ -229,20 +267,53 @@ class _WishlistPageState extends State<WishlistPage> {
                   )
                 else
                   SliverPadding(
-                    padding: const EdgeInsets.fromLTRB(
-                      AppSpacing.md, AppSpacing.sm, AppSpacing.md, 120,
+                    padding: EdgeInsets.fromLTRB(
+                      AppSpacing.md, AppSpacing.sm, AppSpacing.md,
+                      data.purchased.isEmpty ? 120 : AppSpacing.md,
                     ),
                     sliver: SliverList.separated(
                       itemCount: visibleItems.length,
                       separatorBuilder: (_, __) =>
                           const SizedBox(height: AppSpacing.sm),
-                      itemBuilder: (_, i) => _WishlistTile(
+                      itemBuilder: (_, i) => _SwipeableTile(
+                        key: ValueKey(visibleItems[i].id),
                         item: visibleItems[i],
-                        onEdit: () => _openEdit(visibleItems[i]),
-                        onDelete: () => _confirmDelete(visibleItems[i]),
+                        onMarkPurchased: () => _markPurchased(visibleItems[i]),
+                        child: _WishlistTile(
+                          item: visibleItems[i],
+                          onEdit: () => _openEdit(visibleItems[i]),
+                          onDelete: () => _confirmDelete(visibleItems[i]),
+                        ),
                       ),
                     ),
                   ),
+
+                // ── Historial de comprados ─────────────────────────────────
+                if (_tab != _WishlistTab.plan && data.purchased.isNotEmpty) ...[
+                  SliverToBoxAdapter(
+                    child: Padding(
+                      padding: const EdgeInsets.fromLTRB(
+                        AppSpacing.md, AppSpacing.lg, AppSpacing.md, AppSpacing.xs,
+                      ),
+                      child: _PurchasedHeader(items: data.purchased),
+                    ),
+                  ),
+                  SliverPadding(
+                    padding: const EdgeInsets.fromLTRB(
+                      AppSpacing.md, AppSpacing.xs, AppSpacing.md, 120,
+                    ),
+                    sliver: SliverList.separated(
+                      itemCount: data.purchased.length,
+                      separatorBuilder: (_, __) =>
+                          const SizedBox(height: AppSpacing.sm),
+                      itemBuilder: (_, i) => _PurchasedTile(
+                        item: data.purchased[i],
+                        onUnmark: () => _unmarkPurchased(data.purchased[i]),
+                        onDelete: () => _confirmDelete(data.purchased[i]),
+                      ),
+                    ),
+                  ),
+                ],
               ],
             ),
           );
@@ -826,6 +897,202 @@ class _PriorityDot extends StatelessWidget {
       width: 9,
       height: 9,
       decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+    );
+  }
+}
+
+// ─── Swipeable tile (swipe derecha → comprado) ────────────────────────────────
+
+class _SwipeableTile extends StatelessWidget {
+  const _SwipeableTile({
+    super.key,
+    required this.item,
+    required this.onMarkPurchased,
+    required this.child,
+  });
+
+  final WishlistItem item;
+  final VoidCallback onMarkPurchased;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    return Dismissible(
+      key: ValueKey('swipe-${item.id}'),
+      direction: DismissDirection.startToEnd,
+      confirmDismiss: (_) async {
+        onMarkPurchased();
+        return false; // No eliminar el widget: el reload lo hace desaparecer
+      },
+      background: Container(
+        alignment: Alignment.centerLeft,
+        padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
+        decoration: BoxDecoration(
+          color: AppColors.success.withValues(alpha: .15),
+          borderRadius: BorderRadius.circular(AppRadius.lg),
+          border: Border.all(
+            color: AppColors.success.withValues(alpha: .4),
+          ),
+        ),
+        child: Row(
+          children: [
+            const Icon(Icons.check_circle_outline_rounded,
+                color: AppColors.success, size: 22),
+            const SizedBox(width: 8),
+            Text(
+              '¡Comprado!',
+              style: AppTextStyles.subtitle.copyWith(
+                color: AppColors.success,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ],
+        ),
+      ),
+      child: child,
+    );
+  }
+}
+
+// ─── Cabecera sección Comprados ────────────────────────────────────────────────
+
+class _PurchasedHeader extends StatelessWidget {
+  const _PurchasedHeader({required this.items});
+  final List<WishlistItem> items;
+
+  @override
+  Widget build(BuildContext context) {
+    final totalSpent = items.fold<double>(0, (s, i) => s + (i.price ?? 0));
+    return Row(
+      children: [
+        const Text('✅', style: TextStyle(fontSize: 16)),
+        const SizedBox(width: AppSpacing.xs),
+        Text(
+          'Comprados',
+          style: AppTextStyles.subtitle.copyWith(fontWeight: FontWeight.w800),
+        ),
+        const Spacer(),
+        if (totalSpent > 0)
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+            decoration: BoxDecoration(
+              color: AppColors.success.withValues(alpha: .12),
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: Text(
+              '${_fmtPrice(totalSpent)} € gastados',
+              style: AppTextStyles.caption.copyWith(
+                color: AppColors.success,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ),
+      ],
+    );
+  }
+}
+
+// ─── Tile de comprado ──────────────────────────────────────────────────────────
+
+class _PurchasedTile extends StatelessWidget {
+  const _PurchasedTile({
+    required this.item,
+    required this.onUnmark,
+    required this.onDelete,
+  });
+
+  final WishlistItem item;
+  final VoidCallback onUnmark;
+  final VoidCallback onDelete;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(AppSpacing.sm),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(AppRadius.lg),
+        border: Border.all(color: AppColors.paperLine),
+      ),
+      child: Row(
+        children: [
+          // Portada pequeña
+          _Cover(coverUrl: item.coverUrl, title: item.title),
+          const SizedBox(width: AppSpacing.sm),
+
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    const Icon(Icons.check_circle_rounded,
+                        size: 13, color: AppColors.success),
+                    const SizedBox(width: 4),
+                    Expanded(
+                      child: Text(
+                        item.title,
+                        style: AppTextStyles.body.copyWith(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w700,
+                          decoration: TextDecoration.none,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  ],
+                ),
+                if (item.author != null)
+                  Text(
+                    item.author!,
+                    style: AppTextStyles.caption,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                if (item.purchasedAt != null) ...[
+                  const SizedBox(height: 2),
+                  Text(
+                    'Comprado el ${_fmtDateShort(item.purchasedAt!, includeYear: true)}',
+                    style: AppTextStyles.caption.copyWith(
+                      color: AppColors.success,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
+                if (item.price != null)
+                  Text(
+                    '${_fmtPrice(item.price!)} €',
+                    style: AppTextStyles.caption.copyWith(
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+              ],
+            ),
+          ),
+
+          // Controles
+          Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              GestureDetector(
+                onTap: onUnmark,
+                child: const Tooltip(
+                  message: 'Volver a lista',
+                  child: Icon(Icons.undo_rounded,
+                      size: 18, color: AppColors.textSecondary),
+                ),
+              ),
+              const SizedBox(height: AppSpacing.sm),
+              GestureDetector(
+                onTap: onDelete,
+                child: const Icon(Icons.delete_outline_rounded,
+                    size: 18, color: AppColors.textSecondary),
+              ),
+            ],
+          ),
+        ],
+      ),
     );
   }
 }

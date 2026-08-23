@@ -11,6 +11,7 @@ class WishlistItem {
     this.price,
     this.releaseDate,
     this.plannedMonth,
+    this.purchasedAt,
     this.note,
     required this.isUpcoming,
     required this.createdAt,
@@ -28,6 +29,7 @@ class WishlistItem {
   final double? price;
   final DateTime? releaseDate;
   final DateTime? plannedMonth;
+  final DateTime? purchasedAt;
   final String? note;
   final bool isUpcoming;
   final DateTime createdAt;
@@ -49,6 +51,9 @@ class WishlistItem {
           : null,
       plannedMonth: json['plannedMonth'] != null
           ? DateTime.tryParse(json['plannedMonth'] as String)
+          : null,
+      purchasedAt: json['purchasedAt'] != null
+          ? DateTime.tryParse(json['purchasedAt'] as String)
           : null,
       note: json['note'] as String?,
       isUpcoming: json['isUpcoming'] as bool? ?? false,
@@ -212,6 +217,7 @@ class WishlistData {
     required this.items,
     required this.upcoming,
     required this.available,
+    required this.purchased,
     required this.totalItems,
     required this.totalPrice,
     required this.summary,
@@ -220,6 +226,7 @@ class WishlistData {
   final List<WishlistItem> items;
   final List<WishlistItem> upcoming;
   final List<WishlistItem> available;
+  final List<WishlistItem> purchased;
   final int totalItems;
   final double totalPrice;
   final WishlistSummary summary;
@@ -235,6 +242,7 @@ class WishlistData {
       items: parseList(json['items']),
       upcoming: parseList(json['upcoming']),
       available: parseList(json['available']),
+      purchased: parseList(json['purchased']),
       totalItems: (json['totalItems'] as num?)?.toInt() ?? 0,
       totalPrice: (json['totalPrice'] as num?)?.toDouble() ?? 0,
       summary: json['summary'] != null
@@ -247,6 +255,7 @@ class WishlistData {
     items: [],
     upcoming: [],
     available: [],
+    purchased: [],
     totalItems: 0,
     totalPrice: 0,
     summary: WishlistSummary.empty,

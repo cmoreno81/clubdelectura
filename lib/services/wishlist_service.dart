@@ -121,6 +121,39 @@ class WishlistService {
     return WishlistItem.fromJson(data['item'] as Map<String, dynamic>);
   }
 
+  Future<WishlistItem> markPurchased(String id, {DateTime? purchasedAt}) async {
+    final body = <String, dynamic>{
+      if (purchasedAt != null) 'purchasedAt': purchasedAt.toIso8601String(),
+    };
+    final response = await _client.post(
+      _uri('/wishlist/$id/purchased'),
+      headers: const {'Content-Type': 'application/json'},
+      body: jsonEncode(body),
+    );
+    if (response.statusCode == 404) {
+      final decoded = jsonDecode(response.body) as Map<String, dynamic>;
+      throw ApiException(
+        statusCode: 404,
+        message: decoded['mensaje']?.toString() ?? 'Ítem no encontrado.',
+      );
+    }
+    final data = HttpResponseHandler.decodeObject(response);
+    return WishlistItem.fromJson(data['item'] as Map<String, dynamic>);
+  }
+
+  Future<WishlistItem> unmarkPurchased(String id) async {
+    final response = await _client.delete(_uri('/wishlist/$id/purchased'));
+    if (response.statusCode == 404) {
+      final decoded = jsonDecode(response.body) as Map<String, dynamic>;
+      throw ApiException(
+        statusCode: 404,
+        message: decoded['mensaje']?.toString() ?? 'Ítem no encontrado.',
+      );
+    }
+    final data = HttpResponseHandler.decodeObject(response);
+    return WishlistItem.fromJson(data['item'] as Map<String, dynamic>);
+  }
+
   Future<void> deleteItem(String id) async {
     final response = await _client.delete(_uri('/wishlist/$id'));
     if (response.statusCode == 404) {
