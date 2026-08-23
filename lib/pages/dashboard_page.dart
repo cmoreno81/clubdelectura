@@ -345,16 +345,14 @@ class _DashboardPageState extends State<DashboardPage> {
 
           return RefreshIndicator(
             onRefresh: _recargar,
-            // Solo activar con arrastre lento (velocity ≈ 0).
-            // Un fling rápido hacia arriba puede sobrepasar la posición 0 y
-            // disparar el refresh involuntariamente, bloqueando la UI y
-            // dejando el scroll sin poder volver al inicio (especialmente
-            // cuando el contenido es corto, como en cuentas personales
-            // con pocas sagas).
+            // Solo activar cuando el usuario arrastra activamente con el dedo
+            // (dragDetails != null). Los flings y bounces que sobrepasan el
+            // tope tienen dragDetails == null y no deben disparar el refresh.
             notificationPredicate: (notification) {
               if (notification.depth != 0) return false;
-              if (notification is OverscrollNotification) {
-                return notification.velocity.abs() < 50.0;
+              if (notification is ScrollUpdateNotification) {
+                if (notification.dragDetails == null) return false;
+                if ((notification.dragDetails!.delta.dy) < 0) return false;
               }
               return true;
             },
@@ -460,9 +458,6 @@ class _DashboardPageState extends State<DashboardPage> {
                     const _ClubWishlistCard(),
 
                     const SizedBox(height: AppSpacing.md),
-                    const _PersonalidadesClubCard(),
-
-                    const SizedBox(height: AppSpacing.md),
                     _FavoritosClubCard(key: ValueKey(_favoritosKey)),
                     const SizedBox(height: AppSpacing.md),
                     ClubBooksOfYearCard(
@@ -538,6 +533,12 @@ class _DashboardPageState extends State<DashboardPage> {
                         avatarUrl: usuario.avatarUrl,
                       ),
                     ),
+
+                  // ── Personalidades — sección más estática, al final ───────
+                  if (!widget.esPersonal) ...[
+                    const SizedBox(height: AppSpacing.md),
+                    const _PersonalidadesClubCard(),
+                  ],
                 ],
               ),
             ),

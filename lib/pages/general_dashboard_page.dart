@@ -471,13 +471,18 @@ class _GeneralDashboardPageState extends State<GeneralDashboardPage> {
           final data = snapshot.data!;
           return RefreshIndicator(
             onRefresh: _reload,
-            // Solo activar con arrastre lento (velocity ≈ 0).
-            // Un fling rápido hacia arriba puede overshoot la posición 0 y
-            // disparar el refresh involuntariamente, bloqueando la UI.
+            // Solo activar cuando el usuario está arrastrando activamente
+            // con el dedo (dragDetails != null). Los flings y bounces que
+            // sobrepasan el tope no tienen dragDetails y, sin este filtro,
+            // activaban el refresh involuntariamente bloqueando el scroll.
             notificationPredicate: (notification) {
               if (notification.depth != 0) return false;
-              if (notification is OverscrollNotification) {
-                return notification.velocity.abs() < 50.0;
+              // Durante flings y bounces dragDetails es null → ignorar.
+              // Durante arrastre real con dedo moviéndose hacia abajo → permitir.
+              if (notification is ScrollUpdateNotification) {
+                if (notification.dragDetails == null) return false;
+                // Ignorar si el dedo se mueve hacia arriba (no es pull-to-refresh)
+                if ((notification.dragDetails!.delta.dy) < 0) return false;
               }
               return true;
             },
