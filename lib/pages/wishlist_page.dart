@@ -48,27 +48,37 @@ String _fmtMonthYear(DateTime d) =>
 // ─── Página principal ──────────────────────────────────────────────────────────
 
 class WishlistPage extends StatefulWidget {
-  const WishlistPage({super.key});
+  const WishlistPage({super.key, this.service});
+
+  final WishlistService? service;
 
   @override
   State<WishlistPage> createState() => _WishlistPageState();
 }
 
 class _WishlistPageState extends State<WishlistPage> {
-  final _service = WishlistService();
+  late final WishlistService _service;
   late Future<WishlistData> _future;
   _WishlistTab _tab = _WishlistTab.all;
 
   @override
   void initState() {
     super.initState();
+    _service = widget.service ?? WishlistService();
     _future = _service.getWishlist();
   }
 
   Future<void> _reload() async {
     final f = _service.getWishlist();
-    setState(() => _future = f);
-    await f;
+    if (!mounted) return;
+    setState(() {
+      _future = f;
+    });
+    try {
+      await f;
+    } catch (_) {
+      // FutureBuilder muestra el error sin dejar una excepción sin controlar.
+    }
   }
 
   Future<void> _openAdd() async {
