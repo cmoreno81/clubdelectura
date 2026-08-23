@@ -902,11 +902,31 @@ class _WishlistSkeleton extends StatelessWidget {
 // ─── Bottom sheet añadir / editar ──────────────────────────────────────────────
 
 class WishlistAddSheet extends StatefulWidget {
-  const WishlistAddSheet({super.key, this.editItem});
+  const WishlistAddSheet({super.key, this.editItem, this.prefill});
   final WishlistItem? editItem;
+
+  /// Datos pre-rellenados cuando se añade desde la wishlist del club.
+  final WishlistPrefill? prefill;
 
   @override
   State<WishlistAddSheet> createState() => _WishlistAddSheetState();
+}
+
+/// Datos mínimos para pre-rellenar el formulario desde un libro del club.
+class WishlistPrefill {
+  const WishlistPrefill({
+    required this.title,
+    this.author,
+    this.coverUrl,
+    this.isbn,
+    this.releaseDate,
+  });
+
+  final String title;
+  final String? author;
+  final String? coverUrl;
+  final String? isbn;
+  final DateTime? releaseDate;
 }
 
 class _WishlistAddSheetState extends State<WishlistAddSheet> {
@@ -949,6 +969,13 @@ class _WishlistAddSheetState extends State<WishlistAddSheet> {
       _coverUrl = e.coverUrl;
       _bookId = e.bookId;
       _isbn = e.isbn;
+    } else if (widget.prefill != null) {
+      final p = widget.prefill!;
+      _titleCtrl.text = p.title;
+      _authorCtrl.text = p.author ?? '';
+      _coverUrl = p.coverUrl;
+      _isbn = p.isbn;
+      _releaseDate = p.releaseDate;
     }
   }
 

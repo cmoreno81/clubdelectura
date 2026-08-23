@@ -50,6 +50,7 @@ import '../models/personalidad_miembro.dart';
 import 'personalidad_lectora_page.dart';
 import '../models/wishlist.dart';
 import '../services/wishlist_service.dart';
+import 'club_wishlist_page.dart';
 import 'wishlist_page.dart';
 
 class DashboardPage extends StatefulWidget {
@@ -2789,7 +2790,7 @@ class _ClubWishlistCardState extends State<_ClubWishlistCard> {
   void _openWishlist() {
     Navigator.push<void>(
       context,
-      AppPageRoute(builder: (_) => const WishlistPage()),
+      AppPageRoute(builder: (_) => const ClubWishlistPage()),
     );
   }
 
