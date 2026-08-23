@@ -2322,41 +2322,64 @@ class _WishlistPreviewSectionState extends State<_WishlistPreviewSection> {
             child: Container(
               padding: const EdgeInsets.symmetric(
                 horizontal: AppSpacing.md,
-                vertical: AppSpacing.sm,
+                vertical: AppSpacing.md,
               ),
               decoration: BoxDecoration(
-                border: Border.all(
-                  color: AppColors.primary.withValues(alpha: .2),
-                ),
                 borderRadius: BorderRadius.circular(AppRadius.xl),
-                color: AppColors.primaryLight.withValues(alpha: .25),
+                gradient: const LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [
+                    Color(0xFF7B4E92),
+                    Color(0xFF40254F),
+                  ],
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: AppColors.primary.withValues(alpha: .30),
+                    blurRadius: 10,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
               ),
               child: Row(
                 children: [
-                  const Text('🛒', style: TextStyle(fontSize: 22)),
+                  Container(
+                    width: 42,
+                    height: 42,
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: .18),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: const Center(
+                      child: Text('🛍️', style: TextStyle(fontSize: 22)),
+                    ),
+                  ),
                   const SizedBox(width: AppSpacing.sm),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          'Quiero comprar',
+                          'Mi wishlist',
                           style: AppTextStyles.subtitle.copyWith(
                             fontWeight: FontWeight.w800,
-                            color: AppColors.primaryDark,
+                            color: Colors.white,
                           ),
                         ),
                         Text(
-                          'Tu lista de libros pendientes de comprar',
-                          style: AppTextStyles.caption,
+                          'Libros que quieres leer o comprar',
+                          style: AppTextStyles.caption.copyWith(
+                            color: Colors.white.withValues(alpha: .80),
+                          ),
                         ),
                       ],
                     ),
                   ),
-                  const Icon(
+                  Icon(
                     Icons.arrow_forward_ios_rounded,
                     size: 14,
-                    color: AppColors.primary,
+                    color: Colors.white.withValues(alpha: .80),
                   ),
                 ],
               ),

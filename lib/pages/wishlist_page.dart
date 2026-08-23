@@ -1275,42 +1275,75 @@ class WishlistSummaryCard extends StatelessWidget {
       ...data.available,
     ].take(3).toList();
 
-    return ClubCard(
-      elevated: false,
-      borderColor: AppColors.primary.withValues(alpha: .2),
-      gradient: LinearGradient(
-        begin: Alignment.topLeft,
-        end: Alignment.bottomRight,
-        colors: [
-          AppColors.primaryLight.withValues(alpha: .35),
-          AppColors.background,
-        ],
-      ),
+    return GestureDetector(
       onTap: onTap,
-      child: Column(
+      child: Container(
+        padding: const EdgeInsets.symmetric(
+          horizontal: AppSpacing.md,
+          vertical: AppSpacing.md,
+        ),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(AppRadius.xl),
+          gradient: const LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              Color(0xFF7B4E92),
+              Color(0xFF40254F),
+            ],
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: AppColors.primary.withValues(alpha: .30),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // ── Cabecera ──────────────────────────────────────────────────────
           Row(
             children: [
-              const Icon(Icons.shopping_cart_outlined,
-                  size: 20, color: AppColors.primary),
-              const SizedBox(width: AppSpacing.xs),
+              Container(
+                width: 36,
+                height: 36,
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: .18),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: const Center(
+                  child: Text('🛍️', style: TextStyle(fontSize: 18)),
+                ),
+              ),
+              const SizedBox(width: AppSpacing.sm),
               Text(
-                'Quiero comprar',
+                'Mi wishlist',
                 style: AppTextStyles.subtitle.copyWith(
                   fontWeight: FontWeight.w800,
-                  color: AppColors.primaryDark,
+                  color: Colors.white,
                 ),
               ),
               const Spacer(),
-              Text(
-                '$priceStr €',
-                style: AppTextStyles.subtitle.copyWith(
-                  color: AppColors.primary,
-                  fontWeight: FontWeight.w700,
+              if (data.summary.totalPrice > 0)
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 4,
+                  ),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: .18),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Text(
+                    '$priceStr €',
+                    style: AppTextStyles.caption.copyWith(
+                      color: Colors.white,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
                 ),
-              ),
             ],
           ),
 
@@ -1320,7 +1353,9 @@ class WishlistSummaryCard extends StatelessWidget {
           if (preview.isEmpty)
             Text(
               'Sin libros en lista aún',
-              style: AppTextStyles.caption,
+              style: AppTextStyles.caption.copyWith(
+                color: Colors.white.withValues(alpha: .70),
+              ),
             )
           else
             ...preview.map(
@@ -1331,12 +1366,15 @@ class WishlistSummaryCard extends StatelessWidget {
                     if (item.isUpcoming)
                       const Text('🗓', style: TextStyle(fontSize: 12))
                     else
-                      const Text('🛒', style: TextStyle(fontSize: 12)),
+                      const Text('📖', style: TextStyle(fontSize: 12)),
                     const SizedBox(width: 5),
                     Expanded(
                       child: Text(
                         item.title,
-                        style: AppTextStyles.body.copyWith(fontSize: 13),
+                        style: AppTextStyles.body.copyWith(
+                          fontSize: 13,
+                          color: Colors.white.withValues(alpha: .92),
+                        ),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
@@ -1345,7 +1383,7 @@ class WishlistSummaryCard extends StatelessWidget {
                       Text(
                         '${_fmtPrice(item.price!)} €',
                         style: AppTextStyles.caption.copyWith(
-                          color: const Color(0xFF2e7d32),
+                          color: Colors.white.withValues(alpha: .80),
                           fontWeight: FontWeight.w600,
                         ),
                       ),
@@ -1358,7 +1396,9 @@ class WishlistSummaryCard extends StatelessWidget {
             const SizedBox(height: AppSpacing.xs),
             Text(
               '+${data.totalItems - 3} más',
-              style: AppTextStyles.caption,
+              style: AppTextStyles.caption.copyWith(
+                color: Colors.white.withValues(alpha: .70),
+              ),
             ),
           ],
 
@@ -1368,12 +1408,13 @@ class WishlistSummaryCard extends StatelessWidget {
             child: Text(
               'Ver lista completa →',
               style: AppTextStyles.caption.copyWith(
-                color: AppColors.primary,
+                color: Colors.white.withValues(alpha: .85),
                 fontWeight: FontWeight.w700,
               ),
             ),
           ),
         ],
+      ),
       ),
     );
   }
