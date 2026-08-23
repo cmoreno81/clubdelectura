@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 
 import '../models/wishlist.dart';
-import '../navigation/app_page_route.dart';
 import '../services/wishlist_service.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_radius.dart';
@@ -47,7 +46,7 @@ class _ClubWishlistPageState extends State<ClubWishlistPage> {
   void _reload() => setState(() => _future = _service.getClubWishlist());
 
   Future<void> _addToMyList(ClubWishlistGroup group) async {
-    await showModalBottomSheet<bool>(
+    final added = await showModalBottomSheet<bool>(
       context: context,
       isScrollControlled: true,
       useSafeArea: true,
@@ -61,7 +60,7 @@ class _ClubWishlistPageState extends State<ClubWishlistPage> {
         ),
       ),
     );
-    // No recargamos aquí — la recarga es de la wishlist personal, no del club
+    if (added == true && mounted) _reload();
   }
 
   @override
@@ -104,11 +103,13 @@ class _ClubWishlistPageState extends State<ClubWishlistPage> {
                 ),
                 sliver: SliverList.separated(
                   itemCount: data.items.length,
-                  separatorBuilder: (_, __) =>
+                  separatorBuilder: (_, _) =>
                       const SizedBox(height: AppSpacing.sm),
                   itemBuilder: (_, i) => _BookTile(
                     group: data.items[i],
-                    onAdd: () => _addToMyList(data.items[i]),
+                    onAdd: data.items[i].isInMyWishlist
+                        ? null
+                        : () => _addToMyList(data.items[i]),
                   ),
                 ),
               ),
@@ -225,7 +226,7 @@ class _Pill extends StatelessWidget {
 class _BookTile extends StatelessWidget {
   const _BookTile({required this.group, required this.onAdd});
   final ClubWishlistGroup group;
-  final VoidCallback onAdd;
+  final VoidCallback? onAdd;
 
   @override
   Widget build(BuildContext context) {
@@ -292,28 +293,28 @@ class _BookTile extends StatelessWidget {
                     ],
                   ),
 
-                  const SizedBox(height: 8),
-
-                  // Botón añadir
-                  SizedBox(
-                    height: 30,
-                    child: OutlinedButton.icon(
-                      onPressed: onAdd,
-                      icon: const Icon(Icons.add_rounded, size: 14),
-                      label: const Text('Añadir a mi lista'),
-                      style: OutlinedButton.styleFrom(
-                        foregroundColor: AppColors.primary,
-                        side: BorderSide(
-                          color: AppColors.primary.withValues(alpha: .5),
-                        ),
-                        padding: const EdgeInsets.symmetric(horizontal: 10),
-                        textStyle: const TextStyle(
-                          fontSize: 11,
-                          fontWeight: FontWeight.w700,
+                  if (onAdd != null) ...[
+                    const SizedBox(height: 8),
+                    SizedBox(
+                      height: 30,
+                      child: OutlinedButton.icon(
+                        onPressed: onAdd,
+                        icon: const Icon(Icons.add_rounded, size: 14),
+                        label: const Text('Añadir a mi lista'),
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: AppColors.primary,
+                          side: BorderSide(
+                            color: AppColors.primary.withValues(alpha: .5),
+                          ),
+                          padding: const EdgeInsets.symmetric(horizontal: 10),
+                          textStyle: const TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w700,
+                          ),
                         ),
                       ),
                     ),
-                  ),
+                  ],
                 ],
               ),
             ),

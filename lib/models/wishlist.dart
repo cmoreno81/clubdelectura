@@ -93,7 +93,7 @@ class WishlistItem {
           ? false
           : (releaseDate != null
               ? releaseDate.isAfter(DateTime.now())
-              : this.isUpcoming),
+              : isUpcoming),
       createdAt: createdAt,
       updatedAt: DateTime.now(),
     );
@@ -299,6 +299,7 @@ class ClubWishlistGroup {
     this.coverUrl,
     this.releaseDate,
     required this.isUpcoming,
+    required this.isInMyWishlist,
     required this.members,
   });
 
@@ -309,6 +310,7 @@ class ClubWishlistGroup {
   final String? coverUrl;
   final DateTime? releaseDate;
   final bool isUpcoming;
+  final bool isInMyWishlist;
   final List<ClubWishlistMember> members;
 
   factory ClubWishlistGroup.fromJson(Map<String, dynamic> json) {
@@ -322,6 +324,7 @@ class ClubWishlistGroup {
           ? DateTime.tryParse(json['releaseDate'] as String)
           : null,
       isUpcoming: json['isUpcoming'] as bool? ?? false,
+      isInMyWishlist: json['isInMyWishlist'] as bool? ?? false,
       members: (json['members'] as List<dynamic>? ?? [])
           .cast<Map<String, dynamic>>()
           .map(ClubWishlistMember.fromJson)
