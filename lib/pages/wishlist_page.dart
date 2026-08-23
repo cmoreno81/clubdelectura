@@ -72,25 +72,27 @@ class _WishlistPageState extends State<WishlistPage> {
   }
 
   Future<void> _openAdd() async {
-    final added = await showModalBottomSheet<bool>(
+    await showModalBottomSheet<bool>(
       context: context,
       isScrollControlled: true,
       useSafeArea: true,
       backgroundColor: Colors.transparent,
       builder: (_) => const WishlistAddSheet(),
     );
-    if (added == true) await _reload();
+    // Recargamos siempre al cerrar: el guardado puede haber tenido éxito
+    // aunque la hoja se cerrase sin devolver `true` (p.ej. error de parsing).
+    await _reload();
   }
 
   Future<void> _openEdit(WishlistItem item) async {
-    final edited = await showModalBottomSheet<bool>(
+    await showModalBottomSheet<bool>(
       context: context,
       isScrollControlled: true,
       useSafeArea: true,
       backgroundColor: Colors.transparent,
       builder: (_) => WishlistAddSheet(editItem: item),
     );
-    if (edited == true) await _reload();
+    await _reload();
   }
 
   Future<void> _confirmDelete(WishlistItem item) async {
@@ -160,13 +162,17 @@ class _WishlistPageState extends State<WishlistPage> {
             _WishlistTab.all => data.items,
             _WishlistTab.available => data.available,
             _WishlistTab.upcoming => data.upcoming,
+            _WishlistTab.plan => data.items,
           };
 
           return RefreshIndicator(
             onRefresh: _reload,
             notificationPredicate: (n) {
               if (n.depth != 0) return false;
-              if (n is OverscrollNotification) return n.velocity.abs() < 50.0;
+              if (n is ScrollUpdateNotification) {
+                if (n.dragDetails == null) return false;
+                if (n.dragDetails!.delta.dy < 0) return false;
+              }
               return true;
             },
             child: CustomScrollView(
@@ -193,8 +199,23 @@ class _WishlistPageState extends State<WishlistPage> {
                   ),
                 ),
 
+                // ── Vista Planificar ───────────────────────────────────────
+                if (_tab == _WishlistTab.plan) ...[
+                  SliverPadding(
+                    padding: const EdgeInsets.fromLTRB(
+                      AppSpacing.md, AppSpacing.sm, AppSpacing.md, 120,
+                    ),
+                    sliver: SliverToBoxAdapter(
+                      child: _PlanView(
+                        items: data.items,
+                        onEdit: _openEdit,
+                        onDelete: _confirmDelete,
+                      ),
+                    ),
+                  ),
+                ]
                 // ── Lista de ítems ─────────────────────────────────────────
-                if (visibleItems.isEmpty)
+                else if (visibleItems.isEmpty)
                   SliverFillRemaining(
                     child: Center(
                       child: Text(
@@ -233,7 +254,7 @@ class _WishlistPageState extends State<WishlistPage> {
 
 // ── Tab enum ───────────────────────────────────────────────────────────────────
 
-enum _WishlistTab { all, available, upcoming }
+enum _WishlistTab { all, available, upcoming, plan }
 
 // ─── Budget card ───────────────────────────────────────────────────────────────
 
@@ -385,6 +406,7 @@ class _TabsDelegate extends SliverPersistentHeaderDelegate {
                 _tabBtn('Todos', _WishlistTab.all, null),
                 _tabBtn('Disponibles', _WishlistTab.available, availableCount),
                 _tabBtn('Próximas', _WishlistTab.upcoming, upcomingCount),
+                _tabBtn('Planificar', _WishlistTab.plan, null),
               ],
             ),
           ),
@@ -449,6 +471,163 @@ class _TabsDelegate extends SliverPersistentHeaderDelegate {
       tab != old.tab ||
       upcomingCount != old.upcomingCount ||
       availableCount != old.availableCount;
+}
+
+// ─── Vista Planificar ──────────────────────────────────────────────────────────
+
+class _PlanView extends StatelessWidget {
+  const _PlanView({
+    required this.items,
+    required this.onEdit,
+    required this.onDelete,
+  });
+
+  final List<WishlistItem> items;
+  final Future<void> Function(WishlistItem) onEdit;
+  final Future<void> Function(WishlistItem) onDelete;
+
+  @override
+  Widget build(BuildContext context) {
+    // Separamos: los que tienen mes planificado y los que no.
+    final unplanned = items.where((i) => i.plannedMonth == null).toList();
+    final planned = items.where((i) => i.plannedMonth != null).toList()
+      ..sort((a, b) => a.plannedMonth!.compareTo(b.plannedMonth!));
+
+    // Agrupamos por mes/año
+    final groups = <DateTime, List<WishlistItem>>{};
+    for (final item in planned) {
+      final key = DateTime(item.plannedMonth!.year, item.plannedMonth!.month);
+      groups.putIfAbsent(key, () => []).add(item);
+    }
+
+    if (items.isEmpty) {
+      return Center(
+        child: Text(
+          'Añade libros para planificar tu gasto mes a mes.',
+          style: AppTextStyles.bodySecondary,
+          textAlign: TextAlign.center,
+        ),
+      );
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // ── Meses planificados ─────────────────────────────────────────────
+        if (groups.isNotEmpty) ...[
+          for (final entry in groups.entries) ...[
+            _MonthHeader(month: entry.key, items: entry.value),
+            const SizedBox(height: AppSpacing.xs),
+            ...entry.value.map(
+              (item) => Padding(
+                padding: const EdgeInsets.only(bottom: AppSpacing.sm),
+                child: _WishlistTile(
+                  item: item,
+                  onEdit: () => onEdit(item),
+                  onDelete: () => onDelete(item),
+                ),
+              ),
+            ),
+            const SizedBox(height: AppSpacing.sm),
+          ],
+        ],
+
+        // ── Sin mes asignado ───────────────────────────────────────────────
+        if (unplanned.isNotEmpty) ...[
+          _SectionLabel('Sin mes asignado'),
+          const SizedBox(height: AppSpacing.xs),
+          Text(
+            'Toca un libro para asignarle un mes de compra.',
+            style: AppTextStyles.caption,
+          ),
+          const SizedBox(height: AppSpacing.sm),
+          ...unplanned.map(
+            (item) => Padding(
+              padding: const EdgeInsets.only(bottom: AppSpacing.sm),
+              child: _WishlistTile(
+                item: item,
+                onEdit: () => onEdit(item),
+                onDelete: () => onDelete(item),
+              ),
+            ),
+          ),
+        ],
+      ],
+    );
+  }
+}
+
+class _MonthHeader extends StatelessWidget {
+  const _MonthHeader({required this.month, required this.items});
+  final DateTime month;
+  final List<WishlistItem> items;
+
+  @override
+  Widget build(BuildContext context) {
+    final total = items.fold<double>(
+      0, (sum, i) => sum + (i.price ?? 0));
+    final label = _fmtMonthYear(month);
+    final isThisMonth = month.year == DateTime.now().year &&
+        month.month == DateTime.now().month;
+    final isPast = month.isBefore(DateTime(DateTime.now().year, DateTime.now().month));
+
+    return Container(
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.sm, vertical: AppSpacing.xs,
+      ),
+      decoration: BoxDecoration(
+        color: isPast
+            ? AppColors.surfaceMuted
+            : isThisMonth
+                ? AppColors.primaryLight
+                : AppColors.background,
+        borderRadius: BorderRadius.circular(AppRadius.sm),
+        border: Border.all(
+          color: isThisMonth
+              ? AppColors.primary.withValues(alpha: .4)
+              : AppColors.paperLine,
+        ),
+      ),
+      child: Row(
+        children: [
+          Text(
+            isThisMonth ? '📌 $label' : isPast ? '✅ $label' : '📅 $label',
+            style: AppTextStyles.subtitle.copyWith(
+              fontWeight: FontWeight.w700,
+              fontSize: 13,
+              color: isThisMonth ? AppColors.primaryDark : AppColors.textPrimary,
+            ),
+          ),
+          const Spacer(),
+          if (total > 0)
+            Text(
+              '${_fmtPrice(total)} €',
+              style: AppTextStyles.caption.copyWith(
+                fontWeight: FontWeight.w700,
+                color: isThisMonth ? AppColors.primary : AppColors.textSecondary,
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+class _SectionLabel extends StatelessWidget {
+  const _SectionLabel(this.text);
+  final String text;
+
+  @override
+  Widget build(BuildContext context) {
+    return Text(
+      text.toUpperCase(),
+      style: AppTextStyles.caption.copyWith(
+        fontWeight: FontWeight.w700,
+        letterSpacing: 0.8,
+        color: AppColors.textMuted,
+      ),
+    );
+  }
 }
 
 // ─── Tile de ítem ──────────────────────────────────────────────────────────────
@@ -747,7 +926,9 @@ class _WishlistAddSheetState extends State<WishlistAddSheet> {
 
   bool _saving = false;
   bool _searching = false;
+  bool _searchDone = false;
   List<GoogleBookResult> _searchResults = [];
+  DateTime? _plannedMonth;
   Timer? _searchDebounce;
 
   bool get _isEdit => widget.editItem != null;
@@ -764,6 +945,7 @@ class _WishlistAddSheetState extends State<WishlistAddSheet> {
       _format = e.format;
       _priority = e.priority;
       _releaseDate = e.releaseDate;
+      _plannedMonth = e.plannedMonth;
       _coverUrl = e.coverUrl;
       _bookId = e.bookId;
       _isbn = e.isbn;
@@ -789,12 +971,13 @@ class _WishlistAddSheetState extends State<WishlistAddSheet> {
     }
     _searchDebounce = Timer(const Duration(milliseconds: 500), () async {
       if (!mounted) return;
-      setState(() => _searching = true);
+      setState(() { _searching = true; _searchDone = false; });
       final results = await _service.searchBooks(query);
       if (!mounted) return;
       setState(() {
         _searchResults = results;
         _searching = false;
+        _searchDone = true;
       });
     });
   }
@@ -811,7 +994,22 @@ class _WishlistAddSheetState extends State<WishlistAddSheet> {
       }
       _searchCtrl.clear();
       _searchResults = [];
+      _searchDone = false;
     });
+  }
+
+  Future<void> _pickPlannedMonth() async {
+    final now = DateTime.now();
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: _plannedMonth ?? now,
+      firstDate: DateTime(now.year, now.month),
+      lastDate: DateTime(now.year + 2, 12),
+      helpText: 'Mes de compra planificado',
+    );
+    if (picked != null) {
+      setState(() => _plannedMonth = DateTime(picked.year, picked.month));
+    }
   }
 
   Future<void> _save() async {
@@ -838,6 +1036,8 @@ class _WishlistAddSheetState extends State<WishlistAddSheet> {
           clearPrice: price == null,
           releaseDate: _releaseDate,
           clearReleaseDate: _releaseDate == null,
+          plannedMonth: _plannedMonth,
+          clearPlannedMonth: _plannedMonth == null,
           note: _noteCtrl.text.trim().isEmpty ? null : _noteCtrl.text.trim(),
           clearNote: _noteCtrl.text.trim().isEmpty,
         );
@@ -847,6 +1047,7 @@ class _WishlistAddSheetState extends State<WishlistAddSheet> {
           title: title,
           author: _authorCtrl.text.trim().isEmpty ? null : _authorCtrl.text.trim(),
           coverUrl: _coverUrl,
+          plannedMonth: _plannedMonth,
           isbn: _isbn,
           format: _format,
           priority: _priority,
@@ -1018,6 +1219,19 @@ class _WishlistAddSheetState extends State<WishlistAddSheet> {
                               onTap: () => _selectGoogleBook(r),
                             );
                           },
+                        ),
+                      )
+                    else if (_searchDone &&
+                        !_searching &&
+                        _searchCtrl.text.trim().length >= 3)
+                      Padding(
+                        padding: const EdgeInsets.only(top: AppSpacing.xs),
+                        child: Text(
+                          'Sin resultados para "${_searchCtrl.text.trim()}" — puedes añadirlo manualmente.',
+                          style: AppTextStyles.caption.copyWith(
+                            color: AppColors.textSecondary,
+                            fontStyle: FontStyle.italic,
+                          ),
                         ),
                       ),
                     const SizedBox(height: AppSpacing.sm),
@@ -1208,6 +1422,52 @@ class _WishlistAddSheetState extends State<WishlistAddSheet> {
                         ),
                       );
                     }).toList(),
+                  ),
+                  const SizedBox(height: AppSpacing.sm),
+
+                  // ── Mes planificado ────────────────────────────────────
+                  _Label('Mes de compra planificado'),
+                  InkWell(
+                    onTap: _pickPlannedMonth,
+                    borderRadius: BorderRadius.circular(AppRadius.sm),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 12, vertical: 10),
+                      decoration: BoxDecoration(
+                        border: Border.all(color: AppColors.paperLine),
+                        borderRadius: BorderRadius.circular(AppRadius.sm),
+                        color: AppColors.surfaceSoft,
+                      ),
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              _plannedMonth != null
+                                  ? _fmtMonthYear(_plannedMonth!)
+                                  : 'Sin mes asignado',
+                              style: TextStyle(
+                                fontSize: 13,
+                                color: _plannedMonth != null
+                                    ? AppColors.textPrimary
+                                    : AppColors.textSecondary,
+                              ),
+                            ),
+                          ),
+                          if (_plannedMonth != null)
+                            GestureDetector(
+                              onTap: () =>
+                                  setState(() => _plannedMonth = null),
+                              child: const Icon(Icons.close_rounded,
+                                  size: 16,
+                                  color: AppColors.textSecondary),
+                            )
+                          else
+                            const Icon(Icons.calendar_month_outlined,
+                                size: 16,
+                                color: AppColors.textSecondary),
+                        ],
+                      ),
+                    ),
                   ),
                   const SizedBox(height: AppSpacing.sm),
 
