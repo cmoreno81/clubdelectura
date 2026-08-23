@@ -3,9 +3,12 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import '../models/catalog_book.dart';
 import '../models/wishlist.dart';
 import '../navigation/app_page_route.dart';
 import '../services/api_exception.dart';
+import '../services/api_service.dart';
+import '../services/library_refresh_notifier.dart';
 import '../services/wishlist_service.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_radius.dart';
@@ -16,6 +19,7 @@ import '../widgets/common/club_card.dart';
 import '../widgets/common/club_shimmer.dart';
 import '../widgets/common/optimized_network_image.dart';
 import '../widgets/error_view.dart';
+import '../widgets/libros/add_book_sheet.dart';
 
 // ─── Helpers de formato (sin dependencia intl) ────────────────────────────────
 
@@ -147,10 +151,88 @@ class _WishlistPageState extends State<WishlistPage> {
       await _reload();
       if (!mounted) return;
       _showPurchasedNotice(item);
+      await _offerAddToLibrary(item);
     } on ApiException catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(e.message)),
+      );
+    }
+  }
+
+  Future<void> _offerAddToLibrary(WishlistItem item) async {
+    final add = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        icon: const Icon(Icons.auto_stories_rounded),
+        title: const Text('¿Añadirlo a tu biblioteca?'),
+        content: Text(
+          'La compra de "${item.title}" ya está registrada. '
+          'Puedes añadirlo también a tu estantería para organizar su lectura.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, false),
+            child: const Text('Ahora no'),
+          ),
+          FilledButton.icon(
+            onPressed: () => Navigator.pop(dialogContext, true),
+            icon: const Icon(Icons.add_rounded),
+            label: const Text('Añadir'),
+          ),
+        ],
+      ),
+    );
+    if (add != true || !mounted) return;
+
+    final preferences = await showAddBookSheet(
+      context,
+      title: item.title,
+      author: item.author ?? '',
+      coverUrl: item.coverUrl ?? '',
+    );
+    if (preferences == null || !mounted) return;
+
+    try {
+      if (item.bookId?.isNotEmpty == true) {
+        await ApiService().importarLibroCatalogo(
+          bookId: item.bookId,
+          titulo: item.title,
+          prioridad: preferences.priority,
+          formato: preferences.format,
+          estado: 'PENDIENTE',
+        );
+      } else {
+        await ApiService().importarLibroCatalogo(
+          book: CatalogBook(
+            id: 'wishlist-${item.id}',
+            source: 'GOOGLE',
+            title: item.title,
+            authors: item.author?.trim().isNotEmpty == true
+                ? [item.author!.trim()]
+                : const [],
+            coverUrl: item.coverUrl ?? '',
+            genre: '',
+            isbn: item.isbn ?? '',
+            inMyLibrary: false,
+            status: '',
+          ),
+          prioridad: preferences.priority,
+          formato: preferences.format,
+          estado: 'PENDIENTE',
+        );
+      }
+      if (!mounted) return;
+      LibraryRefreshNotifier.instance.invalidate();
+      ScaffoldMessenger.of(context)
+        ..hideCurrentSnackBar()
+        ..showSnackBar(
+          SnackBar(content: Text('📚 "${item.title}" está en tu biblioteca')),
+        );
+    } on ApiException catch (error) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(error.message)),
       );
     }
   }
