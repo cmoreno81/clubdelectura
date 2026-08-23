@@ -869,13 +869,15 @@ class _WishlistAddSheetState extends State<WishlistAddSheet> {
   }
 
   Future<void> _pickReleaseDate() async {
+    // No pasamos `locale` aquí: requeriría GlobalMaterialLocalizations
+    // configurado en MaterialApp. El selector usa el locale del dispositivo,
+    // que en un iPhone en español ya es correcto.
     final picked = await showDatePicker(
       context: context,
       initialDate: _releaseDate ?? DateTime.now().add(const Duration(days: 30)),
       firstDate: DateTime.now().subtract(const Duration(days: 365)),
       lastDate: DateTime.now().add(const Duration(days: 365 * 5)),
       helpText: 'Fecha de salida',
-      locale: const Locale('es'),
     );
     if (picked != null) setState(() => _releaseDate = picked);
   }

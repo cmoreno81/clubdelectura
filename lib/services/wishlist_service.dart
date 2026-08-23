@@ -148,10 +148,12 @@ class WishlistService {
 
   Future<List<GoogleBookResult>> searchBooks(String query) async {
     if (query.trim().isEmpty) return [];
+    // langRestrict filtraría solo libros cuyo idioma principal sea español,
+    // descartando ediciones o traducciones en otros idiomas. Lo quitamos para
+    // que la búsqueda devuelva resultados independientemente del idioma.
     final uri = Uri.parse(_googleBooksUrl).replace(queryParameters: {
       'q': query.trim(),
       'maxResults': '8',
-      'langRestrict': 'es',
       'printType': 'books',
     });
     try {
