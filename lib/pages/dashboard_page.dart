@@ -446,6 +446,9 @@ class _DashboardPageState extends State<DashboardPage> {
                       ),
                     ),
 
+                    const SizedBox(height: AppSpacing.md),
+                    const _ClubWishlistCard(),
+
                     if (data.rankingAfinidad.isNotEmpty) ...[
                       const SizedBox(height: AppSpacing.md),
                       _AffinityCard(
@@ -453,9 +456,6 @@ class _DashboardPageState extends State<DashboardPage> {
                         miAvatarUrl: avatarUrlActual,
                       ),
                     ],
-
-                    const SizedBox(height: AppSpacing.md),
-                    const _ClubWishlistCard(),
 
                     const SizedBox(height: AppSpacing.md),
                     _FavoritosClubCard(key: ValueKey(_favoritosKey)),
@@ -2822,105 +2822,154 @@ class _ClubWishlistCardState extends State<_ClubWishlistCard> {
           child: Container(
             padding: const EdgeInsets.all(AppSpacing.md),
             decoration: BoxDecoration(
-              color: AppColors.primaryLight.withValues(alpha: .2),
-              border: Border.all(
-                color: AppColors.primary.withValues(alpha: .2),
+              gradient: const LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [Color(0xFF7B4E92), Color(0xFF40254F)],
               ),
               borderRadius: BorderRadius.circular(AppRadius.xl),
+              boxShadow: [
+                BoxShadow(
+                  color: AppColors.primary.withValues(alpha: .30),
+                  blurRadius: 10,
+                  offset: const Offset(0, 4),
+                ),
+              ],
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                // ── Cabecera ───────────────────────────────────────────────
                 Row(
                   children: [
-                    const Icon(
-                      Icons.shopping_cart_outlined,
-                      size: 18,
-                      color: AppColors.primary,
-                    ),
-                    const SizedBox(width: AppSpacing.xs),
-                    Text(
-                      'Lo que quiere el club',
-                      style: AppTextStyles.subtitle.copyWith(
-                        fontWeight: FontWeight.w800,
-                        color: AppColors.primaryDark,
+                    Container(
+                      width: 34,
+                      height: 34,
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: .18),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: const Center(
+                        child: Text('🛍️', style: TextStyle(fontSize: 16)),
                       ),
                     ),
-                    const Spacer(),
-                    if (data.membersWithWishlist > 0)
-                      Text(
-                        '${data.membersWithWishlist} miembro${data.membersWithWishlist > 1 ? 's' : ''}',
-                        style: AppTextStyles.caption.copyWith(
-                          color: AppColors.primary,
-                          fontWeight: FontWeight.w600,
-                        ),
+                    const SizedBox(width: AppSpacing.sm),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Lo que quiere el club',
+                            style: AppTextStyles.subtitle.copyWith(
+                              fontWeight: FontWeight.w800,
+                              color: Colors.white,
+                            ),
+                          ),
+                          Text(
+                            '${data.membersWithWishlist} miembro${data.membersWithWishlist != 1 ? 's' : ''} · ${data.totalItems} libro${data.totalItems != 1 ? 's' : ''}',
+                            style: AppTextStyles.caption.copyWith(
+                              color: Colors.white.withValues(alpha: .75),
+                            ),
+                          ),
+                        ],
                       ),
+                    ),
+                    Icon(
+                      Icons.arrow_forward_ios_rounded,
+                      size: 13,
+                      color: Colors.white.withValues(alpha: .70),
+                    ),
                   ],
                 ),
-                const SizedBox(height: AppSpacing.xs),
+
+                const SizedBox(height: AppSpacing.sm),
+
+                // ── Lista de libros con quién los quiere ──────────────────
                 ...preview.map(
                   (group) => Padding(
-                    padding: const EdgeInsets.only(top: 5),
+                    padding: const EdgeInsets.only(bottom: 8),
                     child: Row(
                       children: [
-                        if (group.isUpcoming)
-                          const Text('🗓', style: TextStyle(fontSize: 12))
-                        else
-                          const Text('🛒', style: TextStyle(fontSize: 12)),
-                        const SizedBox(width: 5),
+                        // Icono novedad o disponible
+                        Text(
+                          group.isUpcoming ? '🗓' : '📖',
+                          style: const TextStyle(fontSize: 13),
+                        ),
+                        const SizedBox(width: 6),
+                        // Título
                         Expanded(
                           child: Text(
                             group.title,
-                            style: AppTextStyles.body.copyWith(fontSize: 13),
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 13,
+                              fontWeight: FontWeight.w600,
+                            ),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                           ),
                         ),
-                        if (group.members.length > 1)
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 5, vertical: 1),
-                            decoration: BoxDecoration(
-                              color: AppColors.primaryLight,
-                              borderRadius: BorderRadius.circular(5),
-                            ),
-                            child: Text(
-                              '×${group.members.length}',
-                              style: TextStyle(
-                                fontSize: 10,
-                                fontWeight: FontWeight.w700,
-                                color: AppColors.primary,
-                              ),
-                            ),
-                          ),
+                        const SizedBox(width: 6),
+                        // Nombres de quién lo quiere (hasta 2 + "y N más")
+                        _MemberNames(members: group.members),
                       ],
                     ),
                   ),
                 ),
-                if (data.items.length > 3) ...[
-                  const SizedBox(height: AppSpacing.xs),
-                  Text(
-                    '+${data.items.length - 3} más · Ver todo →',
-                    style: AppTextStyles.caption.copyWith(
-                      color: AppColors.primary,
-                      fontWeight: FontWeight.w700,
-                    ),
+
+                // ── Pie ────────────────────────────────────────────────────
+                Text(
+                  data.items.length > 3
+                      ? '+${data.items.length - 3} más · Ver todo →'
+                      : 'Ver lista completa →',
+                  style: AppTextStyles.caption.copyWith(
+                    color: Colors.white.withValues(alpha: .80),
+                    fontWeight: FontWeight.w700,
                   ),
-                ] else ...[
-                  const SizedBox(height: AppSpacing.xs),
-                  Text(
-                    'Ver lista completa →',
-                    style: AppTextStyles.caption.copyWith(
-                      color: AppColors.primary,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                ],
+                ),
               ],
             ),
           ),
         );
       },
+    );
+  }
+}
+
+// ─── Nombres de miembros para la wishlist del club ────────────────────────────
+
+class _MemberNames extends StatelessWidget {
+  const _MemberNames({required this.members});
+  final List<ClubWishlistMember> members;
+
+  @override
+  Widget build(BuildContext context) {
+    if (members.isEmpty) return const SizedBox.shrink();
+
+    // Mostrar hasta 2 nombres, luego "y N más"
+    final shown = members.take(2).map((m) => m.name.split(' ').first).toList();
+    final extra = members.length - shown.length;
+
+    final label = extra > 0
+        ? '${shown.join(', ')} +$extra'
+        : shown.join(', ');
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: .18),
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: Text(
+        label,
+        style: const TextStyle(
+          color: Colors.white,
+          fontSize: 10,
+          fontWeight: FontWeight.w600,
+        ),
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+      ),
     );
   }
 }
