@@ -47,16 +47,20 @@ import '../services/achievement_service.dart';
 import '../services/usuario_service.dart';
 import 'package:club_lectura_app/widgets/common/club_shimmer.dart';
 import '../models/wishlist.dart';
+import '../models/upcoming_release.dart';
 import '../services/wishlist_service.dart';
+import '../services/upcoming_releases_service.dart';
 import 'wishlist_page.dart';
+import 'upcoming_releases_page.dart';
 
-typedef DashboardQuickActions = Future<bool> Function({
-  required String title,
-  required String bookId,
-  required String coverUrl,
-  required String genre,
-  required String author,
-});
+typedef DashboardQuickActions =
+    Future<bool> Function({
+      required String title,
+      required String bookId,
+      required String coverUrl,
+      required String genre,
+      required String author,
+    });
 
 class GeneralDashboardPage extends StatefulWidget {
   const GeneralDashboardPage({
@@ -76,6 +80,8 @@ class _GeneralDashboardPageState extends State<GeneralDashboardPage> {
   late Future<GeneralDashboard> _future;
   // Se arranca en paralelo con el dashboard para evitar el layout-shift de logros.
   late Future<List<UserAchievement>> _achievementsFuture;
+  late Future<List<UpcomingRelease>> _upcomingFuture;
+  late Future<List<UpcomingRelease>> _newReleasesFuture;
   String? _openingClubId;
   bool _openingBook = false; // ← evita abrir dos fichas a la vez
   bool _openingNewBook = false;
@@ -94,6 +100,8 @@ class _GeneralDashboardPageState extends State<GeneralDashboardPage> {
     // Los logros se piden en paralelo: llegan aproximadamente igual que el
     // dashboard y no causan un salto de layout secundario.
     _achievementsFuture = ApiService().getAchievements();
+    _upcomingFuture = _loadUpcomingPreview();
+    _newReleasesFuture = _loadNewReleasesPreview();
     _checkOnboarding();
     _loadNotificaciones();
   }
@@ -103,6 +111,22 @@ class _GeneralDashboardPageState extends State<GeneralDashboardPage> {
       final data = await ApiService().getNotificaciones();
       if (mounted) setState(() => _noLeidas = data.noLeidas);
     } catch (_) {}
+  }
+
+  Future<List<UpcomingRelease>> _loadUpcomingPreview() async {
+    try {
+      return await UpcomingReleasesService().load(limit: 6);
+    } catch (_) {
+      return const [];
+    }
+  }
+
+  Future<List<UpcomingRelease>> _loadNewReleasesPreview() async {
+    try {
+      return await UpcomingReleasesService().loadNew(limit: 6);
+    } catch (_) {
+      return const [];
+    }
   }
 
   Future<void> _abrirNotificaciones() async {
@@ -211,12 +235,16 @@ class _GeneralDashboardPageState extends State<GeneralDashboardPage> {
   Future<void> _reload() async {
     final refresh = _loadDashboard();
     final achievementsRefresh = ApiService().getAchievements();
+    final upcomingRefresh = _loadUpcomingPreview();
+    final newReleasesRefresh = _loadNewReleasesPreview();
     try {
       final data = await refresh;
       if (!mounted) return;
       setState(() {
         _future = Future.value(data);
         _achievementsFuture = achievementsRefresh;
+        _upcomingFuture = upcomingRefresh;
+        _newReleasesFuture = newReleasesRefresh;
       });
     } catch (error, stack) {
       debugPrint('[dashboard] _reload falló: $error\n$stack');
@@ -471,21 +499,10 @@ class _GeneralDashboardPageState extends State<GeneralDashboardPage> {
           final data = snapshot.data!;
           return RefreshIndicator(
             onRefresh: _reload,
-            // Solo activar cuando el usuario está arrastrando activamente
-            // con el dedo (dragDetails != null). Los flings y bounces que
-            // sobrepasan el tope no tienen dragDetails y, sin este filtro,
-            // activaban el refresh involuntariamente bloqueando el scroll.
-            notificationPredicate: (notification) {
-              if (notification.depth != 0) return false;
-              // Durante flings y bounces dragDetails es null → ignorar.
-              // Durante arrastre real con dedo moviéndose hacia abajo → permitir.
-              if (notification is ScrollUpdateNotification) {
-                if (notification.dragDetails == null) return false;
-                // Ignorar si el dedo se mueve hacia arriba (no es pull-to-refresh)
-                if ((notification.dragDetails!.delta.dy) < 0) return false;
-              }
-              return true;
-            },
+            // El indicador nativo ya distingue un arrastre real de un fling.
+            // Limitarlo al borde evita que capture el gesto de vuelta hacia
+            // arriba cuando empieza sobre una sección intermedia del panel.
+            triggerMode: RefreshIndicatorTriggerMode.onEdge,
             child: CustomScrollView(
               controller: _scrollController,
               physics: const AlwaysScrollableScrollPhysics(),
@@ -554,11 +571,26 @@ class _GeneralDashboardPageState extends State<GeneralDashboardPage> {
                     featureKey: 'hint_dashboard_v4',
                     titulo: 'Tu universo lector de un vistazo',
                     tips: const [
-                      ScreenHintTip('📊', 'Aquí ves tu resumen de lecturas del mes y el año'),
-                      ScreenHintTip('📖', 'Pulsa el botón + (abajo a la derecha) para añadir un libro a tu biblioteca'),
-                      ScreenHintTip('🧭', 'Usa el icono de exploración (arriba) para descubrir libros del catálogo'),
-                      ScreenHintTip('📚', 'Pulsa una portada para ver el detalle · Mantén pulsado para acciones rápidas según el estado del libro'),
-                      ScreenHintTip('🎲', 'La Ruleta del TBR elige un libro pendiente al azar · Cambia a modo 🫙 Tarro para una experiencia más artesanal'),
+                      ScreenHintTip(
+                        '📊',
+                        'Aquí ves tu resumen de lecturas del mes y el año',
+                      ),
+                      ScreenHintTip(
+                        '📖',
+                        'Pulsa el botón + (abajo a la derecha) para añadir un libro a tu biblioteca',
+                      ),
+                      ScreenHintTip(
+                        '🧭',
+                        'Usa el icono de exploración (arriba) para descubrir libros del catálogo',
+                      ),
+                      ScreenHintTip(
+                        '📚',
+                        'Pulsa una portada para ver el detalle · Mantén pulsado para acciones rápidas según el estado del libro',
+                      ),
+                      ScreenHintTip(
+                        '🎲',
+                        'La Ruleta del TBR elige un libro pendiente al azar · Cambia a modo 🫙 Tarro para una experiencia más artesanal',
+                      ),
                     ],
                   ),
                 ),
@@ -596,7 +628,7 @@ class _GeneralDashboardPageState extends State<GeneralDashboardPage> {
                         const SizedBox(height: AppSpacing.xl),
                         _sectionTitle(
                           'Últimas incorporaciones',
-                          'Lo nuevo que acaba de llegar a ClubReads',
+                          'Los últimos libros añadidos por la comunidad',
                           Icons.new_releases_outlined,
                           action: TextButton.icon(
                             key: const Key('add_book_latest_additions'),
@@ -608,6 +640,13 @@ class _GeneralDashboardPageState extends State<GeneralDashboardPage> {
                         const SizedBox(height: AppSpacing.sm),
                         _latestAdditions(data.latestAdditions),
                       ],
+                      const SizedBox(height: AppSpacing.xl),
+                      _ReleasesPreview(
+                        future: _newReleasesFuture,
+                        mode: ReleaseCatalogMode.newReleases,
+                      ),
+                      const SizedBox(height: AppSpacing.xl),
+                      _ReleasesPreview(future: _upcomingFuture),
                       const SizedBox(height: AppSpacing.xl),
                       _sectionTitle(
                         'Tus clubes',
@@ -1442,9 +1481,7 @@ class _GeneralDashboardPageState extends State<GeneralDashboardPage> {
                       item.name,
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                        fontWeight: FontWeight.w900,
-                      ),
+                      style: const TextStyle(fontWeight: FontWeight.w900),
                     ),
                     const SizedBox(height: 8),
                     LinearProgressIndicator(
@@ -1943,10 +1980,7 @@ class _DashboardError extends StatelessWidget {
 }
 
 class _LogrosDashboardSection extends StatelessWidget {
-  const _LogrosDashboardSection({
-    required this.userName,
-    required this.future,
-  });
+  const _LogrosDashboardSection({required this.userName, required this.future});
   final String userName;
   final Future<List<UserAchievement>> future;
 
@@ -2107,10 +2141,10 @@ class _LogroMiniTile extends StatelessWidget {
   final UserAchievement achievement;
 
   Color get _color => switch (achievement.rarity) {
-    'legendary' => AppColors.gold,           // dorado — cálido, especial
-    'epic'      => AppColors.primary,        // ciruela — color principal de la app
-    'rare'      => AppColors.info,           // azul apagado — discreto
-    _           => AppColors.textSecondary,  // marrón grisáceo — común
+    'legendary' => AppColors.gold, // dorado — cálido, especial
+    'epic' => AppColors.primary, // ciruela — color principal de la app
+    'rare' => AppColors.info, // azul apagado — discreto
+    _ => AppColors.textSecondary, // marrón grisáceo — común
   };
 
   @override
@@ -2329,10 +2363,7 @@ class _WishlistPreviewSectionState extends State<_WishlistPreviewSection> {
                 gradient: const LinearGradient(
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
-                  colors: [
-                    Color(0xFF7B4E92),
-                    Color(0xFF40254F),
-                  ],
+                  colors: [Color(0xFF7B4E92), Color(0xFF40254F)],
                 ),
                 boxShadow: [
                   BoxShadow(
@@ -2391,4 +2422,177 @@ class _WishlistPreviewSectionState extends State<_WishlistPreviewSection> {
       },
     );
   }
+}
+
+class _ReleasesPreview extends StatelessWidget {
+  const _ReleasesPreview({
+    required this.future,
+    this.mode = ReleaseCatalogMode.upcoming,
+  });
+
+  final Future<List<UpcomingRelease>> future;
+  final ReleaseCatalogMode mode;
+
+  void _open(BuildContext context) => Navigator.push<void>(
+    context,
+    AppPageRoute(builder: (_) => UpcomingReleasesPage(mode: mode)),
+  );
+
+  @override
+  Widget build(BuildContext context) => FutureBuilder<List<UpcomingRelease>>(
+    future: future,
+    builder: (context, snapshot) {
+      final books = snapshot.data ?? const [];
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              CircleAvatar(
+                child: Icon(
+                  mode == ReleaseCatalogMode.newReleases
+                      ? Icons.auto_awesome_outlined
+                      : Icons.event_available_outlined,
+                ),
+              ),
+              const SizedBox(width: AppSpacing.sm),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      mode == ReleaseCatalogMode.newReleases
+                          ? 'Novedades disponibles'
+                          : 'Próximos lanzamientos',
+                      style: TextStyle(
+                        fontWeight: FontWeight.w800,
+                        fontSize: 20,
+                      ),
+                    ),
+                    Text(
+                      mode == ReleaseCatalogMode.newReleases
+                          ? 'Libros de ficción que ya están en librerías'
+                          : 'Novedades que están a punto de llegar',
+                    ),
+                  ],
+                ),
+              ),
+              TextButton(
+                onPressed: () => _open(context),
+                child: const Text('Ver todos'),
+              ),
+            ],
+          ),
+          const SizedBox(height: AppSpacing.sm),
+          if (snapshot.connectionState != ConnectionState.done)
+            const SizedBox(
+              height: 120,
+              child: Center(child: CircularProgressIndicator()),
+            )
+          else if (snapshot.hasError)
+            ClubCard(
+              child: InkWell(
+                onTap: () => _open(context),
+                child: const Padding(
+                  padding: EdgeInsets.all(AppSpacing.md),
+                  child: Row(
+                    children: [
+                      Icon(Icons.cloud_off_outlined),
+                      SizedBox(width: AppSpacing.sm),
+                      Expanded(
+                        child: Text('No hemos podido cargar esta sección'),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            )
+          else if (books.isEmpty)
+            ClubCard(
+              child: InkWell(
+                onTap: () => _open(context),
+                child: const Padding(
+                  padding: EdgeInsets.all(AppSpacing.md),
+                  child: Row(
+                    children: [
+                      Icon(Icons.event_busy_outlined),
+                      SizedBox(width: AppSpacing.sm),
+                      Expanded(
+                        child: Text('Todavía no hay libros disponibles'),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            )
+          else
+            SizedBox(
+              height: 205,
+              child: ListView.separated(
+                key: PageStorageKey(
+                  mode == ReleaseCatalogMode.newReleases
+                      ? 'dashboard-new-releases'
+                      : 'dashboard-upcoming-releases',
+                ),
+                scrollDirection: Axis.horizontal,
+                // Evita que el rebote horizontal de iOS capture el gesto
+                // vertical del CustomScrollView al volver hacia arriba.
+                physics: const ClampingScrollPhysics(),
+                itemCount: books.length,
+                separatorBuilder: (_, _) =>
+                    const SizedBox(width: AppSpacing.sm),
+                itemBuilder: (_, index) {
+                  final book = books[index];
+                  return InkWell(
+                    onTap: () => _open(context),
+                    borderRadius: BorderRadius.circular(AppRadius.lg),
+                    child: SizedBox(
+                      width: 112,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Stack(
+                            children: [
+                              ClubBookCover(
+                                title: book.title,
+                                imageUrl: book.coverUrl ?? '',
+                                width: 104,
+                                height: 152,
+                              ),
+                              if (book.isInWishlist || book.isInLibrary)
+                                Positioned(
+                                  top: 6,
+                                  right: 6,
+                                  child: CircleAvatar(
+                                    radius: 14,
+                                    backgroundColor: Colors.white,
+                                    child: Icon(
+                                      book.isInLibrary
+                                          ? Icons.check
+                                          : Icons.favorite,
+                                      size: 16,
+                                      color: AppColors.primary,
+                                    ),
+                                  ),
+                                ),
+                            ],
+                          ),
+                          const SizedBox(height: AppSpacing.xs),
+                          Text(
+                            book.title,
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(fontWeight: FontWeight.w700),
+                          ),
+                        ],
+                      ),
+                    ),
+                  );
+                },
+              ),
+            ),
+        ],
+      );
+    },
+  );
 }

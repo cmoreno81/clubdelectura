@@ -35,6 +35,11 @@ String _fmtPrice(double price) {
   return '${buf.toString()},$decPart';
 }
 
+String? _priceLabel(double? price) {
+  if (price == null) return null;
+  return price == 0 ? 'Gratis' : '${_fmtPrice(price)} €';
+}
+
 const _shortMonths = [
   '',
   'ene',
@@ -161,7 +166,9 @@ class _WishlistPageState extends State<WishlistPage> {
       await _reload();
       if (!mounted) return;
       _showPurchasedNotice(item);
-      await _offerAddToLibrary(item);
+      if (!item.isInLibrary) {
+        await _offerAddToLibrary(item);
+      }
     } on ApiException catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(
@@ -993,7 +1000,7 @@ class _WishlistTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isUpcoming = item.isUpcoming && item.releaseDate != null;
-    final priceStr = item.price != null ? '${_fmtPrice(item.price!)} €' : null;
+    final priceStr = _priceLabel(item.price);
 
     return ClubCard(
       elevated: false,
@@ -1348,7 +1355,7 @@ class _PurchasedTile extends StatelessWidget {
                 ],
                 if (item.price != null)
                   Text(
-                    '${_fmtPrice(item.price!)} €',
+                    _priceLabel(item.price)!,
                     style: AppTextStyles.caption.copyWith(
                       fontWeight: FontWeight.w600,
                     ),
@@ -1518,7 +1525,8 @@ class _WishlistAddSheetState extends State<WishlistAddSheet> {
   bool _saving = false;
   bool _searching = false;
   bool _searchDone = false;
-  List<GoogleBookResult> _searchResults = [];
+  List<WishlistBookSearchResult> _searchResults = [];
+  String? _searchError;
   DateTime? _plannedMonth;
   Timer? _searchDebounce;
 
@@ -1564,7 +1572,11 @@ class _WishlistAddSheetState extends State<WishlistAddSheet> {
   void _onSearchChanged(String query) {
     _searchDebounce?.cancel();
     if (query.trim().length < 3) {
-      setState(() => _searchResults = []);
+      setState(() {
+        _searchResults = [];
+        _searchDone = false;
+        _searchError = null;
+      });
       return;
     }
     _searchDebounce = Timer(const Duration(milliseconds: 500), () async {
@@ -1572,24 +1584,35 @@ class _WishlistAddSheetState extends State<WishlistAddSheet> {
       setState(() {
         _searching = true;
         _searchDone = false;
+        _searchError = null;
       });
-      final results = await _service.searchBooks(query);
-      if (!mounted) return;
-      setState(() {
-        _searchResults = results;
-        _searching = false;
-        _searchDone = true;
-      });
+      try {
+        final results = await _service.searchBooks(query);
+        if (!mounted || _searchCtrl.text.trim() != query.trim()) return;
+        setState(() {
+          _searchResults = results;
+          _searching = false;
+          _searchDone = true;
+        });
+      } catch (_) {
+        if (!mounted || _searchCtrl.text.trim() != query.trim()) return;
+        setState(() {
+          _searchResults = [];
+          _searching = false;
+          _searchDone = true;
+          _searchError = 'No se ha podido consultar el catálogo de ClubReads.';
+        });
+      }
     });
   }
 
-  void _selectGoogleBook(GoogleBookResult book) {
+  void _selectCatalogBook(WishlistBookSearchResult book) {
     setState(() {
       _titleCtrl.text = book.title;
       _authorCtrl.text = book.author ?? _authorCtrl.text;
       _coverUrl = book.coverUrl;
       _isbn = book.isbn;
-      _bookId = null; // No es del catálogo interno
+      _bookId = book.bookId;
       if (book.isFutureRelease) {
         _releaseDate = book.releaseDateTime;
       }
@@ -1755,12 +1778,12 @@ class _WishlistAddSheetState extends State<WishlistAddSheet> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // ── Buscador Google Books ──────────────────────────────
+                  // ── Buscador del catálogo ClubReads ────────────────────
                   if (!_isEdit) ...[
                     TextField(
                       controller: _searchCtrl,
                       decoration: InputDecoration(
-                        hintText: 'Busca el libro en Google Books…',
+                        hintText: 'Busca en ClubReads y Google Books…',
                         prefixIcon: const Icon(Icons.search_rounded, size: 20),
                         suffixIcon: _searching
                             ? const Padding(
@@ -1829,6 +1852,7 @@ class _WishlistAddSheetState extends State<WishlistAddSheet> {
                               subtitle: Text(
                                 [
                                   if (r.author != null) r.author!,
+                                  r.sourceLabel,
                                   if (r.publishedDate != null)
                                     r.isFutureRelease
                                         ? '🗓 Sale ${r.publishedDate}'
@@ -1837,9 +1861,19 @@ class _WishlistAddSheetState extends State<WishlistAddSheet> {
                                 style: const TextStyle(fontSize: 11),
                                 maxLines: 1,
                               ),
-                              onTap: () => _selectGoogleBook(r),
+                              onTap: () => _selectCatalogBook(r),
                             );
                           },
+                        ),
+                      )
+                    else if (_searchError != null)
+                      Padding(
+                        padding: const EdgeInsets.only(top: AppSpacing.xs),
+                        child: Text(
+                          _searchError!,
+                          style: AppTextStyles.caption.copyWith(
+                            color: AppColors.danger,
+                          ),
                         ),
                       )
                     else if (_searchDone &&
@@ -1961,6 +1995,7 @@ class _WishlistAddSheetState extends State<WishlistAddSheet> {
                               ],
                               decoration: const InputDecoration(
                                 hintText: 'Ej: 18,90',
+                                helperText: 'Escribe 0 si es gratis',
                                 isDense: true,
                                 contentPadding: EdgeInsets.symmetric(
                                   horizontal: 12,
@@ -2448,7 +2483,7 @@ class WishlistSummaryCard extends StatelessWidget {
                       ),
                       if (item.price != null)
                         Text(
-                          '${_fmtPrice(item.price!)} €',
+                          _priceLabel(item.price)!,
                           style: AppTextStyles.caption.copyWith(
                             color: Colors.white.withValues(alpha: .80),
                             fontWeight: FontWeight.w600,

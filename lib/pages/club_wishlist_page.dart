@@ -309,6 +309,8 @@ class _BookTile extends StatelessWidget {
                     ],
                   ),
 
+                  ..._memberNotes(group.members),
+
                   if (onAdd != null) ...[
                     const SizedBox(height: 8),
                     SizedBox(
@@ -348,6 +350,57 @@ class _BookTile extends StatelessWidget {
         bg: AppColors.surfaceSoft,
       );
     }).toList();
+  }
+
+  List<Widget> _memberNotes(List<ClubWishlistMember> members) {
+    return members
+        .where((member) => member.note != null)
+        .map(
+          (member) => Padding(
+            padding: const EdgeInsets.only(top: AppSpacing.xs),
+            child: Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(
+                horizontal: AppSpacing.sm,
+                vertical: AppSpacing.xs,
+              ),
+              decoration: BoxDecoration(
+                color: AppColors.primaryLight.withValues(alpha: .35),
+                borderRadius: BorderRadius.circular(AppRadius.sm),
+              ),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Icon(
+                    Icons.format_quote_rounded,
+                    size: 16,
+                    color: AppColors.primary,
+                  ),
+                  const SizedBox(width: AppSpacing.xs),
+                  Expanded(
+                    child: Text.rich(
+                      TextSpan(
+                        children: [
+                          TextSpan(
+                            text: '${member.name.split(' ').first}: ',
+                            style: const TextStyle(fontWeight: FontWeight.w700),
+                          ),
+                          TextSpan(text: member.note),
+                        ],
+                      ),
+                      style: AppTextStyles.caption.copyWith(
+                        color: AppColors.textSecondary,
+                      ),
+                      maxLines: 3,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        )
+        .toList(growable: false);
   }
 }
 

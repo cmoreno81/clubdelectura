@@ -2,15 +2,17 @@ import 'dart:convert';
 
 import 'package:http/http.dart' as http;
 
+import '../models/catalog_book.dart';
 import '../models/wishlist.dart';
 import '../utils/app_config.dart';
+import 'api_service.dart';
 import 'api_exception.dart';
 import 'authenticated_http_client.dart';
 import 'http_response_handler.dart';
 
 class WishlistService {
   WishlistService({http.Client? client})
-      : _client = client ?? AuthenticatedHttpClient();
+    : _client = client ?? AuthenticatedHttpClient();
 
   final http.Client _client;
 
@@ -174,91 +176,60 @@ class WishlistService {
     return ClubWishlistData.fromJson(data);
   }
 
-  // ── Google Books — autocompletar al añadir ───────────────────────────────────
+  // ── Catálogo ClubReads — autocompletar al añadir ────────────────────────────
 
-  static const _googleBooksUrl =
-      'https://www.googleapis.com/books/v1/volumes';
+  Future<List<WishlistBookSearchResult>> searchBooks(String query) async {
+    final normalized = query.trim();
+    if (normalized.isEmpty) return const [];
 
-  Future<List<GoogleBookResult>> searchBooks(String query) async {
-    if (query.trim().isEmpty) return [];
-    // langRestrict filtraría solo libros cuyo idioma principal sea español,
-    // descartando ediciones o traducciones en otros idiomas. Lo quitamos para
-    // que la búsqueda devuelva resultados independientemente del idioma.
-    final uri = Uri.parse(_googleBooksUrl).replace(queryParameters: {
-      'q': query.trim(),
-      'maxResults': '8',
-      'printType': 'books',
-    });
-    try {
-      final response = await http.get(uri);
-      if (response.statusCode != 200) return [];
-      final data = jsonDecode(response.body) as Map<String, dynamic>;
-      final items = data['items'] as List<dynamic>? ?? [];
-      return items
-          .cast<Map<String, dynamic>>()
-          .map(GoogleBookResult.fromJson)
-          .where((b) => b.title.isNotEmpty)
-          .toList(growable: false);
-    } catch (_) {
-      return [];
-    }
+    final books = await ApiService(
+      client: _client,
+    ).getCatalogoGeneral(query: normalized);
+    final ordered = [
+      ...books.where((book) => book.source == 'CLUBREADS'),
+      ...books.where((book) => book.source != 'CLUBREADS'),
+    ];
+    return ordered
+        .where((book) => book.id.isNotEmpty)
+        .take(8)
+        .map(WishlistBookSearchResult.fromCatalogBook)
+        .toList(growable: false);
   }
 }
 
-// ── Resultado de Google Books ──────────────────────────────────────────────────
+// ── Resultado del catálogo interno ─────────────────────────────────────────────
 
-class GoogleBookResult {
-  const GoogleBookResult({
-    required this.googleId,
+class WishlistBookSearchResult {
+  const WishlistBookSearchResult({
+    this.bookId,
     required this.title,
+    required this.sourceLabel,
     this.author,
     this.coverUrl,
     this.isbn,
     this.publishedDate,
   });
 
-  final String googleId;
+  final String? bookId;
   final String title;
+  final String sourceLabel;
   final String? author;
   final String? coverUrl;
   final String? isbn;
   final String? publishedDate; // ISO date string o "YYYY-MM" o "YYYY"
 
-  factory GoogleBookResult.fromJson(Map<String, dynamic> json) {
-    final info = json['volumeInfo'] as Map<String, dynamic>? ?? {};
-    final images = info['imageLinks'] as Map<String, dynamic>? ?? {};
-
-    // ISBN-13 preferido, fallback ISBN-10
-    String? isbn;
-    final identifiers =
-        info['industryIdentifiers'] as List<dynamic>? ?? [];
-    for (final id in identifiers.cast<Map<String, dynamic>>()) {
-      if (id['type'] == 'ISBN_13') {
-        isbn = id['identifier'] as String?;
-        break;
-      }
-    }
-    isbn ??= identifiers
-        .cast<Map<String, dynamic>>()
-        .where((id) => id['type'] == 'ISBN_10')
-        .map((id) => id['identifier'] as String?)
-        .firstOrNull;
-
-    // Portada — preferir thumbnail, upgrade a HTTP→HTTPS
-    final rawCover = (images['thumbnail'] ?? images['smallThumbnail']) as String?;
-    final coverUrl = rawCover?.replaceFirst('http://', 'https://');
-
-    final authors = info['authors'] as List<dynamic>? ?? [];
-
-    return GoogleBookResult(
-      googleId: json['id'] as String? ?? '',
-      title: info['title'] as String? ?? '',
-      author: authors.isNotEmpty ? authors.first as String : null,
-      coverUrl: coverUrl,
-      isbn: isbn,
-      publishedDate: info['publishedDate'] as String?,
-    );
-  }
+  factory WishlistBookSearchResult.fromCatalogBook(CatalogBook book) =>
+      WishlistBookSearchResult(
+        bookId: book.source == 'CLUBREADS' ? book.id : null,
+        title: book.title,
+        sourceLabel: book.sourceLabel,
+        author: book.authors.isEmpty ? null : book.authors.join(', '),
+        coverUrl: book.coverUrl.trim().isEmpty ? null : book.coverUrl,
+        isbn: book.isbn.trim().isEmpty ? null : book.isbn,
+        publishedDate: book.publicationDate.trim().isNotEmpty
+            ? book.publicationDate
+            : book.publicationYear?.toString(),
+      );
 
   /// Intenta parsear publishedDate como DateTime para comparar con hoy.
   DateTime? get releaseDateTime {

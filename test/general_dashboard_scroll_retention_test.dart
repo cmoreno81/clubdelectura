@@ -24,16 +24,17 @@ void main() {
             loads++;
             return _dashboard();
           },
-          quickActions: ({
-            required title,
-            required bookId,
-            required coverUrl,
-            required genre,
-            required author,
-          }) async {
-            actions++;
-            return false;
-          },
+          quickActions:
+              ({
+                required title,
+                required bookId,
+                required coverUrl,
+                required genre,
+                required author,
+              }) async {
+                actions++;
+                return false;
+              },
         ),
       ),
     );
@@ -47,10 +48,12 @@ void main() {
     // horizontales, calendarios, etc.). Tomamos el primero, que es el
     // Scrollable del propio CustomScrollView vertical.
     final vertical = tester.state<ScrollableState>(
-      find.descendant(
-        of: find.byType(CustomScrollView),
-        matching: find.byType(Scrollable),
-      ).first,
+      find
+          .descendant(
+            of: find.byType(CustomScrollView),
+            matching: find.byType(Scrollable),
+          )
+          .first,
     );
     final carousel = find.byKey(
       const PageStorageKey('dashboard-trending-books'),
@@ -89,13 +92,14 @@ void main() {
             loads++;
             return _dashboard(updated: loads > 1);
           },
-          quickActions: ({
-            required title,
-            required bookId,
-            required coverUrl,
-            required genre,
-            required author,
-          }) async => true,
+          quickActions:
+              ({
+                required title,
+                required bookId,
+                required coverUrl,
+                required genre,
+                required author,
+              }) async => true,
         ),
       ),
     );
@@ -134,13 +138,14 @@ void main() {
             }
             return _dashboard();
           },
-          quickActions: ({
-            required title,
-            required bookId,
-            required coverUrl,
-            required genre,
-            required author,
-          }) async => true,
+          quickActions:
+              ({
+                required title,
+                required bookId,
+                required coverUrl,
+                required genre,
+                required author,
+              }) async => true,
         ),
       ),
     );
@@ -163,6 +168,37 @@ void main() {
     await tester.pumpWidget(const MaterialApp(home: SizedBox()));
     await tester.pump(const Duration(milliseconds: 30));
     expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('permite volver arriba empezando el gesto sobre Mi wishlist', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        home: GeneralDashboardPage(loadDashboard: () async => _dashboard()),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    final vertical = tester.state<ScrollableState>(
+      find
+          .descendant(
+            of: find.byType(CustomScrollView),
+            matching: find.byType(Scrollable),
+          )
+          .first,
+    );
+    await tester.scrollUntilVisible(
+      find.text('Mi wishlist'),
+      500,
+      scrollable: find.byType(Scrollable).first,
+    );
+    final before = vertical.position.pixels;
+
+    await tester.drag(find.text('Mi wishlist'), const Offset(0, 300));
+    await tester.pumpAndSettle();
+
+    expect(vertical.position.pixels, lessThan(before));
   });
 }
 

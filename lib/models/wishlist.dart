@@ -14,6 +14,7 @@ class WishlistItem {
     this.purchasedAt,
     this.note,
     required this.isUpcoming,
+    required this.isInLibrary,
     required this.createdAt,
     required this.updatedAt,
   });
@@ -32,8 +33,11 @@ class WishlistItem {
   final DateTime? purchasedAt;
   final String? note;
   final bool isUpcoming;
+  final bool isInLibrary;
   final DateTime createdAt;
   final DateTime updatedAt;
+
+  bool get isFree => price == 0;
 
   factory WishlistItem.fromJson(Map<String, dynamic> json) {
     return WishlistItem(
@@ -43,8 +47,12 @@ class WishlistItem {
       author: json['author'] as String?,
       coverUrl: json['coverUrl'] as String?,
       isbn: json['isbn'] as String?,
-      format: WishlistFormat.fromString(json['format'] as String? ?? 'PHYSICAL'),
-      priority: WishlistPriority.fromString(json['priority'] as String? ?? 'MEDIUM'),
+      format: WishlistFormat.fromString(
+        json['format'] as String? ?? 'PHYSICAL',
+      ),
+      priority: WishlistPriority.fromString(
+        json['priority'] as String? ?? 'MEDIUM',
+      ),
       price: (json['price'] as num?)?.toDouble(),
       releaseDate: json['releaseDate'] != null
           ? DateTime.tryParse(json['releaseDate'] as String)
@@ -57,6 +65,7 @@ class WishlistItem {
           : null,
       note: json['note'] as String?,
       isUpcoming: json['isUpcoming'] as bool? ?? false,
+      isInLibrary: json['isInLibrary'] as bool? ?? false,
       createdAt: DateTime.parse(json['createdAt'] as String),
       updatedAt: DateTime.parse(json['updatedAt'] as String),
     );
@@ -87,13 +96,16 @@ class WishlistItem {
       priority: priority ?? this.priority,
       price: price ?? this.price,
       releaseDate: clearReleaseDate ? null : (releaseDate ?? this.releaseDate),
-      plannedMonth: clearPlannedMonth ? null : (plannedMonth ?? this.plannedMonth),
+      plannedMonth: clearPlannedMonth
+          ? null
+          : (plannedMonth ?? this.plannedMonth),
       note: note ?? this.note,
       isUpcoming: clearReleaseDate
           ? false
           : (releaseDate != null
-              ? releaseDate.isAfter(DateTime.now())
-              : isUpcoming),
+                ? releaseDate.isAfter(DateTime.now())
+                : isUpcoming),
+      isInLibrary: isInLibrary,
       createdAt: createdAt,
       updatedAt: DateTime.now(),
     );
@@ -232,11 +244,10 @@ class WishlistData {
   final WishlistSummary summary;
 
   factory WishlistData.fromJson(Map<String, dynamic> json) {
-    List<WishlistItem> parseList(dynamic raw) =>
-        (raw as List<dynamic>? ?? [])
-            .cast<Map<String, dynamic>>()
-            .map(WishlistItem.fromJson)
-            .toList(growable: false);
+    List<WishlistItem> parseList(dynamic raw) => (raw as List<dynamic>? ?? [])
+        .cast<Map<String, dynamic>>()
+        .map(WishlistItem.fromJson)
+        .toList(growable: false);
 
     return WishlistData(
       items: parseList(json['items']),
@@ -270,6 +281,7 @@ class ClubWishlistMember {
     required this.name,
     this.avatarUrl,
     this.price,
+    this.note,
     required this.format,
   });
 
@@ -277,6 +289,7 @@ class ClubWishlistMember {
   final String name;
   final String? avatarUrl;
   final double? price;
+  final String? note;
   final WishlistFormat format;
 
   factory ClubWishlistMember.fromJson(Map<String, dynamic> json) {
@@ -285,9 +298,17 @@ class ClubWishlistMember {
       name: json['name'] as String,
       avatarUrl: json['avatarUrl'] as String?,
       price: (json['price'] as num?)?.toDouble(),
-      format: WishlistFormat.fromString(json['format'] as String? ?? 'PHYSICAL'),
+      note: _nonEmptyString(json['note'] ?? json['nota'] ?? json['comentario']),
+      format: WishlistFormat.fromString(
+        json['format'] as String? ?? 'PHYSICAL',
+      ),
     );
   }
+}
+
+String? _nonEmptyString(dynamic value) {
+  final text = value?.toString().trim();
+  return text == null || text.isEmpty ? null : text;
 }
 
 class ClubWishlistGroup {
