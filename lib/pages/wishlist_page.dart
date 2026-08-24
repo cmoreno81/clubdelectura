@@ -266,6 +266,58 @@ class _WishlistPageState extends State<WishlistPage> {
     }
   }
 
+  Future<void> _editPurchaseDate(WishlistItem item) async {
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final firstDate = DateTime(1900);
+    final rawCurrent = (item.purchasedAt ?? now).toLocal();
+    final currentDate = DateTime(
+      rawCurrent.year,
+      rawCurrent.month,
+      rawCurrent.day,
+    );
+    final current = currentDate.isBefore(firstDate)
+        ? firstDate
+        : currentDate.isAfter(today)
+        ? today
+        : currentDate;
+    final selected = await showDatePicker(
+      context: context,
+      initialDate: current,
+      firstDate: firstDate,
+      lastDate: today,
+      helpText: 'Fecha de compra',
+      cancelText: 'Cancelar',
+      confirmText: 'Guardar',
+    );
+    if (selected == null || !mounted) return;
+    if (selected.year == current.year &&
+        selected.month == current.month &&
+        selected.day == current.day) {
+      return;
+    }
+
+    try {
+      final purchaseDate = DateTime(
+        selected.year,
+        selected.month,
+        selected.day,
+        12,
+      );
+      await _service.markPurchased(item.id, purchasedAt: purchaseDate);
+      await _reload();
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Fecha de compra actualizada')),
+      );
+    } on ApiException catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(e.message)));
+    }
+  }
+
   Future<void> _confirmDelete(WishlistItem item) async {
     final confirmed = await showDialog<bool>(
       context: context,
@@ -417,6 +469,8 @@ class _WishlistPageState extends State<WishlistPage> {
                             const SizedBox(height: AppSpacing.sm),
                         itemBuilder: (_, i) => _PurchasedTile(
                           item: data.purchased[i],
+                          onEditPurchaseDate: () =>
+                              _editPurchaseDate(data.purchased[i]),
                           onUnmark: () => _unmarkPurchased(data.purchased[i]),
                           onDelete: () => _confirmDelete(data.purchased[i]),
                         ),
@@ -1287,11 +1341,13 @@ class _PurchasedHeader extends StatelessWidget {
 class _PurchasedTile extends StatelessWidget {
   const _PurchasedTile({
     required this.item,
+    required this.onEditPurchaseDate,
     required this.onUnmark,
     required this.onDelete,
   });
 
   final WishlistItem item;
+  final VoidCallback onEditPurchaseDate;
   final VoidCallback onUnmark;
   final VoidCallback onDelete;
 
@@ -1345,11 +1401,38 @@ class _PurchasedTile extends StatelessWidget {
                   ),
                 if (item.purchasedAt != null) ...[
                   const SizedBox(height: 2),
-                  Text(
-                    'Comprado el ${_fmtDateShort(item.purchasedAt!, includeYear: true)}',
-                    style: AppTextStyles.caption.copyWith(
-                      color: AppColors.success,
-                      fontWeight: FontWeight.w600,
+                  Material(
+                    color: Colors.transparent,
+                    child: InkWell(
+                      onTap: onEditPurchaseDate,
+                      borderRadius: BorderRadius.circular(8),
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(
+                          vertical: 3,
+                          horizontal: 2,
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              Icons.edit_calendar_rounded,
+                              size: 14,
+                              color: AppColors.success,
+                            ),
+                            const SizedBox(width: 4),
+                            Flexible(
+                              child: Text(
+                                'Comprado el ${_fmtDateShort(item.purchasedAt!, includeYear: true)}',
+                                overflow: TextOverflow.ellipsis,
+                                style: AppTextStyles.caption.copyWith(
+                                  color: AppColors.success,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
                     ),
                   ),
                 ],
@@ -1712,482 +1795,533 @@ class _WishlistAddSheetState extends State<WishlistAddSheet> {
 
   @override
   Widget build(BuildContext context) {
-    final bottomPadding = MediaQuery.viewInsetsOf(context).bottom;
-    return Container(
-      margin: const EdgeInsets.only(top: 40),
-      decoration: const BoxDecoration(
-        color: AppColors.background,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          // Handle
-          Container(
-            margin: const EdgeInsets.only(top: 10, bottom: 6),
-            width: 36,
-            height: 4,
-            decoration: BoxDecoration(
-              color: AppColors.paperLine,
-              borderRadius: BorderRadius.circular(2),
-            ),
-          ),
+    final mediaQuery = MediaQuery.of(context);
+    final keyboardInset = mediaQuery.viewInsets.bottom;
+    final maxSheetHeight =
+        mediaQuery.size.height - mediaQuery.padding.top - AppSpacing.sm;
 
-          // Título del sheet
-          Padding(
-            padding: const EdgeInsets.symmetric(
-              horizontal: AppSpacing.md,
-              vertical: AppSpacing.xs,
+    return AnimatedPadding(
+      duration: const Duration(milliseconds: 180),
+      curve: Curves.easeOutCubic,
+      padding: EdgeInsets.only(bottom: keyboardInset),
+      child: SafeArea(
+        top: false,
+        minimum: const EdgeInsets.only(bottom: AppSpacing.xs),
+        child: ConstrainedBox(
+          constraints: BoxConstraints(
+            maxHeight: maxSheetHeight > 0
+                ? maxSheetHeight
+                : mediaQuery.size.height * .8,
+          ),
+          child: Container(
+            decoration: const BoxDecoration(
+              color: AppColors.background,
+              borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
             ),
-            child: Row(
+            child: Column(
+              mainAxisSize: MainAxisSize.max,
               children: [
-                Expanded(
-                  child: Text(
-                    _isEdit ? 'Editar libro' : 'Añadir a lista',
-                    style: AppTextStyles.section,
+                // Handle
+                Container(
+                  margin: const EdgeInsets.only(top: 10, bottom: 6),
+                  width: 36,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: AppColors.paperLine,
+                    borderRadius: BorderRadius.circular(2),
                   ),
                 ),
-                if (_saving)
-                  const SizedBox(
-                    width: 20,
-                    height: 20,
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  )
-                else
-                  TextButton(
-                    onPressed: _save,
-                    child: const Text(
-                      'Guardar',
-                      style: TextStyle(fontWeight: FontWeight.w700),
-                    ),
+
+                // Título del sheet
+                Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: AppSpacing.md,
+                    vertical: AppSpacing.xs,
                   ),
-              ],
-            ),
-          ),
-
-          const Divider(height: 1),
-
-          Flexible(
-            child: SingleChildScrollView(
-              padding: EdgeInsets.fromLTRB(
-                AppSpacing.md,
-                AppSpacing.sm,
-                AppSpacing.md,
-                AppSpacing.md + bottomPadding,
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // ── Buscador del catálogo ClubReads ────────────────────
-                  if (!_isEdit) ...[
-                    TextField(
-                      controller: _searchCtrl,
-                      decoration: InputDecoration(
-                        hintText: 'Busca en ClubReads y Google Books…',
-                        prefixIcon: const Icon(Icons.search_rounded, size: 20),
-                        suffixIcon: _searching
-                            ? const Padding(
-                                padding: EdgeInsets.all(12),
-                                child: SizedBox(
-                                  width: 16,
-                                  height: 16,
-                                  child: CircularProgressIndicator(
-                                    strokeWidth: 2,
-                                  ),
-                                ),
-                              )
-                            : null,
-                        isDense: true,
-                        contentPadding: const EdgeInsets.symmetric(
-                          vertical: 10,
-                        ),
-                      ),
-                      onChanged: _onSearchChanged,
-                    ),
-                    if (_searchResults.isNotEmpty)
-                      Container(
-                        margin: const EdgeInsets.only(top: AppSpacing.xs),
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(AppRadius.md),
-                          border: Border.all(color: AppColors.paperLine),
-                        ),
-                        child: ListView.separated(
-                          shrinkWrap: true,
-                          physics: const NeverScrollableScrollPhysics(),
-                          itemCount: _searchResults.length,
-                          separatorBuilder: (_, _) => const Divider(
-                            height: 1,
-                            indent: 12,
-                            endIndent: 12,
-                          ),
-                          itemBuilder: (_, i) {
-                            final r = _searchResults[i];
-                            return ListTile(
-                              dense: true,
-                              contentPadding: const EdgeInsets.symmetric(
-                                horizontal: 10,
-                                vertical: 2,
-                              ),
-                              leading: r.coverUrl != null
-                                  ? ClipRRect(
-                                      borderRadius: BorderRadius.circular(4),
-                                      child: OptimizedNetworkImage(
-                                        url: r.coverUrl!,
-                                        width: 32,
-                                        height: 46,
-                                        fit: BoxFit.cover,
-                                      ),
-                                    )
-                                  : const Icon(Icons.book_rounded, size: 28),
-                              title: Text(
-                                r.title,
-                                style: const TextStyle(
-                                  fontSize: 13,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                              subtitle: Text(
-                                [
-                                  if (r.author != null) r.author!,
-                                  r.sourceLabel,
-                                  if (r.publishedDate != null)
-                                    r.isFutureRelease
-                                        ? '🗓 Sale ${r.publishedDate}'
-                                        : r.publishedDate!,
-                                ].join(' · '),
-                                style: const TextStyle(fontSize: 11),
-                                maxLines: 1,
-                              ),
-                              onTap: () => _selectCatalogBook(r),
-                            );
-                          },
-                        ),
-                      )
-                    else if (_searchError != null)
-                      Padding(
-                        padding: const EdgeInsets.only(top: AppSpacing.xs),
-                        child: Text(
-                          _searchError!,
-                          style: AppTextStyles.caption.copyWith(
-                            color: AppColors.danger,
-                          ),
-                        ),
-                      )
-                    else if (_searchDone &&
-                        !_searching &&
-                        _searchCtrl.text.trim().length >= 3)
-                      Padding(
-                        padding: const EdgeInsets.only(top: AppSpacing.xs),
-                        child: Text(
-                          'Sin resultados para "${_searchCtrl.text.trim()}" — puedes añadirlo manualmente.',
-                          style: AppTextStyles.caption.copyWith(
-                            color: AppColors.textSecondary,
-                            fontStyle: FontStyle.italic,
-                          ),
-                        ),
-                      ),
-                    const SizedBox(height: AppSpacing.sm),
-                  ],
-
-                  // ── Título ─────────────────────────────────────────────
-                  _Label('Título *'),
-                  TextField(
-                    controller: _titleCtrl,
-                    decoration: const InputDecoration(
-                      hintText: 'Título del libro',
-                      isDense: true,
-                      contentPadding: EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 10,
-                      ),
-                    ),
-                    textCapitalization: TextCapitalization.sentences,
-                  ),
-                  const SizedBox(height: AppSpacing.sm),
-
-                  // ── Autor ──────────────────────────────────────────────
-                  _Label('Autor / Autora'),
-                  TextField(
-                    controller: _authorCtrl,
-                    decoration: const InputDecoration(
-                      hintText: 'Opcional',
-                      isDense: true,
-                      contentPadding: EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 10,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: AppSpacing.sm),
-
-                  // ── Formato ────────────────────────────────────────────
-                  _Label('Formato'),
-                  Row(
-                    children: WishlistFormat.values.map((f) {
-                      final sel = _format == f;
-                      return Expanded(
-                        child: GestureDetector(
-                          onTap: () => setState(() => _format = f),
-                          child: AnimatedContainer(
-                            duration: const Duration(milliseconds: 150),
-                            margin: const EdgeInsets.only(right: 6),
-                            padding: const EdgeInsets.symmetric(vertical: 8),
-                            decoration: BoxDecoration(
-                              color: sel
-                                  ? AppColors.primaryLight
-                                  : AppColors.surfaceSoft,
-                              borderRadius: BorderRadius.circular(AppRadius.sm),
-                              border: Border.all(
-                                color: sel
-                                    ? AppColors.primary
-                                    : AppColors.paperLine,
-                                width: sel ? 1.5 : 1,
-                              ),
-                            ),
-                            child: Column(
-                              children: [
-                                Text(
-                                  f.emoji,
-                                  style: const TextStyle(fontSize: 18),
-                                ),
-                                const SizedBox(height: 2),
-                                Text(
-                                  f.label,
-                                  style: TextStyle(
-                                    fontSize: 11,
-                                    fontWeight: FontWeight.w600,
-                                    color: sel
-                                        ? AppColors.primary
-                                        : AppColors.textSecondary,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                      );
-                    }).toList(),
-                  ),
-                  const SizedBox(height: AppSpacing.sm),
-
-                  // ── Precio y fecha ─────────────────────────────────────
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                  child: Row(
                     children: [
                       Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            _Label('Precio (€)'),
-                            TextField(
-                              controller: _priceCtrl,
-                              keyboardType:
-                                  const TextInputType.numberWithOptions(
-                                    decimal: true,
-                                  ),
-                              inputFormatters: [
-                                FilteringTextInputFormatter.allow(
-                                  RegExp(r'[\d,.]'),
+                        child: Text(
+                          _isEdit ? 'Editar libro' : 'Añadir a lista',
+                          style: AppTextStyles.section,
+                        ),
+                      ),
+                      if (_saving)
+                        const SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      else
+                        TextButton(
+                          onPressed: _save,
+                          child: const Text(
+                            'Guardar',
+                            style: TextStyle(fontWeight: FontWeight.w700),
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+
+                const Divider(height: 1),
+
+                Expanded(
+                  child: SingleChildScrollView(
+                    keyboardDismissBehavior:
+                        ScrollViewKeyboardDismissBehavior.onDrag,
+                    padding: const EdgeInsets.fromLTRB(
+                      AppSpacing.md,
+                      AppSpacing.sm,
+                      AppSpacing.md,
+                      AppSpacing.lg,
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // ── Buscador del catálogo ClubReads ────────────────────
+                        if (!_isEdit) ...[
+                          TextField(
+                            controller: _searchCtrl,
+                            decoration: InputDecoration(
+                              hintText: 'Busca en ClubReads y Google Books…',
+                              prefixIcon: const Icon(
+                                Icons.search_rounded,
+                                size: 20,
+                              ),
+                              suffixIcon: _searching
+                                  ? const Padding(
+                                      padding: EdgeInsets.all(12),
+                                      child: SizedBox(
+                                        width: 16,
+                                        height: 16,
+                                        child: CircularProgressIndicator(
+                                          strokeWidth: 2,
+                                        ),
+                                      ),
+                                    )
+                                  : null,
+                              isDense: true,
+                              contentPadding: const EdgeInsets.symmetric(
+                                vertical: 10,
+                              ),
+                            ),
+                            onChanged: _onSearchChanged,
+                          ),
+                          if (_searchResults.isNotEmpty)
+                            Container(
+                              margin: const EdgeInsets.only(top: AppSpacing.xs),
+                              decoration: BoxDecoration(
+                                color: Colors.white,
+                                borderRadius: BorderRadius.circular(
+                                  AppRadius.md,
                                 ),
-                              ],
-                              decoration: const InputDecoration(
-                                hintText: 'Ej: 18,90',
-                                helperText: 'Escribe 0 si es gratis',
-                                isDense: true,
-                                contentPadding: EdgeInsets.symmetric(
-                                  horizontal: 12,
-                                  vertical: 10,
+                                border: Border.all(color: AppColors.paperLine),
+                              ),
+                              child: ListView.separated(
+                                shrinkWrap: true,
+                                physics: const NeverScrollableScrollPhysics(),
+                                itemCount: _searchResults.length,
+                                separatorBuilder: (_, _) => const Divider(
+                                  height: 1,
+                                  indent: 12,
+                                  endIndent: 12,
+                                ),
+                                itemBuilder: (_, i) {
+                                  final r = _searchResults[i];
+                                  return ListTile(
+                                    dense: true,
+                                    contentPadding: const EdgeInsets.symmetric(
+                                      horizontal: 10,
+                                      vertical: 2,
+                                    ),
+                                    leading: r.coverUrl != null
+                                        ? ClipRRect(
+                                            borderRadius: BorderRadius.circular(
+                                              4,
+                                            ),
+                                            child: OptimizedNetworkImage(
+                                              url: r.coverUrl!,
+                                              width: 32,
+                                              height: 46,
+                                              fit: BoxFit.cover,
+                                            ),
+                                          )
+                                        : const Icon(
+                                            Icons.book_rounded,
+                                            size: 28,
+                                          ),
+                                    title: Text(
+                                      r.title,
+                                      style: const TextStyle(
+                                        fontSize: 13,
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                    subtitle: Text(
+                                      [
+                                        if (r.author != null) r.author!,
+                                        r.sourceLabel,
+                                        if (r.publishedDate != null)
+                                          r.isFutureRelease
+                                              ? '🗓 Sale ${r.publishedDate}'
+                                              : r.publishedDate!,
+                                      ].join(' · '),
+                                      style: const TextStyle(fontSize: 11),
+                                      maxLines: 1,
+                                    ),
+                                    onTap: () => _selectCatalogBook(r),
+                                  );
+                                },
+                              ),
+                            )
+                          else if (_searchError != null)
+                            Padding(
+                              padding: const EdgeInsets.only(
+                                top: AppSpacing.xs,
+                              ),
+                              child: Text(
+                                _searchError!,
+                                style: AppTextStyles.caption.copyWith(
+                                  color: AppColors.danger,
+                                ),
+                              ),
+                            )
+                          else if (_searchDone &&
+                              !_searching &&
+                              _searchCtrl.text.trim().length >= 3)
+                            Padding(
+                              padding: const EdgeInsets.only(
+                                top: AppSpacing.xs,
+                              ),
+                              child: Text(
+                                'Sin resultados para "${_searchCtrl.text.trim()}" — puedes añadirlo manualmente.',
+                                style: AppTextStyles.caption.copyWith(
+                                  color: AppColors.textSecondary,
+                                  fontStyle: FontStyle.italic,
                                 ),
                               ),
                             ),
-                          ],
+                          const SizedBox(height: AppSpacing.sm),
+                        ],
+
+                        // ── Título ─────────────────────────────────────────────
+                        _Label('Título *'),
+                        TextField(
+                          controller: _titleCtrl,
+                          decoration: const InputDecoration(
+                            hintText: 'Título del libro',
+                            isDense: true,
+                            contentPadding: EdgeInsets.symmetric(
+                              horizontal: 12,
+                              vertical: 10,
+                            ),
+                          ),
+                          textCapitalization: TextCapitalization.sentences,
                         ),
-                      ),
-                      const SizedBox(width: AppSpacing.sm),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            _Label('Fecha de salida'),
-                            InkWell(
-                              onTap: _pickReleaseDate,
-                              borderRadius: BorderRadius.circular(AppRadius.sm),
-                              child: Container(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 12,
-                                  vertical: 10,
-                                ),
-                                decoration: BoxDecoration(
-                                  border: Border.all(
-                                    color: AppColors.paperLine,
+                        const SizedBox(height: AppSpacing.sm),
+
+                        // ── Autor ──────────────────────────────────────────────
+                        _Label('Autor / Autora'),
+                        TextField(
+                          controller: _authorCtrl,
+                          decoration: const InputDecoration(
+                            hintText: 'Opcional',
+                            isDense: true,
+                            contentPadding: EdgeInsets.symmetric(
+                              horizontal: 12,
+                              vertical: 10,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: AppSpacing.sm),
+
+                        // ── Formato ────────────────────────────────────────────
+                        _Label('Formato'),
+                        Row(
+                          children: WishlistFormat.values.map((f) {
+                            final sel = _format == f;
+                            return Expanded(
+                              child: GestureDetector(
+                                onTap: () => setState(() => _format = f),
+                                child: AnimatedContainer(
+                                  duration: const Duration(milliseconds: 150),
+                                  margin: const EdgeInsets.only(right: 6),
+                                  padding: const EdgeInsets.symmetric(
+                                    vertical: 8,
                                   ),
-                                  borderRadius: BorderRadius.circular(
-                                    AppRadius.sm,
+                                  decoration: BoxDecoration(
+                                    color: sel
+                                        ? AppColors.primaryLight
+                                        : AppColors.surfaceSoft,
+                                    borderRadius: BorderRadius.circular(
+                                      AppRadius.sm,
+                                    ),
+                                    border: Border.all(
+                                      color: sel
+                                          ? AppColors.primary
+                                          : AppColors.paperLine,
+                                      width: sel ? 1.5 : 1,
+                                    ),
                                   ),
-                                  color: AppColors.surfaceSoft,
-                                ),
-                                child: Row(
-                                  children: [
-                                    Expanded(
-                                      child: Text(
-                                        _releaseDate != null
-                                            ? _fmtDateShort(
-                                                _releaseDate!,
-                                                includeYear: true,
-                                              )
-                                            : 'Ya disponible',
+                                  child: Column(
+                                    children: [
+                                      Text(
+                                        f.emoji,
+                                        style: const TextStyle(fontSize: 18),
+                                      ),
+                                      const SizedBox(height: 2),
+                                      Text(
+                                        f.label,
                                         style: TextStyle(
-                                          fontSize: 13,
-                                          color: _releaseDate != null
-                                              ? AppColors.textPrimary
+                                          fontSize: 11,
+                                          fontWeight: FontWeight.w600,
+                                          color: sel
+                                              ? AppColors.primary
                                               : AppColors.textSecondary,
                                         ),
                                       ),
-                                    ),
-                                    if (_releaseDate != null)
-                                      GestureDetector(
-                                        onTap: () =>
-                                            setState(() => _releaseDate = null),
-                                        child: const Icon(
-                                          Icons.close_rounded,
-                                          size: 16,
-                                          color: AppColors.textSecondary,
-                                        ),
-                                      )
-                                    else
-                                      const Icon(
-                                        Icons.calendar_today_outlined,
-                                        size: 16,
-                                        color: AppColors.textSecondary,
-                                      ),
-                                  ],
+                                    ],
+                                  ),
                                 ),
+                              ),
+                            );
+                          }).toList(),
+                        ),
+                        const SizedBox(height: AppSpacing.sm),
+
+                        // ── Precio y fecha ─────────────────────────────────────
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  _Label('Precio (€)'),
+                                  TextField(
+                                    controller: _priceCtrl,
+                                    keyboardType:
+                                        const TextInputType.numberWithOptions(
+                                          decimal: true,
+                                        ),
+                                    inputFormatters: [
+                                      FilteringTextInputFormatter.allow(
+                                        RegExp(r'[\d,.]'),
+                                      ),
+                                    ],
+                                    decoration: const InputDecoration(
+                                      hintText: 'Ej: 18,90',
+                                      helperText: 'Escribe 0 si es gratis',
+                                      isDense: true,
+                                      contentPadding: EdgeInsets.symmetric(
+                                        horizontal: 12,
+                                        vertical: 10,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            const SizedBox(width: AppSpacing.sm),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  _Label('Fecha de salida'),
+                                  InkWell(
+                                    onTap: _pickReleaseDate,
+                                    borderRadius: BorderRadius.circular(
+                                      AppRadius.sm,
+                                    ),
+                                    child: Container(
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 12,
+                                        vertical: 10,
+                                      ),
+                                      decoration: BoxDecoration(
+                                        border: Border.all(
+                                          color: AppColors.paperLine,
+                                        ),
+                                        borderRadius: BorderRadius.circular(
+                                          AppRadius.sm,
+                                        ),
+                                        color: AppColors.surfaceSoft,
+                                      ),
+                                      child: Row(
+                                        children: [
+                                          Expanded(
+                                            child: Text(
+                                              _releaseDate != null
+                                                  ? _fmtDateShort(
+                                                      _releaseDate!,
+                                                      includeYear: true,
+                                                    )
+                                                  : 'Ya disponible',
+                                              style: TextStyle(
+                                                fontSize: 13,
+                                                color: _releaseDate != null
+                                                    ? AppColors.textPrimary
+                                                    : AppColors.textSecondary,
+                                              ),
+                                            ),
+                                          ),
+                                          if (_releaseDate != null)
+                                            GestureDetector(
+                                              onTap: () => setState(
+                                                () => _releaseDate = null,
+                                              ),
+                                              child: const Icon(
+                                                Icons.close_rounded,
+                                                size: 16,
+                                                color: AppColors.textSecondary,
+                                              ),
+                                            )
+                                          else
+                                            const Icon(
+                                              Icons.calendar_today_outlined,
+                                              size: 16,
+                                              color: AppColors.textSecondary,
+                                            ),
+                                        ],
+                                      ),
+                                    ),
+                                  ),
+                                ],
                               ),
                             ),
                           ],
                         ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: AppSpacing.sm),
+                        const SizedBox(height: AppSpacing.sm),
 
-                  // ── Prioridad ──────────────────────────────────────────
-                  _Label('Prioridad'),
-                  Row(
-                    children: WishlistPriority.values.map((p) {
-                      final sel = _priority == p;
-                      final color = switch (p) {
-                        WishlistPriority.high => const Color(0xFFe53935),
-                        WishlistPriority.medium => const Color(0xFFfb8c00),
-                        WishlistPriority.low => const Color(0xFF43a047),
-                      };
-                      return Expanded(
-                        child: GestureDetector(
-                          onTap: () => setState(() => _priority = p),
-                          child: AnimatedContainer(
-                            duration: const Duration(milliseconds: 150),
-                            margin: const EdgeInsets.only(right: 6),
-                            padding: const EdgeInsets.symmetric(vertical: 8),
-                            decoration: BoxDecoration(
-                              color: sel
-                                  ? color.withValues(alpha: .1)
-                                  : AppColors.surfaceSoft,
-                              borderRadius: BorderRadius.circular(AppRadius.sm),
-                              border: Border.all(
-                                color: sel ? color : AppColors.paperLine,
-                                width: sel ? 1.5 : 1,
+                        // ── Prioridad ──────────────────────────────────────────
+                        _Label('Prioridad'),
+                        Row(
+                          children: WishlistPriority.values.map((p) {
+                            final sel = _priority == p;
+                            final color = switch (p) {
+                              WishlistPriority.high => const Color(0xFFe53935),
+                              WishlistPriority.medium => const Color(
+                                0xFFfb8c00,
                               ),
+                              WishlistPriority.low => const Color(0xFF43a047),
+                            };
+                            return Expanded(
+                              child: GestureDetector(
+                                onTap: () => setState(() => _priority = p),
+                                child: AnimatedContainer(
+                                  duration: const Duration(milliseconds: 150),
+                                  margin: const EdgeInsets.only(right: 6),
+                                  padding: const EdgeInsets.symmetric(
+                                    vertical: 8,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: sel
+                                        ? color.withValues(alpha: .1)
+                                        : AppColors.surfaceSoft,
+                                    borderRadius: BorderRadius.circular(
+                                      AppRadius.sm,
+                                    ),
+                                    border: Border.all(
+                                      color: sel ? color : AppColors.paperLine,
+                                      width: sel ? 1.5 : 1,
+                                    ),
+                                  ),
+                                  child: Text(
+                                    '${p.emoji} ${p.label}',
+                                    textAlign: TextAlign.center,
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w600,
+                                      color: sel
+                                          ? color
+                                          : AppColors.textSecondary,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            );
+                          }).toList(),
+                        ),
+                        const SizedBox(height: AppSpacing.sm),
+
+                        // ── Mes planificado ────────────────────────────────────
+                        _Label('Mes de compra planificado'),
+                        InkWell(
+                          onTap: _pickPlannedMonth,
+                          borderRadius: BorderRadius.circular(AppRadius.sm),
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 12,
+                              vertical: 10,
                             ),
-                            child: Text(
-                              '${p.emoji} ${p.label}',
-                              textAlign: TextAlign.center,
-                              style: TextStyle(
-                                fontSize: 12,
-                                fontWeight: FontWeight.w600,
-                                color: sel ? color : AppColors.textSecondary,
-                              ),
+                            decoration: BoxDecoration(
+                              border: Border.all(color: AppColors.paperLine),
+                              borderRadius: BorderRadius.circular(AppRadius.sm),
+                              color: AppColors.surfaceSoft,
+                            ),
+                            child: Row(
+                              children: [
+                                Expanded(
+                                  child: Text(
+                                    _plannedMonth != null
+                                        ? _fmtMonthYear(_plannedMonth!)
+                                        : 'Sin mes asignado',
+                                    style: TextStyle(
+                                      fontSize: 13,
+                                      color: _plannedMonth != null
+                                          ? AppColors.textPrimary
+                                          : AppColors.textSecondary,
+                                    ),
+                                  ),
+                                ),
+                                if (_plannedMonth != null)
+                                  GestureDetector(
+                                    onTap: () =>
+                                        setState(() => _plannedMonth = null),
+                                    child: const Icon(
+                                      Icons.close_rounded,
+                                      size: 16,
+                                      color: AppColors.textSecondary,
+                                    ),
+                                  )
+                                else
+                                  const Icon(
+                                    Icons.calendar_month_outlined,
+                                    size: 16,
+                                    color: AppColors.textSecondary,
+                                  ),
+                              ],
                             ),
                           ),
                         ),
-                      );
-                    }).toList(),
-                  ),
-                  const SizedBox(height: AppSpacing.sm),
+                        const SizedBox(height: AppSpacing.sm),
 
-                  // ── Mes planificado ────────────────────────────────────
-                  _Label('Mes de compra planificado'),
-                  InkWell(
-                    onTap: _pickPlannedMonth,
-                    borderRadius: BorderRadius.circular(AppRadius.sm),
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 10,
-                      ),
-                      decoration: BoxDecoration(
-                        border: Border.all(color: AppColors.paperLine),
-                        borderRadius: BorderRadius.circular(AppRadius.sm),
-                        color: AppColors.surfaceSoft,
-                      ),
-                      child: Row(
-                        children: [
-                          Expanded(
-                            child: Text(
-                              _plannedMonth != null
-                                  ? _fmtMonthYear(_plannedMonth!)
-                                  : 'Sin mes asignado',
-                              style: TextStyle(
-                                fontSize: 13,
-                                color: _plannedMonth != null
-                                    ? AppColors.textPrimary
-                                    : AppColors.textSecondary,
-                              ),
+                        // ── Nota ───────────────────────────────────────────────
+                        _Label('Nota personal (opcional)'),
+                        TextField(
+                          controller: _noteCtrl,
+                          maxLines: 2,
+                          decoration: const InputDecoration(
+                            hintText: 'Para la lista de cumple, regalo…',
+                            isDense: true,
+                            contentPadding: EdgeInsets.symmetric(
+                              horizontal: 12,
+                              vertical: 10,
                             ),
                           ),
-                          if (_plannedMonth != null)
-                            GestureDetector(
-                              onTap: () => setState(() => _plannedMonth = null),
-                              child: const Icon(
-                                Icons.close_rounded,
-                                size: 16,
-                                color: AppColors.textSecondary,
-                              ),
-                            )
-                          else
-                            const Icon(
-                              Icons.calendar_month_outlined,
-                              size: 16,
-                              color: AppColors.textSecondary,
-                            ),
-                        ],
-                      ),
+                          textCapitalization: TextCapitalization.sentences,
+                        ),
+                      ],
                     ),
                   ),
-                  const SizedBox(height: AppSpacing.sm),
-
-                  // ── Nota ───────────────────────────────────────────────
-                  _Label('Nota personal (opcional)'),
-                  TextField(
-                    controller: _noteCtrl,
-                    maxLines: 2,
-                    decoration: const InputDecoration(
-                      hintText: 'Para la lista de cumple, regalo…',
-                      isDense: true,
-                      contentPadding: EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 10,
-                      ),
-                    ),
-                    textCapitalization: TextCapitalization.sentences,
-                  ),
-                ],
-              ),
+                ),
+              ],
             ),
           ),
-        ],
+        ),
       ),
     );
   }
