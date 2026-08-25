@@ -88,8 +88,9 @@ class _GeneralDashboardPageState extends State<GeneralDashboardPage> {
   bool _savingProgress = false;
   bool _openingBookActions = false;
   final _scrollController = ScrollController();
-  final _latestScrollController = ScrollController();
-  final _personalLibraryScrollController = ScrollController();
+  // _latestScrollController y _personalLibraryScrollController eliminados:
+  // los carrouseles horizontales usan _HScrollGestureProxy, que no necesita
+  // controller externo para preservar posición.
   final _trendingScrollController = ScrollController();
   int _noLeidas = 0;
 
@@ -218,8 +219,6 @@ class _GeneralDashboardPageState extends State<GeneralDashboardPage> {
   @override
   void dispose() {
     _scrollController.dispose();
-    _latestScrollController.dispose();
-    _personalLibraryScrollController.dispose();
     _trendingScrollController.dispose();
     super.dispose();
   }
@@ -1221,104 +1220,128 @@ class _GeneralDashboardPageState extends State<GeneralDashboardPage> {
     );
   }
 
-  Widget _personalLibrary(List<PersonalLibraryBook> books, String userName) {
+  Widget _personalLibraryBookCard(PersonalLibraryBook book, String userName) {
     return SizedBox(
-      height: 224,
-      child: ListView.separated(
-        key: const PageStorageKey('dashboard-personal-library'),
-        controller: _personalLibraryScrollController,
-        scrollDirection: Axis.horizontal,
-        physics: const ClampingScrollPhysics(),
-        padding: const EdgeInsets.only(right: AppSpacing.sm),
-        itemCount: books.length,
-        separatorBuilder: (_, _) => const SizedBox(width: AppSpacing.md),
-        itemBuilder: (context, index) {
-          final book = books[index];
-          return SizedBox(
-            width: 122,
-            child: InkWell(
-              borderRadius: BorderRadius.circular(16),
-              onTap: () => _openPersonalBook(book, userName),
-              onLongPress: () => _openQuickActions(
-                title: book.title,
-                bookId: book.id,
-                coverUrl: book.coverUrl,
-                genre: book.genre,
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Stack(
-                    clipBehavior: Clip.none,
-                    children: [
-                      Semantics(
-                        hint: 'Mantén pulsado para abrir acciones rápidas',
-                        child: ClubBookCover(
-                          title: book.title,
-                          imageUrl: book.coverUrl,
-                          width: 110,
-                          height: 158,
-                        ),
-                      ),
-                      Positioned(
-                        top: 8,
-                        right: 2,
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 7,
-                            vertical: 4,
-                          ),
-                          decoration: BoxDecoration(
-                            color: book.isHighPriority
-                                ? AppColors.warning
-                                : AppColors.surface,
-                            borderRadius: BorderRadius.circular(10),
-                            boxShadow: const [
-                              BoxShadow(
-                                color: Color(0x26000000),
-                                blurRadius: 5,
-                                offset: Offset(0, 2),
-                              ),
-                            ],
-                          ),
-                          child: Text(
-                            book.priority,
-                            style: TextStyle(
-                              color: book.isHighPriority
-                                  ? AppColors.midnight
-                                  : AppColors.textSecondary,
-                              fontSize: 9,
-                              fontWeight: FontWeight.w900,
-                            ),
-                          ),
-                        ),
-                      ),
-                    ],
+      width: 122,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(16),
+        onTap: () => _openPersonalBook(book, userName),
+        onLongPress: () => _openQuickActions(
+          title: book.title,
+          bookId: book.id,
+          coverUrl: book.coverUrl,
+          genre: book.genre,
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Stack(
+              clipBehavior: Clip.none,
+              children: [
+                Semantics(
+                  hint: 'Mantén pulsado para abrir acciones rápidas',
+                  child: ClubBookCover(
+                    title: book.title,
+                    imageUrl: book.coverUrl,
+                    width: 110,
+                    height: 158,
                   ),
-                  const SizedBox(height: 8),
-                  Text(
-                    book.title,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(fontWeight: FontWeight.w700),
+                ),
+                Positioned(
+                  top: 8,
+                  right: 2,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 7,
+                      vertical: 4,
+                    ),
+                    decoration: BoxDecoration(
+                      color: book.isHighPriority
+                          ? AppColors.warning
+                          : AppColors.surface,
+                      borderRadius: BorderRadius.circular(10),
+                      boxShadow: const [
+                        BoxShadow(
+                          color: Color(0x26000000),
+                          blurRadius: 5,
+                          offset: Offset(0, 2),
+                        ),
+                      ],
+                    ),
+                    child: Text(
+                      book.priority,
+                      style: TextStyle(
+                        color: book.isHighPriority
+                            ? AppColors.midnight
+                            : AppColors.textSecondary,
+                        fontSize: 9,
+                        fontWeight: FontWeight.w900,
+                      ),
+                    ),
                   ),
-                ],
-              ),
+                ),
+              ],
             ),
-          );
-        },
+            const SizedBox(height: 8),
+            Text(
+              book.title,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(fontWeight: FontWeight.w700),
+            ),
+          ],
+        ),
       ),
     );
   }
 
+  Widget _personalLibrary(List<PersonalLibraryBook> books, String userName) {
+    const cardWidth = 122.0;
+    const gap = AppSpacing.md;
+
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final totalContent =
+            books.length * cardWidth + (books.length - 1) * gap;
+
+        // Si caben todos sin scroll: Row (sin competencia de gestos).
+        if (totalContent <= constraints.maxWidth) {
+          return SizedBox(
+            height: 224,
+            child: Row(
+              children: [
+                for (var i = 0; i < books.length; i++) ...[
+                  if (i > 0) const SizedBox(width: gap),
+                  _personalLibraryBookCard(books[i], userName),
+                ],
+              ],
+            ),
+          );
+        }
+
+        // No caben: ListView horizontal protegido contra robo del gesto vertical.
+        return _HScrollGestureProxy(
+          height: 224,
+          child: (physics) => ListView.separated(
+            scrollDirection: Axis.horizontal,
+            physics: physics,
+            padding: const EdgeInsets.only(right: AppSpacing.sm),
+            itemCount: books.length,
+            separatorBuilder: (_, _) => const SizedBox(width: gap),
+            itemBuilder: (_, index) =>
+                _personalLibraryBookCard(books[index], userName),
+          ),
+        );
+      },
+    );
+  }
+
   Widget _latestAdditions(List<GeneralLatestBook> books) {
-    return SizedBox(
+    return _HScrollGestureProxy(
       height: 218,
-      child: ListView.separated(
-        key: const PageStorageKey('dashboard-latest-additions'),
-        controller: _latestScrollController,
+      child: (physics) => ListView.separated(
         scrollDirection: Axis.horizontal,
-        physics: const ClampingScrollPhysics(),
+        physics: physics,
         padding: const EdgeInsets.symmetric(horizontal: 2),
         itemCount: books.length,
         separatorBuilder: (_, _) => const SizedBox(width: AppSpacing.md),
@@ -1451,12 +1474,12 @@ class _GeneralDashboardPageState extends State<GeneralDashboardPage> {
           );
         }
 
-        // No caben: ListView horizontal con ClampingScrollPhysics.
-        return SizedBox(
+        // No caben: ListView horizontal protegido contra robo del gesto vertical.
+        return _HScrollGestureProxy(
           height: 154,
-          child: ListView.separated(
+          child: (physics) => ListView.separated(
             scrollDirection: Axis.horizontal,
-            physics: const ClampingScrollPhysics(),
+            physics: physics,
             itemCount: series.length,
             separatorBuilder: (_, _) => const SizedBox(width: gap),
             itemBuilder: (context, index) =>
@@ -2619,4 +2642,94 @@ class _ReleasesPreview extends StatelessWidget {
       );
     },
   );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// _HScrollGestureProxy
+//
+// Envuelve un ListView horizontal para evitar que su HorizontalDragGestureRecognizer
+// robe gestos verticales del CustomScrollView padre.
+//
+// Mecanismo: un Listener de bajo nivel detecta la dirección del primer movimiento
+// antes de que el arena de gestos se resuelva. Si el movimiento es principalmente
+// vertical (|dy| > |dx|), cambia las físicas a NeverScrollableScrollPhysics.
+// Con esa física, Flutter NO añade ningún HorizontalDragGestureRecognizer al
+// arena, de modo que el VerticalDragGestureRecognizer del padre gana siempre.
+// Al terminar el toque, se restauran las físicas normales (ClampingScrollPhysics)
+// para que el carrusel vuelva a ser deslizable horizontalmente.
+// ─────────────────────────────────────────────────────────────────────────────
+class _HScrollGestureProxy extends StatefulWidget {
+  const _HScrollGestureProxy({
+    required this.height,
+    required this.child,
+  });
+
+  final double height;
+
+  /// Constructor que recibe las físicas a usar y devuelve el widget de lista.
+  final Widget Function(ScrollPhysics physics) child;
+
+  @override
+  State<_HScrollGestureProxy> createState() => _HScrollGestureProxyState();
+}
+
+class _HScrollGestureProxyState extends State<_HScrollGestureProxy> {
+  static const _kDirectionSlop = 4.0; // dp antes de decidir el eje
+
+  bool _horizontalScrollEnabled = true;
+  Offset? _touchOrigin;
+
+  ScrollPhysics get _physics => _horizontalScrollEnabled
+      ? const ClampingScrollPhysics()
+      : const NeverScrollableScrollPhysics();
+
+  void _onPointerDown(PointerDownEvent e) {
+    _touchOrigin = e.localPosition;
+    // Si estaba bloqueado por un gesto anterior, desbloquear inmediatamente.
+    if (!_horizontalScrollEnabled) {
+      setState(() => _horizontalScrollEnabled = true);
+    }
+  }
+
+  void _onPointerMove(PointerMoveEvent e) {
+    final origin = _touchOrigin;
+    if (origin == null || !_horizontalScrollEnabled) return;
+    final delta = e.localPosition - origin;
+    // En cuanto el movimiento vertical supera al horizontal y pasa el umbral,
+    // desactivamos el scroll horizontal para ceder el gesto al padre.
+    if (delta.dy.abs() > delta.dx.abs() && delta.dy.abs() > _kDirectionSlop) {
+      setState(() => _horizontalScrollEnabled = false);
+    }
+  }
+
+  void _onPointerUp(PointerUpEvent e) => _resetAfterFrame();
+  void _onPointerCancel(PointerCancelEvent e) => _resetAfterFrame();
+
+  void _resetAfterFrame() {
+    _touchOrigin = null;
+    if (!_horizontalScrollEnabled) {
+      // Restaurar en el siguiente frame para que la física no cambie en medio
+      // de un fling que el padre pueda estar ejecutando.
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted && !_horizontalScrollEnabled) {
+          setState(() => _horizontalScrollEnabled = true);
+        }
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Listener(
+      behavior: HitTestBehavior.translucent,
+      onPointerDown: _onPointerDown,
+      onPointerMove: _onPointerMove,
+      onPointerUp: _onPointerUp,
+      onPointerCancel: _onPointerCancel,
+      child: SizedBox(
+        height: widget.height,
+        child: widget.child(_physics),
+      ),
+    );
+  }
 }
