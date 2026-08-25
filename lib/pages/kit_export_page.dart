@@ -9,7 +9,6 @@ import 'package:share_plus/share_plus.dart';
 import '../theme/app_spacing.dart';
 import '../theme/app_text_styles.dart';
 import '../widgets/common/club_book_cover.dart';
-import '../widgets/kit/rotulador_preview.dart';
 
 enum KitExportTipo { wallpaper, story }
 
@@ -183,16 +182,18 @@ class _KitPoster extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Para el story: fondo oscuro fijo + toque muy sutil del primer color.
-    // Los colores de la paleta se muestran en las tabs, no en el fondo.
+    // Para el story: fondo claro y aireado mezclando los colores de la paleta
+    // con blanco — estética editorial de ClubReads, no oscura.
     // Para el wallpaper: gradiente de paleta como antes.
-    const storyBase = Color(0xFF12101A); // casi negro, tono púrpura oscuro
-    final storyAccent = colores.isNotEmpty
-        ? Color.lerp(storyBase, colores.first, 0.18)!
-        : storyBase;
+    final storyTop = colores.isNotEmpty
+        ? Color.lerp(const Color(0xFFFCF9FF), colores.first, 0.22)!
+        : const Color(0xFFF2EEFF);
+    final storyBottom = colores.isNotEmpty
+        ? Color.lerp(const Color(0xFFF4EFFE), colores.last, 0.30)!
+        : const Color(0xFFE6DBFF);
 
     final foreground = story
-        ? Colors.white
+        ? const Color(0xFF1A0F33) // morado muy oscuro sobre fondos claros
         : ThemeData.estimateBrightnessForColor(colores.first) == Brightness.dark
             ? Colors.white
             : const Color(0xFF201A29);
@@ -200,10 +201,9 @@ class _KitPoster extends StatelessWidget {
     final decoration = story
         ? BoxDecoration(
             gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [storyAccent, storyBase, storyBase],
-              stops: const [0.0, 0.45, 1.0],
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: [storyTop, storyBottom],
             ),
           )
         : BoxDecoration(
@@ -355,7 +355,6 @@ class _StoryComposition extends StatelessWidget {
         final w = constraints.maxWidth;
         final h = constraints.maxHeight;
 
-        final rotuladores = subrayadores.take(3).toList(growable: false);
         final tonos = colores.take(5).toList(growable: false);
 
         // ── Portada: ocupa la parte izquierda-central ─────────────────
@@ -382,23 +381,46 @@ class _StoryComposition extends StatelessWidget {
         // Pequeño offset X para que no queden todas alineadas al píxel
         final tabOffsets = [0.0, w * 0.012, -w * 0.008, w * 0.015, 0.0];
 
+        // Color del acento para branding y detalles
+        final accentColor = tonos.isNotEmpty ? tonos.first : const Color(0xFF6D4BC3);
+
         return Stack(
           clipBehavior: Clip.hardEdge,
           children: [
-            // ── Franja inferior oscura ─────────────────────────────────
+            // ── Orb decorativo arriba-derecha ──────────────────────────
             Positioned(
-              left: 0,
-              right: 0,
-              bottom: 0,
-              height: h * 0.32,
-              child: DecoratedBox(
+              right: -w * 0.22,
+              top: h * 0.03,
+              child: Container(
+                width: w * 0.62,
+                height: w * 0.62,
                 decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topCenter,
-                    end: Alignment.bottomCenter,
+                  shape: BoxShape.circle,
+                  gradient: RadialGradient(
                     colors: [
-                      Colors.black.withValues(alpha: 0.0),
-                      Colors.black.withValues(alpha: 0.78),
+                      (tonos.length > 1 ? tonos[1] : accentColor)
+                          .withValues(alpha: 0.28),
+                      Colors.transparent,
+                    ],
+                  ),
+                ),
+              ),
+            ),
+
+            // ── Orb decorativo abajo-izquierda ─────────────────────────
+            Positioned(
+              left: -w * 0.25,
+              bottom: h * 0.05,
+              child: Container(
+                width: w * 0.70,
+                height: w * 0.70,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  gradient: RadialGradient(
+                    colors: [
+                      (tonos.isNotEmpty ? tonos.last : const Color(0xFFD4B8FF))
+                          .withValues(alpha: 0.32),
+                      Colors.transparent,
                     ],
                   ),
                 ),
@@ -435,16 +457,14 @@ class _StoryComposition extends StatelessWidget {
                   borderRadius: BorderRadius.circular(9),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.42),
-                      blurRadius: 30,
-                      offset: const Offset(5, 12),
+                      color: Colors.black.withValues(alpha: 0.18),
+                      blurRadius: 28,
+                      offset: const Offset(4, 10),
                     ),
                     BoxShadow(
-                      color: tonos.isNotEmpty
-                          ? tonos.first.withValues(alpha: 0.35)
-                          : Colors.purple.withValues(alpha: 0.25),
-                      blurRadius: 44,
-                      offset: const Offset(0, 18),
+                      color: accentColor.withValues(alpha: 0.28),
+                      blurRadius: 40,
+                      offset: const Offset(0, 16),
                     ),
                   ],
                 ),
@@ -461,85 +481,79 @@ class _StoryComposition extends StatelessWidget {
               ),
             ),
 
-            // ── Mildliners (3, ligeramente superpuestos con Transform) ──
+            // ── Tarjeta de título (frosted, abajo) ─────────────────────
             Positioned(
-              left: 14,
-              bottom: h * 0.115,
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  for (var i = 0; i < rotuladores.length; i++)
-                    Transform.translate(
-                      // Solapar cada marker 6px hacia la izquierda
-                      offset: Offset(i * -6.0, 0),
-                      child: Transform.rotate(
-                        angle: -0.14 + i * 0.07,
-                        child: RotuladorPreview(
-                          color: rotuladores[i],
-                          vertical: false,
-                          length: w * 0.22,
-                          thickness: 13,
+              left: 16,
+              right: 16,
+              bottom: 20,
+              child: Container(
+                padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.78),
+                  borderRadius: BorderRadius.circular(18),
+                  border: Border.all(
+                    color: accentColor.withValues(alpha: 0.18),
+                    width: 1.0,
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.06),
+                      blurRadius: 24,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Row(
+                      children: [
+                        Container(
+                          width: 18,
+                          height: 2,
+                          margin: const EdgeInsets.only(right: 7),
+                          decoration: BoxDecoration(
+                            color: accentColor,
+                            borderRadius: BorderRadius.circular(1),
+                          ),
                         ),
+                        Text(
+                          'ESTOY LEYENDO',
+                          style: TextStyle(
+                            color: foreground.withValues(alpha: 0.52),
+                            fontSize: 9,
+                            fontWeight: FontWeight.w900,
+                            letterSpacing: 2.0,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 5),
+                    Text(
+                      libro,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        color: foreground,
+                        fontSize: 18,
+                        height: 1.08,
+                        fontWeight: FontWeight.w900,
                       ),
                     ),
-                ],
-              ),
-            ),
-
-            // ── Texto inferior ─────────────────────────────────────────
-            Positioned(
-              left: 20,
-              right: 20,
-              bottom: 28,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Row(
-                    children: [
-                      Container(
-                        width: 20,
-                        height: 2,
-                        margin: const EdgeInsets.only(right: 7),
-                        color: tonos.isNotEmpty
-                            ? tonos.first
-                            : Colors.white.withValues(alpha: 0.65),
-                      ),
+                    if (atmosferaTitulo.trim().isNotEmpty) ...[
+                      const SizedBox(height: 3),
                       Text(
-                        'ESTOY LEYENDO',
+                        '${atmosferaIcono.trim().isEmpty ? '✨' : atmosferaIcono}  $atmosferaTitulo',
                         style: TextStyle(
-                          color: Colors.white.withValues(alpha: 0.72),
-                          fontSize: 9,
-                          fontWeight: FontWeight.w900,
-                          letterSpacing: 2.2,
+                          color: foreground.withValues(alpha: 0.55),
+                          fontSize: 10,
+                          fontWeight: FontWeight.w600,
                         ),
                       ),
                     ],
-                  ),
-                  const SizedBox(height: 5),
-                  Text(
-                    libro,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 20,
-                      height: 1.06,
-                      fontWeight: FontWeight.w900,
-                    ),
-                  ),
-                  if (atmosferaTitulo.trim().isNotEmpty) ...[
-                    const SizedBox(height: 4),
-                    Text(
-                      '${atmosferaIcono.trim().isEmpty ? '✨' : atmosferaIcono}  $atmosferaTitulo',
-                      style: TextStyle(
-                        color: Colors.white.withValues(alpha: 0.58),
-                        fontSize: 11,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
                   ],
-                ],
+                ),
               ),
             ),
 
@@ -557,10 +571,10 @@ class _StoryComposition extends StatelessWidget {
                       vertical: 5,
                     ),
                     decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.16),
+                      color: accentColor.withValues(alpha: 0.12),
                       borderRadius: BorderRadius.circular(20),
                       border: Border.all(
-                        color: Colors.white.withValues(alpha: 0.25),
+                        color: accentColor.withValues(alpha: 0.30),
                         width: 0.8,
                       ),
                     ),
@@ -586,13 +600,13 @@ class _StoryComposition extends StatelessWidget {
                               color: c,
                               shape: BoxShape.circle,
                               border: Border.all(
-                                color: Colors.white.withValues(alpha: 0.5),
+                                color: Colors.white.withValues(alpha: 0.7),
                                 width: 1.2,
                               ),
                               boxShadow: [
                                 BoxShadow(
-                                  color: c.withValues(alpha: 0.5),
-                                  blurRadius: 4,
+                                  color: c.withValues(alpha: 0.45),
+                                  blurRadius: 5,
                                   offset: const Offset(0, 1),
                                 ),
                               ],
