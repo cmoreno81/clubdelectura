@@ -91,7 +91,7 @@ class _GeneralDashboardPageState extends State<GeneralDashboardPage> {
   // _latestScrollController y _personalLibraryScrollController eliminados:
   // los carrouseles horizontales usan _HScrollGestureProxy, que no necesita
   // controller externo para preservar posición.
-  final _trendingScrollController = ScrollController();
+  // _trendingScrollController eliminado: _trending usa _HScrollGestureProxy.
   int _noLeidas = 0;
 
   @override
@@ -219,7 +219,6 @@ class _GeneralDashboardPageState extends State<GeneralDashboardPage> {
   @override
   void dispose() {
     _scrollController.dispose();
-    _trendingScrollController.dispose();
     super.dispose();
   }
 
@@ -1603,13 +1602,11 @@ class _GeneralDashboardPageState extends State<GeneralDashboardPage> {
   }
 
   Widget _trending(List<TrendingBook> books) {
-    return SizedBox(
+    return _HScrollGestureProxy(
       height: 190,
-      child: ListView.separated(
-        key: const PageStorageKey('dashboard-trending-books'),
-        controller: _trendingScrollController,
+      child: (physics) => ListView.separated(
         scrollDirection: Axis.horizontal,
-        physics: const ClampingScrollPhysics(),
+        physics: physics,
         itemCount: books.length,
         separatorBuilder: (_, _) => const SizedBox(width: AppSpacing.md),
         itemBuilder: (context, index) {
@@ -1898,11 +1895,11 @@ class _GeneralDashboardPageState extends State<GeneralDashboardPage> {
   }
 
   Widget _trendingAuthors(List<TrendingAuthor> authors) {
-    return SizedBox(
+    return _HScrollGestureProxy(
       height: 150,
-      child: ListView.separated(
+      child: (physics) => ListView.separated(
         scrollDirection: Axis.horizontal,
-        physics: const ClampingScrollPhysics(),
+        physics: physics,
         itemCount: authors.length,
         separatorBuilder: (_, _) => const SizedBox(width: AppSpacing.md),
         itemBuilder: (context, index) {
