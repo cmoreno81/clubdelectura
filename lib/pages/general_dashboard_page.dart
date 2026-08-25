@@ -52,6 +52,9 @@ import '../services/wishlist_service.dart';
 import '../services/upcoming_releases_service.dart';
 import 'wishlist_page.dart';
 import 'upcoming_releases_page.dart';
+import '../models/kit_lectura_seleccion.dart';
+import '../services/kit_lectura_service.dart';
+import 'kit_lectura_page.dart';
 
 typedef DashboardQuickActions =
     Future<bool> Function({
@@ -2570,18 +2573,16 @@ class _ReleasesPreview extends StatelessWidget {
               ),
             )
           else
-            SizedBox(
+            _HScrollGestureProxy(
               height: 205,
-              child: ListView.separated(
+              child: (physics) => ListView.separated(
                 key: PageStorageKey(
                   mode == ReleaseCatalogMode.newReleases
                       ? 'dashboard-new-releases'
                       : 'dashboard-upcoming-releases',
                 ),
                 scrollDirection: Axis.horizontal,
-                // Evita que el rebote horizontal de iOS capture el gesto
-                // vertical del CustomScrollView al volver hacia arriba.
-                physics: const ClampingScrollPhysics(),
+                physics: physics,
                 itemCount: books.length,
                 separatorBuilder: (_, _) =>
                     const SizedBox(width: AppSpacing.sm),
@@ -2726,6 +2727,193 @@ class _HScrollGestureProxyState extends State<_HScrollGestureProxy> {
       child: SizedBox(
         height: widget.height,
         child: widget.child(_physics),
+      ),
+    );
+  }
+}
+
+// ── Feature 1: widget "Mi sesión de hoy" en el dashboard ──────────────────
+//
+// Se muestra bajo "Leyendo ahora" solo cuando el libro activo tiene
+// kit de lectura con atmósfera configurada. Se carga a sí mismo.
+class _KitSesionWidget extends StatefulWidget {
+  final String bookId;
+  final String bookTitle;
+  final String coverUrl;
+  final VoidCallback onTap;
+
+  const _KitSesionWidget({
+    required this.bookId,
+    required this.bookTitle,
+    required this.coverUrl,
+    required this.onTap,
+  });
+
+  @override
+  State<_KitSesionWidget> createState() => _KitSesionWidgetState();
+}
+
+class _KitSesionWidgetState extends State<_KitSesionWidget> {
+  KitLecturaSeleccion? _kit;
+
+  @override
+  void initState() {
+    super.initState();
+    _cargar();
+  }
+
+  @override
+  void didUpdateWidget(_KitSesionWidget old) {
+    super.didUpdateWidget(old);
+    if (old.bookId != widget.bookId) _cargar();
+  }
+
+  Future<void> _cargar() async {
+    if (widget.bookId.isEmpty) return;
+    final kit = await KitLecturaService().obtener(widget.bookId);
+    if (!mounted) return;
+    setState(() => _kit = kit);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final kit = _kit;
+    // Si no hay kit con atmósfera, no mostramos nada
+    if (kit == null || !kit.tieneAtmosfera) return const SizedBox.shrink();
+
+    final icono = kit.atmosferaIcono.trim().isEmpty ? '✨' : kit.atmosferaIcono;
+    final titulo = kit.atmosferaTitulo.trim().isEmpty
+        ? 'Tu atmósfera de lectura'
+        : kit.atmosferaTitulo;
+
+    // Detalles del rincón: luz, bebida, snack, música — los que están configurados
+    final detalles = <String>[
+      if (kit.luz.trim().isNotEmpty) kit.luz,
+      if (kit.bebida.trim().isNotEmpty) kit.bebida,
+      if (kit.snack.trim().isNotEmpty) kit.snack,
+    ].take(3).join(' · ');
+
+    return Padding(
+      padding: const EdgeInsets.only(top: AppSpacing.sm),
+      child: GestureDetector(
+        onTap: () => Navigator.push<void>(
+          context,
+          AppPageRoute(
+            builder: (_) => KitLecturaPage(
+              bookId: widget.bookId,
+              libro: widget.bookTitle,
+              coverUrl: widget.coverUrl,
+            ),
+          ),
+        ),
+        child: Container(
+          padding: const EdgeInsets.all(AppSpacing.md),
+          decoration: BoxDecoration(
+            color: AppColors.primary.withValues(alpha: 0.06),
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(
+              color: AppColors.primary.withValues(alpha: 0.15),
+              width: 1,
+            ),
+          ),
+          child: Row(
+            children: [
+              // Emoji grande de atmósfera
+              Container(
+                width: 52,
+                height: 52,
+                decoration: BoxDecoration(
+                  color: AppColors.primary.withValues(alpha: 0.10),
+                  borderRadius: BorderRadius.circular(14),
+                ),
+                child: Center(
+                  child: Text(icono, style: const TextStyle(fontSize: 24)),
+                ),
+              ),
+              const SizedBox(width: AppSpacing.md),
+              // Info de la sesión
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      titulo,
+                      style: AppTextStyles.subtitle.copyWith(
+                        fontWeight: FontWeight.w800,
+                        color: AppColors.primary,
+                      ),
+                    ),
+                    if (detalles.isNotEmpty) ...[
+                      const SizedBox(height: 3),
+                      Text(
+                        detalles,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: AppTextStyles.caption.copyWith(
+                          color: AppColors.textSecondary,
+                        ),
+                      ),
+                    ],
+                    const SizedBox(height: 3),
+                    Text(
+                      widget.bookTitle,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: AppTextStyles.caption.copyWith(
+                        color: AppColors.textMuted,
+                        fontStyle: FontStyle.italic,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: AppSpacing.sm),
+              // Dots de paleta (si tiene)
+              if (kit.tienePaleta)
+                Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Wrap(
+                      spacing: 4,
+                      runSpacing: 4,
+                      children: kit.paleta
+                          .take(3)
+                          .map((hex) {
+                            final limpio = hex.replaceAll('#', '').trim();
+                            final color = Color(
+                              int.parse('FF$limpio', radix: 16),
+                            );
+                            return Container(
+                              width: 12,
+                              height: 12,
+                              decoration: BoxDecoration(
+                                color: color,
+                                shape: BoxShape.circle,
+                                border: Border.all(
+                                  color: Colors.white,
+                                  width: 1.2,
+                                ),
+                              ),
+                            );
+                          })
+                          .toList(),
+                    ),
+                    const SizedBox(height: 4),
+                    Icon(
+                      Icons.chevron_right_rounded,
+                      color: AppColors.primary.withValues(alpha: 0.5),
+                      size: 18,
+                    ),
+                  ],
+                )
+              else
+                Icon(
+                  Icons.chevron_right_rounded,
+                  color: AppColors.primary.withValues(alpha: 0.5),
+                ),
+            ],
+          ),
+        ),
       ),
     );
   }

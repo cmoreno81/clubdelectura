@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../theme/app_colors.dart';
 import '../theme/app_spacing.dart';
@@ -128,6 +129,77 @@ class SubrayadoresPage extends StatelessWidget {
             },
             icon: const Icon(Icons.check_circle_outline),
             label: const Text("Usar estos subrayadores"),
+          ),
+
+          const SizedBox(height: AppSpacing.xl),
+
+          // ── Referencia de marca ──────────────────────────────────────────
+          ClubCard(
+            elevated: false,
+            borderColor: const Color(0xFFE49A24).withValues(alpha: 0.28),
+            backgroundColor: const Color(0xFFFFF8EC),
+            child: Padding(
+              padding: const EdgeInsets.all(AppSpacing.md),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      RotuladorPreview(
+                        color: const Color(0xFFD4A1C7),
+                        vertical: false,
+                        length: 52,
+                        thickness: 16,
+                      ),
+                      const SizedBox(width: AppSpacing.sm),
+                      RotuladorPreview(
+                        color: const Color(0xFF89B4C2),
+                        vertical: false,
+                        length: 52,
+                        thickness: 16,
+                      ),
+                      const SizedBox(width: AppSpacing.sm),
+                      RotuladorPreview(
+                        color: const Color(0xFFA8C89A),
+                        vertical: false,
+                        length: 52,
+                        thickness: 16,
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: AppSpacing.sm),
+                  Text(
+                    '¿Los quieres en físico?',
+                    style: AppTextStyles.subtitle.copyWith(
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                  const SizedBox(height: AppSpacing.xs),
+                  Text(
+                    'Los Zebra Mildliner son el subrayador favorito de BookTok — punta dual (ancha + fina), 40 tonos pastel y sin manchar el papel fino. Los más usados en anotaciones de libros.',
+                    style: AppTextStyles.bodySecondary,
+                  ),
+                  const SizedBox(height: AppSpacing.md),
+                  OutlinedButton.icon(
+                    onPressed: () => launchUrl(
+                      Uri.parse(
+                        'https://www.amazon.es/s?k=zebra+mildliner',
+                      ),
+                      mode: LaunchMode.externalApplication,
+                    ),
+                    icon: const Icon(Icons.open_in_new_rounded, size: 16),
+                    label: const Text('Buscar Zebra Mildliner'),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: const Color(0xFFB07A1A),
+                      side: const BorderSide(
+                        color: Color(0xFFE49A24),
+                        width: 1.2,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
           ),
         ],
       ),

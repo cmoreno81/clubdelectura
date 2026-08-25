@@ -56,10 +56,10 @@ const List<_TutorialStep> _pasos = [
     titulo: 'Explora y añade libros',
     descripcion:
         'Explora el catálogo compartido para añadir un libro a tu biblioteca. '
-        'Dentro de un club también puedes usar el botón + de la pestaña "Libros".',
+        'Dentro de un club también puedes usar el botón + de la pestaña “Libros”.',
     detalle:
-        'Para crearlo manualmente desde el dashboard global, pulsa “Añadir libro” '
-        'en “Últimas incorporaciones”.',
+        'En “Novedades” y “Próximos lanzamientos” del dashboard puedes guardar '
+        'libros en tu lista de deseos pulsando el icono de carrito 🛒 sobre la portada.',
   ),
   _TutorialStep(
     emoji: '📖',
@@ -69,6 +69,16 @@ const List<_TutorialStep> _pasos = [
         'abandonado o en relectura, y actualiza sus páginas cuando quieras.',
     detalle:
         'Cada relectura conserva su propio periodo y no sustituye la lectura original.',
+  ),
+  _TutorialStep(
+    emoji: '✨',
+    titulo: 'Kit de lectura',
+    descripcion:
+        'Cada libro tiene su propio kit: paleta de colores, subrayadores '
+        'estilo Mildliner, atmósfera de lectura, playlist y story para compartir.',
+    detalle:
+        'El kit tiene 6 secciones y una barra de progreso. Accede desde la ficha del '
+        'libro. Si tienes atmósfera preparada, verás un banner directamente en la ficha.',
   ),
   _TutorialStep(
     emoji: '👤',

@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import '../navigation/app_page_route.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import '../models/kit_lectura_seleccion.dart';
 import '../models/libro.dart';
 import '../models/libro_agrupado.dart';
 import '../services/api_service.dart';
@@ -26,6 +27,7 @@ import '../widgets/libros/libro_header.dart';
 import '../widgets/libros/libro_interesadas_section.dart';
 import '../widgets/libros/libro_section.dart';
 import '../widgets/libros/libro_valoraciones_section.dart';
+import 'kit_export_page.dart';
 import 'kit_lectura_page.dart';
 import 'nuevo_libro_page.dart';
 
@@ -58,6 +60,9 @@ class _DetalleLibroPageState extends State<DetalleLibroPage> {
   late AtmosferaController _atmosferaController;
 
   String? usuarioActual;
+
+  // Kit de lectura: atmósfera activa (Feature 2)
+  KitLecturaSeleccion _kitSeleccion = const KitLecturaSeleccion();
 
   bool _controllerPreparado = false;
   bool _atmosferaCerrada = false;
@@ -108,6 +113,8 @@ class _DetalleLibroPageState extends State<DetalleLibroPage> {
       final seleccion = await _kitService.obtener(bookId);
 
       if (!mounted || _atmosferaCerrada) return;
+
+      setState(() => _kitSeleccion = seleccion);
 
       _atmosferaController.entrarEnLibro(
         bookId: bookId,
@@ -206,6 +213,32 @@ class _DetalleLibroPageState extends State<DetalleLibroPage> {
           titulo: libro.libro,
           coverUrl: libro.coverUrl,
         );
+
+        // Feature 4: prompt para compartir story si tiene kit con paleta
+        if (!mounted) return;
+        final bookId = widget.libro.bookId.trim();
+        if (bookId.isNotEmpty) {
+          final kit = await _kitService.obtener(bookId);
+          if (!mounted) return;
+          if (kit.tienePaleta) {
+            await _mostrarPromptStory(libro, kit);
+          }
+        }
+      } else if (nuevoEstado == 'LEYENDO') {
+        // Feature 3: prompt para preparar el kit si aún no lo tiene
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('Estado actualizado')));
+
+        final bookId = widget.libro.bookId.trim();
+        if (bookId.isNotEmpty && !mounted) return;
+        if (bookId.isNotEmpty) {
+          final kit = await _kitService.obtener(bookId);
+          if (!mounted) return;
+          if (!kit.tienePaleta) {
+            await _mostrarPromptKit(libro);
+          }
+        }
       } else {
         ScaffoldMessenger.of(
           context,
@@ -220,6 +253,160 @@ class _DetalleLibroPageState extends State<DetalleLibroPage> {
         context,
       ).showSnackBar(SnackBar(content: Text('Error: $mensaje')));
     }
+  }
+
+  // ── Feature 3: prompt kit al empezar a leer ────────────────────────────
+  Future<void> _mostrarPromptKit(Libro libro) async {
+    await showModalBottomSheet<void>(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (ctx) => Padding(
+        padding: EdgeInsets.fromLTRB(
+          24,
+          24,
+          24,
+          MediaQuery.of(ctx).padding.bottom + 24,
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 44,
+              height: 4,
+              margin: const EdgeInsets.only(bottom: 20),
+              decoration: BoxDecoration(
+                color: AppColors.border,
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            const Text('✨', style: TextStyle(fontSize: 36)),
+            const SizedBox(height: 12),
+            Text(
+              '¿Preparamos tu kit de lectura?',
+              textAlign: TextAlign.center,
+              style: AppTextStyles.title.copyWith(fontSize: 20),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Paleta, subrayadores, atmósfera y playlist — todo listo en 2 minutos para que esta historia se convierta en una experiencia.',
+              textAlign: TextAlign.center,
+              style: AppTextStyles.bodySecondary,
+            ),
+            const SizedBox(height: 20),
+            FilledButton.icon(
+              onPressed: () {
+                Navigator.pop(ctx);
+                _abrirKitLectura();
+              },
+              icon: const Icon(Icons.auto_awesome_rounded),
+              label: const Text('Preparar mi kit'),
+              style: FilledButton.styleFrom(
+                minimumSize: const Size(double.infinity, 48),
+              ),
+            ),
+            const SizedBox(height: 10),
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: const Text('Más tarde'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // ── Feature 4: prompt story al terminar ────────────────────────────────
+  Future<void> _mostrarPromptStory(
+    Libro libro,
+    KitLecturaSeleccion kit,
+  ) async {
+    await showModalBottomSheet<void>(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (ctx) => Padding(
+        padding: EdgeInsets.fromLTRB(
+          24,
+          24,
+          24,
+          MediaQuery.of(ctx).padding.bottom + 24,
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 44,
+              height: 4,
+              margin: const EdgeInsets.only(bottom: 20),
+              decoration: BoxDecoration(
+                color: AppColors.border,
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            const Text('🎉', style: TextStyle(fontSize: 36)),
+            const SizedBox(height: 12),
+            Text(
+              '¡Has terminado ${libro.libro}!',
+              textAlign: TextAlign.center,
+              style: AppTextStyles.title.copyWith(fontSize: 20),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Tienes tu kit de lectura preparado. ¿Compartes tu story con la comunidad?',
+              textAlign: TextAlign.center,
+              style: AppTextStyles.bodySecondary,
+            ),
+            const SizedBox(height: 20),
+            FilledButton.icon(
+              onPressed: () {
+                Navigator.pop(ctx);
+                _abrirExportacion(KitExportTipo.story, kit);
+              },
+              icon: const Icon(Icons.ios_share_rounded),
+              label: const Text('Compartir mi story'),
+              style: FilledButton.styleFrom(
+                minimumSize: const Size(double.infinity, 48),
+              ),
+            ),
+            const SizedBox(height: 10),
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: const Text('Ahora no'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // ── Abre la exportación de story/wallpaper desde fuera del kit ─────────
+  Future<void> _abrirExportacion(
+    KitExportTipo tipo,
+    KitLecturaSeleccion kit,
+  ) async {
+    await Navigator.push<void>(
+      context,
+      AppPageRoute(
+        builder: (_) => KitExportPage(
+          tipo: tipo,
+          libro: widget.libro.libro,
+          coverUrl: widget.libro.coverUrl,
+          colores: kit.paleta.map(_colorDesdeHex).toList(),
+          subrayadores: kit.subrayadores.map(_colorDesdeHex).toList(),
+          atmosferaTitulo: kit.atmosferaTitulo,
+          atmosferaIcono: kit.atmosferaIcono,
+        ),
+      ),
+    );
+  }
+
+  Color _colorDesdeHex(String hex) {
+    final limpio = hex.replaceAll('#', '').replaceAll('0x', '').trim();
+    final valor = limpio.length == 6 ? 'FF$limpio' : limpio.padLeft(8, 'F');
+    return Color(int.parse(valor, radix: 16));
   }
 
   Future<void> _actualizarPreferencias(
@@ -488,8 +675,17 @@ class _DetalleLibroPageState extends State<DetalleLibroPage> {
 
               // Kit de lectura: solo tiene sentido si el usuario tiene el libro
               // en su biblioteca. En vista global sin estado propio, se omite.
-              if (!widget.globalStats || miEstado != null)
-                KitLecturaCard(onTap: _abrirKitLectura),
+              if (!widget.globalStats || miEstado != null) ...[
+                // Feature 2: banner de atmósfera activa cuando está configurada
+                if (_kitSeleccion.tieneAtmosfera) ...[
+                  _AtmosferaBanner(seleccion: _kitSeleccion),
+                  const SizedBox(height: AppSpacing.sm),
+                ],
+                KitLecturaCard(
+                  bookId: libro.bookId,
+                  onTap: _abrirKitLectura,
+                ),
+              ],
 
               // ── Sección de lectores / estadísticas ────────────────────────
               if (widget.globalStats) ...[
@@ -1038,6 +1234,78 @@ class _BarRow extends StatelessWidget {
           ),
         ),
       ],
+    );
+  }
+}
+
+// ── Feature 2: banner de atmósfera en la ficha del libro ──────────────────
+class _AtmosferaBanner extends StatelessWidget {
+  final KitLecturaSeleccion seleccion;
+
+  const _AtmosferaBanner({required this.seleccion});
+
+  @override
+  Widget build(BuildContext context) {
+    final icono = seleccion.atmosferaIcono.trim().isEmpty
+        ? '✨'
+        : seleccion.atmosferaIcono;
+    final titulo = seleccion.atmosferaTitulo.trim().isEmpty
+        ? 'Atmósfera activa'
+        : seleccion.atmosferaTitulo;
+    final descripcion = seleccion.atmosferaDescripcion.trim().isEmpty
+        ? null
+        : seleccion.atmosferaDescripcion;
+
+    return Container(
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.md,
+        vertical: AppSpacing.sm,
+      ),
+      decoration: BoxDecoration(
+        color: AppColors.primary.withValues(alpha: 0.07),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(
+          color: AppColors.primary.withValues(alpha: 0.18),
+          width: 1,
+        ),
+      ),
+      child: Row(
+        children: [
+          Text(icono, style: const TextStyle(fontSize: 22)),
+          const SizedBox(width: AppSpacing.sm),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  titulo,
+                  style: AppTextStyles.subtitle.copyWith(
+                    fontWeight: FontWeight.w800,
+                    color: AppColors.primary,
+                  ),
+                ),
+                if (descripcion != null)
+                  Text(
+                    descripcion,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: AppTextStyles.caption.copyWith(
+                      color: AppColors.textSecondary,
+                    ),
+                  ),
+              ],
+            ),
+          ),
+          Text(
+            'Tu atmósfera',
+            style: AppTextStyles.caption.copyWith(
+              color: AppColors.primary.withValues(alpha: 0.6),
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

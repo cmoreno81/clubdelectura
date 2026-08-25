@@ -1,7 +1,6 @@
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:palette_generator_plus/palette_generator_plus.dart';
 
 import '../theme/app_colors.dart';
@@ -373,20 +372,6 @@ class _PaletaLecturaPageState extends State<PaletaLecturaPage> {
     }
   }
 
-  Future<void> _copiarHex(BuildContext context, _ColorLector item) async {
-    await Clipboard.setData(ClipboardData(text: item.hex));
-
-    if (!context.mounted) return;
-
-    ScaffoldMessenger.of(context)
-      ..hideCurrentSnackBar()
-      ..showSnackBar(
-        SnackBar(
-          content: Text('${item.hex} copiado'),
-          duration: const Duration(seconds: 1),
-        ),
-      );
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -426,29 +411,6 @@ class _PaletaLecturaPageState extends State<PaletaLecturaPage> {
               ),
 
               const SizedBox(height: AppSpacing.xl),
-
-              const ClubSectionTitle(
-                icon: Icons.palette_outlined,
-                color: AppColors.primary,
-                title: 'Colores de la portada',
-                subtitle: 'Una selección pensada para acompañar tu lectura',
-              ),
-
-              const SizedBox(height: AppSpacing.md),
-
-              ...colores.map(
-                (item) => Padding(
-                  padding: const EdgeInsets.only(bottom: AppSpacing.sm),
-                  child: _ColorCard(
-                    item: item,
-                    onCopiar: () {
-                      _copiarHex(context, item);
-                    },
-                  ),
-                ),
-              ),
-
-              const SizedBox(height: AppSpacing.lg),
 
               const ClubSectionTitle(
                 icon: Icons.bookmark_border_rounded,
@@ -606,77 +568,6 @@ class _HeroPaleta extends StatelessWidget {
                   ),
                 ),
             ],
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _ColorCard extends StatelessWidget {
-  final _ColorLector item;
-  final VoidCallback onCopiar;
-
-  const _ColorCard({required this.item, required this.onCopiar});
-
-  @override
-  Widget build(BuildContext context) {
-    return ClubCard(
-      elevated: false,
-      padding: EdgeInsets.zero,
-      borderColor: item.color.withValues(alpha: 0.24),
-      onTap: onCopiar,
-      child: Row(
-        children: [
-          Container(
-            width: 88,
-            height: 92,
-            decoration: BoxDecoration(
-              color: item.color,
-              borderRadius: const BorderRadius.only(
-                topLeft: Radius.circular(AppRadius.lg),
-                bottomLeft: Radius.circular(AppRadius.lg),
-              ),
-            ),
-          ),
-
-          Expanded(
-            child: Padding(
-              padding: const EdgeInsets.all(AppSpacing.md),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    item.nombre,
-                    style: AppTextStyles.subtitle.copyWith(
-                      fontWeight: FontWeight.w800,
-                    ),
-                  ),
-
-                  const SizedBox(height: 4),
-
-                  Text(
-                    item.hex,
-                    style: AppTextStyles.bodySecondary.copyWith(
-                      fontFeatures: const [FontFeature.tabularFigures()],
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-
-          Padding(
-            padding: const EdgeInsets.only(right: AppSpacing.md),
-            child: Container(
-              width: 40,
-              height: 40,
-              decoration: BoxDecoration(
-                color: item.color.withValues(alpha: 0.10),
-                shape: BoxShape.circle,
-              ),
-              child: Icon(Icons.copy_rounded, color: item.color, size: 19),
-            ),
           ),
         ],
       ),

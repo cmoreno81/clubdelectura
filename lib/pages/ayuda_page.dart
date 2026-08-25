@@ -154,6 +154,16 @@ const List<_HelpSection> _secciones = [
             'abren el mismo formulario.',
       ),
       _HelpItem(
+        pregunta: '¿Qué es la lista de deseos?',
+        respuesta:
+            'La lista de deseos te permite guardar libros de "Novedades" o '
+            '"Próximos lanzamientos" que te interesan antes de decidirte a añadirlos '
+            'a tu biblioteca.\n\n'
+            'Pulsa el icono de carrito 🛒 en la esquina superior de cualquier portada '
+            'en esas secciones para añadirlo o quitarlo. Cuando un libro está en tu '
+            'lista, la portada muestra un badge naranja que te lo confirma.',
+      ),
+      _HelpItem(
         pregunta: '¿Qué significa "autoconclusivo"?',
         respuesta:
             'Un libro autoconclusivo no pertenece a ninguna saga: tiene '
@@ -517,9 +527,96 @@ const List<_HelpSection> _secciones = [
       _HelpItem(
         pregunta: '¿Qué es el Kit de lectura?',
         respuesta:
-            'El Kit de lectura es una selección de recursos para preparar '
-            'la experiencia: playlist musical, paleta de colores, atmósfera '
-            'y story para compartir. Lo encontrarás en la ficha de cada libro.',
+            'El Kit de lectura es tu espacio personal para preparar la experiencia '
+            'lectora de cada libro. Tiene 6 secciones: paleta de colores, '
+            'subrayadores, atmósfera, playlist, wallpaper y story.\n\n'
+            'Lo encontrarás en la ficha de cada libro como una tarjeta con barra de '
+            'progreso. Consulta la sección "Kit de lectura" de esta ayuda para ver '
+            'todas las opciones disponibles.',
+      ),
+    ],
+  ),
+  _HelpSection(
+    icono: '✨',
+    titulo: 'Kit de lectura',
+    items: [
+      _HelpItem(
+        pregunta: '¿Qué secciones tiene el Kit de lectura?',
+        respuesta:
+            'El Kit de lectura tiene 6 secciones que puedes completar a tu ritmo:\n\n'
+            '🎨 Paleta — colores que definen el ambiente visual del libro, con '
+            'tus post-its y la leyenda de lectura.\n'
+            '✏️ Subrayadores — set de 5 marcadores con una propuesta de uso '
+            'para anotar el libro físico.\n'
+            '🌙 Atmósfera — el entorno ideal: luz, bebida, snack y momento del día.\n'
+            '🎵 Playlist — música para acompañar la lectura.\n'
+            '🖼️ Wallpaper — fondo de pantalla generado con los colores del libro.\n'
+            '📱 Story — imagen editorial para compartir en redes.\n\n'
+            'La tarjeta del kit muestra una barra de progreso con cuántas secciones '
+            'llevas preparadas (ej. "3 de 6 preparadas"). El CTA cambia según avanzas: '
+            '"Preparar mi lectura" → "Continúa preparando tu kit" → "Ver mi kit completo".',
+      ),
+      _HelpItem(
+        pregunta: '¿Cómo accedo al Kit de lectura?',
+        respuesta:
+            'Desde la ficha de cualquier libro en tu biblioteca, desplázate hasta '
+            'la tarjeta "Kit de lectura" y pulsa sobre ella.\n\n'
+            'Si el libro tiene atmósfera configurada, verás también un banner encima '
+            'de la tarjeta del kit con el nombre y emoji de la atmósfera.',
+      ),
+      _HelpItem(
+        pregunta: '¿Qué son los subrayadores del Kit?',
+        respuesta:
+            'Son una propuesta de 5 colores para anotar el libro físico, '
+            'cada uno con un significado:\n\n'
+            '• Color 1 — Momentos favoritos\n'
+            '• Color 2 — Teorías e ideas\n'
+            '• Color 3 — Citas\n'
+            '• Color 4 — Personajes\n'
+            '• Color 5 — Impacto\n\n'
+            'Los colores están inspirados en los Zebra Mildliner — el subrayador '
+            'favorito de BookTok y Bookstagram, con punta dual (ancha + fina) y '
+            '40 tonos pastel que no manchan el papel fino. Dentro de la página de '
+            'subrayadores encontrarás un enlace a Amazon para comprarlos en físico.',
+      ),
+      _HelpItem(
+        pregunta: '¿Qué es la Paleta de lectura?',
+        respuesta:
+            'La Paleta de lectura muestra los colores que representan el ambiente '
+            'visual del libro. Dentro encontrarás dos secciones:\n\n'
+            '🟡 Tus post-its — marcadores temáticos (favoritos, citas, teorías, '
+            'personajes, impacto) para organizar tus anotaciones visualmente.\n\n'
+            '📖 La leyenda de lectura — el significado de cada color del set.\n\n'
+            'Al generar el Story, los post-its aparecen en cascada junto a la portada '
+            'del libro, creando una imagen editorial lista para Instagram.',
+      ),
+      _HelpItem(
+        pregunta: '¿Qué es el Story del Kit?',
+        respuesta:
+            'El Story es una imagen de formato 9:16 (vertical, ideal para Instagram) '
+            'generada con los elementos de tu kit:\n\n'
+            '• Portada del libro a la izquierda, inclinada ligeramente\n'
+            '• 5 post-its en cascada a la derecha con tus categorías de anotación\n'
+            '• Puntos de la paleta de color en la esquina superior\n'
+            '• Fila de subrayadores Mildliner en la parte inferior\n'
+            '• Título y nombre del club "CLUBREADS"\n\n'
+            'Puedes guardarla en tu galería o compartirla directamente desde la app.',
+      ),
+      _HelpItem(
+        pregunta: '¿Qué pasa cuando marco un libro como "Leyendo"?',
+        respuesta:
+            'Si el libro no tiene kit de lectura preparado, la app te invitará '
+            'a prepararlo antes de empezar. Puedes hacerlo en ese momento o postponerlo '
+            'y acceder más tarde desde la ficha del libro.',
+      ),
+      _HelpItem(
+        pregunta: '¿Qué pasa cuando termino un libro?',
+        respuesta:
+            'Al marcar un libro como "Historia terminada", si tienes la paleta '
+            'de colores preparada, la app te propondrá generar tu Story para '
+            'compartir el momento en redes sociales.\n\n'
+            'También se muestra la celebración habitual con confeti, '
+            'y el libro pasa inmediatamente a tu historial con su valoración.',
       ),
     ],
   ),
@@ -699,10 +796,13 @@ const List<_HelpSection> _secciones = [
       _HelpItem(
         pregunta: '¿Qué son las atmósferas?',
         respuesta:
-            'Son temas visuales que cambian los colores y el ambiente de '
-            'la app según el libro que está leyendo el club. Quien administra el club '
-            'puede activar una atmósfera para toda la comunidad desde '
-            'la sección Atmósferas dentro de la lectura activa.',
+            'Las atmósferas definen el entorno ideal para leer: el tipo de luz, '
+            'la bebida, el snack y el momento del día. Puedes configurar tu propia '
+            'atmósfera personal para cada libro dentro de su Kit de lectura.\n\n'
+            'Si tienes atmósfera preparada en tu libro activo, verás un banner con '
+            'el entorno encima del Kit de lectura en la ficha del libro.\n\n'
+            'En modo club, quien administra también puede activar una atmósfera visual '
+            'global para toda la comunidad desde la sección Atmósferas de la lectura activa.',
       ),
       _HelpItem(
         pregunta: '¿Cómo cambio mi avatar o foto de perfil?',

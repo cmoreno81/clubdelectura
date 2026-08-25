@@ -189,13 +189,13 @@ void main() {
           .first,
     );
     await tester.scrollUntilVisible(
-      find.text('Mi wishlist'),
+      find.text('Lista de deseos'),
       500,
       scrollable: find.byType(Scrollable).first,
     );
     final before = vertical.position.pixels;
 
-    await tester.drag(find.text('Mi wishlist'), const Offset(0, 300));
+    await tester.drag(find.text('Lista de deseos'), const Offset(0, 300));
     await tester.pumpAndSettle();
 
     expect(vertical.position.pixels, lessThan(before));

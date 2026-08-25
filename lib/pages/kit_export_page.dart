@@ -183,23 +183,45 @@ class _KitPoster extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final foreground =
-        ThemeData.estimateBrightnessForColor(colores.first) == Brightness.dark
+    // Para el story: fondo oscuro fijo + toque muy sutil del primer color.
+    // Los colores de la paleta se muestran en las tabs, no en el fondo.
+    // Para el wallpaper: gradiente de paleta como antes.
+    const storyBase = Color(0xFF12101A); // casi negro, tono púrpura oscuro
+    final storyAccent = colores.isNotEmpty
+        ? Color.lerp(storyBase, colores.first, 0.18)!
+        : storyBase;
+
+    final foreground = story
         ? Colors.white
-        : const Color(0xFF201A29);
+        : ThemeData.estimateBrightnessForColor(colores.first) == Brightness.dark
+            ? Colors.white
+            : const Color(0xFF201A29);
+
+    final decoration = story
+        ? BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [storyAccent, storyBase, storyBase],
+              stops: const [0.0, 0.45, 1.0],
+            ),
+          )
+        : BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: [
+                colores.first,
+                colores[colores.length ~/ 2],
+                colores.last,
+              ],
+            ),
+          );
 
     return ClipRRect(
       borderRadius: BorderRadius.circular(8),
       child: DecoratedBox(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: story ? Alignment.topLeft : Alignment.topCenter,
-            end: story ? Alignment.bottomRight : Alignment.bottomCenter,
-            colors: story
-                ? [colores.last, colores.first, colores[colores.length ~/ 2]]
-                : [colores.first, colores[colores.length ~/ 2], colores.last],
-          ),
-        ),
+        decoration: decoration,
         child: CustomPaint(
           painter: _PosterTexture(color: foreground, editorial: story),
           child: story
@@ -317,123 +339,269 @@ class _StoryComposition extends StatelessWidget {
     required this.atmosferaIcono,
   });
 
+  // Leyenda de colores (tabbing style BookTok)
+  static const List<(String, String)> _labels = [
+    ('✦', 'favoritos'),
+    ('💬', 'citas'),
+    ('🔮', 'teorías'),
+    ('👤', 'personajes'),
+    ('💥', 'impacto'),
+  ];
+
   @override
   Widget build(BuildContext context) {
     return LayoutBuilder(
       builder: (context, constraints) {
-        final width = constraints.maxWidth;
-        final height = constraints.maxHeight;
+        final w = constraints.maxWidth;
+        final h = constraints.maxHeight;
+
+        final rotuladores = subrayadores.take(3).toList(growable: false);
         final tonos = colores.take(5).toList(growable: false);
-        final rotuladores = subrayadores.take(5).toList(growable: false);
+
+        // ── Portada: ocupa la parte izquierda-central ─────────────────
+        final coverW = w * 0.62;
+        final coverH = coverW * 1.50;
+        final coverX = w * 0.03;
+        final coverY = h * 0.09;
+
+        // ── Tabs: emergen del borde derecho de la portada ─────────────
+        // La parte izquierda queda oculta bajo la portada (efecto "metida en páginas")
+        const tabOverlap = 16.0;
+        final tabVisibleW = w * 0.21; // más cortas, aspecto real de banderita
+        final tabTotalW = tabVisibleW + tabOverlap;
+        const tabH = 21.0;
+        final tabX = coverX + coverW - tabOverlap;
+
+        // Distribución vertical + pequeños offsets X para aspecto irregular
+        final tabAreaTop = coverY + coverH * 0.10;
+        final tabAreaH = coverH * 0.80;
+        final tabStep = tabAreaH / 4;
+
+        // Ángulo distinto para cada tab: sensación de colocadas a mano
+        const tabAngles = [0.08, -0.07, 0.11, -0.05, 0.09];
+        // Pequeño offset X para que no queden todas alineadas al píxel
+        final tabOffsets = [0.0, w * 0.012, -w * 0.008, w * 0.015, 0.0];
 
         return Stack(
-          clipBehavior: Clip.none,
+          clipBehavior: Clip.hardEdge,
           children: [
+            // ── Franja inferior oscura ─────────────────────────────────
             Positioned(
-              left: 22,
-              right: 22,
-              top: 20,
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    'CLUBREADS',
-                    style: TextStyle(
-                      color: foreground,
-                      fontSize: 12,
-                      fontWeight: FontWeight.w900,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              height: h * 0.32,
+              child: DecoratedBox(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    colors: [
+                      Colors.black.withValues(alpha: 0.0),
+                      Colors.black.withValues(alpha: 0.78),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+
+            // ── TABS — detrás de la portada para efecto de página ──────
+            for (var i = 0; i < 5; i++)
+              Positioned(
+                left: tabX + tabOffsets[i],
+                top: tabAreaTop + i * tabStep - tabH / 2,
+                child: Transform.rotate(
+                  angle: tabAngles[i],
+                  alignment: Alignment.centerLeft,
+                  child: _PageTab(
+                    color: tonos.length > i
+                        ? tonos[i]
+                        : const Color(0xFF8B5CF6),
+                    emoji: _labels[i].$1,
+                    label: _labels[i].$2,
+                    totalWidth: tabTotalW,
+                    height: tabH,
+                    overlap: tabOverlap,
+                  ),
+                ),
+              ),
+
+            // ── PORTADA encima de los tabs ─────────────────────────────
+            Positioned(
+              left: coverX,
+              top: coverY,
+              child: Container(
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(9),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.42),
+                      blurRadius: 30,
+                      offset: const Offset(5, 12),
                     ),
+                    BoxShadow(
+                      color: tonos.isNotEmpty
+                          ? tonos.first.withValues(alpha: 0.35)
+                          : Colors.purple.withValues(alpha: 0.25),
+                      blurRadius: 44,
+                      offset: const Offset(0, 18),
+                    ),
+                  ],
+                ),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(9),
+                  child: ClubBookCover(
+                    title: libro,
+                    imageUrl: coverUrl,
+                    width: coverW,
+                    highResolution: true,
+                    showShadow: false,
                   ),
-                  Text(
-                    atmosferaIcono.trim().isEmpty ? '✨' : atmosferaIcono,
-                    style: const TextStyle(fontSize: 24),
-                  ),
+                ),
+              ),
+            ),
+
+            // ── Mildliners (3, ligeramente superpuestos con Transform) ──
+            Positioned(
+              left: 14,
+              bottom: h * 0.115,
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  for (var i = 0; i < rotuladores.length; i++)
+                    Transform.translate(
+                      // Solapar cada marker 6px hacia la izquierda
+                      offset: Offset(i * -6.0, 0),
+                      child: Transform.rotate(
+                        angle: -0.14 + i * 0.07,
+                        child: RotuladorPreview(
+                          color: rotuladores[i],
+                          vertical: false,
+                          length: w * 0.22,
+                          thickness: 13,
+                        ),
+                      ),
+                    ),
                 ],
               ),
             ),
+
+            // ── Texto inferior ─────────────────────────────────────────
             Positioned(
-              left: 24,
-              top: 62,
-              child: Text(
-                'MI PUNTO\nDE LECTURA',
-                style: TextStyle(
-                  color: foreground,
-                  fontSize: 27,
-                  height: 0.98,
-                  fontWeight: FontWeight.w900,
-                ),
-              ),
-            ),
-            for (var index = 0; index < tonos.length; index++)
-              Positioned(
-                right: 40.0 + (index % 2) * 20,
-                top: height * 0.22 + index * 39,
-                child: Transform.rotate(
-                  angle: index.isEven ? 0.08 : -0.06,
-                  child: _PostItMarcador(
-                    color: tonos[index],
-                    label: const [
-                      'citas',
-                      'teorías',
-                      'favoritos',
-                      'personajes',
-                      'impacto',
-                    ][index],
+              left: 20,
+              right: 20,
+              bottom: 28,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Row(
+                    children: [
+                      Container(
+                        width: 20,
+                        height: 2,
+                        margin: const EdgeInsets.only(right: 7),
+                        color: tonos.isNotEmpty
+                            ? tonos.first
+                            : Colors.white.withValues(alpha: 0.65),
+                      ),
+                      Text(
+                        'ESTOY LEYENDO',
+                        style: TextStyle(
+                          color: Colors.white.withValues(alpha: 0.72),
+                          fontSize: 9,
+                          fontWeight: FontWeight.w900,
+                          letterSpacing: 2.2,
+                        ),
+                      ),
+                    ],
                   ),
-                ),
-              ),
-            Positioned(
-              left: width * 0.22,
-              top: height * 0.22,
-              child: Transform.rotate(
-                angle: -0.045,
-                child: ClubBookCover(
-                  title: libro,
-                  imageUrl: coverUrl,
-                  width: width * 0.5,
-                  highResolution: true,
-                  showShadow: true,
-                ),
-              ),
-            ),
-            Positioned(
-              left: 26,
-              right: 92,
-              bottom: height * 0.17,
-              child: Transform.rotate(
-                angle: -0.035,
-                child: _NotaLectura(
-                  libro: libro,
-                  atmosferaTitulo: atmosferaTitulo,
-                  color: tonos.length > 1 ? tonos[1] : tonos.first,
-                  foreground: foreground,
-                ),
-              ),
-            ),
-            for (var index = 0; index < rotuladores.length; index++)
-              Positioned(
-                left: 20.0 + index * 22,
-                bottom: 28.0 + (index.isEven ? 0 : 8),
-                child: Transform.rotate(
-                  angle: -0.16 + index * 0.075,
-                  child: RotuladorPreview(
-                    color: rotuladores[index],
-                    vertical: false,
-                    length: width * 0.46,
-                    thickness: 20,
+                  const SizedBox(height: 5),
+                  Text(
+                    libro,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 20,
+                      height: 1.06,
+                      fontWeight: FontWeight.w900,
+                    ),
                   ),
-                ),
+                  if (atmosferaTitulo.trim().isNotEmpty) ...[
+                    const SizedBox(height: 4),
+                    Text(
+                      '${atmosferaIcono.trim().isEmpty ? '✨' : atmosferaIcono}  $atmosferaTitulo',
+                      style: TextStyle(
+                        color: Colors.white.withValues(alpha: 0.58),
+                        fontSize: 11,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
+                ],
               ),
+            ),
+
+            // ── Branding top-left + dots top-right ─────────────────────
             Positioned(
-              right: 22,
-              bottom: 18,
-              child: Text(
-                'mi kit lector',
-                style: TextStyle(
-                  color: foreground.withValues(alpha: 0.7),
-                  fontSize: 11,
-                  fontWeight: FontWeight.w800,
-                ),
+              left: 18,
+              right: 18,
+              top: 18,
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 10,
+                      vertical: 5,
+                    ),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.16),
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(
+                        color: Colors.white.withValues(alpha: 0.25),
+                        width: 0.8,
+                      ),
+                    ),
+                    child: Text(
+                      'CLUBREADS',
+                      style: TextStyle(
+                        color: foreground,
+                        fontSize: 10,
+                        fontWeight: FontWeight.w900,
+                        letterSpacing: 1.2,
+                      ),
+                    ),
+                  ),
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: tonos
+                        .map(
+                          (c) => Container(
+                            width: 12,
+                            height: 12,
+                            margin: const EdgeInsets.only(left: 5),
+                            decoration: BoxDecoration(
+                              color: c,
+                              shape: BoxShape.circle,
+                              border: Border.all(
+                                color: Colors.white.withValues(alpha: 0.5),
+                                width: 1.2,
+                              ),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: c.withValues(alpha: 0.5),
+                                  blurRadius: 4,
+                                  offset: const Offset(0, 1),
+                                ),
+                              ],
+                            ),
+                          ),
+                        )
+                        .toList(),
+                  ),
+                ],
               ),
             ),
           ],
@@ -443,89 +611,149 @@ class _StoryComposition extends StatelessWidget {
   }
 }
 
-class _PostItMarcador extends StatelessWidget {
+// ── Pestaña de página estilo BookTok tabbing ──────────────────────────────
+//
+// Simula una banderita/pestaña adhesiva pegada al borde de las páginas.
+// La parte izquierda (`overlap` px) queda oculta bajo la portada del libro;
+// la parte derecha es la "lengüeta" visible con color y leyenda.
+class _PageTab extends StatelessWidget {
   final Color color;
+  final String emoji;
   final String label;
+  final double totalWidth;  // ancho total incluyendo la parte oculta
+  final double height;
+  final double overlap;     // cuántos px quedan bajo la portada
 
-  const _PostItMarcador({required this.color, required this.label});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: 78,
-      height: 31,
-      padding: const EdgeInsets.only(left: 29, right: 5),
-      alignment: Alignment.center,
-      decoration: BoxDecoration(
-        color: Color.lerp(color, Colors.white, 0.16),
-        borderRadius: const BorderRadius.horizontal(right: Radius.circular(4)),
-        boxShadow: const [
-          BoxShadow(color: Colors.black12, blurRadius: 3, offset: Offset(1, 2)),
-        ],
-      ),
-      child: Text(
-        label,
-        maxLines: 1,
-        overflow: TextOverflow.fade,
-        softWrap: false,
-        style: const TextStyle(
-          color: Color(0xFF342C39),
-          fontSize: 8,
-          fontWeight: FontWeight.w800,
-        ),
-      ),
-    );
-  }
-}
-
-class _NotaLectura extends StatelessWidget {
-  final String libro;
-  final String atmosferaTitulo;
-  final Color color;
-  final Color foreground;
-
-  const _NotaLectura({
-    required this.libro,
-    required this.atmosferaTitulo,
+  const _PageTab({
     required this.color,
-    required this.foreground,
+    required this.emoji,
+    required this.label,
+    required this.totalWidth,
+    required this.height,
+    required this.overlap,
   });
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.fromLTRB(16, 18, 14, 14),
-      decoration: BoxDecoration(
-        color: Color.lerp(color, Colors.white, 0.28),
-        boxShadow: const [
-          BoxShadow(color: Colors.black26, blurRadius: 8, offset: Offset(2, 5)),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+    // Color de la pestaña: ligeramente más claro que el tono base
+    final tabColor = Color.lerp(color, Colors.white, 0.28)!;
+
+    // Color de texto: blanco si el tab es oscuro, casi negro si es claro
+    final textColor =
+        ThemeData.estimateBrightnessForColor(tabColor) == Brightness.dark
+        ? Colors.white
+        : const Color(0xFF1A1228);
+
+    // Línea inferior (sombra entre hojas)
+    final shadowColor = Color.lerp(color, Colors.black, 0.28)!;
+
+    return SizedBox(
+      width: totalWidth,
+      height: height + 2, // +2 para el borde inferior (efecto hoja)
+      child: Stack(
         children: [
-          Text(
-            libro,
-            maxLines: 2,
-            overflow: TextOverflow.ellipsis,
-            style: TextStyle(
-              color: const Color(0xFF2B2330),
-              fontSize: 18,
-              height: 1.05,
-              fontWeight: FontWeight.w900,
+          // ── Sombra / borde inferior (simula grosor de hoja) ──────────
+          Positioned(
+            left: overlap,
+            right: 0,
+            bottom: 0,
+            height: height + 2,
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                color: shadowColor.withValues(alpha: 0.45),
+                borderRadius: const BorderRadius.only(
+                  topRight: Radius.circular(5),
+                  bottomRight: Radius.circular(5),
+                ),
+              ),
             ),
           ),
-          const SizedBox(height: 7),
-          Text(
-            atmosferaTitulo.trim().isEmpty
-                ? 'una nueva historia empieza aquí'
-                : atmosferaTitulo,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: TextStyle(
-              color: foreground.withValues(alpha: 0.72),
-              fontSize: 10,
-              fontWeight: FontWeight.w700,
+
+          // ── Cuerpo principal de la pestaña ────────────────────────────
+          Positioned(
+            left: 0,
+            right: 0,
+            top: 0,
+            height: height,
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                color: tabColor,
+                // Solo el lado derecho tiene bordes redondeados
+                // (izq queda enrasado al borde de las páginas del libro)
+                borderRadius: const BorderRadius.only(
+                  topRight: Radius.circular(5),
+                  bottomRight: Radius.circular(5),
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: color.withValues(alpha: 0.50),
+                    blurRadius: 10,
+                    offset: const Offset(4, 2),
+                  ),
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.20),
+                    blurRadius: 5,
+                    offset: const Offset(3, 2),
+                  ),
+                ],
+              ),
+            ),
+          ),
+
+          // ── Brillo sutil en la mitad superior ────────────────────────
+          Positioned(
+            left: overlap,
+            right: 0,
+            top: 0,
+            height: height * 0.45,
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [
+                    Colors.white.withValues(alpha: 0.22),
+                    Colors.white.withValues(alpha: 0.0),
+                  ],
+                ),
+                borderRadius: const BorderRadius.only(
+                  topRight: Radius.circular(5),
+                ),
+              ),
+            ),
+          ),
+
+          // ── Emoji + texto de leyenda ──────────────────────────────────
+          Positioned(
+            left: overlap + 8,  // empezar después de la zona oculta
+            right: 6,
+            top: 0,
+            height: height,
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                Text(
+                  emoji,
+                  style: TextStyle(
+                    fontSize: height * 0.46,
+                    height: 1.0,
+                  ),
+                ),
+                SizedBox(width: height * 0.22),
+                Expanded(
+                  child: Text(
+                    label,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      color: textColor,
+                      fontSize: height * 0.42,
+                      fontWeight: FontWeight.w800,
+                      height: 1.0,
+                    ),
+                  ),
+                ),
+              ],
             ),
           ),
         ],

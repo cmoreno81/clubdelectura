@@ -1,5 +1,11 @@
+import 'dart:math' as math;
 import 'package:flutter/material.dart';
 
+/// Mildliner-style dual-tip marker — el subrayador icónico de BookTok.
+///
+/// En horizontal: punta plana (chisel) a la izquierda, tapa redonda a la
+/// derecha, ventana blanca central (donde en el producto real va el logotipo).
+/// En vertical (por defecto): el mismo marcador girado 90°.
 class RotuladorPreview extends StatelessWidget {
   final Color color;
   final bool vertical;
@@ -16,153 +22,181 @@ class RotuladorPreview extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return SizedBox(
+    // Siempre renderizamos horizontal; si es vertical lo rotamos.
+    final marker = SizedBox(
       width: vertical ? thickness : length,
       height: vertical ? length : thickness,
-      child: vertical ? _vertical() : _horizontal(),
-    );
-  }
-
-  Widget _vertical() {
-    return Stack(
-      alignment: Alignment.center,
-      children: [
-        Positioned(top: 9, bottom: 7, left: 2, right: 2, child: _cuerpo()),
-        Positioned(
-          top: 0,
-          left: 0,
-          right: 0,
-          height: length * 0.28,
-          child: _tapa(vertical: true),
-        ),
-        Positioned(
-          left: thickness * 0.18,
-          right: thickness * 0.18,
-          bottom: 0,
-          height: 12,
-          child: ClipPath(
-            clipper: const _PuntaVerticalClipper(),
-            child: Container(color: Color.lerp(color, Colors.black, 0.28)),
-          ),
-        ),
-        Positioned(
-          top: length * 0.49,
-          left: 3,
-          right: 3,
-          height: 13,
-          child: _banda(),
-        ),
-      ],
-    );
-  }
-
-  Widget _horizontal() {
-    return Stack(
-      alignment: Alignment.center,
-      children: [
-        Positioned(left: 8, right: 8, top: 2, bottom: 2, child: _cuerpo()),
-        Positioned(
-          right: 0,
-          top: 0,
-          bottom: 0,
-          width: length * 0.28,
-          child: _tapa(vertical: false),
-        ),
-        Positioned(
-          left: 0,
-          top: thickness * 0.18,
-          bottom: thickness * 0.18,
-          width: 13,
-          child: ClipPath(
-            clipper: const _PuntaHorizontalClipper(),
-            child: Container(color: Color.lerp(color, Colors.black, 0.28)),
-          ),
-        ),
-        Positioned(
-          left: length * 0.46,
-          top: 3,
-          bottom: 3,
-          width: 14,
-          child: _banda(),
-        ),
-      ],
-    );
-  }
-
-  Widget _cuerpo() {
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        color: Color.lerp(color, Colors.white, 0.62),
-        borderRadius: BorderRadius.circular(thickness * 0.28),
-        border: Border.all(color: Color.lerp(color, Colors.black, 0.18)!),
-        boxShadow: const [
-          BoxShadow(color: Colors.black12, blurRadius: 4, offset: Offset(1, 2)),
-        ],
+      child: CustomPaint(
+        size: Size(vertical ? thickness : length, vertical ? length : thickness),
+        painter: _MildlinerPainter(color: color, vertical: vertical),
       ),
     );
-  }
 
-  Widget _tapa({required bool vertical}) {
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        color: color,
-        borderRadius: vertical
-            ? BorderRadius.circular(thickness * 0.34)
-            : BorderRadius.circular(thickness * 0.3),
-        border: Border.all(color: Color.lerp(color, Colors.black, 0.2)!),
-      ),
-      child: Align(
-        alignment: vertical ? Alignment.topCenter : Alignment.centerRight,
-        child: Container(
-          width: vertical ? thickness * 0.48 : 3,
-          height: vertical ? 3 : thickness * 0.48,
-          margin: const EdgeInsets.all(4),
-          decoration: BoxDecoration(
-            color: Colors.white.withValues(alpha: 0.42),
-            borderRadius: BorderRadius.circular(4),
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _banda() {
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.78),
-        border: Border.all(color: Colors.black12),
-        borderRadius: BorderRadius.circular(3),
-      ),
-    );
+    return marker;
   }
 }
 
-class _PuntaVerticalClipper extends CustomClipper<Path> {
-  const _PuntaVerticalClipper();
+class _MildlinerPainter extends CustomPainter {
+  final Color color;
+  final bool vertical;
+
+  const _MildlinerPainter({required this.color, required this.vertical});
 
   @override
-  Path getClip(Size size) => Path()
-    ..moveTo(0, 0)
-    ..lineTo(size.width, 0)
-    ..lineTo(size.width * 0.72, size.height)
-    ..lineTo(size.width * 0.18, size.height)
-    ..close();
+  void paint(Canvas canvas, Size size) {
+    if (vertical) {
+      // Rotar 90° en sentido antihorario para dibujar el mismo marcador
+      canvas.save();
+      canvas.translate(0, size.height);
+      canvas.rotate(-math.pi / 2);
+      _paintHorizontal(canvas, Size(size.height, size.width));
+      canvas.restore();
+    } else {
+      _paintHorizontal(canvas, size);
+    }
+  }
+
+  void _paintHorizontal(Canvas canvas, Size size) {
+    final w = size.width;
+    final h = size.height;
+    final r = h / 2;
+
+    // Colores derivados
+    final bodyColor = Color.lerp(color, Colors.white, 0.52)!;
+    final capColor = color;
+    final tipColor = Color.lerp(color, Colors.black, 0.22)!;
+    final borderColor = Color.lerp(color, Colors.black, 0.15)!;
+
+    // Longitudes proporcionales
+    final tipLen = h * 0.55; // punta chisel
+    final capLen = h * 0.90; // tapa redonda derecha
+    final bodyStart = tipLen;
+    final bodyEnd = w - capLen * 0.5;
+
+    // ── Sombra suave ──────────────────────────────────────────────────────
+    final shadowPaint = Paint()
+      ..color = Colors.black.withValues(alpha: 0.14)
+      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 3.5);
+    canvas.drawRRect(
+      RRect.fromLTRBAndCorners(
+        bodyStart,
+        h * 0.08,
+        bodyEnd + capLen * 0.5,
+        h + 2,
+        topRight: Radius.circular(r),
+        bottomRight: Radius.circular(r),
+        topLeft: Radius.circular(3),
+        bottomLeft: Radius.circular(3),
+      ),
+      shadowPaint,
+    );
+
+    // ── Cuerpo principal ──────────────────────────────────────────────────
+    final bodyRect = RRect.fromLTRBAndCorners(
+      bodyStart,
+      0,
+      bodyEnd,
+      h,
+      topRight: Radius.circular(2),
+      bottomRight: Radius.circular(2),
+      topLeft: Radius.circular(3),
+      bottomLeft: Radius.circular(3),
+    );
+    canvas.drawRRect(bodyRect, Paint()..color = bodyColor);
+    canvas.drawRRect(
+      bodyRect,
+      Paint()
+        ..color = borderColor.withValues(alpha: 0.35)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 0.8,
+    );
+
+    // ── Ventana blanca central (logotipo Mildliner) ───────────────────────
+    final windowW = (bodyEnd - bodyStart) * 0.34;
+    final windowX = bodyStart + (bodyEnd - bodyStart - windowW) / 2;
+    final windowRect = RRect.fromLTRBR(
+      windowX,
+      h * 0.12,
+      windowX + windowW,
+      h * 0.88,
+      Radius.circular(2.5),
+    );
+    canvas.drawRRect(
+      windowRect,
+      Paint()..color = Colors.white.withValues(alpha: 0.82),
+    );
+    // Línea de color dentro de la ventana (simula la franja de color del Mildliner)
+    canvas.drawRRect(
+      RRect.fromLTRBR(
+        windowX + windowW * 0.2,
+        h * 0.3,
+        windowX + windowW * 0.8,
+        h * 0.7,
+        Radius.circular(1.5),
+      ),
+      Paint()..color = color.withValues(alpha: 0.55),
+    );
+
+    // ── Reflejo/brillo superior ───────────────────────────────────────────
+    canvas.drawRRect(
+      RRect.fromLTRBR(
+        bodyStart + 4,
+        h * 0.08,
+        bodyEnd - 4,
+        h * 0.32,
+        Radius.circular(2),
+      ),
+      Paint()..color = Colors.white.withValues(alpha: 0.28),
+    );
+
+    // ── Tapa redonda derecha ──────────────────────────────────────────────
+    final capCenter = Offset(w - r, r);
+    canvas.drawCircle(capCenter, r - 0.5, Paint()..color = capColor);
+    canvas.drawCircle(
+      capCenter,
+      r - 0.5,
+      Paint()
+        ..color = borderColor.withValues(alpha: 0.4)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 0.8,
+    );
+    // Reflejo en la tapa
+    canvas.drawCircle(
+      Offset(w - r * 1.35, r * 0.55),
+      r * 0.28,
+      Paint()..color = Colors.white.withValues(alpha: 0.35),
+    );
+
+    // ── Punta chisel (izquierda) — forma trapezoidal ──────────────────────
+    final tipPath = Path()
+      ..moveTo(0, h * 0.5) // ápice de la punta (izquierda)
+      ..lineTo(tipLen, 0) // esquina superior
+      ..lineTo(bodyStart + 1, 0) // unión con el cuerpo (arriba)
+      ..lineTo(bodyStart + 1, h) // unión con el cuerpo (abajo)
+      ..lineTo(tipLen, h) // esquina inferior
+      ..close();
+    canvas.drawPath(tipPath, Paint()..color = tipColor);
+    // Borde de la punta
+    canvas.drawPath(
+      tipPath,
+      Paint()
+        ..color = borderColor.withValues(alpha: 0.5)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 0.6,
+    );
+    // Bisel / brillo en la punta
+    final bevelPath = Path()
+      ..moveTo(0, h * 0.5)
+      ..lineTo(tipLen * 0.65, h * 0.14)
+      ..lineTo(tipLen * 0.65, h * 0.4)
+      ..close();
+    canvas.drawPath(
+      bevelPath,
+      Paint()..color = Colors.white.withValues(alpha: 0.18),
+    );
+  }
 
   @override
-  bool shouldReclip(covariant CustomClipper<Path> oldClipper) => false;
-}
-
-class _PuntaHorizontalClipper extends CustomClipper<Path> {
-  const _PuntaHorizontalClipper();
-
-  @override
-  Path getClip(Size size) => Path()
-    ..moveTo(size.width, 0)
-    ..lineTo(size.width, size.height)
-    ..lineTo(0, size.height * 0.72)
-    ..lineTo(0, size.height * 0.18)
-    ..close();
-
-  @override
-  bool shouldReclip(covariant CustomClipper<Path> oldClipper) => false;
+  bool shouldRepaint(_MildlinerPainter old) =>
+      old.color != color || old.vertical != vertical;
 }

@@ -65,6 +65,17 @@ class _KitLecturaPageState extends State<KitLecturaPage> {
 
   bool get _tieneSubrayadores => _seleccion.tieneSubrayadores;
 
+  int get _seccionesPreparadas => [
+    _seleccion.tienePaleta,
+    _seleccion.tieneSubrayadores,
+    _seleccion.tieneAtmosfera,
+    _seleccion.tienePlaylist,
+    _seleccion.wallpaperGenerado,
+    _seleccion.storyGenerada,
+  ].where((v) => v).length;
+
+  static const int _totalSecciones = 6;
+
   Future<void> _abrirPaleta() async {
     final resultado = await Navigator.push<List<String>>(
       context,
@@ -322,13 +333,35 @@ class _KitLecturaPageState extends State<KitLecturaPage> {
 
                       const SizedBox(height: AppSpacing.sm),
 
-                      Text(
-                        _tienePaleta
-                            ? '✨ Tu experiencia empieza a tomar forma'
-                            : '✨ Preparando tu experiencia de lectura',
-                        textAlign: TextAlign.center,
-                        style: AppTextStyles.bodySecondary,
-                      ),
+                      if (_seccionesPreparadas > 0) ...[
+                        Text(
+                          '$_seccionesPreparadas de $_totalSecciones secciones preparadas',
+                          textAlign: TextAlign.center,
+                          style: AppTextStyles.bodySecondary.copyWith(
+                            color: AppColors.primary,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                        const SizedBox(height: AppSpacing.md),
+                        ClipRRect(
+                          borderRadius: BorderRadius.circular(99),
+                          child: LinearProgressIndicator(
+                            value: _seccionesPreparadas / _totalSecciones,
+                            minHeight: 6,
+                            backgroundColor: AppColors.primary.withValues(
+                              alpha: 0.12,
+                            ),
+                            valueColor: const AlwaysStoppedAnimation<Color>(
+                              AppColors.primary,
+                            ),
+                          ),
+                        ),
+                      ] else
+                        Text(
+                          '✨ Preparando tu experiencia de lectura',
+                          textAlign: TextAlign.center,
+                          style: AppTextStyles.bodySecondary,
+                        ),
 
                       if (_tienePaleta) ...[
                         const SizedBox(height: AppSpacing.lg),
