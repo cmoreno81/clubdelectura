@@ -499,15 +499,17 @@ class _UpcomingReleasesPageState extends State<UpcomingReleasesPage> {
 
   Widget _releaseCard(UpcomingRelease book) {
     final busy = _busy.contains(book.id);
+    final upcoming = widget.mode == ReleaseCatalogMode.upcoming;
+
     return Container(
       decoration: BoxDecoration(
         color: AppColors.surface,
-        border: Border.all(color: AppColors.border.withValues(alpha: .8)),
+        border: Border.all(color: AppColors.border.withValues(alpha: .7)),
         borderRadius: const BorderRadius.only(
-          topLeft: Radius.circular(24),
-          topRight: Radius.circular(12),
-          bottomLeft: Radius.circular(16),
-          bottomRight: Radius.circular(24),
+          topLeft: Radius.circular(22),
+          topRight: Radius.circular(10),
+          bottomLeft: Radius.circular(10),
+          bottomRight: Radius.circular(22),
         ),
       ),
       child: Padding(
@@ -515,28 +517,45 @@ class _UpcomingReleasesPageState extends State<UpcomingReleasesPage> {
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            // ── Portada + fecha ───────────────────────────────────────────
             Column(
               children: [
-                ClubBookCover(
-                  title: book.title,
-                  imageUrl: book.coverUrl ?? '',
-                  width: 82,
-                  height: 123,
+                Stack(
+                  clipBehavior: Clip.none,
+                  children: [
+                    ClubBookCover(
+                      title: book.title,
+                      imageUrl: book.coverUrl ?? '',
+                      width: 80,
+                      height: 120,
+                    ),
+                    // Icono de wishlist sobreimpreso (esquina superior derecha)
+                    Positioned(
+                      top: -6,
+                      right: -6,
+                      child: _WishlistBadge(
+                        inWishlist: book.isInWishlist,
+                        busy: busy,
+                        onTap: () => _toggleWishlist(book),
+                      ),
+                    ),
+                  ],
                 ),
                 const SizedBox(height: AppSpacing.xs),
                 Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 8,
-                    vertical: 4,
-                  ),
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                   decoration: BoxDecoration(
-                    color: AppColors.primaryLight,
+                    color: upcoming
+                        ? AppColors.primaryLight
+                        : const Color(0xFFFFEDE9),
                     borderRadius: BorderRadius.circular(20),
                   ),
                   child: Text(
                     '${book.publicationDate.day} ${_shortMonth(book.publicationDate)}',
-                    style: const TextStyle(
-                      color: AppColors.primaryDark,
+                    style: TextStyle(
+                      color: upcoming
+                          ? AppColors.primaryDark
+                          : const Color(0xFF9B493F),
                       fontSize: 11,
                       fontWeight: FontWeight.w800,
                     ),
@@ -544,7 +563,10 @@ class _UpcomingReleasesPageState extends State<UpcomingReleasesPage> {
                 ),
               ],
             ),
+
             const SizedBox(width: AppSpacing.md),
+
+            // ── Información + acciones ────────────────────────────────────
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -553,71 +575,103 @@ class _UpcomingReleasesPageState extends State<UpcomingReleasesPage> {
                     book.title,
                     style: const TextStyle(
                       fontWeight: FontWeight.w800,
-                      fontSize: 17,
-                      height: 1.15,
+                      fontSize: 16,
+                      height: 1.2,
                     ),
                   ),
-                  if ((book.author ?? '').isNotEmpty) Text(book.author!),
-                  const SizedBox(height: AppSpacing.xs),
+                  if ((book.author ?? '').isNotEmpty)
+                    Text(
+                      book.author!,
+                      style: const TextStyle(
+                        color: AppColors.textSecondary,
+                        fontSize: 13,
+                      ),
+                    ),
+                  const SizedBox(height: 6),
                   Text(
                     _formatDate(book.publicationDate),
-                    style: const TextStyle(
-                      color: AppColors.primary,
+                    style: TextStyle(
+                      color: upcoming
+                          ? AppColors.primary
+                          : const Color(0xFF9B493F),
                       fontWeight: FontWeight.w700,
+                      fontSize: 13,
                     ),
                   ),
-                  Text(
-                    [
-                      book.genre,
-                      book.publisher,
-                    ].where((value) => value?.isNotEmpty == true).join(' · '),
-                  ),
+                  if ([book.genre, book.publisher]
+                      .any((v) => v?.isNotEmpty == true))
+                    Text(
+                      [
+                        book.genre,
+                        book.publisher,
+                      ].where((v) => v?.isNotEmpty == true).join(' · '),
+                      style: const TextStyle(
+                        color: AppColors.textSecondary,
+                        fontSize: 12,
+                      ),
+                    ),
                   if (book.cliches.isNotEmpty) ...[
                     const SizedBox(height: AppSpacing.xs),
                     Wrap(
-                      spacing: AppSpacing.xs,
-                      runSpacing: AppSpacing.xs,
+                      spacing: 4,
+                      runSpacing: 4,
                       children: book.cliches
                           .map(
-                            (cliche) => Chip(
-                              avatar: const Icon(Icons.auto_awesome, size: 15),
-                              label: Text(cliche),
+                            (c) => Chip(
+                              avatar: const Icon(
+                                Icons.auto_awesome,
+                                size: 13,
+                              ),
+                              label: Text(
+                                c,
+                                style: const TextStyle(fontSize: 11),
+                              ),
                               visualDensity: VisualDensity.compact,
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 2,
+                              ),
                             ),
                           )
                           .toList(growable: false),
                     ),
                   ],
                   const SizedBox(height: AppSpacing.sm),
-                  Wrap(
-                    spacing: AppSpacing.xs,
-                    runSpacing: AppSpacing.xs,
-                    children: [
-                      if (book.isInWishlist)
-                        FilledButton.tonalIcon(
-                          onPressed: busy ? null : () => _toggleWishlist(book),
-                          icon: const Icon(Icons.favorite),
-                          label: const Text('En mi wishlist'),
+
+                  // ── Botón biblioteca ──────────────────────────────────
+                  book.isInLibrary
+                      ? Row(
+                          children: [
+                            const Icon(
+                              Icons.check_circle_rounded,
+                              size: 15,
+                              color: AppColors.success,
+                            ),
+                            const SizedBox(width: 4),
+                            const Text(
+                              'En tu biblioteca',
+                              style: TextStyle(
+                                color: AppColors.success,
+                                fontWeight: FontWeight.w700,
+                                fontSize: 13,
+                              ),
+                            ),
+                          ],
                         )
-                      else
-                        OutlinedButton.icon(
-                          onPressed: busy ? null : () => _toggleWishlist(book),
-                          icon: const Icon(Icons.favorite_border),
-                          label: const Text('Añadir a mi wishlist'),
+                      : SizedBox(
+                          width: double.infinity,
+                          child: FilledButton.icon(
+                            onPressed: busy ? null : () => _addToLibrary(book),
+                            icon: const Icon(Icons.add, size: 16),
+                            label: const Text('Añadir a mi biblioteca'),
+                            style: FilledButton.styleFrom(
+                              minimumSize: const Size(0, 38),
+                              textStyle: const TextStyle(
+                                fontWeight: FontWeight.w700,
+                                fontSize: 13,
+                              ),
+                            ),
+                          ),
                         ),
-                      FilledButton.tonalIcon(
-                        onPressed: busy || book.isInLibrary
-                            ? null
-                            : () => _addToLibrary(book),
-                        icon: Icon(book.isInLibrary ? Icons.check : Icons.add),
-                        label: Text(
-                          book.isInLibrary
-                              ? 'En mi biblioteca'
-                              : 'Añadir a mi biblioteca',
-                        ),
-                      ),
-                    ],
-                  ),
                 ],
               ),
             ),
@@ -680,4 +734,55 @@ class _UpcomingReleasesPageState extends State<UpcomingReleasesPage> {
     'NOV',
     'DIC',
   ][date.month - 1];
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Badge de wishlist (corazón sobreimpreso en la portada)
+// ─────────────────────────────────────────────────────────────────────────────
+class _WishlistBadge extends StatelessWidget {
+  const _WishlistBadge({
+    required this.inWishlist,
+    required this.busy,
+    required this.onTap,
+  });
+
+  final bool inWishlist;
+  final bool busy;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: busy ? null : onTap,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        width: 32,
+        height: 32,
+        decoration: BoxDecoration(
+          color: inWishlist ? AppColors.primary : AppColors.surface,
+          shape: BoxShape.circle,
+          border: Border.all(
+            color: inWishlist
+                ? AppColors.primary
+                : AppColors.border,
+            width: 1.5,
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: .15),
+              blurRadius: 6,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: Center(
+          child: Icon(
+            inWishlist ? Icons.bookmark : Icons.bookmark_border,
+            size: 16,
+            color: inWishlist ? Colors.white : AppColors.textSecondary,
+          ),
+        ),
+      ),
+    );
+  }
 }
