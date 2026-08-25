@@ -1415,31 +1415,55 @@ class _GeneralDashboardPageState extends State<GeneralDashboardPage> {
   }
 
   Widget _openSeries(List<GeneralOpenSeries> series) {
-    // Con una sola saga no hay scroll horizontal posible: el ítem ocupa el
-    // ancho completo. En ese caso un ListView con cualquier física (incluso
-    // ClampingScrollPhysics) sigue compitiendo por los gestos verticales y
-    // puede absorberlos, impidiendo que el CustomScrollView padre reciba el
-    // scroll hacia arriba. Se renderiza la tarjeta directamente para que los
-    // gestos lleguen sin obstáculos al ancestro.
-    if (series.length == 1) {
-      return LayoutBuilder(
-        builder: (context, constraints) => _openSeriesCard(
-          series.first,
-          fullWidth: true,
-          cardWidth: constraints.maxWidth,
-        ),
-      );
-    }
-    return SizedBox(
-      height: 154,
-      child: ListView.separated(
-        scrollDirection: Axis.horizontal,
-        physics: const ClampingScrollPhysics(),
-        itemCount: series.length,
-        separatorBuilder: (_, _) => const SizedBox(width: AppSpacing.md),
-        itemBuilder: (context, index) =>
-            _openSeriesCard(series[index], fullWidth: false),
-      ),
+    // Un ListView horizontal —aunque tenga ClampingScrollPhysics— compite con
+    // el CustomScrollView padre y puede absorber gestos verticales hacia arriba
+    // cuando está en la posición 0 de scroll. La solución es evitar el ListView
+    // siempre que el contenido quepa sin necesidad de scroll horizontal.
+    // Ancho de cada tarjeta + separador:
+    const cardWidth = 260.0;
+    const gap = AppSpacing.md;
+
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final available = constraints.maxWidth;
+        final totalContent =
+            series.length * cardWidth + (series.length - 1) * gap;
+
+        if (totalContent <= available) {
+          // Caben todas sin scroll: Row simple, sin competencia de gestos.
+          return SizedBox(
+            height: 154,
+            child: Row(
+              children: [
+                for (var i = 0; i < series.length; i++) ...[
+                  if (i > 0) const SizedBox(width: gap),
+                  SizedBox(
+                    width: series.length == 1 ? available : cardWidth,
+                    child: _openSeriesCard(
+                      series[i],
+                      fullWidth: series.length == 1,
+                      cardWidth: series.length == 1 ? available : cardWidth,
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          );
+        }
+
+        // No caben: ListView horizontal con ClampingScrollPhysics.
+        return SizedBox(
+          height: 154,
+          child: ListView.separated(
+            scrollDirection: Axis.horizontal,
+            physics: const ClampingScrollPhysics(),
+            itemCount: series.length,
+            separatorBuilder: (_, _) => const SizedBox(width: gap),
+            itemBuilder: (context, index) =>
+                _openSeriesCard(series[index], fullWidth: false),
+          ),
+        );
+      },
     );
   }
 
