@@ -1586,10 +1586,7 @@ class _LibrosPageState extends State<LibrosPage> with WidgetsBindingObserver {
   }
 
   Future<void> _finalizarLectura(LibroAgrupado libro) async {
-    final resultado = await showDialog<Map<String, String>>(
-      context: context,
-      builder: (_) => const FinalizarLibroDialog(),
-    );
+    final resultado = await FinalizarLibroDialog.show(context);
     if (resultado == null || !mounted) return;
 
     final usuario = await UsuarioService().obtenerUsuario();
