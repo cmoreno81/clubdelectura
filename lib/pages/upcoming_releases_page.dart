@@ -777,7 +777,7 @@ class _WishlistBadge extends StatelessWidget {
         ),
         child: Center(
           child: Icon(
-            inWishlist ? Icons.bookmark : Icons.bookmark_border,
+            inWishlist ? Icons.shopping_cart : Icons.shopping_cart_outlined,
             size: 16,
             color: inWishlist ? Colors.white : AppColors.textSecondary,
           ),
