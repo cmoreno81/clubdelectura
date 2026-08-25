@@ -1324,7 +1324,8 @@ class _GeneralDashboardPageState extends State<GeneralDashboardPage> {
         // No caben: ListView horizontal protegido contra robo del gesto vertical.
         return _HScrollGestureProxy(
           height: 224,
-          child: (physics) => ListView.separated(
+          child: (physics, controller) => ListView.separated(
+            controller: controller,
             scrollDirection: Axis.horizontal,
             physics: physics,
             padding: const EdgeInsets.only(right: AppSpacing.sm),
@@ -1341,7 +1342,8 @@ class _GeneralDashboardPageState extends State<GeneralDashboardPage> {
   Widget _latestAdditions(List<GeneralLatestBook> books) {
     return _HScrollGestureProxy(
       height: 218,
-      child: (physics) => ListView.separated(
+      child: (physics, controller) => ListView.separated(
+        controller: controller,
         scrollDirection: Axis.horizontal,
         physics: physics,
         padding: const EdgeInsets.symmetric(horizontal: 2),
@@ -1479,7 +1481,8 @@ class _GeneralDashboardPageState extends State<GeneralDashboardPage> {
         // No caben: ListView horizontal protegido contra robo del gesto vertical.
         return _HScrollGestureProxy(
           height: 154,
-          child: (physics) => ListView.separated(
+          child: (physics, controller) => ListView.separated(
+            controller: controller,
             scrollDirection: Axis.horizontal,
             physics: physics,
             itemCount: series.length,
@@ -1607,7 +1610,9 @@ class _GeneralDashboardPageState extends State<GeneralDashboardPage> {
   Widget _trending(List<TrendingBook> books) {
     return _HScrollGestureProxy(
       height: 190,
-      child: (physics) => ListView.separated(
+      child: (physics, controller) => ListView.separated(
+        controller: controller,
+        key: const PageStorageKey('dashboard-trending-books'),
         scrollDirection: Axis.horizontal,
         physics: physics,
         itemCount: books.length,
@@ -1900,7 +1905,8 @@ class _GeneralDashboardPageState extends State<GeneralDashboardPage> {
   Widget _trendingAuthors(List<TrendingAuthor> authors) {
     return _HScrollGestureProxy(
       height: 150,
-      child: (physics) => ListView.separated(
+      child: (physics, controller) => ListView.separated(
+        controller: controller,
         scrollDirection: Axis.horizontal,
         physics: physics,
         itemCount: authors.length,
@@ -2575,7 +2581,8 @@ class _ReleasesPreview extends StatelessWidget {
           else
             _HScrollGestureProxy(
               height: 205,
-              child: (physics) => ListView.separated(
+              child: (physics, controller) => ListView.separated(
+                controller: controller,
                 key: PageStorageKey(
                   mode == ReleaseCatalogMode.newReleases
                       ? 'dashboard-new-releases'
@@ -2648,13 +2655,17 @@ class _ReleasesPreview extends StatelessWidget {
 // Envuelve un ListView horizontal para evitar que su HorizontalDragGestureRecognizer
 // robe gestos verticales del CustomScrollView padre.
 //
-// Mecanismo: un Listener de bajo nivel detecta la dirección del primer movimiento
-// antes de que el arena de gestos se resuelva. Si el movimiento es principalmente
-// vertical (|dy| > |dx|), cambia las físicas a NeverScrollableScrollPhysics.
-// Con esa física, Flutter NO añade ningún HorizontalDragGestureRecognizer al
-// arena, de modo que el VerticalDragGestureRecognizer del padre gana siempre.
-// Al terminar el toque, se restauran las físicas normales (ClampingScrollPhysics)
-// para que el carrusel vuelva a ser deslizable horizontalmente.
+// Mecanismo (v2): el ListView siempre usa NeverScrollableScrollPhysics, por lo
+// que nunca registra su propio HorizontalDragGestureRecognizer. En su lugar,
+// el proxy registra un GestureDetector.onHorizontalDrag* que maneja el scroll
+// manualmente mediante un ScrollController.
+//
+// De esta forma los dos únicos reconocedores en el arena son:
+//   · HorizontalDragGestureRecognizer  (del GestureDetector del proxy)
+//   · VerticalDragGestureRecognizer    (del CustomScrollView padre)
+// Flutter los discrimina correctamente por eje — el scroll vertical nunca
+// se pierde en un gesto claramente vertical, y el carrusel sí responde al
+// gesto claramente horizontal. No hay ningún setState asíncrono involucrado.
 // ─────────────────────────────────────────────────────────────────────────────
 class _HScrollGestureProxy extends StatefulWidget {
   const _HScrollGestureProxy({
@@ -2664,69 +2675,83 @@ class _HScrollGestureProxy extends StatefulWidget {
 
   final double height;
 
-  /// Constructor que recibe las físicas a usar y devuelve el widget de lista.
-  final Widget Function(ScrollPhysics physics) child;
+  /// Recibe las físicas fijas (siempre NeverScrollable) y el ScrollController
+  /// que el ListView debe usar para que el proxy pueda moverlo.
+  final Widget Function(ScrollPhysics physics, ScrollController controller) child;
 
   @override
   State<_HScrollGestureProxy> createState() => _HScrollGestureProxyState();
 }
 
 class _HScrollGestureProxyState extends State<_HScrollGestureProxy> {
-  static const _kDirectionSlop = 4.0; // dp antes de decidir el eje
+  // Deceleración (px/s²) para simular el fling al soltar.
+  static const _kDeceleration = 3000.0;
 
-  bool _horizontalScrollEnabled = true;
-  Offset? _touchOrigin;
+  final _controller = ScrollController();
+  double? _dragStartLocal;
+  double? _scrollAtDragStart;
 
-  ScrollPhysics get _physics => _horizontalScrollEnabled
-      ? const ClampingScrollPhysics()
-      : const NeverScrollableScrollPhysics();
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
 
-  void _onPointerDown(PointerDownEvent e) {
-    _touchOrigin = e.localPosition;
-    // Si estaba bloqueado por un gesto anterior, desbloquear inmediatamente.
-    if (!_horizontalScrollEnabled) {
-      setState(() => _horizontalScrollEnabled = true);
+  void _onHorizontalDragStart(DragStartDetails d) {
+    _dragStartLocal = d.localPosition.dx;
+    _scrollAtDragStart =
+        _controller.hasClients ? _controller.position.pixels : 0.0;
+    // Detener cualquier animación de fling en curso.
+    if (_controller.hasClients) {
+      _controller.position.hold(() {});
     }
   }
 
-  void _onPointerMove(PointerMoveEvent e) {
-    final origin = _touchOrigin;
-    if (origin == null || !_horizontalScrollEnabled) return;
-    final delta = e.localPosition - origin;
-    // En cuanto el movimiento vertical supera al horizontal y pasa el umbral,
-    // desactivamos el scroll horizontal para ceder el gesto al padre.
-    if (delta.dy.abs() > delta.dx.abs() && delta.dy.abs() > _kDirectionSlop) {
-      setState(() => _horizontalScrollEnabled = false);
-    }
+  void _onHorizontalDragUpdate(DragUpdateDetails d) {
+    if (!_controller.hasClients) return;
+    final start = _dragStartLocal ?? d.localPosition.dx;
+    final baseScroll = _scrollAtDragStart ?? _controller.position.pixels;
+    final newPixels =
+        (baseScroll - (d.localPosition.dx - start))
+            .clamp(
+              _controller.position.minScrollExtent,
+              _controller.position.maxScrollExtent,
+            );
+    _controller.jumpTo(newPixels);
   }
 
-  void _onPointerUp(PointerUpEvent e) => _resetAfterFrame();
-  void _onPointerCancel(PointerCancelEvent e) => _resetAfterFrame();
-
-  void _resetAfterFrame() {
-    _touchOrigin = null;
-    if (!_horizontalScrollEnabled) {
-      // Restaurar en el siguiente frame para que la física no cambie en medio
-      // de un fling que el padre pueda estar ejecutando.
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted && !_horizontalScrollEnabled) {
-          setState(() => _horizontalScrollEnabled = true);
-        }
-      });
-    }
+  void _onHorizontalDragEnd(DragEndDetails d) {
+    final v = d.primaryVelocity;
+    if (v == null || !_controller.hasClients || v.abs() < 50) return;
+    // Cinemática: s = v²/(2a), t = v/a
+    final a = _kDeceleration;
+    final distance = v.sign * v * v / (2 * a); // positivo = hacia delante
+    final target =
+        (_controller.position.pixels - distance)
+            .clamp(
+              _controller.position.minScrollExtent,
+              _controller.position.maxScrollExtent,
+            );
+    final durationMs = ((v.abs() / a) * 1000).clamp(80, 500).toInt();
+    _controller.animateTo(
+      target,
+      duration: Duration(milliseconds: durationMs),
+      curve: Curves.decelerate,
+    );
   }
 
   @override
   Widget build(BuildContext context) {
-    return Listener(
+    return GestureDetector(
+      // El GestureDetector registra sólo HorizontalDrag; el padre
+      // (CustomScrollView) registra VerticalDrag. Flutter discrimina por eje.
       behavior: HitTestBehavior.translucent,
-      onPointerDown: _onPointerDown,
-      onPointerMove: _onPointerMove,
-      onPointerUp: _onPointerUp,
-      onPointerCancel: _onPointerCancel,
+      onHorizontalDragStart: _onHorizontalDragStart,
+      onHorizontalDragUpdate: _onHorizontalDragUpdate,
+      onHorizontalDragEnd: _onHorizontalDragEnd,
       child: SizedBox(
         height: widget.height,
-        child: widget.child(_physics),
+        child: widget.child(const NeverScrollableScrollPhysics(), _controller),
       ),
     );
   }

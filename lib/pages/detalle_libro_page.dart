@@ -708,12 +708,10 @@ class _DetalleLibroPageState extends State<DetalleLibroPage> {
                   onQuitarPendientes: _quitarPendientes,
                   onActualizarPreferencias: _actualizarPreferencias,
                   onPedirValoracion: (registro) {
-                    return showDialog<Map<String, String>>(
-                      context: context,
-                      builder: (_) => FinalizarLibroDialog(
-                        fechaInicioActual: registro.startedAt,
-                        formatoActual: registro.formato,
-                      ),
+                    return FinalizarLibroDialog.show(
+                      context,
+                      fechaInicioActual: registro.startedAt,
+                      formatoActual: registro.formato,
                     );
                   },
                 ),

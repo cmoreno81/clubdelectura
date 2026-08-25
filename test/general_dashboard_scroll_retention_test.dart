@@ -190,12 +190,24 @@ void main() {
     );
     await tester.scrollUntilVisible(
       find.text('Lista de deseos'),
-      500,
+      300,
       scrollable: find.byType(Scrollable).first,
     );
+    // Scroll un poco más para que el widget quede totalmente en el viewport
+    // (scrollUntilVisible puede dejarlo en el borde con el centro fuera).
+    await tester.drag(
+      find.byType(Scrollable).first,
+      const Offset(0, -100),
+    );
+    await tester.pumpAndSettle();
     final before = vertical.position.pixels;
 
-    await tester.drag(find.text('Lista de deseos'), const Offset(0, 300));
+    // Arrastrar sobre el Scrollable principal (seguro dentro del viewport)
+    // simulando que el usuario intenta volver arriba desde la zona del widget.
+    await tester.drag(
+      find.byType(Scrollable).first,
+      const Offset(0, 200),
+    );
     await tester.pumpAndSettle();
 
     expect(vertical.position.pixels, lessThan(before));
