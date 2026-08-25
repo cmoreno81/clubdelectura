@@ -2392,7 +2392,7 @@ class _WishlistPreviewSectionState extends State<_WishlistPreviewSection> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          'Mi wishlist',
+                          'Lista de deseos',
                           style: AppTextStyles.subtitle.copyWith(
                             fontWeight: FontWeight.w800,
                             color: Colors.white,
