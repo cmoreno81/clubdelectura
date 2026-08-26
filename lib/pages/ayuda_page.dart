@@ -154,14 +154,20 @@ const List<_HelpSection> _secciones = [
             'abren el mismo formulario.',
       ),
       _HelpItem(
-        pregunta: '¿Qué es la lista de deseos?',
+        pregunta: '¿Qué es "Tu lista de deseos"?',
         respuesta:
-            'La lista de deseos te permite guardar libros de "Novedades" o '
-            '"Próximos lanzamientos" que te interesan antes de decidirte a añadirlos '
+            '"Tu lista de deseos" te permite guardar libros de "Novedades disponibles" '
+            'o "Próximos lanzamientos" que te interesan antes de decidirte a añadirlos '
             'a tu biblioteca.\n\n'
-            'Pulsa el icono de carrito 🛒 en la esquina superior de cualquier portada '
-            'en esas secciones para añadirlo o quitarlo. Cuando un libro está en tu '
-            'lista, la portada muestra un badge naranja que te lo confirma.',
+            '🛒 Para añadir un libro pulsa el icono de carrito en la esquina superior '
+            'de cualquier portada en esas secciones. Un badge lila confirma que el libro '
+            'ya está en tu lista. Pulsa de nuevo para quitarlo.\n\n'
+            '📋 Para ver tu lista completa, accede a la tarjeta morada "Tu lista de '
+            'deseos" en "Mi universo lector" y pulsa "Ver lista completa". Desde ahí '
+            'puedes ver los detalles de cada libro, eliminarlo de la lista o añadirlo '
+            'directamente a tu biblioteca.\n\n'
+            '💶 La tarjeta también muestra el precio total estimado de los libros de '
+            'tu lista, para que te hagas una idea del gasto si los comprases todos.',
       ),
       _HelpItem(
         pregunta: '¿Qué significa "autoconclusivo"?',
@@ -587,19 +593,21 @@ const List<_HelpSection> _secciones = [
             '🟡 Tus post-its — marcadores temáticos (favoritos, citas, teorías, '
             'personajes, impacto) para organizar tus anotaciones visualmente.\n\n'
             '📖 La leyenda de lectura — el significado de cada color del set.\n\n'
-            'Al generar el Story, los post-its aparecen en cascada junto a la portada '
-            'del libro, creando una imagen editorial lista para Instagram.',
+            'Los colores de la paleta se usan como base para generar el Story y el '
+            'wallpaper personalizados del libro.',
       ),
       _HelpItem(
         pregunta: '¿Qué es el Story del Kit?',
         respuesta:
-            'El Story es una imagen de formato 9:16 (vertical, ideal para Instagram) '
-            'generada con los elementos de tu kit:\n\n'
+            'El Story es una imagen de formato 9:16 (vertical, ideal para Instagram '
+            'y redes sociales) generada con los colores y elementos de tu kit:\n\n'
+            '• Fondo claro con un degradado suave de los colores de tu paleta\n'
             '• Portada del libro a la izquierda, inclinada ligeramente\n'
-            '• 5 post-its en cascada a la derecha con tus categorías de anotación\n'
-            '• Puntos de la paleta de color en la esquina superior\n'
-            '• Fila de subrayadores Mildliner en la parte inferior\n'
-            '• Título y nombre del club "CLUBREADS"\n\n'
+            '• Orbes decorativos semitransparentes con los tonos del libro\n'
+            '• Tarjeta de cristal esmerilado en la parte inferior con el título, '
+            'autor y la etiqueta "ESTOY LEYENDO" (o "YA LO HE LEÍDO" si lo has '
+            'terminado)\n'
+            '• Badge "CLUBREADS" en la esquina superior\n\n'
             'Puedes guardarla en tu galería o compartirla directamente desde la app.',
       ),
       _HelpItem(
@@ -614,7 +622,8 @@ const List<_HelpSection> _secciones = [
         respuesta:
             'Al marcar un libro como "Historia terminada", si tienes la paleta '
             'de colores preparada, la app te propondrá generar tu Story para '
-            'compartir el momento en redes sociales.\n\n'
+            'compartir el momento en redes sociales. El Story aparecerá con la '
+            'etiqueta "YA LO HE LEÍDO" en lugar de "ESTOY LEYENDO".\n\n'
             'También se muestra la celebración habitual con confeti, '
             'y el libro pasa inmediatamente a tu historial con su valoración.',
       ),
@@ -830,9 +839,18 @@ const List<_HelpSection> _secciones = [
       _HelpItem(
         pregunta: '¿Qué muestra "Mi universo lector"?',
         respuesta:
-            'Es tu pantalla principal con un resumen de todo: libros que estás '
-            'leyendo, sagas en curso, la estantería del mes, tu calendario '
-            'de lectura, las tendencias de la comunidad y el acceso a tus clubes.',
+            'Es tu pantalla principal con un resumen de todo:\n\n'
+            '• Libros que estás leyendo ahora\n'
+            '• Sagas en curso ("Continúa tus sagas")\n'
+            '• Tu biblioteca de pendientes ("Tu próxima lectura") con la Ruleta del TBR\n'
+            '• La estantería del mes y el calendario de lectura\n'
+            '• Tus clubes activos\n'
+            '• Novedades disponibles y próximos lanzamientos\n'
+            '• La tarjeta "Tu lista de deseos" con el precio total y los libros guardados\n'
+            '• Tus logros del año\n'
+            '• Las tendencias de la comunidad (libros y autores)\n\n'
+            'Usa el icono de exploración (arriba) para buscar en la biblioteca global '
+            'y el icono de notificaciones para ver las novedades del club.',
       ),
       _HelpItem(
         pregunta: '¿Qué es la estantería del mes?',
