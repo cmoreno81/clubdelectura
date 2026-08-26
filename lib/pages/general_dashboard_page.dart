@@ -642,13 +642,6 @@ class _GeneralDashboardPageState extends State<GeneralDashboardPage> {
                         _latestAdditions(data.latestAdditions),
                       ],
                       const SizedBox(height: AppSpacing.xl),
-                      _ReleasesPreview(
-                        future: _newReleasesFuture,
-                        mode: ReleaseCatalogMode.newReleases,
-                      ),
-                      const SizedBox(height: AppSpacing.xl),
-                      _ReleasesPreview(future: _upcomingFuture),
-                      const SizedBox(height: AppSpacing.xl),
                       _sectionTitle(
                         'Tus clubes',
                         data.clubs.isEmpty
@@ -666,6 +659,13 @@ class _GeneralDashboardPageState extends State<GeneralDashboardPage> {
                       else
                         ...data.clubs.map(_clubCard),
 
+                      const SizedBox(height: AppSpacing.xl),
+                      _ReleasesPreview(
+                        future: _newReleasesFuture,
+                        mode: ReleaseCatalogMode.newReleases,
+                      ),
+                      const SizedBox(height: AppSpacing.xl),
+                      _ReleasesPreview(future: _upcomingFuture),
                       const SizedBox(height: AppSpacing.xl),
                       _WishlistPreviewSection(userName: data.userName),
 
@@ -2445,7 +2445,7 @@ class _WishlistPreviewSectionState extends State<_WishlistPreviewSection> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          'Lista de deseos',
+                          'Tu lista de deseos',
                           style: AppTextStyles.subtitle.copyWith(
                             fontWeight: FontWeight.w800,
                             color: Colors.white,

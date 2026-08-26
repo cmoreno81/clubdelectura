@@ -2555,7 +2555,7 @@ class WishlistSummaryCard extends StatelessWidget {
                 ),
                 const SizedBox(width: AppSpacing.sm),
                 Text(
-                  'Lista de deseos',
+                  'Tu lista de deseos',
                   style: AppTextStyles.subtitle.copyWith(
                     fontWeight: FontWeight.w800,
                     color: Colors.white,

@@ -431,7 +431,7 @@ class _UpcomingReleasesPageState extends State<UpcomingReleasesPage> {
               });
             },
           ),
-          if (widget.mode == ReleaseCatalogMode.upcoming) ...[
+          if (cliches.isNotEmpty) ...[
             const SizedBox(height: AppSpacing.sm),
             _filterField(
               label: 'Cliché',
