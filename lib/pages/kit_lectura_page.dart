@@ -26,6 +26,8 @@ class KitLecturaPage extends StatefulWidget {
   final String libro;
   final String coverUrl;
   final bool finalizado;
+  /// Valoración en estrellas (1-5) para mostrar en la story. Null si no valorado.
+  final int? valoracion;
 
   const KitLecturaPage({
     super.key,
@@ -33,6 +35,7 @@ class KitLecturaPage extends StatefulWidget {
     required this.libro,
     this.coverUrl = '',
     this.finalizado = false,
+    this.valoracion,
   });
 
   @override
@@ -274,6 +277,7 @@ class _KitLecturaPageState extends State<KitLecturaPage> {
           atmosferaTitulo: _seleccion.atmosferaTitulo,
           atmosferaIcono: _seleccion.atmosferaIcono,
           etiquetaStory: widget.finalizado ? 'YA LO HE LEÍDO' : 'ESTOY LEYENDO',
+          valoracion: widget.valoracion,
         ),
       ),
     );

@@ -364,7 +364,7 @@ class _DetalleLibroPageState extends State<DetalleLibroPage> {
             FilledButton.icon(
               onPressed: () {
                 Navigator.pop(ctx);
-                _abrirExportacion(KitExportTipo.story, kit, finalizado: finalizado);
+                _abrirExportacion(KitExportTipo.story, kit, finalizado: finalizado, valoracionStr: libro.valoracion);
               },
               icon: const Icon(Icons.ios_share_rounded),
               label: const Text('Compartir mi story'),
@@ -383,11 +383,20 @@ class _DetalleLibroPageState extends State<DetalleLibroPage> {
     );
   }
 
+  // ── Convierte una cadena de valoración ("⭐⭐⭐⭐") a int (1-5) ───────────
+  static int? _parseStarsCount(String? valoracion) {
+    if (valoracion == null || valoracion.isEmpty) return null;
+    final normalized = valoracion.replaceAll('⭐️', '⭐');
+    final count = '⭐'.allMatches(normalized).length;
+    return count > 0 ? count.clamp(1, 5) : null;
+  }
+
   // ── Abre la exportación de story/wallpaper desde fuera del kit ─────────
   Future<void> _abrirExportacion(
     KitExportTipo tipo,
     KitLecturaSeleccion kit, {
     bool finalizado = false,
+    String? valoracionStr,
   }) async {
     await Navigator.push<void>(
       context,
@@ -401,6 +410,7 @@ class _DetalleLibroPageState extends State<DetalleLibroPage> {
           atmosferaTitulo: kit.atmosferaTitulo,
           atmosferaIcono: kit.atmosferaIcono,
           etiquetaStory: finalizado ? 'YA LO HE LEÍDO' : 'ESTOY LEYENDO',
+          valoracion: _parseStarsCount(valoracionStr),
         ),
       ),
     );
@@ -535,7 +545,7 @@ class _DetalleLibroPageState extends State<DetalleLibroPage> {
     }
   }
 
-  Future<void> _abrirKitLectura({bool finalizado = false}) async {
+  Future<void> _abrirKitLectura({bool finalizado = false, int? valoracion}) async {
     await Navigator.push(
       context,
       AppPageRoute(
@@ -544,6 +554,7 @@ class _DetalleLibroPageState extends State<DetalleLibroPage> {
           libro: libro.libro,
           coverUrl: libro.coverUrl,
           finalizado: finalizado,
+          valoracion: valoracion,
         ),
       ),
     );
@@ -687,7 +698,10 @@ class _DetalleLibroPageState extends State<DetalleLibroPage> {
                 ],
                 KitLecturaCard(
                   bookId: libro.bookId,
-                  onTap: () => _abrirKitLectura(finalizado: miEstado == 'FINALIZADO'),
+                  onTap: () => _abrirKitLectura(
+                    finalizado: miEstado == 'FINALIZADO',
+                    valoracion: _parseStarsCount(referencia?.valoracion),
+                  ),
                 ),
               ],
 
