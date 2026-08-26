@@ -431,21 +431,19 @@ class _UpcomingReleasesPageState extends State<UpcomingReleasesPage> {
               });
             },
           ),
-          if (cliches.isNotEmpty) ...[
-            const SizedBox(height: AppSpacing.sm),
-            _filterField(
-              label: 'Cliché',
-              icon: Icons.auto_awesome_outlined,
-              value: selectedCliche,
-              emptyLabel: 'Todos los clichés',
-              options: cliches,
-              onChanged: (value) {
-                setState(() {
-                  _selectedCliche = value;
-                });
-              },
-            ),
-          ],
+          const SizedBox(height: AppSpacing.sm),
+          _filterField(
+            label: 'Cliché',
+            icon: Icons.auto_awesome_outlined,
+            value: selectedCliche,
+            emptyLabel: 'Todos los clichés',
+            options: cliches,
+            onChanged: (value) {
+              setState(() {
+                _selectedCliche = value;
+              });
+            },
+          ),
         ],
       ),
     );
