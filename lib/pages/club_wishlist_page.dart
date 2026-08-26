@@ -57,7 +57,7 @@ class _ClubWishlistPageState extends State<ClubWishlistPage> {
   void _reload() => setState(() => _future = _service.getClubWishlist());
 
   Future<void> _addToMyList(ClubWishlistGroup group) async {
-    final added = await showModalBottomSheet<bool>(
+    await showModalBottomSheet<bool>(
       context: context,
       isScrollControlled: true,
       useSafeArea: true,
@@ -68,10 +68,13 @@ class _ClubWishlistPageState extends State<ClubWishlistPage> {
           author: group.author,
           coverUrl: group.coverUrl,
           releaseDate: group.releaseDate,
+          bookId: group.bookId,
         ),
       ),
     );
-    if (added == true && mounted) _reload();
+    // Recargar siempre al cerrar el sheet: si el usuario guardó, su nombre
+    // tiene que aparecer en el grupo sin necesidad de salir y volver a entrar.
+    if (mounted) _reload();
   }
 
   @override

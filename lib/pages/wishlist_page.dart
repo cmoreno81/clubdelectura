@@ -1580,6 +1580,7 @@ class WishlistPrefill {
     this.author,
     this.coverUrl,
     this.isbn,
+    this.bookId,
     this.releaseDate,
   });
 
@@ -1587,6 +1588,9 @@ class WishlistPrefill {
   final String? author;
   final String? coverUrl;
   final String? isbn;
+  /// bookId del catálogo, si se conoce. Permite que el backend identifique
+  /// el libro y evite duplicados aunque el título tenga ligeras variantes.
+  final String? bookId;
   final DateTime? releaseDate;
 }
 
@@ -1637,6 +1641,7 @@ class _WishlistAddSheetState extends State<WishlistAddSheet> {
       _authorCtrl.text = p.author ?? '';
       _coverUrl = p.coverUrl;
       _isbn = p.isbn;
+      _bookId = p.bookId;
       _releaseDate = p.releaseDate;
     }
   }
