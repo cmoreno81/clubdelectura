@@ -25,12 +25,14 @@ class KitLecturaPage extends StatefulWidget {
   final String bookId;
   final String libro;
   final String coverUrl;
+  final bool finalizado;
 
   const KitLecturaPage({
     super.key,
     required this.bookId,
     required this.libro,
     this.coverUrl = '',
+    this.finalizado = false,
   });
 
   @override
@@ -271,6 +273,7 @@ class _KitLecturaPageState extends State<KitLecturaPage> {
           subrayadores: _seleccion.subrayadores.map(_colorDesdeHex).toList(),
           atmosferaTitulo: _seleccion.atmosferaTitulo,
           atmosferaIcono: _seleccion.atmosferaIcono,
+          etiquetaStory: widget.finalizado ? 'YA LO HE LEÍDO' : 'ESTOY LEYENDO',
         ),
       ),
     );

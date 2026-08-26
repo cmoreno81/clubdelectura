@@ -853,6 +853,20 @@ const List<_HelpSection> _secciones = [
             'y el icono de notificaciones para ver las novedades del club.',
       ),
       _HelpItem(
+        pregunta: '¿Qué son "Novedades disponibles" y "Próximos lanzamientos"?',
+        respuesta:
+            '"Novedades disponibles" muestra libros recientes que ya puedes comprar, '
+            'y "Próximos lanzamientos" los que aún no han salido a la venta.\n\n'
+            'Ambas secciones se pueden filtrar por género y por cliché narrativo '
+            '(Enemies to Lovers, Slow Burn, Found Family…). Los clichés provienen '
+            'de la selección curada de Casa del Libro para literatura juvenil y '
+            'romántica, por lo que el filtro solo aparece con contenido en esas '
+            'categorías.\n\n'
+            'Desde cualquier libro puedes añadirlo a "Tu lista de deseos" '
+            'con el icono del carrito, o ver su ficha completa en la tienda '
+            'pulsando "Ver en tienda".',
+      ),
+      _HelpItem(
         pregunta: '¿Qué es la estantería del mes?',
         respuesta:
             'Una representación visual en forma de librería de madera con todos '

@@ -535,7 +535,7 @@ class _DetalleLibroPageState extends State<DetalleLibroPage> {
     }
   }
 
-  Future<void> _abrirKitLectura() async {
+  Future<void> _abrirKitLectura({bool finalizado = false}) async {
     await Navigator.push(
       context,
       AppPageRoute(
@@ -543,6 +543,7 @@ class _DetalleLibroPageState extends State<DetalleLibroPage> {
           bookId: libro.bookId,
           libro: libro.libro,
           coverUrl: libro.coverUrl,
+          finalizado: finalizado,
         ),
       ),
     );
@@ -686,7 +687,7 @@ class _DetalleLibroPageState extends State<DetalleLibroPage> {
                 ],
                 KitLecturaCard(
                   bookId: libro.bookId,
-                  onTap: _abrirKitLectura,
+                  onTap: () => _abrirKitLectura(finalizado: miEstado == 'FINALIZADO'),
                 ),
               ],
 
