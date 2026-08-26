@@ -506,6 +506,12 @@ class _GeneralDashboardPageState extends State<GeneralDashboardPage> {
             triggerMode: RefreshIndicatorTriggerMode.onEdge,
             child: CustomScrollView(
               controller: _scrollController,
+              // cacheExtent grande para que ninguna sección del dashboard salga
+              // del cache del viewport. Sin esto, secciones como _ReleasesPreview
+              // o _LogrosDashboardSection se desmontan al alejarse y, al remontar,
+              // muestran un frame de skeleton que genera una scrollOffsetCorrection
+              // que empuja la posición de vuelta — el usuario no puede subir.
+              cacheExtent: 4000,
               physics: const AlwaysScrollableScrollPhysics(),
               slivers: [
                 SliverAppBar(
@@ -665,7 +671,9 @@ class _GeneralDashboardPageState extends State<GeneralDashboardPage> {
                         mode: ReleaseCatalogMode.newReleases,
                       ),
                       const SizedBox(height: AppSpacing.xl),
-                      _ReleasesPreview(future: _upcomingFuture),
+                      _ReleasesPreview(
+                        future: _upcomingFuture,
+                      ),
                       const SizedBox(height: AppSpacing.xl),
                       _WishlistPreviewSection(userName: data.userName),
 
@@ -2369,8 +2377,17 @@ class _WishlistPreviewSection extends StatefulWidget {
       _WishlistPreviewSectionState();
 }
 
-class _WishlistPreviewSectionState extends State<_WishlistPreviewSection> {
+class _WishlistPreviewSectionState extends State<_WishlistPreviewSection>
+    with AutomaticKeepAliveClientMixin {
   late Future<WishlistData> _future;
+
+  // Evita que SliverList desmonte este widget cuando sale del viewport.
+  // Sin keepAlive, al remontar se relanza la future desde skeleton (80 px),
+  // la corrección de scrollOffset lleva la posición hacia arriba y, en cuanto
+  // la future resuelve y la sección crece de nuevo, el scroll vuelve al punto
+  // original — el usuario no puede subir a pesar de que pos > 0.
+  @override
+  bool get wantKeepAlive => true;
 
   @override
   void initState() {
@@ -2387,6 +2404,7 @@ class _WishlistPreviewSectionState extends State<_WishlistPreviewSection> {
 
   @override
   Widget build(BuildContext context) {
+    super.build(context); // requerido por AutomaticKeepAliveClientMixin
     return FutureBuilder<WishlistData>(
       future: _future,
       builder: (context, snap) {
@@ -2655,19 +2673,15 @@ class _ReleasesPreview extends StatelessWidget {
 // Envuelve un ListView horizontal para evitar que su HorizontalDragGestureRecognizer
 // robe gestos verticales del CustomScrollView padre.
 //
-// Mecanismo (v3 — Listener): el ListView siempre usa NeverScrollableScrollPhysics,
-// por lo que nunca registra reconocedores de gestos. El proxy usa un Listener
-// (eventos de puntero crudos, FUERA del arena de gestos) para detectar la
-// dirección del swipe y mover el ScrollController directamente cuando es
-// horizontal. Para gestos verticales, el Listener no hace nada: el único
-// reconocedor en el arena es el VerticalDragGestureRecognizer del
-// CustomScrollView padre, que gana sin competencia.
-//
-// Diferencia clave frente a v2 (GestureDetector):
-//   v2 — HorizontalDragGestureRecognizer compite en el arena y puede ganar
-//         sobre gestos casi-verticales en ciertos dispositivos.
-//   v3 — Listener nunca entra en el arena; los gestos verticales fluyen
-//         sin obstáculo al CustomScrollView padre.
+// Mecanismo (v6 — Listener solo horizontal):
+//   – El ListView siempre usa NeverScrollableScrollPhysics → no registra
+//     reconocedores en el arena de gestos; elimina la competencia horizontal.
+//   – Un Listener de puntero crudo detecta la dirección del swipe.
+//   – Gesto horizontal → mueve el carrusel directamente vía _controller.
+//   – Gesto vertical   → el Listener NO interviene; el arena lo resuelve con
+//     el VerticalDragGestureRecognizer del CustomScrollView sin interferencia.
+//     Esto evita el doble-scroll que causaba v5 (Listener + arena scrollando
+//     simultáneamente a velocidad doble y luego reventando).
 // ─────────────────────────────────────────────────────────────────────────────
 class _HScrollGestureProxy extends StatefulWidget {
   const _HScrollGestureProxy({
@@ -2688,7 +2702,7 @@ class _HScrollGestureProxy extends StatefulWidget {
 class _HScrollGestureProxyState extends State<_HScrollGestureProxy> {
   // Umbral de movimiento (px) antes de decidir el eje del gesto.
   static const _kDirectionSlop = 8.0;
-  // Deceleración (px/s²) para el fling al soltar.
+  // Deceleración (px/s²) para el fling del carrusel.
   static const _kDeceleration = 3500.0;
 
   final _controller = ScrollController();
@@ -2700,7 +2714,7 @@ class _HScrollGestureProxyState extends State<_HScrollGestureProxy> {
   double? _scrollAtStart;
   bool? _isHorizontal; // null = aún sin decidir
 
-  // Para estimar la velocidad en el momento de soltar.
+  // Velocidad horizontal (para fling del carrusel).
   double _prevLocalX = 0;
   int _prevTimestampUs = 0;
   double _velocityPxPerSec = 0;
@@ -2712,7 +2726,6 @@ class _HScrollGestureProxyState extends State<_HScrollGestureProxy> {
   }
 
   void _onPointerDown(PointerDownEvent e) {
-    // Solo seguimos el primer dedo; ignoramos multi-touch.
     if (_activePointer != null) return;
     _activePointer = e.pointer;
     _startX = e.localPosition.dx;
@@ -2723,7 +2736,7 @@ class _HScrollGestureProxyState extends State<_HScrollGestureProxy> {
     _prevTimestampUs = e.timeStamp.inMicroseconds;
     _velocityPxPerSec = 0;
 
-    // Detener cualquier animación de fling en curso.
+    // Detener cualquier animación de fling en curso en el carrusel.
     if (_controller.hasClients) {
       try {
         _controller.position.hold(() {});
@@ -2741,27 +2754,27 @@ class _HScrollGestureProxyState extends State<_HScrollGestureProxy> {
     final dy = e.localPosition.dy - sy;
 
     // Determinar el eje una sola vez, tras superar el umbral.
+    // Sesgo 1.7×: el dedo debe moverse un 70 % más en X que en Y para
+    // activar el carrusel; de lo contrario, se deja pasar al arena vertical.
     if (_isHorizontal == null) {
       if (dx.abs() < _kDirectionSlop && dy.abs() < _kDirectionSlop) return;
-      _isHorizontal = dx.abs() >= dy.abs();
+      _isHorizontal = dx.abs() > dy.abs() * 1.7;
     }
 
     // Gesto vertical → no intervenimos; el CustomScrollView lo maneja.
     if (_isHorizontal != true) return;
 
-    // Actualizar velocidad instantánea (px/s) con suavizado exponencial.
+    // Actualizar velocidad instantánea para el fling posterior.
     final nowUs = e.timeStamp.inMicroseconds;
     final dtUs = nowUs - _prevTimestampUs;
-    if (dtUs > 0 && dtUs < 100000) {
+    if (dtUs > 0 && dtUs < 100_000) {
       final instantV = (e.localPosition.dx - _prevLocalX) / (dtUs / 1e6);
-      // EMA α = 0.6 para suavizar ruido del sensor.
       _velocityPxPerSec = 0.6 * instantV + 0.4 * _velocityPxPerSec;
     }
     _prevLocalX = e.localPosition.dx;
     _prevTimestampUs = nowUs;
 
     if (!_controller.hasClients) return;
-
     final newPixels = (_scrollAtStart! - dx).clamp(
       _controller.position.minScrollExtent,
       _controller.position.maxScrollExtent,
@@ -2771,7 +2784,7 @@ class _HScrollGestureProxyState extends State<_HScrollGestureProxy> {
 
   void _onPointerUp(PointerUpEvent e) {
     if (e.pointer != _activePointer) return;
-    _applyFling();
+    if (_isHorizontal == true) _applyFling();
     _reset();
   }
 
@@ -2781,9 +2794,9 @@ class _HScrollGestureProxyState extends State<_HScrollGestureProxy> {
   }
 
   void _applyFling() {
-    if (_isHorizontal != true || !_controller.hasClients) return;
+    if (!_controller.hasClients) return;
     final v = _velocityPxPerSec;
-    if (v.abs() < 80) return; // velocidad demasiado baja → sin fling
+    if (v.abs() < 80) return;
     final a = _kDeceleration;
     final distance = v.sign * v * v / (2 * a);
     final target = (_controller.position.pixels - distance).clamp(
@@ -2809,8 +2822,8 @@ class _HScrollGestureProxyState extends State<_HScrollGestureProxy> {
   Widget build(BuildContext context) {
     return Listener(
       // translucent: el Listener recibe los eventos Y el hit-testing continúa
-      // hacia los ancestros (CustomScrollView), lo que permite que su
-      // VerticalDragGestureRecognizer entre en el arena sin obstáculos.
+      // hacia los ancestros, lo que permite que el VerticalDragGestureRecognizer
+      // del CustomScrollView entre en el arena sin interferencia.
       behavior: HitTestBehavior.translucent,
       onPointerDown: _onPointerDown,
       onPointerMove: _onPointerMove,

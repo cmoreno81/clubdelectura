@@ -576,12 +576,12 @@ class _StoryComposition extends StatelessWidget {
               ),
             ),
 
-            // ── Estrellas flotantes bajo la portada ────────────────────
+            // ── Estrellas flotantes: centradas en el ancho, justo sobre la tarjeta
             if (valoracion != null && valoracion! > 0)
               Positioned(
-                left: coverX,
-                width: coverW,
-                top: coverY + coverH + 10,
+                left: 0,
+                right: 0,
+                bottom: 128, // encima de la tarjeta frosted (~95px) + margen
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: List.generate(5, (i) {
