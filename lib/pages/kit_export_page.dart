@@ -20,6 +20,9 @@ class KitExportPage extends StatefulWidget {
   final List<Color> subrayadores;
   final String atmosferaTitulo;
   final String atmosferaIcono;
+  /// Etiqueta superior en la story (por defecto «ESTOY LEYENDO»).
+  /// Pasa «YA LO HE LEÍDO» cuando la story se genera al finalizar.
+  final String etiquetaStory;
 
   const KitExportPage({
     super.key,
@@ -30,6 +33,7 @@ class KitExportPage extends StatefulWidget {
     this.subrayadores = const [],
     required this.atmosferaTitulo,
     required this.atmosferaIcono,
+    this.etiquetaStory = 'ESTOY LEYENDO',
   });
 
   @override
@@ -125,6 +129,7 @@ class _KitExportPageState extends State<KitExportPage> {
                         : widget.subrayadores,
                     atmosferaTitulo: widget.atmosferaTitulo,
                     atmosferaIcono: widget.atmosferaIcono,
+                    etiquetaStory: widget.etiquetaStory,
                   ),
                 ),
               ),
@@ -169,6 +174,7 @@ class _KitPoster extends StatelessWidget {
   final List<Color> subrayadores;
   final String atmosferaTitulo;
   final String atmosferaIcono;
+  final String etiquetaStory;
 
   const _KitPoster({
     required this.story,
@@ -178,6 +184,7 @@ class _KitPoster extends StatelessWidget {
     required this.subrayadores,
     required this.atmosferaTitulo,
     required this.atmosferaIcono,
+    this.etiquetaStory = 'ESTOY LEYENDO',
   });
 
   @override
@@ -233,6 +240,7 @@ class _KitPoster extends StatelessWidget {
                   foreground: foreground,
                   atmosferaTitulo: atmosferaTitulo,
                   atmosferaIcono: atmosferaIcono,
+                  etiquetaStory: etiquetaStory,
                 )
               : _WallpaperComposition(
                   libro: libro,
@@ -328,6 +336,7 @@ class _StoryComposition extends StatelessWidget {
   final Color foreground;
   final String atmosferaTitulo;
   final String atmosferaIcono;
+  final String etiquetaStory;
 
   const _StoryComposition({
     required this.libro,
@@ -337,6 +346,7 @@ class _StoryComposition extends StatelessWidget {
     required this.foreground,
     required this.atmosferaTitulo,
     required this.atmosferaIcono,
+    this.etiquetaStory = 'ESTOY LEYENDO',
   });
 
   // Leyenda de colores (tabbing style BookTok)
@@ -519,7 +529,7 @@ class _StoryComposition extends StatelessWidget {
                           ),
                         ),
                         Text(
-                          'ESTOY LEYENDO',
+                          etiquetaStory,
                           style: TextStyle(
                             color: foreground.withValues(alpha: 0.52),
                             fontSize: 9,

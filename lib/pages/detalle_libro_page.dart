@@ -221,7 +221,7 @@ class _DetalleLibroPageState extends State<DetalleLibroPage> {
           final kit = await _kitService.obtener(bookId);
           if (!mounted) return;
           if (kit.tienePaleta) {
-            await _mostrarPromptStory(libro, kit);
+            await _mostrarPromptStory(libro, kit, finalizado: true);
           }
         }
       } else if (nuevoEstado == 'LEYENDO') {
@@ -320,8 +320,9 @@ class _DetalleLibroPageState extends State<DetalleLibroPage> {
   // ── Feature 4: prompt story al terminar ────────────────────────────────
   Future<void> _mostrarPromptStory(
     Libro libro,
-    KitLecturaSeleccion kit,
-  ) async {
+    KitLecturaSeleccion kit, {
+    bool finalizado = false,
+  }) async {
     await showModalBottomSheet<void>(
       context: context,
       shape: const RoundedRectangleBorder(
@@ -363,7 +364,7 @@ class _DetalleLibroPageState extends State<DetalleLibroPage> {
             FilledButton.icon(
               onPressed: () {
                 Navigator.pop(ctx);
-                _abrirExportacion(KitExportTipo.story, kit);
+                _abrirExportacion(KitExportTipo.story, kit, finalizado: finalizado);
               },
               icon: const Icon(Icons.ios_share_rounded),
               label: const Text('Compartir mi story'),
@@ -385,8 +386,9 @@ class _DetalleLibroPageState extends State<DetalleLibroPage> {
   // ── Abre la exportación de story/wallpaper desde fuera del kit ─────────
   Future<void> _abrirExportacion(
     KitExportTipo tipo,
-    KitLecturaSeleccion kit,
-  ) async {
+    KitLecturaSeleccion kit, {
+    bool finalizado = false,
+  }) async {
     await Navigator.push<void>(
       context,
       AppPageRoute(
@@ -398,6 +400,7 @@ class _DetalleLibroPageState extends State<DetalleLibroPage> {
           subrayadores: kit.subrayadores.map(_colorDesdeHex).toList(),
           atmosferaTitulo: kit.atmosferaTitulo,
           atmosferaIcono: kit.atmosferaIcono,
+          etiquetaStory: finalizado ? 'YA LO HE LEÍDO' : 'ESTOY LEYENDO',
         ),
       ),
     );
