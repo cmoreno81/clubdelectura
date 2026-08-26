@@ -26,8 +26,8 @@ class KitLecturaPage extends StatefulWidget {
   final String libro;
   final String coverUrl;
   final bool finalizado;
-  /// Valoración en estrellas (1-5) para mostrar en la story. Null si no valorado.
-  final int? valoracion;
+  /// Valoración en estrellas (1-5, admite medias) para mostrar en la story.
+  final double? valoracion;
 
   const KitLecturaPage({
     super.key,

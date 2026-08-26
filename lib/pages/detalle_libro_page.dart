@@ -383,12 +383,21 @@ class _DetalleLibroPageState extends State<DetalleLibroPage> {
     );
   }
 
-  // ── Convierte una cadena de valoración ("⭐⭐⭐⭐") a int (1-5) ───────────
-  static int? _parseStarsCount(String? valoracion) {
+  // ── Convierte una cadena de valoración a double (1.0–5.0, admite medias) ─
+  // Formatos soportados: "⭐⭐⭐⭐½", "4.5", "4,5"
+  static double? _parseStarsCount(String? valoracion) {
     if (valoracion == null || valoracion.isEmpty) return null;
-    final normalized = valoracion.replaceAll('⭐️', '⭐');
-    final count = '⭐'.allMatches(normalized).length;
-    return count > 0 ? count.clamp(1, 5) : null;
+    final texto = valoracion.trim().replaceAll('⭐️', '⭐').replaceAll(',', '.');
+    if (texto == '😞') return null;
+    final num = double.tryParse(texto);
+    if (num != null) {
+      final v = ((num.clamp(0, 5)) * 2).round() / 2;
+      return v > 0 ? v : null;
+    }
+    final stars = '⭐'.allMatches(texto).length;
+    final half = texto.contains('½');
+    final v = (((stars + (half ? 0.5 : 0)).clamp(0, 5)) * 2).round() / 2;
+    return v > 0 ? v : null;
   }
 
   // ── Abre la exportación de story/wallpaper desde fuera del kit ─────────
@@ -545,7 +554,7 @@ class _DetalleLibroPageState extends State<DetalleLibroPage> {
     }
   }
 
-  Future<void> _abrirKitLectura({bool finalizado = false, int? valoracion}) async {
+  Future<void> _abrirKitLectura({bool finalizado = false, double? valoracion}) async {
     await Navigator.push(
       context,
       AppPageRoute(

@@ -23,8 +23,8 @@ class KitExportPage extends StatefulWidget {
   /// Etiqueta superior en la story (por defecto «ESTOY LEYENDO»).
   /// Pasa «YA LO HE LEÍDO» cuando la story se genera al finalizar.
   final String etiquetaStory;
-  /// Valoración en estrellas (1–5). Si es null no se muestran estrellas.
-  final int? valoracion;
+  /// Valoración en estrellas (1–5, admite medias). Si es null no se muestran.
+  final double? valoracion;
 
   const KitExportPage({
     super.key,
@@ -179,7 +179,7 @@ class _KitPoster extends StatelessWidget {
   final String atmosferaTitulo;
   final String atmosferaIcono;
   final String etiquetaStory;
-  final int? valoracion;
+  final double? valoracion;
 
   const _KitPoster({
     required this.story,
@@ -344,7 +344,7 @@ class _StoryComposition extends StatelessWidget {
   final String atmosferaTitulo;
   final String atmosferaIcono;
   final String etiquetaStory;
-  final int? valoracion;
+  final double? valoracion;
 
   const _StoryComposition({
     required this.libro,
@@ -571,28 +571,36 @@ class _StoryComposition extends StatelessWidget {
                         ),
                       ),
                     ],
-                    if (valoracion != null && valoracion! > 0) ...[
-                      const SizedBox(height: 7),
-                      Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: List.generate(5, (i) {
-                          final filled = i < valoracion!;
-                          return Icon(
-                            filled
-                                ? Icons.star_rounded
-                                : Icons.star_outline_rounded,
-                            size: 14,
-                            color: filled
-                                ? accentColor
-                                : foreground.withValues(alpha: 0.18),
-                          );
-                        }),
-                      ),
-                    ],
                   ],
                 ),
               ),
             ),
+
+            // ── Estrellas flotantes bajo la portada ────────────────────
+            if (valoracion != null && valoracion! > 0)
+              Positioned(
+                left: coverX,
+                width: coverW,
+                top: coverY + coverH + 10,
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: List.generate(5, (i) {
+                    final filled = valoracion! >= i + 1;
+                    final half = !filled && valoracion! >= i + 0.5;
+                    return Icon(
+                      filled
+                          ? Icons.star_rounded
+                          : half
+                              ? Icons.star_half_rounded
+                              : Icons.star_outline_rounded,
+                      size: 22,
+                      color: (filled || half)
+                          ? accentColor
+                          : foreground.withValues(alpha: 0.20),
+                    );
+                  }),
+                ),
+              ),
 
             // ── Branding top-left + dots top-right ─────────────────────
             Positioned(
