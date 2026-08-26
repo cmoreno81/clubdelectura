@@ -2655,17 +2655,19 @@ class _ReleasesPreview extends StatelessWidget {
 // Envuelve un ListView horizontal para evitar que su HorizontalDragGestureRecognizer
 // robe gestos verticales del CustomScrollView padre.
 //
-// Mecanismo (v2): el ListView siempre usa NeverScrollableScrollPhysics, por lo
-// que nunca registra su propio HorizontalDragGestureRecognizer. En su lugar,
-// el proxy registra un GestureDetector.onHorizontalDrag* que maneja el scroll
-// manualmente mediante un ScrollController.
+// Mecanismo (v3 — Listener): el ListView siempre usa NeverScrollableScrollPhysics,
+// por lo que nunca registra reconocedores de gestos. El proxy usa un Listener
+// (eventos de puntero crudos, FUERA del arena de gestos) para detectar la
+// dirección del swipe y mover el ScrollController directamente cuando es
+// horizontal. Para gestos verticales, el Listener no hace nada: el único
+// reconocedor en el arena es el VerticalDragGestureRecognizer del
+// CustomScrollView padre, que gana sin competencia.
 //
-// De esta forma los dos únicos reconocedores en el arena son:
-//   · HorizontalDragGestureRecognizer  (del GestureDetector del proxy)
-//   · VerticalDragGestureRecognizer    (del CustomScrollView padre)
-// Flutter los discrimina correctamente por eje — el scroll vertical nunca
-// se pierde en un gesto claramente vertical, y el carrusel sí responde al
-// gesto claramente horizontal. No hay ningún setState asíncrono involucrado.
+// Diferencia clave frente a v2 (GestureDetector):
+//   v2 — HorizontalDragGestureRecognizer compite en el arena y puede ganar
+//         sobre gestos casi-verticales en ciertos dispositivos.
+//   v3 — Listener nunca entra en el arena; los gestos verticales fluyen
+//         sin obstáculo al CustomScrollView padre.
 // ─────────────────────────────────────────────────────────────────────────────
 class _HScrollGestureProxy extends StatefulWidget {
   const _HScrollGestureProxy({
@@ -2684,12 +2686,24 @@ class _HScrollGestureProxy extends StatefulWidget {
 }
 
 class _HScrollGestureProxyState extends State<_HScrollGestureProxy> {
-  // Deceleración (px/s²) para simular el fling al soltar.
-  static const _kDeceleration = 3000.0;
+  // Umbral de movimiento (px) antes de decidir el eje del gesto.
+  static const _kDirectionSlop = 8.0;
+  // Deceleración (px/s²) para el fling al soltar.
+  static const _kDeceleration = 3500.0;
 
   final _controller = ScrollController();
-  double? _dragStartLocal;
-  double? _scrollAtDragStart;
+
+  // Estado del puntero activo.
+  int? _activePointer;
+  double? _startX;
+  double? _startY;
+  double? _scrollAtStart;
+  bool? _isHorizontal; // null = aún sin decidir
+
+  // Para estimar la velocidad en el momento de soltar.
+  double _prevLocalX = 0;
+  int _prevTimestampUs = 0;
+  double _velocityPxPerSec = 0;
 
   @override
   void dispose() {
@@ -2697,41 +2711,85 @@ class _HScrollGestureProxyState extends State<_HScrollGestureProxy> {
     super.dispose();
   }
 
-  void _onHorizontalDragStart(DragStartDetails d) {
-    _dragStartLocal = d.localPosition.dx;
-    _scrollAtDragStart =
-        _controller.hasClients ? _controller.position.pixels : 0.0;
+  void _onPointerDown(PointerDownEvent e) {
+    // Solo seguimos el primer dedo; ignoramos multi-touch.
+    if (_activePointer != null) return;
+    _activePointer = e.pointer;
+    _startX = e.localPosition.dx;
+    _startY = e.localPosition.dy;
+    _scrollAtStart = _controller.hasClients ? _controller.position.pixels : 0.0;
+    _isHorizontal = null;
+    _prevLocalX = e.localPosition.dx;
+    _prevTimestampUs = e.timeStamp.inMicroseconds;
+    _velocityPxPerSec = 0;
+
     // Detener cualquier animación de fling en curso.
     if (_controller.hasClients) {
-      _controller.position.hold(() {});
+      try {
+        _controller.position.hold(() {});
+      } catch (_) {}
     }
   }
 
-  void _onHorizontalDragUpdate(DragUpdateDetails d) {
+  void _onPointerMove(PointerMoveEvent e) {
+    if (e.pointer != _activePointer) return;
+    final sx = _startX;
+    final sy = _startY;
+    if (sx == null || sy == null) return;
+
+    final dx = e.localPosition.dx - sx;
+    final dy = e.localPosition.dy - sy;
+
+    // Determinar el eje una sola vez, tras superar el umbral.
+    if (_isHorizontal == null) {
+      if (dx.abs() < _kDirectionSlop && dy.abs() < _kDirectionSlop) return;
+      _isHorizontal = dx.abs() >= dy.abs();
+    }
+
+    // Gesto vertical → no intervenimos; el CustomScrollView lo maneja.
+    if (_isHorizontal != true) return;
+
+    // Actualizar velocidad instantánea (px/s) con suavizado exponencial.
+    final nowUs = e.timeStamp.inMicroseconds;
+    final dtUs = nowUs - _prevTimestampUs;
+    if (dtUs > 0 && dtUs < 100000) {
+      final instantV = (e.localPosition.dx - _prevLocalX) / (dtUs / 1e6);
+      // EMA α = 0.6 para suavizar ruido del sensor.
+      _velocityPxPerSec = 0.6 * instantV + 0.4 * _velocityPxPerSec;
+    }
+    _prevLocalX = e.localPosition.dx;
+    _prevTimestampUs = nowUs;
+
     if (!_controller.hasClients) return;
-    final start = _dragStartLocal ?? d.localPosition.dx;
-    final baseScroll = _scrollAtDragStart ?? _controller.position.pixels;
-    final newPixels =
-        (baseScroll - (d.localPosition.dx - start))
-            .clamp(
-              _controller.position.minScrollExtent,
-              _controller.position.maxScrollExtent,
-            );
+
+    final newPixels = (_scrollAtStart! - dx).clamp(
+      _controller.position.minScrollExtent,
+      _controller.position.maxScrollExtent,
+    );
     _controller.jumpTo(newPixels);
   }
 
-  void _onHorizontalDragEnd(DragEndDetails d) {
-    final v = d.primaryVelocity;
-    if (v == null || !_controller.hasClients || v.abs() < 50) return;
-    // Cinemática: s = v²/(2a), t = v/a
+  void _onPointerUp(PointerUpEvent e) {
+    if (e.pointer != _activePointer) return;
+    _applyFling();
+    _reset();
+  }
+
+  void _onPointerCancel(PointerCancelEvent e) {
+    if (e.pointer != _activePointer) return;
+    _reset();
+  }
+
+  void _applyFling() {
+    if (_isHorizontal != true || !_controller.hasClients) return;
+    final v = _velocityPxPerSec;
+    if (v.abs() < 80) return; // velocidad demasiado baja → sin fling
     final a = _kDeceleration;
-    final distance = v.sign * v * v / (2 * a); // positivo = hacia delante
-    final target =
-        (_controller.position.pixels - distance)
-            .clamp(
-              _controller.position.minScrollExtent,
-              _controller.position.maxScrollExtent,
-            );
+    final distance = v.sign * v * v / (2 * a);
+    final target = (_controller.position.pixels - distance).clamp(
+      _controller.position.minScrollExtent,
+      _controller.position.maxScrollExtent,
+    );
     final durationMs = ((v.abs() / a) * 1000).clamp(80, 500).toInt();
     _controller.animateTo(
       target,
@@ -2740,15 +2798,24 @@ class _HScrollGestureProxyState extends State<_HScrollGestureProxy> {
     );
   }
 
+  void _reset() {
+    _activePointer = null;
+    _startX = null;
+    _startY = null;
+    _isHorizontal = null;
+  }
+
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      // El GestureDetector registra sólo HorizontalDrag; el padre
-      // (CustomScrollView) registra VerticalDrag. Flutter discrimina por eje.
+    return Listener(
+      // translucent: el Listener recibe los eventos Y el hit-testing continúa
+      // hacia los ancestros (CustomScrollView), lo que permite que su
+      // VerticalDragGestureRecognizer entre en el arena sin obstáculos.
       behavior: HitTestBehavior.translucent,
-      onHorizontalDragStart: _onHorizontalDragStart,
-      onHorizontalDragUpdate: _onHorizontalDragUpdate,
-      onHorizontalDragEnd: _onHorizontalDragEnd,
+      onPointerDown: _onPointerDown,
+      onPointerMove: _onPointerMove,
+      onPointerUp: _onPointerUp,
+      onPointerCancel: _onPointerCancel,
       child: SizedBox(
         height: widget.height,
         child: widget.child(const NeverScrollableScrollPhysics(), _controller),
