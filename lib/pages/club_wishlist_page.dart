@@ -270,7 +270,7 @@ class _BookTile extends StatelessWidget {
             _Cover(
               coverUrl: group.coverUrl,
               title: group.title,
-              hasFree: group.hasFreeMember,
+              hasFree: group.allFree,
             ),
             const SizedBox(width: AppSpacing.sm),
 
@@ -351,11 +351,10 @@ class _BookTile extends StatelessWidget {
 
   List<Widget> _memberChips(List<ClubWishlistMember> members) {
     return members.map((m) {
-      final isFree = m.price == 0;
       return _Chip(
         label: m.name.split(' ').first,
-        color: isFree ? const Color(0xFF1B6B35) : AppColors.textSecondary,
-        bg: isFree ? const Color(0xFFD6F0E0) : AppColors.surfaceSoft,
+        color: m.isFree ? const Color(0xFF1B6B35) : AppColors.textSecondary,
+        bg: m.isFree ? const Color(0xFFD6F0E0) : AppColors.surfaceSoft,
       );
     }).toList();
   }
@@ -455,27 +454,19 @@ class _Cover extends StatelessWidget {
         children: [
           image,
           Positioned(
-            bottom: 0,
-            left: 0,
-            right: 0,
+            bottom: 4,
+            right: 4,
             child: Container(
-              padding: const EdgeInsets.symmetric(vertical: 3),
+              width: 22,
+              height: 22,
               decoration: BoxDecoration(
-                color: const Color(0xFF1B6B35).withValues(alpha: .92),
-                borderRadius: const BorderRadius.only(
-                  bottomLeft: Radius.circular(6),
-                  bottomRight: Radius.circular(6),
-                ),
+                color: const Color(0xFF1B6B35).withValues(alpha: .90),
+                shape: BoxShape.circle,
               ),
+              alignment: Alignment.center,
               child: const Text(
-                '🎁 Gratis',
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 8.5,
-                  fontWeight: FontWeight.w800,
-                  letterSpacing: 0.2,
-                ),
+                '🎁',
+                style: TextStyle(fontSize: 11),
               ),
             ),
           ),

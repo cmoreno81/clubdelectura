@@ -311,6 +311,9 @@ class ClubWishlistMember {
   final String? note;
   final WishlistFormat format;
 
+  /// Sin precio o precio 0 → se interpreta como gratis.
+  bool get isFree => price == null || price == 0;
+
   factory ClubWishlistMember.fromJson(Map<String, dynamic> json) {
     return ClubWishlistMember(
       userId: json['userId'] as String,
@@ -353,11 +356,12 @@ class ClubWishlistGroup {
   final bool isInMyWishlist;
   final List<ClubWishlistMember> members;
 
-  /// Miembros que han marcado el libro como gratis (price == 0).
+  /// Miembros que tienen el libro gratis (price null o 0).
   List<ClubWishlistMember> get freeMembers =>
-      members.where((m) => m.price == 0).toList(growable: false);
+      members.where((m) => m.isFree).toList(growable: false);
 
-  bool get hasFreeMember => members.any((m) => m.price == 0);
+  /// Solo true si TODAS las miembros lo tienen gratis → muestra el badge 🎁.
+  bool get allFree => members.isNotEmpty && members.every((m) => m.isFree);
 
   factory ClubWishlistGroup.fromJson(Map<String, dynamic> json) {
     return ClubWishlistGroup(
