@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "13987033922",
+    "project_id": "clublectura-466c6",
+    "storage_bucket": "clublectura-466c6.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:13987033922:android:9085323ebb407ac4fbcedb",
+        "android_client_info": {
+          "package_name": "es.clublectura.club"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDhqZW0q2GtN1RKysMyQ67OpXPA7Q_5aXg"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
