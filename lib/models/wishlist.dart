@@ -56,7 +56,8 @@ class WishlistItem {
   final DateTime createdAt;
   final DateTime updatedAt;
 
-  bool get isFree => price == 0;
+  /// Sin precio o precio 0 → se interpreta como gratis (igual que ClubWishlistMember).
+  bool get isFree => price == null || price == 0;
 
   factory WishlistItem.fromJson(Map<String, dynamic> json) {
     return WishlistItem(

@@ -39,12 +39,14 @@ class UpcomingRelease {
     author: json['author']?.toString() ?? json['autor']?.toString(),
     isbn: json['isbn']?.toString(),
     coverUrl: json['coverUrl']?.toString(),
-    publicationDate: DateTime.parse(
-      (json['publicationDate'] ??
-              json['fechaPublicacion'] ??
-              json['fechaLanzamiento'])
-          .toString(),
-    ),
+    publicationDate: DateTime.tryParse(
+          ((json['publicationDate'] ??
+                  json['fechaPublicacion'] ??
+                  json['fechaLanzamiento'])
+              ?.toString()) ??
+              '',
+        ) ??
+        DateTime(2099, 12, 31),
     genre: json['genre']?.toString() ?? json['genero']?.toString() ?? '',
     publisher: json['publisher']?.toString() ?? json['editorial']?.toString(),
     source: json['source']?.toString() ?? json['fuente']?.toString(),
