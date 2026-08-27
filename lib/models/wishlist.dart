@@ -1,3 +1,22 @@
+// ── Utilidades ────────────────────────────────────────────────────────────────
+
+/// Decodifica entidades HTML básicas que pueden llegar en títulos/autores
+/// desde la API (p.ej. "Mortal &amp; Inmortal" → "Mortal & Inmortal").
+String _decodeHtml(String s) => s
+    .replaceAll('&amp;', '&')
+    .replaceAll('&lt;', '<')
+    .replaceAll('&gt;', '>')
+    .replaceAll('&quot;', '"')
+    .replaceAll('&#39;', "'")
+    .replaceAll('&apos;', "'")
+    .replaceAll('&nbsp;', ' ');
+
+String? _decodeHtmlNullable(dynamic value) {
+  final text = value?.toString();
+  if (text == null || text.isEmpty) return null;
+  return _decodeHtml(text);
+}
+
 class WishlistItem {
   const WishlistItem({
     required this.id,
@@ -43,8 +62,8 @@ class WishlistItem {
     return WishlistItem(
       id: json['id'] as String,
       bookId: json['bookId'] as String?,
-      title: json['title'] as String,
-      author: json['author'] as String?,
+      title: _decodeHtml(json['title'] as String),
+      author: _decodeHtmlNullable(json['author']),
       coverUrl: json['coverUrl'] as String?,
       isbn: json['isbn'] as String?,
       format: WishlistFormat.fromString(
@@ -334,12 +353,18 @@ class ClubWishlistGroup {
   final bool isInMyWishlist;
   final List<ClubWishlistMember> members;
 
+  /// Miembros que han marcado el libro como gratis (price == 0).
+  List<ClubWishlistMember> get freeMembers =>
+      members.where((m) => m.price == 0).toList(growable: false);
+
+  bool get hasFreeMember => members.any((m) => m.price == 0);
+
   factory ClubWishlistGroup.fromJson(Map<String, dynamic> json) {
     return ClubWishlistGroup(
       key: json['key'] as String,
       bookId: json['bookId'] as String?,
-      title: json['title'] as String,
-      author: json['author'] as String?,
+      title: _decodeHtml(json['title'] as String),
+      author: _decodeHtmlNullable(json['author']),
       coverUrl: json['coverUrl'] as String?,
       releaseDate: json['releaseDate'] != null
           ? DateTime.tryParse(json['releaseDate'] as String)
@@ -370,13 +395,53 @@ class ClubWishlistData {
   final int membersWithWishlist;
 
   factory ClubWishlistData.fromJson(Map<String, dynamic> json) {
+    final rawItems = (json['items'] as List<dynamic>? ?? [])
+        .cast<Map<String, dynamic>>()
+        .map(ClubWishlistGroup.fromJson)
+        .toList(growable: true);
+
+    // ── Deduplicación cliente ──────────────────────────────────────────────────
+    // El backend puede generar grupos separados para el mismo libro cuando los
+    // títulos están guardados con distinta codificación HTML (p.ej. "Mortal &
+    // Inmortal" vs "Mortal &amp; Inmortal"). Tras decodificar, los fusionamos.
+    final seen = <String, ClubWishlistGroup>{};
+    for (final group in rawItems) {
+      // Clave de fusión: título en minúsculas + autor en minúsculas
+      final normalTitle = group.title.toLowerCase().trim();
+      final normalAuthor = (group.author ?? '').toLowerCase().trim();
+      final mergeKey = '$normalTitle|$normalAuthor';
+
+      if (seen.containsKey(mergeKey)) {
+        final existing = seen[mergeKey]!;
+        // Fusionar: unir miembros evitando duplicados por userId
+        final mergedMemberIds = existing.members.map((m) => m.userId).toSet();
+        final newMembers = [
+          ...existing.members,
+          ...group.members.where((m) => !mergedMemberIds.contains(m.userId)),
+        ];
+        seen[mergeKey] = ClubWishlistGroup(
+          key: existing.key,
+          bookId: existing.bookId ?? group.bookId,
+          title: existing.title,
+          author: existing.author ?? group.author,
+          coverUrl: existing.coverUrl ?? group.coverUrl,
+          releaseDate: existing.releaseDate ?? group.releaseDate,
+          isUpcoming: existing.isUpcoming || group.isUpcoming,
+          // Si cualquiera de los dos grupos está en mi lista → ya lo tengo
+          isInMyWishlist: existing.isInMyWishlist || group.isInMyWishlist,
+          members: newMembers,
+        );
+      } else {
+        seen[mergeKey] = group;
+      }
+    }
+
+    final mergedItems = seen.values.toList(growable: false);
+
     return ClubWishlistData(
       clubName: json['clubName'] as String,
-      items: (json['items'] as List<dynamic>? ?? [])
-          .cast<Map<String, dynamic>>()
-          .map(ClubWishlistGroup.fromJson)
-          .toList(growable: false),
-      totalItems: (json['totalItems'] as num?)?.toInt() ?? 0,
+      items: mergedItems,
+      totalItems: mergedItems.length,
       totalMembers: (json['totalMembers'] as num?)?.toInt() ?? 0,
       membersWithWishlist: (json['membersWithWishlist'] as num?)?.toInt() ?? 0,
     );
