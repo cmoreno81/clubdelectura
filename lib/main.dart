@@ -1,7 +1,11 @@
 import 'package:club_lectura_app/services/atmosfera_scope.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_crashlytics/firebase_crashlytics.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 import 'dev/ui_performance_diagnostics.dart';
+import 'firebase_options.dart';
 import 'pages/splash_page.dart';
 import 'pages/club_gate_page.dart';
 import 'pages/login_page.dart';
@@ -20,6 +24,16 @@ final routeObserver = RouteObserver<ModalRoute<void>>();
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   configureUiPerformanceDiagnostics();
+
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+
+  // Redirigir errores de Flutter y errores no capturados a Crashlytics.
+  // En debug se siguen mostrando en consola normalmente.
+  FlutterError.onError = FirebaseCrashlytics.instance.recordFlutterFatalError;
+  PlatformDispatcher.instance.onError = (error, stack) {
+    FirebaseCrashlytics.instance.recordError(error, stack, fatal: true);
+    return true;
+  };
 
   runApp(const MyApp());
 }
