@@ -315,11 +315,6 @@ class _BookTile extends StatelessWidget {
                       ..._memberChips(group.members),
                     ],
                   ),
-                  // Aviso de ebook gratis: quién lo tiene encontrado
-                  if (group.hasFreeMember) ...[
-                    const SizedBox(height: 6),
-                    _FreeEbookBanner(freeMembers: group.freeMembers),
-                  ],
 
                   ..._memberNotes(group.members),
 
@@ -490,46 +485,6 @@ class _Cover extends StatelessWidget {
   }
 }
 
-// ─── Banner ebook gratis ────────────────────────────────────────────────────────
-
-class _FreeEbookBanner extends StatelessWidget {
-  const _FreeEbookBanner({required this.freeMembers});
-  final List<ClubWishlistMember> freeMembers;
-
-  @override
-  Widget build(BuildContext context) {
-    final names = freeMembers.map((m) => m.name.split(' ').first).join(', ');
-    final label = freeMembers.length == 1
-        ? '$names lo tiene gratis 📖'
-        : '$names lo tienen gratis 📖';
-
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
-      decoration: BoxDecoration(
-        color: const Color(0xFFD6F0E0),
-        borderRadius: BorderRadius.circular(AppRadius.sm),
-        border: Border.all(color: const Color(0xFF1B6B35).withValues(alpha: .25)),
-      ),
-      child: Row(
-        children: [
-          const Text('🎁', style: TextStyle(fontSize: 13)),
-          const SizedBox(width: 5),
-          Expanded(
-            child: Text(
-              label,
-              style: const TextStyle(
-                fontSize: 11,
-                fontWeight: FontWeight.w600,
-                color: Color(0xFF1B6B35),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
 
 class _Chip extends StatelessWidget {
   const _Chip({required this.label, required this.color, required this.bg});
