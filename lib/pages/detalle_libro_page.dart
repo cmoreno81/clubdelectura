@@ -478,6 +478,7 @@ class _DetalleLibroPageState extends State<DetalleLibroPage> {
     final respuesta = await ApiService().quitarLibroPendientes(
       usuario: libro.usuario,
       libro: libro.libro,
+      bookId: libro.bookId,
     );
 
     if (!mounted) return;

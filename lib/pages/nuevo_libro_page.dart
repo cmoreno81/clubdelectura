@@ -312,9 +312,7 @@ class _NuevoLibroPageState extends State<NuevoLibroPage> {
     required String titulo,
     required int? paginas,
   }) async {
-    Map<String, dynamic>? candidatoElegido;
-
-    final accion = await showModalBottomSheet<_AccionDuplicado>(
+    final resultado = await showModalBottomSheet<_ResultadoDuplicado>(
       context: context,
       isScrollControlled: true,
       useSafeArea: true,
@@ -324,30 +322,34 @@ class _NuevoLibroPageState extends State<NuevoLibroPage> {
         prioridad: prioridad,
         formato: formato,
         usuario: usuario,
-        onLibroElegido: (c) => candidatoElegido = c,
       ),
     );
 
     if (!mounted) return _AccionDuplicado.cancelar;
 
-    // El usuario eligió un libro existente: ir a su ficha.
-    if (accion == _AccionDuplicado.eligioExistente && candidatoElegido != null) {
-      final libroAgrupado = LibroAgrupado(
-        libro: candidatoElegido!['title']?.toString() ?? '',
-        genero: candidatoElegido!['genero']?.toString() ?? '',
-        registros: const [],
-        finalizados: const [],
-        yaLoTengo: true,
-        leidoPorMi: true,
-        coverUrl: candidatoElegido!['coverUrl']?.toString() ?? '',
-        bookId: candidatoElegido!['id']?.toString(),
-      );
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(
-          builder: (_) => DetalleLibroPage(libro: libroAgrupado),
-        ),
-      );
+    final accion = resultado?.accion;
+
+    // El usuario eligió un libro existente: reemplazar NuevoLibroPage por su ficha.
+    if (accion == _AccionDuplicado.eligioExistente) {
+      final c = resultado!.candidato;
+      if (c != null) {
+        final libroAgrupado = LibroAgrupado(
+          libro: c['title']?.toString() ?? '',
+          genero: c['genero']?.toString() ?? '',
+          registros: const [],
+          finalizados: const [],
+          yaLoTengo: true,
+          leidoPorMi: true,
+          coverUrl: c['coverUrl']?.toString() ?? '',
+          bookId: c['id']?.toString(),
+        );
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder: (_) => DetalleLibroPage(libro: libroAgrupado),
+          ),
+        );
+      }
       return _AccionDuplicado.eligioExistente;
     }
 
@@ -1227,22 +1229,26 @@ class _GeneroOption {
 
 enum _AccionDuplicado { cancelar, crearNuevo, eligioExistente }
 
+/// Resultado del sheet de duplicados: acción + candidato elegido (si aplica).
+/// Usar un objeto único evita problemas de closure al pasar datos al pop.
+class _ResultadoDuplicado {
+  const _ResultadoDuplicado(this.accion, [this.candidato]);
+  final _AccionDuplicado accion;
+  final Map<String, dynamic>? candidato;
+}
+
 class _DuplicadosSheet extends StatefulWidget {
   const _DuplicadosSheet({
     required this.candidatos,
     required this.prioridad,
     required this.formato,
     required this.usuario,
-    this.onLibroElegido,
   });
 
   final List<Map<String, dynamic>> candidatos;
   final String prioridad;
   final String formato;
   final String usuario;
-  /// Se invoca con los datos del candidato elegido cuando el usuario
-  /// selecciona un libro existente y el servidor confirma la adición.
-  final void Function(Map<String, dynamic> candidato)? onLibroElegido;
 
   @override
   State<_DuplicadosSheet> createState() => _DuplicadosSheetState();
@@ -1267,18 +1273,22 @@ class _DuplicadosSheetState extends State<_DuplicadosSheet> {
       );
       if (!mounted) return;
       final ok = respuesta['ok'] == true;
-      if (ok) {
-        LibraryRefreshNotifier.instance.invalidate();
-        widget.onLibroElegido?.call(candidato);
-        // Primero cerrar el sheet, luego el snackbar (el sheet modal no tiene
-        // Scaffold propio, usar la referencia capturada antes es lo seguro)
-        navigator?.pop(_AccionDuplicado.eligioExistente);
-        messenger?.showSnackBar(
-          SnackBar(
-            content: Text('"$titulo" añadido a tu lista.'),
-            backgroundColor: AppColors.success,
-          ),
-        );
+      // Si el libro ya estaba en la biblioteca, también navegamos a su ficha
+      // (el usuario solo quiere verla, no añadirlo de nuevo).
+      final yaEnBiblioteca = respuesta['codigo'] == 'LIBRO_YA_EN_BIBLIOTECA';
+      if (ok || yaEnBiblioteca) {
+        if (ok) LibraryRefreshNotifier.instance.invalidate();
+        // Pasar el candidato completo dentro del resultado para que
+        // _mostrarDialogoDuplicados pueda construir la ficha sin closures.
+        navigator?.pop(_ResultadoDuplicado(_AccionDuplicado.eligioExistente, candidato));
+        if (ok) {
+          messenger?.showSnackBar(
+            SnackBar(
+              content: Text('"$titulo" añadido a tu lista.'),
+              backgroundColor: AppColors.success,
+            ),
+          );
+        }
       } else {
         setState(() => _guardando = false);
         messenger?.showSnackBar(
@@ -1475,8 +1485,10 @@ class _DuplicadosSheetState extends State<_DuplicadosSheet> {
                 child: OutlinedButton(
                   onPressed: _guardando
                       ? null
-                      : () =>
-                            Navigator.pop(context, _AccionDuplicado.crearNuevo),
+                      : () => Navigator.pop(
+                            context,
+                            _ResultadoDuplicado(_AccionDuplicado.crearNuevo),
+                          ),
                   child: const Text('No, crear libro nuevo de todas formas'),
                 ),
               ),
@@ -1486,7 +1498,10 @@ class _DuplicadosSheetState extends State<_DuplicadosSheet> {
                 child: TextButton(
                   onPressed: _guardando
                       ? null
-                      : () => Navigator.pop(context, _AccionDuplicado.cancelar),
+                      : () => Navigator.pop(
+                            context,
+                            _ResultadoDuplicado(_AccionDuplicado.cancelar),
+                          ),
                   child: const Text('Cancelar'),
                 ),
               ),

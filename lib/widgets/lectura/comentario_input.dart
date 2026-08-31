@@ -162,21 +162,28 @@ class ComentarioInput extends StatelessWidget {
                     height: 1.4,
                   ),
                   filled: true,
-                  fillColor: const Color(0xFFF7F1FF),
+                  // Con categoría: fondo teñido del color del subrayador.
+                  // Sin categoría: fondo morado claro por defecto.
+                  fillColor: _colorActivo != null && !_esCita
+                      ? _colorActivo!.withValues(alpha: .08)
+                      : const Color(0xFFF7F1FF),
                   alignLabelWithHint: true,
                   prefixIconConstraints: const BoxConstraints(
                     minWidth: 48,
                     minHeight: 48,
                   ),
-                  prefixIcon: const Align(
+                  prefixIcon: Align(
                     widthFactor: 1,
                     heightFactor: 1,
                     alignment: Alignment.topCenter,
                     child: Padding(
-                      padding: EdgeInsets.only(top: 14),
+                      padding: const EdgeInsets.only(top: 14),
                       child: Icon(
                         Icons.edit_note_rounded,
-                        color: Color(0xFF6F4DBF),
+                        // El icono adopta el color del subrayador si hay uno.
+                        color: _colorActivo != null
+                            ? _readableQuoteColor(_colorActivo!)
+                            : const Color(0xFF6F4DBF),
                         size: 26,
                       ),
                     ),
@@ -187,12 +194,19 @@ class ComentarioInput extends StatelessWidget {
                   ),
                   enabledBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(20),
-                    borderSide: const BorderSide(color: Color(0xFFE1D4F5)),
+                    borderSide: BorderSide(
+                      // Borde del color del subrayador si hay uno activo.
+                      color: _colorActivo != null
+                          ? _colorActivo!.withValues(alpha: .55)
+                          : const Color(0xFFE1D4F5),
+                    ),
                   ),
                   focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(20),
-                    borderSide: const BorderSide(
-                      color: Color(0xFF6F4DBF),
+                    borderSide: BorderSide(
+                      color: _colorActivo != null
+                          ? _readableQuoteColor(_colorActivo!)
+                          : const Color(0xFF6F4DBF),
                       width: 1.5,
                     ),
                   ),

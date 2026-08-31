@@ -449,6 +449,15 @@ class _ComentarioCardState extends State<ComentarioCard> {
                           color: AppColors.textMuted,
                         ),
                       ),
+
+                      // Tag de categoría (solo para tipos no-libre y no-cita,
+                      // que ya tienen su propio diseño de bloque).
+                      if (_categoriaTag(comentario.tipo) != null) ...[
+                        const SizedBox(height: 4),
+                        _CategoriaTag(
+                          tag: _categoriaTag(comentario.tipo)!,
+                        ),
+                      ],
                     ],
                   ),
                 ),
@@ -695,6 +704,18 @@ class _ComentarioCardState extends State<ComentarioCard> {
     );
   }
 
+  /// Devuelve la etiqueta de categoría para el tipo dado, o null si el
+  /// comentario no tiene categoría visible (libre o cita, que ya tiene diseño).
+  static ({String emoji, String nombre})? _categoriaTag(String tipo) {
+    return switch (tipo.toUpperCase()) {
+      'MOMENTO_FAV' => (emoji: '⭐', nombre: 'Momento fav.'),
+      'TEORIA' => (emoji: '💭', nombre: 'Teoría'),
+      'PERSONAJE' => (emoji: '🧩', nombre: 'Personaje'),
+      'IMPACTO' => (emoji: '⚡', nombre: 'Impacto'),
+      _ => null,
+    };
+  }
+
   Color _colorCita(String value) {
     final limpio = value.trim().replaceFirst('#', '');
     if (!RegExp(r'^[0-9a-fA-F]{6}$').hasMatch(limpio)) {
@@ -712,5 +733,34 @@ class _ComentarioCardState extends State<ComentarioCard> {
   void dispose() {
     respuestaController.dispose();
     super.dispose();
+  }
+}
+
+/// Pequeño badge que indica la categoría del comentario (Teoría, Personaje…).
+/// Usa el color morado estándar de la app, no el color del subrayador.
+class _CategoriaTag extends StatelessWidget {
+  const _CategoriaTag({required this.tag});
+
+  final ({String emoji, String nombre}) tag;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+      decoration: BoxDecoration(
+        color: AppColors.primaryLight,
+        borderRadius: BorderRadius.circular(AppRadius.pill),
+        border: Border.all(color: AppColors.primary.withValues(alpha: .30)),
+      ),
+      child: Text(
+        '${tag.emoji} ${tag.nombre}',
+        style: TextStyle(
+          fontSize: 11,
+          fontWeight: FontWeight.w700,
+          color: AppColors.primaryDark,
+          letterSpacing: .1,
+        ),
+      ),
+    );
   }
 }

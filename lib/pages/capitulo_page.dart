@@ -109,6 +109,24 @@ class _CapituloPageState extends State<CapituloPage> {
     return '#${value.toRadixString(16).padLeft(6, '0').toUpperCase()}';
   }
 
+  /// Mapea el índice de categoría (en [kSubrayadorCategorias]) al tipo de
+  /// comentario que envía el backend. Los tipos coinciden con los valores
+  /// que el servidor reconoce: QUOTE, MOMENTO_FAV, TEORIA, PERSONAJE, IMPACTO.
+  String _tipoComentario(int? categoriaIndex) {
+    if (categoriaIndex == null ||
+        categoriaIndex >= kSubrayadorCategorias.length) {
+      return 'COMMENT';
+    }
+    if (kSubrayadorCategorias[categoriaIndex].esCita) return 'QUOTE';
+    return switch (categoriaIndex) {
+      0 => 'MOMENTO_FAV',
+      1 => 'TEORIA',
+      3 => 'PERSONAJE',
+      4 => 'IMPACTO',
+      _ => 'COMMENT',
+    };
+  }
+
   void _onPaginationChanged() {
     if (mounted) setState(() {});
   }
@@ -298,11 +316,7 @@ class _CapituloPageState extends State<CapituloPage> {
           capitulo: widget.capitulo,
           usuario: usuario!,
           comentario: texto,
-          tipo: (_categoriaSeleccionada != null &&
-                  _categoriaSeleccionada! < kSubrayadorCategorias.length &&
-                  kSubrayadorCategorias[_categoriaSeleccionada!].esCita)
-              ? 'QUOTE'
-              : 'COMMENT',
+          tipo: _tipoComentario(_categoriaSeleccionada),
           color: (_categoriaSeleccionada != null &&
                   _categoriaSeleccionada! < coloresSubrayadores.length)
               ? _colorAHex(coloresSubrayadores[_categoriaSeleccionada!])

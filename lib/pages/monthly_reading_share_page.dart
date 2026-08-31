@@ -183,47 +183,51 @@ class _MonthlyReadingPoster extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Row(
-                children: [
-                  Icon(
-                    Icons.auto_stories_rounded,
-                    color: AppColors.primaryDark,
-                    size: 25,
-                  ),
-                  SizedBox(width: 8),
-                  Text(
-                    'CLUBREADS',
-                    style: TextStyle(
+              // Cabecera centrada para que no quede cortada al exportar
+              const Center(
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      Icons.auto_stories_rounded,
                       color: AppColors.primaryDark,
-                      fontSize: 13,
-                      fontWeight: FontWeight.w900,
-                      letterSpacing: 2.2,
+                      size: 22,
                     ),
-                  ),
-                ],
+                    SizedBox(width: 7),
+                    Text(
+                      'CLUBREADS',
+                      style: TextStyle(
+                        color: AppColors.primaryDark,
+                        fontSize: 13,
+                        fontWeight: FontWeight.w900,
+                        letterSpacing: 2.2,
+                      ),
+                    ),
+                  ],
+                ),
               ),
-              const Spacer(),
+              const SizedBox(height: 18),
               Text(
                 '${_months[calendar.month - 1]} ${calendar.year}',
                 style: const TextStyle(
                   color: AppColors.inkCoral,
-                  fontSize: 13,
+                  fontSize: 12,
                   fontWeight: FontWeight.w900,
                   letterSpacing: 2.1,
                 ),
               ),
-              const SizedBox(height: 6),
+              const SizedBox(height: 4),
               const Text(
-                'Mi mes\nlector',
+                'Mi mes lector',
                 style: TextStyle(
                   color: Color(0xFF2C2430),
-                  fontSize: 43,
-                  height: .92,
+                  fontSize: 28,
+                  height: 1.0,
                   fontWeight: FontWeight.w900,
-                  letterSpacing: -1.8,
+                  letterSpacing: -0.8,
                 ),
               ),
-              const SizedBox(height: 22),
+              const SizedBox(height: 12),
               Expanded(
                 flex: 7,
                 child: calendar.readings.isEmpty

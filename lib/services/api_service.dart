@@ -1274,6 +1274,7 @@ class ApiService {
     return {
       "ok": json["ok"] == true,
       "mensaje": json["mensaje"] ?? "Ha ocurrido un error.",
+      if (json["codigo"] != null) "codigo": json["codigo"],
     };
   }
 
@@ -1569,15 +1570,19 @@ class ApiService {
   Future<Map<String, dynamic>> quitarLibroPendientes({
     required String usuario,
     required String libro,
+    String? bookId,
   }) async {
     final uri = Uri.parse(
       baseUrl,
     ).replace(queryParameters: {'action': 'quitarLibroPendientes'});
 
+    final body = <String, dynamic>{'libro': libro};
+    if (bookId != null && bookId.isNotEmpty) body['bookId'] = bookId;
+
     final response = await _client.post(
       uri,
       headers: {'Content-Type': 'application/json'},
-      body: jsonEncode({'libro': libro}),
+      body: jsonEncode(body),
     );
 
     if (response.statusCode != 200) {
