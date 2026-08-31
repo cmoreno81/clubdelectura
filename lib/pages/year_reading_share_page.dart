@@ -224,7 +224,9 @@ class _YearReadingPoster extends StatelessWidget {
         .toSet()
         .length;
 
-    return ClipRect(
+    return MediaQuery.withClampedTextScaling(
+      maxScaleFactor: 1.0,
+      child: ClipRect(
       child: CustomPaint(
         painter: const _YearPaperPainter(),
         child: Container(
@@ -347,7 +349,8 @@ class _YearReadingPoster extends StatelessWidget {
           ),
         ),
       ),
-    );
+      ), // ClipRect
+    ); // MediaQuery.withClampedTextScaling
   }
 
   List<YearShelfBook> _booksForShelf(List<YearShelfBook> visible, int shelf) {
