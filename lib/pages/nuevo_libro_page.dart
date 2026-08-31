@@ -1252,8 +1252,16 @@ class _DuplicadosSheetState extends State<_DuplicadosSheet> {
       } else {
         setState(() => _guardando = false);
       }
-    } catch (_) {
-      if (mounted) setState(() => _guardando = false);
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _guardando = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            e.toString().replaceFirst('Exception: ', ''),
+          ),
+        ),
+      );
     }
   }
 
@@ -1274,7 +1282,8 @@ class _DuplicadosSheetState extends State<_DuplicadosSheet> {
             AppSpacing.lg,
             AppSpacing.lg,
           ),
-          child: Column(
+          child: SingleChildScrollView(
+            child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -1303,8 +1312,11 @@ class _DuplicadosSheetState extends State<_DuplicadosSheet> {
               ),
               const SizedBox(height: AppSpacing.md),
 
-              // Candidatos
-              ...widget.candidatos.map((c) {
+              // Candidatos — deduplicados por id para evitar entradas repetidas
+              ...{
+                for (final c in widget.candidatos)
+                  c['id']?.toString() ?? '': c,
+              }.values.map((c) {
                 final id = c['id']?.toString() ?? '';
                 final title = c['title']?.toString() ?? '';
                 final author = c['authorName']?.toString();
@@ -1420,6 +1432,7 @@ class _DuplicadosSheetState extends State<_DuplicadosSheet> {
               ),
             ],
           ),
+          ), // SingleChildScrollView
         ),
       ), // SafeArea
     ); // Material

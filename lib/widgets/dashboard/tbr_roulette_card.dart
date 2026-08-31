@@ -191,7 +191,7 @@ class _TbrRouletteCardState extends State<TbrRouletteCard>
             ),
             // Contenido principal
             Padding(
-              padding: const EdgeInsets.all(AppSpacing.lg),
+              padding: const EdgeInsets.all(AppSpacing.md),
               child: AnimatedSwitcher(
                 duration: const Duration(milliseconds: 200),
                 child: switch (_phase) {
@@ -271,7 +271,7 @@ class _Idle extends StatelessWidget {
         Center(
           child: _isJar
               ? const _JarIdlePreview()
-              : const Text('🎲', style: TextStyle(fontSize: 72)),
+              : const Text('🎲', style: TextStyle(fontSize: 60)),
         ),
         const SizedBox(height: AppSpacing.sm),
         Text(

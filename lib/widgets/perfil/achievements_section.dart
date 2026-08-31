@@ -148,7 +148,7 @@ class _CategorySection extends StatelessWidget {
             crossAxisCount: 4,
             crossAxisSpacing: AppSpacing.xs,
             mainAxisSpacing: AppSpacing.xs,
-            childAspectRatio: 0.85,
+            childAspectRatio: 0.78,
           ),
           itemCount: sorted.length,
           itemBuilder: (context, i) => _AchievementTile(achievement: sorted[i]),

@@ -26,7 +26,6 @@ class WelcomePage extends StatelessWidget {
           ),
           children: [
             Container(
-              height: 250,
               padding: const EdgeInsets.all(AppSpacing.xl),
               decoration: BoxDecoration(
                 gradient: const LinearGradient(
@@ -61,14 +60,17 @@ class WelcomePage extends StatelessWidget {
                     ),
                   ),
                   SizedBox(height: AppSpacing.sm),
-                  Text(
-                    'Tu universo lector,\nsiempre contigo',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 28,
-                      height: 1.08,
-                      fontWeight: FontWeight.w800,
+                  FittedBox(
+                    fit: BoxFit.scaleDown,
+                    child: Text(
+                      'Tu universo lector,\nsiempre contigo',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 28,
+                        height: 1.08,
+                        fontWeight: FontWeight.w800,
+                      ),
                     ),
                   ),
                 ],

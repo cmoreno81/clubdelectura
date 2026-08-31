@@ -168,12 +168,14 @@ class _MonthlyReadingPoster extends StatelessWidget {
         calendar.finishedBooks.isNotEmpty &&
         calendar.finishedBooks.every((book) => book.pages > 0);
 
-    return ClipRect(
+    return MediaQuery.withClampedTextScaling(
+      maxScaleFactor: 1.0,
+      child: ClipRect(
       child: CustomPaint(
         painter: const _PaperPainter(),
         child: Container(
           color: const Color(0xFFF7F0E4).withValues(alpha: .93),
-          padding: const EdgeInsets.fromLTRB(24, 36, 24, 24),
+          padding: const EdgeInsets.fromLTRB(24, 36, 24, 20),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -257,7 +259,7 @@ class _MonthlyReadingPoster extends StatelessWidget {
                         ),
                       ),
               ),
-              const SizedBox(height: 20),
+              const SizedBox(height: 14),
               Row(
                 children: [
                   _PosterMetric(
@@ -293,7 +295,8 @@ class _MonthlyReadingPoster extends StatelessWidget {
           ),
         ),
       ),
-    );
+      ), // ClipRect
+    ); // MediaQuery.withClampedTextScaling
   }
 }
 
