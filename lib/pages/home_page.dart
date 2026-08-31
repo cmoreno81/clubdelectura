@@ -66,6 +66,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
               controller: _librosController,
               onBackToClub: _volverAlClub,
               esPersonal: true,
+              clubId: widget.club.id,
             ),
             () => SagasPage(controller: _sagasController),
             () => const MiEspacioPage(),
@@ -83,6 +84,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
             () => LibrosPage(
               controller: _librosController,
               onBackToClub: _volverAlClub,
+              clubId: widget.club.id,
             ),
             () => SagasPage(controller: _sagasController),
             () => LecturasPage(onBackToClub: _volverAlClub),

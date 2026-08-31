@@ -57,6 +57,7 @@ class LibrosPage extends StatefulWidget {
     this.controller,
     this.loadData,
     this.esPersonal = false,
+    this.clubId,
   });
 
   final VoidCallback? onBackToClub;
@@ -64,6 +65,8 @@ class LibrosPage extends StatefulWidget {
   final LibraryDataLoader? loadData;
   /// true cuando el usuario está en modo lector solitario (sin club).
   final bool esPersonal;
+  /// ID del club activo — se usa para aislar el caché entre clubs.
+  final String? clubId;
 
   @override
   State<LibrosPage> createState() => _LibrosPageState();
@@ -114,7 +117,10 @@ class _LibrosPageState extends State<LibrosPage> with WidgetsBindingObserver {
       // Vista global: no se usa caché de club
       return ApiService().getLibrosDataGlobal();
     }
-    return LibrosDataCache.instance.get(() => ApiService().getLibrosData());
+    return LibrosDataCache.instance.get(
+      () => ApiService().getLibrosData(),
+      clubId: widget.clubId,
+    );
   }
 
   Future<LibrosData> _startReload({bool notify = true}) {

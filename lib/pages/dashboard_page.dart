@@ -51,7 +51,6 @@ import 'personalidad_lectora_page.dart';
 import '../models/wishlist.dart';
 import '../services/wishlist_service.dart';
 import 'club_wishlist_page.dart';
-import 'wishlist_page.dart';
 
 class DashboardPage extends StatefulWidget {
   const DashboardPage({
@@ -232,7 +231,7 @@ class _DashboardPageState extends State<DashboardPage> {
     );
   }
 
-  Future<void> _abrirMiPerfil() async {
+  Future<void> _abrirMiPerfil({bool scrollToSeguimiento = false}) async {
     final nombre = usuarioActual?.trim() ?? '';
     final userId = AuthSessionService.instance.user?.id.trim() ?? '';
     if (nombre.isEmpty) return;
@@ -240,11 +239,17 @@ class _DashboardPageState extends State<DashboardPage> {
       context,
       AppPageRoute(
         builder: (_) =>
-            widget.profilePageBuilder?.call(nombre) ??
-            PerfilUsuarioPage(
-              usuario: nombre,
-              profileUserId: userId.isEmpty ? null : userId,
-            ),
+            scrollToSeguimiento
+                ? PerfilUsuarioPage(
+                    usuario: nombre,
+                    profileUserId: userId.isEmpty ? null : userId,
+                    scrollToSeguimiento: true,
+                  )
+                : widget.profilePageBuilder?.call(nombre) ??
+                    PerfilUsuarioPage(
+                      usuario: nombre,
+                      profileUserId: userId.isEmpty ? null : userId,
+                    ),
       ),
     );
     if (mounted) await _recargar();
@@ -497,6 +502,7 @@ class _DashboardPageState extends State<DashboardPage> {
                   RachaLectoraCard(
                     key: ValueKey('reading-streak-$_favoritosKey'),
                     loadHistory: widget.loadCheckinHistory,
+                    onTap: () => _abrirMiPerfil(scrollToSeguimiento: true),
                   ),
 
                   const SizedBox(height: AppSpacing.lg),

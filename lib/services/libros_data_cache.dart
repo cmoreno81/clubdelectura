@@ -10,19 +10,31 @@ class LibrosDataCache {
   Future<LibrosData>? _inFlight;
   LibrosData? _cached;
   DateTime? _cachedAt;
+  String? _cachedForClubId;
   static const _ttl = Duration(seconds: 30);
 
-  bool get _isValid =>
+  bool _isValid(String? clubId) =>
       _cached != null &&
       _cachedAt != null &&
-      DateTime.now().difference(_cachedAt!) < _ttl;
+      DateTime.now().difference(_cachedAt!) < _ttl &&
+      _cachedForClubId == clubId;
 
-  Future<LibrosData> get(Future<LibrosData> Function() fetcher) {
-    if (_isValid) return Future.value(_cached);
+  Future<LibrosData> get(
+    Future<LibrosData> Function() fetcher, {
+    String? clubId,
+  }) {
+    if (_isValid(clubId)) return Future.value(_cached);
+    // Si el club es distinto al cacheado, cancelar vuelo en curso y limpiar.
+    if (_cachedForClubId != clubId) {
+      _inFlight = null;
+      _cached = null;
+      _cachedAt = null;
+    }
     _inFlight ??= fetcher()
         .then((data) {
           _cached = data;
           _cachedAt = DateTime.now();
+          _cachedForClubId = clubId;
           _inFlight = null;
           return data;
         })
@@ -36,6 +48,7 @@ class LibrosDataCache {
   void invalidate() {
     _cached = null;
     _cachedAt = null;
+    _cachedForClubId = null;
     _inFlight = null;
   }
 }
