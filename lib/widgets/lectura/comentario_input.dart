@@ -65,14 +65,22 @@ class ComentarioInput extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             children: [
               // ── Selector de categoría (solo en capítulos no-reflexión) ──
-              if (!esReflexion &&
-                  onCategoriaChanged != null &&
-                  coloresCategorias.isNotEmpty) ...[
-                _CategoriasSelector(
-                  colores: coloresCategorias,
-                  seleccionada: categoriaSeleccionada,
-                  onSeleccionada: onCategoriaChanged!,
-                ),
+              if (!esReflexion && onCategoriaChanged != null) ...[
+                if (coloresCategorias.isNotEmpty)
+                  // Kit configurado: selector completo con los 5 subrayadores.
+                  _CategoriasSelector(
+                    colores: coloresCategorias,
+                    seleccionada: categoriaSeleccionada,
+                    onSeleccionada: onCategoriaChanged!,
+                  )
+                else
+                  // Sin kit: selector mínimo — Comentario o Cita del libro.
+                  // El índice 2 corresponde a kSubrayadorCategorias[2] (esCita=true),
+                  // por lo que _esCita sigue funcionando igual.
+                  _SelectorSimple(
+                    seleccionada: categoriaSeleccionada,
+                    onSeleccionada: onCategoriaChanged!,
+                  ),
                 const SizedBox(height: 8),
               ],
 
@@ -246,6 +254,45 @@ class ComentarioInput extends StatelessWidget {
   Color _readableQuoteColor(Color color) {
     if (color.computeLuminance() <= .52) return color;
     return Color.lerp(color, Colors.black, .38)!;
+  }
+}
+
+/// Selector mínimo para usuarios sin kit de lectura configurado.
+/// Muestra solo dos opciones: Comentario libre y Cita del libro.
+class _SelectorSimple extends StatelessWidget {
+  const _SelectorSimple({
+    required this.seleccionada,
+    required this.onSeleccionada,
+  });
+
+  final int? seleccionada;
+  final ValueChanged<int?> onSeleccionada;
+
+  // Índice de "Cita del libro" en kSubrayadorCategorias (esCita = true).
+  static const _citaIndex = 2;
+
+  @override
+  Widget build(BuildContext context) {
+    final esCita = seleccionada == _citaIndex;
+    return Row(
+      children: [
+        _CategoriaChip(
+          emoji: '✏️',
+          nombre: 'Comentario',
+          color: null,
+          seleccionada: !esCita,
+          onTap: () => onSeleccionada(null),
+        ),
+        const SizedBox(width: 6),
+        _CategoriaChip(
+          emoji: kSubrayadorCategorias[_citaIndex].emoji,
+          nombre: kSubrayadorCategorias[_citaIndex].nombre,
+          color: null,
+          seleccionada: esCita,
+          onTap: () => onSeleccionada(_citaIndex),
+        ),
+      ],
+    );
   }
 }
 
