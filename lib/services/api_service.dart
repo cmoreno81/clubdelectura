@@ -115,6 +115,17 @@ class ApiService {
     throw Exception('Error cargando libros');
   }
 
+  /// Vista ClubReads: todos los usuarios sin filtro de club.
+  Future<List<Libro>> getLibrosGlobal() async {
+    final response =
+        await _client.get(Uri.parse('$baseUrl?action=librosGlobal'));
+    if (response.statusCode == 200) {
+      final List data = _decodeJson(response);
+      return data.map((e) => Libro.fromJson(e)).toList();
+    }
+    throw Exception('Error cargando libros ClubReads');
+  }
+
   Future<List<CatalogBook>> getCatalogoGeneral({String query = ''}) async {
     final response = await _client.get(
       Uri.parse(baseUrl).replace(
@@ -528,6 +539,18 @@ class ApiService {
   Future<List<LibroFinalizado>> getAllLibrosFinalizados() async {
     final response = await _client.get(
       Uri.parse('$baseUrl?action=librosFinalizadosTodos'),
+    );
+    if (response.statusCode != 200) throw ApiException.fromResponse(response);
+    final List data = _decodeJson(response);
+    return data
+        .map((e) => LibroFinalizado.fromJson(e as Map<String, dynamic>))
+        .toList();
+  }
+
+  /// Vista ClubReads: finalizados de todos los usuarios sin filtro de club.
+  Future<List<LibroFinalizado>> getAllLibrosFinalizadosGlobal() async {
+    final response = await _client.get(
+      Uri.parse('$baseUrl?action=librosFinalizadosTodosGlobal'),
     );
     if (response.statusCode != 200) throw ApiException.fromResponse(response);
     final List data = _decodeJson(response);
@@ -1044,6 +1067,16 @@ class ApiService {
         finalizados: _deduplicarFinalizados(finalizados),
       );
     });
+  }
+
+  /// Vista ClubReads: igual que [getLibrosData] pero sin filtro de club.
+  Future<LibrosData> getLibrosDataGlobal() async {
+    final libros = await getLibrosGlobal();
+    final finalizados = await getAllLibrosFinalizadosGlobal();
+    return LibrosData(
+      libros: libros,
+      finalizados: _deduplicarFinalizados(finalizados),
+    );
   }
 
   Future<Map<String, dynamic>> getLibroPorId(

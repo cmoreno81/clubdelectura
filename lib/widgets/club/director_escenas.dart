@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 
 import '../../models/dashboard.dart';
 import '../../models/estado_club.dart';
+import '../../navigation/app_page_route.dart';
+import '../../pages/configurar_lectura_page.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_radius.dart';
 import '../../theme/app_spacing.dart';
@@ -12,13 +14,19 @@ import '../common/club_chip.dart';
 import 'escenas/escena_votacion.dart';
 
 class DirectorEscenas {
-  Widget construir({required EstadoClub estado, required Dashboard dashboard}) {
+  Widget construir({
+    required EstadoClub estado,
+    required Dashboard dashboard,
+  }) {
+    final esAdmin = dashboard.clubvision.esAdmin;
+    final totalMiembros = dashboard.clubvision.totalUsuarios;
+
     switch (estado.contenido) {
       case ContenidoClub.preparando:
         return _preparando();
 
       case ContenidoClub.sinCandidatas:
-        return _sinCandidatas();
+        return _sinCandidatas(esAdmin: esAdmin, totalMiembros: totalMiembros);
 
       case ContenidoClub.candidatas:
         return EscenaVotacion(
@@ -30,72 +38,94 @@ class DirectorEscenas {
         return _ganador(dashboard);
 
       case ContenidoClub.lectura:
-        return _lectura(dashboard);
+        return _lectura(dashboard, esAdmin: esAdmin, totalMiembros: totalMiembros);
     }
   }
 
-  Widget _sinCandidatas() {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(AppSpacing.lg),
-      decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: .6),
-        borderRadius: BorderRadius.circular(AppRadius.lg),
-        border: Border.all(color: AppColors.border),
-      ),
-      child: Column(
-        children: [
-          const Icon(
-            Icons.library_books_outlined,
-            size: 40,
-            color: AppColors.textMuted,
-          ),
-          const SizedBox(height: AppSpacing.md),
-          Text(
-            'Sin libros candidatos este mes',
-            style: AppTextStyles.section.copyWith(color: AppColors.textPrimary),
-            textAlign: TextAlign.center,
-          ),
-          const SizedBox(height: AppSpacing.sm),
-          Text(
-            'Para que Clubvisión se abra, al menos dos miembros del club deben '
-            'tener el mismo libro en estado "En mi estantería".',
-            style: AppTextStyles.bodySecondary.copyWith(height: 1.4),
-            textAlign: TextAlign.center,
-          ),
-          const SizedBox(height: AppSpacing.lg),
-          Container(
-            padding: const EdgeInsets.symmetric(
-              horizontal: AppSpacing.md,
-              vertical: AppSpacing.sm,
+  Widget _sinCandidatas({required bool esAdmin, required int totalMiembros}) {
+    // Clubs pequeños (≤5 miembros) o admin pueden configurar lectura directamente
+    final esClubPequeno = totalMiembros > 0 && totalMiembros <= 5;
+    final mostrarPropuesta = esClubPequeno || esAdmin;
+
+    return Builder(
+      builder: (context) => Container(
+        width: double.infinity,
+        padding: const EdgeInsets.all(AppSpacing.lg),
+        decoration: BoxDecoration(
+          color: Colors.white.withValues(alpha: .6),
+          borderRadius: BorderRadius.circular(AppRadius.lg),
+          border: Border.all(color: AppColors.border),
+        ),
+        child: Column(
+          children: [
+            const Icon(
+              Icons.library_books_outlined,
+              size: 40,
+              color: AppColors.textMuted,
             ),
-            decoration: BoxDecoration(
-              color: AppColors.surfaceSoft,
-              borderRadius: BorderRadius.circular(AppRadius.pill),
+            const SizedBox(height: AppSpacing.md),
+            Text(
+              'Sin libros candidatos este mes',
+              style: AppTextStyles.section.copyWith(color: AppColors.textPrimary),
+              textAlign: TextAlign.center,
             ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const Icon(
-                  Icons.tips_and_updates_outlined,
-                  size: 16,
-                  color: AppColors.primary,
+            const SizedBox(height: AppSpacing.sm),
+            Text(
+              esClubPequeno
+                  ? 'En clubes pequeños podéis proponer una lectura directamente, '
+                    'sin necesidad de votar.'
+                  : 'Para que Clubvisión se abra, al menos dos miembros del club deben '
+                    'tener el mismo libro en estado "En mi estantería".',
+              style: AppTextStyles.bodySecondary.copyWith(height: 1.4),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: AppSpacing.lg),
+            if (mostrarPropuesta) ...[
+              _BotonConfigurarLectura(
+                etiqueta: esClubPequeno
+                    ? 'Proponer lectura'
+                    : 'Configurar lectura',
+                icono: esClubPequeno
+                    ? Icons.menu_book_rounded
+                    : Icons.settings_rounded,
+              ),
+              const SizedBox(height: AppSpacing.md),
+            ],
+            if (!esClubPequeno) ...[
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: AppSpacing.md,
+                  vertical: AppSpacing.sm,
                 ),
-                const SizedBox(width: 6),
-                Flexible(
-                  child: Text(
-                    'Añade libros pendientes y comenta los que te interesan',
-                    style: AppTextStyles.caption.copyWith(
+                decoration: BoxDecoration(
+                  color: AppColors.surfaceSoft,
+                  borderRadius: BorderRadius.circular(AppRadius.pill),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(
+                      Icons.tips_and_updates_outlined,
+                      size: 16,
                       color: AppColors.primary,
-                      fontWeight: FontWeight.w600,
                     ),
-                    textAlign: TextAlign.center,
-                  ),
+                    const SizedBox(width: 6),
+                    Flexible(
+                      child: Text(
+                        'Añade libros pendientes y comenta los que te interesan',
+                        style: AppTextStyles.caption.copyWith(
+                          color: AppColors.primary,
+                          fontWeight: FontWeight.w600,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                    ),
+                  ],
                 ),
-              ],
-            ),
-          ),
-        ],
+              ),
+            ],
+          ],
+        ),
       ),
     );
   }
@@ -241,41 +271,55 @@ class DirectorEscenas {
     );
   }
 
-  Widget _lectura(Dashboard dashboard) {
+  Widget _lectura(Dashboard dashboard, {required bool esAdmin, required int totalMiembros}) {
     final lectura = dashboard.lecturaActual;
     // Sin lectura oficial — cada lectora va a su ritmo
     if (lectura.titulo.trim().isEmpty) {
-      return Container(
-        width: double.infinity,
-        padding: const EdgeInsets.all(AppSpacing.lg),
-        decoration: BoxDecoration(
-          color: Colors.white.withValues(alpha: .6),
-          borderRadius: BorderRadius.circular(AppRadius.lg),
-          border: Border.all(color: AppColors.border),
-        ),
-        child: Column(
-          children: [
-            const Icon(
-              Icons.import_contacts_rounded,
-              color: AppColors.textMuted,
-              size: 38,
-            ),
-            const SizedBox(height: AppSpacing.md),
-            Text(
-              'Sin lectura conjunta',
-              textAlign: TextAlign.center,
-              style: AppTextStyles.section.copyWith(
-                color: AppColors.textPrimary,
+      final esClubPequeno = totalMiembros > 0 && totalMiembros <= 5;
+      final mostrarBoton = esClubPequeno || esAdmin;
+      return Builder(
+        builder: (context) => Container(
+          width: double.infinity,
+          padding: const EdgeInsets.all(AppSpacing.lg),
+          decoration: BoxDecoration(
+            color: Colors.white.withValues(alpha: .6),
+            borderRadius: BorderRadius.circular(AppRadius.lg),
+            border: Border.all(color: AppColors.border),
+          ),
+          child: Column(
+            children: [
+              const Icon(
+                Icons.import_contacts_rounded,
+                color: AppColors.textMuted,
+                size: 38,
               ),
-            ),
-            const SizedBox(height: AppSpacing.sm),
-            Text(
-              'Este club no tiene una lectura oficial en común. '
-              'Cada miembro avanza con sus propios libros.',
-              style: AppTextStyles.bodySecondary.copyWith(height: 1.4),
-              textAlign: TextAlign.center,
-            ),
-          ],
+              const SizedBox(height: AppSpacing.md),
+              Text(
+                'Sin lectura conjunta',
+                textAlign: TextAlign.center,
+                style: AppTextStyles.section.copyWith(
+                  color: AppColors.textPrimary,
+                ),
+              ),
+              const SizedBox(height: AppSpacing.sm),
+              Text(
+                esClubPequeno
+                    ? 'Podéis proponer una lectura directamente, '
+                      'sin necesidad de candidatos ni votación.'
+                    : 'Este club no tiene una lectura oficial en común. '
+                      'Cada miembro avanza con sus propios libros.',
+                style: AppTextStyles.bodySecondary.copyWith(height: 1.4),
+                textAlign: TextAlign.center,
+              ),
+              if (mostrarBoton) ...[
+                const SizedBox(height: AppSpacing.lg),
+                _BotonConfigurarLectura(
+                  etiqueta: esClubPequeno ? 'Proponer lectura' : 'Configurar lectura',
+                  icono: esClubPequeno ? Icons.menu_book_rounded : Icons.settings_rounded,
+                ),
+              ],
+            ],
+          ),
         ),
       );
     }
@@ -435,6 +479,191 @@ class DirectorEscenas {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────
+// Botón + bottom sheet para proponer / configurar una lectura directamente
+// ─────────────────────────────────────────────
+
+class _BotonConfigurarLectura extends StatelessWidget {
+  const _BotonConfigurarLectura({
+    required this.etiqueta,
+    required this.icono,
+  });
+
+  final String etiqueta;
+  final IconData icono;
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: double.infinity,
+      child: OutlinedButton.icon(
+        onPressed: () => _mostrarSelector(context),
+        icon: Icon(icono, size: 18),
+        label: Text(etiqueta),
+        style: OutlinedButton.styleFrom(
+          foregroundColor: AppColors.primary,
+          side: BorderSide(color: AppColors.primary.withValues(alpha: .6)),
+          padding: const EdgeInsets.symmetric(vertical: 12),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(AppRadius.pill),
+          ),
+          textStyle: AppTextStyles.subtitle.copyWith(
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _mostrarSelector(BuildContext context) async {
+    final controller = TextEditingController();
+    final resultado = await showModalBottomSheet<String>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (sheetCtx) => _SelectorLibroSheet(controller: controller),
+    );
+
+    if (resultado != null && resultado.trim().isNotEmpty && context.mounted) {
+      await Navigator.push(
+        context,
+        AppPageRoute(
+          builder: (_) => ConfigurarLecturaPage(
+            libro: resultado.trim(),
+            tipo: 'OFICIAL',
+          ),
+        ),
+      );
+    }
+  }
+}
+
+class _SelectorLibroSheet extends StatefulWidget {
+  const _SelectorLibroSheet({required this.controller});
+  final TextEditingController controller;
+
+  @override
+  State<_SelectorLibroSheet> createState() => _SelectorLibroSheetState();
+}
+
+class _SelectorLibroSheetState extends State<_SelectorLibroSheet> {
+  bool _valido = false;
+
+  @override
+  void initState() {
+    super.initState();
+    widget.controller.addListener(_onTextChanged);
+  }
+
+  void _onTextChanged() {
+    final tiene = widget.controller.text.trim().isNotEmpty;
+    if (tiene != _valido) setState(() => _valido = tiene);
+  }
+
+  @override
+  void dispose() {
+    widget.controller.removeListener(_onTextChanged);
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: EdgeInsets.only(
+        bottom: MediaQuery.viewInsetsOf(context).bottom,
+      ),
+      child: Container(
+        decoration: BoxDecoration(
+          color: Theme.of(context).colorScheme.surface,
+          borderRadius: const BorderRadius.vertical(
+            top: Radius.circular(AppRadius.xl),
+          ),
+        ),
+        padding: const EdgeInsets.fromLTRB(
+          AppSpacing.lg,
+          AppSpacing.md,
+          AppSpacing.lg,
+          AppSpacing.xl,
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Indicador
+            Center(
+              child: Container(
+                width: 36,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: AppColors.border,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+            ),
+            const SizedBox(height: AppSpacing.lg),
+
+            Text(
+              '¿Qué libro queréis leer?',
+              style: AppTextStyles.section,
+            ),
+            const SizedBox(height: AppSpacing.xs),
+            Text(
+              'Escribe el título del libro que el club va a leer juntos.',
+              style: AppTextStyles.bodySecondary,
+            ),
+            const SizedBox(height: AppSpacing.lg),
+
+            TextField(
+              controller: widget.controller,
+              autofocus: true,
+              textCapitalization: TextCapitalization.sentences,
+              decoration: InputDecoration(
+                hintText: 'Título del libro',
+                prefixIcon: const Icon(Icons.menu_book_outlined),
+                filled: true,
+                fillColor: AppColors.surfaceSoft,
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(AppRadius.md),
+                  borderSide: BorderSide.none,
+                ),
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: AppSpacing.md,
+                  vertical: AppSpacing.md,
+                ),
+              ),
+              onSubmitted: (v) {
+                if (v.trim().isNotEmpty) Navigator.pop(context, v.trim());
+              },
+            ),
+            const SizedBox(height: AppSpacing.lg),
+
+            SizedBox(
+              width: double.infinity,
+              child: FilledButton.icon(
+                onPressed: _valido
+                    ? () => Navigator.pop(
+                          context,
+                          widget.controller.text.trim(),
+                        )
+                    : null,
+                icon: const Icon(Icons.arrow_forward_rounded, size: 18),
+                label: const Text('Continuar'),
+                style: FilledButton.styleFrom(
+                  backgroundColor: AppColors.primary,
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(AppRadius.pill),
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

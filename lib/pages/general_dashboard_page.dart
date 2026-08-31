@@ -868,14 +868,34 @@ class _GeneralDashboardPageState extends State<GeneralDashboardPage> {
                         ),
                         const SizedBox(width: 6),
                         Flexible(
-                          child: Text(
-                            clubvisionReminder,
-                            style: const TextStyle(
+                          child: Builder(builder: (context) {
+                            const base = TextStyle(
                               color: Colors.white,
                               fontSize: 12,
                               fontWeight: FontWeight.w700,
-                            ),
-                          ),
+                            );
+                            final parts = data.clubvisionNotice?.messageParts;
+                            if (parts?.clubName != null) {
+                              return RichText(
+                                text: TextSpan(
+                                  style: base,
+                                  children: [
+                                    TextSpan(text: parts!.prefix),
+                                    TextSpan(
+                                      text: '«${parts.clubName}»',
+                                      style: base.copyWith(
+                                        color: const Color(0xFFFFD979),
+                                        fontStyle: FontStyle.italic,
+                                      ),
+                                    ),
+                                    if (parts.suffix.isNotEmpty)
+                                      TextSpan(text: parts.suffix),
+                                  ],
+                                ),
+                              );
+                            }
+                            return Text(clubvisionReminder, style: base);
+                          }),
                         ),
                       ],
                     ),

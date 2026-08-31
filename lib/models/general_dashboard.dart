@@ -159,6 +159,31 @@ class GeneralClubvisionNotice {
     }
   }
 
+  /// Partes del mensaje listas para RichText: [prefijo, nombreClub?, sufijo?]
+  /// Si no hay un único club, devuelve una sola parte con el mensaje completo.
+  ({String prefix, String? clubName, String suffix}) get messageParts {
+    final singleClub = clubs.length == 1 ? clubs.first.name : null;
+    String prefix;
+    String suffix = '';
+    switch (type) {
+      case 'APERTURA':
+        prefix = 'Esta noche abre una nueva edición de Clubvisión';
+      case 'VOTACION':
+        prefix = 'Clubvisión está abierto';
+        suffix = singleClub != null ? ': ya puedes votar' : '';
+        if (singleClub == null) prefix += ': ya puedes votar';
+      case 'GALA':
+        prefix = 'Hoy llega la gala de Clubvisión';
+      default:
+        prefix = '';
+    }
+    if (singleClub != null) {
+      return (prefix: '$prefix en ', clubName: singleClub, suffix: suffix);
+    }
+    // Múltiples clubes o ninguno: mensaje plano
+    return (prefix: message, clubName: null, suffix: '');
+  }
+
   factory GeneralClubvisionNotice.fromJson(Map<String, dynamic> json) =>
       GeneralClubvisionNotice(
         type: json['tipo']?.toString() ?? '',

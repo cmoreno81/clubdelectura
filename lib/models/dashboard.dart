@@ -116,6 +116,7 @@ class Clubvision {
   final int likes;
   final String ultimaActividad;
   final bool haVotado;
+  final bool esAdmin;
 
   Clubvision({
     required this.estado,
@@ -135,6 +136,7 @@ class Clubvision {
     required this.likes,
     required this.ultimaActividad,
     this.haVotado = false,
+    this.esAdmin = false,
   });
 
   factory Clubvision.fromJson(Map<String, dynamic> json) {
@@ -165,6 +167,7 @@ class Clubvision {
 
       ultimaActividad: json['ultimaActividad']?.toString() ?? '',
       haVotado: json['haVotado'] == true,
+      esAdmin: json['esAdmin'] == true,
     );
   }
 }

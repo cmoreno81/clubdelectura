@@ -1,7 +1,13 @@
+import 'dart:io';
 import 'dart:math' as math;
+import 'dart:typed_data';
+import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter/scheduler.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:share_plus/share_plus.dart';
 
 import '../../theme/app_colors.dart';
 import '../../theme/app_spacing.dart';
@@ -152,6 +158,10 @@ class _LibroFinalizadoCelebrationState
   late final Ticker _ticker; // ignore: use_late_for_private_fields_and_variables
   double _lastT = 0;
 
+  /// Key para capturar el área de la tarjeta como imagen al compartir.
+  final GlobalKey _shareCardKey = GlobalKey();
+  bool _sharing = false;
+
   @override
   void initState() {
     super.initState();
@@ -219,6 +229,62 @@ class _LibroFinalizadoCelebrationState
     super.dispose();
   }
 
+  /// Captura el widget marcado con [_shareCardKey] como imagen PNG
+  /// y lo comparte a través del sistema operativo.
+  Future<void> _compartirLogro() async {
+    if (_sharing) return;
+    setState(() => _sharing = true);
+
+    try {
+      final boundary = _shareCardKey.currentContext?.findRenderObject()
+          as RenderRepaintBoundary?;
+      if (boundary == null) {
+        _compartirTexto();
+        return;
+      }
+
+      // Captura a la densidad de pantalla para nitidez en redes sociales.
+      final pixelRatio = MediaQuery.devicePixelRatioOf(context);
+      final ui.Image image = await boundary.toImage(pixelRatio: pixelRatio);
+      final ByteData? byteData =
+          await image.toByteData(format: ui.ImageByteFormat.png);
+      image.dispose();
+
+      if (byteData == null) {
+        _compartirTexto();
+        return;
+      }
+
+      final tempDir = await getTemporaryDirectory();
+      final file = File(
+        '${tempDir.path}/libro_terminado_${DateTime.now().millisecondsSinceEpoch}.png',
+      );
+      await file.writeAsBytes(byteData.buffer.asUint8List());
+
+      if (!mounted) return;
+
+      await SharePlus.instance.share(
+        ShareParams(
+          text: '¡He terminado de leer "${widget.titulo}"! 📚✨ #ClubReads',
+          files: [XFile(file.path, mimeType: 'image/png')],
+        ),
+      );
+    } catch (_) {
+      // Si la captura falla por cualquier motivo, compartir solo texto.
+      if (mounted) _compartirTexto();
+    } finally {
+      if (mounted) setState(() => _sharing = false);
+    }
+  }
+
+  void _compartirTexto() {
+    SharePlus.instance.share(
+      ShareParams(
+        text: '¡He terminado de leer "${widget.titulo}"! 📚✨ #ClubReads',
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Material(
@@ -255,54 +321,24 @@ class _LibroFinalizadoCelebrationState
 
                 const Spacer(),
 
-                // Emoji y título
+                // ── Tarjeta compartible (emoji + título + portada) ──────────
                 FadeTransition(
                   opacity: _fadeAnim,
                   child: ScaleTransition(
                     scale: _scaleAnim,
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        const Text('🎉', style: TextStyle(fontSize: 56)),
-                        const SizedBox(height: AppSpacing.sm),
-                        Text(
-                          '¡Lo has conseguido!',
-                          style: AppTextStyles.title.copyWith(
-                            color: AppColors.primaryDark,
-                            fontSize: 26,
-                          ),
-                          textAlign: TextAlign.center,
-                        ),
-                        const SizedBox(height: AppSpacing.xs),
-                        Text(
-                          'Has terminado de leer',
-                          style: AppTextStyles.body.copyWith(
-                            color: AppColors.textSecondary,
-                            fontSize: 15,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-
-                const SizedBox(height: AppSpacing.xl),
-
-                // Portada del libro
-                FadeTransition(
-                  opacity: _fadeAnim,
-                  child: ScaleTransition(
-                    scale: _scaleAnim,
-                    child: _CoverCard(
-                      titulo: widget.titulo,
-                      coverUrl: widget.coverUrl,
+                    child: RepaintBoundary(
+                      key: _shareCardKey,
+                      child: _ShareCard(
+                        titulo: widget.titulo,
+                        coverUrl: widget.coverUrl,
+                      ),
                     ),
                   ),
                 ),
 
                 const Spacer(),
 
-                // Botón continuar
+                // ── Botones ────────────────────────────────────────────────
                 FadeTransition(
                   opacity: _fadeAnim,
                   child: Padding(
@@ -312,33 +348,161 @@ class _LibroFinalizadoCelebrationState
                       AppSpacing.xl,
                       AppSpacing.xl,
                     ),
-                    child: SizedBox(
-                      width: double.infinity,
-                      child: FilledButton(
-                        style: FilledButton.styleFrom(
-                          backgroundColor: AppColors.primary,
-                          foregroundColor: Colors.white,
-                          padding: const EdgeInsets.symmetric(
-                            vertical: AppSpacing.md,
-                          ),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(14),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        // Botón compartir
+                        SizedBox(
+                          width: double.infinity,
+                          child: OutlinedButton.icon(
+                            style: OutlinedButton.styleFrom(
+                              foregroundColor: AppColors.primary,
+                              side: const BorderSide(
+                                color: AppColors.primary,
+                                width: 1.5,
+                              ),
+                              padding: const EdgeInsets.symmetric(
+                                vertical: AppSpacing.md,
+                              ),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(14),
+                              ),
+                            ),
+                            onPressed: _sharing ? null : _compartirLogro,
+                            icon: _sharing
+                                ? const SizedBox(
+                                    width: 18,
+                                    height: 18,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                      color: AppColors.primary,
+                                    ),
+                                  )
+                                : const Icon(Icons.share_rounded, size: 20),
+                            label: Text(
+                              _sharing ? 'Preparando…' : 'Compartir logro',
+                              style: const TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
                           ),
                         ),
-                        onPressed: () => Navigator.of(context).pop(),
-                        child: const Text(
-                          'Continuar',
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w700,
+
+                        const SizedBox(height: AppSpacing.sm),
+
+                        // Botón continuar
+                        SizedBox(
+                          width: double.infinity,
+                          child: FilledButton(
+                            style: FilledButton.styleFrom(
+                              backgroundColor: AppColors.primary,
+                              foregroundColor: Colors.white,
+                              padding: const EdgeInsets.symmetric(
+                                vertical: AppSpacing.md,
+                              ),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(14),
+                              ),
+                            ),
+                            onPressed: () => Navigator.of(context).pop(),
+                            child: const Text(
+                              'Continuar',
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
                           ),
                         ),
-                      ),
+                      ],
                     ),
                   ),
                 ),
               ],
             ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ── Tarjeta compartible (emoji + texto + portada) ─────────────────────────────
+//
+// Este widget es el que se captura como imagen al pulsar "Compartir logro".
+// Tiene fondo propio para que la captura tenga contexto visual aunque el
+// sistema comparta solo la imagen sin el texto del mensaje.
+
+class _ShareCard extends StatelessWidget {
+  const _ShareCard({required this.titulo, required this.coverUrl});
+
+  final String titulo;
+  final String coverUrl;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: AppSpacing.xl),
+      padding: const EdgeInsets.symmetric(
+        vertical: AppSpacing.lg,
+        horizontal: AppSpacing.xl,
+      ),
+      decoration: BoxDecoration(
+        color: AppColors.background,
+        borderRadius: BorderRadius.circular(24),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.primaryDark.withValues(alpha: 0.12),
+            blurRadius: 32,
+            offset: const Offset(0, 8),
+          ),
+        ],
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const Text('🎉', style: TextStyle(fontSize: 56)),
+          const SizedBox(height: AppSpacing.sm),
+          Text(
+            '¡Lo has conseguido!',
+            style: AppTextStyles.title.copyWith(
+              color: AppColors.primaryDark,
+              fontSize: 26,
+            ),
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: AppSpacing.xs),
+          Text(
+            'Has terminado de leer',
+            style: AppTextStyles.body.copyWith(
+              color: AppColors.textSecondary,
+              fontSize: 15,
+            ),
+          ),
+          const SizedBox(height: AppSpacing.xl),
+          _CoverCard(titulo: titulo, coverUrl: coverUrl),
+          const SizedBox(height: AppSpacing.lg),
+          // Marca de la app
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Icon(
+                Icons.menu_book_rounded,
+                color: AppColors.primary,
+                size: 16,
+              ),
+              const SizedBox(width: 6),
+              Text(
+                'ClubReads',
+                style: AppTextStyles.body.copyWith(
+                  color: AppColors.primary,
+                  fontWeight: FontWeight.w700,
+                  fontSize: 13,
+                  letterSpacing: 0.4,
+                ),
+              ),
+            ],
           ),
         ],
       ),

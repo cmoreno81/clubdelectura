@@ -81,6 +81,7 @@ class _LibrosPageState extends State<LibrosPage> with WidgetsBindingObserver {
 
   String filtroBusqueda = '';
   String filtroEstado = 'TODOS';
+  String filtroOrigen = 'DEL_CLUB'; // 'DEL_CLUB' | 'CLUBREADS'
   String filtroUsuario = 'TODAS';
   String? filtroVibe; // null = sin filtro de vibe
   List<Libro>? _cachedBooks;
@@ -102,9 +103,14 @@ class _LibrosPageState extends State<LibrosPage> with WidgetsBindingObserver {
     _restoreOrder();
   }
 
-  Future<LibrosData> _fetchData() => widget.loadData != null
-      ? widget.loadData!()
-      : LibrosDataCache.instance.get(() => ApiService().getLibrosData());
+  Future<LibrosData> _fetchData() {
+    if (widget.loadData != null) return widget.loadData!();
+    if (filtroOrigen == 'CLUBREADS') {
+      // Vista global: no se usa caché de club
+      return ApiService().getLibrosDataGlobal();
+    }
+    return LibrosDataCache.instance.get(() => ApiService().getLibrosData());
+  }
 
   Future<LibrosData> _startReload({bool notify = true}) {
     final active = _reloadInFlight;
@@ -328,13 +334,15 @@ class _LibrosPageState extends State<LibrosPage> with WidgetsBindingObserver {
                             actionLabel:
                                 filtroBusqueda.isNotEmpty ||
                                     filtroEstado != 'TODOS' ||
-                                    filtroUsuario != 'TODAS'
+                                    filtroUsuario != 'TODAS' ||
+                                    filtroOrigen != 'DEL_CLUB'
                                 ? 'Limpiar filtros'
                                 : null,
                             onAction:
                                 filtroBusqueda.isNotEmpty ||
                                     filtroEstado != 'TODOS' ||
-                                    filtroUsuario != 'TODAS'
+                                    filtroUsuario != 'TODAS' ||
+                                    filtroOrigen != 'DEL_CLUB'
                                 ? _limpiarFiltros
                                 : null,
                           )
@@ -425,6 +433,43 @@ class _LibrosPageState extends State<LibrosPage> with WidgetsBindingObserver {
           const SizedBox(height: AppSpacing.xs),
 
           DropdownButtonFormField<String>(
+            key: ValueKey('biblioteca_$filtroOrigen'),
+            initialValue: filtroOrigen,
+            isDense: true,
+            style: AppTextStyles.body.copyWith(color: AppColors.textPrimary),
+            decoration: const InputDecoration(
+              isDense: true,
+              contentPadding: EdgeInsets.symmetric(vertical: 10),
+              labelText: 'Biblioteca',
+              prefixIconConstraints: BoxConstraints(minWidth: 42),
+              prefixIcon: Icon(Icons.collections_bookmark_outlined, size: 21),
+            ),
+            items: const [
+              DropdownMenuItem(
+                value: 'DEL_CLUB',
+                child: Text('Del club'),
+              ),
+              DropdownMenuItem(
+                value: 'CLUBREADS',
+                child: Text('De ClubReads'),
+              ),
+            ],
+            onChanged: (value) {
+              if (value == null || value == filtroOrigen) return;
+              HapticFeedback.selectionClick();
+              setState(() {
+                filtroOrigen = value;
+                filtroEstado = 'TODOS';
+                filtroUsuario = 'TODAS';
+                filtroVibe = null;
+                librosFuture = _startReload(notify: false);
+              });
+            },
+          ),
+
+          const SizedBox(height: AppSpacing.xs),
+
+          DropdownButtonFormField<String>(
             initialValue: filtroUsuario,
             isDense: true,
             style: AppTextStyles.body.copyWith(color: AppColors.textPrimary),
@@ -458,6 +503,7 @@ class _LibrosPageState extends State<LibrosPage> with WidgetsBindingObserver {
             scrollDirection: Axis.horizontal,
             child: Row(
               children: [
+                // ── Chips de estado ────────────────────────────────────────
                 _chip(
                   estado: 'TODOS',
                   label: 'Todos',
@@ -476,7 +522,6 @@ class _LibrosPageState extends State<LibrosPage> with WidgetsBindingObserver {
                   icon: ReadingStatusCopy.icon('LEYENDO'),
                 ),
                 const SizedBox(width: AppSpacing.xs),
-
                 _chip(
                   estado: 'PAUSADO',
                   label: ReadingStatusCopy.label('PAUSADO', plural: true),
@@ -1319,13 +1364,18 @@ class _LibrosPageState extends State<LibrosPage> with WidgetsBindingObserver {
 
   void _limpiarFiltros() {
     buscadorController.clear();
-
+    final origenAnterior = filtroOrigen;
     setState(() {
       filtroBusqueda = '';
       filtroEstado = 'TODOS';
       filtroUsuario = 'TODAS';
       filtroVibe = null;
+      filtroOrigen = 'DEL_CLUB';
     });
+    // Recargar solo si el origen cambió (ClubReads → Del club)
+    if (origenAnterior != 'DEL_CLUB') {
+      librosFuture = _startReload(notify: false);
+    }
   }
 
   Future<void> _confirmarAgregarLibro(LibroAgrupado libro) async {
