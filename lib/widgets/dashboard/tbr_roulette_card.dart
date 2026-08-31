@@ -132,7 +132,6 @@ class _TbrRouletteCardState extends State<TbrRouletteCard>
     if (pendientes.isEmpty) return const SizedBox.shrink();
 
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
       decoration: BoxDecoration(
         gradient: const LinearGradient(
           begin: Alignment.topLeft,

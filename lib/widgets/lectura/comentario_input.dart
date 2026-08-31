@@ -1,19 +1,8 @@
 import 'package:flutter/material.dart';
 
-class ComentarioInput extends StatelessWidget {
-  final TextEditingController controller;
-  final VoidCallback onEnviar;
-  final bool enviando;
-  final String hintText;
-  final bool esReflexion;
-  final VoidCallback? onCerrar;
-  final FocusNode? focusNode;
-  final bool esCita;
-  final ValueChanged<bool>? onTipoChanged;
-  final List<Color> coloresCita;
-  final Color? colorCita;
-  final ValueChanged<Color>? onColorChanged;
+import '../../models/subrayador_categoria.dart';
 
+class ComentarioInput extends StatelessWidget {
   const ComentarioInput({
     super.key,
     required this.controller,
@@ -23,18 +12,46 @@ class ComentarioInput extends StatelessWidget {
     this.esReflexion = false,
     this.onCerrar,
     this.focusNode,
-    this.esCita = false,
-    this.onTipoChanged,
-    this.coloresCita = const [],
-    this.colorCita,
-    this.onColorChanged,
+    // Categoría seleccionada: índice en coloresCategorias (null = libre).
+    // Determina tanto el color como si es cita (esCita = categoria.esCita).
+    this.categoriaSeleccionada,
+    this.onCategoriaChanged,
+    this.coloresCategorias = const [],
   });
+
+  final TextEditingController controller;
+  final VoidCallback onEnviar;
+  final bool enviando;
+  final String hintText;
+  final bool esReflexion;
+  final VoidCallback? onCerrar;
+  final FocusNode? focusNode;
+
+  /// Índice de la categoría activa (null = comentario libre, sin color).
+  final int? categoriaSeleccionada;
+
+  /// Colores del kit (uno por categoría, en el mismo orden que [kSubrayadorCategorias]).
+  final List<Color> coloresCategorias;
+
+  /// Callback cuando el usuario cambia de categoría.
+  final ValueChanged<int?>? onCategoriaChanged;
+
+  bool get _esCita =>
+      categoriaSeleccionada != null &&
+      categoriaSeleccionada! < kSubrayadorCategorias.length &&
+      kSubrayadorCategorias[categoriaSeleccionada!].esCita;
+
+  Color? get _colorActivo =>
+      categoriaSeleccionada != null &&
+          categoriaSeleccionada! < coloresCategorias.length
+      ? coloresCategorias[categoriaSeleccionada!]
+      : null;
 
   @override
   Widget build(BuildContext context) {
-    final quoteColor = _readableQuoteColor(
-      colorCita ?? Theme.of(context).colorScheme.primary,
-    );
+    final quoteColor = _colorActivo != null
+        ? _readableQuoteColor(_colorActivo!)
+        : const Color(0xFF6F4DBF);
 
     return Material(
       color: Theme.of(context).scaffoldBackgroundColor,
@@ -47,80 +64,19 @@ class ComentarioInput extends StatelessWidget {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              if (!esReflexion && onTipoChanged != null) ...[
-                SizedBox(
-                  width: double.infinity,
-                  child: SegmentedButton<bool>(
-                    showSelectedIcon: false,
-                    segments: const [
-                      ButtonSegment(
-                        value: false,
-                        icon: Icon(Icons.chat_bubble_outline_rounded),
-                        label: Text('Comentario'),
-                      ),
-                      ButtonSegment(
-                        value: true,
-                        icon: Icon(Icons.format_quote_rounded),
-                        label: Text('Cita'),
-                      ),
-                    ],
-                    selected: {esCita},
-                    onSelectionChanged: (value) {
-                      onTipoChanged!(value.first);
-                    },
-                  ),
+              // ── Selector de categoría (solo en capítulos no-reflexión) ──
+              if (!esReflexion &&
+                  onCategoriaChanged != null &&
+                  coloresCategorias.isNotEmpty) ...[
+                _CategoriasSelector(
+                  colores: coloresCategorias,
+                  seleccionada: categoriaSeleccionada,
+                  onSeleccionada: onCategoriaChanged!,
                 ),
-                if (esCita && coloresCita.isNotEmpty) ...[
-                  const SizedBox(height: 8),
-                  Row(
-                    children: [
-                      const Text(
-                        'Color del kit',
-                        style: TextStyle(fontWeight: FontWeight.w700),
-                      ),
-                      const SizedBox(width: 10),
-                      Expanded(
-                        child: Wrap(
-                          spacing: 8,
-                          children: [
-                            for (final color in coloresCita)
-                              Semantics(
-                                button: true,
-                                selected: colorCita == color,
-                                label: 'Elegir color de cita',
-                                child: InkWell(
-                                  customBorder: const CircleBorder(),
-                                  onTap: () => onColorChanged?.call(color),
-                                  child: Container(
-                                    width: 30,
-                                    height: 30,
-                                    decoration: BoxDecoration(
-                                      color: color,
-                                      shape: BoxShape.circle,
-                                      border: Border.all(
-                                        color: colorCita == color
-                                            ? Colors.black87
-                                            : Colors.white,
-                                        width: colorCita == color ? 3 : 2,
-                                      ),
-                                      boxShadow: const [
-                                        BoxShadow(
-                                          color: Colors.black12,
-                                          blurRadius: 4,
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                ),
-                              ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
                 const SizedBox(height: 8),
               ],
+
+              // ── Encabezado de "Escribir reflexión" ──
               if (onCerrar != null) ...[
                 Row(
                   children: [
@@ -140,11 +96,13 @@ class ComentarioInput extends StatelessWidget {
                 ),
                 const SizedBox(height: 4),
               ],
+
+              // ── Campo de texto ──
               TextField(
                 controller: controller,
                 focusNode: focusNode,
                 enabled: !enviando,
-                style: esCita
+                style: _esCita
                     ? TextStyle(
                         color: quoteColor,
                         fontFamily: 'serif',
@@ -154,15 +112,11 @@ class ComentarioInput extends StatelessWidget {
                         height: 1.5,
                       )
                     : null,
-                // La caja crece con el contenido: empieza en 3 líneas y se
-                // expande hasta 8 (10 para reflexiones). A partir de ahí el
-                // texto sigue siendo visible cerca del cursor, pero el usuario
-                // ya ha podido leer casi todo lo escrito sin scroll interno.
                 minLines: esReflexion ? 4 : 3,
                 maxLines: esReflexion ? 10 : 8,
                 maxLength: esReflexion
                     ? 2000
-                    : esCita
+                    : _esCita
                     ? 500
                     : 1500,
                 keyboardType: TextInputType.multiline,
@@ -172,43 +126,36 @@ class ComentarioInput extends StatelessWidget {
                 enableSuggestions: true,
                 smartDashesType: SmartDashesType.enabled,
                 smartQuotesType: SmartQuotesType.enabled,
-
-                // Contador sutil: aparece solo cuando quedan menos de 200
-                // caracteres. No estorba durante la escritura normal.
-                buildCounter:
-                    (
-                      context, {
-                      required currentLength,
-                      required isFocused,
-                      maxLength,
-                    }) {
-                      if (maxLength == null) return null;
-                      final restantes = maxLength - currentLength;
-                      if (restantes > 200) return null;
-                      return Text(
-                        '$restantes restantes',
-                        style: TextStyle(
-                          fontSize: 11,
-                          color: restantes < 50
-                              ? Colors.red.shade600
-                              : Colors.grey.shade500,
-                        ),
-                      );
-                    },
-
+                buildCounter: (
+                  context, {
+                  required currentLength,
+                  required isFocused,
+                  maxLength,
+                }) {
+                  if (maxLength == null) return null;
+                  final restantes = maxLength - currentLength;
+                  if (restantes > 200) return null;
+                  return Text(
+                    '$restantes restantes',
+                    style: TextStyle(
+                      fontSize: 11,
+                      color: restantes < 50
+                          ? Colors.red.shade600
+                          : Colors.grey.shade500,
+                    ),
+                  );
+                },
                 decoration: InputDecoration(
-                  hintText: esCita
+                  hintText: _esCita
                       ? 'Escribe aquí la frase del libro…'
                       : hintText,
                   hintStyle: TextStyle(
                     color: Colors.grey.shade600,
                     height: 1.4,
                   ),
-
                   filled: true,
                   fillColor: const Color(0xFFF7F1FF),
                   alignLabelWithHint: true,
-
                   prefixIconConstraints: const BoxConstraints(
                     minWidth: 48,
                     minHeight: 48,
@@ -226,17 +173,14 @@ class ComentarioInput extends StatelessWidget {
                       ),
                     ),
                   ),
-
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(20),
                     borderSide: BorderSide.none,
                   ),
-
                   enabledBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(20),
                     borderSide: const BorderSide(color: Color(0xFFE1D4F5)),
                   ),
-
                   focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(20),
                     borderSide: const BorderSide(
@@ -244,7 +188,6 @@ class ComentarioInput extends StatelessWidget {
                       width: 1.5,
                     ),
                   ),
-
                   contentPadding: const EdgeInsets.fromLTRB(14, 16, 14, 16),
                 ),
               ),
@@ -276,7 +219,7 @@ class ComentarioInput extends StatelessWidget {
                               ? 'Publicando...'
                               : esReflexion
                               ? 'Publicar reflexión'
-                              : esCita
+                              : _esCita
                               ? 'Guardar cita'
                               : 'Publicar comentario',
                           key: ValueKey(enviando),
@@ -301,6 +244,134 @@ class ComentarioInput extends StatelessWidget {
   }
 
   Color _readableQuoteColor(Color color) {
+    if (color.computeLuminance() <= .52) return color;
+    return Color.lerp(color, Colors.black, .38)!;
+  }
+}
+
+/// Selector horizontal de categorías de subrayador.
+/// La primera opción es siempre "Libre" (sin categoría, sin color).
+class _CategoriasSelector extends StatelessWidget {
+  const _CategoriasSelector({
+    required this.colores,
+    required this.seleccionada,
+    required this.onSeleccionada,
+  });
+
+  final List<Color> colores;
+  final int? seleccionada;
+  final ValueChanged<int?> onSeleccionada;
+
+  @override
+  Widget build(BuildContext context) {
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      child: Row(
+        children: [
+          // Opción "libre" (sin categoría)
+          _CategoriaChip(
+            emoji: '✏️',
+            nombre: 'Libre',
+            color: null,
+            seleccionada: seleccionada == null,
+            onTap: () => onSeleccionada(null),
+          ),
+          const SizedBox(width: 6),
+          // Opciones de categoría del kit.
+          // Las citas van primero (índice 2) porque son el tipo más frecuente;
+          // el resto mantiene el orden original.
+          for (final i in [
+            2,
+            0,
+            1,
+            3,
+            4,
+          ].where((i) => i < kSubrayadorCategorias.length && i < colores.length)) ...[
+            _CategoriaChip(
+              emoji: kSubrayadorCategorias[i].emoji,
+              nombre: kSubrayadorCategorias[i].nombre,
+              color: colores[i],
+              seleccionada: seleccionada == i,
+              onTap: () => onSeleccionada(i),
+            ),
+            const SizedBox(width: 6),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+class _CategoriaChip extends StatelessWidget {
+  const _CategoriaChip({
+    required this.emoji,
+    required this.nombre,
+    required this.color,
+    required this.seleccionada,
+    required this.onTap,
+  });
+
+  final String emoji;
+  final String nombre;
+  final Color? color;
+  final bool seleccionada;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final chipColor = color ?? const Color(0xFF6F4DBF);
+    final bgColor = seleccionada
+        ? chipColor.withValues(alpha: .18)
+        : Colors.transparent;
+    final borderColor = seleccionada ? chipColor : Colors.grey.shade300;
+
+    return GestureDetector(
+      onTap: onTap,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 160),
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+        decoration: BoxDecoration(
+          color: bgColor,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(
+            color: borderColor,
+            width: seleccionada ? 1.5 : 1,
+          ),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (color != null) ...[
+              Container(
+                width: 11,
+                height: 11,
+                decoration: BoxDecoration(
+                  color: color,
+                  shape: BoxShape.circle,
+                ),
+              ),
+              const SizedBox(width: 5),
+            ],
+            Text(
+              '$emoji $nombre',
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight:
+                    seleccionada ? FontWeight.w800 : FontWeight.w600,
+                color: seleccionada
+                    ? (color != null
+                        ? _readableColor(chipColor)
+                        : const Color(0xFF5B3CA8))
+                    : Colors.grey.shade700,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  static Color _readableColor(Color color) {
     if (color.computeLuminance() <= .52) return color;
     return Color.lerp(color, Colors.black, .38)!;
   }

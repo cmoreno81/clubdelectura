@@ -28,6 +28,7 @@ import '../models/libro.dart';
 import '../models/libro_finalizado.dart';
 import '../models/libros_data.dart';
 import '../services/api_service.dart';
+import '../services/club_service.dart';
 import '../services/auth_session_service.dart';
 import '../services/library_order_preferences.dart';
 import '../services/library_refresh_notifier.dart';
@@ -111,16 +112,38 @@ class _LibrosPageState extends State<LibrosPage> with WidgetsBindingObserver {
     _restoreOrder();
   }
 
-  Future<LibrosData> _fetchData() {
+  // Último club correctamente sincronizado con el backend en esta sesión.
+  // Estático para sobrevivir a rebuilds y navegaciones dentro de la misma sesión.
+  // Si el usuario cambia de club, este valor difiere de clubId → forzamos
+  // selectClub + invalidación de caché para garantizar datos limpios.
+  static String? _lastSyncedClubId;
+
+  Future<LibrosData> _fetchData() async {
     if (widget.loadData != null) return widget.loadData!();
     if (filtroOrigen == 'CLUBREADS') {
       // Vista global: no se usa caché de club
       return ApiService().getLibrosDataGlobal();
     }
-    return LibrosDataCache.instance.get(
-      () => ApiService().getLibrosData(),
-      clubId: widget.clubId,
-    );
+
+    final clubId = widget.esPersonal ? null : widget.clubId;
+
+    if (clubId != null && _lastSyncedClubId != clubId) {
+      // El club activo ha cambiado (o nunca se ha sincronizado).
+      // 1) Invalidamos el caché ANTES para evitar servir datos del club anterior.
+      // 2) Llamamos selectClub para sincronizar el backend.
+      // 3) Solo si tiene éxito marcamos el club como sincronizado.
+      // Si falla, _lastSyncedClubId queda diferente → próximo _fetchData reintenta.
+      LibrosDataCache.instance.invalidate();
+      try {
+        await ClubService().selectClub(clubId);
+        _lastSyncedClubId = clubId;
+      } catch (_) {
+        // El backend mantiene el club que tuviera activo.
+        // El caché ya está invalidado, así que el fetch será fresco.
+      }
+    }
+
+    return ApiService().getLibrosData(clubId: clubId);
   }
 
   Future<LibrosData> _startReload({bool notify = true}) {

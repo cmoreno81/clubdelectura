@@ -15,6 +15,7 @@ import '../theme/app_radius.dart';
 import '../theme/app_spacing.dart';
 import '../theme/app_text_styles.dart';
 import '../widgets/common/club_card.dart';
+import '../models/subrayador_categoria.dart';
 import '../services/api_service.dart';
 import '../services/kit_lectura_service.dart';
 import '../widgets/lectura/comentario_card.dart';
@@ -52,9 +53,12 @@ class _CapituloPageState extends State<CapituloPage> {
   /// Key asignada al divisor "Nuevos" para poder hacer scroll automático.
   final GlobalKey _newsDividerKey = GlobalKey();
   bool _scrolledToNew = false; // solo scrolleamos una vez por apertura
-  bool editorEsCita = false;
-  List<Color> coloresCita = const [];
-  Color? colorCita;
+  /// Índice de la categoría de subrayador seleccionada (null = libre).
+  /// Determina color y si es cita (kSubrayadorCategorias[i].esCita).
+  int? _categoriaSeleccionada;
+
+  /// Colores de los subrayadores del kit (uno por categoría).
+  List<Color> coloresSubrayadores = const [];
   Timer? _temporizadorBorrador;
 
   bool get esReflexion => widget.capitulo.trim() == '💭 Reflexión final';
@@ -81,14 +85,15 @@ class _CapituloPageState extends State<CapituloPage> {
 
   Future<void> _cargarColoresKit() async {
     final kit = await KitLecturaService().obtener(widget.bookId);
-    final colores = kit.paleta
+    // Usar los subrayadores (no la paleta base) ya que son los colores
+    // diseñados específicamente para anotar el libro.
+    final colores = kit.subrayadores
         .map(_colorDesdeHex)
         .whereType<Color>()
         .toList(growable: false);
     if (!mounted) return;
     setState(() {
-      coloresCita = colores;
-      colorCita = colores.isEmpty ? AppColors.primary : colores.first;
+      coloresSubrayadores = colores;
     });
   }
 
@@ -293,8 +298,15 @@ class _CapituloPageState extends State<CapituloPage> {
           capitulo: widget.capitulo,
           usuario: usuario!,
           comentario: texto,
-          tipo: editorEsCita ? 'QUOTE' : 'COMMENT',
-          color: editorEsCita ? _colorAHex(colorCita) : '',
+          tipo: (_categoriaSeleccionada != null &&
+                  _categoriaSeleccionada! < kSubrayadorCategorias.length &&
+                  kSubrayadorCategorias[_categoriaSeleccionada!].esCita)
+              ? 'QUOTE'
+              : 'COMMENT',
+          color: (_categoriaSeleccionada != null &&
+                  _categoriaSeleccionada! < coloresSubrayadores.length)
+              ? _colorAHex(coloresSubrayadores[_categoriaSeleccionada!])
+              : '',
         ),
         onConfirmed: _pagination.appendLocal,
         clearDraft: _borrarBorrador,
@@ -689,13 +701,13 @@ class _CapituloPageState extends State<CapituloPage> {
                 esReflexion: esReflexion,
                 onCerrar: esReflexion ? _cerrarEditorReflexion : null,
                 focusNode: esReflexion ? editorFocusNode : null,
-                esCita: editorEsCita,
-                onTipoChanged: esReflexion
+                categoriaSeleccionada: esReflexion
                     ? null
-                    : (value) => setState(() => editorEsCita = value),
-                coloresCita: coloresCita,
-                colorCita: colorCita,
-                onColorChanged: (color) => setState(() => colorCita = color),
+                    : _categoriaSeleccionada,
+                coloresCategorias: esReflexion ? const [] : coloresSubrayadores,
+                onCategoriaChanged: esReflexion
+                    ? null
+                    : (i) => setState(() => _categoriaSeleccionada = i),
                 hintText: esReflexion
                     ? 'Comparte tu reflexión sobre el libro, '
                           'el desenlace, los personajes...'

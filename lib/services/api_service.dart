@@ -1058,15 +1058,18 @@ class ApiService {
     return _respuestaOk(response);
   }
 
-  Future<LibrosData> getLibrosData() {
-    return LibrosDataCache.instance.get(() async {
-      final libros = await getLibros();
-      final finalizados = await getAllLibrosFinalizados();
-      return LibrosData(
-        libros: libros,
-        finalizados: _deduplicarFinalizados(finalizados),
-      );
-    });
+  Future<LibrosData> getLibrosData({String? clubId}) {
+    return LibrosDataCache.instance.get(
+      () async {
+        final libros = await getLibros();
+        final finalizados = await getAllLibrosFinalizados();
+        return LibrosData(
+          libros: libros,
+          finalizados: _deduplicarFinalizados(finalizados),
+        );
+      },
+      clubId: clubId,
+    );
   }
 
   /// Vista ClubReads: igual que [getLibrosData] pero sin filtro de club.

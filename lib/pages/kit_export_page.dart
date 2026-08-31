@@ -581,22 +581,24 @@ class _StoryComposition extends StatelessWidget {
               Positioned(
                 left: 0,
                 right: 0,
-                bottom: 128, // encima de la tarjeta frosted (~95px) + margen
+                bottom: 158, // un poco más arriba que antes
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: List.generate(5, (i) {
                     final filled = valoracion! >= i + 1;
                     final half = !filled && valoracion! >= i + 0.5;
+                    // Color oro siempre, independientemente del accentColor
+                    const goldColor = Color(0xFFFFB800);
                     return Icon(
                       filled
                           ? Icons.star_rounded
                           : half
                               ? Icons.star_half_rounded
                               : Icons.star_outline_rounded,
-                      size: 22,
+                      size: 28,
                       color: (filled || half)
-                          ? accentColor
-                          : foreground.withValues(alpha: 0.20),
+                          ? goldColor
+                          : goldColor.withValues(alpha: 0.25),
                     );
                   }),
                 ),

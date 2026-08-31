@@ -230,14 +230,16 @@ class _MonthlyReadingPoster extends StatelessWidget {
                     ? const _EmptyMonthlyPoster()
                     : Container(
                         padding: const EdgeInsets.all(9),
+                        // Evita desbordamiento visual en el póster renderizado.
+                        clipBehavior: Clip.hardEdge,
                         decoration: BoxDecoration(
                           color: Colors.white.withValues(alpha: .78),
                           borderRadius: BorderRadius.circular(16),
                           border: Border.all(color: AppColors.primaryLight),
                         ),
-                        child: Builder(
-                          builder: (context) {
-                            // Calcular semanas del mes para ajustar el aspecto
+                        child: LayoutBuilder(
+                          builder: (context, constraints) {
+                            // Calcular número de semanas del mes
                             final firstDay = DateTime(
                               calendar.year,
                               calendar.month,
@@ -251,8 +253,38 @@ class _MonthlyReadingPoster extends StatelessWidget {
                             final startOffset = (firstDay.weekday - 1) % 7;
                             final totalCells = startOffset + lastDay.day;
                             final weeks = (totalCells / 7).ceil();
-                            // 5 semanas → .88, 6 semanas → .74
-                            final ratio = weeks >= 6 ? .74 : .88;
+
+                            // LayoutBuilder recibe el interior del Container
+                            // (padding de 9 px ya descontado por Flutter).
+                            final gridWidth = constraints.maxWidth;
+                            final gridHeight = constraints.maxHeight;
+
+                            // Reservamos el 18 % del alto para la fila de
+                            // etiquetas + SizedBox(5) + margen de seguridad.
+                            // En dispositivos iOS con escalado de fuente, el
+                            // texto renderiza más alto de lo teórico (~14 px);
+                            // 18 % ≈ 57 px sobre un contenedor de 315 px, que
+                            // absorbe el sobrecoste observado empíricamente.
+                            final headerH = (gridHeight * 0.18).clamp(
+                              30.0,
+                              80.0,
+                            );
+
+                            // Espacio neto para el GridView
+                            // mainAxisSpacing = 1 px entre filas
+                            final availableForGrid =
+                                gridHeight - headerH - (weeks - 1);
+                            final cellH = (availableForGrid / weeks).clamp(
+                              1.0,
+                              double.infinity,
+                            );
+
+                            // crossAxisSpacing = 1 px entre columnas (6 gaps)
+                            final cellW = (gridWidth - 6) / 7;
+
+                            // childAspectRatio = ancho / alto: mayor → más cortas
+                            final ratio = (cellW / cellH).clamp(0.55, 1.6);
+
                             return ReadingCoverCalendar(
                               calendar: calendar,
                               highResolution: true,

@@ -284,7 +284,7 @@ class _Content extends StatelessWidget {
                   crossAxisCount: 3,
                   crossAxisSpacing: AppSpacing.sm,
                   mainAxisSpacing: AppSpacing.sm,
-                  childAspectRatio: .78,
+                  childAspectRatio: .72,
                 ),
                 itemCount: unlocked.length,
                 itemBuilder: (context, i) =>

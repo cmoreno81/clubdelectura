@@ -19,6 +19,10 @@ class LibrosDataCache {
       DateTime.now().difference(_cachedAt!) < _ttl &&
       _cachedForClubId == clubId;
 
+  /// Versión pública de _isValid para que otros widgets puedan saber
+  /// si el fetch real es necesario (y pre-sincronizar el club).
+  bool isValidFor(String? clubId) => _isValid(clubId);
+
   Future<LibrosData> get(
     Future<LibrosData> Function() fetcher, {
     String? clubId,

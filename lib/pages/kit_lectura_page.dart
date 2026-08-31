@@ -405,7 +405,7 @@ class _KitLecturaPageState extends State<KitLecturaPage> {
                   icon: Icons.brush_outlined,
                   title: 'Subrayadores',
                   subtitle: _tieneSubrayadores
-                      ? 'Subrayadores preparados · Toca para cambiarlos'
+                      ? 'Listos · Se usarán para marcar tus comentarios en el club'
                       : _tienePaleta
                       ? 'Crearemos tonos a partir de tu paleta'
                       : 'Primero elige una paleta',

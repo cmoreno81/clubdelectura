@@ -380,6 +380,8 @@ class _ComentarioCardState extends State<ComentarioCard> {
             : null,
         borderColor: comentario.esCita
             ? colorCita.withValues(alpha: .55)
+            : comentario.color.isNotEmpty
+            ? colorCita.withValues(alpha: .30)
             : esNuevo
             ? colorPrincipal.withValues(alpha: .36)
             : null,
@@ -514,15 +516,37 @@ class _ComentarioCardState extends State<ComentarioCard> {
                   ],
                 ),
               )
-            else
-              Text(
-                comentario.comentario,
-                style: AppTextStyles.body.copyWith(
-                  fontSize: 16,
-                  height: 1.55,
-                  color: AppColors.textPrimary,
+            else ...[
+              // Si el comentario tiene color de subrayador, mostramos un
+              // indicador coloreado a la izquierda (como marcador de categoría).
+              if (comentario.color.isNotEmpty)
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.only(left: 10),
+                  decoration: BoxDecoration(
+                    border: Border(
+                      left: BorderSide(color: colorCita, width: 3),
+                    ),
+                  ),
+                  child: Text(
+                    comentario.comentario,
+                    style: AppTextStyles.body.copyWith(
+                      fontSize: 16,
+                      height: 1.55,
+                      color: AppColors.textPrimary,
+                    ),
+                  ),
+                )
+              else
+                Text(
+                  comentario.comentario,
+                  style: AppTextStyles.body.copyWith(
+                    fontSize: 16,
+                    height: 1.55,
+                    color: AppColors.textPrimary,
+                  ),
                 ),
-              ),
+            ],
 
             if (comentario.editado) ...[
               const SizedBox(height: AppSpacing.xs),

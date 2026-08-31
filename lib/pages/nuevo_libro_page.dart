@@ -2,6 +2,7 @@ import 'package:club_lectura_app/services/library_refresh_notifier.dart';
 import 'package:flutter/material.dart';
 import '../models/libro.dart';
 import '../models/libro_agrupado.dart';
+import 'detalle_libro_page.dart';
 import '../models/nuevo_libro.dart';
 import '../services/api_service.dart';
 import '../services/usuario_service.dart';
@@ -220,9 +221,8 @@ class _NuevoLibroPageState extends State<NuevoLibroPage> {
         if (!mounted) return;
         if (accion == _AccionDuplicado.cancelar) return;
         if (accion == _AccionDuplicado.eligioExistente) {
-          // El sheet ya mostró el snackbar y actualizó la biblioteca.
-          // Cerramos también esta página.
-          Navigator.pop(context, true);
+          // La navegación a la ficha ya se realizó dentro de
+          // _mostrarDialogoDuplicados (pushReplacement). Solo salimos.
           return;
         }
         // Si crearNuevo: _mostrarDialogoDuplicados lo gestionó.
@@ -312,6 +312,8 @@ class _NuevoLibroPageState extends State<NuevoLibroPage> {
     required String titulo,
     required int? paginas,
   }) async {
+    Map<String, dynamic>? candidatoElegido;
+
     final accion = await showModalBottomSheet<_AccionDuplicado>(
       context: context,
       isScrollControlled: true,
@@ -322,10 +324,32 @@ class _NuevoLibroPageState extends State<NuevoLibroPage> {
         prioridad: prioridad,
         formato: formato,
         usuario: usuario,
+        onLibroElegido: (c) => candidatoElegido = c,
       ),
     );
 
     if (!mounted) return _AccionDuplicado.cancelar;
+
+    // El usuario eligió un libro existente: ir a su ficha.
+    if (accion == _AccionDuplicado.eligioExistente && candidatoElegido != null) {
+      final libroAgrupado = LibroAgrupado(
+        libro: candidatoElegido!['title']?.toString() ?? '',
+        genero: candidatoElegido!['genero']?.toString() ?? '',
+        registros: const [],
+        finalizados: const [],
+        yaLoTengo: true,
+        leidoPorMi: true,
+        coverUrl: candidatoElegido!['coverUrl']?.toString() ?? '',
+        bookId: candidatoElegido!['id']?.toString(),
+      );
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(
+          builder: (_) => DetalleLibroPage(libro: libroAgrupado),
+        ),
+      );
+      return _AccionDuplicado.eligioExistente;
+    }
 
     if (accion == _AccionDuplicado.crearNuevo) {
       // Usuario confirmó: reintentar con confirmarNuevo = true
@@ -1209,12 +1233,16 @@ class _DuplicadosSheet extends StatefulWidget {
     required this.prioridad,
     required this.formato,
     required this.usuario,
+    this.onLibroElegido,
   });
 
   final List<Map<String, dynamic>> candidatos;
   final String prioridad;
   final String formato;
   final String usuario;
+  /// Se invoca con los datos del candidato elegido cuando el usuario
+  /// selecciona un libro existente y el servidor confirma la adición.
+  final void Function(Map<String, dynamic> candidato)? onLibroElegido;
 
   @override
   State<_DuplicadosSheet> createState() => _DuplicadosSheetState();
@@ -1223,8 +1251,13 @@ class _DuplicadosSheet extends StatefulWidget {
 class _DuplicadosSheetState extends State<_DuplicadosSheet> {
   bool _guardando = false;
 
-  Future<void> _elegirExistente(String bookId, String titulo) async {
+  Future<void> _elegirExistente(Map<String, dynamic> candidato) async {
+    final bookId = candidato['id']?.toString() ?? '';
+    final titulo = candidato['title']?.toString() ?? '';
     setState(() => _guardando = true);
+    // Capturar referencias antes del await — el contexto puede no ser válido después
+    final messenger = ScaffoldMessenger.maybeOf(context);
+    final navigator = Navigator.maybeOf(context);
     try {
       final respuesta = await ApiService().anadirLibroExistente(
         usuario: widget.usuario,
@@ -1234,33 +1267,33 @@ class _DuplicadosSheetState extends State<_DuplicadosSheet> {
       );
       if (!mounted) return;
       final ok = respuesta['ok'] == true;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            ok
-                ? '"$titulo" añadido a tu lista.'
-                : (respuesta['mensaje']?.toString() ??
-                      'Error al añadir el libro.'),
-          ),
-          backgroundColor: ok ? AppColors.success : null,
-        ),
-      );
       if (ok) {
         LibraryRefreshNotifier.instance.invalidate();
-        // Cierra el sheet y la página de NuevoLibro
-        Navigator.pop(context, _AccionDuplicado.eligioExistente);
+        widget.onLibroElegido?.call(candidato);
+        // Primero cerrar el sheet, luego el snackbar (el sheet modal no tiene
+        // Scaffold propio, usar la referencia capturada antes es lo seguro)
+        navigator?.pop(_AccionDuplicado.eligioExistente);
+        messenger?.showSnackBar(
+          SnackBar(
+            content: Text('"$titulo" añadido a tu lista.'),
+            backgroundColor: AppColors.success,
+          ),
+        );
       } else {
         setState(() => _guardando = false);
+        messenger?.showSnackBar(
+          SnackBar(
+            content: Text(
+              respuesta['mensaje']?.toString() ?? 'Error al añadir el libro.',
+            ),
+          ),
+        );
       }
     } catch (e) {
       if (!mounted) return;
       setState(() => _guardando = false);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            e.toString().replaceFirst('Exception: ', ''),
-          ),
-        ),
+      messenger?.showSnackBar(
+        SnackBar(content: Text(e.toString().replaceFirst('Exception: ', ''))),
       );
     }
   }
@@ -1312,12 +1345,39 @@ class _DuplicadosSheetState extends State<_DuplicadosSheet> {
               ),
               const SizedBox(height: AppSpacing.md),
 
-              // Candidatos — deduplicados por id para evitar entradas repetidas
-              ...{
-                for (final c in widget.candidatos)
-                  c['id']?.toString() ?? '': c,
-              }.values.map((c) {
-                final id = c['id']?.toString() ?? '';
+              // Candidatos — deduplicados por título normalizado para evitar
+              // que el mismo libro aparezca dos veces con distintos ids/ediciones.
+              // Se prefiere la entrada con más datos (autor o portada).
+              ...(() {
+                final seen = <String, Map<String, dynamic>>{};
+                for (final c in widget.candidatos) {
+                  final key = (c['title']?.toString() ?? '')
+                      .toLowerCase()
+                      .trim();
+                  if (!seen.containsKey(key)) {
+                    seen[key] = c;
+                  } else {
+                    // Preferir la entrada que tiene más datos
+                    final existing = seen[key]!;
+                    final existingScore =
+                        (existing['authorName']?.toString().isNotEmpty == true
+                                ? 1
+                                : 0) +
+                            (existing['coverUrl']?.toString().isNotEmpty == true
+                                ? 1
+                                : 0);
+                    final newScore =
+                        (c['authorName']?.toString().isNotEmpty == true
+                                ? 1
+                                : 0) +
+                            (c['coverUrl']?.toString().isNotEmpty == true
+                                ? 1
+                                : 0);
+                    if (newScore > existingScore) seen[key] = c;
+                  }
+                }
+                return seen.values;
+              })().map((c) {
                 final title = c['title']?.toString() ?? '';
                 final author = c['authorName']?.toString();
                 final cover = c['coverUrl']?.toString();
@@ -1327,7 +1387,7 @@ class _DuplicadosSheetState extends State<_DuplicadosSheet> {
                   child: InkWell(
                     onTap: _guardando
                         ? null
-                        : () => _elegirExistente(id, title),
+                        : () => _elegirExistente(c),
                     borderRadius: BorderRadius.circular(AppRadius.md),
                     child: Container(
                       padding: const EdgeInsets.all(AppSpacing.sm),

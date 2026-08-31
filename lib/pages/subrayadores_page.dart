@@ -121,7 +121,50 @@ class SubrayadoresPage extends StatelessWidget {
             descripcion: "Momentos que te dejaron sin respiración.",
           ),
 
-          const SizedBox(height: 30),
+          const SizedBox(height: 24),
+
+          // ── Nota: uso en lecturas conjuntas ──────────────────────────────
+          Container(
+            padding: const EdgeInsets.all(AppSpacing.md),
+            decoration: BoxDecoration(
+              color: const Color(0xFFEEF4FF),
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(color: const Color(0xFFB8D0FF)),
+            ),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text('💬', style: TextStyle(fontSize: 22)),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'También en las lecturas conjuntas',
+                        style: TextStyle(
+                          fontWeight: FontWeight.w800,
+                          fontSize: 14,
+                          color: Color(0xFF3058C7),
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        'Estos colores estarán disponibles al escribir comentarios en los capítulos del libro. '
+                        'Elige una categoría para que tu nota quede marcada con su color — '
+                        'muy útil para que el club identifique de un vistazo si compartes una teoría, un personaje o un momento especial.',
+                        style: AppTextStyles.bodySecondary.copyWith(
+                          color: const Color(0xFF3058C7).withValues(alpha: .85),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+          const SizedBox(height: 24),
 
           FilledButton.icon(
             onPressed: () {

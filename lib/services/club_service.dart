@@ -33,7 +33,15 @@ class ClubService {
   }
 
   Future<void> selectClub(String clubId) async {
-    await _request('seleccionarClub', body: {'clubId': clubId});
+    final params = {'action': 'seleccionarClub'};
+    final uri = Uri.parse(AppConfig.baseUrl).replace(queryParameters: params);
+    final response = await _client.post(
+      uri,
+      headers: const {'Content-Type': 'application/json'},
+      body: jsonEncode({'clubId': clubId}),
+    );
+    // Solo verificamos que el servidor respondió con éxito (no necesitamos el cuerpo).
+    HttpResponseHandler.ensureSuccess(response);
   }
 
   Future<String> getInvite(String clubId) async {
