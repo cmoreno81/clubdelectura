@@ -56,11 +56,14 @@ class LibrosPage extends StatefulWidget {
     this.onBackToClub,
     this.controller,
     this.loadData,
+    this.esPersonal = false,
   });
 
   final VoidCallback? onBackToClub;
   final LibrosPageController? controller;
   final LibraryDataLoader? loadData;
+  /// true cuando el usuario está en modo lector solitario (sin club).
+  final bool esPersonal;
 
   @override
   State<LibrosPage> createState() => _LibrosPageState();
@@ -84,6 +87,8 @@ class _LibrosPageState extends State<LibrosPage> with WidgetsBindingObserver {
   String filtroOrigen = 'DEL_CLUB'; // 'DEL_CLUB' | 'CLUBREADS'
   String filtroUsuario = 'TODAS';
   String? filtroVibe; // null = sin filtro de vibe
+  // Lista de miembros del club — se actualiza solo con datos DEL_CLUB
+  List<String> _miembrosClub = [];
   List<Libro>? _cachedBooks;
   List<LibroFinalizado>? _cachedFinishedBooks;
   String? _cachedFilterKey;
@@ -280,14 +285,19 @@ class _LibrosPageState extends State<LibrosPage> with WidgetsBindingObserver {
           final libros = data.libros;
           final finalizados = data.finalizados;
 
-          final usuarios = {
-            ...libros.map((e) => e.usuario.trim()).where((u) => u.isNotEmpty),
-            ...finalizados
-                .map((e) => e.usuario.trim())
-                .where((u) => u.isNotEmpty),
-          }.toList()..sort();
+          // La lista de lectores solo se actualiza con datos del club propio,
+          // nunca con datos globales de ClubReads (que incluirían todos los usuarios).
+          if (filtroOrigen == 'DEL_CLUB') {
+            final miembros = {
+              ...libros.map((e) => e.usuario.trim()).where((u) => u.isNotEmpty),
+              ...finalizados
+                  .map((e) => e.usuario.trim())
+                  .where((u) => u.isNotEmpty),
+            }.toList()..sort();
+            _miembrosClub = miembros;
+          }
 
-          final usuariosFiltro = ['TODAS', ...usuarios];
+          final usuariosFiltro = ['TODAS', ..._miembrosClub];
 
           if (!usuariosFiltro.contains(filtroUsuario)) {
             filtroUsuario = 'TODAS';
@@ -444,12 +454,12 @@ class _LibrosPageState extends State<LibrosPage> with WidgetsBindingObserver {
               prefixIconConstraints: BoxConstraints(minWidth: 42),
               prefixIcon: Icon(Icons.collections_bookmark_outlined, size: 21),
             ),
-            items: const [
+            items: [
               DropdownMenuItem(
                 value: 'DEL_CLUB',
-                child: Text('Del club'),
+                child: Text(widget.esPersonal ? 'Mi biblioteca' : 'Del club'),
               ),
-              DropdownMenuItem(
+              const DropdownMenuItem(
                 value: 'CLUBREADS',
                 child: Text('De ClubReads'),
               ),
@@ -467,35 +477,39 @@ class _LibrosPageState extends State<LibrosPage> with WidgetsBindingObserver {
             },
           ),
 
-          const SizedBox(height: AppSpacing.xs),
+          // El selector de Lector solo aparece en modo DEL_CLUB de club social.
+          // En ClubReads (libros globales) o en cuenta personal no aplica.
+          if (filtroOrigen == 'DEL_CLUB' && !widget.esPersonal) ...[
+            const SizedBox(height: AppSpacing.xs),
 
-          DropdownButtonFormField<String>(
-            initialValue: filtroUsuario,
-            isDense: true,
-            style: AppTextStyles.body.copyWith(color: AppColors.textPrimary),
-            decoration: const InputDecoration(
+            DropdownButtonFormField<String>(
+              initialValue: filtroUsuario,
               isDense: true,
-              contentPadding: EdgeInsets.symmetric(vertical: 10),
-              labelText: 'Lector',
-              prefixIconConstraints: BoxConstraints(minWidth: 42),
-              prefixIcon: Icon(Icons.person_outline_rounded, size: 21),
-            ),
-            items: usuariosFiltro.map((usuario) {
-              return DropdownMenuItem(
-                value: usuario,
-                child: Text(
-                  usuario == 'TODAS' ? 'Todos los lectores' : usuario,
-                ),
-              );
-            }).toList(),
-            onChanged: (value) {
-              if (value == null) return;
+              style: AppTextStyles.body.copyWith(color: AppColors.textPrimary),
+              decoration: const InputDecoration(
+                isDense: true,
+                contentPadding: EdgeInsets.symmetric(vertical: 10),
+                labelText: 'Lector',
+                prefixIconConstraints: BoxConstraints(minWidth: 42),
+                prefixIcon: Icon(Icons.person_outline_rounded, size: 21),
+              ),
+              items: usuariosFiltro.map((usuario) {
+                return DropdownMenuItem(
+                  value: usuario,
+                  child: Text(
+                    usuario == 'TODAS' ? 'Todos los lectores' : usuario,
+                  ),
+                );
+              }).toList(),
+              onChanged: (value) {
+                if (value == null) return;
 
-              setState(() {
-                filtroUsuario = value;
-              });
-            },
-          ),
+                setState(() {
+                  filtroUsuario = value;
+                });
+              },
+            ),
+          ],
 
           const SizedBox(height: AppSpacing.sm),
 

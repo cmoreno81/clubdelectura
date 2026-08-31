@@ -9,6 +9,7 @@ import 'libros_page.dart';
 import 'mi_espacio_page.dart';
 import 'sagas_page.dart';
 import '../models/club_membership.dart';
+import '../services/libros_data_cache.dart';
 import '../services/notificaciones_service.dart';
 import '../utils/app_breakpoints.dart';
 
@@ -61,6 +62,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
             () => LibrosPage(
               controller: _librosController,
               onBackToClub: _volverAlClub,
+              esPersonal: true,
             ),
             () => SagasPage(controller: _sagasController),
             () => const MiEspacioPage(),
@@ -97,6 +99,13 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
   void didUpdateWidget(covariant HomePage oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.club.id == widget.club.id) return;
+    // Al cambiar de club: invalidar caché de biblioteca y resetear todas las
+    // páginas para que se reconstruyan frescas con el nuevo contexto de club.
+    LibrosDataCache.instance.invalidate();
+    for (var i = 0; i < _pages.length; i++) {
+      _pages[i] = null;
+    }
+    _pages[0] = _pageBuilders[0]();
     _notifications.limpiar();
     if (!_esPersonal) {
       unawaited(_notifications.cargar());
