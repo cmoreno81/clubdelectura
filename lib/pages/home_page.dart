@@ -49,6 +49,9 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
+    // Invalidar caché al entrar en cualquier club para no arrastrar datos
+    // del club anterior (en navegación push/pop se crea un nuevo HomePage).
+    LibrosDataCache.instance.invalidate();
     if (_esPersonal) {
       // Modo lector solitario: 4 tabs sin Lecturas ni Clubvisión
       _pageBuilders =
