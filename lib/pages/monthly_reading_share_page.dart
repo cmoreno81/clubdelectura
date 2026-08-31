@@ -164,9 +164,13 @@ class _MonthlyReadingPoster extends StatelessWidget {
       0,
       (total, book) => total + book.pages,
     );
+    final booksWithPages =
+        calendar.finishedBooks.where((book) => book.pages > 0).length;
+    final hasAnyPageData =
+        calendar.finishedBooks.isNotEmpty && booksWithPages > 0;
     final hasCompletePageData =
-        calendar.finishedBooks.isNotEmpty &&
-        calendar.finishedBooks.every((book) => book.pages > 0);
+        hasAnyPageData &&
+        booksWithPages == calendar.finishedBooks.length;
 
     return MediaQuery.withClampedTextScaling(
       maxScaleFactor: 1.0,
@@ -270,10 +274,10 @@ class _MonthlyReadingPoster extends StatelessWidget {
                   ),
                   const SizedBox(width: 26),
                   _PosterMetric(
-                    value: hasCompletePageData ? '$pages' : '—',
-                    label: hasCompletePageData
-                        ? 'PÁGINAS'
-                        : 'PÁGINAS SIN DATOS',
+                    value: hasAnyPageData
+                        ? (hasCompletePageData ? '$pages' : '$pages+')
+                        : '—',
+                    label: 'PÁGINAS',
                   ),
                   const Spacer(),
                   Flexible(
