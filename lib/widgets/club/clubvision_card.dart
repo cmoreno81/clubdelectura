@@ -33,7 +33,9 @@ class ClubvisionCard extends StatelessWidget {
   bool get _mostrarFlecha {
     final estado = dashboard.clubvision.estado.toUpperCase();
 
-    return estado == 'VOTACION' || estado == 'RESULTADOS';
+    return estado == 'VOTACION' ||
+        estado == 'RESULTADOS' ||
+        (dashboard.clubvision.esAdmin && estado == 'SIN_CANDIDATAS');
   }
 
   bool get _esInteractiva {
@@ -41,7 +43,8 @@ class ClubvisionCard extends StatelessWidget {
     return estado == 'VOTACION' ||
         estado == 'RESULTADOS' ||
         estado == 'LECTURA' ||
-        estado == 'ULTIMAS_HORAS';
+        estado == 'ULTIMAS_HORAS' ||
+        (dashboard.clubvision.esAdmin && estado == 'SIN_CANDIDATAS');
   }
 
   Future<void> _abrirClubvision(BuildContext context) async {
@@ -348,7 +351,11 @@ class ClubvisionCard extends StatelessWidget {
       ),
       child: Column(
         children: [
-          const Icon(Icons.menu_book_rounded, color: AppColors.primary, size: 34),
+          const Icon(
+            Icons.menu_book_rounded,
+            color: AppColors.primary,
+            size: 34,
+          ),
           SizedBox(height: AppSpacing.sm),
           Text(
             'Aún faltan libros para votar',

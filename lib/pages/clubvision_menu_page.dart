@@ -10,6 +10,7 @@ import '../theme/app_radius.dart';
 import '../theme/app_spacing.dart';
 import '../theme/app_text_styles.dart';
 import '../widgets/common/club_card.dart';
+import '../widgets/common/club_button.dart';
 import '../widgets/common/club_chip.dart';
 import '../widgets/error_view.dart';
 import 'clubvision_votacion_page.dart';
@@ -34,6 +35,7 @@ class ClubvisionMenuPage extends StatefulWidget {
 
 class _ClubvisionMenuPageState extends State<ClubvisionMenuPage> {
   late Future<ClubvisionData> clubvisionFuture;
+  bool _iniciandoBienvenida = false;
 
   @override
   void initState() {
@@ -48,6 +50,47 @@ class _ClubvisionMenuPageState extends State<ClubvisionMenuPage> {
   Future<void> _refrescar() async {
     setState(_recargar);
     await clubvisionFuture;
+  }
+
+  Future<void> _iniciarBienvenida() async {
+    final confirmar = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Iniciar Clubvisión de bienvenida'),
+        content: const Text(
+          'El club tendrá 48 horas para votar. Después se mostrará la gala y comenzará la lectura elegida.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Ahora no'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Iniciar'),
+          ),
+        ],
+      ),
+    );
+    if (confirmar != true || !mounted) return;
+    setState(() => _iniciandoBienvenida = true);
+    try {
+      final result = await ApiService().iniciarClubvisionBienvenida();
+      if (!mounted) return;
+      final ok = result['ok'] == true;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            ok
+                ? 'Clubvisión de bienvenida iniciada'
+                : (result['mensaje']?.toString() ?? 'No se ha podido iniciar'),
+          ),
+        ),
+      );
+      if (ok) await _refrescar();
+    } finally {
+      if (mounted) setState(() => _iniciandoBienvenida = false);
+    }
   }
 
   Future<void> _abrirVotacion(ClubvisionData club) async {
@@ -106,7 +149,6 @@ class _ClubvisionMenuPageState extends State<ClubvisionMenuPage> {
     if (!mounted) return;
     setState(_recargar);
   }
-
 
   @override
   Widget build(BuildContext context) {
@@ -308,6 +350,15 @@ class _ClubvisionMenuPageState extends State<ClubvisionMenuPage> {
         ];
 
       default:
+        if (club.bienvenida.esAdmin) {
+          return [
+            _WelcomeClubvisionCard(
+              eligibility: club.bienvenida,
+              loading: _iniciandoBienvenida,
+              onStart: club.bienvenida.disponible ? _iniciarBienvenida : null,
+            ),
+          ];
+        }
         return [const _EstadoEnEsperaCard()];
     }
   }
@@ -1065,7 +1116,9 @@ class _SinPropuestaCard extends StatelessWidget {
                 vertical: AppSpacing.sm,
               ),
               decoration: BoxDecoration(
-                color: AppColors.primary.withValues(alpha: accionando ? .05 : .1),
+                color: AppColors.primary.withValues(
+                  alpha: accionando ? .05 : .1,
+                ),
                 borderRadius: BorderRadius.circular(AppRadius.pill),
               ),
               child: Row(
@@ -1126,7 +1179,9 @@ class _PropuestaActivaCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final color = propuesta.estaCompleta ? AppColors.success : AppColors.primary;
+    final color = propuesta.estaCompleta
+        ? AppColors.success
+        : AppColors.primary;
 
     return ClubCard(
       elevated: true,
@@ -1162,11 +1217,7 @@ class _PropuestaActivaCard extends StatelessWidget {
                   borderRadius: BorderRadius.circular(AppRadius.lg),
                   border: Border.all(color: color.withValues(alpha: .20)),
                 ),
-                child: Icon(
-                  Icons.groups_rounded,
-                  color: color,
-                  size: 29,
-                ),
+                child: Icon(Icons.groups_rounded, color: color, size: 29),
               ),
               const SizedBox(width: AppSpacing.md),
               Expanded(
@@ -1538,6 +1589,85 @@ class _SinGalaEsteMesCard extends StatelessWidget {
 }
 
 // ── Estado en espera ─────────────────────────────────────────────
+
+class _WelcomeClubvisionCard extends StatelessWidget {
+  const _WelcomeClubvisionCard({
+    required this.eligibility,
+    required this.loading,
+    required this.onStart,
+  });
+
+  final ClubvisionWelcomeEligibility eligibility;
+  final bool loading;
+  final VoidCallback? onStart;
+
+  @override
+  Widget build(BuildContext context) {
+    return ClubCard(
+      elevated: true,
+      padding: const EdgeInsets.all(AppSpacing.xl),
+      gradient: const LinearGradient(
+        begin: Alignment.topLeft,
+        end: Alignment.bottomRight,
+        colors: [Color(0xFFF8EFF9), Color(0xFFFFF6DF)],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Icon(Icons.auto_awesome_rounded, color: AppColors.primary),
+              const SizedBox(width: AppSpacing.sm),
+              Expanded(
+                child: Text(
+                  'Clubvisión de bienvenida',
+                  style: AppTextStyles.subtitle,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: AppSpacing.sm),
+          Text(
+            'Vivid vuestra primera votación sin esperar al próximo mes.',
+            style: AppTextStyles.bodySecondary,
+          ),
+          const SizedBox(height: AppSpacing.md),
+          Wrap(
+            spacing: AppSpacing.sm,
+            runSpacing: AppSpacing.sm,
+            children: [
+              ClubChip(
+                label:
+                    '${eligibility.miembros}/${eligibility.minimoMiembros} miembros',
+                variant: eligibility.miembros >= eligibility.minimoMiembros
+                    ? ClubChipVariant.success
+                    : ClubChipVariant.warning,
+              ),
+              ClubChip(
+                label:
+                    '${eligibility.candidatas}/${eligibility.minimoCandidatas} candidatas',
+                variant: eligibility.candidatas >= eligibility.minimoCandidatas
+                    ? ClubChipVariant.success
+                    : ClubChipVariant.warning,
+              ),
+            ],
+          ),
+          if (!eligibility.disponible && eligibility.motivo.isNotEmpty) ...[
+            const SizedBox(height: AppSpacing.md),
+            Text(eligibility.motivo, style: AppTextStyles.caption),
+          ],
+          const SizedBox(height: AppSpacing.lg),
+          ClubButton(
+            label: 'Iniciar bienvenida',
+            icon: Icons.how_to_vote_outlined,
+            loading: loading,
+            onPressed: onStart,
+          ),
+        ],
+      ),
+    );
+  }
+}
 
 class _EstadoEnEsperaCard extends StatelessWidget {
   const _EstadoEnEsperaCard();

@@ -118,8 +118,9 @@ class ApiService {
 
   /// Vista ClubReads: todos los usuarios sin filtro de club.
   Future<List<Libro>> getLibrosGlobal() async {
-    final response =
-        await _client.get(Uri.parse('$baseUrl?action=librosGlobal'));
+    final response = await _client.get(
+      Uri.parse('$baseUrl?action=librosGlobal'),
+    );
     if (response.statusCode == 200) {
       final List data = _decodeJson(response);
       return data.map((e) => Libro.fromJson(e)).toList();
@@ -675,6 +676,7 @@ class ApiService {
     required String capitulo,
     int limit = 20,
     String? cursor,
+
     /// Corte de novedad ISO. Solo se envía en páginas 2+ para que el backend
     /// pueda seguir usando el mismo corte que en la primera página.
     String? cutoff,
@@ -1060,17 +1062,14 @@ class ApiService {
   }
 
   Future<LibrosData> getLibrosData({String? clubId}) {
-    return LibrosDataCache.instance.get(
-      () async {
-        final libros = await getLibros();
-        final finalizados = await getAllLibrosFinalizados();
-        return LibrosData(
-          libros: libros,
-          finalizados: _deduplicarFinalizados(finalizados),
-        );
-      },
-      clubId: clubId,
-    );
+    return LibrosDataCache.instance.get(() async {
+      final libros = await getLibros();
+      final finalizados = await getAllLibrosFinalizados();
+      return LibrosData(
+        libros: libros,
+        finalizados: _deduplicarFinalizados(finalizados),
+      );
+    }, clubId: clubId);
   }
 
   /// Vista ClubReads: igual que [getLibrosData] pero sin filtro de club.
@@ -1103,9 +1102,9 @@ class ApiService {
 
   Future<List<Map<String, dynamic>>> exportarBiblioteca() async {
     final response = await _client.get(
-      Uri.parse(baseUrl).replace(
-        queryParameters: {'action': 'exportBiblioteca'},
-      ),
+      Uri.parse(
+        baseUrl,
+      ).replace(queryParameters: {'action': 'exportBiblioteca'}),
     );
     if (response.statusCode != 200) return [];
     final data = _decodeJson(response);
@@ -1161,6 +1160,13 @@ class ApiService {
     }
 
     throw Exception('Error cargando Clubvisión');
+  }
+
+  Future<Map<String, dynamic>> iniciarClubvisionBienvenida() async {
+    final response = await _postJson('iniciarClubvisionBienvenida');
+    if (response.statusCode != 200) return {'ok': false};
+    final data = _decodeJson(response);
+    return data is Map<String, dynamic> ? data : {'ok': false};
   }
 
   Future<List<HistorialClubvision>> getHistorialClubvision() async {
@@ -1326,7 +1332,9 @@ class ApiService {
     return _decodeJson(response);
   }
 
-  Future<Map<String, dynamic>> apoyarPropuestaLectura(String propuestaId) async {
+  Future<Map<String, dynamic>> apoyarPropuestaLectura(
+    String propuestaId,
+  ) async {
     final response = await _postJson('apoyarPropuestaLectura', {
       'propuestaId': propuestaId,
     });
@@ -1334,7 +1342,9 @@ class ApiService {
     return _decodeJson(response);
   }
 
-  Future<Map<String, dynamic>> cancelarPropuestaLectura(String propuestaId) async {
+  Future<Map<String, dynamic>> cancelarPropuestaLectura(
+    String propuestaId,
+  ) async {
     final response = await _postJson('cancelarPropuestaLectura', {
       'propuestaId': propuestaId,
     });
@@ -1953,9 +1963,11 @@ class ApiService {
     final uri = Uri.parse(baseUrl).replace(
       queryParameters: {
         'action': 'favoritosUsuario',
-        'perfil': usuario, // Siempre enviamos el nombre para evitar fallback al usuario autenticado
+        'perfil':
+            usuario, // Siempre enviamos el nombre para evitar fallback al usuario autenticado
         if (profileUserId?.trim().isNotEmpty == true)
-          'profileUserId': profileUserId!.trim(), // ID estable para lookup más robusto
+          'profileUserId': profileUserId!
+              .trim(), // ID estable para lookup más robusto
       },
     );
     final response = await _client.get(uri);
@@ -2155,7 +2167,10 @@ class ApiService {
     final data = _decodeJson(response) as Map<String, dynamic>;
     final list = data['personalidades'] as List? ?? [];
     return list
-        .map((e) => PersonalidadMiembro.fromJson(Map<String, dynamic>.from(e as Map)))
+        .map(
+          (e) =>
+              PersonalidadMiembro.fromJson(Map<String, dynamic>.from(e as Map)),
+        )
         .toList();
   }
 
