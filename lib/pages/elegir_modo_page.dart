@@ -80,10 +80,18 @@ class _ElegirModoPageState extends State<ElegirModoPage>
 
   Future<void> _irAClubs({bool joinMode = false}) async {
     HapticFeedback.selectionClick();
-    await Navigator.push<void>(
+    final result = await Navigator.push<ClubMembership?>(
       context,
       AppPageRoute(builder: (_) => const ClubsPage(onboarding: true)),
     );
+    if (!mounted) return;
+    // Si ClubsPage devolvió un club (creado o unido), navegar a HomePage
+    if (result != null) {
+      await Navigator.pushReplacement<void, void>(
+        context,
+        AppPageRoute(builder: (_) => HomePage(club: result)),
+      );
+    }
   }
 
   @override

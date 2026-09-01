@@ -85,9 +85,16 @@ Future<bool> mostrarAccionesRapidasLibro(
         motivoPausa: motivo.isEmpty ? null : motivo,
       );
     case LibroAccion.finalizar:
-      final resultado = await showDialog<Map<String, String>>(
-        context: context,
-        builder: (_) => const FinalizarLibroDialog(),
+      final resultado = await FinalizarLibroDialog.show(
+        context,
+        fechaInicioActual: libro.registros
+            .where((r) => r.yaLoTengo)
+            .firstOrNull
+            ?.startedAt,
+        formatoActual: libro.registros
+            .where((r) => r.yaLoTengo)
+            .firstOrNull
+            ?.formato ?? '',
       );
       if (resultado == null || !context.mounted) return false;
       ok = await ApiService().actualizarEstado(

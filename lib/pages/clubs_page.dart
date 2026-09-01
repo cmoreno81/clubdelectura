@@ -116,7 +116,20 @@ class _ClubsPageState extends State<ClubsPage> {
       } else {
         ClubContextController.instance.refresh();
       }
-      if (widget.onboarding) return;
+      if (widget.onboarding) {
+        // En el flujo de onboarding, buscar el club activo y volver con él
+        // para que ElegirModoPage pueda navegar directamente a HomePage.
+        final myClubs = await ClubService().getMyClubs();
+        if (!mounted) return;
+        final active = myClubs.clubs.where((c) => c.activo).firstOrNull
+            ?? (myClubs.activeClubId != null
+                ? myClubs.clubs
+                    .where((c) => c.id == myClubs.activeClubId)
+                    .firstOrNull
+                : null);
+        Navigator.pop(context, active);
+        return;
+      }
       _reload();
     } on ApiException catch (error) {
       if (mounted) _snack(error.message);
