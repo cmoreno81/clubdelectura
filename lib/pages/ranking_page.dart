@@ -1163,14 +1163,29 @@ class _CompactStars extends StatelessWidget {
 // Historial mensual: ganadoras de cada mes
 // ─────────────────────────────────────────────────────────────
 
-class _HistoricoMensual extends StatelessWidget {
+class _HistoricoMensual extends StatefulWidget {
   final List<RankingMesHistorico> meses;
   final int anio;
 
   const _HistoricoMensual({required this.meses, required this.anio});
 
   @override
+  State<_HistoricoMensual> createState() => _HistoricoMensualState();
+}
+
+class _HistoricoMensualState extends State<_HistoricoMensual> {
+  // Meses visibles sin expandir (los más recientes)
+  static const _visibles = 6;
+  bool _expandido = false;
+
+  @override
   Widget build(BuildContext context) {
+    final meses = widget.meses;
+    final anio = widget.anio;
+    final hayMas = meses.length > _visibles;
+    final mostrar = _expandido || !hayMas ? meses : meses.take(_visibles).toList();
+    final ocultos = hayMas ? meses.length - _visibles : 0;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -1188,14 +1203,51 @@ class _HistoricoMensual extends StatelessWidget {
           padding: const EdgeInsets.all(AppSpacing.sm),
           child: Column(
             children: [
-              for (var i = 0; i < meses.length; i++) ...[
-                _MesRow(mes: meses[i], anio: anio),
-                if (i < meses.length - 1)
+              for (var i = 0; i < mostrar.length; i++) ...[
+                _MesRow(mes: mostrar[i], anio: anio),
+                if (i < mostrar.length - 1)
                   const Divider(
                     height: 1,
                     indent: AppSpacing.md,
                     endIndent: AppSpacing.md,
                   ),
+              ],
+
+              // Botón expandir / colapsar
+              if (hayMas) ...[
+                const Divider(height: 1, indent: AppSpacing.md, endIndent: AppSpacing.md),
+                InkWell(
+                  onTap: () => setState(() => _expandido = !_expandido),
+                  borderRadius: BorderRadius.circular(AppRadius.md),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: AppSpacing.md,
+                      vertical: AppSpacing.sm,
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          _expandido
+                              ? Icons.keyboard_arrow_up_rounded
+                              : Icons.keyboard_arrow_down_rounded,
+                          size: 18,
+                          color: AppColors.textMuted,
+                        ),
+                        const SizedBox(width: AppSpacing.xs),
+                        Text(
+                          _expandido
+                              ? 'Ver menos'
+                              : 'Ver $ocultos ${ocultos == 1 ? 'mes más' : 'meses más'}',
+                          style: AppTextStyles.caption.copyWith(
+                            color: AppColors.textMuted,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
               ],
             ],
           ),
