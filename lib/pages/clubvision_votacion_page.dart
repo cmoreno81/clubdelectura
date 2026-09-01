@@ -703,6 +703,7 @@ class _PapeletaItem extends StatelessWidget {
         border: Border.all(color: color.withValues(alpha: 0.24)),
       ),
       child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           Container(
             width: 46,
@@ -740,20 +741,26 @@ class _PapeletaItem extends StatelessWidget {
 
                 const SizedBox(height: AppSpacing.xs),
 
-                Text(
-                  '${iconoGenero(genero)} $genero',
-                  style: AppTextStyles.caption,
+                Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        '${iconoGenero(genero)} $genero',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: AppTextStyles.caption,
+                      ),
+                    ),
+                    const SizedBox(width: AppSpacing.sm),
+                    ClubChip(
+                      label: '$puntos pt',
+                      icon: Icons.star_outline_rounded,
+                      variant: ClubChipVariant.primary,
+                    ),
+                  ],
                 ),
               ],
             ),
-          ),
-
-          const SizedBox(width: AppSpacing.sm),
-
-          ClubChip(
-            label: '$puntos puntos',
-            icon: Icons.star_outline_rounded,
-            variant: ClubChipVariant.primary,
           ),
         ],
       ),
@@ -1127,7 +1134,8 @@ class _ResumenVotoDialog extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
+      crossAxisAlignment: CrossAxisAlignment.baseline,
+      textBaseline: TextBaseline.alphabetic,
       children: [
         Text(
           posicion < 3 ? ['🥇', '🥈', '🥉'][posicion] : '${posicion + 1}.',
@@ -1139,6 +1147,8 @@ class _ResumenVotoDialog extends StatelessWidget {
         Expanded(
           child: Text(
             libro,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
             style: const TextStyle(fontWeight: FontWeight.w600),
           ),
         ),
