@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../navigation/book_detail_navigation.dart';
 import '../models/ranking.dart';
 import '../models/ranking_item.dart';
+import '../models/ranking_mes_historico.dart';
 import '../services/api_service.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_radius.dart';
@@ -145,6 +146,14 @@ class _RankingPageState extends State<RankingPage> {
                     items: ranking.topLectoras.take(4).toList(growable: false),
                   ),
                 ),
+
+                if (ranking.historicoMensual.isNotEmpty) ...[
+                  const SizedBox(height: AppSpacing.xl),
+                  _HistoricoMensual(
+                    meses: ranking.historicoMensual,
+                    anio: ranking.anio,
+                  ),
+                ],
 
                 if (libroClub != null || cementerio != null) ...[
                   const SizedBox(height: AppSpacing.xl),
@@ -1146,6 +1155,209 @@ class _CompactStars extends StatelessWidget {
           ),
         ),
       ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────
+// Historial mensual: ganadoras de cada mes
+// ─────────────────────────────────────────────────────────────
+
+class _HistoricoMensual extends StatelessWidget {
+  final List<RankingMesHistorico> meses;
+  final int anio;
+
+  const _HistoricoMensual({required this.meses, required this.anio});
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        const _SectionHeader(
+          icon: Icons.calendar_month_rounded,
+          color: Color(0xFF8B6FC2),
+          title: 'Ganadoras por mes',
+          subtitle: 'La lectora más activa de cada mes',
+        ),
+
+        const SizedBox(height: AppSpacing.md),
+
+        ClubCard(
+          elevated: false,
+          padding: const EdgeInsets.all(AppSpacing.sm),
+          child: Column(
+            children: [
+              for (var i = 0; i < meses.length; i++) ...[
+                _MesRow(mes: meses[i], anio: anio),
+                if (i < meses.length - 1)
+                  const Divider(
+                    height: 1,
+                    indent: AppSpacing.md,
+                    endIndent: AppSpacing.md,
+                  ),
+              ],
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _MesRow extends StatelessWidget {
+  final RankingMesHistorico mes;
+  final int anio;
+
+  const _MesRow({required this.mes, required this.anio});
+
+  @override
+  Widget build(BuildContext context) {
+    if (mes.top.isEmpty) return const SizedBox.shrink();
+
+    final ganadora = mes.top.first;
+    final empate = mes.top.length > 1 && mes.top[1].total == ganadora.total;
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.md,
+        vertical: AppSpacing.sm,
+      ),
+      child: Row(
+        children: [
+          // Mes
+          SizedBox(
+            width: 76,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  mes.nombreMes,
+                  style: AppTextStyles.body.copyWith(
+                    fontWeight: FontWeight.w800,
+                    color: AppColors.textPrimary,
+                  ),
+                ),
+                Text(
+                  '$anio',
+                  style: AppTextStyles.caption.copyWith(
+                    color: AppColors.textMuted,
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+          const SizedBox(width: AppSpacing.sm),
+
+          // Ganadora(s)
+          Expanded(
+            child: Row(
+              children: [
+                // Podio compacto (top 3)
+                for (var i = 0; i < mes.top.length && i < 3; i++) ...[
+                  if (i > 0) const SizedBox(width: AppSpacing.xs),
+                  _MiniAvatar(
+                    lector: mes.top[i],
+                    posicion: i + 1,
+                    esGanadora: i == 0 && !empate,
+                  ),
+                ],
+
+                const SizedBox(width: AppSpacing.sm),
+
+                // Nombre + libros de la ganadora
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        empate
+                            ? '¡Empate!'
+                            : ganadora.nombre,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: AppTextStyles.body.copyWith(
+                          fontWeight: FontWeight.w700,
+                          color: AppColors.textPrimary,
+                        ),
+                      ),
+                      Text(
+                        empate
+                            ? '${ganadora.total} ${ganadora.total == 1 ? 'libro' : 'libros'} cada una'
+                            : '${ganadora.total} ${ganadora.total == 1 ? 'libro' : 'libros'}',
+                        style: AppTextStyles.caption.copyWith(
+                          color: AppColors.textMuted,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+          // Trofeo o medalla de oro
+          const Icon(
+            Icons.emoji_events_rounded,
+            color: Color(0xFFE4B63F),
+            size: 20,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _MiniAvatar extends StatelessWidget {
+  final RankingLectoraMes lector;
+  final int posicion;
+  final bool esGanadora;
+
+  const _MiniAvatar({
+    required this.lector,
+    required this.posicion,
+    required this.esGanadora,
+  });
+
+  static const _medales = ['🥇', '🥈', '🥉'];
+
+  Color get _borderColor => switch (posicion) {
+        1 => const Color(0xFFE4B63F),
+        2 => const Color(0xFF9AA3AF),
+        _ => const Color(0xFFB77948),
+      };
+
+  @override
+  Widget build(BuildContext context) {
+    return Stack(
+      clipBehavior: Clip.none,
+      children: [
+        Container(
+          padding: const EdgeInsets.all(2),
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            border: Border.all(
+              color: _borderColor,
+              width: esGanadora ? 2.5 : 1.5,
+            ),
+          ),
+          child: ClubAvatar(
+            nombre: lector.nombre,
+            imageUrl: lector.avatarUrl,
+            size: esGanadora ? 36 : 28,
+          ),
+        ),
+        if (posicion <= 3)
+          Positioned(
+            bottom: -4,
+            right: -4,
+            child: Text(
+              _medales[posicion - 1],
+              style: TextStyle(fontSize: esGanadora ? 13 : 11),
+            ),
+          ),
+      ],
     );
   }
 }

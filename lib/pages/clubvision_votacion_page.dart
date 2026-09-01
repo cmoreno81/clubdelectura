@@ -225,6 +225,13 @@ class _ClubvisionVotacionPageState extends State<ClubvisionVotacionPage> {
           }
 
           final clubvision = snapshot.data!;
+
+          if (clubvision.candidatas.length < 5) {
+            return _SinCandidatasSuficientes(
+              count: clubvision.candidatas.length,
+            );
+          }
+
           final votos = _votos(clubvision);
 
           final totalIntereses = clubvision.candidatas.fold<int>(
@@ -516,48 +523,57 @@ class _PapeletaCard extends StatelessWidget {
           if (votos.isEmpty)
             const _PapeletaVacia()
           else
-            // ReorderableListView para reordenar con drag & drop
-            ReorderableListView(
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              padding: EdgeInsets.zero,
-              buildDefaultDragHandles: false,
-              onReorderItem: (oldIndex, newIndex) {
-                onReorder?.call(oldIndex, newIndex);
-              },
-              children: [
-                for (var index = 0; index < votos.length; index++)
-                  Padding(
-                    key: ValueKey(votos[index].libro),
-                    padding: EdgeInsets.only(
-                      bottom: index < votos.length - 1 ? AppSpacing.sm : 0,
-                    ),
-                    child: Row(
-                      children: [
-                        Expanded(
-                          child: _PapeletaItem(
-                            posicion: index,
-                            libro: votos[index].libro,
-                            genero: votos[index].genero,
-                          ),
+            // LayoutBuilder captura el ancho real antes de pasarlo al
+            // ReorderableListView. Sin esto, en Android con shrinkWrap:true
+            // los hijos reciben ancho no acotado y el Expanded colapsa a cero,
+            // partiendo los títulos carácter a carácter.
+            LayoutBuilder(
+              builder: (context, constraints) => ReorderableListView(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                padding: EdgeInsets.zero,
+                buildDefaultDragHandles: false,
+                onReorderItem: (oldIndex, newIndex) {
+                  onReorder?.call(oldIndex, newIndex);
+                },
+                children: [
+                  for (var index = 0; index < votos.length; index++)
+                    SizedBox(
+                      key: ValueKey(votos[index].libro),
+                      width: constraints.maxWidth,
+                      child: Padding(
+                        padding: EdgeInsets.only(
+                          bottom:
+                              index < votos.length - 1 ? AppSpacing.sm : 0,
                         ),
-                        // Handle de arrastre — solo visible si hay 2+ items
-                        if (votos.length > 1)
-                          ReorderableDragStartListener(
-                            index: index,
-                            child: Padding(
-                              padding: const EdgeInsets.only(left: 8),
-                              child: Icon(
-                                Icons.drag_handle_rounded,
-                                color: AppColors.textMuted,
-                                size: 22,
+                        child: Row(
+                          children: [
+                            Expanded(
+                              child: _PapeletaItem(
+                                posicion: index,
+                                libro: votos[index].libro,
+                                genero: votos[index].genero,
                               ),
                             ),
-                          ),
-                      ],
+                            // Handle de arrastre — solo visible si hay 2+ items
+                            if (votos.length > 1)
+                              ReorderableDragStartListener(
+                                index: index,
+                                child: Padding(
+                                  padding: const EdgeInsets.only(left: 8),
+                                  child: Icon(
+                                    Icons.drag_handle_rounded,
+                                    color: AppColors.textMuted,
+                                    size: 22,
+                                  ),
+                                ),
+                              ),
+                          ],
+                        ),
+                      ),
                     ),
-                  ),
-              ],
+                ],
+              ),
             ),
 
           const SizedBox(height: AppSpacing.lg),
@@ -1043,6 +1059,55 @@ class _VotacionCerrada extends StatelessWidget {
             style: AppTextStyles.bodySecondary,
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _SinCandidatasSuficientes extends StatelessWidget {
+  final int count;
+  const _SinCandidatasSuficientes({required this.count});
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.all(AppSpacing.lg),
+      child: ClubCard(
+        elevated: false,
+        padding: const EdgeInsets.all(AppSpacing.xl),
+        gradient: const LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [AppColors.surfaceSoft, Color(0xFFE8F4FF)],
+        ),
+        borderColor: AppColors.info,
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Icon(Icons.menu_book_rounded, color: AppColors.info, size: 56),
+            const SizedBox(height: AppSpacing.md),
+            Text(
+              'Aún no hay suficientes candidatos',
+              textAlign: TextAlign.center,
+              style: AppTextStyles.section.copyWith(
+                color: AppColors.textPrimary,
+              ),
+            ),
+            const SizedBox(height: AppSpacing.sm),
+            Text(
+              'Se necesitan al menos 5 libros candidatos para abrir la votación. '
+              'Ahora mismo hay $count.\n\n¡Propón el tuyo para llegar antes a la votación!',
+              textAlign: TextAlign.center,
+              style: AppTextStyles.bodySecondary.copyWith(height: 1.5),
+            ),
+            const SizedBox(height: AppSpacing.xl),
+            ClubButton(
+              label: 'Volver',
+              icon: Icons.arrow_back_rounded,
+              onPressed: () => Navigator.pop(context),
+            ),
+          ],
+        ),
       ),
     );
   }

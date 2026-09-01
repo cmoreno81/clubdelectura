@@ -11,6 +11,7 @@ import '../../theme/app_text_styles.dart';
 import '../lectura/fecha_relativa.dart';
 import '../common/club_book_cover.dart';
 import '../common/club_chip.dart';
+import '../common/selector_libro_sheet.dart';
 import 'escenas/escena_votacion.dart';
 
 class DirectorEscenas {
@@ -35,6 +36,10 @@ class DirectorEscenas {
         );
 
       case ContenidoClub.ganador:
+        // Si no hay ganadora (mes sin candidatos suficientes) no mostramos la Gala
+        if (dashboard.clubvision.ganador.trim().isEmpty) {
+          return _sinGalaEsteMes();
+        }
         return _ganador(dashboard);
 
       case ContenidoClub.lectura:
@@ -482,6 +487,40 @@ class DirectorEscenas {
       ),
     );
   }
+
+  Widget _sinGalaEsteMes() {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(AppSpacing.lg),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: .6),
+        borderRadius: BorderRadius.circular(AppRadius.lg),
+        border: Border.all(color: AppColors.border),
+      ),
+      child: Column(
+        children: [
+          const Icon(
+            Icons.event_busy_rounded,
+            color: AppColors.textMuted,
+            size: 36,
+          ),
+          const SizedBox(height: AppSpacing.md),
+          Text(
+            'Este mes no hay Gala',
+            textAlign: TextAlign.center,
+            style: AppTextStyles.section.copyWith(color: AppColors.textPrimary),
+          ),
+          const SizedBox(height: AppSpacing.sm),
+          Text(
+            'No hubo candidatos suficientes para votar. '
+            'La próxima edición arrancará el mes que viene.',
+            textAlign: TextAlign.center,
+            style: AppTextStyles.bodySecondary.copyWith(height: 1.4),
+          ),
+        ],
+      ),
+    );
+  }
 }
 
 // ─────────────────────────────────────────────
@@ -526,7 +565,7 @@ class _BotonConfigurarLectura extends StatelessWidget {
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (sheetCtx) => _SelectorLibroSheet(controller: controller),
+      builder: (sheetCtx) => SelectorLibroSheet(controller: controller),
     );
 
     if (resultado != null && resultado.trim().isNotEmpty && context.mounted) {
@@ -543,128 +582,3 @@ class _BotonConfigurarLectura extends StatelessWidget {
   }
 }
 
-class _SelectorLibroSheet extends StatefulWidget {
-  const _SelectorLibroSheet({required this.controller});
-  final TextEditingController controller;
-
-  @override
-  State<_SelectorLibroSheet> createState() => _SelectorLibroSheetState();
-}
-
-class _SelectorLibroSheetState extends State<_SelectorLibroSheet> {
-  bool _valido = false;
-
-  @override
-  void initState() {
-    super.initState();
-    widget.controller.addListener(_onTextChanged);
-  }
-
-  void _onTextChanged() {
-    final tiene = widget.controller.text.trim().isNotEmpty;
-    if (tiene != _valido) setState(() => _valido = tiene);
-  }
-
-  @override
-  void dispose() {
-    widget.controller.removeListener(_onTextChanged);
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: EdgeInsets.only(
-        bottom: MediaQuery.viewInsetsOf(context).bottom,
-      ),
-      child: Container(
-        decoration: BoxDecoration(
-          color: Theme.of(context).colorScheme.surface,
-          borderRadius: const BorderRadius.vertical(
-            top: Radius.circular(AppRadius.xl),
-          ),
-        ),
-        padding: const EdgeInsets.fromLTRB(
-          AppSpacing.lg,
-          AppSpacing.md,
-          AppSpacing.lg,
-          AppSpacing.xl,
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Indicador
-            Center(
-              child: Container(
-                width: 36,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: AppColors.border,
-                  borderRadius: BorderRadius.circular(2),
-                ),
-              ),
-            ),
-            const SizedBox(height: AppSpacing.lg),
-
-            Text(
-              '¿Qué libro queréis leer?',
-              style: AppTextStyles.section,
-            ),
-            const SizedBox(height: AppSpacing.xs),
-            Text(
-              'Escribe el título del libro que el club va a leer juntos.',
-              style: AppTextStyles.bodySecondary,
-            ),
-            const SizedBox(height: AppSpacing.lg),
-
-            TextField(
-              controller: widget.controller,
-              autofocus: true,
-              textCapitalization: TextCapitalization.sentences,
-              decoration: InputDecoration(
-                hintText: 'Título del libro',
-                prefixIcon: const Icon(Icons.menu_book_outlined),
-                filled: true,
-                fillColor: AppColors.surfaceSoft,
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(AppRadius.md),
-                  borderSide: BorderSide.none,
-                ),
-                contentPadding: const EdgeInsets.symmetric(
-                  horizontal: AppSpacing.md,
-                  vertical: AppSpacing.md,
-                ),
-              ),
-              onSubmitted: (v) {
-                if (v.trim().isNotEmpty) Navigator.pop(context, v.trim());
-              },
-            ),
-            const SizedBox(height: AppSpacing.lg),
-
-            SizedBox(
-              width: double.infinity,
-              child: FilledButton.icon(
-                onPressed: _valido
-                    ? () => Navigator.pop(
-                          context,
-                          widget.controller.text.trim(),
-                        )
-                    : null,
-                icon: const Icon(Icons.arrow_forward_rounded, size: 18),
-                label: const Text('Continuar'),
-                style: FilledButton.styleFrom(
-                  backgroundColor: AppColors.primary,
-                  padding: const EdgeInsets.symmetric(vertical: 14),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(AppRadius.pill),
-                  ),
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}

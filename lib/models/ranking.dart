@@ -1,4 +1,5 @@
 import 'ranking_item.dart';
+import 'ranking_mes_historico.dart';
 
 class Ranking {
   final int anio;
@@ -12,6 +13,8 @@ class Ranking {
 
   final List<RankingItem> topLectoras;
 
+  final List<RankingMesHistorico> historicoMensual;
+
   Ranking({
     required this.anio,
     required this.masDeseados,
@@ -23,6 +26,8 @@ class Ranking {
     required this.masAbandonados,
 
     required this.topLectoras,
+
+    this.historicoMensual = const [],
   });
 
   factory Ranking.fromJson(Map<String, dynamic> json) {
@@ -44,6 +49,11 @@ class Ranking {
       masAbandonados: parse('masAbandonados'),
 
       topLectoras: parse('topLectoras'),
+
+      historicoMensual: (json['historicoMensual'] as List?)
+              ?.map((e) => RankingMesHistorico.fromJson(e))
+              .toList() ??
+          [],
     );
   }
 }

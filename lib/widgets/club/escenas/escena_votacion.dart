@@ -66,6 +66,20 @@ class _EscenaVotacionState extends State<EscenaVotacion>
     super.dispose();
   }
 
+  static String _textoPrincipal(int total) {
+    if (total < 5) {
+      return 'Hacen falta al menos 5 libros candidatos\npara abrir la votación.';
+    }
+    return '$total historias esperan convertirse\nen la próxima lectura del club.';
+  }
+
+  static String _textoSecundario(int total) {
+    if (total < 5) {
+      return 'Ahora mismo hay $total. ¡Propón el tuyo!';
+    }
+    return 'Cada voto acerca el desenlace.';
+  }
+
   @override
   Widget build(BuildContext context) {
     return Column(
@@ -92,8 +106,7 @@ class _EscenaVotacionState extends State<EscenaVotacion>
 
         // ── Texto ──
         Text(
-          '${widget.totalCandidatas} historias esperan convertirse\n'
-          'en la próxima lectura del club.',
+          _textoPrincipal(widget.totalCandidatas),
           textAlign: TextAlign.center,
           style: const TextStyle(
             fontSize: 20,
@@ -104,10 +117,10 @@ class _EscenaVotacionState extends State<EscenaVotacion>
 
         const SizedBox(height: 16),
 
-        const Text(
-          'Cada voto acerca el desenlace.',
+        Text(
+          _textoSecundario(widget.totalCandidatas),
           textAlign: TextAlign.center,
-          style: TextStyle(
+          style: const TextStyle(
             fontSize: 16,
             fontStyle: FontStyle.italic,
             color: Colors.black54,

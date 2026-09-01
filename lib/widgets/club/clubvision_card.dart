@@ -88,7 +88,10 @@ class ClubvisionCard extends StatelessWidget {
 
                 if (estadoClub.permiteVotar) ...[
                   const SizedBox(height: AppSpacing.lg),
-                  _bloqueVotacion(context),
+                  if (dashboard.clubvision.totalCandidatas >= 5)
+                    _bloqueVotacion(context)
+                  else
+                    _bloqueProponerLibros(),
                 ],
 
                 if (estadoClub.mostrarGanador) ...[
@@ -332,6 +335,34 @@ class ClubvisionCard extends StatelessWidget {
             ),
           ),
       ],
+    );
+  }
+
+  Widget _bloqueProponerLibros() {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(AppSpacing.md),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.62),
+        borderRadius: BorderRadius.circular(AppRadius.lg),
+      ),
+      child: Column(
+        children: [
+          const Icon(Icons.menu_book_rounded, color: AppColors.primary, size: 34),
+          SizedBox(height: AppSpacing.sm),
+          Text(
+            'Aún faltan libros para votar',
+            textAlign: TextAlign.center,
+            style: AppTextStyles.subtitle,
+          ),
+          SizedBox(height: AppSpacing.xs),
+          Text(
+            'No hay suficientes candidatos. Podéis poneros de acuerdo y proponer una lectura desde el menú de Clubvisión.',
+            textAlign: TextAlign.center,
+            style: AppTextStyles.bodySecondary,
+          ),
+        ],
+      ),
     );
   }
 

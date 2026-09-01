@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../navigation/app_page_route.dart';
 
 import '../models/clubvision.dart';
+import '../models/propuesta_lectura.dart';
 import '../services/api_service.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_radius.dart';
@@ -19,6 +20,7 @@ import 'clubvision_historial_page.dart';
 import 'clubvision_mi_voto_page.dart';
 import 'configurar_lectura_page.dart';
 import 'lectura_page.dart';
+import '../widgets/common/selector_libro_sheet.dart';
 import 'package:club_lectura_app/widgets/common/club_shimmer.dart';
 
 class ClubvisionMenuPage extends StatefulWidget {
@@ -105,6 +107,7 @@ class _ClubvisionMenuPageState extends State<ClubvisionMenuPage> {
     setState(_recargar);
   }
 
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -189,7 +192,7 @@ class _ClubvisionMenuPageState extends State<ClubvisionMenuPage> {
                   },
                 ),
 
-                if (club.estado == 'RESULTADOS' ||
+                if ((club.estado == 'RESULTADOS' && club.ganador.isNotEmpty) ||
                     club.estado == 'LECTURA') ...[
                   const SizedBox(height: AppSpacing.md),
 
@@ -238,28 +241,40 @@ class _ClubvisionMenuPageState extends State<ClubvisionMenuPage> {
   List<Widget> _opcionesPrincipales(ClubvisionData club) {
     switch (club.estado?.trim().toUpperCase()) {
       case 'VOTACION':
+        if (club.candidatas.length >= 5) {
+          return [
+            _MenuCard(
+              icon: club.haVotado
+                  ? Icons.check_circle_outline_rounded
+                  : Icons.how_to_vote_outlined,
+              color: club.haVotado ? AppColors.success : AppColors.primary,
+              title: club.haVotado ? 'Mi voto' : 'Votación abierta',
+              subtitle: club.haVotado
+                  ? 'Consulta la clasificación que enviaste'
+                  : 'Elige las cinco historias que prefieres',
+              actionLabel: club.haVotado ? 'Consultar voto' : 'Votar ahora',
+              badge: club.haVotado
+                  ? 'Voto registrado'
+                  : '${club.votosPendientes} pendientes',
+              badgeVariant: club.haVotado
+                  ? ClubChipVariant.success
+                  : ClubChipVariant.warning,
+              onTap: () => _abrirVotacion(club),
+            ),
+          ];
+        }
         return [
-          _MenuCard(
-            icon: club.haVotado
-                ? Icons.check_circle_outline_rounded
-                : Icons.how_to_vote_outlined,
-            color: club.haVotado ? AppColors.success : AppColors.primary,
-            title: club.haVotado ? 'Mi voto' : 'Votación abierta',
-            subtitle: club.haVotado
-                ? 'Consulta la clasificación que enviaste'
-                : 'Elige las cinco historias que prefieres',
-            actionLabel: club.haVotado ? 'Consultar voto' : 'Votar ahora',
-            badge: club.haVotado
-                ? 'Voto registrado'
-                : '${club.votosPendientes} pendientes',
-            badgeVariant: club.haVotado
-                ? ClubChipVariant.success
-                : ClubChipVariant.warning,
-            onTap: () => _abrirVotacion(club),
+          _PropuestaVotacionCard(
+            candidatasCount: club.candidatas.length,
+            onActivada: _refrescar,
           ),
         ];
 
       case 'RESULTADOS':
+        // Sin ganadora → mes sin candidatos suficientes, la Gala no aplica
+        if (club.ganador.isEmpty) {
+          return [const _SinGalaEsteMesCard()];
+        }
         return [
           _MenuCard(
             icon: Icons.emoji_events_outlined,
@@ -843,6 +858,686 @@ class _MenuCard extends StatelessWidget {
     );
   }
 }
+
+// ── Propuesta de lectura (VOTACION con < 5 candidatos) ─────────
+
+class _PropuestaVotacionCard extends StatefulWidget {
+  final int candidatasCount;
+  final Future<void> Function() onActivada;
+
+  const _PropuestaVotacionCard({
+    required this.candidatasCount,
+    required this.onActivada,
+  });
+
+  @override
+  State<_PropuestaVotacionCard> createState() => _PropuestaVotacionCardState();
+}
+
+class _PropuestaVotacionCardState extends State<_PropuestaVotacionCard> {
+  late Future<PropuestaLectura?> _propuestaFuture;
+  bool _accionando = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _recargar();
+  }
+
+  void _recargar() {
+    _propuestaFuture = ApiService().getPropuestaLectura();
+  }
+
+  Future<void> _proponer() async {
+    final controller = TextEditingController();
+    final libro = await showModalBottomSheet<String>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => SelectorLibroSheet(controller: controller),
+    );
+    if (libro == null || libro.trim().isEmpty || !mounted) return;
+
+    setState(() => _accionando = true);
+    try {
+      final result = await ApiService().crearPropuestaLectura(libro.trim());
+      if (!mounted) return;
+      if (result['ok'] == true) {
+        setState(_recargar);
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(result['error']?.toString() ?? 'No se pudo proponer'),
+          ),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _accionando = false);
+    }
+  }
+
+  Future<void> _apoyar(String propuestaId) async {
+    setState(() => _accionando = true);
+    try {
+      final result = await ApiService().apoyarPropuestaLectura(propuestaId);
+      if (!mounted) return;
+      if (result['activada'] == true) {
+        await widget.onActivada();
+      } else {
+        setState(_recargar);
+      }
+    } finally {
+      if (mounted) setState(() => _accionando = false);
+    }
+  }
+
+  Future<void> _cancelar(String propuestaId) async {
+    setState(() => _accionando = true);
+    try {
+      await ApiService().cancelarPropuestaLectura(propuestaId);
+      if (!mounted) return;
+      setState(_recargar);
+    } finally {
+      if (mounted) setState(() => _accionando = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return FutureBuilder<PropuestaLectura?>(
+      future: _propuestaFuture,
+      builder: (context, snap) {
+        if (snap.connectionState == ConnectionState.waiting) {
+          return const _PropuestaSkeletonCard();
+        }
+
+        final propuesta = snap.data;
+
+        if (propuesta == null) {
+          return _SinPropuestaCard(
+            candidatasCount: widget.candidatasCount,
+            accionando: _accionando,
+            onProponer: _proponer,
+          );
+        }
+
+        return _PropuestaActivaCard(
+          propuesta: propuesta,
+          accionando: _accionando,
+          onApoyar: () => _apoyar(propuesta.id),
+          onCancelar: () => _cancelar(propuesta.id),
+        );
+      },
+    );
+  }
+}
+
+class _SinPropuestaCard extends StatelessWidget {
+  final int candidatasCount;
+  final bool accionando;
+  final VoidCallback onProponer;
+
+  const _SinPropuestaCard({
+    required this.candidatasCount,
+    required this.accionando,
+    required this.onProponer,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return ClubCard(
+      elevated: true,
+      padding: const EdgeInsets.all(AppSpacing.lg),
+      borderColor: AppColors.primary.withValues(alpha: 0.20),
+      gradient: LinearGradient(
+        begin: Alignment.topLeft,
+        end: Alignment.bottomRight,
+        colors: [
+          Colors.white,
+          Color.lerp(AppColors.primary, Colors.white, .9) ?? Colors.white,
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                width: 58,
+                height: 58,
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [
+                      AppColors.primary.withValues(alpha: .22),
+                      AppColors.primary.withValues(alpha: .08),
+                    ],
+                  ),
+                  borderRadius: BorderRadius.circular(AppRadius.lg),
+                  border: Border.all(
+                    color: AppColors.primary.withValues(alpha: .16),
+                  ),
+                ),
+                child: const Icon(
+                  Icons.menu_book_rounded,
+                  color: AppColors.primary,
+                  size: 29,
+                ),
+              ),
+              const SizedBox(width: AppSpacing.md),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Proponer lectura conjunta',
+                      style: AppTextStyles.section.copyWith(
+                        color: AppColors.textPrimary,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                    const SizedBox(height: AppSpacing.xs),
+                    Text(
+                      'No hay suficientes candidatos para votar. '
+                      'Poneos de acuerdo y proponed una lectura para el club.',
+                      style: AppTextStyles.bodySecondary.copyWith(height: 1.4),
+                    ),
+                    const SizedBox(height: AppSpacing.sm),
+                    ClubChip(
+                      label: '$candidatasCount candidatos',
+                      icon: Icons.auto_awesome_outlined,
+                      variant: ClubChipVariant.info,
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: AppSpacing.lg),
+          GestureDetector(
+            onTap: accionando ? null : onProponer,
+            child: Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(
+                horizontal: AppSpacing.md,
+                vertical: AppSpacing.sm,
+              ),
+              decoration: BoxDecoration(
+                color: AppColors.primary.withValues(alpha: accionando ? .05 : .1),
+                borderRadius: BorderRadius.circular(AppRadius.pill),
+              ),
+              child: Row(
+                children: [
+                  Icon(
+                    Icons.menu_book_rounded,
+                    size: 18,
+                    color: AppColors.primary.withValues(
+                      alpha: accionando ? .4 : 1,
+                    ),
+                  ),
+                  const SizedBox(width: AppSpacing.xs),
+                  Expanded(
+                    child: Text(
+                      'Proponer un libro',
+                      style: AppTextStyles.body.copyWith(
+                        color: AppColors.primary.withValues(
+                          alpha: accionando ? .4 : 1,
+                        ),
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                  ),
+                  if (accionando)
+                    const SizedBox(
+                      width: 16,
+                      height: 16,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  else
+                    Icon(
+                      Icons.arrow_forward_rounded,
+                      color: AppColors.primary,
+                      size: 19,
+                    ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _PropuestaActivaCard extends StatelessWidget {
+  final PropuestaLectura propuesta;
+  final bool accionando;
+  final VoidCallback onApoyar;
+  final VoidCallback onCancelar;
+
+  const _PropuestaActivaCard({
+    required this.propuesta,
+    required this.accionando,
+    required this.onApoyar,
+    required this.onCancelar,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final color = propuesta.estaCompleta ? AppColors.success : AppColors.primary;
+
+    return ClubCard(
+      elevated: true,
+      padding: const EdgeInsets.all(AppSpacing.lg),
+      borderColor: color.withValues(alpha: 0.30),
+      gradient: LinearGradient(
+        begin: Alignment.topLeft,
+        end: Alignment.bottomRight,
+        colors: [
+          Colors.white,
+          Color.lerp(color, Colors.white, .88) ?? Colors.white,
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Header
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                width: 58,
+                height: 58,
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [
+                      color.withValues(alpha: .22),
+                      color.withValues(alpha: .08),
+                    ],
+                  ),
+                  borderRadius: BorderRadius.circular(AppRadius.lg),
+                  border: Border.all(color: color.withValues(alpha: .20)),
+                ),
+                child: Icon(
+                  Icons.groups_rounded,
+                  color: color,
+                  size: 29,
+                ),
+              ),
+              const SizedBox(width: AppSpacing.md),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Propuesta del club',
+                      style: AppTextStyles.section.copyWith(
+                        color: AppColors.textPrimary,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                    const SizedBox(height: AppSpacing.xs),
+                    Text(
+                      'Propuesto por ${propuesta.proposedBy}',
+                      style: AppTextStyles.bodySecondary,
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+
+          const SizedBox(height: AppSpacing.md),
+
+          // Book title
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(AppSpacing.md),
+            decoration: BoxDecoration(
+              color: color.withValues(alpha: .07),
+              borderRadius: BorderRadius.circular(AppRadius.md),
+              border: Border.all(color: color.withValues(alpha: .15)),
+            ),
+            child: Row(
+              children: [
+                Icon(Icons.menu_book_rounded, color: color, size: 20),
+                const SizedBox(width: AppSpacing.sm),
+                Expanded(
+                  child: Text(
+                    propuesta.bookTitle,
+                    style: AppTextStyles.subtitle.copyWith(
+                      color: AppColors.textPrimary,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+          const SizedBox(height: AppSpacing.md),
+
+          // Apoyos progress
+          Row(
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      '${propuesta.apoyosCount} de ${propuesta.totalMiembros} '
+                      '${propuesta.totalMiembros == 1 ? 'miembro apoya' : 'miembros apoyan'}',
+                      style: AppTextStyles.bodySecondary.copyWith(
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    const SizedBox(height: AppSpacing.xs),
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(AppRadius.pill),
+                      child: LinearProgressIndicator(
+                        value: propuesta.totalMiembros > 0
+                            ? propuesta.apoyosCount / propuesta.totalMiembros
+                            : 0,
+                        minHeight: 8,
+                        backgroundColor: color.withValues(alpha: .15),
+                        valueColor: AlwaysStoppedAnimation<Color>(color),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              if (propuesta.apoyos.isNotEmpty) ...[
+                const SizedBox(width: AppSpacing.md),
+                _AvatarStack(apoyantes: propuesta.apoyos),
+              ],
+            ],
+          ),
+
+          const SizedBox(height: AppSpacing.lg),
+
+          // Actions
+          if (propuesta.yaApoye)
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(
+                horizontal: AppSpacing.md,
+                vertical: AppSpacing.sm,
+              ),
+              decoration: BoxDecoration(
+                color: AppColors.success.withValues(alpha: .10),
+                borderRadius: BorderRadius.circular(AppRadius.pill),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Icon(
+                    Icons.check_circle_rounded,
+                    size: 18,
+                    color: AppColors.success,
+                  ),
+                  const SizedBox(width: AppSpacing.xs),
+                  Text(
+                    'Ya has apoyado esta propuesta',
+                    style: AppTextStyles.body.copyWith(
+                      color: AppColors.success,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ],
+              ),
+            )
+          else
+            GestureDetector(
+              onTap: accionando ? null : onApoyar,
+              child: Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: AppSpacing.md,
+                  vertical: AppSpacing.sm,
+                ),
+                decoration: BoxDecoration(
+                  color: AppColors.primary.withValues(
+                    alpha: accionando ? .05 : .1,
+                  ),
+                  borderRadius: BorderRadius.circular(AppRadius.pill),
+                ),
+                child: Row(
+                  children: [
+                    Icon(
+                      Icons.thumb_up_alt_rounded,
+                      size: 18,
+                      color: AppColors.primary.withValues(
+                        alpha: accionando ? .4 : 1,
+                      ),
+                    ),
+                    const SizedBox(width: AppSpacing.xs),
+                    Expanded(
+                      child: Text(
+                        'Apoyar esta propuesta',
+                        style: AppTextStyles.body.copyWith(
+                          color: AppColors.primary.withValues(
+                            alpha: accionando ? .4 : 1,
+                          ),
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
+                    ),
+                    if (accionando)
+                      const SizedBox(
+                        width: 16,
+                        height: 16,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    else
+                      Icon(
+                        Icons.arrow_forward_rounded,
+                        color: AppColors.primary,
+                        size: 19,
+                      ),
+                  ],
+                ),
+              ),
+            ),
+
+          if (propuesta.soyElProponente) ...[
+            const SizedBox(height: AppSpacing.sm),
+            GestureDetector(
+              onTap: accionando ? null : onCancelar,
+              child: Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: AppSpacing.md,
+                  vertical: AppSpacing.sm,
+                ),
+                decoration: BoxDecoration(
+                  color: AppColors.danger.withValues(alpha: .07),
+                  borderRadius: BorderRadius.circular(AppRadius.pill),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                      Icons.close_rounded,
+                      size: 16,
+                      color: AppColors.danger.withValues(alpha: .7),
+                    ),
+                    const SizedBox(width: AppSpacing.xs),
+                    Text(
+                      'Cancelar propuesta',
+                      style: AppTextStyles.bodySecondary.copyWith(
+                        color: AppColors.danger.withValues(alpha: .7),
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+class _AvatarStack extends StatelessWidget {
+  final List<ApoyantesPropuesta> apoyantes;
+
+  const _AvatarStack({required this.apoyantes});
+
+  @override
+  Widget build(BuildContext context) {
+    const size = 32.0;
+    const overlap = 10.0;
+    final show = apoyantes.take(4).toList();
+    final total = show.length * size - (show.length - 1) * overlap;
+
+    return SizedBox(
+      width: total,
+      height: size,
+      child: Stack(
+        children: [
+          for (var i = 0; i < show.length; i++)
+            Positioned(
+              left: i * (size - overlap),
+              child: Container(
+                width: size,
+                height: size,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  border: Border.all(color: Colors.white, width: 2),
+                  color: AppColors.primary.withValues(alpha: .15),
+                ),
+                child: ClipOval(
+                  child: show[i].avatarUrl.isNotEmpty
+                      ? Image.network(
+                          show[i].avatarUrl,
+                          fit: BoxFit.cover,
+                          errorBuilder: (_, __, ___) => const Icon(
+                            Icons.person,
+                            size: 16,
+                            color: AppColors.primary,
+                          ),
+                        )
+                      : const Icon(
+                          Icons.person,
+                          size: 16,
+                          color: AppColors.primary,
+                        ),
+                ),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+class _PropuestaSkeletonCard extends StatelessWidget {
+  const _PropuestaSkeletonCard();
+
+  @override
+  Widget build(BuildContext context) {
+    return ClubCard(
+      elevated: true,
+      padding: const EdgeInsets.all(AppSpacing.lg),
+      backgroundColor: AppColors.surfaceSoft,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                width: 58,
+                height: 58,
+                decoration: BoxDecoration(
+                  color: AppColors.textMuted.withValues(alpha: .10),
+                  borderRadius: BorderRadius.circular(AppRadius.lg),
+                ),
+              ),
+              const SizedBox(width: AppSpacing.md),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Container(
+                      height: 16,
+                      width: 140,
+                      decoration: BoxDecoration(
+                        color: AppColors.textMuted.withValues(alpha: .10),
+                        borderRadius: BorderRadius.circular(AppRadius.sm),
+                      ),
+                    ),
+                    const SizedBox(height: AppSpacing.xs),
+                    Container(
+                      height: 13,
+                      width: 200,
+                      decoration: BoxDecoration(
+                        color: AppColors.textMuted.withValues(alpha: .07),
+                        borderRadius: BorderRadius.circular(AppRadius.sm),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: AppSpacing.lg),
+          Container(
+            height: 44,
+            decoration: BoxDecoration(
+              color: AppColors.textMuted.withValues(alpha: .07),
+              borderRadius: BorderRadius.circular(AppRadius.pill),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ── Sin gala este mes (RESULTADOS sin candidatos) ────────────────
+
+class _SinGalaEsteMesCard extends StatelessWidget {
+  const _SinGalaEsteMesCard();
+
+  @override
+  Widget build(BuildContext context) {
+    return ClubCard(
+      elevated: false,
+      padding: const EdgeInsets.all(AppSpacing.xl),
+      backgroundColor: AppColors.surfaceSoft,
+      child: Column(
+        children: [
+          const Icon(
+            Icons.event_busy_rounded,
+            color: AppColors.textMuted,
+            size: 38,
+          ),
+          const SizedBox(height: AppSpacing.md),
+          Text(
+            'Este mes no hay Gala',
+            textAlign: TextAlign.center,
+            style: AppTextStyles.subtitle,
+          ),
+          const SizedBox(height: AppSpacing.sm),
+          Text(
+            'No hubo candidatos suficientes para abrir la votación. '
+            'La próxima edición arrancará el mes que viene.',
+            textAlign: TextAlign.center,
+            style: AppTextStyles.bodySecondary,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ── Estado en espera ─────────────────────────────────────────────
 
 class _EstadoEnEsperaCard extends StatelessWidget {
   const _EstadoEnEsperaCard();

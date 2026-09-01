@@ -21,6 +21,8 @@ class ClubvisionData {
 
   final bool haVotado;
 
+  final bool esAdmin;
+
   final int votosRecibidos;
 
   final int totalUsuarios;
@@ -40,6 +42,7 @@ class ClubvisionData {
     required this.lectoras,
     required this.candidatas,
     required this.haVotado,
+    this.esAdmin = false,
     required this.votosRecibidos,
     required this.totalUsuarios,
     required this.votosPendientes,
@@ -69,6 +72,7 @@ class ClubvisionData {
               .toList() ??
           [],
       haVotado: json['haVotado'] ?? false,
+      esAdmin: json['esAdmin'] == true,
       votosRecibidos: (json['votosRecibidos'] as num?)?.toInt() ?? 0,
 
       totalUsuarios: (json['totalUsuarios'] as num?)?.toInt() ?? 0,

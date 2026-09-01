@@ -408,30 +408,63 @@ const List<_HelpSection> _secciones = [
       _HelpItem(
         pregunta: '¿Qué es Clubvisión?',
         respuesta:
-            'Es el sistema de votación del club para elegir el próximo libro '
-            'de lectura grupal. Funciona por ediciones mensuales: se abre una '
-            'votación, los miembros votan entre los libros candidatos y el libro ganador '
-            'se convierte en la siguiente lectura del club.',
+            'Es el sistema mensual del club para elegir el próximo libro de '
+            'lectura grupal. Cada mes sigue este ciclo:\n\n'
+            '🗳️ Votación (días 1-2) — los miembros votan entre los libros candidatos.\n'
+            '🏆 Gala (día 3) — se revela el ganador.\n'
+            '📖 Lectura (resto del mes) — el club lee el libro elegido.\n\n'
+            'Si no hay suficientes candidatos, el club puede acordar una lectura '
+            'conjunta directamente sin pasar por la votación ni la Gala.',
       ),
       _HelpItem(
         pregunta: '¿Cómo se eligen los libros candidatos?',
         respuesta:
-            'Los libros candidatos se generan automáticamente. Para que un libro '
-            'aparezca como candidato tiene que cumplir tres condiciones: '
-            'que al menos 2 miembros del club lo tengan en su biblioteca personal, '
-            'que no haya sido ya leído por el club, y que no haya ganado '
-            'una edición anterior de Clubvisión.',
+            'Los libros candidatos se generan automáticamente al abrir cada edición. '
+            'Para que un libro aparezca como candidato tiene que cumplir tres condiciones:\n\n'
+            '• Que al menos 2 miembros del club lo tengan en "En mi estantería"\n'
+            '• Que el club no lo haya leído ya\n'
+            '• Que no haya ganado una edición anterior de Clubvisión\n\n'
+            'Se necesitan al menos 5 libros candidatos para abrir la votación.',
       ),
       _HelpItem(
-        pregunta: '¿Qué pasa si no hay libros candidatos?',
+        pregunta: '¿Qué pasa si hay menos de 5 candidatos?',
         respuesta:
-            'Si ningún libro cumple las condiciones, Clubvisión no se abre '
-            'ese mes y verás un aviso en la pantalla del club explicando '
-            'el motivo. Para que haya libros candidatos, al menos dos miembros '
-            'tienen que tener el mismo libro en "En mi estantería".',
+            'Si Clubvisión se abre pero hay menos de 5 libros candidatos, '
+            'la votación no puede celebrarse. En su lugar aparece la opción de '
+            '"Proponer lectura conjunta": cualquier miembro puede sugerir un libro '
+            'directamente para que el club lo lea ese mes.\n\n'
+            'Esta opción aparece tanto en la tarjeta del club como en el menú de Clubvisión.',
       ),
       _HelpItem(
-        pregunta: '¿Cómo voto?',
+        pregunta: '¿Cómo funciona la propuesta de lectura conjunta?',
+        respuesta:
+            'Cuando no hay candidatos suficientes, cualquier miembro puede proponer '
+            'un libro escribiendo su título. Una vez enviada:\n\n'
+            '• Todos los miembros del club ven la propuesta con el título y quién la hizo.\n'
+            '• Cada miembro puede pulsar "Apoyar" para mostrar su acuerdo.\n'
+            '• La barra de progreso muestra cuántos de cuántos han apoyado ya.\n'
+            '• Quien propuso apoya automáticamente.\n\n'
+            'En cuanto todos los miembros han apoyado, la lectura se activa '
+            'automáticamente y el club entra en fase de Lectura sin pasar por la Gala. '
+            'Todos reciben una notificación de que la lectura está lista.',
+      ),
+      _HelpItem(
+        pregunta: '¿Solo puede haber una propuesta a la vez?',
+        respuesta:
+            'Sí. Solo puede haber una propuesta pendiente al mismo tiempo. '
+            'Quien la propuso puede cancelarla pulsando "Cancelar propuesta"; '
+            'en ese momento cualquier otro miembro puede hacer una nueva propuesta.',
+      ),
+      _HelpItem(
+        pregunta: '¿Qué pasa si nadie propone nada ese mes?',
+        respuesta:
+            'Si el mes termina sin que nadie haya propuesto una lectura y sin '
+            'candidatos suficientes para votar, la Gala no se celebra. En su lugar '
+            'verás un aviso de "Este mes no hay Gala" tanto en la tarjeta del club '
+            'como en el menú de Clubvisión. La próxima edición arrancará el mes siguiente.',
+      ),
+      _HelpItem(
+        pregunta: '¿Cómo voto cuando hay 5 o más candidatos?',
         respuesta:
             'Cuando la votación está abierta, entra en Clubvisión '
             'y ordena los libros candidatos según tus preferencias arrastrándolos. '
@@ -446,11 +479,47 @@ const List<_HelpSection> _secciones = [
             'Durante la votación activa, los votos son privados.',
       ),
       _HelpItem(
-        pregunta: '¿Quién abre y cierra la votación?',
+        pregunta: '¿Qué es el historial de Clubvisión?',
         respuesta:
-            'Solo quien administra el club puede abrir y cerrar cada edición '
-            'de Clubvisión. El resto de miembros solo pueden votar mientras '
-            'la votación esté abierta.',
+            'Desde el menú de Clubvisión → "Historial" puedes ver todas las ediciones '
+            'anteriores con el libro ganador de cada una. También hay un apartado '
+            '"Estadísticas" con gráficas y datos de todas las ediciones del club.',
+      ),
+    ],
+  ),
+  _HelpSection(
+    icono: '📈',
+    titulo: 'Rankings',
+    items: [
+      _HelpItem(
+        pregunta: '¿Qué muestra el Ranking del club?',
+        respuesta:
+            'El Ranking recoge la actividad lectora de todos los miembros del club '
+            'durante el año seleccionado. Puedes ver:\n\n'
+            '🥇 Pódium — las tres lectoras más activas del año con sus libros leídos.\n'
+            '📅 Ganadoras por mes — quién leyó más cada mes del año, con un histórico '
+            'completo ordenado del mes más reciente al más antiguo.\n'
+            '📚 Más deseados — libros con más pendientes en el club.\n'
+            '⭐ Mejor valorados — los libros con mejor puntuación media.\n'
+            '📖 Más leídos — los libros que más miembros han terminado.\n'
+            '🚫 Más abandonados — los libros que más veces se han dejado a medias.',
+      ),
+      _HelpItem(
+        pregunta: '¿Qué son las "Ganadoras por mes"?',
+        respuesta:
+            'Es un histórico mensual que muestra quién fue la lectora más activa '
+            'cada mes del año: la persona que terminó más libros en ese periodo.\n\n'
+            'Aparece debajo del pódium anual y se ordena del mes más reciente '
+            'al más antiguo. Para cada mes verás el avatar, el nombre y el número '
+            'de libros terminados de las tres primeras lectoras.\n\n'
+            'Solo se muestran los meses en los que al menos una miembro terminó algún libro.',
+      ),
+      _HelpItem(
+        pregunta: '¿Puedo ver el ranking de años anteriores?',
+        respuesta:
+            'Sí. En la parte superior del Ranking hay un selector de año. '
+            'Puedes navegar a ediciones anteriores para ver el histórico de '
+            'actividad del club, incluidas las ganadoras mensuales de ese año.',
       ),
     ],
   ),
@@ -942,9 +1011,13 @@ const List<_HelpSection> _secciones = [
         pregunta: '¿Cómo funcionan las notificaciones?',
         respuesta:
             'Recibirás notificaciones dentro de la app (campanita en el dashboard) '
-            'cuando ocurra algo relevante en tu club: nueva lectura oficial, '
-            'nuevo miembro, resultado de Clubvisión, nuevo libro en la biblioteca '
-            'o cuando alguien comenta en una lectura en la que participas.',
+            'cuando ocurra algo relevante en tu club:\n\n'
+            '• Nueva lectura oficial activada (tanto por votación como por propuesta acordada)\n'
+            '• ¡Lectura acordada! cuando todos los miembros apoyan una propuesta conjunta\n'
+            '• Nuevo miembro en el club\n'
+            '• Resultado de Clubvisión (libro ganador)\n'
+            '• Nuevo libro en la biblioteca del club\n'
+            '• Cuando alguien comenta en una lectura en la que participas',
       ),
       _HelpItem(
         pregunta: '¿Qué es "Seguimiento de lectura" en el perfil?',

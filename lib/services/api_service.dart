@@ -7,6 +7,7 @@ import 'package:club_lectura_app/services/libros_data_cache.dart';
 import 'package:club_lectura_app/utils/app_config.dart';
 import 'package:http/http.dart' as http;
 import '../models/achievements/achievement.dart';
+import '../models/propuesta_lectura.dart';
 import '../models/dashboard.dart';
 import '../models/reaction_details.dart';
 import '../models/libro.dart';
@@ -1303,6 +1304,42 @@ class ApiService {
     }
 
     throw Exception('Error cargando mi voto');
+  }
+
+  // ── Propuestas de lectura conjunta ─────────────────────────
+
+  Future<PropuestaLectura?> getPropuestaLectura() async {
+    final response = await _client.get(
+      Uri.parse('$baseUrl?action=propuestaLectura'),
+    );
+    if (response.statusCode != 200) return null;
+    final json = _decodeJson(response);
+    if (json is! Map<String, dynamic> || json['id'] == null) return null;
+    return PropuestaLectura.fromJson(json);
+  }
+
+  Future<Map<String, dynamic>> crearPropuestaLectura(String bookTitle) async {
+    final response = await _postJson('crearPropuestaLectura', {
+      'bookTitle': bookTitle,
+    });
+    if (response.statusCode != 200) return {'ok': false};
+    return _decodeJson(response);
+  }
+
+  Future<Map<String, dynamic>> apoyarPropuestaLectura(String propuestaId) async {
+    final response = await _postJson('apoyarPropuestaLectura', {
+      'propuestaId': propuestaId,
+    });
+    if (response.statusCode != 200) return {'ok': false};
+    return _decodeJson(response);
+  }
+
+  Future<Map<String, dynamic>> cancelarPropuestaLectura(String propuestaId) async {
+    final response = await _postJson('cancelarPropuestaLectura', {
+      'propuestaId': propuestaId,
+    });
+    if (response.statusCode != 200) return {'ok': false};
+    return _decodeJson(response);
   }
 
   Future<bool> enviarVotacion({

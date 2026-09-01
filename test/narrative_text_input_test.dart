@@ -23,7 +23,9 @@ void main() {
               onEnviar: () {},
               enviando: false,
               hintText: 'Escribe un comentario',
-              esCita: isQuote,
+              // La categoría 2 es "Cita del libro"; sin categoría es un
+              // comentario libre.
+              categoriaSeleccionada: isQuote ? 2 : null,
             ),
           ),
         ),
@@ -63,7 +65,11 @@ void main() {
   testWidgets('el buscador de biblioteca no activa ayudas narrativas', (
     tester,
   ) async {
-    SharedPreferences.setMockInitialValues({'screen_hint_v1_hint_biblioteca_v1': true});
+    await tester.binding.setSurfaceSize(const Size(1000, 900));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    SharedPreferences.setMockInitialValues({
+      'screen_hint_v1_hint_biblioteca_v1': true,
+    });
     final atmosphere = AtmosferaController();
     addTearDown(atmosphere.dispose);
     await tester.pumpWidget(
