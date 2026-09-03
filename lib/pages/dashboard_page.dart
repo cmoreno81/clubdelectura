@@ -461,9 +461,10 @@ class _DashboardPageState extends State<DashboardPage> {
                               title: 'Pulso del club',
                               value: data.mood,
                               icon: Icons.psychology_alt_outlined,
-                              foreground: const Color(0xFFD95781),
-                              background: const Color(0xFFFFF4F7),
-                              border: const Color(0xFFF5D8E1),
+                              gradientColors: const [
+                                Color(0xFFD63070),
+                                Color(0xFFE8607A),
+                              ],
                               onTap: () => Navigator.push(
                                 context,
                                 AppPageRoute(
@@ -478,9 +479,10 @@ class _DashboardPageState extends State<DashboardPage> {
                               title: 'Tendencia',
                               value: data.tendencia,
                               icon: Icons.trending_up_rounded,
-                              foreground: const Color(0xFF3D7358),
-                              background: const Color(0xFFF0F7F4),
-                              border: const Color(0xFFB8D9C5),
+                              gradientColors: const [
+                                Color(0xFF1F7A55),
+                                Color(0xFF39A876),
+                              ],
                               onTap: () => Navigator.push(
                                 context,
                                 AppPageRoute(
@@ -1873,15 +1875,35 @@ class _LogrosClubCardState extends State<_LogrosClubCard> {
         int? myTarget;
         int myRead = 0;
         if (snap.hasData && snap.data != null) {
-          final challenges =
-              (snap.data!['challenges'] as List<dynamic>? ?? []);
-          final myChallenge = challenges.isNotEmpty
-              ? Map<String, dynamic>.from(challenges.first as Map)
-              : <String, dynamic>{};
-          myTarget = myChallenge['target'] != null
-              ? (myChallenge['target'] as num).toInt()
-              : null;
-          myRead = (myChallenge['read'] as num? ?? 0).toInt();
+          final d = snap.data!;
+          if (widget.esPersonal) {
+            // Personal: buscar el registro propio (isMe: true) o el primero
+            final challenges =
+                (d['challenges'] as List<dynamic>? ?? []);
+            final myChallenge = challenges
+                    .cast<Map>()
+                    .firstWhere(
+                      (c) => c['isMe'] == true,
+                      orElse: () => challenges.isNotEmpty
+                          ? Map<String, dynamic>.from(
+                              challenges.first as Map)
+                          : <String, dynamic>{},
+                    )
+                    as Map<String, dynamic>;
+            myTarget = myChallenge['target'] != null
+                ? (myChallenge['target'] as num).toInt()
+                : null;
+            myRead = (myChallenge['read'] as num? ?? 0).toInt();
+          } else {
+            // Club: mostrar el reto colectivo
+            final clubTarget = d['clubTarget'];
+            final clubTotal = d['clubTotal'];
+            final clubTargetNum = clubTarget as num?;
+            myTarget = clubTargetNum != null && clubTargetNum > 0
+                ? clubTargetNum.toInt()
+                : null;
+            myRead = (clubTotal as num? ?? 0).toInt();
+          }
         }
 
         final hasData = snap.hasData && myTarget != null;
@@ -1921,7 +1943,9 @@ class _LogrosClubCardState extends State<_LogrosClubCard> {
                               style: TextStyle(fontSize: 16)),
                           const SizedBox(width: 6),
                           Text(
-                            'Reto lector $year',
+                            widget.esPersonal
+                                ? 'Mi reto lector $year'
+                                : 'Reto colectivo $year',
                             style: const TextStyle(
                               color: Colors.white70,
                               fontSize: 13,
@@ -2031,29 +2055,36 @@ class _AchievementsClubCardState extends State<_AchievementsClubCard> {
       future: _future,
       builder: (context, snap) {
         // Últimos logros (máx 4 emojis visibles)
+        // Cada item de `achievements` tiene achievementIcon/achievementTitle directamente
         final recientes = snap.hasData
             ? (snap.data!['achievements'] as List<dynamic>? ?? [])
                 .take(4)
                 .map((e) {
                   final m = Map<String, dynamic>.from(e as Map);
-                  if (m['achievement'] is Map) {
-                    return Map<String, dynamic>.from(
-                      m['achievement'] as Map,
-                    );
-                  }
-                  return <String, dynamic>{'icon': '🏅', 'title': ''};
+                  return <String, dynamic>{
+                    'icon': m['achievementIcon']?.toString() ?? '🏅',
+                    'title': m['achievementTitle']?.toString() ?? '',
+                  };
                 })
                 .toList()
             : <Map<String, dynamic>>[];
 
-        // Total logros del usuario (sumar ranking propio)
+        // Total logros: para personal = total del primer (único) ranking entry;
+        // para club = suma de todos los miembros
         int myTotal = 0;
         if (snap.hasData) {
           final ranking =
               snap.data!['ranking'] as List<dynamic>? ?? [];
-          if (ranking.isNotEmpty) {
+          if (widget.esPersonal && ranking.isNotEmpty) {
+            // En personal solo hay un entry (el propio usuario)
             final me = Map<String, dynamic>.from(ranking.first as Map);
-            myTotal = (me['count'] as num? ?? 0).toInt();
+            myTotal = (me['total'] as num? ?? 0).toInt();
+          } else {
+            // En club: suma de todos los miembros del ranking
+            myTotal = ranking.fold<int>(0, (sum, e) {
+              final m = Map<String, dynamic>.from(e as Map);
+              return sum + ((m['total'] as num?)?.toInt() ?? 0);
+            });
           }
         }
 
@@ -2424,18 +2455,14 @@ class _PulsoTendenciaCard extends StatefulWidget {
     required this.title,
     required this.value,
     required this.icon,
-    required this.foreground,
-    required this.background,
-    required this.border,
+    required this.gradientColors,
     this.onTap,
   });
 
   final String title;
   final String value;
   final IconData icon;
-  final Color foreground;
-  final Color background;
-  final Color border;
+  final List<Color> gradientColors;
   final VoidCallback? onTap;
 
   @override
@@ -2452,12 +2479,11 @@ class _PulsoTendenciaCardState extends State<_PulsoTendenciaCard>
     super.initState();
     _controller = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 1200),
+      duration: const Duration(milliseconds: 1400),
     )..repeat(reverse: true);
-    _scale = Tween<double>(
-      begin: 0.92,
-      end: 1.08,
-    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeInOut));
+    _scale = Tween<double>(begin: 0.88, end: 1.12).animate(
+      CurvedAnimation(parent: _controller, curve: Curves.easeInOut),
+    );
   }
 
   @override
@@ -2473,50 +2499,53 @@ class _PulsoTendenciaCardState extends State<_PulsoTendenciaCard>
       child: Container(
         padding: const EdgeInsets.all(AppSpacing.md),
         decoration: BoxDecoration(
-          color: widget.background,
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: widget.gradientColors,
+          ),
           borderRadius: BorderRadius.circular(AppRadius.md),
-          border: Border.all(color: widget.border),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Cabecera: ícono animado + título
+            // Cabecera: ícono animado + título + flecha
             Row(
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
                 ScaleTransition(
                   scale: _scale,
-                  child: Icon(widget.icon, color: widget.foreground, size: 16),
+                  child: Icon(widget.icon, color: Colors.white, size: 15),
                 ),
-                const SizedBox(width: 6),
+                const SizedBox(width: 5),
                 Expanded(
                   child: Text(
                     widget.title,
-                    style: AppTextStyles.caption.copyWith(
-                      color: widget.foreground,
+                    style: const TextStyle(
+                      color: Colors.white,
                       fontWeight: FontWeight.w700,
                       fontSize: 11,
-                      letterSpacing: 0.5,
+                      letterSpacing: 0.4,
                     ),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
                 ),
-                Icon(
+                const Icon(
                   Icons.chevron_right_rounded,
                   size: 14,
-                  color: widget.foreground.withValues(alpha: 0.6),
+                  color: Colors.white60,
                 ),
               ],
             ),
-            const SizedBox(height: AppSpacing.xs),
-            // Valor — texto completo, sin truncar
+            const SizedBox(height: AppSpacing.sm),
+            // Valor — texto destacado
             Text(
               widget.value,
-              style: AppTextStyles.body.copyWith(
-                color: AppColors.textPrimary,
-                fontWeight: FontWeight.w600,
-                fontSize: 13,
+              style: const TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.w700,
+                fontSize: 14,
                 height: 1.35,
               ),
             ),
