@@ -81,7 +81,7 @@ class _InfoCardState extends State<InfoCard>
         color: colors.iconBackground,
         borderRadius: BorderRadius.circular(AppRadius.lg),
       ),
-      child: Icon(widget.icon, size: 27, color: colors.foreground),
+      child: Icon(widget.icon, size: 27, color: colors.iconColor ?? colors.foreground),
     );
     return Row(
       crossAxisAlignment: CrossAxisAlignment.center,
@@ -132,7 +132,7 @@ class _InfoCardState extends State<InfoCard>
                 color: colors.iconBackground,
                 borderRadius: BorderRadius.circular(AppRadius.md),
               ),
-              child: Icon(widget.icon, size: 21, color: colors.foreground),
+              child: Icon(widget.icon, size: 21, color: colors.iconColor ?? colors.foreground),
             ),
 
             const Spacer(),
@@ -196,10 +196,11 @@ class _InfoCardState extends State<InfoCard>
 
       case InfoCardVariant.gold:
         return const _InfoCardColors(
-          background: Color(0xFFFFFBEF),
-          border: Color(0xFFF1E2B3),
-          iconBackground: Color(0xFFFFF0B8),
-          foreground: Color(0xFFB48113),
+          background: Color(0xFFEEDDAA),
+          border: Color(0xFFCCAA66),
+          iconBackground: Color(0xFFA87C38),
+          foreground: Color(0xFF6A4E18),
+          iconColor: Colors.white,
         );
 
       case InfoCardVariant.info:
@@ -212,10 +213,11 @@ class _InfoCardState extends State<InfoCard>
 
       case InfoCardVariant.coral:
         return const _InfoCardColors(
-          background: Color(0xFFFFF0EB),
-          border: Color(0xFFF5CFC5),
-          iconBackground: Color(0xFFFFDDD4),
-          foreground: AppColors.inkCoral,
+          background: Color(0xFFF5D8C8),
+          border: Color(0xFFCFA090),
+          iconBackground: Color(0xFFA85C42),
+          foreground: Color(0xFF7A3A28),
+          iconColor: Colors.white,
         );
 
       case InfoCardVariant.primary:
@@ -234,11 +236,14 @@ class _InfoCardColors {
   final Color border;
   final Color iconBackground;
   final Color foreground;
+  /// Color del icono dentro del contenedor. Si es null, usa [foreground].
+  final Color? iconColor;
 
   const _InfoCardColors({
     required this.background,
     required this.border,
     required this.iconBackground,
     required this.foreground,
+    this.iconColor,
   });
 }

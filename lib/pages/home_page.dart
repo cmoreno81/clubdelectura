@@ -256,20 +256,27 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
     return Scaffold(
       extendBody: false,
       body: _pageStack(),
-      bottomNavigationBar: _esPersonal
-          ? NavigationBar(
-              selectedIndex: currentIndex,
-              onDestinationSelected: _selectTab,
-              destinations: _personalDestinations(),
-            )
-          : ListenableBuilder(
-              listenable: _notifications,
-              builder: (context, _) => NavigationBar(
+      bottomNavigationBar: Container(
+        decoration: const BoxDecoration(
+          border: Border(
+            top: BorderSide(color: Color(0xFFCFB8E0), width: 1.0),
+          ),
+        ),
+        child: _esPersonal
+            ? NavigationBar(
                 selectedIndex: currentIndex,
                 onDestinationSelected: _selectTab,
-                destinations: _socialDestinations(),
+                destinations: _personalDestinations(),
+              )
+            : ListenableBuilder(
+                listenable: _notifications,
+                builder: (context, _) => NavigationBar(
+                  selectedIndex: currentIndex,
+                  onDestinationSelected: _selectTab,
+                  destinations: _socialDestinations(),
+                ),
               ),
-            ),
+      ),
     );
   }
 

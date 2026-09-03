@@ -90,6 +90,7 @@ class _GeneralDashboardPageState extends State<GeneralDashboardPage> {
   String? _openingClubId;
   bool _openingBook = false; // ← evita abrir dos fichas a la vez
   bool _openingNewBook = false;
+  bool _clubsExpanded = false;
   bool _savingProgress = false;
   bool _openingBookActions = false;
   final _scrollController = ScrollController();
@@ -539,13 +540,49 @@ class _GeneralDashboardPageState extends State<GeneralDashboardPage> {
               slivers: [
                 SliverAppBar(
                   pinned: true,
-                  backgroundColor: AppColors.background,
+                  toolbarHeight: 72,
+                  backgroundColor: const Color(0xFFF5EDE0),
+                  foregroundColor: AppColors.primaryDark,
+                  iconTheme: const IconThemeData(
+                    color: AppColors.primaryDark,
+                    size: 22,
+                  ),
+                  actionsIconTheme: const IconThemeData(
+                    color: AppColors.primaryDark,
+                    size: 22,
+                  ),
                   surfaceTintColor: Colors.transparent,
                   scrolledUnderElevation: 0,
                   shape: const Border(
-                    bottom: BorderSide(color: AppColors.paperLine, width: .8),
+                    bottom: BorderSide(color: Color(0xFFCDB8A0), width: 1.0),
                   ),
-                  title: const Text('Mi universo lector'),
+                  centerTitle: true,
+                  titleSpacing: 4,
+                  title: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: const [
+                      Text(
+                        '✦  C L U B R E A D S  ✦',
+                        style: TextStyle(
+                          fontSize: 8,
+                          letterSpacing: 1.2,
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.primary,
+                        ),
+                      ),
+                      SizedBox(height: 4),
+                      Text(
+                        'Mi universo lector',
+                        style: TextStyle(
+                          fontSize: 19,
+                          fontWeight: FontWeight.w900,
+                          color: AppColors.primaryDark,
+                          letterSpacing: -0.4,
+                          height: 1.1,
+                        ),
+                      ),
+                    ],
+                  ),
                   actions: [
                     Stack(
                       clipBehavior: Clip.none,
@@ -638,20 +675,75 @@ class _GeneralDashboardPageState extends State<GeneralDashboardPage> {
                       const SizedBox(height: AppSpacing.sm),
                       _metrics(data),
                       const SizedBox(height: AppSpacing.md),
-                      Card(
-                        child: ListTile(
-                          onTap: _exploreBooks,
-                          leading: const CircleAvatar(
-                            child: Icon(Icons.auto_stories_outlined),
+                      ClubCard(
+                        onTap: _exploreBooks,
+                        padding: EdgeInsets.zero,
+                        child: Container(
+                          decoration: BoxDecoration(
+                            gradient: LinearGradient(
+                              begin: Alignment.centerLeft,
+                              end: Alignment.centerRight,
+                              colors: [
+                                AppColors.primaryLight,
+                                const Color(0xFFF5EEF9),
+                              ],
+                            ),
+                            borderRadius: const BorderRadius.only(
+                              topLeft: Radius.circular(24),
+                              topRight: Radius.circular(12),
+                              bottomRight: Radius.circular(24),
+                              bottomLeft: Radius.circular(16),
+                            ),
                           ),
-                          title: const Text(
-                            'Explorar la biblioteca',
-                            style: TextStyle(fontWeight: FontWeight.w800),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: AppSpacing.lg,
+                            vertical: AppSpacing.md,
                           ),
-                          subtitle: const Text(
-                            'Busca nuevas lecturas y añádelas a tu espacio',
+                          child: Row(
+                            children: [
+                              Container(
+                                width: 44,
+                                height: 44,
+                                decoration: BoxDecoration(
+                                  color: AppColors.primary.withValues(alpha: .12),
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                child: const Icon(
+                                  Icons.auto_stories_rounded,
+                                  color: AppColors.primary,
+                                  size: 22,
+                                ),
+                              ),
+                              const SizedBox(width: AppSpacing.md),
+                              const Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      'Explorar la biblioteca',
+                                      style: TextStyle(
+                                        fontWeight: FontWeight.w800,
+                                        fontSize: 15,
+                                      ),
+                                    ),
+                                    SizedBox(height: 2),
+                                    Text(
+                                      'Busca nuevas lecturas y añádelas a tu espacio',
+                                      style: TextStyle(
+                                        fontSize: 12,
+                                        color: AppColors.textSecondary,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              const SizedBox(width: AppSpacing.sm),
+                              const Icon(
+                                Icons.arrow_forward_rounded,
+                                color: AppColors.primary,
+                              ),
+                            ],
                           ),
-                          trailing: const Icon(Icons.arrow_forward_ios_rounded),
                         ),
                       ),
                       if (data.latestAdditions.isNotEmpty) ...[
@@ -685,8 +777,10 @@ class _GeneralDashboardPageState extends State<GeneralDashboardPage> {
                       const SizedBox(height: AppSpacing.sm),
                       if (data.clubs.isEmpty)
                         _emptyClubs()
+                      else if (data.clubs.length <= 2)
+                        ...data.clubs.map(_clubCard)
                       else
-                        ...data.clubs.map(_clubCard),
+                        _clubListCollapsible(data.clubs),
 
                       const SizedBox(height: AppSpacing.xl),
                       _ReleasesPreview(
@@ -1012,47 +1106,47 @@ class _GeneralDashboardPageState extends State<GeneralDashboardPage> {
     required BuildContext context,
   }) {
     return ClubCard(
-      elevated: false,
-      padding: const EdgeInsets.all(AppSpacing.md),
-      child: Row(
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.md,
+        vertical: AppSpacing.md,
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          CircleAvatar(
-            backgroundColor: color.withValues(alpha: .14),
-            child: Icon(icon, color: color),
+          Row(
+            children: [
+              Icon(icon, color: color, size: 13),
+              const SizedBox(width: 4),
+              Text(
+                title.toUpperCase(),
+                style: TextStyle(
+                  fontSize: 10,
+                  fontWeight: FontWeight.w700,
+                  color: color,
+                  letterSpacing: 0.7,
+                ),
+              ),
+            ],
           ),
-          const SizedBox(width: AppSpacing.sm),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Text(
-                  value,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: Theme.of(
-                    context,
-                  ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w800),
+          const SizedBox(height: 6),
+          Text(
+            value,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                  fontWeight: FontWeight.w900,
                 ),
-                Text(
-                  title,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(fontSize: 12),
-                ),
-                if (subtitle.isNotEmpty)
-                  Text(
-                    subtitle,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                      fontSize: 10,
-                      color: AppColors.textSecondary,
-                    ),
-                  ),
-              ],
+          ),
+          if (subtitle.isNotEmpty)
+            Text(
+              subtitle,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(
+                fontSize: 11,
+                color: AppColors.textSecondary,
+              ),
             ),
-          ),
         ],
       ),
     );
@@ -1063,50 +1157,50 @@ class _GeneralDashboardPageState extends State<GeneralDashboardPage> {
     required int pages,
     required BuildContext context,
   }) {
+    const mesColor = Color(0xFFA85C42);
     return ClubCard(
-      elevated: false,
-      padding: const EdgeInsets.all(AppSpacing.md),
-      child: Row(
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.md,
+        vertical: AppSpacing.md,
+      ),
+      backgroundColor: const Color(0xFFFAEDE8),
+      borderColor: const Color(0xFFE8C4B4),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          CircleAvatar(
-            backgroundColor: AppColors.warning.withValues(alpha: .14),
-            child: const Icon(Icons.bolt_rounded, color: AppColors.warning),
+          Row(
+            children: [
+              const Icon(Icons.bolt_rounded, color: mesColor, size: 13),
+              const SizedBox(width: 4),
+              const Text(
+                'ESTE MES',
+                style: TextStyle(
+                  fontSize: 10,
+                  fontWeight: FontWeight.w700,
+                  color: mesColor,
+                  letterSpacing: 0.7,
+                ),
+              ),
+            ],
           ),
-          const SizedBox(width: AppSpacing.sm),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                const Text(
-                  'Este mes',
-                  maxLines: 1,
-                  style: TextStyle(
-                    fontSize: 11,
-                    fontWeight: FontWeight.w800,
-                    color: AppColors.warning,
-                  ),
+          const SizedBox(height: 6),
+          Text(
+            '${summary.finishedThisMonth}',
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                  fontWeight: FontWeight.w900,
                 ),
-                Text(
-                  '${summary.finishedThisMonth}',
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: Theme.of(
-                    context,
-                  ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w800),
-                ),
-                Text(
-                  summary.finishedThisMonth == 1
-                      ? 'libro terminado'
-                      : 'libros terminados',
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    fontSize: 10,
-                    color: AppColors.textSecondary,
-                  ),
-                ),
-              ],
+          ),
+          Text(
+            summary.finishedThisMonth == 1
+                ? 'libro terminado'
+                : 'libros terminados',
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: const TextStyle(
+              fontSize: 11,
+              color: AppColors.textSecondary,
             ),
           ),
         ],
@@ -1119,48 +1213,52 @@ class _GeneralDashboardPageState extends State<GeneralDashboardPage> {
     required int pagesMes,
     required BuildContext context,
   }) {
+    const paginasColor = Color(0xFF5A7A60);
     return ClubCard(
-      elevated: false,
-      padding: const EdgeInsets.all(AppSpacing.md),
-      child: Row(
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.md,
+        vertical: AppSpacing.md,
+      ),
+      backgroundColor: const Color(0xFFF0F5EE),
+      borderColor: const Color(0xFFCEDECF),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          CircleAvatar(
-            backgroundColor: AppColors.primary.withValues(alpha: .14),
-            child: const Icon(Icons.bookmark_rounded, color: AppColors.primary),
+          Row(
+            children: [
+              const Icon(
+                Icons.bookmark_rounded,
+                color: paginasColor,
+                size: 13,
+              ),
+              const SizedBox(width: 4),
+              const Text(
+                'PÁGINAS',
+                style: TextStyle(
+                  fontSize: 10,
+                  fontWeight: FontWeight.w700,
+                  color: paginasColor,
+                  letterSpacing: 0.7,
+                ),
+              ),
+            ],
           ),
-          const SizedBox(width: AppSpacing.sm),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                const Text(
-                  'Páginas',
-                  maxLines: 1,
-                  style: TextStyle(
-                    fontSize: 11,
-                    fontWeight: FontWeight.w800,
-                    color: AppColors.primary,
-                  ),
+          const SizedBox(height: 6),
+          Text(
+            pagesMes > 0 ? '$pagesMes' : '0',
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                  fontWeight: FontWeight.w900,
                 ),
-                Text(
-                  pagesMes > 0 ? '$pagesMes' : '0',
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: Theme.of(
-                    context,
-                  ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w800),
-                ),
-                Text(
-                  '${summary.pagesRead} en total',
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    fontSize: 10,
-                    color: AppColors.textSecondary,
-                  ),
-                ),
-              ],
+          ),
+          Text(
+            '${summary.pagesRead} en total',
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: const TextStyle(
+              fontSize: 11,
+              color: AppColors.textSecondary,
             ),
           ),
         ],
@@ -1222,6 +1320,56 @@ class _GeneralDashboardPageState extends State<GeneralDashboardPage> {
           ],
         ),
       ),
+    );
+  }
+
+  Widget _clubListCollapsible(List<GeneralClub> clubs) {
+    // Siempre visibles: club activo + espacio personal
+    final pinned = clubs.where((c) => c.active || c.esPersonal).toList();
+    // Ya deduplicados porque un club no puede ser activo Y personal a la vez
+    final rest = clubs.where((c) => !c.active && !c.esPersonal).toList();
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        ...pinned.map(_clubCard),
+        // Sección colapsable con los demás clubes
+        AnimatedSize(
+          duration: const Duration(milliseconds: 250),
+          curve: Curves.easeInOut,
+          child: _clubsExpanded
+              ? Column(children: rest.map(_clubCard).toList())
+              : const SizedBox.shrink(),
+        ),
+        if (rest.isNotEmpty)
+          Padding(
+            padding: const EdgeInsets.only(bottom: AppSpacing.sm),
+            child: OutlinedButton.icon(
+              onPressed: () =>
+                  setState(() => _clubsExpanded = !_clubsExpanded),
+              icon: Icon(
+                _clubsExpanded
+                    ? Icons.expand_less_rounded
+                    : Icons.expand_more_rounded,
+                size: 18,
+              ),
+              label: Text(
+                _clubsExpanded
+                    ? 'Ver menos'
+                    : 'Ver ${rest.length} club${rest.length == 1 ? '' : 'es'} más',
+              ),
+              style: OutlinedButton.styleFrom(
+                foregroundColor: AppColors.primary,
+                side: BorderSide(
+                  color: AppColors.primary.withValues(alpha: .35),
+                ),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(AppRadius.md),
+                ),
+              ),
+            ),
+          ),
+      ],
     );
   }
 
@@ -1568,7 +1716,7 @@ class _GeneralDashboardPageState extends State<GeneralDashboardPage> {
         borderRadius: BorderRadius.circular(18),
         onTap: item.next == null
             ? _openMySeries
-            : () => _openBook(
+            : () => _openCatalogBook(
                 title: item.next!.title,
                 bookId: item.next!.id,
                 coverUrl: item.next!.coverUrl,

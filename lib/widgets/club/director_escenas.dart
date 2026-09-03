@@ -182,7 +182,7 @@ class DirectorEscenas {
       width: double.infinity,
       padding: const EdgeInsets.symmetric(
         horizontal: AppSpacing.lg,
-        vertical: AppSpacing.xl,
+        vertical: AppSpacing.md,
       ),
       decoration: BoxDecoration(
         gradient: const LinearGradient(
@@ -195,52 +195,38 @@ class DirectorEscenas {
           color: const Color(0xFFE4B63F).withValues(alpha: .5),
         ),
       ),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        crossAxisAlignment: CrossAxisAlignment.center,
+      child: Row(
         children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              _statItem(
-                '$totalVotos',
-                'votos recibidos',
-                Icons.how_to_vote_outlined,
-              ),
-              Container(
-                width: 1,
-                height: 56,
-                margin: const EdgeInsets.symmetric(horizontal: AppSpacing.xl),
-                color: const Color(0xFFE4B63F).withValues(alpha: .4),
-              ),
-              _statItem(
-                '$participacion%',
-                'participación',
-                Icons.people_outline_rounded,
-              ),
-            ],
-          ),
-          const SizedBox(height: AppSpacing.lg),
+          Expanded(child: _statItem('$totalVotos', 'votos recibidos', Icons.how_to_vote_outlined)),
           Container(
-            padding: const EdgeInsets.symmetric(
-              horizontal: AppSpacing.md,
-              vertical: 6,
-            ),
-            decoration: BoxDecoration(
-              color: const Color(0xFFE4B63F).withValues(alpha: .15),
-              borderRadius: BorderRadius.circular(30),
-              border: Border.all(
-                color: const Color(0xFFE4B63F).withValues(alpha: .4),
-              ),
-            ),
-            child: Text(
-              '¡Entra y descubre quién ha ganado! 🏆',
-              textAlign: TextAlign.center,
-              style: AppTextStyles.caption.copyWith(
-                color: const Color(0xFF7A5A00),
-                fontStyle: FontStyle.italic,
-                fontWeight: FontWeight.w600,
-              ),
+            width: 1,
+            height: 44,
+            margin: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
+            color: const Color(0xFFE4B63F).withValues(alpha: .4),
+          ),
+          Expanded(child: _statItem('$participacion%', '', Icons.people_outline_rounded)),
+          Container(
+            width: 1,
+            height: 44,
+            margin: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
+            color: const Color(0xFFE4B63F).withValues(alpha: .4),
+          ),
+          Expanded(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(Icons.emoji_events_rounded, color: Color(0xFFB48113), size: 18),
+                const SizedBox(height: 4),
+                Text(
+                  '¡Descubre el ganador!',
+                  textAlign: TextAlign.center,
+                  style: AppTextStyles.caption.copyWith(
+                    color: const Color(0xFF7A5A00),
+                    fontStyle: FontStyle.italic,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
             ),
           ),
         ],
@@ -253,25 +239,27 @@ class DirectorEscenas {
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
-        Icon(icon, color: const Color(0xFFB48113), size: 22),
-        const SizedBox(height: 6),
+        Icon(icon, color: const Color(0xFFB48113), size: 18),
+        const SizedBox(height: 4),
         Text(
           value,
           style: AppTextStyles.title.copyWith(
-            fontSize: 32,
+            fontSize: 22,
             color: const Color(0xFF5A3E00),
             fontWeight: FontWeight.w900,
           ),
         ),
-        const SizedBox(height: 2),
-        Text(
-          label,
-          textAlign: TextAlign.center,
-          style: AppTextStyles.caption.copyWith(
-            color: const Color(0xFF9A7A20),
-            height: 1.3,
+        if (label.isNotEmpty) ...[
+          const SizedBox(height: 2),
+          Text(
+            label,
+            textAlign: TextAlign.center,
+            style: AppTextStyles.caption.copyWith(
+              color: const Color(0xFF9A7A20),
+              height: 1.3,
+            ),
           ),
-        ),
+        ],
       ],
     );
   }

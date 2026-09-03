@@ -219,40 +219,39 @@ class ClubvisionCard extends StatelessWidget {
         ? AppColors.textMuted
         : estadoClub.iconColor;
 
-    return Column(
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.center,
       children: [
         Container(
-          width: 68,
-          height: 68,
+          width: 48,
+          height: 48,
           decoration: BoxDecoration(
             color: Colors.white.withValues(alpha: 0.72),
-            borderRadius: BorderRadius.circular(AppRadius.xl),
+            borderRadius: BorderRadius.circular(AppRadius.lg),
           ),
-          child: Icon(icono, size: 34, color: iconColor),
+          child: Icon(icono, size: 26, color: iconColor),
         ),
-
-        const SizedBox(height: AppSpacing.md),
-
-        Padding(
-          padding: EdgeInsets.symmetric(
-            horizontal: _mostrarFlecha ? AppSpacing.xl : 0,
-          ),
-          child: Text(
-            titulo,
-            textAlign: TextAlign.center,
-            style: AppTextStyles.section.copyWith(fontWeight: FontWeight.w700),
+        const SizedBox(width: AppSpacing.md),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                titulo,
+                style: AppTextStyles.section.copyWith(
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+              if (mensaje.trim().isNotEmpty) ...[
+                const SizedBox(height: 2),
+                Text(
+                  mensaje,
+                  style: AppTextStyles.bodySecondary,
+                ),
+              ],
+            ],
           ),
         ),
-
-        if (mensaje.trim().isNotEmpty) ...[
-          const SizedBox(height: AppSpacing.xs),
-
-          Text(
-            mensaje,
-            textAlign: TextAlign.center,
-            style: AppTextStyles.bodySecondary,
-          ),
-        ],
       ],
     );
   }

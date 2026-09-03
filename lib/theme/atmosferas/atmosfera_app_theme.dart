@@ -60,31 +60,31 @@ class AtmosferaAppTheme {
       ),
 
       navigationBarTheme: NavigationBarThemeData(
-        height: 76,
+        height: 72,
         elevation: 0,
+        shadowColor: const Color(0xFF4E3A5E),
         backgroundColor: paleta.navigationBackground,
         indicatorColor: paleta.navigationIndicator,
         surfaceTintColor: Colors.transparent,
         labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
         iconTheme: WidgetStateProperty.resolveWith((states) {
           if (states.contains(WidgetState.selected)) {
-            return IconThemeData(color: paleta.primary, size: 26);
+            return IconThemeData(color: paleta.primary, size: 25);
           }
-
-          return const IconThemeData(color: Colors.black54, size: 24);
+          return const IconThemeData(color: Color(0xFF8A7A70), size: 23);
         }),
         labelTextStyle: WidgetStateProperty.resolveWith((states) {
           if (states.contains(WidgetState.selected)) {
             return TextStyle(
               color: paleta.primary,
-              fontSize: 12,
-              fontWeight: FontWeight.w700,
+              fontSize: 11,
+              fontWeight: FontWeight.w800,
+              letterSpacing: 0.2,
             );
           }
-
           return const TextStyle(
-            color: Colors.black54,
-            fontSize: 12,
+            color: Color(0xFF8A7A70),
+            fontSize: 11,
             fontWeight: FontWeight.w500,
           );
         }),

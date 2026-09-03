@@ -295,37 +295,41 @@ class _DashboardPageState extends State<DashboardPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        toolbarHeight: 76,
-        title: Row(
+        toolbarHeight: 80,
+        backgroundColor: const Color(0xFFF5EDE0),
+        foregroundColor: AppColors.primaryDark,
+        surfaceTintColor: Colors.transparent,
+        scrolledUnderElevation: 0,
+        centerTitle: true,
+        iconTheme: const IconThemeData(color: AppColors.primaryDark, size: 22),
+        actionsIconTheme: const IconThemeData(color: AppColors.primaryDark, size: 22),
+        shape: const Border(
+          bottom: BorderSide(color: Color(0xFFCDB8A0), width: 1.0),
+        ),
+        title: Column(
+          mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(
-              Icons.auto_stories_rounded,
-              color: AppColors.primary,
-              size: 28,
+            const Text(
+              '✦  C L U B R E A D S  ✦',
+              style: TextStyle(
+                fontSize: 8,
+                letterSpacing: 1.2,
+                fontWeight: FontWeight.w600,
+                color: AppColors.primary,
+              ),
             ),
-
-            const SizedBox(width: AppSpacing.xs),
-
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    widget.clubName,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: AppTextStyles.subtitle.copyWith(
-                      fontSize: 18,
-                      fontWeight: FontWeight.w800,
-                    ),
-                  ),
-                  Text(
-                    'ClubReads',
-                    style: AppTextStyles.caption.copyWith(
-                      color: AppColors.textSecondary,
-                    ),
-                  ),
-                ],
+            const SizedBox(height: 4),
+            Text(
+              widget.clubName,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w900,
+                color: AppColors.primaryDark,
+                letterSpacing: -0.3,
+                height: 1.15,
               ),
             ),
           ],
@@ -462,8 +466,8 @@ class _DashboardPageState extends State<DashboardPage> {
                               value: data.mood,
                               icon: Icons.psychology_alt_outlined,
                               gradientColors: const [
-                                Color(0xFFD63070),
-                                Color(0xFFE8607A),
+                                Color(0xFF7D3D52),
+                                Color(0xFFA85E72),
                               ],
                               onTap: () => Navigator.push(
                                 context,
@@ -480,8 +484,8 @@ class _DashboardPageState extends State<DashboardPage> {
                               value: data.tendencia,
                               icon: Icons.trending_up_rounded,
                               gradientColors: const [
-                                Color(0xFF1F7A55),
-                                Color(0xFF39A876),
+                                Color(0xFF3D6248),
+                                Color(0xFF5E8A68),
                               ],
                               onTap: () => Navigator.push(
                                 context,
@@ -496,7 +500,44 @@ class _DashboardPageState extends State<DashboardPage> {
                     ),
 
                     const SizedBox(height: AppSpacing.md),
+                    _estadisticasMes(
+                      actividad: data.resumen.actividadMes,
+                      valoracion: data.resumen.valoracionMedia,
+                    ),
+                    const SizedBox(height: AppSpacing.md),
                     const _ClubWishlistCard(),
+                    const SizedBox(height: AppSpacing.md),
+                    RachaLectoraCard(
+                      key: ValueKey('reading-streak-club-$_favoritosKey'),
+                      loadHistory: widget.loadCheckinHistory,
+                      onTap: () => _abrirMiPerfil(scrollToSeguimiento: true),
+                    ),
+
+                    // ── Leyendo ahora — justo después del wishlist ────────────
+                    const SizedBox(height: AppSpacing.lg),
+                    ClubSectionTitle(
+                      title: 'Leyendo ahora',
+                      subtitle: 'Qué tienen entre manos los miembros',
+                      icon: Icons.menu_book_rounded,
+                      padding: EdgeInsets.zero,
+                    ),
+                    const SizedBox(height: AppSpacing.sm),
+                    if (data.leyendoAhora.isEmpty)
+                      ClubEmptyState(
+                        icon: Icons.menu_book_outlined,
+                        title: 'El club está entre lecturas',
+                        message: 'Cuando alguien empiece un libro, aparecerá aquí.',
+                        padding: const EdgeInsets.symmetric(vertical: AppSpacing.xl),
+                      )
+                    else
+                      ...data.leyendoAhora.map(
+                        (usuario) => _lectoraLeyendoCard(
+                          nombre: usuario.usuario,
+                          lecturas: usuario.lecturas,
+                          total: usuario.total,
+                          avatarUrl: usuario.avatarUrl,
+                        ),
+                      ),
 
                     if (data.rankingAfinidad.isNotEmpty) ...[
                       const SizedBox(height: AppSpacing.md),
@@ -531,65 +572,10 @@ class _DashboardPageState extends State<DashboardPage> {
                         ),
                       ),
                     ],
-                  ], // fin if (!widget.esPersonal)
-
-                  const SizedBox(height: AppSpacing.lg),
-
-                  _estadisticasMes(
-                    actividad: data.resumen.actividadMes,
-                    valoracion: data.resumen.valoracionMedia,
-                    esPersonal: widget.esPersonal,
-                  ),
-
-                  const SizedBox(height: AppSpacing.md),
-
-                  RachaLectoraCard(
-                    key: ValueKey('reading-streak-$_favoritosKey'),
-                    loadHistory: widget.loadCheckinHistory,
-                    onTap: () => _abrirMiPerfil(scrollToSeguimiento: true),
-                  ),
-
-                  const SizedBox(height: AppSpacing.lg),
-
-                  ClubSectionTitle(
-                    title: 'Leyendo ahora',
-                    subtitle: widget.esPersonal
-                        ? 'Tus lecturas activas'
-                        : 'Qué tienen entre manos los miembros',
-                    icon: Icons.menu_book_rounded,
-                    padding: EdgeInsets.zero,
-                  ),
-
-                  const SizedBox(height: AppSpacing.sm),
-
-                  if (data.leyendoAhora.isEmpty)
-                    ClubEmptyState(
-                      icon: Icons.menu_book_outlined,
-                      title: widget.esPersonal
-                          ? 'Aún no tienes lecturas activas'
-                          : 'El club está entre lecturas',
-                      message: widget.esPersonal
-                          ? 'Ve a Libros y empieza una nueva lectura.'
-                          : 'Cuando alguien empiece un libro, aparecerá aquí.',
-                      padding: const EdgeInsets.symmetric(
-                        vertical: AppSpacing.xl,
-                      ),
-                    )
-                  else
-                    ...data.leyendoAhora.map(
-                      (usuario) => _lectoraLeyendoCard(
-                        nombre: usuario.usuario,
-                        lecturas: usuario.lecturas,
-                        total: usuario.total,
-                        avatarUrl: usuario.avatarUrl,
-                      ),
-                    ),
-
                   // ── Personalidades — sección más estática, al final ───────
-                  if (!widget.esPersonal) ...[
                     const SizedBox(height: AppSpacing.md),
                     const _PersonalidadesClubCard(),
-                  ],
+                  ], // fin if (!widget.esPersonal)
                 ],
               ),
             ),
@@ -675,7 +661,18 @@ class _DashboardPageState extends State<DashboardPage> {
               padding: EdgeInsets.zero,
             ),
             const SizedBox(height: AppSpacing.sm),
-            _PersonalOpenSeriesShelf(series: general!.openSeries),
+            _PersonalOpenSeriesShelf(
+              series: general!.openSeries,
+              onBookTap: (saga) {
+                if (saga.next == null) return;
+                openBookDetail(
+                  context,
+                  title: saga.next!.title,
+                  bookId: saga.next!.id,
+                  coverUrl: saga.next!.coverUrl,
+                );
+              },
+            ),
           ],
 
           const SizedBox(height: AppSpacing.md),
@@ -1940,7 +1937,7 @@ class _LogrosClubCardState extends State<_LogrosClubCard> {
               gradient: const LinearGradient(
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
-                colors: [Color(0xFF6C3CE1), Color(0xFF3B7BF6)],
+                colors: [Color(0xFF7A3828), Color(0xFFA85C42)],
               ),
               borderRadius: BorderRadius.circular(AppRadius.lg),
             ),
@@ -2119,7 +2116,7 @@ class _AchievementsClubCardState extends State<_AchievementsClubCard> {
               gradient: const LinearGradient(
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
-                colors: [Color(0xFFD4960A), Color(0xFFE8B84B)],
+                colors: [Color(0xFF7A5418), Color(0xFFA87C38)],
               ),
               borderRadius: BorderRadius.circular(AppRadius.lg),
             ),
@@ -2457,7 +2454,7 @@ class _RachaLectoraTile extends StatelessWidget {
       );
     }
 
-    // ── Racha baja o sin check-in: ClubCard neutra ───────────────────────────
+    // ── Racha baja o sin check-in: ClubCard con tinte cálido ───────────────────
     return GestureDetector(
       onTap: onTap,
       child: ClubCard(
@@ -2465,7 +2462,8 @@ class _RachaLectoraTile extends StatelessWidget {
           horizontal: AppSpacing.lg,
           vertical: AppSpacing.md,
         ),
-        borderColor: color.withValues(alpha: 0.35),
+        backgroundColor: const Color(0xFFE4EDD8),
+        borderColor: const Color(0xFFB4C8AA),
         child: Row(
           children: [
             // ── Icono de llama ──────────────────────────────────────────────
@@ -2473,7 +2471,7 @@ class _RachaLectoraTile extends StatelessWidget {
               width: 52,
               height: 52,
               decoration: BoxDecoration(
-                color: color.withValues(alpha: 0.12),
+                color: color.withValues(alpha: 0.28),
                 borderRadius: BorderRadius.circular(16),
               ),
               child: Center(
@@ -2555,15 +2553,15 @@ class _RachaLectoraTile extends StatelessWidget {
     if (racha >= 30) {
       return ('🏆', '¡Racha legendaria!', AppColors.gold);
     } else if (racha >= 14) {
-      return ('🔥', '¡Imparable!', AppColors.inkCoral);
+      return ('🔥', '¡Imparable!', const Color(0xFFA85C42));
     } else if (racha >= 7) {
-      return ('⚡', '¡Una semana seguida!', AppColors.inkCoral);
+      return ('⚡', '¡Una semana seguida!', const Color(0xFFA85C42));
     } else if (racha >= 3) {
-      return ('🔥', '¡En racha!', AppColors.inkCoral);
+      return ('🔥', '¡En racha!', const Color(0xFFA85C42));
     } else if (racha == 2) {
-      return ('📖', '¡Dos días seguidos!', AppColors.inkCoral);
+      return ('📖', '¡Dos días seguidos!', const Color(0xFFA85C42));
     } else {
-      return ('📖', 'Sigue leyendo cada día', AppColors.textSecondary);
+      return ('📖', 'Sigue leyendo cada día', const Color(0xFF5A7A60));
     }
   }
 }
@@ -3354,14 +3352,19 @@ class _PersonalidadesContent extends StatelessWidget {
 
           const SizedBox(height: AppSpacing.sm),
 
-          // ── Lista horizontal de miembros ──────────────────────────────────
-          SizedBox(
-            height: 90,
-            child: ListView.separated(
-              scrollDirection: Axis.horizontal,
-              padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
+          // ── Grid de miembros (4 por fila) ────────────────────────────────
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
+            child: GridView.builder(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: 4,
+                crossAxisSpacing: AppSpacing.sm,
+                mainAxisSpacing: AppSpacing.sm,
+                childAspectRatio: 0.78,
+              ),
               itemCount: miembros.length,
-              separatorBuilder: (_, _) => const SizedBox(width: AppSpacing.sm),
               itemBuilder: (context, i) => _MiembroPersonalidadChip(miembro: miembros[i]),
             ),
           ),
@@ -3402,7 +3405,6 @@ class _MiembroPersonalidadChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      width: 70,
       decoration: BoxDecoration(
         gradient: LinearGradient(
           begin: Alignment.topCenter,
@@ -3417,7 +3419,7 @@ class _MiembroPersonalidadChip extends StatelessWidget {
           color: Color(miembro.colores.end).withValues(alpha: .30),
         ),
       ),
-      padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 4),
+      padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         mainAxisSize: MainAxisSize.min,
@@ -3506,7 +3508,7 @@ class _ClubWishlistCardState extends State<_ClubWishlistCard> {
               gradient: const LinearGradient(
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
-                colors: [Color(0xFF7B4E92), Color(0xFF40254F)],
+                colors: [Color(0xFF5A3560), Color(0xFF7D5488)],
               ),
               borderRadius: BorderRadius.circular(AppRadius.xl),
               boxShadow: [
@@ -3824,9 +3826,13 @@ class _PersonalYearShelfCard extends StatelessWidget {
 
 /// Shelf horizontal de sagas en curso con progreso visual.
 class _PersonalOpenSeriesShelf extends StatelessWidget {
-  const _PersonalOpenSeriesShelf({required this.series});
+  const _PersonalOpenSeriesShelf({
+    required this.series,
+    required this.onBookTap,
+  });
 
   final List<GeneralOpenSeries> series;
+  final void Function(GeneralOpenSeries) onBookTap;
 
   @override
   Widget build(BuildContext context) {
@@ -3839,7 +3845,9 @@ class _PersonalOpenSeriesShelf extends StatelessWidget {
         itemBuilder: (context, index) {
           final saga = series[index];
           final remaining = saga.total > 0 ? saga.total - saga.read : 0;
-          return SizedBox(
+          return GestureDetector(
+            onTap: saga.next != null ? () => onBookTap(saga) : null,
+            child: SizedBox(
             width: 130,
             child: ClubCard(
               padding: const EdgeInsets.all(AppSpacing.sm),
@@ -3912,6 +3920,7 @@ class _PersonalOpenSeriesShelf extends StatelessWidget {
                   ],
                 ],
               ),
+            ),
             ),
           );
         },

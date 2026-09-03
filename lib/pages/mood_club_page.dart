@@ -299,7 +299,7 @@ class _MoodHeader extends StatelessWidget {
           gradient: LinearGradient(
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
-            colors: [Color(0xFF7B1451), Color(0xFFAD3B7E)],
+            colors: [Color(0xFF7D3D52), Color(0xFFA85E72)],
           ),
           borderRadius: BorderRadius.only(
             topLeft: Radius.circular(23),
@@ -445,7 +445,7 @@ class _MoodVoteCard extends StatelessWidget {
                 Text(
                   '¿Cómo estás viviendo tu lectura?',
                   style: AppTextStyles.section.copyWith(
-                    color: const Color(0xFF7B1451),
+                    color: const Color(0xFF7D3D52),
                     fontWeight: FontWeight.w900,
                   ),
                 ),
@@ -455,7 +455,7 @@ class _MoodVoteCard extends StatelessWidget {
                       ? 'Estrena el pulso de esta semana.'
                       : '${mood.total} ${mood.total == 1 ? 'persona ha compartido' : 'personas han compartido'} su mood esta semana.',
                   style: AppTextStyles.bodySecondary.copyWith(
-                    color: const Color(0xFFAD3B7E),
+                    color: const Color(0xFFA85E72),
                   ),
                 ),
               ],
