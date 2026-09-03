@@ -190,20 +190,20 @@ class _ClubBooksOfYearCardState extends State<ClubBooksOfYearCard> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            // ── Encabezado con trofeo grande y título prominente ──
             Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
+              crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-                Container(
-                  padding: const EdgeInsets.all(AppSpacing.sm),
-                  decoration: BoxDecoration(
-                    color: dark
-                        ? const Color(0xFF4A3E55)
-                        : const Color(0xFFE8DAEE),
-                    borderRadius: BorderRadius.circular(AppRadius.md),
-                  ),
-                  child: const Icon(
-                    Icons.emoji_events_outlined,
-                    color: AppColors.gold,
+                Text(
+                  '🏆',
+                  style: TextStyle(
+                    fontSize: 32,
+                    shadows: [
+                      Shadow(
+                        color: AppColors.gold.withValues(alpha: .3),
+                        blurRadius: 8,
+                      ),
+                    ],
                   ),
                 ),
                 const SizedBox(width: AppSpacing.sm),
@@ -213,48 +213,81 @@ class _ClubBooksOfYearCardState extends State<ClubBooksOfYearCard> {
                     children: [
                       Text(
                         'El año del club',
-                        style: Theme.of(context).textTheme.titleMedium
-                            ?.copyWith(fontWeight: FontWeight.w800),
+                        style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                          fontWeight: FontWeight.w900,
+                          letterSpacing: -.3,
+                        ),
                       ),
-                      const Text(
-                        'La elección colectiva y los cuadros personales',
+                      Text(
+                        'Elección colectiva · cuadros personales',
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: dark
+                              ? const Color(0xFFAA9ABB)
+                              : const Color(0xFF9A7EAB),
+                          fontWeight: FontWeight.w500,
+                        ),
                       ),
                     ],
                   ),
                 ),
               ],
             ),
-            const SizedBox(height: AppSpacing.sm),
-            _CollectiveArea(
-              year: year,
-              loadEdition: widget.loadEdition,
-              pageBuilder: widget.collectivePageBuilder,
+            const SizedBox(height: AppSpacing.md),
+            // ── Libro colectivo en mini-card con fondo translúcido ──
+            Container(
+              decoration: BoxDecoration(
+                color: dark
+                    ? Colors.white.withValues(alpha: .06)
+                    : Colors.white.withValues(alpha: .55),
+                borderRadius: BorderRadius.circular(AppRadius.md),
+                border: Border.all(
+                  color: dark
+                      ? Colors.white.withValues(alpha: .08)
+                      : const Color(0xFFD9C8DF).withValues(alpha: .5),
+                ),
+              ),
+              padding: const EdgeInsets.symmetric(
+                horizontal: AppSpacing.md,
+                vertical: AppSpacing.sm,
+              ),
+              child: _CollectiveArea(
+                year: year,
+                loadEdition: widget.loadEdition,
+                pageBuilder: widget.collectivePageBuilder,
+              ),
             ),
-            const Padding(
-              padding: EdgeInsets.symmetric(vertical: AppSpacing.md),
-              child: Divider(),
-            ),
-            Text(
-              'Elecciones de los miembros',
-              style: Theme.of(
-                context,
-              ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800),
-            ),
-            const Text('Descubre sus cuadros personales'),
-            const SizedBox(height: AppSpacing.sm),
-            Wrap(
-              spacing: AppSpacing.sm,
-              runSpacing: AppSpacing.xs,
+            const SizedBox(height: AppSpacing.md),
+            // ── Sección de miembros ──
+            Row(
               children: [
+                Expanded(
+                  child: Text(
+                    'Elecciones de los miembros',
+                    style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                ),
                 _HeaderBadge(label: '$year'),
-                if (members.isNotEmpty)
+                if (members.isNotEmpty) ...[
+                  const SizedBox(width: AppSpacing.xs),
                   _HeaderBadge(
                     label:
                         '${members.length} ${members.length == 1 ? 'participante' : 'participantes'}',
                   ),
+                ],
               ],
             ),
-            const SizedBox(height: AppSpacing.md),
+            const SizedBox(height: 2),
+            Text(
+              'Descubre sus cuadros personales',
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                color: dark
+                    ? const Color(0xFFAA9ABB)
+                    : const Color(0xFF9A7EAB),
+              ),
+            ),
+            const SizedBox(height: AppSpacing.sm),
             if (members.isEmpty)
               const Text('Todavía no hay elecciones personales.')
             else
@@ -390,35 +423,67 @@ class _CollectiveAreaState extends State<_CollectiveArea> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      'Libro del año del club',
-                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.w900,
-                      ),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            'Libro del año del club',
+                            style: Theme.of(context).textTheme.titleSmall
+                                ?.copyWith(fontWeight: FontWeight.w900),
+                          ),
+                        ),
+                        // Badge de estado
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 8, vertical: 3),
+                          decoration: BoxDecoration(
+                            color: AppColors.gold.withValues(alpha: .15),
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                          child: Text(
+                            status,
+                            style: TextStyle(
+                              color: AppColors.gold.withValues(alpha: .9),
+                              fontSize: 10,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
-                    Text('${widget.year} · $status'),
+                    const SizedBox(height: 4),
                     if (winner != null)
                       Text(
-                        'Libro ganador: ${winner.title}',
+                        winner.title,
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(fontWeight: FontWeight.w700),
+                        style: const TextStyle(fontWeight: FontWeight.w600),
                       )
                     else
                       Text(
                         edition == null
-                            ? 'La votación todavía no ha comenzado'
+                            ? 'La votación no ha comenzado'
                             : '${edition.candidates.length} lecturas candidatas',
+                        style: Theme.of(context).textTheme.bodySmall,
                       ),
                     if (edition?.status == 'PREPARING') ...[
-                      if (edition?.candidatesSyncedAt != null)
-                        Text(
-                          'Actualizada ${edition!.candidatesSyncedAt!.toLocal().day}/${edition.candidatesSyncedAt!.toLocal().month}',
-                          style: Theme.of(context).textTheme.bodySmall,
-                        ),
-                      const Text(
-                        'Revisar candidatas',
-                        style: TextStyle(fontWeight: FontWeight.w700),
+                      const SizedBox(height: 4),
+                      Row(
+                        children: [
+                          if (edition?.candidatesSyncedAt != null)
+                            Text(
+                              'Actualizada ${edition!.candidatesSyncedAt!.toLocal().day}/${edition.candidatesSyncedAt!.toLocal().month}  ·  ',
+                              style: Theme.of(context).textTheme.bodySmall,
+                            ),
+                          Text(
+                            'Revisar candidatas →',
+                            style: TextStyle(
+                              color: AppColors.primary,
+                              fontSize: 12,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                        ],
                       ),
                     ],
                   ],
