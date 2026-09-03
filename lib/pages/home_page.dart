@@ -79,6 +79,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
           [
             () => DashboardPage(
               clubName: widget.club.nombre,
+              clubId: widget.club.id,
               controller: _dashboardController,
             ),
             () => LibrosPage(
@@ -87,7 +88,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
               clubId: widget.club.id,
             ),
             () => SagasPage(controller: _sagasController),
-            () => LecturasPage(onBackToClub: _volverAlClub),
+            () => LecturasPage(onBackToClub: _volverAlClub, clubId: widget.club.id),
             () => ClubvisionMenuPage(onBackToClub: _volverAlClub),
           ];
       assert(_pageBuilders.length == 5);
@@ -152,13 +153,13 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
   List<NavigationDestination> _socialDestinations() => [
     NavigationDestination(
       icon: Badge(
-        isLabelVisible: _notifications.noLeidasClub > 0,
-        label: Text(_badge(_notifications.noLeidasClub)),
+        isLabelVisible: _notifications.noLeidasClubPara(widget.club.id) > 0,
+        label: Text(_badge(_notifications.noLeidasClubPara(widget.club.id))),
         child: const Icon(Icons.dashboard_outlined),
       ),
       selectedIcon: Badge(
-        isLabelVisible: _notifications.noLeidasClub > 0,
-        label: Text(_badge(_notifications.noLeidasClub)),
+        isLabelVisible: _notifications.noLeidasClubPara(widget.club.id) > 0,
+        label: Text(_badge(_notifications.noLeidasClubPara(widget.club.id))),
         child: const Icon(Icons.dashboard_rounded),
       ),
       label: 'El Club',
@@ -175,26 +176,26 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
     ),
     NavigationDestination(
       icon: Badge(
-        isLabelVisible: _notifications.noLeidasLecturas > 0,
-        label: Text(_badge(_notifications.noLeidasLecturas)),
+        isLabelVisible: _notifications.noLeidasLecturasPara(widget.club.id) > 0,
+        label: Text(_badge(_notifications.noLeidasLecturasPara(widget.club.id))),
         child: const Icon(Icons.auto_stories_outlined),
       ),
       selectedIcon: Badge(
-        isLabelVisible: _notifications.noLeidasLecturas > 0,
-        label: Text(_badge(_notifications.noLeidasLecturas)),
+        isLabelVisible: _notifications.noLeidasLecturasPara(widget.club.id) > 0,
+        label: Text(_badge(_notifications.noLeidasLecturasPara(widget.club.id))),
         child: const Icon(Icons.auto_stories_rounded),
       ),
       label: 'Lecturas',
     ),
     NavigationDestination(
       icon: Badge(
-        isLabelVisible: _notifications.noLeidasClubvision > 0,
-        label: Text(_badge(_notifications.noLeidasClubvision)),
+        isLabelVisible: _notifications.noLeidasClubvisionPara(widget.club.id) > 0,
+        label: Text(_badge(_notifications.noLeidasClubvisionPara(widget.club.id))),
         child: const Icon(Icons.mic_none_outlined),
       ),
       selectedIcon: Badge(
-        isLabelVisible: _notifications.noLeidasClubvision > 0,
-        label: Text(_badge(_notifications.noLeidasClubvision)),
+        isLabelVisible: _notifications.noLeidasClubvisionPara(widget.club.id) > 0,
+        label: Text(_badge(_notifications.noLeidasClubvisionPara(widget.club.id))),
         child: const Icon(Icons.mic_rounded),
       ),
       label: 'Clubvisión',
@@ -349,8 +350,8 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
   List<NavigationRailDestination> _railSocialDestinations() => [
     NavigationRailDestination(
       icon: Badge(
-        isLabelVisible: _notifications.noLeidasClub > 0,
-        label: Text(_badge(_notifications.noLeidasClub)),
+        isLabelVisible: _notifications.noLeidasClubPara(widget.club.id) > 0,
+        label: Text(_badge(_notifications.noLeidasClubPara(widget.club.id))),
         child: const Icon(Icons.dashboard_outlined),
       ),
       selectedIcon: const Icon(Icons.dashboard_rounded),
@@ -368,8 +369,8 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
     ),
     NavigationRailDestination(
       icon: Badge(
-        isLabelVisible: _notifications.noLeidasLecturas > 0,
-        label: Text(_badge(_notifications.noLeidasLecturas)),
+        isLabelVisible: _notifications.noLeidasLecturasPara(widget.club.id) > 0,
+        label: Text(_badge(_notifications.noLeidasLecturasPara(widget.club.id))),
         child: const Icon(Icons.auto_stories_outlined),
       ),
       selectedIcon: const Icon(Icons.auto_stories_rounded),
@@ -377,8 +378,8 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
     ),
     NavigationRailDestination(
       icon: Badge(
-        isLabelVisible: _notifications.noLeidasClubvision > 0,
-        label: Text(_badge(_notifications.noLeidasClubvision)),
+        isLabelVisible: _notifications.noLeidasClubvisionPara(widget.club.id) > 0,
+        label: Text(_badge(_notifications.noLeidasClubvisionPara(widget.club.id))),
         child: const Icon(Icons.mic_none_outlined),
       ),
       selectedIcon: const Icon(Icons.mic_rounded),

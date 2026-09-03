@@ -4,7 +4,7 @@ import '../models/estado_club.dart';
 class ClubNarrador {
   const ClubNarrador();
 
-  EstadoClub narrar({required String estado}) {
-    return EstadoClubFactory.fromApi(estado);
+  EstadoClub narrar({required String estado, String ganador = ''}) {
+    return EstadoClubFactory.fromApi(estado, ganador: ganador);
   }
 }

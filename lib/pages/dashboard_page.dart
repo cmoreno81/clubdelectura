@@ -56,6 +56,7 @@ class DashboardPage extends StatefulWidget {
   const DashboardPage({
     super.key,
     required this.clubName,
+    this.clubId,
     this.esPersonal = false,
     this.controller,
     this.loadData,
@@ -65,6 +66,10 @@ class DashboardPage extends StatefulWidget {
   });
 
   final String clubName;
+
+  /// ID del club activo. Si se proporciona, las notificaciones de "Actividad
+  /// del club" se filtran para mostrar solo las de este club.
+  final String? clubId;
   final bool esPersonal;
   final DashboardPageController? controller;
   final Future<DashboardViewData> Function()? loadData;
@@ -113,12 +118,21 @@ class _DashboardPageState extends State<DashboardPage> {
     final notif = await mostrarNotificacionesSheet(
       context,
       titulo: 'Actividad del club',
-      filtro: (n) =>
-          n.tipo == 'LIBRO_TERMINADO' ||
-          n.tipo == 'LIBRO_EMPEZADO' ||
-          n.tipo == 'LIBRO_NUEVO_BIBLIOTECA' ||
-          n.tipo == 'NUEVA_MIEMBRO' ||
-          n.tipo == 'CLUB_BOOK_OF_YEAR',
+      filtro: (n) {
+        const tipos = {
+          'LIBRO_TERMINADO',
+          'LIBRO_EMPEZADO',
+          'LIBRO_NUEVO_BIBLIOTECA',
+          'NUEVA_MIEMBRO',
+          'CLUB_BOOK_OF_YEAR',
+        };
+        if (!tipos.contains(n.tipo)) return false;
+        final clubId = widget.clubId;
+        if (clubId != null && clubId.isNotEmpty) {
+          return n.clubId == null || n.clubId == clubId;
+        }
+        return true;
+      },
     );
 
     // Refrescar el servicio tras cerrar el sheet
@@ -347,6 +361,7 @@ class _DashboardPageState extends State<DashboardPage> {
 
           final estadoClub = ClubNarrador().narrar(
             estado: DevSettings.estadoForzado ?? data.clubvision.estado,
+            ganador: data.clubvision.ganador,
           );
 
           return RefreshIndicator(

@@ -213,6 +213,14 @@ class _CatalogBookDetailPageState extends State<CatalogBookDetailPage> {
         context,
         AppPageRoute(builder: (_) => DetalleLibroPage(libro: agrupado!)),
       );
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('No se pudo cargar la biblioteca. Inténtalo de nuevo.'),
+          ),
+        );
+      }
     } finally {
       if (mounted) setState(() => _navigating = false);
     }

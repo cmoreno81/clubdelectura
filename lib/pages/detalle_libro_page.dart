@@ -20,6 +20,7 @@ import '../theme/app_colors.dart';
 import '../theme/app_spacing.dart';
 import '../theme/app_text_styles.dart';
 import '../widgets/common/libro_finalizado_celebration.dart';
+import '../widgets/common/screen_hint_banner.dart';
 import '../widgets/libros/conversaciones_libro_card.dart';
 import '../widgets/libros/finalizar_libro_dialog.dart';
 import '../widgets/libros/kit_lectura_card.dart';
@@ -695,6 +696,29 @@ class _DetalleLibroPageState extends State<DetalleLibroPage> {
                 globalStats: widget.globalStats,
                 miEstado: miEstado,
               ),
+
+              // Banner de sugerencia: anima a completar la ficha del libro
+              // Aparece cuando el libro tiene bookId (se puede editar) y le falta portada o género
+              if (libro.bookId.isNotEmpty &&
+                  (libro.coverUrl.isEmpty ||
+                      libro.genero.isEmpty ||
+                      libro.genero.trim().toLowerCase() == 'sin género')) ...[
+                const SizedBox(height: AppSpacing.md),
+                ScreenHintBanner(
+                  featureKey: 'hint_editar_ficha_v1',
+                  titulo: '¿Le falta información a este libro?',
+                  tips: const [
+                    ScreenHintTip(
+                      '🖊️',
+                      'Pulsa "Editar" para añadir portada, género, enlace a Goodreads y más.',
+                    ),
+                    ScreenHintTip(
+                      '📸',
+                      'Si importaste desde Goodreads u otra app, la info puede venir incompleta: ¡complétala tú!',
+                    ),
+                  ],
+                ),
+              ],
 
               const SizedBox(height: AppSpacing.lg),
 

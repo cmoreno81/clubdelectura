@@ -15,6 +15,7 @@ import '../models/libro.dart';
 import '../models/libro_agrupado.dart';
 import '../services/api_exception.dart';
 import '../services/auth_service.dart';
+import '../services/club_context_controller.dart';
 import '../services/club_service.dart';
 import '../services/api_service.dart';
 import '../services/general_dashboard_service.dart';
@@ -30,6 +31,7 @@ import '../widgets/common/optimized_network_image.dart';
 import '../widgets/dashboard/monthly_reading_shelf.dart';
 import '../widgets/dashboard/tbr_roulette_card.dart';
 import 'clubs_page.dart';
+import 'clubvision_menu_page.dart';
 import 'elegir_modo_page.dart';
 import 'home_page.dart';
 import 'explore_catalog_page.dart';
@@ -448,6 +450,27 @@ class _GeneralDashboardPageState extends State<GeneralDashboardPage> {
     if (mounted) await _reload();
   }
 
+  Future<void> _openClubvisionNotice(GeneralClubvisionNotice notice) async {
+    final club = notice.clubs.isNotEmpty ? notice.clubs.first : null;
+    if (club == null) return;
+    try {
+      await ClubService().selectClub(club.id);
+      ClubContextController.instance.refresh();
+      if (!mounted) return;
+      await Navigator.push<void>(
+        context,
+        AppPageRoute(builder: (_) => const ClubvisionMenuPage()),
+      );
+      if (mounted) await _reload();
+    } on ApiException catch (error) {
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(error.message)));
+      }
+    }
+  }
+
   Future<void> _openClub(GeneralClub club) async {
     if (_openingClubId != null) return;
     setState(() => _openingClubId = club.id);
@@ -846,58 +869,70 @@ class _GeneralDashboardPageState extends State<GeneralDashboardPage> {
                 if (clubvisionReminder != null &&
                     clubvisionReminder.isNotEmpty) ...[
                   const SizedBox(height: AppSpacing.sm),
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: AppSpacing.sm,
-                      vertical: 7,
-                    ),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: .14),
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(
-                        color: Colors.white.withValues(alpha: .24),
+                  GestureDetector(
+                    behavior: HitTestBehavior.opaque,
+                    onTap: data.clubvisionNotice != null
+                        ? () => _openClubvisionNotice(data.clubvisionNotice!)
+                        : null,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: AppSpacing.sm,
+                        vertical: 7,
                       ),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        const Icon(
-                          Icons.mic_rounded,
-                          color: Color(0xFFFFD979),
-                          size: 17,
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: .14),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(
+                          color: Colors.white.withValues(alpha: .24),
                         ),
-                        const SizedBox(width: 6),
-                        Flexible(
-                          child: Builder(builder: (context) {
-                            const base = TextStyle(
-                              color: Colors.white,
-                              fontSize: 12,
-                              fontWeight: FontWeight.w700,
-                            );
-                            final parts = data.clubvisionNotice?.messageParts;
-                            if (parts?.clubName != null) {
-                              return RichText(
-                                text: TextSpan(
-                                  style: base,
-                                  children: [
-                                    TextSpan(text: parts!.prefix),
-                                    TextSpan(
-                                      text: '«${parts.clubName}»',
-                                      style: base.copyWith(
-                                        color: const Color(0xFFFFD979),
-                                        fontStyle: FontStyle.italic,
-                                      ),
-                                    ),
-                                    if (parts.suffix.isNotEmpty)
-                                      TextSpan(text: parts.suffix),
-                                  ],
-                                ),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Icon(
+                            Icons.mic_rounded,
+                            color: Color(0xFFFFD979),
+                            size: 17,
+                          ),
+                          const SizedBox(width: 6),
+                          Flexible(
+                            child: Builder(builder: (context) {
+                              const base = TextStyle(
+                                color: Colors.white,
+                                fontSize: 12,
+                                fontWeight: FontWeight.w700,
                               );
-                            }
-                            return Text(clubvisionReminder, style: base);
-                          }),
-                        ),
-                      ],
+                              final parts = data.clubvisionNotice?.messageParts;
+                              if (parts?.clubName != null) {
+                                return RichText(
+                                  text: TextSpan(
+                                    style: base,
+                                    children: [
+                                      TextSpan(text: parts!.prefix),
+                                      TextSpan(
+                                        text: '«${parts.clubName}»',
+                                        style: base.copyWith(
+                                          color: const Color(0xFFFFD979),
+                                          fontStyle: FontStyle.italic,
+                                        ),
+                                      ),
+                                      if (parts.suffix.isNotEmpty)
+                                        TextSpan(text: parts.suffix),
+                                    ],
+                                  ),
+                                );
+                              }
+                              return Text(clubvisionReminder, style: base);
+                            }),
+                          ),
+                          const SizedBox(width: 4),
+                          const Icon(
+                            Icons.arrow_forward_ios_rounded,
+                            color: Color(0xFFFFD979),
+                            size: 11,
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                 ],

@@ -1279,7 +1279,7 @@ class _MesRow extends StatelessWidget {
         children: [
           // Mes
           SizedBox(
-            width: 76,
+            width: 90,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -1304,45 +1304,41 @@ class _MesRow extends StatelessWidget {
 
           // Ganadora(s)
           Expanded(
-            child: Row(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 // Podio compacto (top 3)
-                for (var i = 0; i < mes.top.length && i < 3; i++) ...[
-                  if (i > 0) const SizedBox(width: AppSpacing.xs),
-                  _MiniAvatar(
-                    lector: mes.top[i],
-                    posicion: i + 1,
-                    esGanadora: i == 0 && !empate,
-                  ),
-                ],
-
-                const SizedBox(width: AppSpacing.sm),
-
-                // Nombre + libros de la ganadora
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        empate
-                            ? '¡Empate!'
-                            : ganadora.nombre,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: AppTextStyles.body.copyWith(
-                          fontWeight: FontWeight.w700,
-                          color: AppColors.textPrimary,
-                        ),
-                      ),
-                      Text(
-                        empate
-                            ? '${ganadora.total} ${ganadora.total == 1 ? 'libro' : 'libros'} cada una'
-                            : '${ganadora.total} ${ganadora.total == 1 ? 'libro' : 'libros'}',
-                        style: AppTextStyles.caption.copyWith(
-                          color: AppColors.textMuted,
-                        ),
+                Row(
+                  children: [
+                    for (var i = 0; i < mes.top.length && i < 3; i++) ...[
+                      if (i > 0) const SizedBox(width: AppSpacing.xs),
+                      _MiniAvatar(
+                        lector: mes.top[i],
+                        posicion: i + 1,
+                        esGanadora: i == 0 && !empate,
                       ),
                     ],
+                  ],
+                ),
+
+                const SizedBox(height: 2),
+
+                // Nombre + libros — siempre con ancho completo, sin cortes
+                Text(
+                  empate ? '¡Empate!' : ganadora.nombre,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: AppTextStyles.body.copyWith(
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.textPrimary,
+                  ),
+                ),
+                Text(
+                  empate
+                      ? '${ganadora.total} ${ganadora.total == 1 ? 'libro' : 'libros'} cada una'
+                      : '${ganadora.total} ${ganadora.total == 1 ? 'libro' : 'libros'}',
+                  style: AppTextStyles.caption.copyWith(
+                    color: AppColors.textMuted,
                   ),
                 ),
               ],

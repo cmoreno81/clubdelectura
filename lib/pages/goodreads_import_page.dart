@@ -1003,6 +1003,32 @@ class _ImportFinished extends StatelessWidget {
               style: const TextStyle(color: AppColors.warning),
             ),
           ],
+          const SizedBox(height: AppSpacing.md),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+            decoration: BoxDecoration(
+              color: AppColors.primary.withValues(alpha: .08),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: AppColors.primary.withValues(alpha: .25)),
+            ),
+            child: const Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('🖊️', style: TextStyle(fontSize: 18)),
+                SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    'Si algún libro viene sin portada o sin género, puedes completarlo tú misma: '
+                    'abre el libro en tu biblioteca y pulsa "Editar".',
+                    style: TextStyle(
+                      fontSize: 13,
+                      color: AppColors.textSecondary,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
         ],
       ),
     );

@@ -385,7 +385,10 @@ class _FinalizarLibroDialogState extends State<FinalizarLibroDialog> {
           // ── Botones fijos en la parte inferior ───────────────────────────
           const Divider(height: 1),
           Padding(
-            padding: const EdgeInsets.fromLTRB(24, 12, 24, 16),
+            padding: EdgeInsets.fromLTRB(
+              24, 12, 24,
+              16 + MediaQuery.paddingOf(context).bottom,
+            ),
             child: Row(
               children: [
                 Expanded(

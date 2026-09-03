@@ -27,9 +27,13 @@ import 'package:club_lectura_app/widgets/common/club_shimmer.dart';
 import '../widgets/common/screen_hint_banner.dart';
 
 class LecturasPage extends StatefulWidget {
-  const LecturasPage({super.key, this.onBackToClub});
+  const LecturasPage({super.key, this.onBackToClub, this.clubId});
 
   final VoidCallback? onBackToClub;
+
+  /// ID del club activo. Si se proporciona, las notificaciones se filtran
+  /// para mostrar solo las de este club.
+  final String? clubId;
 
   @override
   State<LecturasPage> createState() => _LecturasPageState();
@@ -54,8 +58,17 @@ class _LecturasPageState extends State<LecturasPage> {
     final notif = await mostrarNotificacionesSheet(
       context,
       titulo: 'Novedades en Lecturas',
-      filtro: (n) =>
-          n.tipo == 'LECTURA_NUEVA' || n.tipo == 'COMENTARIO_LECTURA',
+      filtro: (n) {
+        final esTipoLectura =
+            n.tipo == 'LECTURA_NUEVA' || n.tipo == 'COMENTARIO_LECTURA';
+        if (!esTipoLectura) return false;
+        // Si conocemos el club activo, filtrar solo sus notificaciones
+        final clubId = widget.clubId;
+        if (clubId != null && clubId.isNotEmpty) {
+          return n.clubId == null || n.clubId == clubId;
+        }
+        return true;
+      },
     );
 
     // Refrescar el servicio compartido (actualiza todos los badges)

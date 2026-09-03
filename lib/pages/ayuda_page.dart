@@ -1,4 +1,6 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_spacing.dart';
 import '../theme/app_text_styles.dart';
@@ -168,6 +170,17 @@ const List<_HelpSection> _secciones = [
             'directamente a tu biblioteca.\n\n'
             '💶 La tarjeta también muestra el precio total estimado de los libros de '
             'tu lista, para que te hagas una idea del gasto si los comprases todos.',
+      ),
+      _HelpItem(
+        pregunta: '¿Puedo editar la portada, el género o el enlace a Goodreads de un libro?',
+        respuesta:
+            'Sí. Abre el detalle del libro y pulsa el botón "Editar" (lápiz) '
+            'que aparece en la cabecera. Desde ahí puedes cambiar la portada '
+            '(subiendo una imagen o pegando una URL), el género, el enlace a '
+            'Goodreads y otros datos de la ficha.\n\n'
+            '💡 Si importaste libros desde Goodreads u otra app, es muy habitual '
+            'que la portada o el género no vengan rellenos. ¡Completa la ficha '
+            'tú misma para tener tu biblioteca perfecta!',
       ),
       _HelpItem(
         pregunta: '¿Qué significa "autoconclusivo"?',
@@ -1135,6 +1148,26 @@ class AyudaPage extends StatelessWidget {
       appBar: AppBar(
         title: const Text('Ayuda'),
         actions: [
+          // Solo en debug: resetea tutorial y banners para poder probarlos
+          if (kDebugMode)
+            IconButton(
+              tooltip: '[DEBUG] Resetear tutorial y hints',
+              icon: const Icon(Icons.refresh_rounded),
+              onPressed: () async {
+                final prefs = await SharedPreferences.getInstance();
+                await prefs.remove('onboarding_v1_done');
+                // Elimina todas las claves de banners de hint
+                final keys = prefs.getKeys().where((k) => k.startsWith('screen_hint_v1_')).toList();
+                for (final k in keys) {
+                  await prefs.remove(k);
+                }
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('[DEBUG] Tutorial y hints reseteados')),
+                  );
+                }
+              },
+            ),
           IconButton(
             tooltip: 'Ver tutorial de inicio',
             icon: const Icon(Icons.play_circle_outline_rounded),

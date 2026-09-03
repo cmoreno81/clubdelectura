@@ -62,6 +62,17 @@ const List<_TutorialStep> _pasos = [
         'libros en tu lista de deseos pulsando el icono de carrito 🛒 sobre la portada.',
   ),
   _TutorialStep(
+    emoji: '🖊️',
+    titulo: 'Completa la ficha de cada libro',
+    descripcion:
+        'Puedes editar cualquier libro de tu biblioteca: añadir portada, '
+        'género, enlace a Goodreads y mucho más.',
+    detalle:
+        'Entra en el detalle del libro y pulsa "Editar". Si has importado '
+        'desde Goodreads u otras apps, la información puede venir incompleta: '
+        'complétala tú misma para tener tu biblioteca perfecta.',
+  ),
+  _TutorialStep(
     emoji: '📖',
     titulo: 'Estados, progreso y relecturas',
     descripcion:

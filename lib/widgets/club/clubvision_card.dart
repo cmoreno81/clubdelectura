@@ -32,7 +32,10 @@ class ClubvisionCard extends StatelessWidget {
 
   bool get _mostrarFlecha {
     final estado = dashboard.clubvision.estado.toUpperCase();
-
+    // RESULTADOS sin ganador → no hay nada útil que abrir como Gala
+    if (estado == 'RESULTADOS' && dashboard.clubvision.ganador.trim().isEmpty) {
+      return false;
+    }
     return estado == 'VOTACION' ||
         estado == 'RESULTADOS' ||
         (dashboard.clubvision.esAdmin && estado == 'SIN_CANDIDATAS');
@@ -40,6 +43,10 @@ class ClubvisionCard extends StatelessWidget {
 
   bool get _esInteractiva {
     final estado = dashboard.clubvision.estado.toUpperCase();
+    // RESULTADOS sin ganador → no es interactiva (no lleva a ningún sitio útil)
+    if (estado == 'RESULTADOS' && dashboard.clubvision.ganador.trim().isEmpty) {
+      return false;
+    }
     return estado == 'VOTACION' ||
         estado == 'RESULTADOS' ||
         estado == 'LECTURA' ||
@@ -48,7 +55,9 @@ class ClubvisionCard extends StatelessWidget {
   }
 
   Future<void> _abrirClubvision(BuildContext context) async {
-    final esGala = dashboard.clubvision.estado == 'RESULTADOS';
+    // Solo ir a la Gala si hay ganador real; sin ganador → menú general
+    final esGala = dashboard.clubvision.estado == 'RESULTADOS' &&
+        dashboard.clubvision.ganador.trim().isNotEmpty;
     await Navigator.push(
       context,
       AppPageRoute(
@@ -376,7 +385,13 @@ class ClubvisionCard extends StatelessWidget {
   Widget _bloqueGanador() {
     final esResultados = dashboard.clubvision.estado == 'RESULTADOS';
 
-    if (esResultados) return const _GalaResultadosCard();
+    if (esResultados) {
+      // Sin ganador → DirectorEscenas ya muestra "Este mes no hay Gala"; aquí no ponemos nada
+      if (dashboard.clubvision.ganador.trim().isEmpty) {
+        return const SizedBox.shrink();
+      }
+      return const _GalaResultadosCard();
+    }
 
     // ── Estado LECTURA: muestra actividad del club ──
     return Column(

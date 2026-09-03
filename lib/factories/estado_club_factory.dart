@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import '../models/estado_club.dart';
 
 class EstadoClubFactory {
-  static EstadoClub fromApi(String estado) {
+  static EstadoClub fromApi(String estado, {String ganador = ''}) {
     final estadoNormalizado = estado.trim().toUpperCase();
     switch (estadoNormalizado) {
       case 'PREPARANDO':
@@ -43,15 +43,18 @@ class EstadoClubFactory {
         );
       case 'RESULTADOS':
       case 'GALA':
-        return const EstadoClub(
+        final tieneGanador = ganador.trim().isNotEmpty;
+        return EstadoClub(
           estado: EstadoClubTipo.gala,
-          titulo: 'La Gala del Club',
-          mensaje: 'Ya tenemos una nueva lectura.',
-          icono: Icons.emoji_events,
-          iconColor: Colors.amber,
+          titulo: tieneGanador ? 'La Gala del Club' : 'Clubvisión',
+          mensaje: tieneGanador
+              ? 'Ya tenemos una nueva lectura.'
+              : 'Este mes no hubo candidatos suficientes.',
+          icono: tieneGanador ? Icons.emoji_events : Icons.event_busy_rounded,
+          iconColor: tieneGanador ? Colors.amber : Colors.grey,
           contenido: ContenidoClub.ganador,
-          mostrarGanador: true,
-          color: Color(0xFFFFF8E1),
+          mostrarGanador: tieneGanador,
+          color: tieneGanador ? const Color(0xFFFFF8E1) : const Color(0xFFF5F5F5),
         );
 
       case 'LECTURA':

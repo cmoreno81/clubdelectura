@@ -24,11 +24,43 @@ class NotificacionesService extends ChangeNotifier {
   int _loadGeneration = 0;
   final Set<String> _readLocally = {};
   final Set<String> _mutatingIds = {};
+  List<Notificacion> _notificaciones = [];
 
   int get noLeidas => _noLeidas;
   int get noLeidasClub => _noLeidasClub;
   int get noLeidasLecturas => _noLeidasLecturas;
   int get noLeidasClubvision => _noLeidasClubvision;
+
+  /// Contadores filtrados por club. Si [clubId] es nulo devuelve el total.
+  int noLeidasLecturasPara(String? clubId) {
+    if (clubId == null || clubId.isEmpty) return _noLeidasLecturas;
+    return _notificaciones
+        .where((n) =>
+            !n.leida &&
+            notificationBadgeCategory(n.tipo) == NotificationBadgeCategory.lecturas &&
+            (n.clubId == null || n.clubId == clubId))
+        .length;
+  }
+
+  int noLeidasClubPara(String? clubId) {
+    if (clubId == null || clubId.isEmpty) return _noLeidasClub;
+    return _notificaciones
+        .where((n) =>
+            !n.leida &&
+            notificationBadgeCategory(n.tipo) == NotificationBadgeCategory.club &&
+            (n.clubId == null || n.clubId == clubId))
+        .length;
+  }
+
+  int noLeidasClubvisionPara(String? clubId) {
+    if (clubId == null || clubId.isEmpty) return _noLeidasClubvision;
+    return _notificaciones
+        .where((n) =>
+            !n.leida &&
+            notificationBadgeCategory(n.tipo) == NotificationBadgeCategory.clubvision &&
+            (n.clubId == null || n.clubId == clubId))
+        .length;
+  }
 
   /// Carga los contadores desde la API y notifica a los listeners.
   Future<void> cargar() async {
@@ -40,6 +72,7 @@ class NotificacionesService extends ChangeNotifier {
       _noLeidasClub = data.noLeidasClub;
       _noLeidasLecturas = data.noLeidasLecturas;
       _noLeidasClubvision = data.noLeidasClubvision;
+      _notificaciones = data.notificaciones;
       _readLocally
         ..clear()
         ..addAll(data.notificaciones.where((n) => n.leida).map((n) => n.id));
@@ -70,6 +103,7 @@ class NotificacionesService extends ChangeNotifier {
     _noLeidasClub = 0;
     _noLeidasLecturas = 0;
     _noLeidasClubvision = 0;
+    _notificaciones = [];
     notifyListeners();
   }
 
