@@ -423,33 +423,28 @@ class _CollectiveAreaState extends State<_CollectiveArea> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Row(
-                      children: [
-                        Expanded(
-                          child: Text(
-                            'Libro del año del club',
-                            style: Theme.of(context).textTheme.titleSmall
-                                ?.copyWith(fontWeight: FontWeight.w900),
-                          ),
+                    Text(
+                      'Libro del año del club',
+                      style: Theme.of(context).textTheme.titleSmall
+                          ?.copyWith(fontWeight: FontWeight.w900),
+                    ),
+                    const SizedBox(height: 4),
+                    // Badge de estado en su propia línea — sin riesgo de overflow
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 8, vertical: 3),
+                      decoration: BoxDecoration(
+                        color: AppColors.gold.withValues(alpha: .15),
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Text(
+                        status,
+                        style: TextStyle(
+                          color: AppColors.gold.withValues(alpha: .9),
+                          fontSize: 10,
+                          fontWeight: FontWeight.w700,
                         ),
-                        // Badge de estado
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 8, vertical: 3),
-                          decoration: BoxDecoration(
-                            color: AppColors.gold.withValues(alpha: .15),
-                            borderRadius: BorderRadius.circular(20),
-                          ),
-                          child: Text(
-                            status,
-                            style: TextStyle(
-                              color: AppColors.gold.withValues(alpha: .9),
-                              fontSize: 10,
-                              fontWeight: FontWeight.w700,
-                            ),
-                          ),
-                        ),
-                      ],
+                      ),
                     ),
                     const SizedBox(height: 4),
                     if (winner != null)
@@ -472,11 +467,11 @@ class _CollectiveAreaState extends State<_CollectiveArea> {
                         children: [
                           if (edition?.candidatesSyncedAt != null)
                             Text(
-                              'Actualizada ${edition!.candidatesSyncedAt!.toLocal().day}/${edition.candidatesSyncedAt!.toLocal().month}  ·  ',
+                              'Act. ${edition!.candidatesSyncedAt!.toLocal().day}/${edition.candidatesSyncedAt!.toLocal().month}  ·  ',
                               style: Theme.of(context).textTheme.bodySmall,
                             ),
                           Text(
-                            'Revisar candidatas →',
+                            'Revisar →',
                             style: TextStyle(
                               color: AppColors.primary,
                               fontSize: 12,

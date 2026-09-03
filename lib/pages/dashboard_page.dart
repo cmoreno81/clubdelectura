@@ -1558,19 +1558,8 @@ class _AffinityCard extends StatelessWidget {
           // Cabecera
           Row(
             children: [
-              Container(
-                width: 38,
-                height: 38,
-                decoration: BoxDecoration(
-                  color: AppColors.primaryLight,
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: const Icon(
-                  Icons.people_alt_rounded,
-                  color: AppColors.primary,
-                  size: 20,
-                ),
-              ),
+              // Emoji protagonista sin cuadrado contenedor
+              const Text('👥', style: TextStyle(fontSize: 30)),
               const SizedBox(width: AppSpacing.sm),
               Expanded(
                 child: Column(
@@ -2334,6 +2323,114 @@ class _RachaLectoraTile extends StatelessWidget {
         ? _datos(racha)
         : ('📖', 'Marca que has leído hoy', AppColors.textSecondary);
 
+    // ── Racha activa (≥3 días): tarjeta con gradiente flamígero ─────────────
+    if (checkedToday && racha >= 3) {
+      final gradientColors = racha >= 30
+          ? [const Color(0xFFAA7A00), const Color(0xFFD4A800)] // dorado
+          : racha >= 14
+              ? [const Color(0xFFB82400), const Color(0xFFE85020)] // rojo coral
+              : [const Color(0xFFD84B00), const Color(0xFFFF7040)]; // naranja llama
+
+      return GestureDetector(
+        onTap: onTap,
+        child: Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: gradientColors,
+            ),
+            borderRadius: const BorderRadius.only(
+              topLeft: Radius.circular(24),
+              topRight: Radius.circular(12),
+              bottomRight: Radius.circular(24),
+              bottomLeft: Radius.circular(16),
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: gradientColors.last.withValues(alpha: .35),
+                blurRadius: 12,
+                offset: const Offset(0, 4),
+              ),
+            ],
+          ),
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppSpacing.lg,
+            vertical: AppSpacing.md,
+          ),
+          child: Row(
+            children: [
+              // ── Número de días protagonista ────────────────────────────
+              Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  AnimatedSwitcher(
+                    duration: const Duration(milliseconds: 400),
+                    transitionBuilder: (child, anim) => ScaleTransition(
+                      scale: anim,
+                      child: FadeTransition(opacity: anim, child: child),
+                    ),
+                    child: Text(
+                      '$racha',
+                      key: ValueKey(racha),
+                      style: const TextStyle(
+                        fontSize: 48,
+                        fontWeight: FontWeight.w900,
+                        color: Colors.white,
+                        height: 1,
+                      ),
+                    ),
+                  ),
+                  Text(
+                    racha == 1 ? 'día' : 'días',
+                    style: const TextStyle(
+                      color: Colors.white70,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ],
+              ),
+
+              const SizedBox(width: AppSpacing.md),
+
+              // ── Etiqueta + mensaje ─────────────────────────────────────
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'RACHA DE LECTURA',
+                      style: TextStyle(
+                        color: Colors.white60,
+                        fontSize: 10,
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: .8,
+                      ),
+                    ),
+                    const SizedBox(height: 3),
+                    Text(
+                      mensaje,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 15,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+
+              // ── Emoji grande ───────────────────────────────────────────
+              Text(emoji, style: const TextStyle(fontSize: 38)),
+            ],
+          ),
+        ),
+      );
+    }
+
+    // ── Racha baja o sin check-in: ClubCard neutra ───────────────────────────
     return GestureDetector(
       onTap: onTap,
       child: ClubCard(
@@ -2615,50 +2712,63 @@ class _FavoritosClubCardState extends State<_FavoritosClubCard> {
     }
 
     return ClubCard(
+      padding: EdgeInsets.zero,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Cabecera
-          Row(
-            children: [
-              Container(
-                width: 38,
-                height: 38,
-                decoration: BoxDecoration(
-                  color: const Color(0xFFFDE8EF),
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: const Icon(
-                  Icons.favorite_rounded,
-                  color: Color(0xFFD4537E),
-                  size: 20,
-                ),
+          // Cabecera con degradado rosa suave
+          Container(
+            width: double.infinity,
+            decoration: const BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [Color(0xFFF7D0E0), Color(0xFFFFEDF5)],
               ),
-              const SizedBox(width: AppSpacing.sm),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Favoritos del club',
-                      style: AppTextStyles.subtitle.copyWith(
-                        fontWeight: FontWeight.w800,
-                        color: const Color(0xFFAD2F5A),
-                      ),
-                    ),
-                    Text(
-                      'Los 5 libros favoritos de los miembros',
-                      style: AppTextStyles.caption.copyWith(
-                        color: AppColors.textMuted,
-                      ),
-                    ),
-                  ],
-                ),
+              borderRadius: BorderRadius.only(
+                topLeft: Radius.circular(23),
+                topRight: Radius.circular(11),
               ),
-            ],
+            ),
+            padding: const EdgeInsets.symmetric(
+              horizontal: AppSpacing.lg,
+              vertical: AppSpacing.md,
+            ),
+            child: Row(
+              children: [
+                const Text('❤️', style: TextStyle(fontSize: 26)),
+                const SizedBox(width: AppSpacing.sm),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Favoritos del club',
+                        style: AppTextStyles.subtitle.copyWith(
+                          fontWeight: FontWeight.w800,
+                          color: const Color(0xFFAD2F5A),
+                        ),
+                      ),
+                      Text(
+                        'Los 5 libros favoritos de los miembros',
+                        style: AppTextStyles.caption.copyWith(
+                          color: const Color(0xFFAD2F5A).withValues(alpha: .6),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
           ),
 
-          const SizedBox(height: AppSpacing.lg),
+          const SizedBox(height: AppSpacing.md),
+
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
 
           if (_cargando)
             const Center(
@@ -2686,9 +2796,13 @@ class _FavoritosClubCardState extends State<_FavoritosClubCard> {
                     .toList(),
               ),
             ),
-        ],
-      ),
-    );
+            ],       // cierra inner Column children
+          ),         // cierra inner Column
+        ),           // cierra Padding
+        const SizedBox(height: AppSpacing.sm),
+      ],             // cierra outer Column children
+    ),               // cierra outer Column
+  );                 // cierra ClubCard
   }
 }
 
