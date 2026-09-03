@@ -291,59 +291,102 @@ class _MoodHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ClubCard(
-      elevated: false,
-      padding: const EdgeInsets.all(AppSpacing.xl),
-      gradient: const LinearGradient(
-        begin: Alignment.topLeft,
-        end: Alignment.bottomRight,
-        colors: [Color(0xFFFFF3F7), Color(0xFFF5E9FF)],
-      ),
-      borderColor: const Color(0xFFF0D4E2),
-      child: Column(
-        children: [
-          Container(
-            width: 78,
-            height: 78,
-            decoration: const BoxDecoration(
-              color: Color(0xFFFFDDEA),
-              shape: BoxShape.circle,
+      elevated: true,
+      padding: EdgeInsets.zero,
+      child: Container(
+        width: double.infinity,
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [Color(0xFF7B1451), Color(0xFFAD3B7E)],
+          ),
+          borderRadius: BorderRadius.only(
+            topLeft: Radius.circular(23),
+            topRight: Radius.circular(11),
+            bottomRight: Radius.circular(23),
+            bottomLeft: Radius.circular(15),
+          ),
+        ),
+        padding: const EdgeInsets.all(AppSpacing.xl),
+        child: Column(
+          children: [
+            // Icono sobre fondo translúcido
+            Container(
+              width: 62,
+              height: 62,
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: .18),
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(
+                Icons.psychology_outlined,
+                color: Colors.white,
+                size: 34,
+              ),
             ),
-            child: const Icon(
-              Icons.psychology_outlined,
-              color: Color(0xFFD75784),
-              size: 40,
+
+            const SizedBox(height: AppSpacing.md),
+
+            // Etiqueta pequeña
+            const Text(
+              'EL CLUB HOY',
+              style: TextStyle(
+                color: Colors.white60,
+                fontSize: 11,
+                fontWeight: FontWeight.w700,
+                letterSpacing: 1.5,
+              ),
             ),
-          ),
 
-          const SizedBox(height: AppSpacing.md),
+            const SizedBox(height: AppSpacing.sm),
 
-          Text(
-            'El club hoy',
-            textAlign: TextAlign.center,
-            style: AppTextStyles.title.copyWith(fontSize: 29),
-          ),
-
-          const SizedBox(height: AppSpacing.sm),
-
-          Text(
-            titular.trim().isEmpty
-                ? 'El club sigue escribiendo su propia historia.'
-                : titular,
-            textAlign: TextAlign.center,
-            style: AppTextStyles.section.copyWith(
-              color: AppColors.textPrimary,
-              height: 1.3,
+            // Titular como protagonista
+            Text(
+              titular.trim().isEmpty
+                  ? 'El club sigue escribiendo su propia historia.'
+                  : titular,
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 20,
+                fontWeight: FontWeight.w800,
+                height: 1.35,
+              ),
             ),
-          ),
 
-          const SizedBox(height: AppSpacing.lg),
+            const SizedBox(height: AppSpacing.lg),
 
-          const ClubChip(
-            label: 'Pulso lector',
-            icon: Icons.monitor_heart_outlined,
-            variant: ClubChipVariant.danger,
-          ),
-        ],
+            // Chip con estilo "white glass"
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: .18),
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(color: Colors.white38),
+              ),
+              child: const Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    Icons.monitor_heart_outlined,
+                    color: Colors.white,
+                    size: 16,
+                  ),
+                  SizedBox(width: 6),
+                  Text(
+                    'Pulso lector',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.w700,
+                      fontSize: 13,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -373,93 +416,143 @@ class _MoodVoteCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return ClubCard(
       elevated: false,
-      padding: const EdgeInsets.all(AppSpacing.lg),
-      borderColor: AppColors.primaryLight,
+      padding: EdgeInsets.zero,
+      borderColor: const Color(0xFFF0D4E2),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            '¿Cómo estás viviendo tu lectura?',
-            style: AppTextStyles.section,
-          ),
-          const SizedBox(height: AppSpacing.xs),
-          Text(
-            mood.total == 0
-                ? 'Estrena el pulso de esta semana.'
-                : '${mood.total} personas han compartido su mood esta semana.',
-            style: AppTextStyles.bodySecondary,
-          ),
-          const SizedBox(height: AppSpacing.lg),
-          Wrap(
-            spacing: AppSpacing.sm,
-            runSpacing: AppSpacing.md,
-            children: _moodOpciones.map((opcion) {
-              final seleccionada = mood.miMood == opcion.$1;
-              final total = mood.distribucion[opcion.$1] ?? 0;
-              final personas = mood.votantes[opcion.$1] ?? [];
-              return GestureDetector(
-                onTap: enabled ? () => onVote(opcion.$1) : null,
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    AnimatedContainer(
-                      duration: const Duration(milliseconds: 200),
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: AppSpacing.sm,
-                        vertical: AppSpacing.xs,
-                      ),
-                      decoration: BoxDecoration(
-                        color: seleccionada
-                            ? AppColors.primaryLight
-                            : AppColors.surfaceSoft,
-                        borderRadius: BorderRadius.circular(AppRadius.pill),
-                        border: Border.all(
-                          color: seleccionada
-                              ? AppColors.primary
-                              : AppColors.border,
-                          width: seleccionada ? 2 : 1,
-                        ),
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Text(opcion.$2, style: const TextStyle(fontSize: 23)),
-                          if (total > 0) ...[
-                            const SizedBox(width: AppSpacing.xs),
-                            Text(
-                              '$total',
-                              style: AppTextStyles.caption.copyWith(
-                                fontWeight: FontWeight.w800,
-                              ),
-                            ),
-                          ],
-                        ],
-                      ),
-                    ),
-                    if (personas.isNotEmpty) ...[
-                      const SizedBox(height: 4),
-                      SizedBox(
-                        width: 90,
-                        child: Text(
-                          personas.length <= 2
-                              ? personas.join(' · ')
-                              : '${personas.take(2).join(', ')} +${personas.length - 2}',
-                          style: AppTextStyles.caption.copyWith(
-                            fontSize: 10,
-                            color: seleccionada
-                                ? AppColors.primary
-                                : AppColors.textMuted,
-                          ),
-                          textAlign: TextAlign.center,
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
-                    ],
-                  ],
+          // Cabecera con leve gradiente rosa
+          Container(
+            width: double.infinity,
+            decoration: const BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [Color(0xFFF9E5EF), Color(0xFFF5EAFF)],
+              ),
+              borderRadius: BorderRadius.only(
+                topLeft: Radius.circular(23),
+                topRight: Radius.circular(11),
+              ),
+            ),
+            padding: const EdgeInsets.symmetric(
+              horizontal: AppSpacing.lg,
+              vertical: AppSpacing.md,
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  '¿Cómo estás viviendo tu lectura?',
+                  style: AppTextStyles.section.copyWith(
+                    color: const Color(0xFF7B1451),
+                    fontWeight: FontWeight.w900,
+                  ),
                 ),
-              );
-            }).toList(),
+                const SizedBox(height: AppSpacing.xxs),
+                Text(
+                  mood.total == 0
+                      ? 'Estrena el pulso de esta semana.'
+                      : '${mood.total} ${mood.total == 1 ? 'persona ha compartido' : 'personas han compartido'} su mood esta semana.',
+                  style: AppTextStyles.bodySecondary.copyWith(
+                    color: const Color(0xFFAD3B7E),
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+          // Botones de mood
+          Padding(
+            padding: const EdgeInsets.all(AppSpacing.lg),
+            child: Wrap(
+              spacing: AppSpacing.sm,
+              runSpacing: AppSpacing.md,
+              children: _moodOpciones.map((opcion) {
+                final seleccionada = mood.miMood == opcion.$1;
+                final total = mood.distribucion[opcion.$1] ?? 0;
+                final personas = mood.votantes[opcion.$1] ?? [];
+                return GestureDetector(
+                  onTap: enabled ? () => onVote(opcion.$1) : null,
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      AnimatedContainer(
+                        duration: const Duration(milliseconds: 200),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: AppSpacing.sm,
+                          vertical: AppSpacing.xs,
+                        ),
+                        decoration: BoxDecoration(
+                          color: seleccionada
+                              ? const Color(0xFFFFDDEA)
+                              : AppColors.surfaceSoft,
+                          borderRadius: BorderRadius.circular(AppRadius.pill),
+                          border: Border.all(
+                            color: seleccionada
+                                ? const Color(0xFFD75784)
+                                : AppColors.border,
+                            width: seleccionada ? 2 : 1,
+                          ),
+                          boxShadow: seleccionada
+                              ? [
+                                  BoxShadow(
+                                    color: const Color(
+                                      0xFFD75784,
+                                    ).withValues(alpha: .2),
+                                    blurRadius: 6,
+                                    offset: const Offset(0, 2),
+                                  ),
+                                ]
+                              : null,
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(
+                              opcion.$2,
+                              style: const TextStyle(fontSize: 26),
+                            ),
+                            if (total > 0) ...[
+                              const SizedBox(width: AppSpacing.xs),
+                              Text(
+                                '$total',
+                                style: AppTextStyles.caption.copyWith(
+                                  fontWeight: FontWeight.w800,
+                                  color: seleccionada
+                                      ? const Color(0xFFD75784)
+                                      : AppColors.textPrimary,
+                                ),
+                              ),
+                            ],
+                          ],
+                        ),
+                      ),
+                      if (personas.isNotEmpty) ...[
+                        const SizedBox(height: 4),
+                        SizedBox(
+                          width: 90,
+                          child: Text(
+                            personas.length <= 2
+                                ? personas.join(' · ')
+                                : '${personas.take(2).join(', ')} +${personas.length - 2}',
+                            style: AppTextStyles.caption.copyWith(
+                              fontSize: 10,
+                              color: seleccionada
+                                  ? const Color(0xFFD75784)
+                                  : AppColors.textMuted,
+                            ),
+                            textAlign: TextAlign.center,
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                );
+              }).toList(),
+            ),
           ),
         ],
       ),
@@ -663,19 +756,12 @@ class _SectionHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
+      crossAxisAlignment: CrossAxisAlignment.center,
       children: [
-        Container(
-          width: 54,
-          height: 54,
-          decoration: BoxDecoration(
-            color: color.withValues(alpha: 0.13),
-            borderRadius: BorderRadius.circular(AppRadius.lg),
-          ),
-          child: Icon(icon, color: color, size: 27),
-        ),
+        // Icono sin cuadrado contenedor
+        Icon(icon, color: color, size: 26),
 
-        const SizedBox(width: AppSpacing.md),
+        const SizedBox(width: AppSpacing.sm),
 
         Expanded(
           child: Column(
@@ -687,9 +773,6 @@ class _SectionHeader extends StatelessWidget {
                   color: AppColors.textPrimary,
                 ),
               ),
-
-              const SizedBox(height: AppSpacing.xs),
-
               Text(
                 subtitle,
                 style: AppTextStyles.bodySecondary.copyWith(height: 1.35),
