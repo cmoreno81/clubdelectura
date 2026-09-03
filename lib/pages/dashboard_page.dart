@@ -740,121 +740,153 @@ class _DashboardPageState extends State<DashboardPage> {
         : const <RankingItem>[];
 
     return ClubCard(
-      padding: const EdgeInsets.all(AppSpacing.md),
-      gradient: const LinearGradient(
-        begin: Alignment.topLeft,
-        end: Alignment.bottomRight,
-        colors: [AppColors.surfaceSoft, Color(0xFFF0E5FF)],
-      ),
+      padding: EdgeInsets.zero,
       borderColor: AppColors.primaryLight,
       onTap: () => _abrirRanking(initialTab: 1),
       child: Column(
         children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              const Icon(
-                Icons.emoji_events_rounded,
-                size: 28,
-                color: AppColors.gold,
+          // ── Cabecera morada con gradiente ────────────────────────────────
+          Container(
+            width: double.infinity,
+            decoration: const BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [Color(0xFF3B1A78), Color(0xFF6B3DB5)],
               ),
-              const SizedBox(width: AppSpacing.xs),
-              Text(
-                'Ranking del club',
-                style: AppTextStyles.section.copyWith(fontSize: 20),
+              borderRadius: BorderRadius.only(
+                topLeft: Radius.circular(23),
+                topRight: Radius.circular(11),
               ),
-            ],
-          ),
-
-          const SizedBox(height: AppSpacing.xxs),
-
-          Text(
-            participantes.isEmpty
-                ? '¿Quién lo conseguirá este mes?'
-                : 'El podio lector de este mes',
-            style: AppTextStyles.caption,
-            textAlign: TextAlign.center,
-          ),
-
-          const SizedBox(height: AppSpacing.sm),
-
-          // Podio — siempre muestra 3 puestos; los vacíos animan a participar
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              Expanded(
-                child: participantes.length > 1
-                    ? _PodioPuesto(
-                        item: participantes[1],
-                        posicion: 2,
-                        altura: 44,
-                        color: const Color(0xFF9AA3AD),
-                        onTap: () => _abrirPerfil(participantes[1].nombre),
-                      )
-                    : const _PodioPuestoVacio(
-                        posicion: 2,
-                        altura: 44,
-                        color: Color(0xFF9AA3AD),
+            ),
+            padding: const EdgeInsets.symmetric(
+              horizontal: AppSpacing.lg,
+              vertical: AppSpacing.md,
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Text('🏆', style: TextStyle(fontSize: 26)),
+                const SizedBox(width: AppSpacing.sm),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'Ranking del club',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 18,
+                          fontWeight: FontWeight.w900,
+                        ),
                       ),
-              ),
-
-              const SizedBox(width: AppSpacing.xs),
-
-              Expanded(
-                child: participantes.isNotEmpty
-                    ? _PodioPuesto(
-                        item: participantes.first,
-                        posicion: 1,
-                        altura: 60,
-                        color: AppColors.gold,
-                        destacado: true,
-                        onTap: () => _abrirPerfil(participantes.first.nombre),
-                      )
-                    : const _PodioPuestoVacio(
-                        posicion: 1,
-                        altura: 60,
-                        color: AppColors.gold,
-                        destacado: true,
+                      Text(
+                        participantes.isEmpty
+                            ? '¿Quién lo conseguirá este mes?'
+                            : 'El podio lector de este mes',
+                        style: const TextStyle(
+                          color: Colors.white70,
+                          fontSize: 11,
+                          fontWeight: FontWeight.w500,
+                        ),
                       ),
-              ),
-
-              const SizedBox(width: AppSpacing.xs),
-
-              Expanded(
-                child: participantes.length > 2
-                    ? _PodioPuesto(
-                        item: participantes[2],
-                        posicion: 3,
-                        altura: 36,
-                        color: const Color(0xFFB77A4A),
-                        onTap: () => _abrirPerfil(participantes[2].nombre),
-                      )
-                    : const _PodioPuestoVacio(
-                        posicion: 3,
-                        altura: 36,
-                        color: Color(0xFFB77A4A),
-                      ),
-              ),
-            ],
-          ),
-          const SizedBox(height: AppSpacing.sm),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Text(
-                'Abrir ranking completo',
-                style: AppTextStyles.caption.copyWith(
-                  color: AppColors.primary,
-                  fontWeight: FontWeight.w800,
+                    ],
+                  ),
                 ),
-              ),
-              const SizedBox(width: AppSpacing.xxs),
-              const Icon(
-                Icons.arrow_forward_rounded,
-                size: 17,
-                color: AppColors.primary,
-              ),
-            ],
+              ],
+            ),
+          ),
+
+          // ── Podio ────────────────────────────────────────────────────────
+          Padding(
+            padding: const EdgeInsets.fromLTRB(
+              AppSpacing.md,
+              AppSpacing.md,
+              AppSpacing.md,
+              AppSpacing.xs,
+            ),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                Expanded(
+                  child: participantes.length > 1
+                      ? _PodioPuesto(
+                          item: participantes[1],
+                          posicion: 2,
+                          altura: 44,
+                          color: const Color(0xFF9AA3AD),
+                          onTap: () => _abrirPerfil(participantes[1].nombre),
+                        )
+                      : const _PodioPuestoVacio(
+                          posicion: 2,
+                          altura: 44,
+                          color: Color(0xFF9AA3AD),
+                        ),
+                ),
+
+                const SizedBox(width: AppSpacing.xs),
+
+                Expanded(
+                  child: participantes.isNotEmpty
+                      ? _PodioPuesto(
+                          item: participantes.first,
+                          posicion: 1,
+                          altura: 60,
+                          color: AppColors.gold,
+                          destacado: true,
+                          onTap: () =>
+                              _abrirPerfil(participantes.first.nombre),
+                        )
+                      : const _PodioPuestoVacio(
+                          posicion: 1,
+                          altura: 60,
+                          color: AppColors.gold,
+                          destacado: true,
+                        ),
+                ),
+
+                const SizedBox(width: AppSpacing.xs),
+
+                Expanded(
+                  child: participantes.length > 2
+                      ? _PodioPuesto(
+                          item: participantes[2],
+                          posicion: 3,
+                          altura: 36,
+                          color: const Color(0xFFB77A4A),
+                          onTap: () => _abrirPerfil(participantes[2].nombre),
+                        )
+                      : const _PodioPuestoVacio(
+                          posicion: 3,
+                          altura: 36,
+                          color: Color(0xFFB77A4A),
+                        ),
+                ),
+              ],
+            ),
+          ),
+
+          // ── Enlace ranking completo ───────────────────────────────────────
+          Padding(
+            padding: const EdgeInsets.only(bottom: AppSpacing.md),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text(
+                  'Abrir ranking completo',
+                  style: AppTextStyles.caption.copyWith(
+                    color: AppColors.primary,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+                const SizedBox(width: AppSpacing.xxs),
+                const Icon(
+                  Icons.arrow_forward_rounded,
+                  size: 17,
+                  color: AppColors.primary,
+                ),
+              ],
+            ),
           ),
         ],
       ),
