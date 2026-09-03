@@ -9,6 +9,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../models/kit_lectura_seleccion.dart';
 import '../models/libro.dart';
 import '../models/libro_agrupado.dart';
+import '../models/libro_finalizado.dart';
 import '../services/api_service.dart';
 import '../services/atmosfera_controller.dart';
 import '../services/atmosfera_scope.dart';
@@ -549,10 +550,62 @@ class _DetalleLibroPageState extends State<DetalleLibroPage> {
 
     if (actualizado == true) {
       _cerrarAtmosferaDelLibro();
-
       if (!mounted) return;
 
-      Navigator.pop(context, true);
+      // Recargar datos frescos del libro para mostrar los cambios (portada,
+      // género…) sin depender del timing del refresco asíncrono de la
+      // biblioteca. Si la recarga falla, retrocedemos con pop como antes.
+      try {
+        final data = await ApiService().getLibroPorId(libro.bookId);
+        if (!mounted) return;
+
+        if (data['ok'] == true) {
+          final librosActualizados = (data['libros'] as List? ?? [])
+              .map((e) => Libro.fromJson(Map<String, dynamic>.from(e as Map)))
+              .toList();
+          final finalizadosActualizados = (data['finalizados'] as List? ?? [])
+              .map(
+                (e) => LibroFinalizado.fromJson(
+                  Map<String, dynamic>.from(e as Map),
+                ),
+              )
+              .toList();
+
+          // Resolver portada y género frescos
+          String coverFresh = librosActualizados.isNotEmpty
+              ? librosActualizados.first.coverUrl
+              : '';
+          if (coverFresh.isEmpty && finalizadosActualizados.isNotEmpty) {
+            coverFresh = finalizadosActualizados.first.coverUrl;
+          }
+          if (coverFresh.isEmpty) coverFresh = libro.coverUrl;
+
+          String generoFresh = librosActualizados.isNotEmpty
+              ? librosActualizados.first.genero
+              : '';
+          if (generoFresh.isEmpty) generoFresh = libro.genero;
+
+          setState(() {
+            libro = LibroAgrupado(
+              libro: libro.libro,
+              genero: generoFresh,
+              registros: librosActualizados,
+              finalizados: finalizadosActualizados,
+              yaLoTengo: librosActualizados.any((l) => l.yaLoTengo),
+              leidoPorMi: finalizadosActualizados.any((l) => l.yaLoTengo),
+              coverUrl: coverFresh,
+              bookId: libro.bookId,
+            );
+            registros = List<Libro>.from(libro.registros);
+          });
+          // No hacemos pop: el usuario ve la ficha actualizada y puede
+          // volver atrás cuando quiera.
+        } else {
+          Navigator.pop(context, true);
+        }
+      } catch (_) {
+        if (mounted) Navigator.pop(context, true);
+      }
     }
   }
 

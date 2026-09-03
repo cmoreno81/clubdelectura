@@ -17,6 +17,8 @@ class LibroFinalizado {
   final String avatarUrl;
   final int? paginas;
   final bool yaLoTengo;
+  /// true cuando el registro llegó por importación (Goodreads, Bookmory…).
+  final bool isImported;
 
   const LibroFinalizado({
     required this.bookId,
@@ -36,6 +38,7 @@ class LibroFinalizado {
     required this.avatarUrl,
     required this.paginas,
     this.yaLoTengo = false,
+    this.isImported = false,
   });
 
   factory LibroFinalizado.fromJson(Map<String, dynamic> json) {
@@ -66,6 +69,7 @@ class LibroFinalizado {
           (json['paginas'] as num?)?.toInt() ??
           (json['totalPages'] as num?)?.toInt(),
       yaLoTengo: json['yaLoTengo'] as bool? ?? false,
+      isImported: json['isImported'] as bool? ?? false,
     );
   }
 }

@@ -1111,6 +1111,12 @@ class _LibrosPageState extends State<LibrosPage> with WidgetsBindingObserver {
           return normalizar(a.libro).compareTo(normalizar(b.libro));
 
         case OrdenLibros.recientes:
+          // Los libros importados van al final para no contaminar el orden
+          // con añadidos masivos (p.ej. un import de Goodreads de 300 libros).
+          final aImported = a.isImported;
+          final bImported = b.isImported;
+          if (aImported != bImported) return aImported ? 1 : -1;
+
           final fechaA = a.fechaAlta;
           final fechaB = b.fechaAlta;
 

@@ -127,6 +127,18 @@ class LibroAgrupado {
     return fechas.first;
   }
 
+  /// true si TODAS las interacciones del club con este libro son importaciones.
+  /// Cubre tanto libros en curso/pendientes (registros) como leídos (finalizados).
+  /// Se usa para excluir el libro del orden "Añadidos recientemente".
+  bool get isImported {
+    final tieneRegistros = registros.isNotEmpty;
+    final tieneFinalizados = finalizados.isNotEmpty;
+    if (!tieneRegistros && !tieneFinalizados) return false;
+    final registrosImportados = !tieneRegistros || registros.every((r) => r.isImported);
+    final finalizadosImportados = !tieneFinalizados || finalizados.every((f) => f.isImported);
+    return registrosImportados && finalizadosImportados;
+  }
+
   bool get esReciente {
     final fecha = fechaAlta;
 

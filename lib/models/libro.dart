@@ -13,6 +13,9 @@ class Libro {
   final String estado;
   final String valoracion;
   final bool yaLoTengo;
+  /// true cuando el registro llegó por importación (Goodreads, Bookmory…).
+  /// Se usa para excluirlo del orden "Añadidos recientemente".
+  final bool isImported;
   final String goodreads;
   final String coverUrl;
   final DateTime? fechaAlta;
@@ -36,6 +39,7 @@ class Libro {
     required this.estado,
     required this.valoracion,
     required this.yaLoTengo,
+    this.isImported = false,
     required this.goodreads,
     required this.coverUrl,
     required this.fechaAlta,
@@ -61,6 +65,7 @@ class Libro {
       estado: json['estado']?.toString() ?? '',
       valoracion: json['valoracion']?.toString() ?? '',
       yaLoTengo: json['yaLoTengo'] as bool? ?? false,
+      isImported: json['isImported'] as bool? ?? false,
       goodreads:
           json['goodreads']?.toString() ??
           json['goodreadsUrl']?.toString() ??
@@ -97,6 +102,7 @@ class Libro {
     String? estado,
     String? valoracion,
     bool? yaLoTengo,
+    bool? isImported,
     String? goodreads,
     String? coverUrl,
     DateTime? fechaAlta,
@@ -120,6 +126,7 @@ class Libro {
       estado: estado ?? this.estado,
       valoracion: valoracion ?? this.valoracion,
       yaLoTengo: yaLoTengo ?? this.yaLoTengo,
+      isImported: isImported ?? this.isImported,
       goodreads: goodreads ?? this.goodreads,
       coverUrl: coverUrl ?? this.coverUrl,
       fechaAlta: fechaAlta ?? this.fechaAlta,

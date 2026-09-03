@@ -51,7 +51,9 @@ class _MemberRankingEntry {
 // ─── Página principal ─────────────────────────────────────────────────────────
 
 class ClubLogrosPage extends StatefulWidget {
-  const ClubLogrosPage({super.key});
+  const ClubLogrosPage({super.key, this.esPersonal = false});
+
+  final bool esPersonal;
 
   @override
   State<ClubLogrosPage> createState() => _ClubLogrosPageState();
@@ -64,6 +66,8 @@ class _ClubLogrosPageState extends State<ClubLogrosPage> {
   @override
   void initState() {
     super.initState();
+    // En personal, iniciar directamente en recientes
+    if (widget.esPersonal) _tab = 'recientes';
     _future = ApiService().getRecentClubAchievements();
   }
 
@@ -73,7 +77,9 @@ class _ClubLogrosPageState extends State<ClubLogrosPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Logros del club')),
+      appBar: AppBar(
+        title: Text(widget.esPersonal ? 'Mis logros' : 'Logros del club'),
+      ),
       body: FutureBuilder<Map<String, dynamic>>(
         future: _future,
         builder: (context, snap) {
@@ -102,6 +108,17 @@ class _ClubLogrosPageState extends State<ClubLogrosPage> {
               )
               .toList();
 
+          // ── Cuenta personal: sin ranking, mostrar colección propia ──
+          if (widget.esPersonal) {
+            // Sumar mis logros totales (primer entry del ranking = yo misma)
+            final myTotal = ranking.isNotEmpty ? ranking.first.total : 0;
+            return _PersonalLogrosView(
+              events: recientes,
+              myTotal: myTotal,
+            );
+          }
+
+          // ── Cuenta de club: tabs ranking / recientes ──
           return Column(
             children: [
               Padding(
@@ -140,6 +157,149 @@ class _ClubLogrosPageState extends State<ClubLogrosPage> {
         },
       ),
     );
+  }
+}
+
+// ─── Vista personal de logros ────────────────────────────────────────────────
+
+class _PersonalLogrosView extends StatelessWidget {
+  const _PersonalLogrosView({
+    required this.events,
+    required this.myTotal,
+  });
+
+  final List<ClubAchievementEvent> events;
+  final int myTotal;
+
+  @override
+  Widget build(BuildContext context) {
+    if (events.isEmpty) {
+      return _empty('Aún no tienes logros', '¡Sigue leyendo para desbloquearlos!');
+    }
+
+    return ListView(
+      padding: const EdgeInsets.all(AppSpacing.md),
+      children: [
+        // — Header: total de logros con emojis en cuadrícula
+        Container(
+          decoration: BoxDecoration(
+            gradient: const LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [Color(0xFFD4960A), Color(0xFFE8B84B)],
+            ),
+            borderRadius: BorderRadius.circular(AppRadius.lg),
+          ),
+          padding: const EdgeInsets.all(AppSpacing.md),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                '$myTotal ${myTotal == 1 ? 'logro' : 'logros'} desbloqueados',
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 22,
+                  fontWeight: FontWeight.w900,
+                ),
+              ),
+              const SizedBox(height: AppSpacing.sm),
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: events
+                    .take(10)
+                    .map(
+                      (e) => Tooltip(
+                        message: e.achievementTitle,
+                        child: Container(
+                          width: 42,
+                          height: 42,
+                          decoration: BoxDecoration(
+                            color: Colors.white.withValues(alpha: .25),
+                            shape: BoxShape.circle,
+                          ),
+                          alignment: Alignment.center,
+                          child: Text(
+                            e.achievementIcon,
+                            style: const TextStyle(fontSize: 22),
+                          ),
+                        ),
+                      ),
+                    )
+                    .toList(),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: AppSpacing.md),
+        // — Lista cronológica de logros
+        Text(
+          'Historial',
+          style: AppTextStyles.section,
+        ),
+        const SizedBox(height: AppSpacing.sm),
+        ...events.asMap().entries.map((entry) {
+          final e = entry.value;
+          return Padding(
+            padding: const EdgeInsets.only(bottom: AppSpacing.sm),
+            child: ClubCard(
+              elevated: false,
+              padding: const EdgeInsets.symmetric(
+                horizontal: AppSpacing.md,
+                vertical: AppSpacing.sm,
+              ),
+              child: Row(
+                children: [
+                  Container(
+                    width: 44,
+                    height: 44,
+                    decoration: BoxDecoration(
+                      color: AppColors.gold.withValues(alpha: .12),
+                      shape: BoxShape.circle,
+                    ),
+                    alignment: Alignment.center,
+                    child: Text(
+                      e.achievementIcon,
+                      style: const TextStyle(fontSize: 24),
+                    ),
+                  ),
+                  const SizedBox(width: AppSpacing.md),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          e.achievementTitle,
+                          style: AppTextStyles.subtitle.copyWith(
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  Text(
+                    _formatDate(e.unlockedAt),
+                    style: AppTextStyles.caption.copyWith(
+                      color: AppColors.textMuted,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          );
+        }),
+      ],
+    );
+  }
+
+  String _formatDate(String iso) {
+    final dt = DateTime.tryParse(iso)?.toLocal();
+    if (dt == null) return '';
+    final diff = DateTime.now().difference(dt);
+    if (diff.inDays == 0) return 'hoy';
+    if (diff.inDays == 1) return 'ayer';
+    if (diff.inDays < 30) return 'hace ${diff.inDays}d';
+    return '${dt.day}/${dt.month}/${dt.year}';
   }
 }
 

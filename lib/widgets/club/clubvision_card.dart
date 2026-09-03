@@ -554,6 +554,10 @@ class _GalaResultadosCardState extends State<_GalaResultadosCard>
           child: ClipRRect(
             borderRadius: BorderRadius.circular(AppRadius.lg),
             child: Stack(
+              // alignment: topCenter → los hijos no-posicionados (el Padding)
+              // se colocan centrados horizontalmente, sin alterar los constraints
+              // de altura (evita el crash con ListView de altura infinita).
+              alignment: Alignment.topCenter,
               children: [
                 // Partículas de fondo
                 Positioned.fill(child: _StarField(controller: _estrellas)),
