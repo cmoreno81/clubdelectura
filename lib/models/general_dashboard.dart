@@ -379,6 +379,7 @@ class GeneralSummary {
     required this.pagesReadThisMonth,
     required this.pagesRead,
     required this.monthStreak,
+    this.enEstanteria = 0,
   });
 
   final int clubs;
@@ -388,6 +389,8 @@ class GeneralSummary {
   final int pagesReadThisMonth;
   final int pagesRead;
   final int monthStreak;
+  /// Total de libros en la estantería personal (cualquier estado).
+  final int enEstanteria;
 
   factory GeneralSummary.fromJson(Map<String, dynamic> json) => GeneralSummary(
     clubs: _integer(json['clubes']),
@@ -397,6 +400,7 @@ class GeneralSummary {
     pagesReadThisMonth: _integer(json['paginasMes']),
     pagesRead: _integer(json['paginasLeidas']),
     monthStreak: _integer(json['rachaMeses']),
+    enEstanteria: _integer(json['enEstanteria']),
   );
 }
 

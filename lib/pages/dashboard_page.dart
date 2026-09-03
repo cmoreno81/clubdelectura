@@ -662,7 +662,7 @@ class _DashboardPageState extends State<DashboardPage> {
             year: year,
             books: yearBooks,
             favoriteGenre: favoriteGenre,
-            totalLibrary: personalLib.length,
+            totalLibrary: general?.summary.enEstanteria ?? personalLib.length,
           ),
 
           // ── 3. Sagas en curso ─────────────────────────────────────────────
@@ -3812,7 +3812,7 @@ class _PersonalYearShelfCard extends StatelessWidget {
                   ),
                   const SizedBox(width: 4),
                   Text(
-                    '$totalLibrary en biblioteca',
+                    '$totalLibrary en mi estantería',
                     style: AppTextStyles.caption.copyWith(
                       color: AppColors.textSecondary,
                     ),
