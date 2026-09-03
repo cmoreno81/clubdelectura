@@ -752,7 +752,7 @@ class _DashboardPageState extends State<DashboardPage> {
               gradient: LinearGradient(
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
-                colors: [Color(0xFF3B1A78), Color(0xFF6B3DB5)],
+                colors: [AppColors.primaryDark, AppColors.primary],
               ),
               borderRadius: BorderRadius.only(
                 topLeft: Radius.circular(23),
@@ -763,34 +763,29 @@ class _DashboardPageState extends State<DashboardPage> {
               horizontal: AppSpacing.lg,
               vertical: AppSpacing.md,
             ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.center,
               children: [
                 const Text('🏆', style: TextStyle(fontSize: 26)),
-                const SizedBox(width: AppSpacing.sm),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text(
-                        'Ranking del club',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 18,
-                          fontWeight: FontWeight.w900,
-                        ),
-                      ),
-                      Text(
-                        participantes.isEmpty
-                            ? '¿Quién lo conseguirá este mes?'
-                            : 'El podio lector de este mes',
-                        style: const TextStyle(
-                          color: Colors.white70,
-                          fontSize: 11,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                    ],
+                const SizedBox(height: 4),
+                const Text(
+                  'Ranking del club',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 18,
+                    fontWeight: FontWeight.w900,
+                  ),
+                ),
+                Text(
+                  participantes.isEmpty
+                      ? '¿Quién lo conseguirá este mes?'
+                      : 'El podio lector de este mes',
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(
+                    color: Colors.white70,
+                    fontSize: 11,
+                    fontWeight: FontWeight.w500,
                   ),
                 ),
               ],
