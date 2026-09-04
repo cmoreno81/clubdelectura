@@ -21,6 +21,7 @@ import 'clubvision_historial_page.dart';
 import 'clubvision_mi_voto_page.dart';
 import 'configurar_lectura_page.dart';
 import 'lectura_page.dart';
+import 'lecturas_page.dart';
 import '../widgets/common/selector_libro_sheet.dart';
 import 'package:club_lectura_app/widgets/common/club_shimmer.dart';
 
@@ -148,6 +149,13 @@ class _ClubvisionMenuPageState extends State<ClubvisionMenuPage> {
 
     if (!mounted) return;
     setState(_recargar);
+  }
+
+  Future<void> _abrirLecturasLibres() async {
+    await Navigator.push(
+      context,
+      AppPageRoute(builder: (_) => const LecturasPage()),
+    );
   }
 
   @override
@@ -336,30 +344,38 @@ class _ClubvisionMenuPageState extends State<ClubvisionMenuPage> {
         ];
 
       case 'LECTURA':
-        return [
-          _MenuCard(
-            icon: Icons.auto_stories_outlined,
-            color: AppColors.primary,
-            title: club.ganador.isEmpty ? 'Lectura actual' : club.ganador,
-            subtitle: 'Entra en los capítulos y comparte tus impresiones',
-            actionLabel: 'Abrir lectura',
-            badge: 'Lectura oficial',
-            badgeVariant: ClubChipVariant.primary,
-            onTap: () => _abrirLectura(club),
-          ),
-        ];
+        // Con ganador oficial → flujo normal
+        if (club.ganador.isNotEmpty) {
+          return [
+            _MenuCard(
+              icon: Icons.auto_stories_outlined,
+              color: AppColors.primary,
+              title: club.ganador,
+              subtitle: 'Entra en los capítulos y comparte tus impresiones',
+              actionLabel: 'Abrir lectura',
+              badge: 'Lectura oficial',
+              badgeVariant: ClubChipVariant.primary,
+              onTap: () => _abrirLectura(club),
+            ),
+          ];
+        }
+        // Sin ganador → redirigir a lecturas libres del club
+        return [_LecturasLibresCard(onTap: _abrirLecturasLibres)];
 
       default:
-        if (club.bienvenida.esAdmin) {
-          return [
+        // Sin ciclo Clubvisión activo
+        return [
+          if (club.bienvenida.esAdmin)
             _WelcomeClubvisionCard(
               eligibility: club.bienvenida,
               loading: _iniciandoBienvenida,
               onStart: club.bienvenida.disponible ? _iniciarBienvenida : null,
-            ),
-          ];
-        }
-        return [const _EstadoEnEsperaCard()];
+            )
+          else
+            const _EstadoEnEsperaCard(),
+          const SizedBox(height: AppSpacing.md),
+          _LecturasLibresCard(onTap: _abrirLecturasLibres),
+        ];
     }
   }
 
@@ -1700,6 +1716,90 @@ class _EstadoEnEsperaCard extends StatelessWidget {
             'Muy pronto conoceremos los nuevos libros candidatos.',
             textAlign: TextAlign.center,
             style: AppTextStyles.bodySecondary,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ── Tarjeta de lecturas libres del club ──────────────────────────────────────
+
+class _LecturasLibresCard extends StatelessWidget {
+  const _LecturasLibresCard({required this.onTap});
+
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    const color = Color(0xFF5B7A6B); // verde musgo suave
+    return ClubCard(
+      elevated: true,
+      padding: const EdgeInsets.all(AppSpacing.lg),
+      borderColor: color.withValues(alpha: 0.22),
+      gradient: LinearGradient(
+        begin: Alignment.topLeft,
+        end: Alignment.bottomRight,
+        colors: [
+          Colors.white,
+          Color.lerp(color, Colors.white, .88) ?? Colors.white,
+        ],
+      ),
+      onTap: onTap,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(9),
+                decoration: BoxDecoration(
+                  color: color.withValues(alpha: .12),
+                  borderRadius: BorderRadius.circular(AppRadius.sm),
+                ),
+                child: const Icon(
+                  Icons.people_outline_rounded,
+                  color: color,
+                  size: 20,
+                ),
+              ),
+              const SizedBox(width: AppSpacing.md),
+              const Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Lecturas del club',
+                      style: TextStyle(
+                        fontWeight: FontWeight.w800,
+                        fontSize: 15,
+                      ),
+                    ),
+                    SizedBox(height: 2),
+                    Text(
+                      'Los miembros están leyendo sus propios libros',
+                      style: TextStyle(
+                        color: AppColors.textSecondary,
+                        fontSize: 13,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: AppSpacing.sm),
+          Align(
+            alignment: Alignment.centerRight,
+            child: TextButton.icon(
+              onPressed: onTap,
+              style: TextButton.styleFrom(foregroundColor: color),
+              icon: const Icon(Icons.arrow_forward_rounded, size: 16),
+              label: const Text(
+                'Ver lecturas activas',
+                style: TextStyle(fontWeight: FontWeight.w700),
+              ),
+            ),
           ),
         ],
       ),

@@ -270,49 +270,79 @@ class DirectorEscenas {
     if (lectura.titulo.trim().isEmpty) {
       final esClubPequeno = totalMiembros > 0 && totalMiembros <= 5;
       final mostrarBoton = esClubPequeno || esAdmin;
+
+      // Calcular el libro más leído entre los miembros del club
+      final conteo = <String, ({LecturaAhoraItem item, int lectores})>{};
+      for (final miembro in dashboard.leyendoAhora) {
+        for (final item in miembro.lecturas) {
+          if (item.titulo.trim().isEmpty) continue;
+          final key = item.bookId.isNotEmpty ? item.bookId : item.titulo;
+          final prev = conteo[key];
+          conteo[key] = (item: item, lectores: (prev?.lectores ?? 0) + 1);
+        }
+      }
+      // Libro con más lectores, al menos 1
+      final masLeido = conteo.values.isEmpty
+          ? null
+          : conteo.values.reduce((a, b) => a.lectores >= b.lectores ? a : b);
+
       return Builder(
-        builder: (context) => Container(
-          width: double.infinity,
-          padding: const EdgeInsets.all(AppSpacing.lg),
-          decoration: BoxDecoration(
-            color: Colors.white.withValues(alpha: .6),
-            borderRadius: BorderRadius.circular(AppRadius.lg),
-            border: Border.all(color: AppColors.border),
-          ),
-          child: Column(
-            children: [
-              const Icon(
-                Icons.import_contacts_rounded,
-                color: AppColors.textMuted,
-                size: 38,
+        builder: (context) => Column(
+          children: [
+            // ── Libro más leído del club ────────────────────────────────
+            if (masLeido != null) ...[
+              _LibroMasLeidoCard(
+                item: masLeido.item,
+                lectores: masLeido.lectores,
               ),
               const SizedBox(height: AppSpacing.md),
-              Text(
-                'Sin lectura conjunta',
-                textAlign: TextAlign.center,
-                style: AppTextStyles.section.copyWith(
-                  color: AppColors.textPrimary,
-                ),
-              ),
-              const SizedBox(height: AppSpacing.sm),
-              Text(
-                esClubPequeno
-                    ? 'Podéis proponer una lectura directamente, '
-                      'sin necesidad de candidatos ni votación.'
-                    : 'Este club no tiene una lectura oficial en común. '
-                      'Cada miembro avanza con sus propios libros.',
-                style: AppTextStyles.bodySecondary.copyWith(height: 1.4),
-                textAlign: TextAlign.center,
-              ),
-              if (mostrarBoton) ...[
-                const SizedBox(height: AppSpacing.lg),
-                _BotonConfigurarLectura(
-                  etiqueta: esClubPequeno ? 'Proponer lectura' : 'Configurar lectura',
-                  icono: esClubPequeno ? Icons.menu_book_rounded : Icons.settings_rounded,
-                ),
-              ],
             ],
-          ),
+
+            // ── Explicación: sin Clubvisión activo ──────────────────────
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(AppSpacing.lg),
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: .6),
+                borderRadius: BorderRadius.circular(AppRadius.lg),
+                border: Border.all(color: AppColors.border),
+              ),
+              child: Column(
+                children: [
+                  const Icon(
+                    Icons.mic_none_rounded,
+                    color: AppColors.textMuted,
+                    size: 32,
+                  ),
+                  const SizedBox(height: AppSpacing.md),
+                  Text(
+                    'Clubvisión en pausa',
+                    textAlign: TextAlign.center,
+                    style: AppTextStyles.section.copyWith(
+                      color: AppColors.textPrimary,
+                    ),
+                  ),
+                  const SizedBox(height: AppSpacing.sm),
+                  Text(
+                    esClubPequeno
+                        ? 'No hay edición de Clubvisión activa. '
+                          'Podéis proponer una lectura directamente.'
+                        : 'No hay edición de Clubvisión activa este mes. '
+                          'Mientras tanto, cada miembro lee a su ritmo.',
+                    style: AppTextStyles.bodySecondary.copyWith(height: 1.4),
+                    textAlign: TextAlign.center,
+                  ),
+                  if (mostrarBoton) ...[
+                    const SizedBox(height: AppSpacing.lg),
+                    _BotonConfigurarLectura(
+                      etiqueta: esClubPequeno ? 'Proponer lectura' : 'Configurar lectura',
+                      icono: esClubPequeno ? Icons.menu_book_rounded : Icons.settings_rounded,
+                    ),
+                  ],
+                ],
+              ),
+            ),
+          ],
         ),
       );
     }
@@ -570,3 +600,88 @@ class _BotonConfigurarLectura extends StatelessWidget {
   }
 }
 
+
+// ── Tarjeta: libro más leído del club este mes ────────────────────────────────
+
+class _LibroMasLeidoCard extends StatelessWidget {
+  const _LibroMasLeidoCard({required this.item, required this.lectores});
+
+  final LecturaAhoraItem item;
+  final int lectores;
+
+  @override
+  Widget build(BuildContext context) {
+    const accent = Color(0xFF5C7A6B); // verde musgo suave, lector libre
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(AppSpacing.md),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            Colors.white.withValues(alpha: .92),
+            const Color(0xFFE8F0EC).withValues(alpha: .75),
+          ],
+        ),
+        borderRadius: BorderRadius.circular(AppRadius.xl),
+        border: Border.all(color: accent.withValues(alpha: .18)),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          // Portada
+          if (item.coverUrl.isNotEmpty)
+            ClipRRect(
+              borderRadius: BorderRadius.circular(AppRadius.sm),
+              child: ClubBookCover(
+                title: item.titulo,
+                imageUrl: item.coverUrl,
+                width: 52,
+                height: 76,
+              ),
+            )
+          else
+            Container(
+              width: 52,
+              height: 76,
+              decoration: BoxDecoration(
+                color: accent.withValues(alpha: .10),
+                borderRadius: BorderRadius.circular(AppRadius.sm),
+              ),
+              child: const Icon(Icons.auto_stories_outlined, color: accent, size: 26),
+            ),
+
+          const SizedBox(width: AppSpacing.md),
+
+          // Texto
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                ClubChip(
+                  label: lectores == 1
+                      ? '1 miembro leyendo'
+                      : '$lectores miembros leyendo',
+                  variant: ClubChipVariant.neutral,
+                  icon: Icons.people_alt_outlined,
+                ),
+                const SizedBox(height: AppSpacing.xs),
+                Text(
+                  item.titulo,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    fontWeight: FontWeight.w800,
+                    fontSize: 14,
+                    height: 1.25,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}

@@ -1,5 +1,3 @@
-import 'dart:math' show pi;
-
 import 'package:flutter/material.dart';
 
 import '../navigation/book_detail_navigation.dart';
@@ -141,7 +139,7 @@ class _AutorLibrosPageState extends State<AutorLibrosPage> {
                 expandedHeight: 160,
                 pinned: true,
                 stretch: true,
-                backgroundColor: AppColors.primaryDark,
+                backgroundColor: const Color(0xFF4A2240),
                 foregroundColor: Colors.white,
                 leading: Padding(
                   padding: const EdgeInsets.all(8),
@@ -180,7 +178,7 @@ class _AutorLibrosPageState extends State<AutorLibrosPage> {
                           gradient: LinearGradient(
                             begin: Alignment.topCenter,
                             end: Alignment.bottomCenter,
-                            colors: [Color(0xFF2D1B69), AppColors.primaryDark],
+                            colors: [Color(0xFF5C2B4A), Color(0xFF3A1830)],
                           ),
                         ),
                       ),
@@ -396,18 +394,10 @@ class _LibrosAgrupados extends StatelessWidget {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Saga: cinta serpentina gruesa (tipo infográfico de roadmap) con CustomPainter.
-// Las portadas se colocan encima de la cinta. START y FINISH en los extremos.
-// ─────────────────────────────────────────────────────────────────────────────
-
-const _kGold     = Color(0xFFA87C38);
-const _kBandH    = 68.0;   // grosor visual de la cinta
-const _kInnerR   = 26.0;   // radio interior del giro U
-const _kCoverW   = 58.0;   // ancho portada
-const _kCoverH   = 84.0;   // alto portada (≈ 2:3)
-const _kPerRow   = 3;      // portadas por fila
-// Las portadas (84px) sobresalen _kOverhang px por arriba y abajo de la cinta (68px)
-const _kOverhang = (_kCoverH - _kBandH) / 2; // = 8px
+const _kGold      = Color(0xFFA87C38);   // dorado — badges de número
+const _kTerracota = Color(0xFF4A6741);   // verde musgo — título e icono de saga
+const _kCoverW    = 58.0;   // ancho portada
+const _kCoverH    = 84.0;   // alto portada (≈ 2:3)
 
 // ── Widget principal de saga ─────────────────────────────────────────────────
 
@@ -428,98 +418,39 @@ class _SagaTimeline extends StatelessWidget {
   Widget build(BuildContext context) {
     if (libros.isEmpty) return const SizedBox.shrink();
 
-    final numRows = (libros.length / _kPerRow).ceil();
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final bandColor = isDark
-        ? const Color(0xFF5C2E8A).withValues(alpha: .82)
-        : const Color(0xFF7348B0).withValues(alpha: .78);
-    const outerR = _kInnerR + _kBandH; // = 94
-
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Título de la saga
         Row(children: [
-          const Icon(Icons.auto_stories_rounded, size: 16, color: _kGold),
+          const Icon(Icons.auto_stories_rounded, size: 18, color: _kTerracota),
           const SizedBox(width: 8),
           Expanded(child: Text(nombre,
             maxLines: 1, overflow: TextOverflow.ellipsis,
             style: AppTextStyles.subtitle.copyWith(
-              fontWeight: FontWeight.w800, color: _kGold, fontSize: 15))),
+              fontWeight: FontWeight.w800, color: _kTerracota, fontSize: 17))),
         ]),
         const SizedBox(height: 10),
-
-        // Chip "Inicio"
-        _SnakeLabel(text: 'Inicio ▶', alignRight: false),
-        const SizedBox(height: 2),
-
-        // Cinta serpentina: portadas sobresalen _kOverhang px arriba y abajo
-        LayoutBuilder(builder: (ctx, constraints) {
-          final w = constraints.maxWidth;
-          // Alto total: margen arriba + filas + giros U + margen abajo
-          final snakeH = 2 * _kOverhang
-              + numRows * _kBandH
-              + (numRows - 1) * 2 * _kInnerR;
-
-          return SizedBox(
-            width: w,
-            height: snakeH,
-            child: Stack(
-              clipBehavior: Clip.none,
-              children: [
-                CustomPaint(
-                  size: Size(w, snakeH),
-                  painter: _SnakeRibbonPainter(
-                    numRows: numRows,
-                    bandColor: bandColor,
-                    outerR: outerR,
-                  ),
-                ),
-                for (int i = 0; i < libros.length; i++)
-                  _buildCard(i, w, outerR),
-              ],
-            ),
-          );
-        }),
-
-        const SizedBox(height: 2),
-        // Chip "Fin" – alineado al extremo donde termina la última fila
-        _SnakeLabel(
-          text: '◀ Fin',
-          alignRight: numRows.isOdd,
+        Wrap(
+          spacing: 8,
+          runSpacing: 12,
+          children: [
+            for (int i = 0; i < libros.length; i++) _buildCard(i),
+          ],
         ),
       ],
     );
   }
 
-  Widget _buildCard(int i, double w, double outerR) {
-    final row = i ~/ _kPerRow;
-    final colInRow = i % _kPerRow;
-    final isEven = row % 2 == 0;
-    final isLast = row == (libros.length / _kPerRow).ceil() - 1;
-
-    // Zona horizontal de portadas: dejamos espacio para el arco U del lado activo,
-    // excepto en la última fila donde no hay arco.
-    final double rLeft = (!isEven && !isLast) ? outerR + 6 : 6.0;
-    final double rRight = (isEven && !isLast) ? w - outerR - 6 : w - 6.0;
-
-    final step = (rRight - rLeft) / _kPerRow;
-    final visualCol = isEven ? colInRow : (_kPerRow - 1 - colInRow);
-    final cardX = rLeft + visualCol * step + (step - _kCoverW) / 2;
-    // Portadas: _kOverhang arriba + fila × (banda + giro)
-    final cardY = _kOverhang + row * (_kBandH + 2 * _kInnerR);
-
-    final libro   = libros[i];
-    final titulo  = libro['titulo']?.toString()  ?? '';
+  Widget _buildCard(int i) {
+    final libro    = libros[i];
+    final titulo   = libro['titulo']?.toString()  ?? '';
     final coverUrl = libro['coverUrl']?.toString() ?? '';
 
-    return Positioned(
-      left: cardX,
-      top: cardY,
-      width: _kCoverW,
-      child: GestureDetector(
-        onTap: () => onTap(libro),
-        onLongPress: () => onLongPress(libro),
+    return GestureDetector(
+      onTap: () => onTap(libro),
+      onLongPress: () => onLongPress(libro),
+      child: SizedBox(
+        width: _kCoverW,
         child: Column(mainAxisSize: MainAxisSize.min, children: [
           Stack(clipBehavior: Clip.none, children: [
             ClubBookCover(
@@ -558,136 +489,6 @@ class _SagaTimeline extends StatelessWidget {
       ),
     );
   }
-}
-
-// ── Chip de Inicio / Fin ──────────────────────────────────────────────────────
-
-class _SnakeLabel extends StatelessWidget {
-  const _SnakeLabel({required this.text, required this.alignRight});
-  final String text;
-  final bool alignRight;
-
-  @override
-  Widget build(BuildContext context) {
-    final chip = Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-      decoration: BoxDecoration(
-        color: _kGold,
-        borderRadius: BorderRadius.circular(20),
-      ),
-      child: Text(text,
-        style: const TextStyle(
-          color: Colors.white, fontSize: 11,
-          fontWeight: FontWeight.w800, letterSpacing: .3)),
-    );
-    return Row(
-      mainAxisAlignment:
-          alignRight ? MainAxisAlignment.end : MainAxisAlignment.start,
-      children: [chip],
-    );
-  }
-}
-
-// ── Painter de la cinta serpentina ───────────────────────────────────────────
-//
-// Dibuja una cinta de ancho medio (_kBandH = 68px) centrada en cada fila.
-// Las portadas (84px) sobresalen _kOverhang = 8px arriba y abajo → efecto
-// "elementos sobre el carril", igual que en los infográficos de roadmap.
-// Los giros U son arcos de trazo grueso (strokeWidth = _kBandH).
-
-class _SnakeRibbonPainter extends CustomPainter {
-  const _SnakeRibbonPainter({
-    required this.numRows,
-    required this.bandColor,
-    required this.outerR,
-  });
-
-  final int numRows;
-  final Color bandColor;
-  final double outerR;
-
-  // Offset vertical de la cinta dentro del SizedBox (= margen de portadas)
-  static const double _offset = _kOverhang;
-
-  // Top de la banda pintada para la fila r
-  double bandTop(int r) => _offset + r * (_kBandH + 2 * _kInnerR);
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final w = size.width;
-    final fill = Paint()..color = bandColor..style = PaintingStyle.fill;
-    // Trazo para los giros U: strokeWidth = grosor de la cinta
-    final arcPaint = Paint()
-      ..color = bandColor
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = _kBandH
-      ..strokeCap = StrokeCap.butt;
-    // Radio de la línea central del arco
-    const arcCenterR = _kInnerR + _kBandH / 2;
-
-    for (int r = 0; r < numRows; r++) {
-      final top = bandTop(r);
-      final isEven = r % 2 == 0;
-      final isFirst = r == 0;
-      final isLast = r == numRows - 1;
-      const cap = _kBandH / 2; // radio de los extremos redondeados
-
-      // Límites horizontales del rectángulo de la fila
-      final double left  = isEven ? 0 : outerR;
-      final double right = (isEven && !isLast) ? w - outerR : w;
-
-      // RRect con redondeo solo en el extremo cerrado (Inicio / Fin)
-      final RRect rrect;
-      if (isFirst && isLast) {
-        rrect = RRect.fromRectAndRadius(
-            Rect.fromLTWH(0, top, w, _kBandH), const Radius.circular(cap));
-      } else if (isFirst) {
-        rrect = RRect.fromRectAndCorners(
-          Rect.fromLTWH(0, top, right, _kBandH),
-          topLeft: const Radius.circular(cap),
-          bottomLeft: const Radius.circular(cap));
-      } else if (isLast && isEven) {
-        rrect = RRect.fromRectAndCorners(
-          Rect.fromLTWH(left, top, right - left, _kBandH),
-          topRight: const Radius.circular(cap),
-          bottomRight: const Radius.circular(cap));
-      } else if (isLast && !isEven) {
-        rrect = RRect.fromRectAndCorners(
-          Rect.fromLTWH(left, top, right - left, _kBandH),
-          topLeft: const Radius.circular(cap),
-          bottomLeft: const Radius.circular(cap));
-      } else {
-        rrect = RRect.fromRectAndRadius(
-            Rect.fromLTWH(left, top, right - left, _kBandH), Radius.zero);
-      }
-      canvas.drawRRect(rrect, fill);
-
-      // Giro U hacia la siguiente fila
-      if (!isLast) {
-        // Centro del arco: a _kBandH/2 debajo del centro de la banda
-        // → conecta el centro de la banda r con el centro de la banda r+1
-        final arcCenterY = top + _kBandH / 2 + _kBandH / 2 + _kInnerR;
-        // = top + _kBandH + _kInnerR
-        if (isEven) {
-          canvas.drawArc(
-            Rect.fromCenter(
-              center: Offset(w - outerR, arcCenterY),
-              width: 2 * arcCenterR, height: 2 * arcCenterR),
-            -pi / 2, pi, false, arcPaint);
-        } else {
-          canvas.drawArc(
-            Rect.fromCenter(
-              center: Offset(outerR, arcCenterY),
-              width: 2 * arcCenterR, height: 2 * arcCenterR),
-            pi / 2, pi, false, arcPaint);
-        }
-      }
-    }
-  }
-
-  @override
-  bool shouldRepaint(covariant _SnakeRibbonPainter old) =>
-      old.numRows != numRows || old.bandColor != bandColor;
 }
 
 // ─── Cabecera para libros independientes ─────────────────────────────────────

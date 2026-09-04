@@ -233,6 +233,16 @@ const List<_HelpSection> _secciones = [
             'personal sin introducir los datos manualmente.',
       ),
       _HelpItem(
+        pregunta: '¿Puedo cambiar el estado de un libro directamente desde el catálogo?',
+        respuesta:
+            'Sí. En "Explorar libros" (el buscador del catálogo global) puedes hacer '
+            'una pulsación larga sobre cualquier portada para ver las acciones rápidas: '
+            'cambiar su estado a TBR, Leyendo, Pausado, Terminado…\n\n'
+            'Es la forma más rápida de actualizar el estado de un libro sin tener que '
+            'entrar en su ficha completa. Si el libro aún no está en tu biblioteca, '
+            'se añade automáticamente con el estado que elijas.',
+      ),
+      _HelpItem(
         pregunta: '¿Cómo marco un libro como favorito?',
         respuesta:
             'Desde la ficha de cualquier libro de tu biblioteca verás un icono '
