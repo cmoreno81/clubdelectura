@@ -2046,23 +2046,33 @@ class _GeneralDashboardPageState extends State<GeneralDashboardPage> {
         : nombre.isNotEmpty
         ? nombre[0].toUpperCase()
         : '?';
-    final colors = [
-      const Color(0xFF7C3AED),
-      const Color(0xFF2563EB),
-      const Color(0xFFDB2777),
-      const Color(0xFF059669),
-      const Color(0xFFD97706),
-      const Color(0xFFDC2626),
-      const Color(0xFF0891B2),
+    // Paleta earthy: terracota, dorado, salvia, marrón cálido, ocre, ciruela, siena
+    final backgrounds = [
+      const Color(0xFFF5D8C8), // blush coral
+      const Color(0xFFEEDDAA), // gold cream
+      const Color(0xFFDDEAD8), // sage
+      const Color(0xFFEADDD0), // warm sand
+      const Color(0xFFE8D5C4), // sienna light
+      const Color(0xFFE9DCEE), // lavender suave
+      const Color(0xFFD8E8E0), // mint earth
     ];
-    final color = colors[nombre.hashCode.abs() % colors.length];
+    final foregrounds = [
+      const Color(0xFFA85C42), // terracota
+      const Color(0xFFA87C38), // dorado
+      const Color(0xFF5A7A60), // salvia
+      const Color(0xFF8A6048), // marrón cálido
+      const Color(0xFF9A6840), // ocre
+      const Color(0xFF603B73), // ciruela (primary)
+      const Color(0xFF3A7A60), // verde tierra
+    ];
+    final idx = nombre.hashCode.abs() % backgrounds.length;
     return Container(
-      color: color.withValues(alpha: .15),
+      color: backgrounds[idx],
       alignment: Alignment.center,
       child: Text(
         iniciales,
         style: TextStyle(
-          color: color,
+          color: foregrounds[idx],
           fontSize: 22,
           fontWeight: FontWeight.w800,
         ),
@@ -2139,23 +2149,49 @@ class _GeneralDashboardPageState extends State<GeneralDashboardPage> {
               width: 80,
               child: Column(
                 children: [
-                  Container(
-                    width: 72,
-                    height: 72,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      border: Border.all(
-                        color: AppColors.primaryLight,
-                        width: 2,
+                  Stack(
+                    alignment: Alignment.bottomRight,
+                    children: [
+                      Container(
+                        width: 72,
+                        height: 72,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          border: Border.all(
+                            color: const Color(0xFFCFA090),
+                            width: 2,
+                          ),
+                          boxShadow: [
+                            BoxShadow(
+                              color: const Color(0xFFA85C42).withValues(alpha: .12),
+                              blurRadius: 6,
+                              offset: const Offset(0, 2),
+                            ),
+                          ],
+                        ),
+                        child: ClipOval(
+                          child: OptimizedNetworkImage(
+                            url: author.photoUrl,
+                            width: 72,
+                            height: 72,
+                            fallback: _authorInitials(author.nombre),
+                          ),
+                        ),
                       ),
-                    ),
-                    clipBehavior: Clip.antiAlias,
-                    child: OptimizedNetworkImage(
-                      url: author.photoUrl,
-                      width: 72,
-                      height: 72,
-                      fallback: _authorInitials(author.nombre),
-                    ),
+                      Container(
+                        width: 20,
+                        height: 20,
+                        decoration: const BoxDecoration(
+                          color: Color(0xFFA85C42),
+                          shape: BoxShape.circle,
+                        ),
+                        child: const Icon(
+                          Icons.chevron_right_rounded,
+                          color: Colors.white,
+                          size: 14,
+                        ),
+                      ),
+                    ],
                   ),
                   const SizedBox(height: 8),
                   Text(
@@ -2169,10 +2205,11 @@ class _GeneralDashboardPageState extends State<GeneralDashboardPage> {
                     ),
                   ),
                   Text(
-                    '${author.libros} libros',
+                    '${author.libros} ${author.libros == 1 ? 'libro' : 'libros'} →',
                     style: AppTextStyles.caption.copyWith(
-                      color: AppColors.textMuted,
+                      color: const Color(0xFFA85C42),
                       fontSize: 10,
+                      fontWeight: FontWeight.w600,
                     ),
                   ),
                 ],
@@ -2405,10 +2442,10 @@ class _LogroMiniTile extends StatelessWidget {
   final UserAchievement achievement;
 
   Color get _color => switch (achievement.rarity) {
-    'legendary' => AppColors.gold, // dorado — cálido, especial
-    'epic' => AppColors.primary, // ciruela — color principal de la app
-    'rare' => AppColors.info, // azul apagado — discreto
-    _ => AppColors.textSecondary, // marrón grisáceo — común
+    'legendary' => AppColors.gold,               // dorado
+    'epic'      => AppColors.primary,            // ciruela
+    'rare'      => const Color(0xFF5A7A60),      // salvia tierra
+    _           => AppColors.textSecondary,      // marrón grisáceo — común
   };
 
   @override
@@ -2421,10 +2458,10 @@ class _LogroMiniTile extends StatelessWidget {
         decoration: BoxDecoration(
           color: color.withValues(alpha: .10),
           borderRadius: BorderRadius.circular(AppRadius.md),
-          border: Border.all(color: color.withValues(alpha: .22), width: 1),
+          border: Border.all(color: color.withValues(alpha: .45), width: 1.8),
           boxShadow: [
             BoxShadow(
-              color: color.withValues(alpha: .08),
+              color: color.withValues(alpha: .10),
               blurRadius: 6,
               offset: const Offset(0, 2),
             ),

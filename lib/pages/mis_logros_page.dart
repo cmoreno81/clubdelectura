@@ -253,10 +253,10 @@ class _AchievementTile extends StatelessWidget {
   final UserAchievement achievement;
 
   Color get _rarityColor => switch (achievement.rarity) {
-    'legendary' => const Color(0xFFD97706),
-    'epic' => const Color(0xFF7C3AED),
-    'rare' => const Color(0xFF2563EB),
-    _ => AppColors.primary,
+    'legendary' => AppColors.gold,              // dorado
+    'epic'      => AppColors.primary,           // ciruela
+    'rare'      => const Color(0xFF5A7A60),     // salvia tierra
+    _           => AppColors.textSecondary,     // marrón grisáceo — común
   };
 
   String get _rarityLabel =>
@@ -282,9 +282,9 @@ class _AchievementTile extends StatelessWidget {
           borderRadius: BorderRadius.circular(AppRadius.md),
           border: Border.all(
             color: unlocked
-                ? color.withValues(alpha: .35)
+                ? color.withValues(alpha: .50)
                 : AppColors.border.withValues(alpha: .5),
-            width: unlocked ? 1.5 : 1,
+            width: unlocked ? 1.8 : 1,
           ),
           boxShadow: unlocked
               ? [

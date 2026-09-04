@@ -161,7 +161,27 @@ class _CatalogBookDetailPageState extends State<CatalogBookDetailPage> {
 
       // Cargamos los datos reales de la biblioteca (la caché ya fue invalidada
       // por LibraryRefreshNotifier al añadir el libro).
-      final data = await ApiService().getLibrosData();
+      late final dynamic data;
+      try {
+        data = await ApiService().getLibrosData();
+      } catch (_) {
+        // Sin club activo (409) u otro error de red: abrimos con datos mínimos
+        if (!mounted) return;
+        final fallback = LibroAgrupado(
+          libro: widget.title,
+          genero: widget.genre,
+          registros: [],
+          finalizados: [],
+          yaLoTengo: true,
+          coverUrl: widget.coverUrl,
+          bookId: effectiveBookId,
+        );
+        await Navigator.push<void>(
+          context,
+          AppPageRoute(builder: (_) => DetalleLibroPage(libro: fallback)),
+        );
+        return;
+      }
 
       if (!mounted) return;
 
@@ -207,7 +227,19 @@ class _CatalogBookDetailPageState extends State<CatalogBookDetailPage> {
           .firstOrNull;
       agrupado ??= agrupados[widget.title.trim().toLowerCase()];
 
-      if (agrupado == null || !mounted) return;
+      if (!mounted) return;
+
+      // Si no está en los datos del club (p.ej. recién añadido a biblioteca
+      // personal sin sesión de lectura activa), abrimos con datos mínimos.
+      agrupado ??= LibroAgrupado(
+        libro: widget.title,
+        genero: widget.genre,
+        registros: [],
+        finalizados: [],
+        yaLoTengo: true,
+        coverUrl: widget.coverUrl,
+        bookId: effectiveBookId,
+      );
 
       await Navigator.push<void>(
         context,

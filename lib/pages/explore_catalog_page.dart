@@ -12,6 +12,7 @@ import '../theme/app_spacing.dart';
 import '../navigation/book_detail_navigation.dart';
 import '../widgets/common/optimized_network_image.dart';
 import '../widgets/libros/add_book_sheet.dart';
+import '../widgets/libros/libro_acciones_rapidas.dart';
 import 'package:club_lectura_app/widgets/common/club_shimmer.dart';
 import '../widgets/common/screen_hint_banner.dart';
 
@@ -32,6 +33,7 @@ class _ExploreCatalogPageState extends State<ExploreCatalogPage> {
   bool _loading = false;
   String? _error;
   String? _addingId;
+  bool _longPressing = false;
   Timer? _debounce;
   final RequestGeneration _searchGeneration = RequestGeneration();
 
@@ -203,12 +205,12 @@ class _ExploreCatalogPageState extends State<ExploreCatalogPage> {
             ),
           ),
           ScreenHintBanner(
-            featureKey: 'hint_catalogo_v1',
+            featureKey: 'hint_catalogo_v2',
             titulo: 'Explorar el catálogo',
             tips: const [
               ScreenHintTip('🔍', 'Busca por título, autor o ISBN para encontrar cualquier libro'),
-              ScreenHintTip('📚', 'Pulsa un libro para ver detalles y añadirlo a tu biblioteca'),
-              ScreenHintTip('❤️', 'Guarda libros en favoritos para no perderlos de vista'),
+              ScreenHintTip('📚', 'Pulsa un libro para ver la ficha y añadirlo a tu biblioteca'),
+              ScreenHintTip('✋', 'Pulsación larga para cambiar su estado (leyendo, leído, TBR…) directamente'),
             ],
           ),
           Expanded(
@@ -330,11 +332,53 @@ class _ExploreCatalogPageState extends State<ExploreCatalogPage> {
     if (changed && mounted) _pagination.loadFirst();
   }
 
+  Future<void> _onLongPress(CatalogBook book) async {
+    if (_longPressing) return;
+    _longPressing = true;
+    try {
+      final changed = await mostrarAccionesRapidasLibro(
+        context,
+        bookId: book.id,
+        titulo: book.title,
+        autor: book.authorLabel,
+        genero: book.genre,
+        coverUrl: book.coverUrl,
+        abrirFicha: (_) => _openDetail(book),
+      );
+      if (changed && mounted) {
+        LibraryRefreshNotifier.instance.invalidate();
+        // Actualizar el libro en la lista local
+        CatalogBook updater(CatalogBook b) =>
+            b.id == book.id && b.source == book.source
+                ? b.copyWith(inMyLibrary: true)
+                : b;
+        setState(() {
+          _books = _books.map(updater).toList(growable: false);
+        });
+        _pagination.replace(
+          '${book.source}:${book.id}',
+          updater,
+        );
+      }
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('No se pudo cargar la información del libro.'),
+          ),
+        );
+      }
+    } finally {
+      _longPressing = false;
+    }
+  }
+
   Widget _bookCard(CatalogBook book) {
     return Card(
       clipBehavior: Clip.antiAlias,
       child: InkWell(
         onTap: () => _openDetail(book),
+        onLongPress: () => _onLongPress(book),
         child: Padding(
         padding: const EdgeInsets.all(AppSpacing.sm),
         child: Row(

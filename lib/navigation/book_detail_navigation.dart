@@ -101,9 +101,28 @@ Future<bool> openBookDetail(
     // Siempre usamos la caché del club, que contiene registros de todos los
     // miembros. El endpoint personal (global:false) solo devuelve el propio
     // usuario y rompería la sección "Lectores interesados".
-    final data = await LibrosDataCache.instance.get(
-      () => ApiService().getLibrosData(),
-    );
+    // Si falla (ej: usuario sin club activo → 409), abrimos la ficha de catálogo
+    // con los datos mínimos disponibles en lugar de mostrar un error.
+    late final dynamic data;
+    try {
+      data = await LibrosDataCache.instance.get(
+        () => ApiService().getLibrosData(),
+      );
+    } catch (_) {
+      if (!context.mounted) return false;
+      await Navigator.push<void>(
+        context,
+        BookDetailPageRoute(
+          builder: (_) => CatalogBookDetailPage(
+            bookId: bookId,
+            title: title,
+            coverUrl: coverUrl,
+            genre: genre,
+          ),
+        ),
+      );
+      return false;
+    }
     if (!context.mounted) return false;
 
     List<Libro> registros;
