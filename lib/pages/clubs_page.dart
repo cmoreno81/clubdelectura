@@ -461,6 +461,73 @@ class _ClubSettingsPageState extends State<_ClubSettingsPage> {
     }
   }
 
+  Future<void> _deleteClub() async {
+    // Primer diálogo: advertencia
+    final confirm1 = await showDialog<bool>(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: const Text('Eliminar club'),
+        content: Text(
+          '¿Segura que quieres eliminar "${widget.club.nombre}"?\n\n'
+          'Se borrarán todas las lecturas, conversaciones y datos del club. '
+          'Esta acción no se puede deshacer.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancelar'),
+          ),
+          FilledButton(
+            style: FilledButton.styleFrom(backgroundColor: AppColors.danger),
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Continuar'),
+          ),
+        ],
+      ),
+    );
+    if (confirm1 != true || !mounted) return;
+
+    // Segundo diálogo: confirmación final
+    final confirm2 = await showDialog<bool>(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: const Text('Confirmación final'),
+        content: const Text(
+          'Esta es tu última oportunidad. El club y todos sus datos '
+          'desaparecerán de forma permanente.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancelar'),
+          ),
+          FilledButton(
+            style: FilledButton.styleFrom(backgroundColor: AppColors.danger),
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Eliminar club'),
+          ),
+        ],
+      ),
+    );
+    if (confirm2 != true || !mounted) return;
+
+    setState(() => _busy = true);
+    try {
+      await ClubService().deleteClub(widget.club.id);
+      ClubContextController.instance.refresh();
+      if (!mounted) return;
+      Navigator.pop(context, true);
+    } on ApiException catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(e.message)));
+      }
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+
   Future<void> _leaveClub() async {
     final confirm = await showDialog<bool>(
       context: context,
@@ -651,6 +718,28 @@ class _ClubSettingsPageState extends State<_ClubSettingsPage> {
                       color: AppColors.danger,
                     ),
                     onTap: _busy ? null : _leaveClub,
+                  ),
+                ],
+                if (widget.club.rol == 'OWNER') ...[
+                  const Divider(height: 1),
+                  ListTile(
+                    leading: const Icon(
+                      Icons.delete_forever_rounded,
+                      color: AppColors.danger,
+                    ),
+                    title: const Text(
+                      'Eliminar club',
+                      style: TextStyle(
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.danger,
+                      ),
+                    ),
+                    subtitle: const Text('Borra el club y todos sus datos permanentemente'),
+                    trailing: const Icon(
+                      Icons.chevron_right_rounded,
+                      color: AppColors.danger,
+                    ),
+                    onTap: _busy ? null : _deleteClub,
                   ),
                 ],
               ],

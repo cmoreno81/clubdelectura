@@ -76,6 +76,10 @@ class ClubService {
     await _request('salirClub', body: {'clubId': clubId});
   }
 
+  Future<void> deleteClub(String clubId) async {
+    await _request('eliminarClub', body: {'clubId': clubId});
+  }
+
   Future<void> updateClub({
     required String clubId,
     String? nombre,
