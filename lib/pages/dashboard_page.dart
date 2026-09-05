@@ -33,6 +33,7 @@ import '../widgets/common/club_card.dart';
 import '../widgets/dashboard/club_books_of_year_card.dart';
 import '../widgets/common/club_chip.dart';
 import '../widgets/common/club_empty_state.dart';
+import '../widgets/common/mapa_calor_widget.dart';
 import '../widgets/common/club_section_title.dart';
 import '../widgets/common/club_book_cover.dart';
 import '../widgets/common/optimized_network_image.dart';
@@ -425,7 +426,12 @@ class _DashboardPageState extends State<DashboardPage> {
                       librosUsuarioMes: data.resumen.librosUsuarioMes,
                     ),
                     const SizedBox(height: AppSpacing.lg),
-                    if (data.clubvision.estado.toUpperCase() != 'SIN_DATOS')
+                    // SIN_DATOS solo se oculta si además no hay una lectura
+                    // activa de respaldo (una lectura FREE en curso sin
+                    // Clubvisión este mes) — si la hay, sí queremos ver la
+                    // tarjeta, aunque el estado en sí sea SIN_DATOS.
+                    if (data.clubvision.estado.toUpperCase() != 'SIN_DATOS' ||
+                        data.lecturaActual.ok)
                       ClubvisionCard(
                         dashboard: data,
                         estadoClub: estadoClub,
@@ -682,20 +688,28 @@ class _DashboardPageState extends State<DashboardPage> {
           const SizedBox(height: AppSpacing.sm),
           _AchievementsClubCard(esPersonal: true),
           const SizedBox(height: AppSpacing.sm),
-          RachaLectoraCard(
-            key: ValueKey('reading-streak-$_favoritosKey'),
-            loadHistory: widget.loadCheckinHistory,
-            onTap: () => _abrirMiPerfil(scrollToSeguimiento: true),
-          ),
 
-          const SizedBox(height: AppSpacing.md),
-
-          // ── 5. Stats del mes ──────────────────────────────────────────────
+          // ── 5. Stats del mes (solo cuentas personales, justo tras Mis logros) ──
           _estadisticasMes(
             actividad: data.resumen.actividadMes,
             valoracion: data.resumen.valoracionMedia,
             esPersonal: true,
           ),
+          const SizedBox(height: AppSpacing.sm),
+
+          RachaLectoraCard(
+            key: ValueKey('reading-streak-$_favoritosKey'),
+            loadHistory: widget.loadCheckinHistory,
+            navegable: false,
+          ),
+          // En espacio personal mostramos el check-in y el mapa de calor
+          // aquí mismo, en vez de obligar a navegar al perfil para verlos.
+          const SizedBox(height: AppSpacing.md),
+          CheckinSection(),
+          const SizedBox(height: AppSpacing.md),
+          ClubCard(elevated: false, child: MapaCalorWidget()),
+
+          const SizedBox(height: AppSpacing.md),
 
           // ── 6. Próximas lecturas (alta prioridad) ─────────────────────────
           if (highPriority.isNotEmpty) ...[
@@ -2279,10 +2293,20 @@ class _LogroBadge extends StatelessWidget {
 // ─────────────────────────────────────────────────────────────────────────────
 
 class RachaLectoraCard extends StatefulWidget {
-  const RachaLectoraCard({super.key, this.loadHistory, this.onTap});
+  const RachaLectoraCard({
+    super.key,
+    this.loadHistory,
+    this.onTap,
+    this.navegable = true,
+  });
 
   final Future<Map<String, dynamic>> Function()? loadHistory;
   final VoidCallback? onTap;
+
+  /// Si es false y no se pasa [onTap], la tarjeta no navega a ningún sitio
+  /// (ni muestra la flechita) — para cuando el seguimiento de lectura ya se
+  /// ve justo debajo, en vez de tener que entrar al perfil a verlo.
+  final bool navegable;
 
   @override
   State<RachaLectoraCard> createState() => _RachaLectoraCardState();
@@ -2323,7 +2347,8 @@ class _RachaLectoraCardState extends State<RachaLectoraCard> {
         return _RachaLectoraTile(
           racha: racha,
           checkedToday: checkedToday,
-          onTap: widget.onTap ?? () => _irASeguimiento(context),
+          onTap: widget.onTap ??
+              (widget.navegable ? () => _irASeguimiento(context) : null),
         );
       },
     );
@@ -2353,7 +2378,7 @@ class _RachaLectoraTile extends StatelessWidget {
           ? [const Color(0xFFAA7A00), const Color(0xFFD4A800)] // dorado
           : racha >= 14
               ? [const Color(0xFFB82400), const Color(0xFFE85020)] // rojo coral
-              : [const Color(0xFFD84B00), const Color(0xFFFF7040)]; // naranja llama
+              : [const Color(0xFF7A3828), const Color(0xFFA85C42)]; // terracota tierra, a juego con el resto de la app
 
       return GestureDetector(
         onTap: onTap,

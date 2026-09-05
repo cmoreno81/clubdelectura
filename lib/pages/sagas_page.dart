@@ -19,6 +19,8 @@ import '../widgets/common/club_section_title.dart';
 import '../widgets/error_view.dart';
 import '../widgets/perfil/perfil_saga_card.dart';
 import '../widgets/libros/add_book_sheet.dart';
+import '../widgets/libros/apply_initial_status.dart';
+import '../widgets/common/libro_finalizado_celebration.dart';
 import '../widgets/common/onboarding_tutorial.dart';
 import '../widgets/common/screen_hint_banner.dart';
 import 'complete_series_page.dart';
@@ -47,6 +49,57 @@ class _SagasPageState extends State<SagasPage> {
   final _searchController = TextEditingController();
   String _query = '';
   String _filter = 'EN_CURSO';
+  // La recarga tras guardar un cambio (marcar un tomo, editar una saga,
+  // ocultarla, reordenar...) puede tardar unos segundos: sin este
+  // indicador, la pantalla parece no haber hecho nada hasta que se recarga
+  // sola. Se comparte entre todas las acciones que guardan algo en Sagas.
+  bool _savingOverride = false;
+
+  // Guarda con [escritura] y solo entonces recarga la pantalla. Si falla la
+  // escritura, se avisa como un fallo real. Si la escritura tiene éxito
+  // pero solo falla la recarga posterior, NO se avisa como un fallo — el
+  // cambio ya se guardó, y avisar de un "error" ahí haría pensar que no se
+  // aplicó cuando sí lo hizo (se verá en la próxima recarga).
+  Future<void> _guardarYRecargar(
+    Future<void> Function() escritura, {
+    String? mensajeExito,
+  }) async {
+    setState(() => _savingOverride = true);
+    try {
+      await escritura();
+    } on ApiException catch (error) {
+      if (mounted) {
+        setState(() => _savingOverride = false);
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(error.message)));
+      }
+      return;
+    } catch (_) {
+      if (mounted) {
+        setState(() => _savingOverride = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('No se pudo guardar el cambio')),
+        );
+      }
+      return;
+    }
+
+    if (!mounted) return;
+    if (mensajeExito != null) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(mensajeExito)));
+    }
+
+    try {
+      await _reload();
+    } catch (_) {
+      // Silencioso a propósito: el cambio ya se guardó.
+    } finally {
+      if (mounted) setState(() => _savingOverride = false);
+    }
+  }
 
   @override
   void initState() {
@@ -293,6 +346,8 @@ class _SagasPageState extends State<SagasPage> {
 
     if (result == null || !mounted) return;
 
+    setState(() => _savingOverride = true);
+
     // ── Marcas externas / OMITIDO / QUITAR ──────────────────────────
     try {
       if (result == 'QUITAR') {
@@ -307,18 +362,37 @@ class _SagasPageState extends State<SagasPage> {
           tipo: result,
         );
       }
-      // Recargar sagas
-      final latest = await _load();
-      if (!mounted) return;
-      setState(() {
-        _future = Future.value(latest);
-      });
     } catch (_) {
       if (mounted) {
+        setState(() => _savingOverride = false);
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('No se pudo guardar el cambio')),
         );
       }
+      return;
+    }
+
+    if (!mounted) return;
+    // Confirmamos ya el guardado en sí (independiente de si la recarga de
+    // abajo tarda o falla): sin esto, si la recarga es lenta, parece que no
+    // ha pasado nada aunque el cambio ya esté guardado.
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(const SnackBar(content: Text('Guardado')));
+
+    // El cambio ya se guardó: si falla solo la recarga, no lo mostramos
+    // como un fallo de guardado (dejaría a la usuaria pensando que no se
+    // aplicó cuando en realidad sí). Se verá la próxima vez que se recargue.
+    try {
+      final latest = await _load();
+      if (!mounted) return;
+      setState(() {
+        _future = Future.value(latest);
+        _savingOverride = false;
+      });
+    } catch (_) {
+      if (mounted) setState(() => _savingOverride = false);
+      return;
     }
   }
 
@@ -359,18 +433,12 @@ class _SagasPageState extends State<SagasPage> {
     );
     if (numero == null || numero.isEmpty || !mounted) return;
 
-    try {
-      await ApiService().actualizarNumeroVolumenSaga(
+    await _guardarYRecargar(
+      () => ApiService().actualizarNumeroVolumenSaga(
         bookId: volumen.bookId,
         numero: numero,
-      );
-      if (mounted) await _reload();
-    } on ApiException catch (error) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(error.message)));
-    }
+      ),
+    );
   }
 
   Future<void> _editSeries(PerfilSaga saga) async {
@@ -439,19 +507,13 @@ class _SagasPageState extends State<SagasPage> {
       ),
     );
     if (result == null || !mounted) return;
-    try {
-      await ApiService().actualizarEstadoEditorialSaga(
+    await _guardarYRecargar(
+      () => ApiService().actualizarEstadoEditorialSaga(
         sagaId: saga.id,
         estadoEditorial: result.$1,
         totalPrevisto: result.$2,
-      );
-      if (mounted) await _reload();
-    } on ApiException catch (error) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(error.message)));
-    }
+      ),
+    );
   }
 
   Future<void> _hideSeries(PerfilSaga saga) async {
@@ -482,24 +544,11 @@ class _SagasPageState extends State<SagasPage> {
     );
     if (confirmed != true || !mounted) return;
 
-    try {
-      await ApiService().ocultarSaga(sagaId: saga.id);
-      if (!mounted) return;
-      await _reload();
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            '${saga.nombre} se ha ocultado. Puedes recuperarla desde tu perfil.',
-          ),
-        ),
-      );
-    } on ApiException catch (error) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(error.message)));
-    }
+    await _guardarYRecargar(
+      () => ApiService().ocultarSaga(sagaId: saga.id),
+      mensajeExito:
+          '${saga.nombre} se ha ocultado. Puedes recuperarla desde tu perfil.',
+    );
   }
 
   Future<void> _removeSeries(PerfilSaga saga) async {
@@ -529,24 +578,10 @@ class _SagasPageState extends State<SagasPage> {
     );
     if (confirmed != true || !mounted) return;
 
-    try {
-      await ApiService().eliminarSaga(sagaId: saga.id);
-      if (!mounted) return;
-      await _reload();
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            '${saga.nombre} eliminada. Puedes recuperarla desde tu perfil.',
-          ),
-        ),
-      );
-    } on ApiException catch (error) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(error.message)));
-    }
+    await _guardarYRecargar(
+      () => ApiService().eliminarSaga(sagaId: saga.id),
+      mensajeExito: '${saga.nombre} eliminada. Puedes recuperarla desde tu perfil.',
+    );
   }
 
   Future<void> _onAddToLibrary(
@@ -629,9 +664,7 @@ class _SagasPageState extends State<SagasPage> {
                 ),
               ),
               title: const Text('Omitir este tomo'),
-              subtitle: const Text(
-                'Para subsagas o tomos que no quieres leer',
-              ),
+              subtitle: const Text('Para subsagas o tomos que no quieres leer'),
               onTap: () => Navigator.pop(ctx, 'OMITIDO'),
             ),
             const SizedBox(height: 8),
@@ -644,11 +677,12 @@ class _SagasPageState extends State<SagasPage> {
 
     try {
       if (accion == 'ANADIR') {
-        // Abre la hoja de añadir con formato/prioridad
+        // Abre la hoja de añadir con formato/prioridad/estado
         final addResult = await showAddBookSheet(
           context,
           title: volumen.titulo,
           coverUrl: volumen.coverUrl,
+          showStatusPicker: true,
         );
         if (addResult == null || !mounted) return;
         await ApiService().importarLibroCatalogo(
@@ -657,31 +691,78 @@ class _SagasPageState extends State<SagasPage> {
           formato: addResult.format,
           estado: 'PENDIENTE',
         );
+        // importarLibroCatalogo siempre crea como pendiente: si se eligió
+        // otro estado inicial, lo aplicamos reutilizando la lógica ya
+        // validada de actualizarEstado. El libro ya quedó añadido en la
+        // llamada anterior, así que un fallo aquí solo deja el estado en
+        // "sigue pendiente".
+        var estadoFinal = 'PENDIENTE';
+        if (addResult.status != 'PENDIENTE' && mounted) {
+          final usuario = await UsuarioService().obtenerUsuario();
+          if (usuario != null && usuario.trim().isNotEmpty && mounted) {
+            estadoFinal = await aplicarEstadoInicial(
+              context,
+              usuario: usuario,
+              libro: volumen.titulo,
+              estadoElegido: addResult.status,
+              formato: addResult.format,
+            );
+          }
+        }
         LibraryRefreshNotifier.instance.invalidate();
         if (!mounted) return;
         await _reload();
         if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('${volumen.titulo} añadido a tu biblioteca')),
-        );
+        if (estadoFinal == 'FINALIZADO') {
+          await mostrarCelebracionFinalizado(
+            context,
+            titulo: volumen.titulo,
+            coverUrl: volumen.coverUrl,
+          );
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('${volumen.titulo} añadido a tu biblioteca')),
+          );
+        }
       } else if (posicion != null) {
         // LEIDO_EXTERNO u OMITIDO → marca de posición en la saga
+        setState(() => _savingOverride = true);
         await ApiService().setSeriesOverride(
           seriesId: saga.id,
           posicion: posicion,
           tipo: accion,
         );
-        final latest = await _load();
         if (!mounted) return;
-        setState(() => _future = Future.value(latest));
+        // Confirmamos ya el guardado en sí, independiente de si la recarga
+        // de abajo tarda o falla: si no, con una recarga lenta parece que
+        // no ha pasado nada aunque el cambio ya esté guardado.
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('Guardado')));
+        // El cambio ya se guardó: si solo falla la recarga no lo tratamos
+        // como un fallo de guardado, o parecería que no se aplicó cuando
+        // sí lo hizo. Se verá la próxima vez que se recargue la pantalla.
+        try {
+          final latest = await _load();
+          if (!mounted) return;
+          setState(() {
+            _future = Future.value(latest);
+            _savingOverride = false;
+          });
+        } catch (_) {
+          if (mounted) setState(() => _savingOverride = false);
+          return;
+        }
       }
     } on ApiException catch (error) {
+      if (mounted) setState(() => _savingOverride = false);
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(error.message)),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(error.message)));
     } catch (_) {
       if (mounted) {
+        setState(() => _savingOverride = false);
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('No se pudo guardar el cambio')),
         );
@@ -711,9 +792,9 @@ class _SagasPageState extends State<SagasPage> {
         ),
     ];
 
-    await ApiService().guardarOrdenPersonalSaga(sagaId: saga.id, order: order);
-
-    await _reload();
+    await _guardarYRecargar(
+      () => ApiService().guardarOrdenPersonalSaga(sagaId: saga.id, order: order),
+    );
   }
 
   @override
@@ -722,6 +803,12 @@ class _SagasPageState extends State<SagasPage> {
       appBar: AppBar(
         title: const Text('Mis sagas'),
         automaticallyImplyLeading: widget.showBackButton,
+        bottom: _savingOverride
+            ? const PreferredSize(
+                preferredSize: Size.fromHeight(3),
+                child: LinearProgressIndicator(minHeight: 3),
+              )
+            : null,
       ),
       body: FutureBuilder<PerfilUsuario>(
         future: _future,
@@ -831,11 +918,26 @@ class _SagasPageState extends State<SagasPage> {
                   featureKey: 'hint_sagas_v2',
                   titulo: 'Cómo leer los tomos de una saga',
                   tips: [
-                    ScreenHintTip('🟠', 'Naranja = pendiente · ✅ Tick morado = leído · 📖 Libro abierto = leyendo ahora'),
-                    ScreenHintTip('➕', 'Portada con + = está en el catálogo pero no en tu biblioteca; púlsalo para añadir, marcar como leído u omitir'),
-                    ScreenHintTip('🔲', 'Cuadro gris con número = hueco sin datos en el catálogo; márcalo manualmente o usa "Completar saga"'),
-                    ScreenHintTip('✨', '"Completar saga" añade de golpe todos los tomos que aún no tienes en tu biblioteca'),
-                    ScreenHintTip('↕️', 'Las flechas reordenan tomos · El lápiz edita la saga · El ojo la oculta · La papelera la elimina'),
+                    ScreenHintTip(
+                      '🟠',
+                      'Naranja = pendiente · ✅ Tick morado = leído · 📖 Libro abierto = leyendo ahora',
+                    ),
+                    ScreenHintTip(
+                      '➕',
+                      'Portada con + = está en el catálogo pero no en tu biblioteca; púlsalo para añadir, marcar como leído u omitir',
+                    ),
+                    ScreenHintTip(
+                      '🔲',
+                      'Cuadro gris con número = hueco sin datos en el catálogo; márcalo manualmente o usa "Completar saga"',
+                    ),
+                    ScreenHintTip(
+                      '✨',
+                      '"Completar saga" añade de golpe todos los tomos que aún no tienes en tu biblioteca',
+                    ),
+                    ScreenHintTip(
+                      '↕️',
+                      'Las flechas reordenan tomos · El lápiz edita la saga · El ojo la oculta · La papelera la elimina',
+                    ),
                   ],
                 ),
                 if (visibleSagas.isEmpty)

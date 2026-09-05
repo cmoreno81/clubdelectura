@@ -47,12 +47,17 @@ class _AutorLibrosPageState extends State<AutorLibrosPage> {
     super.dispose();
   }
 
-  Future<void> _reloadBooks() async {
+  // [silent]=true para la recarga oportunista al volver de ver una ficha
+  // (openBookDetail no informa si algo cambió, así que refrescamos siempre
+  // "por si acaso"): un fallo ahí no es un error del usuario, así que no
+  // debe avisarle con un snackbar. [silent]=false se reserva para cuando sí
+  // hubo una edición explícita (p. ej. desde las acciones rápidas).
+  Future<void> _reloadBooks({bool silent = false}) async {
     try {
       final data = await ApiService().getLibrosPorAutor(widget.autorId);
       if (mounted) setState(() => _future = Future.value(data));
     } catch (_) {
-      if (!mounted) return;
+      if (silent || !mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('No se han podido actualizar los libros.')),
       );
@@ -309,7 +314,7 @@ class _AutorLibrosPageState extends State<AutorLibrosPage> {
                           genre: libro['genero']?.toString() ?? '',
                         ).then((_) {
                           // Recarga al volver: refresca portadas y estado biblioteca
-                          if (mounted) _reloadBooks();
+                          if (mounted) _reloadBooks(silent: true);
                         });
                       },
                       onLongPress: _mostrarAcciones,
@@ -451,40 +456,31 @@ class _SagaTimeline extends StatelessWidget {
       onLongPress: () => onLongPress(libro),
       child: SizedBox(
         width: _kCoverW,
-        child: Column(mainAxisSize: MainAxisSize.min, children: [
-          Stack(clipBehavior: Clip.none, children: [
-            ClubBookCover(
-              title: titulo,
-              imageUrl: coverUrl,
-              width: _kCoverW,
-              height: _kCoverH,
-              borderRadius: BorderRadius.circular(AppRadius.sm),
-              showShadow: true,
-            ),
-            Positioned(
-              top: 3, left: 3,
-              child: Container(
-                width: 20, height: 20,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: _kGold,
-                  boxShadow: [BoxShadow(
-                    color: Colors.black.withValues(alpha: .3), blurRadius: 3)],
-                ),
-                alignment: Alignment.center,
-                child: Text('${i + 1}', style: const TextStyle(
-                  color: Colors.white, fontSize: 9,
-                  fontWeight: FontWeight.w900, height: 1)),
+        child: Stack(clipBehavior: Clip.none, children: [
+          ClubBookCover(
+            title: titulo,
+            imageUrl: coverUrl,
+            width: _kCoverW,
+            height: _kCoverH,
+            borderRadius: BorderRadius.circular(AppRadius.sm),
+            showShadow: true,
+          ),
+          Positioned(
+            top: 3, left: 3,
+            child: Container(
+              width: 20, height: 20,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: _kGold,
+                boxShadow: [BoxShadow(
+                  color: Colors.black.withValues(alpha: .3), blurRadius: 3)],
               ),
+              alignment: Alignment.center,
+              child: Text('${i + 1}', style: const TextStyle(
+                color: Colors.white, fontSize: 9,
+                fontWeight: FontWeight.w900, height: 1)),
             ),
-          ]),
-          const SizedBox(height: 3),
-          Text(titulo,
-            maxLines: 1, overflow: TextOverflow.ellipsis,
-            textAlign: TextAlign.center,
-            style: const TextStyle(
-              color: Colors.white, fontSize: 9.5,
-              fontWeight: FontWeight.w700, height: 1.2)),
+          ),
         ]),
       ),
     );

@@ -68,6 +68,12 @@ class EstadoClubFactory {
           color: Color(0xFFF3F0FF),
         );
 
+      // SIN_DATOS: sin candidatas este mes y sin ninguna lectura activa de
+      // respaldo. Se trata igual que SIN_CANDIDATAS — si de verdad hay una
+      // lectura activa, dashboard_page.dart ya decide mostrar la tarjeta
+      // igualmente, y DirectorEscenas comprueba lecturaActual.ok para elegir
+      // entre esa lectura y este estado "vacío".
+      case 'SIN_DATOS':
       case 'SIN_CANDIDATAS':
         return const EstadoClub(
           estado: EstadoClubTipo.preparando,

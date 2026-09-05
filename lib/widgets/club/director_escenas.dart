@@ -4,6 +4,7 @@ import '../../models/dashboard.dart';
 import '../../models/estado_club.dart';
 import '../../navigation/app_page_route.dart';
 import '../../pages/configurar_lectura_page.dart';
+import '../../pages/lectura_page.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_radius.dart';
 import '../../theme/app_spacing.dart';
@@ -18,6 +19,7 @@ class DirectorEscenas {
   Widget construir({
     required EstadoClub estado,
     required Dashboard dashboard,
+    required Future<void> Function() onActualizar,
   }) {
     final esAdmin = dashboard.clubvision.esAdmin;
     final totalMiembros = dashboard.clubvision.totalUsuarios;
@@ -27,7 +29,28 @@ class DirectorEscenas {
         return _preparando();
 
       case ContenidoClub.sinCandidatas:
-        return _sinCandidatas(esAdmin: esAdmin, totalMiembros: totalMiembros);
+        // Que esta edición no tenga candidatas no significa que el club no
+        // siga leyendo algo juntos: puede seguir con el libro que ganó una
+        // edición anterior, o una lectura configurada a mano. Si la hay,
+        // mostramos esa tarjeta en vez de la de "sin candidatas" — sin esto
+        // el dashboard parecía no reflejar ninguna actividad del club.
+        // `titulo` no sirve para esto: si no hay lectura real, el backend lo
+        // rellena igualmente con un mensaje genérico ("Aún no hay libros con
+        // suficiente interés..."). `ok` sí distingue "hay lectura real" de
+        // "no la hay".
+        if (dashboard.lecturaActual.ok) {
+          return _lectura(
+            dashboard,
+            esAdmin: esAdmin,
+            totalMiembros: totalMiembros,
+            onActualizar: onActualizar,
+          );
+        }
+        return _sinCandidatas(
+          esAdmin: esAdmin,
+          totalMiembros: totalMiembros,
+          onActualizar: onActualizar,
+        );
 
       case ContenidoClub.candidatas:
         return EscenaVotacion(
@@ -43,11 +66,20 @@ class DirectorEscenas {
         return _ganador(dashboard);
 
       case ContenidoClub.lectura:
-        return _lectura(dashboard, esAdmin: esAdmin, totalMiembros: totalMiembros);
+        return _lectura(
+          dashboard,
+          esAdmin: esAdmin,
+          totalMiembros: totalMiembros,
+          onActualizar: onActualizar,
+        );
     }
   }
 
-  Widget _sinCandidatas({required bool esAdmin, required int totalMiembros}) {
+  Widget _sinCandidatas({
+    required bool esAdmin,
+    required int totalMiembros,
+    required Future<void> Function() onActualizar,
+  }) {
     // Clubs pequeños (≤5 miembros) o admin pueden configurar lectura directamente
     final esClubPequeno = totalMiembros > 0 && totalMiembros <= 5;
     final mostrarPropuesta = esClubPequeno || esAdmin;
@@ -93,6 +125,7 @@ class DirectorEscenas {
                 icono: esClubPequeno
                     ? Icons.menu_book_rounded
                     : Icons.settings_rounded,
+                onActualizar: onActualizar,
               ),
               const SizedBox(height: AppSpacing.md),
             ],
@@ -264,7 +297,12 @@ class DirectorEscenas {
     );
   }
 
-  Widget _lectura(Dashboard dashboard, {required bool esAdmin, required int totalMiembros}) {
+  Widget _lectura(
+    Dashboard dashboard, {
+    required bool esAdmin,
+    required int totalMiembros,
+    required Future<void> Function() onActualizar,
+  }) {
     final lectura = dashboard.lecturaActual;
     // Sin lectura oficial — cada lectora va a su ritmo
     if (lectura.titulo.trim().isEmpty) {
@@ -337,6 +375,7 @@ class DirectorEscenas {
                     _BotonConfigurarLectura(
                       etiqueta: esClubPequeno ? 'Proponer lectura' : 'Configurar lectura',
                       icono: esClubPequeno ? Icons.menu_book_rounded : Icons.settings_rounded,
+                      onActualizar: onActualizar,
                     ),
                   ],
                 ],
@@ -347,7 +386,8 @@ class DirectorEscenas {
       );
     }
 
-    return Container(
+    return Builder(
+      builder: (context) => Container(
       width: double.infinity,
       padding: const EdgeInsets.all(AppSpacing.md),
       decoration: BoxDecoration(
@@ -466,42 +506,65 @@ class DirectorEscenas {
             ),
           ],
           const SizedBox(height: AppSpacing.md),
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.symmetric(
-              horizontal: AppSpacing.md,
-              vertical: AppSpacing.sm,
-            ),
-            decoration: BoxDecoration(
-              color: AppColors.primaryDark,
+          // Antes esto era un Container puramente decorativo: la tarjeta
+          // solo era interactiva a través del onTap de ClubvisionCard, que
+          // en estados sin Clubvisión activa (SIN_CANDIDATAS/SIN_DATOS) no
+          // sabe nada de esta lectura de respaldo y llevaba a un menú
+          // genérico. Al hacerlo tappable aquí mismo y llevar directo a
+          // LecturaPage, el botón funciona pase lo que pase con el estado
+          // de Clubvisión de este mes.
+          Material(
+            color: Colors.transparent,
+            child: InkWell(
               borderRadius: BorderRadius.circular(AppRadius.pill),
-            ),
-            child: const Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(Icons.forum_outlined, size: 18, color: Colors.white),
-                SizedBox(width: AppSpacing.xs),
-                Flexible(
-                  child: Text(
-                    'Entrar al rincón de lectura',
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.w800,
-                    ),
+              onTap: () => Navigator.push(
+                context,
+                AppPageRoute(
+                  builder: (_) => LecturaPage(
+                    libro: lectura.titulo,
+                    coverUrl: lectura.coverUrl,
                   ),
                 ),
-                SizedBox(width: AppSpacing.xs),
-                Icon(
-                  Icons.arrow_forward_rounded,
-                  size: 18,
-                  color: Colors.white,
+              ),
+              child: Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: AppSpacing.md,
+                  vertical: AppSpacing.sm,
                 ),
-              ],
+                decoration: BoxDecoration(
+                  color: AppColors.primaryDark,
+                  borderRadius: BorderRadius.circular(AppRadius.pill),
+                ),
+                child: const Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(Icons.forum_outlined, size: 18, color: Colors.white),
+                    SizedBox(width: AppSpacing.xs),
+                    Flexible(
+                      child: Text(
+                        'Entrar al rincón de lectura',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
+                    ),
+                    SizedBox(width: AppSpacing.xs),
+                    Icon(
+                      Icons.arrow_forward_rounded,
+                      size: 18,
+                      color: Colors.white,
+                    ),
+                  ],
+                ),
+              ),
             ),
           ),
         ],
+      ),
       ),
     );
   }
@@ -549,10 +612,12 @@ class _BotonConfigurarLectura extends StatelessWidget {
   const _BotonConfigurarLectura({
     required this.etiqueta,
     required this.icono,
+    required this.onActualizar,
   });
 
   final String etiqueta;
   final IconData icono;
+  final Future<void> Function() onActualizar;
 
   @override
   Widget build(BuildContext context) {
@@ -587,6 +652,11 @@ class _BotonConfigurarLectura extends StatelessWidget {
     );
 
     if (resultado != null && resultado.trim().isNotEmpty && context.mounted) {
+      // No comprobamos el valor de retorno: aunque no haya "true" explícito,
+      // volver de esta pantalla puede significar que la lectura ya quedó
+      // configurada (p. ej. si se creó la conversación en un paso posterior).
+      // Antes no se recargaba nada al volver, así que la nueva lectura oficial
+      // no se veía reflejada en "El Club" hasta salir y volver a entrar.
       await Navigator.push(
         context,
         AppPageRoute(
@@ -596,6 +666,7 @@ class _BotonConfigurarLectura extends StatelessWidget {
           ),
         ),
       );
+      await onActualizar();
     }
   }
 }

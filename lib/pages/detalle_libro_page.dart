@@ -10,6 +10,8 @@ import '../models/kit_lectura_seleccion.dart';
 import '../models/libro.dart';
 import '../models/libro_agrupado.dart';
 import '../models/libro_finalizado.dart';
+import '../models/perfil_usuario.dart';
+import '../navigation/book_detail_navigation.dart';
 import '../services/api_service.dart';
 import '../services/atmosfera_controller.dart';
 import '../services/atmosfera_scope.dart';
@@ -20,8 +22,13 @@ import '../services/library_refresh_notifier.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_spacing.dart';
 import '../theme/app_text_styles.dart';
+import '../utils/reading_status_copy.dart';
+import '../widgets/common/club_book_cover.dart';
+import '../widgets/common/club_card.dart';
 import '../widgets/common/libro_finalizado_celebration.dart';
 import '../widgets/common/screen_hint_banner.dart';
+import '../widgets/libros/add_book_sheet.dart';
+import '../widgets/libros/apply_initial_status.dart';
 import '../widgets/libros/conversaciones_libro_card.dart';
 import '../widgets/libros/finalizar_libro_dialog.dart';
 import '../widgets/libros/kit_lectura_card.dart';
@@ -69,6 +76,10 @@ class _DetalleLibroPageState extends State<DetalleLibroPage> {
   bool _controllerPreparado = false;
   bool _atmosferaCerrada = false;
   bool _toggling = false;
+  bool _anadiendo = false;
+
+  List<PerfilSagaVolumen> _volumenesSaga = const [];
+  final Set<String> _anadiendoVolumenSaga = {};
 
   @override
   void initState() {
@@ -80,6 +91,7 @@ class _DetalleLibroPageState extends State<DetalleLibroPage> {
 
     _cargarUsuarioActual();
     unawaited(FavoritosService.instance.cargar());
+    if (libro.bookId.isNotEmpty) unawaited(_cargarVolumenesSaga());
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
@@ -89,6 +101,12 @@ class _DetalleLibroPageState extends State<DetalleLibroPage> {
 
       _cargarAtmosferaDelLibro();
     });
+  }
+
+  Future<void> _cargarVolumenesSaga() async {
+    final volumenes = await ApiService().getVolumenesSaga(libro.bookId);
+    if (!mounted) return;
+    setState(() => _volumenesSaga = volumenes);
   }
 
   Future<void> _cargarUsuarioActual() async {
@@ -205,9 +223,23 @@ class _DetalleLibroPageState extends State<DetalleLibroPage> {
           formato: formato ?? libro.formato,
         );
       });
-
+    } catch (error) {
       if (!mounted) return;
 
+      final mensaje = error.toString().replaceFirst('Exception: ', '');
+
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Error: $mensaje')));
+      return;
+    }
+
+    if (!mounted) return;
+
+    // A partir de aquí el estado ya se guardó y está reflejado en pantalla:
+    // si falla algo de lo que sigue (celebración, prompts del kit), NO debe
+    // reportarse como si el guardado hubiera fallado.
+    try {
       if (nuevoEstado == 'FINALIZADO') {
         // Vibración + pantalla de celebración
         await mostrarCelebracionFinalizado(
@@ -246,14 +278,8 @@ class _DetalleLibroPageState extends State<DetalleLibroPage> {
           context,
         ).showSnackBar(const SnackBar(content: Text('Estado actualizado')));
       }
-    } catch (error) {
-      if (!mounted) return;
-
-      final mensaje = error.toString().replaceFirst('Exception: ', '');
-
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Error: $mensaje')));
+    } catch (_) {
+      // Silencioso a propósito: el estado ya se guardó correctamente.
     }
   }
 
@@ -541,9 +567,44 @@ class _DetalleLibroPageState extends State<DetalleLibroPage> {
   Future<void> _editarLibro() async {
     if (libro.bookId.isEmpty) return;
 
+    // Antes de abrir el formulario, pedimos la saga real del catálogo: si
+    // nadie del club tiene aún este libro en su biblioteca, `libro.registros`
+    // y `libro.finalizados` vienen vacíos y el formulario no tendría de
+    // dónde precargarla — guardaría el libro como autoconclusivo y le
+    // borraría la saga a todo el mundo aunque solo se cambiara la portada.
+    var libroParaEditar = libro;
+    try {
+      final data = await ApiService().getLibroPorId(
+        libro.bookId,
+        global: widget.globalStats,
+      );
+      if (data['ok'] == true && data['libro'] is Map) {
+        final catalogo = Map<String, dynamic>.from(data['libro'] as Map);
+        libroParaEditar = LibroAgrupado(
+          libro: libro.libro,
+          genero: libro.genero,
+          registros: libro.registros,
+          finalizados: libro.finalizados,
+          yaLoTengo: libro.yaLoTengo,
+          leidoPorMi: libro.leidoPorMi,
+          coverUrl: libro.coverUrl,
+          bookId: libro.bookId,
+          sagaCatalogo: catalogo['saga']?.toString(),
+          numSagaCatalogo: catalogo['numSaga']?.toString(),
+          standaloneCatalogo: catalogo['autoconclusivo'] == null
+              ? null
+              : catalogo['autoconclusivo'].toString() == 'Si',
+        );
+      }
+    } catch (_) {
+      // Si falla, seguimos con los datos que ya teníamos.
+    }
+
+    if (!mounted) return;
+
     final actualizado = await Navigator.push<bool>(
       context,
-      AppPageRoute(builder: (_) => NuevoLibroPage(libro: libro)),
+      AppPageRoute(builder: (_) => NuevoLibroPage(libro: libroParaEditar)),
     );
 
     if (!mounted) return;
@@ -609,6 +670,198 @@ class _DetalleLibroPageState extends State<DetalleLibroPage> {
     }
   }
 
+  // ── Añadir a mi biblioteca desde la ficha ───────────────────────────────
+  //
+  // Cubre el caso de llegar a la ficha de un libro que otras compañeras del
+  // club ya tienen (p. ej. desde el Ranking) pero que la usuaria actual
+  // todavía no ha registrado: sin esto, la ficha no ofrecía ninguna forma de
+  // añadirlo ni de fijar su estado (leyendo/leído) en un solo paso.
+  Future<void> _anadirABiblioteca() async {
+    if (_anadiendo) return;
+    final usuario = usuarioActual;
+    if (usuario == null || usuario.isEmpty) return;
+
+    final referencia = registros.isNotEmpty ? registros.first : null;
+    final preferencias = await showAddBookSheet(
+      context,
+      title: libro.libro,
+      author: referencia?.autor ?? '',
+      coverUrl: libro.coverUrl,
+      showStatusPicker: true,
+    );
+    if (preferencias == null || !mounted) return;
+
+    setState(() => _anadiendo = true);
+    try {
+      final respuesta = await ApiService().anadirLibroExistente(
+        usuario: usuario,
+        libro: libro.libro,
+        prioridad: preferencias.priority,
+        formato: preferencias.format,
+      );
+      if (respuesta['ok'] != true) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              respuesta['mensaje']?.toString() ?? 'No se ha podido añadir',
+            ),
+          ),
+        );
+        return;
+      }
+      if (!mounted) return;
+
+      final estadoFinal = await aplicarEstadoInicial(
+        context,
+        usuario: usuario,
+        libro: libro.libro,
+        estadoElegido: preferencias.status,
+        formato: preferencias.format,
+      );
+
+      if (!mounted) return;
+      LibraryRefreshNotifier.instance.invalidate();
+
+      // Recargamos desde el servidor (igual que al editar la ficha) para
+      // reflejar el nuevo registro con datos reales en vez de reconstruirlo
+      // localmente. Respetamos widget.globalStats: si esta ficha se abrió
+      // desde una vista global (p. ej. sin club activo), el endpoint de club
+      // fallaría con 409 y la recarga se perdería en el catch de abajo.
+      if (libro.bookId.isNotEmpty) {
+        try {
+          final data = await ApiService().getLibroPorId(
+            libro.bookId,
+            global: widget.globalStats,
+          );
+          if (mounted && data['ok'] == true) {
+            final librosActualizados = (data['libros'] as List? ?? [])
+                .map(
+                  (e) => Libro.fromJson(Map<String, dynamic>.from(e as Map)),
+                )
+                .toList();
+            final finalizadosActualizados = (data['finalizados'] as List? ?? [])
+                .map(
+                  (e) => LibroFinalizado.fromJson(
+                    Map<String, dynamic>.from(e as Map),
+                  ),
+                )
+                .toList();
+            setState(() {
+              libro = LibroAgrupado(
+                libro: libro.libro,
+                genero: libro.genero,
+                registros: librosActualizados,
+                finalizados: finalizadosActualizados,
+                yaLoTengo: librosActualizados.any((l) => l.yaLoTengo),
+                leidoPorMi: finalizadosActualizados.any((l) => l.yaLoTengo),
+                coverUrl: libro.coverUrl,
+                bookId: libro.bookId,
+              );
+              registros = List<Libro>.from(libro.registros);
+            });
+          }
+        } catch (_) {
+          // Si la recarga falla, el snackbar de confirmación sigue siendo
+          // correcto; la próxima entrada a la ficha traerá los datos frescos.
+        }
+      }
+
+      if (!mounted) return;
+      if (estadoFinal == 'FINALIZADO') {
+        await mostrarCelebracionFinalizado(
+          context,
+          titulo: libro.libro,
+          coverUrl: libro.coverUrl,
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Añadido a tu biblioteca')),
+        );
+      }
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('No se ha podido añadir')),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _anadiendo = false);
+    }
+  }
+
+  // ── Añadir otro volumen de la misma saga desde el panel de sugerencias ──
+  Future<void> _anadirVolumenSaga(PerfilSagaVolumen volumen) async {
+    if (_anadiendoVolumenSaga.contains(volumen.bookId)) return;
+    final usuario = usuarioActual;
+    if (usuario == null || usuario.isEmpty) return;
+
+    final preferencias = await showAddBookSheet(
+      context,
+      title: volumen.titulo,
+      coverUrl: volumen.coverUrl,
+      showStatusPicker: true,
+    );
+    if (preferencias == null || !mounted) return;
+
+    setState(() => _anadiendoVolumenSaga.add(volumen.bookId));
+    try {
+      final respuesta = await ApiService().anadirLibroExistente(
+        usuario: usuario,
+        libro: volumen.bookId,
+        prioridad: preferencias.priority,
+        formato: preferencias.format,
+      );
+      if (respuesta['ok'] != true) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              respuesta['mensaje']?.toString() ?? 'No se ha podido añadir',
+            ),
+          ),
+        );
+        return;
+      }
+      if (!mounted) return;
+
+      final estadoFinal = await aplicarEstadoInicial(
+        context,
+        usuario: usuario,
+        libro: volumen.titulo,
+        estadoElegido: preferencias.status,
+        formato: preferencias.format,
+      );
+
+      if (!mounted) return;
+      LibraryRefreshNotifier.instance.invalidate();
+      await _cargarVolumenesSaga();
+
+      if (!mounted) return;
+      if (estadoFinal == 'FINALIZADO') {
+        await mostrarCelebracionFinalizado(
+          context,
+          titulo: volumen.titulo,
+          coverUrl: volumen.coverUrl,
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('${volumen.titulo} añadido a tu biblioteca')),
+        );
+      }
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('No se ha podido añadir')),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _anadiendoVolumenSaga.remove(volumen.bookId));
+      }
+    }
+  }
+
   Future<void> _abrirKitLectura({bool finalizado = false, double? valoracion}) async {
     await Navigator.push(
       context,
@@ -638,14 +891,16 @@ class _DetalleLibroPageState extends State<DetalleLibroPage> {
   Widget build(BuildContext context) {
     final referencia = registros.isNotEmpty ? registros.first : null;
 
-    // En modo global, calculamos el estado personal del usuario buscando
-    // primero en registros (PENDIENTE/LEYENDO/PAUSADO…) y luego en finalizados.
-    // Los registros en modo global contienen a TODOS los usuarios, así que
-    // hay que filtrar por el usuario actual.
+    // Calculamos el estado personal del usuario buscando primero en registros
+    // (PENDIENTE/LEYENDO/PAUSADO…) y luego en finalizados, filtrando siempre
+    // por el usuario actual: `registros` puede traer datos de TODOS los
+    // miembros del club (p. ej. al abrir la ficha desde el Ranking vía
+    // openBookDetail, que no filtra por usuario), así que asumir que
+    // `registros.first` es "mi" registro daba un estado ajeno como propio
+    // — o, peor, ocultaba la tarjeta de "añadir a mi biblioteca" cuando la
+    // usuaria en realidad no tenía el libro.
     final String? miEstado;
-    if (!widget.globalStats) {
-      miEstado = referencia?.estado;
-    } else if (usuarioActual != null) {
+    if (usuarioActual != null) {
       final normalizado = usuarioActual!.trim().toLowerCase();
       final enRegistros = registros
           .where((r) => r.usuario.trim().toLowerCase() == normalizado)
@@ -659,7 +914,7 @@ class _DetalleLibroPageState extends State<DetalleLibroPage> {
         miEstado = enFinalizados != null ? 'FINALIZADO' : null;
       }
     } else {
-      miEstado = null;
+      miEstado = !widget.globalStats ? referencia?.estado : null;
     }
 
     return PopScope(
@@ -775,9 +1030,80 @@ class _DetalleLibroPageState extends State<DetalleLibroPage> {
 
               const SizedBox(height: AppSpacing.lg),
 
-              // Kit de lectura: solo tiene sentido si el usuario tiene el libro
-              // en su biblioteca. En vista global sin estado propio, se omite.
-              if (!widget.globalStats || miEstado != null) ...[
+              // Añadir a mi biblioteca: aparece cuando la usuaria actual no
+              // tiene aún este libro (ni en curso ni finalizado), típicamente
+              // al llegar desde el Ranking a un libro que solo otras
+              // compañeras del club han leído/valorado.
+              if (miEstado == null && libro.bookId.isNotEmpty) ...[
+                ClubCard(
+                  backgroundColor: AppColors.primary.withValues(alpha: 0.06),
+                  borderColor: AppColors.primary.withValues(alpha: 0.25),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              '¿Tienes este libro?',
+                              style: AppTextStyles.subtitle.copyWith(
+                                fontWeight: FontWeight.w800,
+                              ),
+                            ),
+                            const SizedBox(height: AppSpacing.xxs),
+                            Text(
+                              'Añádelo a tu biblioteca y cuéntanos en qué punto vas.',
+                              style: AppTextStyles.bodySecondary,
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(width: AppSpacing.sm),
+                      FilledButton.icon(
+                        onPressed: _anadiendo ? null : _anadirABiblioteca,
+                        icon: _anadiendo
+                            ? const SizedBox(
+                                width: 16,
+                                height: 16,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                ),
+                              )
+                            : const Icon(Icons.add_rounded, size: 18),
+                        label: const Text('Añadir'),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: AppSpacing.lg),
+              ],
+
+              // Otros libros de la saga: solo si hay más volúmenes conocidos
+              // en el catálogo además de este (si es el primero, no hay nada
+              // que sugerir todavía).
+              if (_volumenesSaga.isNotEmpty) ...[
+                _OtrosVolumenesSagaSection(
+                  volumenes: _volumenesSaga,
+                  anadiendo: _anadiendoVolumenSaga,
+                  onAnadir: _anadirVolumenSaga,
+                  onAbrir: (volumen) => openBookDetail(
+                    context,
+                    title: volumen.titulo,
+                    bookId: volumen.bookId,
+                    coverUrl: volumen.coverUrl,
+                  ),
+                ),
+                const SizedBox(height: AppSpacing.lg),
+              ],
+
+              // Kit de lectura: solo tiene sentido si la usuaria tiene el
+              // libro en su biblioteca. Antes se mostraba igualmente en modo
+              // club (!widget.globalStats) sin comprobar miEstado, lo cual
+              // era seguro mientras solo se llegaba aquí con el libro ya
+              // propio; desde que el Ranking abre esta ficha para libros que
+              // la usuaria no tiene (miEstado == null, globalStats == false),
+              // hace falta la misma condición en los dos modos.
+              if (miEstado != null) ...[
                 // Feature 2: banner de atmósfera activa cuando está configurada
                 if (_kitSeleccion.tieneAtmosfera) ...[
                   _AtmosferaBanner(seleccion: _kitSeleccion),
@@ -852,6 +1178,133 @@ class _DetalleLibroPageState extends State<DetalleLibroPage> {
   void dispose() {
     _cerrarAtmosferaDelLibro();
     super.dispose();
+  }
+}
+
+// ─── Otros libros de la saga ────────────────────────────────────────────────────
+//
+// Sugiere el resto de volúmenes de la saga que ya existen en el catálogo
+// (los haya añadido quien sea) para poder guardarlos directamente sin salir
+// de la ficha. No se muestra nada si este es el único volumen conocido.
+
+// Los tomos marcados en Sagas como "leído fuera de la app" u "omitido" no
+// tienen registro en Library, así que no encajan en el vocabulario de
+// ReadingStatusCopy (pensado para estados de lectura reales): sin este
+// helper caerían en su rama por defecto y se verían como "En mi estantería".
+String _labelVolumenSaga(String estado) {
+  switch (estado) {
+    case 'LEIDO_EXTERNO':
+      return 'Leído fuera de la app';
+    case 'OMITIDO':
+      return 'Omitido';
+    default:
+      return ReadingStatusCopy.label(estado);
+  }
+}
+
+class _OtrosVolumenesSagaSection extends StatelessWidget {
+  const _OtrosVolumenesSagaSection({
+    required this.volumenes,
+    required this.anadiendo,
+    required this.onAnadir,
+    required this.onAbrir,
+  });
+
+  final List<PerfilSagaVolumen> volumenes;
+  final Set<String> anadiendo;
+  final ValueChanged<PerfilSagaVolumen> onAnadir;
+  final ValueChanged<PerfilSagaVolumen> onAbrir;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Otros libros de la saga',
+          style: AppTextStyles.subtitle.copyWith(fontWeight: FontWeight.w800),
+        ),
+        const SizedBox(height: AppSpacing.sm),
+        SizedBox(
+          height: 260,
+          child: ListView.separated(
+            scrollDirection: Axis.horizontal,
+            itemCount: volumenes.length,
+            separatorBuilder: (_, _) => const SizedBox(width: AppSpacing.sm),
+            itemBuilder: (context, index) {
+              final volumen = volumenes[index];
+              final yaLoTiene = volumen.estado != 'NO_ANADIDO';
+              final estaAnadiendo = anadiendo.contains(volumen.bookId);
+              return SizedBox(
+                width: 112,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    ClubBookCover(
+                      title: volumen.titulo,
+                      imageUrl: volumen.coverUrl,
+                      width: 112,
+                      height: 158,
+                      onTap: yaLoTiene ? () => onAbrir(volumen) : null,
+                    ),
+                    const SizedBox(height: AppSpacing.xs),
+                    Text(
+                      volumen.titulo,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: AppTextStyles.caption.copyWith(
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    const SizedBox(height: AppSpacing.xs),
+                    if (yaLoTiene)
+                      Text(
+                        _labelVolumenSaga(volumen.estado),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: AppTextStyles.caption.copyWith(
+                          color: AppColors.textMuted,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      )
+                    else
+                      SizedBox(
+                        width: double.infinity,
+                        child: OutlinedButton.icon(
+                          onPressed: estaAnadiendo
+                              ? null
+                              : () => onAnadir(volumen),
+                          style: OutlinedButton.styleFrom(
+                            padding: const EdgeInsets.symmetric(vertical: 4),
+                            minimumSize: const Size(0, 32),
+                            visualDensity: VisualDensity.compact,
+                          ),
+                          icon: estaAnadiendo
+                              ? const SizedBox(
+                                  width: 12,
+                                  height: 12,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                  ),
+                                )
+                              : const Icon(Icons.add_rounded, size: 14),
+                          label: const Text(
+                            'Añadir',
+                            style: TextStyle(fontSize: 12),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+              );
+            },
+          ),
+        ),
+      ],
+    );
   }
 }
 

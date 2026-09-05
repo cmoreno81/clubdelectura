@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
@@ -187,6 +188,49 @@ class _PerfilUsuarioPageState extends State<PerfilUsuarioPage> {
 
   /// Clave global para el título de "Seguimiento lector" — usada para scroll automático.
   final _seguimientoKey = GlobalKey();
+  bool _seguimientoScrollHecho = false;
+
+  /// La primera vez que hay datos, la sección de seguimiento puede no estar
+  /// todavía disponible en `_seguimientoKey.currentContext` (p. ej. mientras
+  /// `esMiPerfil` depende de `usuarioActual`, que se carga de forma
+  /// asíncrona por separado) — reintenta un par de frames más antes de
+  /// rendirse, en vez de hacer un solo intento inmediato.
+  Future<void> _intentarScrollASeguimiento({int intentos = 6}) async {
+    // Un solo post-frame no basta: cuando el FutureBuilder acaba de recibir
+    // los datos en ESTE frame, los RenderObject de los slivers que aparecen
+    // recién construidos (como esta sección, muy abajo en la lista) pueden
+    // no tener aún una geometría de scroll asentada — ensureVisible calcula
+    // "ya está visible" (offset 0) aunque el contenido sí quepa de sobra.
+    // Esperar al final del frame SIGUIENTE le da tiempo a asentarse.
+    await SchedulerBinding.instance.endOfFrame;
+    await SchedulerBinding.instance.endOfFrame;
+    if (!mounted) return;
+
+    final ctx = _seguimientoKey.currentContext;
+    if (ctx == null) {
+      if (intentos > 1) {
+        await _intentarScrollASeguimiento(intentos: intentos - 1);
+      }
+      return;
+    }
+
+    // ignore: use_build_context_synchronously
+    final renderBox = ctx.findRenderObject();
+    final viewport = renderBox == null
+        ? null
+        : RenderAbstractViewport.maybeOf(renderBox);
+    if (renderBox == null || viewport == null) return;
+
+    final target = viewport.getOffsetToReveal(renderBox, 0.0).offset.clamp(
+      0.0,
+      _scrollController.position.maxScrollExtent,
+    );
+    await _scrollController.animateTo(
+      target,
+      duration: const Duration(milliseconds: 500),
+      curve: Curves.easeInOut,
+    );
+  }
 
   @override
   void initState() {
@@ -862,7 +906,7 @@ class _PerfilUsuarioPageState extends State<PerfilUsuarioPage> {
           widget.trackingContentBuilder?.call() ??
               Column(
                 children: [
-                  _CheckinSection(),
+                  CheckinSection(),
                   const SizedBox(height: AppSpacing.md),
                   ClubCard(elevated: false, child: MapaCalorWidget()),
                 ],
@@ -1112,18 +1156,9 @@ class _PerfilUsuarioPageState extends State<PerfilUsuarioPage> {
           final perfil = snapshot.data!;
 
           // Scroll automático a "Seguimiento lector" cuando se solicita
-          if (widget.scrollToSeguimiento) {
-            SchedulerBinding.instance.addPostFrameCallback((_) {
-              final ctx = _seguimientoKey.currentContext;
-              if (ctx != null) {
-                Scrollable.ensureVisible(
-                  ctx,
-                  duration: const Duration(milliseconds: 500),
-                  curve: Curves.easeInOut,
-                  alignment: 0.0,
-                );
-              }
-            });
+          if (widget.scrollToSeguimiento && !_seguimientoScrollHecho) {
+            _seguimientoScrollHecho = true;
+            _intentarScrollASeguimiento();
           }
 
           final tabs = [
@@ -2349,12 +2384,14 @@ class _PerfilLogroTile extends StatelessWidget {
 
 // ── Check-in en perfil ────────────────────────────────────────────────────────
 
-class _CheckinSection extends StatefulWidget {
+class CheckinSection extends StatefulWidget {
+  const CheckinSection({super.key});
+
   @override
-  State<_CheckinSection> createState() => _CheckinSectionState();
+  State<CheckinSection> createState() => CheckinSectionState();
 }
 
-class _CheckinSectionState extends State<_CheckinSection> {
+class CheckinSectionState extends State<CheckinSection> {
   bool _checkedToday = false;
   int _streak = 0;
   bool _loaded = false;

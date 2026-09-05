@@ -254,6 +254,16 @@ const List<_HelpSection> _secciones = [
             'los favoritos compartidos por sus miembros.',
       ),
       _HelpItem(
+        pregunta: '¿Puedo elegir el estado de un libro al añadirlo?',
+        respuesta:
+            'Sí. Al añadir un libro nuevo puedes indicar directamente si quieres '
+            'leerlo (pendiente), si ya lo estás leyendo o si ya lo has terminado, '
+            'en el mismo formulario de añadir — sin necesidad de hacerlo en dos pasos.\n\n'
+            'Si eliges "Ya lo he leído", a continuación te pedirá la valoración y '
+            'las fechas de lectura, igual que si marcaras el libro como terminado '
+            'desde su ficha.',
+      ),
+      _HelpItem(
         pregunta:
             '¿Puedo ver la ficha de un libro que aparece en el panel pero no tengo en mi biblioteca?',
         respuesta:
@@ -402,6 +412,19 @@ const List<_HelpSection> _secciones = [
             'automáticamente.',
       ),
       _HelpItem(
+        pregunta: '¿Puedo añadir otros tomos de la saga desde la ficha de un libro?',
+        respuesta:
+            'Sí. Si el libro pertenece a una saga con más volúmenes ya en el '
+            'catálogo, su ficha muestra un panel "Otros libros de la saga" con el '
+            'resto de tomos conocidos. Pulsa "Añadir" sobre cualquiera de ellos '
+            'para incorporarlo directamente a tu biblioteca sin salir de la ficha.\n\n'
+            'Si un tomo ya está marcado como "Leído fuera de la app" u "Omitido" '
+            'desde la pestaña Sagas, el panel lo refleja en vez de ofrecerte '
+            'añadirlo de nuevo.\n\n'
+            'Si el libro es el primero de su saga en añadirse al catálogo, el panel '
+            'todavía no aparece: no hay ningún otro tomo que sugerir.',
+      ),
+      _HelpItem(
         pregunta: '¿Qué significa que una saga esté "abandonada"?',
         respuesta:
             'Si marcas algún libro de la saga como "No era para mí" (abandonado), '
@@ -543,6 +566,15 @@ const List<_HelpSection> _secciones = [
             'Sí. En la parte superior del Ranking hay un selector de año. '
             'Puedes navegar a ediciones anteriores para ver el histórico de '
             'actividad del club, incluidas las ganadoras mensuales de ese año.',
+      ),
+      _HelpItem(
+        pregunta: '¿Puedo gestionar un libro directamente desde el Ranking?',
+        respuesta:
+            'Sí. Pulsa sobre cualquier portada del Ranking — ya sea de los libros '
+            'más deseados, mejor valorados, más leídos o del cementerio de '
+            'abandonados — para abrir su ficha completa. Desde ahí puedes añadirlo '
+            'a tu biblioteca, cambiar su estado de lectura o valorarlo, sin tener '
+            'que buscarlo aparte en el catálogo.',
       ),
     ],
   ),

@@ -5,10 +5,19 @@ import '../../theme/app_spacing.dart';
 import '../common/club_book_cover.dart';
 
 class AddBookPreferences {
-  const AddBookPreferences({required this.priority, required this.format});
+  const AddBookPreferences({
+    required this.priority,
+    required this.format,
+    this.status = 'PENDIENTE',
+  });
 
   final String priority;
   final String format;
+
+  /// Estado de lectura inicial elegido al añadir: 'PENDIENTE' (por defecto),
+  /// 'LEYENDO' o 'FINALIZADO'. Solo se pregunta cuando [showAddBookSheet] se
+  /// llama con `showStatusPicker: true` (biblioteca); en la wishlist no aplica.
+  final String status;
 }
 
 Future<AddBookPreferences?> showAddBookSheet(
@@ -16,13 +25,18 @@ Future<AddBookPreferences?> showAddBookSheet(
   required String title,
   String author = '',
   String coverUrl = '',
+  bool showStatusPicker = false,
 }) => showModalBottomSheet<AddBookPreferences>(
   context: context,
   isScrollControlled: true,
   useSafeArea: true,
   backgroundColor: Colors.transparent,
-  builder: (_) =>
-      AddBookSheet(title: title, author: author, coverUrl: coverUrl),
+  builder: (_) => AddBookSheet(
+    title: title,
+    author: author,
+    coverUrl: coverUrl,
+    showStatusPicker: showStatusPicker,
+  ),
 );
 
 class AddBookSheet extends StatefulWidget {
@@ -31,17 +45,20 @@ class AddBookSheet extends StatefulWidget {
     required this.title,
     this.author = '',
     this.coverUrl = '',
+    this.showStatusPicker = false,
   });
 
   final String title;
   final String author;
   final String coverUrl;
+  final bool showStatusPicker;
 
   @override
   State<AddBookSheet> createState() => _AddBookSheetState();
 }
 
 class _AddBookSheetState extends State<AddBookSheet> {
+  String _status = 'PENDIENTE';
   String _priority = 'MEDIA';
   String _format = '';
 
@@ -129,27 +146,53 @@ class _AddBookSheetState extends State<AddBookSheet> {
                   ),
                 ],
               ),
-              const SizedBox(height: AppSpacing.lg),
-              _optionTitle(context, 'Prioridad'),
-              const SizedBox(height: AppSpacing.xs),
-              Wrap(
-                spacing: AppSpacing.xs,
-                runSpacing: AppSpacing.xs,
-                children:
-                    const {
-                      'BAJA': 'Baja',
-                      'MEDIA': 'Media',
-                      'ALTA': 'Alta',
-                    }.entries.map((entry) {
-                      return _choice(
-                        context,
-                        key: ValueKey('add-book-priority-${entry.key}'),
-                        label: entry.value,
-                        selected: _priority == entry.key,
-                        onSelected: () => setState(() => _priority = entry.key),
-                      );
-                    }).toList(),
-              ),
+              if (widget.showStatusPicker) ...[
+                const SizedBox(height: AppSpacing.lg),
+                _optionTitle(context, 'Estado'),
+                const SizedBox(height: AppSpacing.xs),
+                Wrap(
+                  spacing: AppSpacing.xs,
+                  runSpacing: AppSpacing.xs,
+                  children:
+                      const {
+                        'PENDIENTE': 'Quiero leerlo',
+                        'LEYENDO': 'Lo estoy leyendo',
+                        'FINALIZADO': 'Ya lo he leído',
+                      }.entries.map((entry) {
+                        return _choice(
+                          context,
+                          key: ValueKey('add-book-status-${entry.key}'),
+                          label: entry.value,
+                          selected: _status == entry.key,
+                          onSelected: () => setState(() => _status = entry.key),
+                        );
+                      }).toList(),
+                ),
+              ],
+              if (!widget.showStatusPicker || _status == 'PENDIENTE') ...[
+                const SizedBox(height: AppSpacing.lg),
+                _optionTitle(context, 'Prioridad'),
+                const SizedBox(height: AppSpacing.xs),
+                Wrap(
+                  spacing: AppSpacing.xs,
+                  runSpacing: AppSpacing.xs,
+                  children:
+                      const {
+                        'BAJA': 'Baja',
+                        'MEDIA': 'Media',
+                        'ALTA': 'Alta',
+                      }.entries.map((entry) {
+                        return _choice(
+                          context,
+                          key: ValueKey('add-book-priority-${entry.key}'),
+                          label: entry.value,
+                          selected: _priority == entry.key,
+                          onSelected: () =>
+                              setState(() => _priority = entry.key),
+                        );
+                      }).toList(),
+                ),
+              ],
               const SizedBox(height: AppSpacing.md),
               _optionTitle(context, 'Formato'),
               const SizedBox(height: AppSpacing.xs),
@@ -190,10 +233,15 @@ class _AddBookSheetState extends State<AddBookSheet> {
                         AddBookPreferences(
                           priority: _priority,
                           format: _format,
+                          status: widget.showStatusPicker
+                              ? _status
+                              : 'PENDIENTE',
                         ),
                       ),
                       icon: const Icon(Icons.add_rounded),
-                      label: const Text('Añadir'),
+                      label: Text(
+                        _status == 'FINALIZADO' ? 'Siguiente' : 'Añadir',
+                      ),
                     ),
                   ),
                 ],

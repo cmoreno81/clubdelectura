@@ -694,21 +694,28 @@ class _VolumeSquare extends StatelessWidget {
                     iconSize: 10,
                   ),
                 ),
-              // Indicador especial — esquina superior derecha
+              // Indicador especial — esquina superior derecha. Con fondo de
+              // color (como el resto de _statusBadge) en vez de un icono
+              // suelto: sobre portadas con mucho color, un icono sin fondo
+              // se pierde y no se distingue bien.
               if (omitido)
                 Positioned(
                   top: 2,
                   right: 2,
-                  child: Icon(Icons.block_rounded, size: 13, color: color),
+                  child: _statusBadge(
+                    color: color,
+                    icon: Icons.block_rounded,
+                    iconSize: 11,
+                  ),
                 ),
               if (leidoExterno)
                 Positioned(
                   top: 2,
                   right: 2,
-                  child: Icon(
-                    Icons.history_edu_rounded,
-                    size: 13,
+                  child: _statusBadge(
                     color: color,
+                    icon: Icons.history_edu_rounded,
+                    iconSize: 11,
                   ),
                 ),
               // En ClubReads pero no en mi biblioteca → icono de añadir

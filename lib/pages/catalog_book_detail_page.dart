@@ -7,12 +7,15 @@ import '../models/libro_agrupado.dart';
 import '../navigation/app_page_route.dart';
 import '../services/api_exception.dart';
 import '../services/api_service.dart';
+import '../services/usuario_service.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_spacing.dart';
 import '../theme/app_text_styles.dart';
 import '../widgets/common/club_book_cover.dart';
 import '../widgets/common/club_card.dart';
+import '../widgets/common/libro_finalizado_celebration.dart';
 import '../widgets/libros/add_book_sheet.dart';
+import '../widgets/libros/apply_initial_status.dart';
 import 'detalle_libro_page.dart';
 
 class CatalogBookDetailPage extends StatefulWidget {
@@ -106,6 +109,7 @@ class _CatalogBookDetailPageState extends State<CatalogBookDetailPage> {
         coverUrl: _book?.coverUrl.isNotEmpty == true
             ? _book!.coverUrl
             : widget.coverUrl,
+        showStatusPicker: true,
       );
     } finally {
       _sheetOpen = false;
@@ -124,6 +128,24 @@ class _CatalogBookDetailPageState extends State<CatalogBookDetailPage> {
               formato: result.format,
               estado: 'PENDIENTE',
             );
+      // El estado inicial (leyendo/finalizado) elegido en el sheet no lo
+      // aplica importarLibroCatalogo (siempre crea como pendiente): lo
+      // aplicamos aquí reutilizando la lógica ya validada de
+      // actualizarEstado. El libro ya quedó añadido en la llamada anterior,
+      // así que un fallo aquí solo deja el estado en "sigue pendiente".
+      var estadoFinal = 'PENDIENTE';
+      if (result.status != 'PENDIENTE' && mounted) {
+        final usuario = await UsuarioService().obtenerUsuario();
+        if (usuario != null && usuario.trim().isNotEmpty && mounted) {
+          estadoFinal = await aplicarEstadoInicial(
+            context,
+            usuario: usuario,
+            libro: _book?.title ?? widget.title,
+            estadoElegido: result.status,
+            formato: result.format,
+          );
+        }
+      }
       if (mounted) {
         LibraryRefreshNotifier.instance.invalidate();
         widget.onLibraryChanged?.call();
@@ -132,13 +154,21 @@ class _CatalogBookDetailPageState extends State<CatalogBookDetailPage> {
           _added = true;
           _adding = false;
           _addedBookId = addedId.isNotEmpty ? addedId : widget.bookId;
-          _book = _book?.copyWith(inMyLibrary: true, status: 'PENDIENTE');
+          _book = _book?.copyWith(inMyLibrary: true, status: estadoFinal);
         });
       }
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('${widget.title} añadido a tu biblioteca')),
-        );
+        if (estadoFinal == 'FINALIZADO') {
+          await mostrarCelebracionFinalizado(
+            context,
+            titulo: widget.title,
+            coverUrl: widget.coverUrl,
+          );
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('${widget.title} añadido a tu biblioteca')),
+          );
+        }
       }
     } on ApiException catch (e) {
       if (mounted) {
@@ -146,6 +176,13 @@ class _CatalogBookDetailPageState extends State<CatalogBookDetailPage> {
         ScaffoldMessenger.of(
           context,
         ).showSnackBar(SnackBar(content: Text(e.message)));
+      }
+    } catch (_) {
+      if (mounted) {
+        setState(() => _adding = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('No se ha podido añadir')),
+        );
       }
     }
   }
@@ -249,7 +286,9 @@ class _CatalogBookDetailPageState extends State<CatalogBookDetailPage> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('No se pudo cargar la biblioteca. Inténtalo de nuevo.'),
+            content: Text(
+              'No se pudo cargar la biblioteca. Inténtalo de nuevo.',
+            ),
           ),
         );
       }

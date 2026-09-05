@@ -1100,6 +1100,27 @@ class ApiService {
     return data;
   }
 
+  /// Resto de libros de la saga a la que pertenece [bookId] (ya existentes en
+  /// el catálogo, con el estado de la usuaria actual para cada uno). Devuelve
+  /// una lista vacía si el libro no pertenece a ninguna saga o es su único
+  /// volumen conocido.
+  Future<List<PerfilSagaVolumen>> getVolumenesSaga(String bookId) async {
+    final params = <String, String>{
+      'action': 'volumenesSaga',
+      'bookId': bookId,
+    };
+    final response = await _client.get(
+      Uri.parse(baseUrl).replace(queryParameters: params),
+    );
+    if (response.statusCode != 200) return const [];
+    final data = _decodeJson(response);
+    if (data is! Map<String, dynamic> || data['ok'] != true) return const [];
+    return (data['volumenes'] as List? ?? const [])
+        .whereType<Map<String, dynamic>>()
+        .map(PerfilSagaVolumen.fromJson)
+        .toList(growable: false);
+  }
+
   Future<List<Map<String, dynamic>>> exportarBiblioteca() async {
     final response = await _client.get(
       Uri.parse(
@@ -1660,15 +1681,26 @@ class ApiService {
         if (user != null && user.isNotEmpty) 'user': user,
       },
     );
-    final response = await _client.get(uri);
-    if (response.statusCode != 200) return [];
-    final data = _decodeJson(response);
-    if (data is! Map<String, dynamic>) return [];
-    final list = data['achievements'] as List<dynamic>? ?? [];
-    return list
-        .cast<Map<String, dynamic>>()
-        .map(UserAchievement.fromJson)
-        .toList(growable: false);
+    try {
+      final response = await _client.get(uri);
+      if (response.statusCode != 200) return [];
+      final data = _decodeJson(response);
+      if (data is! Map<String, dynamic>) return [];
+      final list = data['achievements'] as List<dynamic>? ?? [];
+      return list
+          .cast<Map<String, dynamic>>()
+          .map(UserAchievement.fromJson)
+          .toList(growable: false);
+    } catch (_) {
+      // Igual que el resto de fallos de esta función (HTTP no-200, JSON con
+      // forma inesperada): mejor lista vacía que dejar una excepción de red
+      // sin capturar. Este future se guarda en varios sitios para un
+      // FutureBuilder que puede no llegar a construirse nunca (p. ej. si la
+      // pantalla se cierra justo mientras está en vuelo) — sin este catch,
+      // esa excepción quedaba "no gestionada" y Crashlytics la reportaba
+      // como fallo fatal aunque no afectara a la usuaria.
+      return [];
+    }
   }
 
   Future<Map<String, dynamic>> getRecentClubAchievements() async {
@@ -1781,7 +1813,7 @@ class ApiService {
     required int posicion,
     required String tipo,
   }) async {
-    await _client.post(
+    final response = await _client.post(
       Uri.parse('$baseUrl?action=setSeriesOverride'),
       headers: const {'Content-Type': 'application/json'},
       body: jsonEncode({
@@ -1790,17 +1822,23 @@ class ApiService {
         'tipo': tipo,
       }),
     );
+    if (response.statusCode != 200) {
+      throw ApiException.fromResponse(response);
+    }
   }
 
   Future<void> removeSeriesOverride({
     required String seriesId,
     required int posicion,
   }) async {
-    await _client.post(
+    final response = await _client.post(
       Uri.parse('$baseUrl?action=removeSeriesOverride'),
       headers: const {'Content-Type': 'application/json'},
       body: jsonEncode({'seriesId': seriesId, 'posicion': posicion}),
     );
+    if (response.statusCode != 200) {
+      throw ApiException.fromResponse(response);
+    }
   }
 
   // ── General dashboard ───────────────────────────────────────────

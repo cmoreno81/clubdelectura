@@ -385,55 +385,67 @@ class _LibroClubCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return ClubCard(
       elevated: false,
-      padding: const EdgeInsets.all(AppSpacing.lg),
+      padding: EdgeInsets.zero,
       backgroundColor: const Color(0xFFFFFBF0),
       borderColor: const Color(0xFFF1E2B3),
-      child: Row(
-        children: [
-          _RankedBookCover(
-            item: item,
-            icon: Icons.star_rounded,
-            color: const Color(0xFFB48113),
-            width: 74,
-            height: 104,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(AppRadius.lg),
+        onTap: () => openBookDetail(
+          context,
+          title: item.nombre,
+          bookId: item.bookId,
+          coverUrl: item.coverUrl,
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(AppSpacing.lg),
+          child: Row(
+            children: [
+              _RankedBookCover(
+                item: item,
+                icon: Icons.star_rounded,
+                color: const Color(0xFFB48113),
+                width: 74,
+                height: 104,
+              ),
+
+              const SizedBox(width: AppSpacing.md),
+
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const ClubChip(
+                      label: 'Libro del club',
+                      icon: Icons.auto_awesome_rounded,
+                      variant: ClubChipVariant.warning,
+                    ),
+
+                    const SizedBox(height: AppSpacing.sm),
+
+                    Text(
+                      item.nombre,
+                      maxLines: 3,
+                      overflow: TextOverflow.ellipsis,
+                      style: AppTextStyles.subtitle.copyWith(
+                        color: AppColors.textPrimary,
+                        fontWeight: FontWeight.w800,
+                        fontSize: 20,
+                      ),
+                    ),
+
+                    const SizedBox(height: AppSpacing.xs),
+
+                    Text(
+                      '${item.media.toStringAsFixed(2)} / 5 · '
+                      '${item.votos} ${item.votos == 1 ? 'valoración' : 'valoraciones'}',
+                      style: AppTextStyles.bodySecondary,
+                    ),
+                  ],
+                ),
+              ),
+            ],
           ),
-
-          const SizedBox(width: AppSpacing.md),
-
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const ClubChip(
-                  label: 'Libro del club',
-                  icon: Icons.auto_awesome_rounded,
-                  variant: ClubChipVariant.warning,
-                ),
-
-                const SizedBox(height: AppSpacing.sm),
-
-                Text(
-                  item.nombre,
-                  maxLines: 3,
-                  overflow: TextOverflow.ellipsis,
-                  style: AppTextStyles.subtitle.copyWith(
-                    color: AppColors.textPrimary,
-                    fontWeight: FontWeight.w800,
-                    fontSize: 20,
-                  ),
-                ),
-
-                const SizedBox(height: AppSpacing.xs),
-
-                Text(
-                  '${item.media.toStringAsFixed(2)} / 5 · '
-                  '${item.votos} ${item.votos == 1 ? 'valoración' : 'valoraciones'}',
-                  style: AppTextStyles.bodySecondary,
-                ),
-              ],
-            ),
-          ),
-        ],
+        ),
       ),
     );
   }
@@ -448,54 +460,68 @@ class _CementerioCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return ClubCard(
       elevated: false,
-      padding: const EdgeInsets.all(AppSpacing.lg),
+      padding: EdgeInsets.zero,
       backgroundColor: const Color(0xFFFFF4F4),
       borderColor: const Color(0xFFF5CECE),
-      child: Row(
-        children: [
-          _RankedBookCover(
-            item: item,
-            icon: Icons.heart_broken_rounded,
-            color: AppColors.danger,
-            width: 74,
-            height: 104,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(AppRadius.lg),
+        onTap: () => openBookDetail(
+          context,
+          title: item.nombre,
+          bookId: item.bookId,
+          coverUrl: item.coverUrl,
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(AppSpacing.lg),
+          child: Row(
+            children: [
+              _RankedBookCover(
+                item: item,
+                icon: Icons.heart_broken_rounded,
+                color: AppColors.danger,
+                width: 74,
+                height: 104,
+              ),
+
+              const SizedBox(width: AppSpacing.md),
+
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const ClubChip(
+                      label: 'Cementerio literario',
+                      icon: Icons.sentiment_dissatisfied_outlined,
+                      variant: ClubChipVariant.danger,
+                    ),
+
+                    const SizedBox(height: AppSpacing.sm),
+
+                    Text(
+                      item.nombre,
+                      maxLines: 3,
+                      overflow: TextOverflow.ellipsis,
+                      style: AppTextStyles.subtitle.copyWith(
+                        color: AppColors.textPrimary,
+                        fontWeight: FontWeight.w800,
+                        fontSize: 20,
+                      ),
+                    ),
+
+                    const SizedBox(height: AppSpacing.xs),
+
+                    Text(
+                      item.total == 1
+                          ? '1 abandono'
+                          : '${item.total} abandonos',
+                      style: AppTextStyles.bodySecondary,
+                    ),
+                  ],
+                ),
+              ),
+            ],
           ),
-
-          const SizedBox(width: AppSpacing.md),
-
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const ClubChip(
-                  label: 'Cementerio literario',
-                  icon: Icons.sentiment_dissatisfied_outlined,
-                  variant: ClubChipVariant.danger,
-                ),
-
-                const SizedBox(height: AppSpacing.sm),
-
-                Text(
-                  item.nombre,
-                  maxLines: 3,
-                  overflow: TextOverflow.ellipsis,
-                  style: AppTextStyles.subtitle.copyWith(
-                    color: AppColors.textPrimary,
-                    fontWeight: FontWeight.w800,
-                    fontSize: 20,
-                  ),
-                ),
-
-                const SizedBox(height: AppSpacing.xs),
-
-                Text(
-                  item.total == 1 ? '1 abandono' : '${item.total} abandonos',
-                  style: AppTextStyles.bodySecondary,
-                ),
-              ],
-            ),
-          ),
-        ],
+        ),
       ),
     );
   }
@@ -927,7 +953,12 @@ class _RankingRow extends StatelessWidget {
       borderRadius: BorderRadius.circular(AppRadius.md),
       onTap: useAvatar
           ? null
-          : () => openBookDetail(context, title: item.nombre),
+          : () => openBookDetail(
+              context,
+              title: item.nombre,
+              bookId: item.bookId,
+              coverUrl: item.coverUrl,
+            ),
       child: Padding(
         padding: const EdgeInsets.all(AppSpacing.md),
         child: Row(

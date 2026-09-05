@@ -12,6 +12,15 @@ class LibroAgrupado {
   bool leidoPorMi;
   String coverUrl;
 
+  /// Saga real del libro en el catálogo, independiente de si alguien del
+  /// club lo tiene ya en su biblioteca. Sirve de único respaldo para
+  /// precargar el formulario de edición cuando `registros`/`finalizados`
+  /// están vacíos (si no, el formulario no sabe que el libro pertenece a
+  /// una saga y al guardar lo marca como autoconclusivo).
+  final String? sagaCatalogo;
+  final String? numSagaCatalogo;
+  final bool? standaloneCatalogo;
+
   /// bookId fijo para libros que no tienen registros ni finalizados
   /// (p.ej. libros de catálogo aún no añadidos a la biblioteca).
   final String? _bookIdOverride;
@@ -25,6 +34,9 @@ class LibroAgrupado {
     this.leidoPorMi = false,
     required this.coverUrl,
     String? bookId,
+    this.sagaCatalogo,
+    this.numSagaCatalogo,
+    this.standaloneCatalogo,
   }) : _bookIdOverride = (bookId?.trim().isNotEmpty == true) ? bookId!.trim() : null;
 
   int get total => registros.length;

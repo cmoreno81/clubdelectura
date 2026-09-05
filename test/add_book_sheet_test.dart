@@ -46,6 +46,58 @@ void main() {
     expect(result?.format, 'DIGITAL');
   });
 
+  testWidgets(
+    'sin showStatusPicker no muestra el selector de estado y usa PENDIENTE',
+    (tester) async {
+      AddBookPreferences? result;
+      await _pumpLauncher(tester, onResult: (value) => result = value);
+      await tester.tap(find.text('Abrir'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Estado'), findsNothing);
+      expect(
+        find.byKey(const ValueKey('add-book-status-FINALIZADO')),
+        findsNothing,
+      );
+
+      await tester.tap(find.byKey(const ValueKey('confirm-add-book')));
+      await tester.pumpAndSettle();
+      expect(result?.status, 'PENDIENTE');
+    },
+  );
+
+  testWidgets(
+    'con showStatusPicker permite elegir "Ya lo he leído" y cambia el botón',
+    (tester) async {
+      AddBookPreferences? result;
+      await _pumpLauncher(
+        tester,
+        onResult: (value) => result = value,
+        showStatusPicker: true,
+      );
+      await tester.tap(find.text('Abrir'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Estado'), findsOneWidget);
+      expect(find.text('Añadir'), findsOneWidget);
+      // Con estado pendiente (por defecto) la prioridad sigue siendo relevante.
+      expect(find.text('Prioridad'), findsOneWidget);
+
+      await tester.tap(
+        find.byKey(const ValueKey('add-book-status-FINALIZADO')),
+      );
+      await tester.pumpAndSettle();
+
+      // Ya leído: la prioridad de compra deja de tener sentido y se oculta.
+      expect(find.text('Prioridad'), findsNothing);
+      expect(find.text('Siguiente'), findsOneWidget);
+
+      await tester.tap(find.byKey(const ValueKey('confirm-add-book')));
+      await tester.pumpAndSettle();
+      expect(result?.status, 'FINALIZADO');
+    },
+  );
+
   testWidgets('Cancelar cierra sin devolver preferencias', (tester) async {
     var callbacks = 0;
     await _pumpLauncher(tester, onResult: (_) => callbacks++);
@@ -114,6 +166,7 @@ ChoiceChip _chip(WidgetTester tester, String key) =>
 Future<void> _pumpLauncher(
   WidgetTester tester, {
   required ValueChanged<AddBookPreferences> onResult,
+  bool showStatusPicker = false,
 }) => tester.pumpWidget(
   MaterialApp(
     home: Builder(
@@ -124,6 +177,7 @@ Future<void> _pumpLauncher(
               context,
               title: 'Libro de prueba',
               author: 'Autora',
+              showStatusPicker: showStatusPicker,
             );
             if (result != null) onResult(result);
           },

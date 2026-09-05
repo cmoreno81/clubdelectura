@@ -17,6 +17,7 @@ import 'package:flutter/services.dart';
 
 import '../navigation/app_page_route.dart';
 import '../navigation/book_detail_page_route.dart';
+import '../widgets/libros/apply_initial_status.dart';
 import '../widgets/libros/finalizar_libro_dialog.dart';
 import '../widgets/libros/libro_acciones_sheet.dart';
 import '../widgets/common/libro_finalizado_celebration.dart';
@@ -1434,6 +1435,7 @@ class _LibrosPageState extends State<LibrosPage> with WidgetsBindingObserver {
       title: libro.libro,
       author: referencia?.autor ?? '',
       coverUrl: libro.coverUrl,
+      showStatusPicker: true,
     );
 
     if (preferencias == null) return;
@@ -1461,37 +1463,64 @@ class _LibrosPageState extends State<LibrosPage> with WidgetsBindingObserver {
     if (!mounted) return;
 
     final ok = respuesta['ok'] == true;
-    if (ok) HapticFeedback.mediumImpact();
-
-    if (ok) {
-      final messenger = ScaffoldMessenger.of(context);
-      messenger.showSnackBar(
-        SnackBar(
-          content: const Text('📚 Añadido a tu lista'),
-          behavior: SnackBarBehavior.floating,
-          action: SnackBarAction(
-            label: 'Deshacer',
-            onPressed: () async {
-              final u = await UsuarioService().obtenerUsuario();
-              if (u == null || u.trim().isEmpty) return;
-              await ApiService().quitarLibroPendientes(
-                usuario: u,
-                libro: libro.libro,
-              );
-              if (!mounted) return;
-              LibraryRefreshNotifier.instance.invalidate();
-              _recargar();
-            },
-          ),
-        ),
-      );
-      LibraryRefreshNotifier.instance.invalidate();
-      _recargar();
-    } else {
+    if (!ok) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(respuesta['mensaje'] ?? 'No se ha podido añadir'),
           behavior: SnackBarBehavior.floating,
+        ),
+      );
+      return;
+    }
+
+    // El estado inicial (leyendo/finalizado) elegido en el sheet no lo aplica
+    // anadirLibroExistente (siempre crea como pendiente): lo aplicamos aquí
+    // reutilizando la lógica ya validada de actualizarEstado. El libro ya
+    // quedó añadido en la llamada anterior, así que un fallo aquí solo baja
+    // el estado a "sigue pendiente", nunca se trata como que no se añadió.
+    final estadoFinal = await aplicarEstadoInicial(
+      context,
+      usuario: usuario,
+      libro: libro.libro,
+      estadoElegido: preferencias.status,
+      formato: preferencias.format,
+    );
+
+    if (!mounted) return;
+    HapticFeedback.mediumImpact();
+    LibraryRefreshNotifier.instance.invalidate();
+    _recargar();
+
+    if (estadoFinal == 'FINALIZADO') {
+      await mostrarCelebracionFinalizado(
+        context,
+        titulo: libro.libro,
+        coverUrl: libro.coverUrl,
+      );
+    } else {
+      final messenger = ScaffoldMessenger.of(context);
+      // "Deshacer" solo tiene sentido si el libro sigue pendiente de verdad:
+      // quitarLibroPendientes rechaza libros ya en lectura o finalizados.
+      messenger.showSnackBar(
+        SnackBar(
+          content: const Text('📚 Añadido a tu lista'),
+          behavior: SnackBarBehavior.floating,
+          action: estadoFinal != 'PENDIENTE'
+              ? null
+              : SnackBarAction(
+                  label: 'Deshacer',
+                  onPressed: () async {
+                    final u = await UsuarioService().obtenerUsuario();
+                    if (u == null || u.trim().isEmpty) return;
+                    await ApiService().quitarLibroPendientes(
+                      usuario: u,
+                      libro: libro.libro,
+                    );
+                    if (!mounted) return;
+                    LibraryRefreshNotifier.instance.invalidate();
+                    _recargar();
+                  },
+                ),
         ),
       );
     }

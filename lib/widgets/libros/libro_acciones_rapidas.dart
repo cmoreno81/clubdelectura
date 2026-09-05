@@ -7,6 +7,7 @@ import '../../services/library_refresh_notifier.dart';
 import '../../services/usuario_service.dart';
 import '../../theme/app_colors.dart';
 import '../common/libro_finalizado_celebration.dart';
+import 'apply_initial_status.dart';
 import 'finalizar_libro_dialog.dart';
 import 'add_book_sheet.dart';
 import 'libro_acciones_sheet.dart';
@@ -44,7 +45,9 @@ Future<bool> mostrarAccionesRapidasLibro(
   }
 
   var ok = false;
-  switch (accion) {
+  var celebrarFinalizado = false;
+  try {
+    switch (accion) {
     case LibroAccion.anadir:
       final referencia = libro.referencia;
       final preferencias = await showAddBookSheet(
@@ -52,6 +55,7 @@ Future<bool> mostrarAccionesRapidasLibro(
         title: libro.libro,
         author: referencia?.autor ?? '',
         coverUrl: libro.coverUrl,
+        showStatusPicker: true,
       );
       if (preferencias == null || !context.mounted) return false;
       final respuesta = await ApiService().anadirLibroExistente(
@@ -61,6 +65,20 @@ Future<bool> mostrarAccionesRapidasLibro(
         formato: preferencias.format,
       );
       ok = respuesta['ok'] == true;
+      // El estado inicial elegido en el sheet no lo aplica
+      // anadirLibroExistente (siempre crea como pendiente): un fallo aquí
+      // solo baja el estado a "sigue pendiente", nunca deshace el "ok" de
+      // que el libro sí se añadió.
+      if (ok && context.mounted) {
+        final estadoFinal = await aplicarEstadoInicial(
+          context,
+          usuario: usuario,
+          libro: libro.libro,
+          estadoElegido: preferencias.status,
+          formato: preferencias.format,
+        );
+        celebrarFinalizado = estadoFinal == 'FINALIZADO';
+      }
     case LibroAccion.empezar:
       ok = await ApiService().iniciarLectura(
         usuario: usuario,
@@ -91,10 +109,9 @@ Future<bool> mostrarAccionesRapidasLibro(
             .where((r) => r.yaLoTengo)
             .firstOrNull
             ?.startedAt,
-        formatoActual: libro.registros
-            .where((r) => r.yaLoTengo)
-            .firstOrNull
-            ?.formato ?? '',
+        formatoActual:
+            libro.registros.where((r) => r.yaLoTengo).firstOrNull?.formato ??
+            '',
       );
       if (resultado == null || !context.mounted) return false;
       ok = await ApiService().actualizarEstado(
@@ -145,21 +162,30 @@ Future<bool> mostrarAccionesRapidasLibro(
       );
     case LibroAccion.verFicha:
       break;
+    }
+  } catch (_) {
+    if (context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('No se ha podido actualizar')),
+      );
+    }
+    return false;
   }
 
   if (!context.mounted) return false;
 
   if (!ok) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('No se ha podido actualizar')),
-    );
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(const SnackBar(content: Text('No se ha podido actualizar')));
     return false;
   }
 
   LibraryRefreshNotifier.instance.invalidate();
 
   // Celebración solo cuando se finaliza un libro
-  if (accion == LibroAccion.finalizar && context.mounted) {
+  if ((accion == LibroAccion.finalizar || celebrarFinalizado) &&
+      context.mounted) {
     await mostrarCelebracionFinalizado(
       context,
       titulo: libro.libro,
@@ -170,9 +196,9 @@ Future<bool> mostrarAccionesRapidasLibro(
       const SnackBar(content: Text('Fecha de inicio actualizada')),
     );
   } else if (context.mounted) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Biblioteca actualizada')),
-    );
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(const SnackBar(content: Text('Biblioteca actualizada')));
   }
 
   return ok;

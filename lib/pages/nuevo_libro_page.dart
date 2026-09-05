@@ -98,12 +98,26 @@ class _NuevoLibroPageState extends State<NuevoLibroPage> {
         ? 'Fantasía'
         : agrupado.genero.trim();
 
-    sagaController.text = registro?.saga ?? finalizado?.saga ?? '';
+    // Si nadie del club tiene aún este libro (registro/finalizado vacíos),
+    // caemos en la saga real del catálogo: sin este respaldo el formulario
+    // no sabría que pertenece a una saga y al guardar la borraría para
+    // todo el mundo, aunque solo se estuviera cambiando la portada.
+    sagaController.text =
+        registro?.saga ?? finalizado?.saga ?? agrupado.sagaCatalogo ?? '';
 
-    numSagaController.text = registro?.numSaga ?? finalizado?.numSaga ?? '';
+    numSagaController.text =
+        registro?.numSaga ??
+        finalizado?.numSaga ??
+        agrupado.numSagaCatalogo ??
+        '';
 
     autoconclusivo =
-        registro?.autoconclusivo ?? finalizado?.autoconclusivo ?? 'Si';
+        registro?.autoconclusivo ??
+        finalizado?.autoconclusivo ??
+        (agrupado.standaloneCatalogo == null
+            ? null
+            : (agrupado.standaloneCatalogo! ? 'Si' : 'No')) ??
+        'Si';
 
     prioridad = registro?.prioridad.isNotEmpty == true
         ? _normalizarPrioridad(registro!.prioridad)

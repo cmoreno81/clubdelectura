@@ -236,7 +236,11 @@ class _GeneralDashboardPageState extends State<GeneralDashboardPage> {
     await mostrarOnboardingTutorial(context);
   }
 
-  Future<void> _reload() async {
+  // [silent]=true para recargas oportunistas "por si acaso" (p. ej. al
+  // volver de ver la ficha de un libro, donde openBookDetail no informa si
+  // algo cambió realmente): un fallo ahí no es un error del usuario, así
+  // que no debe avisarle con un snackbar.
+  Future<void> _reload({bool silent = false}) async {
     final refresh = _loadDashboard();
     final achievementsRefresh = ApiService().getAchievements();
     final upcomingRefresh = _loadUpcomingPreview();
@@ -252,7 +256,7 @@ class _GeneralDashboardPageState extends State<GeneralDashboardPage> {
       });
     } catch (error, stack) {
       debugPrint('[dashboard] _reload falló: $error\n$stack');
-      if (!mounted) return;
+      if (silent || !mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('No se ha podido actualizar el panel.')),
       );
@@ -317,7 +321,10 @@ class _GeneralDashboardPageState extends State<GeneralDashboardPage> {
         coverUrl: coverUrl,
         genre: genre,
       );
-      if (mounted) await _reload();
+      // openBookDetail no informa si algo cambió de verdad dentro de la
+      // ficha, así que recargamos "por si acaso" — pero en silencio: un
+      // fallo aquí no significa que la usuaria hiciera algo mal.
+      if (mounted) await _reload(silent: true);
     } finally {
       if (mounted) setState(() => _openingBook = false);
     }
@@ -1552,7 +1559,7 @@ class _GeneralDashboardPageState extends State<GeneralDashboardPage> {
 
   Widget _latestAdditions(List<GeneralLatestBook> books) {
     return _HScrollGestureProxy(
-      height: 218,
+      height: 248,
       child: (physics, controller) => ListView.separated(
         controller: controller,
         scrollDirection: Axis.horizontal,
@@ -2838,7 +2845,7 @@ class _ReleasesPreview extends StatelessWidget {
             )
           else
             _HScrollGestureProxy(
-              height: 205,
+              height: 235,
               child: (physics, controller) => ListView.separated(
                 controller: controller,
                 key: PageStorageKey(

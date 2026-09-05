@@ -7,11 +7,14 @@ import '../models/catalog_book.dart';
 import '../services/api_exception.dart';
 import '../services/api_service.dart';
 import '../services/cursor_pagination_controller.dart';
+import '../services/usuario_service.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_spacing.dart';
 import '../navigation/book_detail_navigation.dart';
+import '../widgets/common/libro_finalizado_celebration.dart';
 import '../widgets/common/optimized_network_image.dart';
 import '../widgets/libros/add_book_sheet.dart';
+import '../widgets/libros/apply_initial_status.dart';
 import '../widgets/libros/libro_acciones_rapidas.dart';
 import 'package:club_lectura_app/widgets/common/club_shimmer.dart';
 import '../widgets/common/screen_hint_banner.dart';
@@ -128,6 +131,7 @@ class _ExploreCatalogPageState extends State<ExploreCatalogPage> {
       title: book.title,
       author: book.authorLabel,
       coverUrl: book.coverUrl,
+      showStatusPicker: true,
     );
     if (preferences == null || !mounted) return;
     setState(() => _addingId = book.id);
@@ -137,6 +141,23 @@ class _ExploreCatalogPageState extends State<ExploreCatalogPage> {
         prioridad: preferences.priority,
         formato: preferences.format,
       );
+      // importarLibroCatalogo siempre crea como pendiente: si se eligió otro
+      // estado inicial, lo aplicamos reutilizando la lógica ya validada de
+      // actualizarEstado. El libro ya quedó añadido en la llamada anterior,
+      // así que un fallo aquí solo deja el estado en "sigue pendiente".
+      var estadoFinal = 'PENDIENTE';
+      if (preferences.status != 'PENDIENTE' && mounted) {
+        final usuario = await UsuarioService().obtenerUsuario();
+        if (usuario != null && usuario.trim().isNotEmpty && mounted) {
+          estadoFinal = await aplicarEstadoInicial(
+            context,
+            usuario: usuario,
+            libro: book.title,
+            estadoElegido: preferences.status,
+            formato: preferences.format,
+          );
+        }
+      }
       if (!mounted) return;
       LibraryRefreshNotifier.instance.invalidate();
 
@@ -144,23 +165,37 @@ class _ExploreCatalogPageState extends State<ExploreCatalogPage> {
         _books = _books
             .map(
               (item) => item.id == book.id && item.source == book.source
-                  ? item.copyWith(inMyLibrary: true, status: 'PENDIENTE')
+                  ? item.copyWith(inMyLibrary: true, status: estadoFinal)
                   : item,
             )
             .toList(growable: false);
       });
       _pagination.replace(
         '${book.source}:${book.id}',
-        (item) => item.copyWith(inMyLibrary: true, status: 'PENDIENTE'),
+        (item) => item.copyWith(inMyLibrary: true, status: estadoFinal),
       );
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('${book.title} está ya en tu biblioteca')),
-      );
+      if (estadoFinal == 'FINALIZADO') {
+        await mostrarCelebracionFinalizado(
+          context,
+          titulo: book.title,
+          coverUrl: book.coverUrl,
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('${book.title} está ya en tu biblioteca')),
+        );
+      }
     } on ApiException catch (error) {
       if (mounted) {
         ScaffoldMessenger.of(
           context,
         ).showSnackBar(SnackBar(content: Text(error.message)));
+      }
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('No se ha podido añadir')),
+        );
       }
     } finally {
       if (mounted) setState(() => _addingId = null);

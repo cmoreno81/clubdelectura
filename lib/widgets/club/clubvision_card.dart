@@ -89,13 +89,19 @@ class ClubvisionCard extends StatelessWidget {
             padding: const EdgeInsets.all(AppSpacing.lg),
             child: Column(
               children: [
-                _cabecera(),
-
-                const SizedBox(height: AppSpacing.lg),
+                // Cuando no hay candidatas, DirectorEscenas ya pinta su
+                // propio icono + título + mensaje en una tarjeta completa
+                // (con el mismo texto que pondría esta cabecera genérica) —
+                // mostrar ambos repetía el mismo aviso dos veces seguidas.
+                if (estadoClub.contenido != ContenidoClub.sinCandidatas) ...[
+                  _cabecera(),
+                  const SizedBox(height: AppSpacing.lg),
+                ],
 
                 DirectorEscenas().construir(
                   estado: estadoClub,
                   dashboard: dashboard,
+                  onActualizar: onActualizar,
                 ),
 
                 if (estadoClub.permiteVotar) ...[

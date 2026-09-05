@@ -13,6 +13,11 @@ class LecturaFinalizada {
 }
 
 class LecturaActual {
+  /// true solo si hay una lectura oficial real (ganadora de Clubvisión o
+  /// lectura activa de respaldo). `titulo` no sirve para esto: cuando no
+  /// hay lectura real, el backend rellena `titulo` con un mensaje genérico
+  /// ("Aún no hay libros con suficiente interés...") en vez de dejarlo vacío.
+  final bool ok;
   final String titulo;
 
   final List<String> leyendo;
@@ -29,6 +34,7 @@ class LecturaActual {
   final String coverUrl;
 
   const LecturaActual({
+    required this.ok,
     required this.titulo,
     required this.leyendo,
     required this.finalizado,
@@ -42,6 +48,7 @@ class LecturaActual {
 
   factory LecturaActual.fromJson(Map<String, dynamic> json) {
     return LecturaActual(
+      ok: json['ok'] == true,
       titulo: json['titulo'] ?? '',
 
       leyendo: List<String>.from(json['leyendo'] ?? []),
