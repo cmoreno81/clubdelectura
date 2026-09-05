@@ -3,6 +3,7 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 
 import 'dev/ui_performance_diagnostics.dart';
 import 'firebase_options.dart';
@@ -102,6 +103,20 @@ class _MyAppState extends State<MyApp> {
             debugShowCheckedModeBanner: false,
             title: 'ClubReads',
             theme: theme,
+
+            // Todos los textos propios de la app están escritos en español
+            // directamente en el código (sin sistema de traducción real), así
+            // que forzamos español también en los widgets nativos de Flutter
+            // (selector de fecha, etc.) — sin esto, caían por defecto en
+            // inglés y esperaban MM/DD/AAAA en vez de DD/MM/AAAA, rechazando
+            // fechas válidas escritas a mano con el formato español.
+            locale: const Locale('es'),
+            supportedLocales: const [Locale('es')],
+            localizationsDelegates: const [
+              GlobalMaterialLocalizations.delegate,
+              GlobalWidgetsLocalizations.delegate,
+              GlobalCupertinoLocalizations.delegate,
+            ],
 
             themeAnimationDuration: Duration.zero,
 
