@@ -75,6 +75,7 @@ void main() {
     await tester.pumpAndSettle();
     await tester.tap(find.text('Añadir a mi biblioteca'));
     await tester.pumpAndSettle();
+    await tester.ensureVisible(find.text('Cancelar'));
     await tester.tap(find.text('Cancelar'));
     await tester.pumpAndSettle();
     expect(saves, 0);
@@ -85,7 +86,11 @@ void main() {
     await tester.tap(find.text('Añadir a mi biblioteca'));
     await tester.pumpAndSettle();
     await tester.tap(find.byKey(const ValueKey('add-book-priority-ALTA')));
+    await tester.ensureVisible(
+      find.byKey(const ValueKey('add-book-format-DIGITAL')),
+    );
     await tester.tap(find.byKey(const ValueKey('add-book-format-DIGITAL')));
+    await tester.ensureVisible(find.byKey(const ValueKey('confirm-add-book')));
     await tester.tap(find.byKey(const ValueKey('confirm-add-book')));
     await tester.pumpAndSettle();
 

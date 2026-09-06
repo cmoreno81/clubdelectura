@@ -34,6 +34,7 @@ import '../services/auth_session_service.dart';
 import '../services/library_order_preferences.dart';
 import '../services/library_refresh_notifier.dart';
 import '../utils/genero_utils.dart';
+import '../utils/idioma_utils.dart';
 import '../utils/lector_count_utils.dart';
 import '../utils/reading_status_copy.dart';
 import 'detalle_libro_page.dart';
@@ -42,7 +43,14 @@ import '../services/atmosfera_scope.dart';
 import '../widgets/common/onboarding_tutorial.dart';
 import '../widgets/common/screen_hint_banner.dart';
 
-enum OrdenLibros { populares, recientes, tituloAsc, tituloDesc, mejorValorados }
+enum OrdenLibros {
+  populares,
+  recientes,
+  tituloAsc,
+  tituloDesc,
+  mejorValorados,
+  fechaLectura,
+}
 
 typedef LibraryDataLoader = Future<LibrosData> Function();
 
@@ -92,6 +100,9 @@ class _LibrosPageState extends State<LibrosPage> with WidgetsBindingObserver {
   String filtroOrigen = 'DEL_CLUB'; // 'DEL_CLUB' | 'CLUBREADS'
   String filtroUsuario = 'TODAS';
   String? filtroVibe; // null = sin filtro de vibe
+  // Por defecto se filtra por español; el usuario puede cambiarlo a otro
+  // idioma o a "Todos" (null) cuando quiera.
+  String? filtroIdioma = 'es';
   // Lista de miembros del club — se actualiza solo con datos DEL_CLUB
   List<String> _miembrosClub = [];
   List<Libro>? _cachedBooks;
@@ -333,6 +344,19 @@ class _LibrosPageState extends State<LibrosPage> with WidgetsBindingObserver {
             filtroUsuario = 'TODAS';
           }
 
+          final idiomasDisponibles =
+              {
+                ...libros.map((e) => e.idioma.trim()).where((i) => i.isNotEmpty),
+                ...finalizados
+                    .map((e) => e.idioma.trim())
+                    .where((i) => i.isNotEmpty),
+              }.toList()
+                ..sort();
+
+          if (filtroIdioma != null && !idiomasDisponibles.contains(filtroIdioma)) {
+            filtroIdioma = null;
+          }
+
           final resultado = _crearResultado(
             libros: libros,
             finalizados: finalizados,
@@ -355,6 +379,7 @@ class _LibrosPageState extends State<LibrosPage> with WidgetsBindingObserver {
                   ),
                   _cabeceraFiltros(
                     usuariosFiltro: usuariosFiltro,
+                    idiomasDisponibles: idiomasDisponibles,
                     totalResultados: resultado.length,
                   ),
                   // ── Vibe Reader (solo en modo PENDIENTE) ───────────────
@@ -375,6 +400,7 @@ class _LibrosPageState extends State<LibrosPage> with WidgetsBindingObserver {
                                 filtroBusqueda.isNotEmpty ||
                                     filtroEstado != 'TODOS' ||
                                     filtroUsuario != 'TODAS' ||
+                                    filtroIdioma != null ||
                                     filtroOrigen != 'DEL_CLUB'
                                 ? 'Limpiar filtros'
                                 : null,
@@ -382,6 +408,7 @@ class _LibrosPageState extends State<LibrosPage> with WidgetsBindingObserver {
                                 filtroBusqueda.isNotEmpty ||
                                     filtroEstado != 'TODOS' ||
                                     filtroUsuario != 'TODAS' ||
+                                    filtroIdioma != null ||
                                     filtroOrigen != 'DEL_CLUB'
                                 ? _limpiarFiltros
                                 : null,
@@ -420,6 +447,7 @@ class _LibrosPageState extends State<LibrosPage> with WidgetsBindingObserver {
 
   Widget _cabeceraFiltros({
     required List<String> usuariosFiltro,
+    required List<String> idiomasDisponibles,
     required int totalResultados,
   }) {
     return Container(
@@ -547,6 +575,11 @@ class _LibrosPageState extends State<LibrosPage> with WidgetsBindingObserver {
             scrollDirection: Axis.horizontal,
             child: Row(
               children: [
+                // ── Chip de idioma (va primero para que se vea al abrir) ────
+                if (idiomasDisponibles.isNotEmpty) ...[
+                  _chipIdioma(idiomasDisponibles),
+                  const SizedBox(width: AppSpacing.xs),
+                ],
                 // ── Chips de estado ────────────────────────────────────────
                 _chip(
                   estado: 'TODOS',
@@ -672,6 +705,424 @@ class _LibrosPageState extends State<LibrosPage> with WidgetsBindingObserver {
     }
   }
 
+  Widget _chipIdioma(List<String> idiomasDisponibles) {
+    return ClubChip(
+      label: filtroIdioma == null ? 'Idioma' : nombreIdioma(filtroIdioma!),
+      icon: Icons.language_rounded,
+      selected: filtroIdioma != null,
+      variant: ClubChipVariant.primary,
+      onTap: () => _mostrarSelectorIdioma(idiomasDisponibles),
+    );
+  }
+
+  // Centinela para distinguir "el usuario eligió Todos" de "cerró el sheet
+  // sin elegir nada" — ambos casos devolverían null si no se distinguieran.
+  static const _todosLosIdiomas = '__TODOS__';
+
+  Future<void> _mostrarSelectorIdioma(List<String> idiomasDisponibles) async {
+    final seleccionado = await showModalBottomSheet<String>(
+      context: context,
+      showDragHandle: true,
+      useSafeArea: true,
+      isScrollControlled: true,
+      builder: (sheetContext) {
+        return FractionallySizedBox(
+          heightFactor: 0.72,
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(
+              AppSpacing.md,
+              0,
+              AppSpacing.md,
+              AppSpacing.lg,
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('Filtrar por idioma', style: AppTextStyles.section),
+                const SizedBox(height: AppSpacing.xs),
+                Text(
+                  'Solo se puede elegir entre los idiomas ya detectados en la biblioteca.',
+                  style: AppTextStyles.bodySecondary,
+                ),
+                const SizedBox(height: AppSpacing.md),
+                Expanded(
+                  child: ListView(
+                    padding: EdgeInsets.zero,
+                    children: [
+                      _opcionIdioma(
+                        context: sheetContext,
+                        codigo: _todosLosIdiomas,
+                        titulo: 'Todos los idiomas',
+                        icono: Icons.public_rounded,
+                      ),
+                      for (final codigo in idiomasDisponibles)
+                        _opcionIdioma(
+                          context: sheetContext,
+                          codigo: codigo,
+                          titulo: nombreIdioma(codigo),
+                          icono: Icons.language_rounded,
+                        ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+
+    if (seleccionado == null || !mounted) return;
+    setState(() {
+      filtroIdioma = seleccionado == _todosLosIdiomas ? null : seleccionado;
+    });
+  }
+
+  Widget _opcionIdioma({
+    required BuildContext context,
+    required String codigo,
+    required String titulo,
+    required IconData icono,
+  }) {
+    final seleccionada = codigo == _todosLosIdiomas
+        ? filtroIdioma == null
+        : filtroIdioma == codigo;
+    final color = Theme.of(context).colorScheme.primary;
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: AppSpacing.xs),
+      child: ListTile(
+        selected: seleccionada,
+        selectedTileColor: color.withValues(alpha: 0.08),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        leading: Container(
+          width: 42,
+          height: 42,
+          decoration: BoxDecoration(
+            color: seleccionada
+                ? color.withValues(alpha: 0.12)
+                : AppColors.surfaceSoft,
+            borderRadius: BorderRadius.circular(14),
+          ),
+          child: Icon(icono, color: seleccionada ? color : AppColors.textSecondary),
+        ),
+        title: Text(
+          titulo,
+          style: AppTextStyles.body.copyWith(fontWeight: FontWeight.w700),
+        ),
+        trailing: seleccionada
+            ? Icon(Icons.check_circle_rounded, color: color)
+            : const Icon(Icons.circle_outlined, color: AppColors.textMuted),
+        onTap: () => Navigator.pop(context, codigo),
+      ),
+    );
+  }
+
+  Future<void> _corregirIdiomaLibro(LibroAgrupado libro) async {
+    final bookId = libro.bookId;
+    if (bookId.isEmpty) return;
+
+    final seleccionado = await showModalBottomSheet<String>(
+      context: context,
+      showDragHandle: true,
+      useSafeArea: true,
+      isScrollControlled: true,
+      builder: (sheetContext) {
+        return FractionallySizedBox(
+          heightFactor: 0.72,
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(
+              AppSpacing.md,
+              0,
+              AppSpacing.md,
+              AppSpacing.lg,
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Idioma de "${libro.libro}"',
+                  style: AppTextStyles.section,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                const SizedBox(height: AppSpacing.xs),
+                Text(
+                  'Corrige el idioma si la detección automática no acertó con la edición que lees.',
+                  style: AppTextStyles.bodySecondary,
+                ),
+                const SizedBox(height: AppSpacing.md),
+                Expanded(
+                  child: ListView(
+                    padding: EdgeInsets.zero,
+                    children: [
+                      for (final codigo in idiomasSoportados)
+                        _opcionIdiomaLibro(
+                          context: sheetContext,
+                          libro: libro,
+                          codigo: codigo,
+                        ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+
+    if (seleccionado == null || !mounted) return;
+
+    final resultado = await ApiService().actualizarIdiomaLibro(
+      bookId: bookId,
+      idioma: seleccionado,
+    );
+
+    if (!mounted) return;
+
+    if (resultado['ok'] == true) {
+      // El idioma es un dato de catálogo (Book), no de biblioteca personal:
+      // sin invalidar el caché de 30s de LibrosDataCache, la recarga
+      // devolvería la respuesta ya cacheada sin el idioma recién corregido.
+      LibraryRefreshNotifier.instance.invalidate();
+      setState(() {
+        librosFuture = _startReload(notify: false);
+      });
+    } else {
+      final mensaje = resultado['mensaje']?.toString();
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            mensaje?.isNotEmpty == true
+                ? mensaje!
+                : 'No se pudo actualizar el idioma.',
+          ),
+        ),
+      );
+    }
+  }
+
+  Widget _opcionIdiomaLibro({
+    required BuildContext context,
+    required LibroAgrupado libro,
+    required String codigo,
+  }) {
+    final seleccionada = libro.idioma == codigo;
+    final color = Theme.of(context).colorScheme.primary;
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: AppSpacing.xs),
+      child: ListTile(
+        selected: seleccionada,
+        selectedTileColor: color.withValues(alpha: 0.08),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        leading: Text(banderaIdioma(codigo), style: const TextStyle(fontSize: 22)),
+        title: Text(
+          nombreIdioma(codigo),
+          style: AppTextStyles.body.copyWith(fontWeight: FontWeight.w700),
+        ),
+        trailing: seleccionada
+            ? Icon(Icons.check_circle_rounded, color: color)
+            : const Icon(Icons.circle_outlined, color: AppColors.textMuted),
+        onTap: () => Navigator.pop(context, codigo),
+      ),
+    );
+  }
+
+  Future<void> _corregirGeneroLibro(LibroAgrupado libro) async {
+    final bookId = libro.bookId;
+    if (bookId.isEmpty) return;
+
+    final seleccionado = await showModalBottomSheet<String>(
+      context: context,
+      showDragHandle: true,
+      useSafeArea: true,
+      isScrollControlled: true,
+      builder: (sheetContext) {
+        return FractionallySizedBox(
+          heightFactor: 0.72,
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(
+              AppSpacing.md,
+              0,
+              AppSpacing.md,
+              AppSpacing.lg,
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Género de "${libro.libro}"',
+                  style: AppTextStyles.section,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                const SizedBox(height: AppSpacing.xs),
+                Text(
+                  'Corrige el género si no encaja con este libro.',
+                  style: AppTextStyles.bodySecondary,
+                ),
+                const SizedBox(height: AppSpacing.md),
+                Expanded(
+                  child: ListView(
+                    padding: EdgeInsets.zero,
+                    children: [
+                      for (final opcion in generosSoportados)
+                        _opcionGeneroLibro(
+                          context: sheetContext,
+                          libro: libro,
+                          genero: opcion,
+                        ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+
+    if (seleccionado == null || !mounted) return;
+
+    final resultado = await ApiService().actualizarGeneroLibro(
+      bookId: bookId,
+      genero: seleccionado,
+    );
+
+    if (!mounted) return;
+
+    if (resultado['ok'] == true) {
+      // El género es un dato de catálogo (Book), no de biblioteca personal:
+      // sin invalidar el caché de 30s de LibrosDataCache, la recarga
+      // devolvería la respuesta ya cacheada sin el género recién corregido.
+      LibraryRefreshNotifier.instance.invalidate();
+      setState(() {
+        librosFuture = _startReload(notify: false);
+      });
+    } else {
+      final mensaje = resultado['mensaje']?.toString();
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            mensaje?.isNotEmpty == true
+                ? mensaje!
+                : 'No se pudo actualizar el género.',
+          ),
+        ),
+      );
+    }
+  }
+
+  Widget _opcionGeneroLibro({
+    required BuildContext context,
+    required LibroAgrupado libro,
+    required String genero,
+  }) {
+    final seleccionado = libro.genero == genero;
+    final color = Theme.of(context).colorScheme.primary;
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: AppSpacing.xs),
+      child: ListTile(
+        selected: seleccionado,
+        selectedTileColor: color.withValues(alpha: 0.08),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        leading: Text(iconoGenero(genero), style: const TextStyle(fontSize: 22)),
+        title: Text(
+          genero,
+          style: AppTextStyles.body.copyWith(fontWeight: FontWeight.w700),
+        ),
+        trailing: seleccionado
+            ? Icon(Icons.check_circle_rounded, color: color)
+            : const Icon(Icons.circle_outlined, color: AppColors.textMuted),
+        onTap: () => Navigator.pop(context, genero),
+      ),
+    );
+  }
+
+  /// Pastilla que muestra un dato de catálogo (género/idioma) dejando claro
+  /// con su fondo, borde y lápiz que se puede tocar para corregirlo.
+  Widget _pastillaEditable({
+    required Widget leading,
+    String? label,
+    Color labelColor = AppColors.textSecondary,
+    required VoidCallback onTap,
+  }) {
+    return Material(
+      color: AppColors.surfaceSoft,
+      borderRadius: BorderRadius.circular(AppRadius.pill),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(AppRadius.pill),
+        onTap: onTap,
+        child: Container(
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppSpacing.sm,
+            vertical: 5,
+          ),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(AppRadius.pill),
+            border: Border.all(
+              color: AppColors.textMuted.withValues(alpha: 0.25),
+            ),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              leading,
+              if (label != null) ...[
+                const SizedBox(width: AppSpacing.xs),
+                Flexible(
+                  child: Text(
+                    label,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: AppTextStyles.caption.copyWith(
+                      color: labelColor,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ),
+              ],
+              const SizedBox(width: 4),
+              Icon(
+                Icons.edit_rounded,
+                size: 11,
+                color: AppColors.textMuted.withValues(alpha: 0.7),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// En la vista ClubReads se mezclan lectoras de todos los clubes: solo
+  /// mostramos el nombre de quienes son del mismo club que quien mira la
+  /// pantalla, y el resto se agrupa en un contador para no exponer con
+  /// quién lee gente de otros clubes.
+  String _resumenLectores(List<Libro> registros) {
+    final propios = registros
+        .where((r) => r.mismoClub)
+        .map((r) => r.usuario)
+        .where((usuario) => usuario.trim().isNotEmpty)
+        .toList();
+    final otros = registros.length - propios.length;
+
+    if (otros <= 0) {
+      return propios.join(' · ');
+    }
+
+    final etiquetaOtros = otros == 1
+        ? '+1 lector de otro club'
+        : '+$otros lectores de otros clubes';
+
+    return propios.isEmpty
+        ? etiquetaOtros
+        : '${propios.join(' · ')} · $etiquetaOtros';
+  }
+
   Widget _libroCard(LibroAgrupado libro) {
     final formatosPropios = libro.registros
         .where((registro) => registro.yaLoTengo)
@@ -766,37 +1217,56 @@ class _LibrosPageState extends State<LibrosPage> with WidgetsBindingObserver {
                       HapticFeedback.mediumImpact();
                       _mostrarAcciones(libro);
                     },
-                    child: Stack(
-                      clipBehavior: Clip.none,
+                    child: Column(
                       children: [
-                        ClubBookCover(
-                          title: libro.libro,
-                          imageUrl: libro.coverUrl,
-                          width: 92,
-                          showShadow: false,
-                          heroTag: heroTag,
-                        ),
-                        // Badge en esquina superior derecha de la portada
-                        if (libro.leidoPorMi)
-                          _CoverBadge(
-                            label: 'Leído',
-                            icon: iconoPropio,
-                            color: AppColors.primary,
-                          )
-                        else if (esPausado)
-                          const _CoverBadge(
-                            label: 'Pausa',
-                            icon: Icons.nights_stay_outlined,
-                            color: Color(0xFFE8A020),
-                          )
-                        else if (esAbandonado)
-                          const _CoverBadge(
-                            label: 'Abandonado',
-                            icon: Icons.heart_broken_rounded,
-                            color: AppColors.danger,
+                        Stack(
+                          clipBehavior: Clip.none,
+                          children: [
+                            ClubBookCover(
+                              title: libro.libro,
+                              imageUrl: libro.coverUrl,
+                              width: 92,
+                              showShadow: false,
+                              heroTag: heroTag,
+                            ),
+                            // Badge en esquina superior derecha de la portada
+                            if (libro.leidoPorMi)
+                              _CoverBadge(
+                                label: 'Leído',
+                                icon: iconoPropio,
+                                color: AppColors.primary,
+                              )
+                            else if (esPausado)
+                              const _CoverBadge(
+                                label: 'Pausa',
+                                icon: Icons.nights_stay_outlined,
+                                color: Color(0xFFE8A020),
+                              )
+                            else if (esAbandonado)
+                              const _CoverBadge(
+                                label: 'Abandonado',
+                                icon: Icons.heart_broken_rounded,
+                                color: AppColors.danger,
+                              ),
+                          ],
+                        ), // Stack
+                        // "Nuevo" no es una característica del libro (no vive
+                        // en el catálogo) — va debajo de la portada, no junto
+                        // a género/idioma ni al resto de chips del club.
+                        if (libro.esReciente) ...[
+                          const SizedBox(height: AppSpacing.xs),
+                          const ClubChip(
+                            label: 'Nuevo',
+                            icon: Icons.auto_awesome_rounded,
+                            variant: ClubChipVariant.primary,
+                            padding: EdgeInsets.symmetric(
+                              horizontal: AppSpacing.xs,
+                              vertical: 2,
+                            ),
                           ),
+                        ],
                       ],
-                    ), // Stack
+                    ), // Column
                   ); // GestureDetector
                 },
               ),
@@ -849,20 +1319,38 @@ class _LibrosPageState extends State<LibrosPage> with WidgetsBindingObserver {
 
                     Row(
                       children: [
-                        Text(
-                          iconoGenero(libro.genero),
-                          style: const TextStyle(fontSize: 17),
+                        Expanded(
+                          child: _pastillaEditable(
+                            leading: Text(
+                              iconoGenero(libro.genero),
+                              style: const TextStyle(fontSize: 15),
+                            ),
+                            label: libro.genero,
+                            labelColor: AppColors.primary,
+                            onTap: () => _corregirGeneroLibro(libro),
+                          ),
                         ),
                         const SizedBox(width: AppSpacing.xs),
-                        Expanded(
-                          child: Text(
-                            libro.genero,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: AppTextStyles.caption.copyWith(
-                              color: AppColors.primary,
-                              fontWeight: FontWeight.w700,
+                        Tooltip(
+                          message: libro.idioma.trim().isEmpty
+                              ? 'Idioma sin especificar'
+                              : nombreIdioma(libro.idioma),
+                          child: _pastillaEditable(
+                            leading: Text(
+                              libro.idioma.trim().isEmpty
+                                  ? '🌐'
+                                  : banderaIdioma(libro.idioma),
+                              style: const TextStyle(fontSize: 15),
                             ),
+                            // Sin bandera propia (catalán, euskera, gallego…):
+                            // el globo genérico no distingue entre idiomas,
+                            // así que añadimos el nombre para diferenciarlos.
+                            label:
+                                libro.idioma.trim().isNotEmpty &&
+                                    banderaIdioma(libro.idioma) == '🌐'
+                                ? nombreIdioma(libro.idioma)
+                                : null,
+                            onTap: () => _corregirIdiomaLibro(libro),
                           ),
                         ),
                       ],
@@ -874,13 +1362,6 @@ class _LibrosPageState extends State<LibrosPage> with WidgetsBindingObserver {
                       spacing: AppSpacing.xs,
                       runSpacing: AppSpacing.xs,
                       children: [
-                        // "Leído por ti" se muestra sobre la portada (badge)
-                        if (libro.esReciente)
-                          const ClubChip(
-                            label: 'Nuevo',
-                            icon: Icons.auto_awesome_rounded,
-                            variant: ClubChipVariant.primary,
-                          ),
                         ClubChip(
                           label:
                               '${libro.total} ${lectoresInteresadosLabel(libro.total)}',
@@ -896,10 +1377,17 @@ class _LibrosPageState extends State<LibrosPage> with WidgetsBindingObserver {
                             variant: ClubChipVariant.success,
                           ),
 
+                        // Estrellas y guindillas van en un único chip para
+                        // que siempre queden juntas en la misma línea — el
+                        // picante es opcional, así que la mayoría de libros
+                        // solo mostrarán la parte de estrellas.
                         if (libro.mediaValoracion > 0)
                           ClubChip(
-                            label: libro.mediaValoracion.toStringAsFixed(1),
-                            icon: Icons.star_rounded,
+                            label: [
+                              '⭐ ${libro.mediaValoracion.toStringAsFixed(1)}',
+                              if (libro.mediaPicante > 0)
+                                '🌶️ ${libro.mediaPicante.toStringAsFixed(1)}',
+                            ].join('   '),
                             variant: ClubChipVariant.warning,
                           ),
                       ],
@@ -909,7 +1397,7 @@ class _LibrosPageState extends State<LibrosPage> with WidgetsBindingObserver {
                       const SizedBox(height: AppSpacing.sm),
 
                       Text(
-                        libro.registros.map((e) => e.usuario).join(' · '),
+                        _resumenLectores(libro.registros),
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
                         style: AppTextStyles.caption,
@@ -951,6 +1439,9 @@ class _LibrosPageState extends State<LibrosPage> with WidgetsBindingObserver {
 
       case OrdenLibros.mejorValorados:
         return 'Mejor valorados';
+
+      case OrdenLibros.fechaLectura:
+        return 'Fecha de lectura';
     }
   }
 
@@ -1026,6 +1517,14 @@ class _LibrosPageState extends State<LibrosPage> with WidgetsBindingObserver {
                         titulo: 'Mejor valorados',
                         subtitulo: 'Los favoritos del club primero',
                         icono: Icons.star_outline_rounded,
+                      ),
+
+                      _opcionOrden(
+                        context: sheetContext,
+                        orden: OrdenLibros.fechaLectura,
+                        titulo: 'Fecha de lectura',
+                        subtitulo: 'Lo último terminado de leer primero',
+                        icono: Icons.calendar_today_rounded,
                       ),
                     ],
                   ),
@@ -1150,6 +1649,25 @@ class _LibrosPageState extends State<LibrosPage> with WidgetsBindingObserver {
           }
 
           return normalizar(a.libro).compareTo(normalizar(b.libro));
+
+        case OrdenLibros.fechaLectura:
+          final fechaLecturaA = a.fechaLectura;
+          final fechaLecturaB = b.fechaLectura;
+
+          if (fechaLecturaA == null && fechaLecturaB == null) {
+            return normalizar(a.libro).compareTo(normalizar(b.libro));
+          }
+
+          if (fechaLecturaA == null) return 1;
+          if (fechaLecturaB == null) return -1;
+
+          final comparacionFecha = fechaLecturaB.compareTo(fechaLecturaA);
+
+          if (comparacionFecha != 0) {
+            return comparacionFecha;
+          }
+
+          return normalizar(a.libro).compareTo(normalizar(b.libro));
       }
     });
   }
@@ -1177,6 +1695,7 @@ class _LibrosPageState extends State<LibrosPage> with WidgetsBindingObserver {
       pauseReason: '',
       avatarUrl: finalizado.avatarUrl,
       paginas: finalizado.paginas,
+      mismoClub: finalizado.mismoClub,
     );
   }
 
@@ -1186,7 +1705,7 @@ class _LibrosPageState extends State<LibrosPage> with WidgetsBindingObserver {
   }) {
     final filterKey =
         '$filtroBusqueda\u0000$filtroEstado\u0000$filtroUsuario\u0000$ordenSeleccionado';
-    final filterKeyFull = '$filterKey|${filtroVibe ?? ''}';
+    final filterKeyFull = '$filterKey|${filtroVibe ?? ''}|${filtroIdioma ?? ''}';
     if (identical(_cachedBooks, libros) &&
         identical(_cachedFinishedBooks, finalizados) &&
         _cachedFilterKey == filterKeyFull) {
@@ -1223,7 +1742,11 @@ class _LibrosPageState extends State<LibrosPage> with WidgetsBindingObserver {
               (g) => normalizar(libro.genero).contains(g),
             );
 
-        return coincideBusqueda && coincideUsuario && coincideEstado && coincideVibe;
+        final coincideIdioma =
+            filtroIdioma == null || libro.idioma == filtroIdioma;
+
+        return coincideBusqueda && coincideUsuario && coincideEstado &&
+            coincideVibe && coincideIdioma;
       }).toList();
 
       final agrupados = <String, LibroAgrupado>{};
@@ -1262,7 +1785,9 @@ class _LibrosPageState extends State<LibrosPage> with WidgetsBindingObserver {
           final coincideBusqueda = normalizar(
             finalizado.libro,
           ).contains(normalizar(filtroBusqueda));
-          return coincideUsuario && coincideBusqueda;
+          final coincideIdioma =
+              filtroIdioma == null || finalizado.idioma == filtroIdioma;
+          return coincideUsuario && coincideBusqueda && coincideIdioma;
         });
 
         for (final finalizado in finalizadosFiltrados) {
@@ -1324,7 +1849,9 @@ class _LibrosPageState extends State<LibrosPage> with WidgetsBindingObserver {
           filtroBusqueda.isEmpty ||
           normalizar(f.libro).contains(normalizar(filtroBusqueda));
 
-      return coincideUsuario && coincideBusqueda;
+      final coincideIdioma = filtroIdioma == null || f.idioma == filtroIdioma;
+
+      return coincideUsuario && coincideBusqueda && coincideIdioma;
     }).toList();
 
     final titulosFinalizados = finalizadosFiltrados
@@ -1420,6 +1947,7 @@ class _LibrosPageState extends State<LibrosPage> with WidgetsBindingObserver {
       filtroEstado = 'TODOS';
       filtroUsuario = 'TODAS';
       filtroVibe = null;
+      filtroIdioma = null;
       filtroOrigen = 'DEL_CLUB';
     });
     // Recargar solo si el origen cambió (ClubReads → Del club)
@@ -1458,6 +1986,7 @@ class _LibrosPageState extends State<LibrosPage> with WidgetsBindingObserver {
       libro: libro.libro,
       prioridad: preferencias.priority,
       formato: preferencias.format,
+      idioma: preferencias.idioma,
     );
 
     if (!mounted) return;
@@ -1499,11 +2028,19 @@ class _LibrosPageState extends State<LibrosPage> with WidgetsBindingObserver {
       );
     } else {
       final messenger = ScaffoldMessenger.of(context);
+      final noSeAplico = noSeAplicoEstadoElegido(
+        estadoElegido: preferencias.status,
+        estadoFinal: estadoFinal,
+      );
       // "Deshacer" solo tiene sentido si el libro sigue pendiente de verdad:
       // quitarLibroPendientes rechaza libros ya en lectura o finalizados.
       messenger.showSnackBar(
         SnackBar(
-          content: const Text('📚 Añadido a tu lista'),
+          content: Text(
+            noSeAplico
+                ? mensajeEstadoNoAplicado(libro.libro)
+                : '📚 Añadido a tu lista',
+          ),
           behavior: SnackBarBehavior.floating,
           action: estadoFinal != 'PENDIENTE'
               ? null
@@ -1725,6 +2262,7 @@ class _LibrosPageState extends State<LibrosPage> with WidgetsBindingObserver {
       libro: libro.libro,
       estado: 'FINALIZADO',
       valoracion: resultado['valoracion'],
+      picante: resultado['picante'],
       reflexion: resultado['reflexion'],
       fechaInicio: resultado['fechaInicio'],
       fechaFin: resultado['fechaFin'],

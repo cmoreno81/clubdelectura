@@ -16,6 +16,7 @@ void main() {
     expect(_chip(tester, 'add-book-priority-MEDIA').selected, isTrue);
     expect(_chip(tester, 'add-book-format-').selected, isTrue);
 
+    await tester.ensureVisible(find.byKey(const ValueKey('confirm-add-book')));
     await tester.tap(find.byKey(const ValueKey('confirm-add-book')));
     await tester.pumpAndSettle();
     expect(result?.priority, 'MEDIA');
@@ -37,7 +38,11 @@ void main() {
     await tester.tap(find.text('Abrir'));
     await tester.pumpAndSettle();
     await tester.tap(find.byKey(const ValueKey('add-book-priority-ALTA')));
+    await tester.ensureVisible(
+      find.byKey(const ValueKey('add-book-format-DIGITAL')),
+    );
     await tester.tap(find.byKey(const ValueKey('add-book-format-DIGITAL')));
+    await tester.ensureVisible(find.byKey(const ValueKey('confirm-add-book')));
     await tester.tap(find.byKey(const ValueKey('confirm-add-book')));
     await tester.pumpAndSettle();
 
@@ -60,6 +65,9 @@ void main() {
         findsNothing,
       );
 
+      await tester.ensureVisible(
+        find.byKey(const ValueKey('confirm-add-book')),
+      );
       await tester.tap(find.byKey(const ValueKey('confirm-add-book')));
       await tester.pumpAndSettle();
       expect(result?.status, 'PENDIENTE');
@@ -83,6 +91,9 @@ void main() {
       // Con estado pendiente (por defecto) la prioridad sigue siendo relevante.
       expect(find.text('Prioridad'), findsOneWidget);
 
+      await tester.ensureVisible(
+        find.byKey(const ValueKey('add-book-status-FINALIZADO')),
+      );
       await tester.tap(
         find.byKey(const ValueKey('add-book-status-FINALIZADO')),
       );
@@ -92,6 +103,7 @@ void main() {
       expect(find.text('Prioridad'), findsNothing);
       expect(find.text('Siguiente'), findsOneWidget);
 
+      await tester.ensureVisible(find.byKey(const ValueKey('confirm-add-book')));
       await tester.tap(find.byKey(const ValueKey('confirm-add-book')));
       await tester.pumpAndSettle();
       expect(result?.status, 'FINALIZADO');

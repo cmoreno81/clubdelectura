@@ -12,6 +12,7 @@ import '../navigation/book_detail_navigation.dart';
 
 import '../models/perfil_usuario.dart';
 import '../services/api_service.dart';
+import '../services/library_refresh_notifier.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_radius.dart';
 import '../theme/app_spacing.dart';
@@ -369,6 +370,7 @@ class _PerfilUsuarioPageState extends State<PerfilUsuarioPage> {
         fechaInicio: resultado['fechaInicio'] ?? '',
         fechaFin: resultado['fechaFin'] ?? '',
         valoracion: resultado['valoracion'],
+        picante: resultado['picante'],
         resena: resultado['resena'],
       );
     } catch (_) {
@@ -394,6 +396,10 @@ class _PerfilUsuarioPageState extends State<PerfilUsuarioPage> {
     );
 
     if (ok) {
+      // Fechas/valoración/picante son datos de biblioteca compartidos: sin
+      // invalidar este caché de 30s, la ficha del libro y la tarjeta de
+      // Biblioteca seguirían mostrando el valor antiguo un rato.
+      LibraryRefreshNotifier.instance.invalidate();
       await _recargar();
     }
   }

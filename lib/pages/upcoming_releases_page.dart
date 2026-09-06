@@ -133,6 +133,7 @@ class _UpcomingReleasesPageState extends State<UpcomingReleasesPage> {
         ),
         prioridad: preferences.priority,
         formato: preferences.format,
+        idioma: preferences.idioma,
       );
       if (mounted) {
         final refreshed = _load();

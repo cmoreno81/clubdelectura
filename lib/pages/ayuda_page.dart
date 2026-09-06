@@ -183,6 +183,13 @@ const List<_HelpSection> _secciones = [
             'tú misma para tener tu biblioteca perfecta!',
       ),
       _HelpItem(
+        pregunta: '¿Cómo ordeno mi biblioteca?',
+        respuesta:
+            'Pulsa "Ordenar" en la Biblioteca para elegir entre varios criterios, '
+            'incluido "Fecha de lectura", que coloca primero lo último que '
+            'terminaste de leer.',
+      ),
+      _HelpItem(
         pregunta: '¿Qué significa "autoconclusivo"?',
         respuesta:
             'Un libro autoconclusivo no pertenece a ninguna saga: tiene '
@@ -241,6 +248,38 @@ const List<_HelpSection> _secciones = [
             'Es la forma más rápida de actualizar el estado de un libro sin tener que '
             'entrar en su ficha completa. Si el libro aún no está en tu biblioteca, '
             'se añade automáticamente con el estado que elijas.',
+      ),
+      _HelpItem(
+        pregunta: '¿Puedo filtrar mi biblioteca por idioma?',
+        respuesta:
+            'Sí. En la Biblioteca verás un filtro "Idioma" junto al de estado. '
+            'Por defecto se muestra solo el español, así que si buscas un libro '
+            'y no aparece, prueba a cambiar el filtro a "Todos los idiomas".\n\n'
+            'Los idiomas sin bandera propia (catalán, euskera, gallego…) muestran '
+            'un icono de globo 🌐 junto al nombre del idioma para distinguirlos.',
+      ),
+      _HelpItem(
+        pregunta: '¿Puedo corregir el idioma o el género de un libro?',
+        respuesta:
+            'Sí. En cada tarjeta de la Biblioteca, el género y el idioma se '
+            'muestran como pastillas con un lápiz ✏️. Pulsa sobre cualquiera '
+            'de ellas para corregirlas si la detección automática no acertó.\n\n'
+            'Es un dato de catálogo: al cambiarlo, se actualiza para todo el mundo '
+            'que tenga ese libro, no solo en tu biblioteca.\n\n'
+            'También hemos añadido el género 🦇 Gótico a la lista disponible.',
+      ),
+      _HelpItem(
+        pregunta: '¿Qué es la valoración picante 🌶️?',
+        respuesta:
+            'Es una valoración opcional de 1 a 5 guindillas que puedes añadir '
+            'al marcar un libro como terminado, además de tu puntuación por '
+            'estrellas. Sirve para indicar el nivel de contenido subido de tono.\n\n'
+            'Puedes editarla en cualquier momento, no solo al finalizar: entra en '
+            'tu perfil → Historial, abre el libro y cambia el nivel picante o '
+            'pulsa "Quitar nivel picante" si quieres eliminarlo.\n\n'
+            'La media de picante aparece en la tarjeta de la Biblioteca y en la '
+            'ficha del libro (cabecera y sección de valoraciones) solo cuando '
+            'hay datos guardados; si nadie lo ha valorado, no se muestra.',
       ),
       _HelpItem(
         pregunta: '¿Cómo marco un libro como favorito?',
@@ -418,6 +457,8 @@ const List<_HelpSection> _secciones = [
             'catálogo, su ficha muestra un panel "Otros libros de la saga" con el '
             'resto de tomos conocidos. Pulsa "Añadir" sobre cualquiera de ellos '
             'para incorporarlo directamente a tu biblioteca sin salir de la ficha.\n\n'
+            'También puedes pulsar sobre la portada de cualquier tomo para ir '
+            'directamente a su ficha, lo tengas ya en tu biblioteca o no.\n\n'
             'Si un tomo ya está marcado como "Leído fuera de la app" u "Omitido" '
             'desde la pestaña Sagas, el panel lo refleja en vez de ofrecerte '
             'añadirlo de nuevo.\n\n'
@@ -1050,6 +1091,16 @@ const List<_HelpSection> _secciones = [
             'de favoritos con título, autor y género.\n\n'
             'Para que aparezca necesitas tener al menos un libro marcado como '
             'favorito ♥ en tu biblioteca.',
+      ),
+      _HelpItem(
+        pregunta: '¿Puedo interactuar con "Mi año en libros"?',
+        respuesta:
+            'Sí. En "Mi espacio lector", la tarjeta "Mi año en libros" muestra '
+            'una estantería con las portadas de lo que has terminado este año.\n\n'
+            'Pulsa sobre cualquier portada para ir directamente a su ficha, o '
+            'pulsa "Ver todos" (arriba a la derecha de la tarjeta) para abrir '
+            'la lista completa de tu historial de lecturas, no solo las que '
+            'caben en la fila.',
       ),
       _HelpItem(
         pregunta: '¿Puedo exportar mi biblioteca?',

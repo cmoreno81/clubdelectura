@@ -40,6 +40,7 @@ Future<String> aplicarEstadoInicial(
       libro: libro,
       estado: 'FINALIZADO',
       valoracion: resultado['valoracion'],
+      picante: resultado['picante'],
       reflexion: resultado['reflexion'],
       fechaInicio: resultado['fechaInicio'],
       fechaFin: resultado['fechaFin'],
@@ -50,3 +51,18 @@ Future<String> aplicarEstadoInicial(
 
   return 'PENDIENTE';
 }
+
+/// true si se pidió marcar el libro como "Lo estoy leyendo" o "Ya lo he
+/// leído" pero se quedó en pendiente (falló la actualización de estado, o
+/// se canceló el diálogo de valoración/fechas). El libro sí se añadió a la
+/// biblioteca — solo el estado elegido no llegó a aplicarse — así que hace
+/// falta un mensaje que lo diga en vez de uno de éxito genérico que dé a
+/// entender que todo salió como se pidió.
+bool noSeAplicoEstadoElegido({
+  required String estadoElegido,
+  required String estadoFinal,
+}) => estadoElegido != 'PENDIENTE' && estadoFinal != estadoElegido;
+
+/// Mensaje honesto para cuando [noSeAplicoEstadoElegido] es true.
+String mensajeEstadoNoAplicado(String tituloLibro) =>
+    '$tituloLibro se ha añadido como pendiente';

@@ -10,12 +10,18 @@ class Libro {
   final String autoconclusivo;
   final String prioridad;
   final String formato;
+  final String idioma;
   final String estado;
   final String valoracion;
   final bool yaLoTengo;
   /// true cuando el registro llegó por importación (Goodreads, Bookmory…).
   /// Se usa para excluirlo del orden "Añadidos recientemente".
   final bool isImported;
+  /// true si esta lectora comparte club con quien consulta. Solo viene en
+  /// `false` en la vista ClubReads (todos los clubes); en la vista de un
+  /// club concreto todo el mundo mostrado ya es del mismo club, así que por
+  /// defecto es `true` para no ocultar nombres donde no hace falta.
+  final bool mismoClub;
   final String goodreads;
   final String coverUrl;
   final DateTime? fechaAlta;
@@ -36,10 +42,12 @@ class Libro {
     required this.autoconclusivo,
     required this.prioridad,
     this.formato = '',
+    this.idioma = '',
     required this.estado,
     required this.valoracion,
     required this.yaLoTengo,
     this.isImported = false,
+    this.mismoClub = true,
     required this.goodreads,
     required this.coverUrl,
     required this.fechaAlta,
@@ -62,10 +70,12 @@ class Libro {
       autoconclusivo: json['autoconclusivo']?.toString() ?? '',
       prioridad: json['prioridad']?.toString() ?? '',
       formato: json['formato']?.toString() ?? '',
+      idioma: json['idioma']?.toString() ?? json['language']?.toString() ?? '',
       estado: json['estado']?.toString() ?? '',
       valoracion: json['valoracion']?.toString() ?? '',
       yaLoTengo: json['yaLoTengo'] as bool? ?? false,
       isImported: json['isImported'] as bool? ?? false,
+      mismoClub: json['mismoClub'] as bool? ?? true,
       goodreads:
           json['goodreads']?.toString() ??
           json['goodreadsUrl']?.toString() ??

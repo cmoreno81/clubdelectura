@@ -11,11 +11,13 @@ import 'libro_section.dart';
 class LibroValoracionesSection extends StatelessWidget {
   final List<LibroFinalizado> valoraciones;
   final double mediaValoracion;
+  final double mediaPicante;
 
   const LibroValoracionesSection({
     super.key,
     required this.valoraciones,
     required this.mediaValoracion,
+    this.mediaPicante = 0,
   });
 
   @override
@@ -38,6 +40,17 @@ class LibroValoracionesSection extends StatelessWidget {
             media: mediaValoracion,
             total: valoraciones.length,
           ),
+
+          // El picante es opcional: solo aparece si alguien lo ha valorado.
+          if (mediaPicante > 0) ...[
+            const SizedBox(height: AppSpacing.sm),
+            _ResumenPicante(
+              media: mediaPicante,
+              total: valoraciones
+                  .where((v) => v.picante.trim().isNotEmpty)
+                  .length,
+            ),
+          ],
 
           const SizedBox(height: AppSpacing.lg),
 
@@ -113,6 +126,66 @@ class _ResumenValoraciones extends StatelessWidget {
           ),
 
           _EstrellasCompactas(valoracion: media),
+        ],
+      ),
+    );
+  }
+}
+
+class _ResumenPicante extends StatelessWidget {
+  final double media;
+  final int total;
+
+  const _ResumenPicante({required this.media, required this.total});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(AppSpacing.md),
+      decoration: BoxDecoration(
+        color: const Color(0xFFFCE9E4),
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: const Color(0xFFF0C6B8)),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 58,
+            height: 58,
+            decoration: const BoxDecoration(
+              color: Color(0xFFFBDCD1),
+              shape: BoxShape.circle,
+            ),
+            child: const Center(
+              child: Text('🌶️', style: TextStyle(fontSize: 26)),
+            ),
+          ),
+
+          const SizedBox(width: AppSpacing.md),
+
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  '${media.toStringAsFixed(1)} / 5',
+                  style: AppTextStyles.section.copyWith(
+                    fontSize: 24,
+                    color: AppColors.textPrimary,
+                  ),
+                ),
+
+                const SizedBox(height: AppSpacing.xs),
+
+                Text(
+                  total == 1
+                      ? 'Nivel picante según 1 persona'
+                      : 'Nivel picante según $total personas',
+                  style: AppTextStyles.bodySecondary,
+                ),
+              ],
+            ),
+          ),
         ],
       ),
     );

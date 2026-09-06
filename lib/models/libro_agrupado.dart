@@ -55,6 +55,18 @@ class LibroAgrupado {
     return '';
   }
 
+  String get idioma {
+    for (final registro in registros) {
+      final value = registro.idioma.trim();
+      if (value.isNotEmpty) return value;
+    }
+    for (final finalizado in finalizados) {
+      final value = finalizado.idioma.trim();
+      if (value.isNotEmpty) return value;
+    }
+    return '';
+  }
+
   double get mediaValoracion {
     if (finalizados.isEmpty) {
       return 0;
@@ -70,6 +82,30 @@ class LibroAgrupado {
     }
 
     return valores.reduce((a, b) => a + b) / valores.length;
+  }
+
+  /// Media de nivel picante (1-5), solo entre quienes lo han valorado — a
+  /// diferencia de mediaValoracion, la mayoría de finalizados no tendrán
+  /// dato (es opcional), así que no cuentan como "0" en la media.
+  double get mediaPicante {
+    final valores = finalizados
+        .map((f) => _valorNumericoPicante(f.picante))
+        .where((v) => v > 0)
+        .toList();
+
+    if (valores.isEmpty) {
+      return 0;
+    }
+
+    return valores.reduce((a, b) => a + b) / valores.length;
+  }
+
+  int _valorNumericoPicante(String picante) {
+    if (picante.trim().isEmpty) {
+      return 0;
+    }
+
+    return '🌶️'.allMatches(picante).length;
   }
 
   double _valorNumerico(String valoracion) {
@@ -137,6 +173,29 @@ class LibroAgrupado {
     fechas.sort();
 
     return fechas.first;
+  }
+
+  /// Cuándo se terminó de leer más recientemente (Reading.finishedAt).
+  /// Solo mira finalizados, no lecturas en curso: sirve para ver qué se ha
+  /// leído últimamente. Si se filtra por lector, [finalizados] ya viene
+  /// filtrado a ese lector, así que esta fecha refleja solo la suya.
+  DateTime? get fechaLectura {
+    final fechas = <DateTime>[];
+
+    for (final finalizado in finalizados) {
+      final fecha = finalizado.finishedAt;
+      if (fecha != null) {
+        fechas.add(fecha);
+      }
+    }
+
+    if (fechas.isEmpty) {
+      return null;
+    }
+
+    fechas.sort();
+
+    return fechas.last;
   }
 
   /// true si TODAS las interacciones del club con este libro son importaciones.

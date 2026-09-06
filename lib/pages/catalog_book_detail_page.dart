@@ -126,6 +126,7 @@ class _CatalogBookDetailPageState extends State<CatalogBookDetailPage> {
               titulo: _book == null ? widget.title : null,
               prioridad: result.priority,
               formato: result.format,
+              idioma: result.idioma,
               estado: 'PENDIENTE',
             );
       // El estado inicial (leyendo/finalizado) elegido en el sheet no lo
@@ -163,6 +164,13 @@ class _CatalogBookDetailPageState extends State<CatalogBookDetailPage> {
             context,
             titulo: widget.title,
             coverUrl: widget.coverUrl,
+          );
+        } else if (noSeAplicoEstadoElegido(
+          estadoElegido: result.status,
+          estadoFinal: estadoFinal,
+        )) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(mensajeEstadoNoAplicado(widget.title))),
           );
         } else {
           ScaffoldMessenger.of(context).showSnackBar(

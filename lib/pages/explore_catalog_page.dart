@@ -140,6 +140,7 @@ class _ExploreCatalogPageState extends State<ExploreCatalogPage> {
         book: book,
         prioridad: preferences.priority,
         formato: preferences.format,
+        idioma: preferences.idioma,
       );
       // importarLibroCatalogo siempre crea como pendiente: si se eligió otro
       // estado inicial, lo aplicamos reutilizando la lógica ya validada de
@@ -179,6 +180,13 @@ class _ExploreCatalogPageState extends State<ExploreCatalogPage> {
           context,
           titulo: book.title,
           coverUrl: book.coverUrl,
+        );
+      } else if (noSeAplicoEstadoElegido(
+        estadoElegido: preferences.status,
+        estadoFinal: estadoFinal,
+      )) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(mensajeEstadoNoAplicado(book.title))),
         );
       } else {
         ScaffoldMessenger.of(context).showSnackBar(

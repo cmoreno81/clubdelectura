@@ -6,6 +6,7 @@ import 'detalle_libro_page.dart';
 import '../models/nuevo_libro.dart';
 import '../services/api_service.dart';
 import '../services/usuario_service.dart';
+import '../utils/idioma_utils.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_radius.dart';
 import '../theme/app_spacing.dart';
@@ -39,6 +40,7 @@ class _NuevoLibroPageState extends State<NuevoLibroPage> {
   String genero = 'Fantasía';
   String prioridad = 'MEDIA';
   String formato = '';
+  String idioma = '';
   String autoconclusivo = 'Si';
 
   bool guardando = false;
@@ -67,6 +69,7 @@ class _NuevoLibroPageState extends State<NuevoLibroPage> {
     _GeneroOption('🏰', 'Novela Histórica', 'Histórica'),
     _GeneroOption('🚀', 'Ciencia Ficción', 'Ciencia ficción'),
     _GeneroOption('👻', 'Terror', 'Terror'),
+    _GeneroOption('🦇', 'Gótico', 'Gótico'),
     _GeneroOption('🕵️', 'Novela Negra', 'Novela negra'),
     _GeneroOption('💬', 'Cómic', 'Cómic'),
     _GeneroOption('🧠', 'No ficción', 'No ficción'),
@@ -123,6 +126,7 @@ class _NuevoLibroPageState extends State<NuevoLibroPage> {
         ? _normalizarPrioridad(registro!.prioridad)
         : 'MEDIA';
     formato = registro?.formato ?? finalizado?.formato ?? '';
+    idioma = agrupado.idioma;
 
     goodreadsController.text = agrupado.goodreads;
     coverUrlController.text = agrupado.coverUrl;
@@ -313,6 +317,7 @@ class _NuevoLibroPageState extends State<NuevoLibroPage> {
       autoconclusivo: autoconclusivo,
       prioridad: prioridad,
       formato: formato,
+      idioma: idioma,
       goodreads: goodreadsController.text.trim(),
       coverUrl: coverUrlController.text.trim(),
       paginas: paginas,
@@ -681,6 +686,53 @@ class _NuevoLibroPageState extends State<NuevoLibroPage> {
                             : FontWeight.w500,
                       ),
                       onSelected: (_) => setState(() => formato = opcion.$1),
+                    ),
+                ],
+              ),
+
+              const SizedBox(height: AppSpacing.xl),
+
+              const _SectionHeader(
+                icon: Icons.language_outlined,
+                color: AppColors.info,
+                title: 'Idioma',
+                subtitle: 'Puedes corregirlo más adelante desde la ficha',
+              ),
+
+              const SizedBox(height: AppSpacing.md),
+
+              Wrap(
+                spacing: AppSpacing.sm,
+                runSpacing: AppSpacing.sm,
+                children: [
+                  ChoiceChip(
+                    label: const Text('Sin especificar'),
+                    selected: idioma.isEmpty,
+                    selectedColor: AppColors.primary,
+                    checkmarkColor: Colors.white,
+                    labelStyle: TextStyle(
+                      color: idioma.isEmpty ? Colors.white : AppColors.textPrimary,
+                      fontWeight: idioma.isEmpty
+                          ? FontWeight.w800
+                          : FontWeight.w500,
+                    ),
+                    onSelected: (_) => setState(() => idioma = ''),
+                  ),
+                  for (final codigo in const ['es', 'en', 'fr', 'de', 'it', 'pt'])
+                    ChoiceChip(
+                      label: Text('${banderaIdioma(codigo)} ${nombreIdioma(codigo)}'),
+                      selected: idioma == codigo,
+                      selectedColor: AppColors.primary,
+                      checkmarkColor: Colors.white,
+                      labelStyle: TextStyle(
+                        color: idioma == codigo
+                            ? Colors.white
+                            : AppColors.textPrimary,
+                        fontWeight: idioma == codigo
+                            ? FontWeight.w800
+                            : FontWeight.w500,
+                      ),
+                      onSelected: (_) => setState(() => idioma = codigo),
                     ),
                 ],
               ),

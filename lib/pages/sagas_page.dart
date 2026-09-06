@@ -689,6 +689,7 @@ class _SagasPageState extends State<SagasPage> {
           bookId: volumen.bookId,
           prioridad: addResult.priority,
           formato: addResult.format,
+          idioma: addResult.idioma,
           estado: 'PENDIENTE',
         );
         // importarLibroCatalogo siempre crea como pendiente: si se eligió
@@ -718,6 +719,13 @@ class _SagasPageState extends State<SagasPage> {
             context,
             titulo: volumen.titulo,
             coverUrl: volumen.coverUrl,
+          );
+        } else if (noSeAplicoEstadoElegido(
+          estadoElegido: addResult.status,
+          estadoFinal: estadoFinal,
+        )) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(mensajeEstadoNoAplicado(volumen.titulo))),
           );
         } else {
           ScaffoldMessenger.of(context).showSnackBar(

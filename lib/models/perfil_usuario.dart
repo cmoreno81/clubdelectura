@@ -223,6 +223,7 @@ class PerfilLibroTerminado {
   final String fechaInicio;
   final String fechaFin;
   final String valoracion;
+  final String picante;
   final String resena;
   final String coverUrl;
   final bool esRelectura;
@@ -236,6 +237,7 @@ class PerfilLibroTerminado {
     required this.fechaInicio,
     required this.fechaFin,
     required this.valoracion,
+    this.picante = '',
     required this.resena,
     required this.coverUrl,
     required this.esRelectura,
@@ -261,6 +263,7 @@ class PerfilLibroTerminado {
           json['fecha']?.toString() ??
           '',
       valoracion: json['valoracion']?.toString() ?? '',
+      picante: json['picante']?.toString() ?? '',
       resena: json['resena']?.toString() ?? json['review']?.toString() ?? '',
       coverUrl: json['coverUrl']?.toString() ?? '',
       esRelectura: json['esRelectura'] == true,

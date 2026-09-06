@@ -172,14 +172,44 @@ class LibroHeader extends StatelessWidget {
 
                 const SizedBox(height: AppSpacing.sm),
 
-                ClubMetric(
-                  icon: Icons.star_outline_rounded,
-                  value: libro.mediaValoracion > 0
-                      ? libro.mediaValoracion.toStringAsFixed(1)
-                      : '—',
-                  label: 'valoración media',
-                  variant: ClubMetricVariant.warning,
-                ),
+                // El picante es opcional: si hay dato, la caja de estrellas
+                // se comparte con la de picante en vez de ocupar todo el
+                // ancho ella sola.
+                if (libro.mediaPicante > 0)
+                  Row(
+                    children: [
+                      Expanded(
+                        child: ClubMetric(
+                          icon: Icons.star_outline_rounded,
+                          value: libro.mediaValoracion > 0
+                              ? libro.mediaValoracion.toStringAsFixed(1)
+                              : '—',
+                          label: 'valoración',
+                          variant: ClubMetricVariant.warning,
+                          compact: true,
+                        ),
+                      ),
+                      const SizedBox(width: AppSpacing.sm),
+                      Expanded(
+                        child: ClubMetric(
+                          icon: Icons.local_fire_department_outlined,
+                          value: libro.mediaPicante.toStringAsFixed(1),
+                          label: 'picante',
+                          variant: ClubMetricVariant.danger,
+                          compact: true,
+                        ),
+                      ),
+                    ],
+                  )
+                else
+                  ClubMetric(
+                    icon: Icons.star_outline_rounded,
+                    value: libro.mediaValoracion > 0
+                        ? libro.mediaValoracion.toStringAsFixed(1)
+                        : '—',
+                    label: 'valoración media',
+                    variant: ClubMetricVariant.warning,
+                  ),
               ],
             ],
           ),

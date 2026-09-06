@@ -9,16 +9,23 @@ class LibroFinalizado {
   final String numSaga;
   final String autoconclusivo;
   final String valoracion;
+  /// Nivel picante opcional ('' = sin especificar), como cadena de 🌶️.
+  final String picante;
   final String formato;
+  final String idioma;
   final String resena;
   final String coverUrl;
   final String goodreads;
   final DateTime? fechaAlta;
+  /// Cuándo se terminó de leer (Reading.finishedAt en el backend).
+  final DateTime? finishedAt;
   final String avatarUrl;
   final int? paginas;
   final bool yaLoTengo;
   /// true cuando el registro llegó por importación (Goodreads, Bookmory…).
   final bool isImported;
+  /// true si esta lectora comparte club con quien consulta (ver [Libro]).
+  final bool mismoClub;
 
   const LibroFinalizado({
     required this.bookId,
@@ -30,15 +37,19 @@ class LibroFinalizado {
     required this.numSaga,
     required this.autoconclusivo,
     required this.valoracion,
+    this.picante = '',
     this.formato = '',
+    this.idioma = '',
     required this.resena,
     required this.coverUrl,
     this.goodreads = '',
     required this.fechaAlta,
+    this.finishedAt,
     required this.avatarUrl,
     required this.paginas,
     this.yaLoTengo = false,
     this.isImported = false,
+    this.mismoClub = true,
   });
 
   factory LibroFinalizado.fromJson(Map<String, dynamic> json) {
@@ -52,7 +63,9 @@ class LibroFinalizado {
       numSaga: json['numSaga']?.toString() ?? '',
       autoconclusivo: json['autoconclusivo']?.toString() ?? '',
       valoracion: json['valoracion']?.toString() ?? '',
+      picante: json['picante']?.toString() ?? '',
       formato: json['formato']?.toString() ?? '',
+      idioma: json['idioma']?.toString() ?? json['language']?.toString() ?? '',
       resena: json['resena']?.toString() ?? json['review']?.toString() ?? '',
       coverUrl: json['coverUrl']?.toString() ?? '',
       goodreads:
@@ -60,6 +73,7 @@ class LibroFinalizado {
           json['goodreadsUrl']?.toString() ??
           '',
       fechaAlta: DateTime.tryParse(json['fechaAlta']?.toString() ?? ''),
+      finishedAt: DateTime.tryParse(json['fecha']?.toString() ?? ''),
       avatarUrl:
           json['avatarUrl']?.toString() ??
           json['fotoUrl']?.toString() ??
@@ -70,6 +84,7 @@ class LibroFinalizado {
           (json['totalPages'] as num?)?.toInt(),
       yaLoTengo: json['yaLoTengo'] as bool? ?? false,
       isImported: json['isImported'] as bool? ?? false,
+      mismoClub: json['mismoClub'] as bool? ?? true,
     );
   }
 }

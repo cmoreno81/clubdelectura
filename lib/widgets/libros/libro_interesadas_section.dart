@@ -130,6 +130,7 @@ class LibroInteresadasSection extends StatelessWidget {
     Libro libro,
     String nuevoEstado, {
     String? valoracion,
+    String? picante,
     String? reflexion,
     String? motivoPausa,
     String? fechaInicio,
@@ -200,6 +201,7 @@ class _LectoraCard extends StatelessWidget {
     Libro libro,
     String nuevoEstado, {
     String? valoracion,
+    String? picante,
     String? reflexion,
     String? motivoPausa,
     String? fechaInicio,
@@ -453,6 +455,7 @@ class _LectoraCard extends StatelessWidget {
                   registro,
                   value,
                   valoracion: datosValoracion?['valoracion'],
+                  picante: datosValoracion?['picante'],
                   reflexion: datosValoracion?['reflexion'],
                   fechaInicio: datosValoracion?['fechaInicio'],
                   fechaFin: datosValoracion?['fechaFin'],

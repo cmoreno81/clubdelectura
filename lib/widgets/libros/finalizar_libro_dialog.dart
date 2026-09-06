@@ -39,6 +39,7 @@ class FinalizarLibroDialog extends StatefulWidget {
 
 class _FinalizarLibroDialogState extends State<FinalizarLibroDialog> {
   double? valoracion;
+  int? picante;
   late String formato;
   late DateTime fechaInicio;
   late DateTime fechaFin;
@@ -155,6 +156,7 @@ class _FinalizarLibroDialogState extends State<FinalizarLibroDialog> {
     HapticFeedback.mediumImpact();
     Navigator.pop<Map<String, String>>(context, {
       'valoracion': valoracion.toString(),
+      'picante': picante?.toString() ?? '',
       'reflexion': _controller.text.trim(),
       'fechaInicio': _fechaApi(fechaInicio),
       'fechaFin': _fechaApi(fechaFin),
@@ -329,6 +331,65 @@ class _FinalizarLibroDialogState extends State<FinalizarLibroDialog> {
                       },
                     ),
                   ),
+
+                  const SizedBox(height: 24),
+
+                  // Picante — opcional, nunca bloquea "Finalizar"
+                  const Text(
+                    '🌶️ ¿Qué tan picante era? (opcional)',
+                    style: TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    'Solo si quieres compartirlo con el club. Puedes dejarlo sin marcar.',
+                    style: Theme.of(context).textTheme.bodySmall,
+                  ),
+                  const SizedBox(height: 12),
+                  Center(
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: List.generate(5, (index) {
+                        final nivel = index + 1;
+                        final activo = picante != null && nivel <= picante!;
+                        return GestureDetector(
+                          behavior: HitTestBehavior.opaque,
+                          onTap: () => setState(() => picante = nivel),
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 3),
+                            child: Opacity(
+                              opacity: activo ? 1 : 0.25,
+                              child: const Text(
+                                '🌶️',
+                                style: TextStyle(fontSize: 30),
+                              ),
+                            ),
+                          ),
+                        );
+                      }),
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Center(
+                    child: Text(
+                      picante == null ? 'Sin especificar' : '$picante de 5',
+                      style: TextStyle(
+                        color: picante == null
+                            ? cs.onSurfaceVariant
+                            : cs.primary,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ),
+                  if (picante != null) ...[
+                    const SizedBox(height: 4),
+                    Center(
+                      child: TextButton.icon(
+                        onPressed: () => setState(() => picante = null),
+                        icon: const Icon(Icons.clear_rounded, size: 18),
+                        label: const Text('Quitar nivel picante'),
+                      ),
+                    ),
+                  ],
 
                   const SizedBox(height: 24),
 

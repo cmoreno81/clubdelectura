@@ -9,6 +9,7 @@ class NuevoLibro {
   final String autoconclusivo;
   final String prioridad;
   final String formato;
+  final String idioma;
 
   final String goodreads;
   final String coverUrl;
@@ -26,6 +27,7 @@ class NuevoLibro {
     required this.autoconclusivo,
     required this.prioridad,
     this.formato = '',
+    this.idioma = '',
     this.goodreads = '',
     this.coverUrl = '',
     this.paginas,
@@ -46,6 +48,7 @@ class NuevoLibro {
       if (prioridad.trim().isNotEmpty)
         'prioridad': prioridad, // ← omitir si vacío
       if (formato.trim().isNotEmpty) 'formato': formato, // ← omitir si vacío
+      if (idioma.trim().isNotEmpty) 'idioma': idioma,
       if (goodreads.trim().isNotEmpty) 'goodreads': goodreads.trim(),
       if (coverUrl.trim().isNotEmpty) 'coverUrl': coverUrl.trim(),
       if (paginas != null && paginas! > 0)

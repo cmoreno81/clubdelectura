@@ -63,6 +63,7 @@ Future<bool> mostrarAccionesRapidasLibro(
         libro: libro.libro,
         prioridad: preferencias.priority,
         formato: preferencias.format,
+        idioma: preferencias.idioma,
       );
       ok = respuesta['ok'] == true;
       // El estado inicial elegido en el sheet no lo aplica
@@ -119,6 +120,7 @@ Future<bool> mostrarAccionesRapidasLibro(
         libro: libro.libro,
         estado: 'FINALIZADO',
         valoracion: resultado['valoracion'],
+        picante: resultado['picante'],
         reflexion: resultado['reflexion'],
         fechaInicio: resultado['fechaInicio'],
         fechaFin: resultado['fechaFin'],

@@ -18,6 +18,7 @@ class _EditarFechasLecturaDialogState extends State<EditarFechasLecturaDialog> {
   DateTime? fechaInicio;
   DateTime? fechaFin;
   double? valoracion;
+  int? picante;
   late final TextEditingController resenaController;
 
   @override
@@ -27,6 +28,7 @@ class _EditarFechasLecturaDialogState extends State<EditarFechasLecturaDialog> {
     fechaInicio = _parseFecha(widget.libro.fechaInicio);
     fechaFin = _parseFecha(widget.libro.fechaFin);
     valoracion = _parseValoracion(widget.libro.valoracion);
+    picante = _parsePicante(widget.libro.picante);
     resenaController = TextEditingController(text: widget.libro.resena);
 
     if (fechaInicio != null &&
@@ -111,6 +113,16 @@ class _EditarFechasLecturaDialogState extends State<EditarFechasLecturaDialog> {
     return (estrellas + (tieneMedia ? 0.5 : 0)).clamp(0, 5).toDouble();
   }
 
+  int? _parsePicante(String valor) {
+    if (valor.trim().isEmpty) {
+      return null;
+    }
+
+    final nivel = '🌶️'.allMatches(valor).length;
+
+    return nivel > 0 ? nivel : null;
+  }
+
   String _formatoVisual(DateTime? fecha) {
     if (fecha == null) {
       return 'Sin fecha';
@@ -146,6 +158,8 @@ class _EditarFechasLecturaDialogState extends State<EditarFechasLecturaDialog> {
       firstDate: DateTime(1950),
       lastDate: ultimaFechaPermitida,
       helpText: 'Fecha de inicio',
+      fieldHintText: 'DD/MM/AAAA',
+      fieldLabelText: 'Introduce una fecha (DD/MM/AAAA)',
     );
 
     if (elegida == null) return;
@@ -179,6 +193,8 @@ class _EditarFechasLecturaDialogState extends State<EditarFechasLecturaDialog> {
       firstDate: primeraFechaPermitida,
       lastDate: ultimaFechaPermitida,
       helpText: 'Fecha de fin',
+      fieldHintText: 'DD/MM/AAAA',
+      fieldLabelText: 'Introduce una fecha (DD/MM/AAAA)',
     );
 
     if (elegida == null) return;
@@ -208,6 +224,7 @@ class _EditarFechasLecturaDialogState extends State<EditarFechasLecturaDialog> {
       'fechaInicio': _formatoApi(fechaInicio),
       'fechaFin': _formatoApi(fechaFin),
       'valoracion': valoracion?.toString() ?? '',
+      'picante': picante?.toString() ?? '',
       'resena': resenaController.text.trim(),
     });
   }
@@ -231,7 +248,20 @@ class _EditarFechasLecturaDialogState extends State<EditarFechasLecturaDialog> {
                 contentPadding: EdgeInsets.zero,
                 leading: const Icon(Icons.play_circle_outline_rounded),
                 title: const Text('Fecha de inicio'),
-                subtitle: Text(_formatoVisual(fechaInicio)),
+                subtitle: Text.rich(
+                  TextSpan(
+                    text: _formatoVisual(fechaInicio),
+                    children: [
+                      TextSpan(
+                        text: ' (DD/MM/AAAA)',
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          fontSize: 11,
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
                 trailing: const Icon(Icons.calendar_month_outlined),
                 onTap: _seleccionarInicio,
               ),
@@ -242,7 +272,20 @@ class _EditarFechasLecturaDialogState extends State<EditarFechasLecturaDialog> {
                 contentPadding: EdgeInsets.zero,
                 leading: const Icon(Icons.flag_outlined),
                 title: const Text('Fecha de fin'),
-                subtitle: Text(_formatoVisual(fechaFin)),
+                subtitle: Text.rich(
+                  TextSpan(
+                    text: _formatoVisual(fechaFin),
+                    children: [
+                      TextSpan(
+                        text: ' (DD/MM/AAAA)',
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          fontSize: 11,
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
                 trailing: const Icon(Icons.calendar_month_outlined),
                 onTap: _seleccionarFin,
               ),
@@ -291,6 +334,59 @@ class _EditarFechasLecturaDialogState extends State<EditarFechasLecturaDialog> {
                     },
                     icon: const Icon(Icons.clear_rounded, size: 18),
                     label: const Text('Eliminar valoración'),
+                  ),
+                ),
+              ],
+
+              const SizedBox(height: AppSpacing.lg),
+
+              const Text(
+                '🌶️ Nivel picante (opcional)',
+                style: TextStyle(fontWeight: FontWeight.w700),
+              ),
+              const SizedBox(height: AppSpacing.sm),
+              Center(
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: List.generate(5, (index) {
+                    final nivel = index + 1;
+                    final activo = picante != null && nivel <= picante!;
+                    return GestureDetector(
+                      behavior: HitTestBehavior.opaque,
+                      onTap: () => setState(() => picante = nivel),
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 3),
+                        child: Opacity(
+                          opacity: activo ? 1 : 0.25,
+                          child: const Text(
+                            '🌶️',
+                            style: TextStyle(fontSize: 28),
+                          ),
+                        ),
+                      ),
+                    );
+                  }),
+                ),
+              ),
+              const SizedBox(height: AppSpacing.xs),
+              Center(
+                child: Text(
+                  picante == null ? 'Sin especificar' : '$picante de 5',
+                  style: TextStyle(
+                    color: picante == null
+                        ? Theme.of(context).colorScheme.onSurfaceVariant
+                        : Theme.of(context).colorScheme.primary,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
+              if (picante != null) ...[
+                const SizedBox(height: AppSpacing.xs),
+                Center(
+                  child: TextButton.icon(
+                    onPressed: () => setState(() => picante = null),
+                    icon: const Icon(Icons.clear_rounded, size: 18),
+                    label: const Text('Quitar nivel picante'),
                   ),
                 ),
               ],

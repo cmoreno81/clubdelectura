@@ -217,6 +217,7 @@ class _WishlistPageState extends State<WishlistPage> {
           titulo: item.title,
           prioridad: preferences.priority,
           formato: preferences.format,
+          idioma: preferences.idioma,
           estado: 'PENDIENTE',
         );
       } else {
@@ -236,6 +237,7 @@ class _WishlistPageState extends State<WishlistPage> {
           ),
           prioridad: preferences.priority,
           formato: preferences.format,
+          idioma: preferences.idioma,
           estado: 'PENDIENTE',
         );
       }

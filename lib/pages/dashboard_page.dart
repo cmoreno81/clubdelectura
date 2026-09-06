@@ -655,6 +655,28 @@ class _DashboardPageState extends State<DashboardPage> {
             books: yearBooks,
             favoriteGenre: favoriteGenre,
             totalLibrary: general?.summary.enEstanteria ?? personalLib.length,
+            onTapBook: (book) => openBookDetail(
+              context,
+              title: book.title,
+              bookId: book.bookId,
+              coverUrl: book.coverUrl,
+            ),
+            onVerTodos: () async {
+              final nombre = usuarioActual?.trim() ?? '';
+              final userId = AuthSessionService.instance.user?.id.trim() ?? '';
+              if (nombre.isEmpty) return;
+              await Navigator.push<void>(
+                context,
+                AppPageRoute(
+                  builder: (_) => PerfilUsuarioPage(
+                    usuario: nombre,
+                    profileUserId: userId.isEmpty ? null : userId,
+                    initialTab: 'HISTORIAL',
+                  ),
+                ),
+              );
+              if (mounted) await _recargar();
+            },
           ),
 
           // ── 3. Sagas en curso ─────────────────────────────────────────────
@@ -3700,12 +3722,16 @@ class _PersonalYearShelfCard extends StatelessWidget {
     required this.books,
     required this.favoriteGenre,
     required this.totalLibrary,
+    this.onTapBook,
+    this.onVerTodos,
   });
 
   final int year;
   final List<YearShelfBook> books;
   final String? favoriteGenre;
   final int totalLibrary;
+  final ValueChanged<YearShelfBook>? onTapBook;
+  final VoidCallback? onVerTodos;
 
   @override
   Widget build(BuildContext context) {
@@ -3743,6 +3769,18 @@ class _PersonalYearShelfCard extends StatelessWidget {
                   ],
                 ),
               ),
+              if (onVerTodos != null && count > 0)
+                TextButton(
+                  onPressed: onVerTodos,
+                  style: TextButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: AppSpacing.xs,
+                    ),
+                    minimumSize: Size.zero,
+                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                  ),
+                  child: const Text('Ver todos'),
+                ),
               // Contador grande
               Container(
                 padding: const EdgeInsets.symmetric(
@@ -3777,7 +3815,7 @@ class _PersonalYearShelfCard extends StatelessWidget {
                     const SizedBox(width: AppSpacing.xs),
                 itemBuilder: (context, index) {
                   final book = covers[index];
-                  return ClipRRect(
+                  final cover = ClipRRect(
                     borderRadius: BorderRadius.circular(AppRadius.sm),
                     child: ClubBookCover(
                       imageUrl: book.coverUrl,
@@ -3786,6 +3824,11 @@ class _PersonalYearShelfCard extends StatelessWidget {
                       height: 100,
                       showShadow: false,
                     ),
+                  );
+                  if (onTapBook == null) return cover;
+                  return GestureDetector(
+                    onTap: () => onTapBook!(book),
+                    child: cover,
                   );
                 },
               ),

@@ -187,6 +187,7 @@ class ApiService {
     String? titulo,
     required String prioridad,
     required String formato,
+    String? idioma,
     String? estado,
     String? fechaInicio,
     String? fechaFin,
@@ -195,6 +196,7 @@ class ApiService {
     final body = <String, dynamic>{
       'prioridad': prioridad,
       if (formato.trim().isNotEmpty) 'formato': formato,
+      if (idioma != null && idioma.trim().isNotEmpty) 'idioma': idioma,
       if (estado != null && estado.isNotEmpty) 'estado': estado,
       if (fechaInicio != null && fechaInicio.isNotEmpty)
         'fechaInicio': fechaInicio,
@@ -1006,6 +1008,7 @@ class ApiService {
     required String libro,
     required String estado,
     String? valoracion,
+    String? picante,
     String? reflexion,
     String? motivoPausa,
     String? fechaInicio,
@@ -1019,6 +1022,7 @@ class ApiService {
         'libro': libro,
         'estado': estado,
         'valoracion': valoracion ?? '',
+        'picante': picante ?? '',
         'reflexion': reflexion ?? '',
         'motivoPausa': motivoPausa ?? '',
         'fechaInicio': fechaInicio ?? '',
@@ -1286,11 +1290,13 @@ class ApiService {
     required String libro,
     required String prioridad,
     required String formato,
+    String idioma = '',
   }) async {
     final response = await _postJson('anadirLibroExistente', {
       'libro': libro,
       'prioridad': prioridad,
       if (formato.trim().isNotEmpty) 'formato': formato,
+      if (idioma.trim().isNotEmpty) 'idioma': idioma,
     });
 
     if (response.statusCode != 200) {
@@ -1321,6 +1327,48 @@ class ApiService {
       }),
     );
     return _respuestaOk(response);
+  }
+
+  Future<Map<String, dynamic>> actualizarIdiomaLibro({
+    required String bookId,
+    required String idioma,
+  }) async {
+    final response = await _postJson('actualizarIdiomaLibro', {
+      'bookId': bookId,
+      'idioma': idioma,
+    });
+
+    if (response.statusCode != 200) {
+      return {'ok': false, 'mensaje': 'Error de conexión con el servidor.'};
+    }
+
+    final json = _decodeJson(response);
+    return {
+      'ok': json['ok'] == true,
+      'mensaje': json['mensaje'] ?? '',
+      if (json['idioma'] != null) 'idioma': json['idioma'],
+    };
+  }
+
+  Future<Map<String, dynamic>> actualizarGeneroLibro({
+    required String bookId,
+    required String genero,
+  }) async {
+    final response = await _postJson('actualizarGeneroLibro', {
+      'bookId': bookId,
+      'genero': genero,
+    });
+
+    if (response.statusCode != 200) {
+      return {'ok': false, 'mensaje': 'Error de conexión con el servidor.'};
+    }
+
+    final json = _decodeJson(response);
+    return {
+      'ok': json['ok'] == true,
+      'mensaje': json['mensaje'] ?? '',
+      if (json['genero'] != null) 'genero': json['genero'],
+    };
   }
 
   Future<MiVoto> getMiVoto(String usuario) async {
@@ -1504,6 +1552,7 @@ class ApiService {
     required String fechaInicio,
     required String fechaFin,
     String? valoracion,
+    String? picante,
     String? resena,
   }) async {
     final body = <String, dynamic>{
@@ -1515,6 +1564,7 @@ class ApiService {
       body['completionId'] = completionId;
     }
     if (valoracion != null) body['valoracion'] = valoracion;
+    if (picante != null) body['picante'] = picante;
     if (resena != null) body['resena'] = resena;
 
     final response = await _client.post(

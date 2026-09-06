@@ -172,6 +172,7 @@ class _DetalleLibroPageState extends State<DetalleLibroPage> {
     Libro libro,
     String nuevoEstado, {
     String? valoracion,
+    String? picante,
     String? reflexion,
     String? motivoPausa,
     String? fechaInicio,
@@ -192,6 +193,7 @@ class _DetalleLibroPageState extends State<DetalleLibroPage> {
           libro: libro.libro,
           estado: nuevoEstado,
           valoracion: valoracion,
+          picante: picante,
           reflexion: reflexion,
           motivoPausa: motivoPausa,
           fechaInicio: fechaInicio,
@@ -646,9 +648,17 @@ class _DetalleLibroPageState extends State<DetalleLibroPage> {
               : '';
           if (generoFresh.isEmpty) generoFresh = libro.genero;
 
+          String tituloFresh = librosActualizados.isNotEmpty
+              ? librosActualizados.first.libro
+              : '';
+          if (tituloFresh.isEmpty && finalizadosActualizados.isNotEmpty) {
+            tituloFresh = finalizadosActualizados.first.libro;
+          }
+          if (tituloFresh.isEmpty) tituloFresh = libro.libro;
+
           setState(() {
             libro = LibroAgrupado(
-              libro: libro.libro,
+              libro: tituloFresh,
               genero: generoFresh,
               registros: librosActualizados,
               finalizados: finalizadosActualizados,
@@ -698,6 +708,7 @@ class _DetalleLibroPageState extends State<DetalleLibroPage> {
         libro: libro.libro,
         prioridad: preferencias.priority,
         formato: preferencias.format,
+        idioma: preferencias.idioma,
       );
       if (respuesta['ok'] != true) {
         if (!mounted) return;
@@ -774,6 +785,13 @@ class _DetalleLibroPageState extends State<DetalleLibroPage> {
           titulo: libro.libro,
           coverUrl: libro.coverUrl,
         );
+      } else if (noSeAplicoEstadoElegido(
+        estadoElegido: preferencias.status,
+        estadoFinal: estadoFinal,
+      )) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(mensajeEstadoNoAplicado(libro.libro))),
+        );
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Añadido a tu biblioteca')),
@@ -811,6 +829,7 @@ class _DetalleLibroPageState extends State<DetalleLibroPage> {
         libro: volumen.bookId,
         prioridad: preferencias.priority,
         formato: preferencias.format,
+        idioma: preferencias.idioma,
       );
       if (respuesta['ok'] != true) {
         if (!mounted) return;
@@ -843,6 +862,13 @@ class _DetalleLibroPageState extends State<DetalleLibroPage> {
           context,
           titulo: volumen.titulo,
           coverUrl: volumen.coverUrl,
+        );
+      } else if (noSeAplicoEstadoElegido(
+        estadoElegido: preferencias.status,
+        estadoFinal: estadoFinal,
+      )) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(mensajeEstadoNoAplicado(volumen.titulo))),
         );
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -1163,6 +1189,7 @@ class _DetalleLibroPageState extends State<DetalleLibroPage> {
                 LibroValoracionesSection(
                   valoraciones: libro.finalizados,
                   mediaValoracion: libro.mediaValoracion,
+                  mediaPicante: libro.mediaPicante,
                 ),
               ],
 
@@ -1246,7 +1273,10 @@ class _OtrosVolumenesSagaSection extends StatelessWidget {
                       imageUrl: volumen.coverUrl,
                       width: 112,
                       height: 158,
-                      onTap: yaLoTiene ? () => onAbrir(volumen) : null,
+                      // Tocable siempre: si aún no lo tiene, openBookDetail
+                      // cae a la ficha de catálogo para poder verlo antes
+                      // de decidir añadirlo.
+                      onTap: () => onAbrir(volumen),
                     ),
                     const SizedBox(height: AppSpacing.xs),
                     Text(
@@ -1348,6 +1378,13 @@ class _EstadisticasGlobalesSection extends StatelessWidget {
     final maxCount = counts.values.fold(0, math.max);
     final hayPuntuaciones = maxCount > 0;
 
+    // ── Nivel picante (opcional) ─────────────────────────────────────────────
+    final mediaPicante = libro.mediaPicante;
+    final conPicante = libro.finalizados
+        .where((f) => f.picante.trim().isNotEmpty)
+        .length;
+    final hayPicante = mediaPicante > 0;
+
     // ── Formato de lectura ───────────────────────────────────────────────────
     // Combinamos registros (no finalizados) y finalizados para ver el formato
     // en el que cada persona tiene o leyó el libro.
@@ -1412,6 +1449,12 @@ class _EstadisticasGlobalesSection extends StatelessWidget {
           if (hayPuntuaciones) ...[
             const SizedBox(height: AppSpacing.lg),
             _RatingBarChart(counts: counts, maxCount: maxCount),
+          ],
+
+          // ── Nivel picante ─────────────────────────────────────────────────
+          if (hayPicante) ...[
+            const SizedBox(height: AppSpacing.lg),
+            _PicanteSection(media: mediaPicante, total: conPicante),
           ],
 
           // ── Formato de lectura ────────────────────────────────────────────
@@ -1589,6 +1632,63 @@ class _FormatoPill extends StatelessWidget {
             style: AppTextStyles.caption.copyWith(
               color: AppColors.textMuted,
               fontSize: 10,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ─── Nivel picante ──────────────────────────────────────────────────────────────
+
+class _PicanteSection extends StatelessWidget {
+  const _PicanteSection({required this.media, required this.total});
+
+  final double media;
+  final int total;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(AppSpacing.md),
+      decoration: BoxDecoration(
+        color: AppColors.surfaceSoft,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppColors.border),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Text('🌶️', style: TextStyle(fontSize: 18)),
+              const SizedBox(width: AppSpacing.sm),
+              Expanded(
+                child: Text(
+                  'Nivel picante',
+                  style: AppTextStyles.caption.copyWith(
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.textSecondary,
+                    letterSpacing: .3,
+                  ),
+                ),
+              ),
+              Text(
+                total == 1 ? '1 valoración' : '$total valoraciones',
+                style: AppTextStyles.caption.copyWith(
+                  fontWeight: FontWeight.w800,
+                  color: AppColors.primary,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: AppSpacing.sm),
+          Text(
+            '${media.toStringAsFixed(1)} / 5',
+            style: AppTextStyles.section.copyWith(
+              fontSize: 22,
+              color: AppColors.textPrimary,
             ),
           ),
         ],
