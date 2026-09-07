@@ -247,25 +247,34 @@ class _AjustesBodyState extends State<_AjustesBody> {
         ClubCard(
           elevated: false,
           padding: EdgeInsets.zero,
-          child: Builder(
-            builder: (context) {
-              final visibles = widget.data.tipos
-                  .where((entry) => entry['tipo'] != null)
-                  .toList(growable: false);
-              return Column(
-                children: [
-                  for (final entry in visibles) ...[
-                    _NotificacionSwitch(
-                      tipo: entry['tipo'].toString(),
-                      activado: _activados[entry['tipo'].toString()] ?? true,
-                      guardando: _guardando.contains(entry['tipo'].toString()),
-                      onChanged: (v) => _toggle(entry['tipo'].toString(), v),
-                    ),
-                    if (entry != visibles.last) const Divider(height: 1),
+          child: Material(
+            // ClubCard ya pinta su propio fondo con un DecoratedBox: sin
+            // este Material intermedio, el ripple/highlight del switch
+            // queda oculto detrás (aviso de Flutter "ListTile background
+            // color or ink splashes may be invisible").
+            color: Colors.transparent,
+            child: Builder(
+              builder: (context) {
+                final visibles = widget.data.tipos
+                    .where((entry) => entry['tipo'] != null)
+                    .toList(growable: false);
+                return Column(
+                  children: [
+                    for (final entry in visibles) ...[
+                      _NotificacionSwitch(
+                        tipo: entry['tipo'].toString(),
+                        activado: _activados[entry['tipo'].toString()] ?? true,
+                        guardando: _guardando.contains(
+                          entry['tipo'].toString(),
+                        ),
+                        onChanged: (v) => _toggle(entry['tipo'].toString(), v),
+                      ),
+                      if (entry != visibles.last) const Divider(height: 1),
+                    ],
                   ],
-                ],
-              );
-            },
+                );
+              },
+            ),
           ),
         ),
       ],
