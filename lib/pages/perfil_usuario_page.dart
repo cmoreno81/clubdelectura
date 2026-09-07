@@ -11,6 +11,7 @@ import '../navigation/app_page_route.dart';
 import '../navigation/book_detail_navigation.dart';
 
 import '../models/perfil_usuario.dart';
+import '../services/api_exception.dart';
 import '../services/api_service.dart';
 import '../services/library_refresh_notifier.dart';
 import '../theme/app_colors.dart';
@@ -39,6 +40,7 @@ import '../widgets/perfil/perfil_timeline_lectura.dart';
 import '../widgets/perfil/perfil_historico_meses.dart';
 import '../widgets/common/club_rating_stars.dart';
 import 'acerca_de_page.dart';
+import 'ajustes_privacidad_page.dart';
 import 'ayuda_page.dart';
 import 'change_password_page.dart';
 import 'goodreads_import_page.dart';
@@ -957,6 +959,27 @@ class _PerfilUsuarioPageState extends State<PerfilUsuarioPage> {
           child: Material(
             color: Colors.transparent,
             child: ListTile(
+              key: const ValueKey('privacidad-notificaciones'),
+              leading: const Icon(Icons.lock_outline_rounded),
+              title: const Text('Privacidad y notificaciones'),
+              subtitle: const Text(
+                'Quién ve tu perfil y qué avisos quieres recibir',
+              ),
+              trailing: const Icon(Icons.chevron_right_rounded),
+              onTap: () => Navigator.push<void>(
+                context,
+                AppPageRoute(builder: (_) => const AjustesPrivacidadPage()),
+              ),
+            ),
+          ),
+        ),
+        const SizedBox(height: AppSpacing.sm),
+        ClubCard(
+          elevated: false,
+          padding: EdgeInsets.zero,
+          child: Material(
+            color: Colors.transparent,
+            child: ListTile(
               key: const ValueKey('hidden-series-management'),
               leading: const Icon(Icons.visibility_off_outlined),
               title: const Text('Sagas ocultas'),
@@ -1156,6 +1179,14 @@ class _PerfilUsuarioPageState extends State<PerfilUsuarioPage> {
           }
 
           if (snapshot.hasError) {
+            if (snapshot.error is PerfilPrivadoException) {
+              return const ErrorView(
+                titulo: 'Perfil privado',
+                mensaje:
+                    'Esta usuaria ha decidido que solo ella pueda ver su '
+                    'perfil y sus estadísticas.',
+              );
+            }
             return ErrorView(onRetry: _recargar);
           }
 

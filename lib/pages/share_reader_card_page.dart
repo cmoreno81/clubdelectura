@@ -61,7 +61,15 @@ class _ShareReaderCardPageState extends State<ShareReaderCardPage> {
       for (final url in widget.data.coverUrls) {
         if (url.trim().isNotEmpty) {
           try {
-            await precacheImage(NetworkImage(url), context);
+            // onError es imprescindible: precacheImage no lanza excepción
+            // si la imagen falla, así que sin esto Flutter reporta el
+            // fallo directo a FlutterError.onError (Crashlytics lo cuenta
+            // como crash fatal).
+            await precacheImage(
+              NetworkImage(url),
+              context,
+              onError: (_, _) {},
+            );
           } catch (_) {}
         }
       }
@@ -456,6 +464,10 @@ class _Avatar extends StatelessWidget {
             ? DecorationImage(
                 image: NetworkImage(avatarUrl),
                 fit: BoxFit.cover,
+                // Mismo motivo que en precacheImage: sin onError, un avatar
+                // caído se reporta como crash fatal en Crashlytics aunque
+                // la app siga funcionando (el círculo se queda sin foto).
+                onError: (_, _) {},
               )
             : null,
       ),

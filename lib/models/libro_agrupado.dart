@@ -55,7 +55,21 @@ class LibroAgrupado {
     return '';
   }
 
+  // Preferimos SIEMPRE el idioma de la propia copia de quien mira la
+  // pantalla (yaLoTengo) antes que el de cualquier otra lectora: dos
+  // personas pueden tener el mismo libro en idiomas distintos (una lo
+  // leyó en catalán, otra en español) sin que eso sea un error de datos.
   String get idioma {
+    for (final registro in registros) {
+      if (registro.yaLoTengo && registro.idioma.trim().isNotEmpty) {
+        return registro.idioma.trim();
+      }
+    }
+    for (final finalizado in finalizados) {
+      if (finalizado.yaLoTengo && finalizado.idioma.trim().isNotEmpty) {
+        return finalizado.idioma.trim();
+      }
+    }
     for (final registro in registros) {
       final value = registro.idioma.trim();
       if (value.isNotEmpty) return value;

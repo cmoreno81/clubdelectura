@@ -11,6 +11,9 @@ import 'sagas_page.dart';
 import '../models/club_membership.dart';
 import '../services/libros_data_cache.dart';
 import '../services/notificaciones_service.dart';
+import '../theme/app_colors.dart';
+import '../theme/app_spacing.dart';
+import '../theme/app_text_styles.dart';
 import '../utils/app_breakpoints.dart';
 
 typedef HomePageBuilder = Widget Function();
@@ -252,6 +255,58 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
 
   // ── Layout móvil (NavigationBar inferior) ──────────────────────────────────
 
+  // Vuelve directa a "Mi universo lector" (el dashboard global), sin
+  // importar cuántas pantallas se hayan apilado por encima — toda la app
+  // corre sobre un único Navigator, así que popUntil llega hasta la raíz
+  // desde cualquier punto. Antes había que ir hacia atrás pantalla por
+  // pantalla (p. ej. desde dentro de Clubvisión).
+  void _volverAlDashboardGlobal() {
+    HapticFeedback.selectionClick();
+    Navigator.of(context).popUntil((route) => route.isFirst);
+  }
+
+  // Con el mismo peso visual que un NavigationDestination (icono + etiqueta)
+  // para que no se vea como un botón suelto pegado al menú.
+  //
+  // En pantallas estrechas (compact=true) se queda solo con el icono: con
+  // 5 pestañas de club más este botón no cabe la etiqueta completa sin
+  // apretar demasiado el resto del menú.
+  Widget _homeShortcutButton({bool compact = false}) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: _volverAlDashboardGlobal,
+        child: Tooltip(
+          message: 'Volver a Mi universo lector',
+          child: SizedBox(
+            width: compact ? 40 : 64,
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Icon(
+                  Icons.home_outlined,
+                  color: AppColors.textSecondary,
+                ),
+                if (!compact) ...[
+                  const SizedBox(height: 3),
+                  Text(
+                    'ClubReads',
+                    style: AppTextStyles.caption.copyWith(
+                      color: AppColors.textSecondary,
+                      fontSize: 10,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ],
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
   Widget _buildMobile(BuildContext context) {
     return Scaffold(
       extendBody: false,
@@ -262,20 +317,61 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
             top: BorderSide(color: Color(0xFFCFB8E0), width: 1.0),
           ),
         ),
-        child: _esPersonal
-            ? NavigationBar(
-                selectedIndex: currentIndex,
-                onDestinationSelected: _selectTab,
-                destinations: _personalDestinations(),
-              )
-            : ListenableBuilder(
-                listenable: _notifications,
-                builder: (context, _) => NavigationBar(
-                  selectedIndex: currentIndex,
-                  onDestinationSelected: _selectTab,
-                  destinations: _socialDestinations(),
-                ),
-              ),
+        child: SafeArea(
+          top: false,
+          // Alto fijo (algo mayor que el de NavigationBar, 80) para que el
+          // separador vertical tenga una altura acotada en la que dibujarse
+          // (sin esto el Row queda con altura indefinida y el layout se
+          // rompe) y para que el contenido quede centrado con un pelín de
+          // aire arriba y abajo en vez de pegado al borde superior.
+          child: SizedBox(
+            height: 88,
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                // Con 5 pestañas de club + este botón, una pantalla estrecha
+                // (iPhone mini/SE) no tiene sitio para la etiqueta completa.
+                final compact = constraints.maxWidth < 380;
+                return Row(
+                  children: [
+                    const SizedBox(width: 8),
+                    _homeShortcutButton(compact: compact),
+                    const VerticalDivider(
+                      width: 1,
+                      thickness: 1,
+                      color: Color(0xFFE3D5EF),
+                    ),
+                    Expanded(
+                      child: _esPersonal
+                          ? NavigationBar(
+                              selectedIndex: currentIndex,
+                              onDestinationSelected: _selectTab,
+                              labelBehavior: compact
+                                  ? NavigationDestinationLabelBehavior
+                                        .onlyShowSelected
+                                  : NavigationDestinationLabelBehavior
+                                        .alwaysShow,
+                              destinations: _personalDestinations(),
+                            )
+                          : ListenableBuilder(
+                              listenable: _notifications,
+                              builder: (context, _) => NavigationBar(
+                                selectedIndex: currentIndex,
+                                onDestinationSelected: _selectTab,
+                                labelBehavior: compact
+                                    ? NavigationDestinationLabelBehavior
+                                          .onlyShowSelected
+                                    : NavigationDestinationLabelBehavior
+                                          .alwaysShow,
+                                destinations: _socialDestinations(),
+                              ),
+                            ),
+                    ),
+                  ],
+                );
+              },
+            ),
+          ),
+        ),
       ),
     );
   }
@@ -285,6 +381,15 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
   Widget _buildTablet(BuildContext context) {
     final extended = AppBreakpoints.isExpanded(context);
 
+    Widget railHomeButton() => Padding(
+      padding: const EdgeInsets.only(bottom: AppSpacing.sm),
+      child: IconButton(
+        tooltip: 'Volver a Mi universo lector',
+        icon: const Icon(Icons.home_outlined),
+        onPressed: _volverAlDashboardGlobal,
+      ),
+    );
+
     // Rail para modo personal (sin notificaciones)
     NavigationRail personalRail() => NavigationRail(
       selectedIndex: currentIndex,
@@ -292,6 +397,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
       extended: extended,
       minWidth: 72,
       minExtendedWidth: 180,
+      leading: railHomeButton(),
       labelType: extended
           ? NavigationRailLabelType.none
           : NavigationRailLabelType.all,
@@ -317,6 +423,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
                         extended: extended,
                         minWidth: 72,
                         minExtendedWidth: 180,
+                        leading: railHomeButton(),
                         labelType: extended
                             ? NavigationRailLabelType.none
                             : NavigationRailLabelType.all,

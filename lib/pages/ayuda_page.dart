@@ -269,6 +269,24 @@ const List<_HelpSection> _secciones = [
             'También hemos añadido el género 🦇 Gótico a la lista disponible.',
       ),
       _HelpItem(
+        pregunta:
+            '¿Qué pasa si leo un libro en un idioma distinto al de la ficha?',
+        respuesta:
+            'Puede que un libro ya esté en el catálogo en un idioma (p. ej. '
+            'español) y tú lo hayas leído en otro (p. ej. catalán o inglés). '
+            'Al añadirlo, si eliges un idioma distinto al que ya tiene la '
+            'ficha, se guarda como tu idioma personal: solo tú lo verás así '
+            'en tu biblioteca y en la ficha del libro. El resto de lectoras '
+            'siguen viendo el idioma de la ficha sin que cambie para ellas.\n\n'
+            'Si la ficha todavía no tenía idioma asignado, tu elección sí '
+            'se guarda como el idioma de referencia del libro, porque no hay '
+            'ningún conflicto que resolver.\n\n'
+            'Ojo: esto es distinto de corregir el idioma con la pastilla ✏️ '
+            'de la tarjeta (pregunta anterior) — esa sigue cambiando el dato '
+            'para todo el mundo, porque sirve para arreglar errores del '
+            'catálogo, no para marcar tu edición personal.',
+      ),
+      _HelpItem(
         pregunta: '¿Qué es la valoración picante 🌶️?',
         respuesta:
             'Es una valoración opcional de 1 a 5 guindillas que puedes añadir '
@@ -1123,7 +1141,25 @@ const List<_HelpSection> _secciones = [
             '• Nuevo miembro en el club\n'
             '• Resultado de Clubvisión (libro ganador)\n'
             '• Nuevo libro en la biblioteca del club\n'
-            '• Cuando alguien comenta en una lectura en la que participas',
+            '• Cuando alguien termina o empieza un libro\n'
+            '• Cuando alguien desbloquea un logro\n'
+            '• Novedades del Libro del año del club\n'
+            '• Cuando alguien comenta en una lectura en la que participas\n\n'
+            'Puedes desactivar cualquiera de estos avisos por separado en '
+            'Perfil → "Más" → "Privacidad y notificaciones". Se aplica solo a '
+            'ti; el resto del club sigue recibiendo las suyas con normalidad.',
+      ),
+      _HelpItem(
+        pregunta: '¿Quién puede ver mi perfil y mis estadísticas?',
+        respuesta:
+            'Por defecto, solo las personas de tu club actual pueden ver tu '
+            'perfil, tu biblioteca, tu historial y tus estadísticas — igual '
+            'que hasta ahora.\n\n'
+            'Si prefieres que nadie más las vea, ve a Perfil → "Más" → '
+            '"Privacidad y notificaciones" y elige "Solo yo". Con esa opción, '
+            'ni siquiera tu club puede abrir tu ficha de perfil; tú sigues '
+            'viendo todo con normalidad y puedes volver a "Miembros de mi '
+            'club" cuando quieras.',
       ),
       _HelpItem(
         pregunta: '¿Qué es "Seguimiento de lectura" en el perfil?',

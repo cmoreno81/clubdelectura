@@ -1484,9 +1484,11 @@ class ApiService {
     }
 
     if (data['ok'] == false) {
-      throw Exception(
-        data['mensaje']?.toString() ?? 'No se pudo cargar el perfil',
-      );
+      final mensaje = data['mensaje']?.toString() ?? 'No se pudo cargar el perfil';
+      if (data['privado'] == true) {
+        throw PerfilPrivadoException(mensaje);
+      }
+      throw Exception(mensaje);
     }
 
     return PerfilUsuario.fromJson(data);
@@ -1651,6 +1653,67 @@ class ApiService {
     }
 
     return data;
+  }
+
+  /// Devuelve, para cada tipo de notificación, si está activada.
+  Future<List<Map<String, dynamic>>> getPreferenciasNotificacion() async {
+    final response = await _client.get(
+      Uri.parse('$baseUrl?action=preferenciasNotificacion'),
+    );
+    if (response.statusCode != 200) {
+      throw ApiException.fromResponse(response);
+    }
+    final data = _decodeJson(response);
+    if (data is! Map<String, dynamic> || data['tipos'] is! List) {
+      throw const ApiException(
+        statusCode: 500,
+        message: 'La respuesta de preferencias no es válida.',
+      );
+    }
+    return (data['tipos'] as List).cast<Map<String, dynamic>>();
+  }
+
+  Future<bool> actualizarPreferenciaNotificacion({
+    required String tipo,
+    required bool activado,
+  }) async {
+    final response = await _client.post(
+      Uri.parse('$baseUrl?action=actualizarPreferenciaNotificacion'),
+      headers: const {'Content-Type': 'application/json'},
+      body: jsonEncode({'tipo': tipo, 'activado': activado}),
+    );
+    if (response.statusCode != 200) return false;
+    final data = _decodeJson(response);
+    return data is Map<String, dynamic> && data['ok'] == true;
+  }
+
+  /// Devuelve la visibilidad actual del perfil: 'CLUB' o 'PRIVADO'.
+  Future<String> getPrivacidadPerfil() async {
+    final response = await _client.get(
+      Uri.parse('$baseUrl?action=privacidadPerfil'),
+    );
+    if (response.statusCode != 200) {
+      throw ApiException.fromResponse(response);
+    }
+    final data = _decodeJson(response);
+    if (data is! Map<String, dynamic>) {
+      throw const ApiException(
+        statusCode: 500,
+        message: 'La respuesta de privacidad no es válida.',
+      );
+    }
+    return data['visibilidad']?.toString() ?? 'CLUB';
+  }
+
+  Future<bool> actualizarPrivacidadPerfil({required String visibilidad}) async {
+    final response = await _client.post(
+      Uri.parse('$baseUrl?action=actualizarPrivacidadPerfil'),
+      headers: const {'Content-Type': 'application/json'},
+      body: jsonEncode({'visibilidad': visibilidad}),
+    );
+    if (response.statusCode != 200) return false;
+    final data = _decodeJson(response);
+    return data is Map<String, dynamic> && data['ok'] == true;
   }
 
   Future<MoodClub> getMoodClub() async {

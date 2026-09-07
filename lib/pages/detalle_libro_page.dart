@@ -619,7 +619,15 @@ class _DetalleLibroPageState extends State<DetalleLibroPage> {
       // género…) sin depender del timing del refresco asíncrono de la
       // biblioteca. Si la recarga falla, retrocedemos con pop como antes.
       try {
-        final data = await ApiService().getLibroPorId(libro.bookId);
+        // Siempre con global:true: la ficha puede haberse abierto desde la
+        // vista "De ClubReads" (con lectoras de otros clubes) aunque
+        // widget.globalStats sea false (esa flag controla el modo de
+        // estadísticas anónimas, no el alcance de los datos). El backend ya
+        // anonimiza aquí a quien no comparte club, igual que en esa vista.
+        final data = await ApiService().getLibroPorId(
+          libro.bookId,
+          global: true,
+        );
         if (!mounted) return;
 
         if (data['ok'] == true) {

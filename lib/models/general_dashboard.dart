@@ -648,12 +648,14 @@ class CommunitySummary {
     required this.readers,
     required this.activeReadings,
     required this.formats,
+    required this.languages,
   });
 
   final int clubs;
   final int readers;
   final int activeReadings;
   final CommunityReadingFormats formats;
+  final CommunityLanguageStats languages;
 
   factory CommunitySummary.fromJson(Map<String, dynamic> json) =>
       CommunitySummary(
@@ -663,6 +665,41 @@ class CommunitySummary {
         formats: CommunityReadingFormats.fromJson(
           Map<String, dynamic>.from(json['formatos'] as Map? ?? {}),
         ),
+        languages: CommunityLanguageStats.fromJson(
+          Map<String, dynamic>.from(json['idiomas'] as Map? ?? {}),
+        ),
+      );
+}
+
+class CommunityLanguageEntry {
+  const CommunityLanguageEntry({required this.code, required this.count});
+
+  final String code;
+  final int count;
+
+  factory CommunityLanguageEntry.fromJson(Map<String, dynamic> json) =>
+      CommunityLanguageEntry(
+        code: json['codigo']?.toString() ?? '',
+        count: _integer(json['cantidad']),
+      );
+}
+
+class CommunityLanguageStats {
+  const CommunityLanguageStats({required this.breakdown, required this.total});
+
+  final List<CommunityLanguageEntry> breakdown;
+  final int total;
+
+  factory CommunityLanguageStats.fromJson(Map<String, dynamic> json) =>
+      CommunityLanguageStats(
+        breakdown: (json['desglose'] as List? ?? [])
+            .map(
+              (e) => CommunityLanguageEntry.fromJson(
+                Map<String, dynamic>.from(e as Map),
+              ),
+            )
+            .toList(),
+        total: _integer(json['total']),
       );
 }
 

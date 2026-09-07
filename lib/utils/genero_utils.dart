@@ -11,6 +11,7 @@ const generosSoportados = [
   'Dark Academia',
   'Drama',
   'Clásicos',
+  'Distopía',
   'Novela contemporánea',
   'Novela histórica',
   'Ciencia ficción',
@@ -19,6 +20,7 @@ const generosSoportados = [
   'Cómic',
   'No ficción',
   'Infantil',
+  'Poesía',
 ];
 
 String iconoGenero(String genero) {
@@ -54,6 +56,9 @@ String iconoGenero(String genero) {
       return '😭';
     case 'clásicos':
       return '📜';
+    case 'distopía':
+    case 'distopia':
+      return '🌇';
     case 'comic':
     case 'cómic':
       return '💬';
@@ -62,6 +67,9 @@ String iconoGenero(String genero) {
       return '🧠';
     case 'infantil':
       return '🎈';
+    case 'poesía':
+    case 'poesia':
+      return '🪶';
     default:
       return '📚';
   }

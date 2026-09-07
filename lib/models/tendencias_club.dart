@@ -7,6 +7,7 @@ class TendenciasClub {
   final List<TendenciaItem> libros;
   final List<TendenciaItem> lectoras;
   final int totalLeyendo;
+  final ComparativaClub? comparativa;
 
   TendenciasClub({
     required this.titular,
@@ -15,6 +16,7 @@ class TendenciasClub {
     required this.libros,
     required this.lectoras,
     required this.totalLeyendo,
+    this.comparativa,
   });
 
   factory TendenciasClub.fromJson(Map<String, dynamic> json) {
@@ -31,6 +33,82 @@ class TendenciasClub {
       libros: parse('libros'),
       lectoras: parse('lectoras'),
       totalLeyendo: (json['totalLeyendo'] as num?)?.toInt() ?? 0,
+      comparativa: json['comparativa'] is Map
+          ? ComparativaClub.fromJson(
+              Map<String, dynamic>.from(json['comparativa'] as Map),
+            )
+          : null,
+    );
+  }
+}
+
+// ── Comparativa: tu club frente a toda la comunidad ──────────────────────────
+
+class ComparativaClub {
+  final ComparativaCategoria generos;
+  final ComparativaCategoria idiomas;
+  final ComparativaCategoria formatos;
+
+  ComparativaClub({
+    required this.generos,
+    required this.idiomas,
+    required this.formatos,
+  });
+
+  factory ComparativaClub.fromJson(Map<String, dynamic> json) {
+    ComparativaCategoria parse(String key) => ComparativaCategoria.fromJson(
+      Map<String, dynamic>.from(json[key] as Map? ?? {}),
+    );
+    return ComparativaClub(
+      generos: parse('generos'),
+      idiomas: parse('idiomas'),
+      formatos: parse('formatos'),
+    );
+  }
+}
+
+class ComparativaCategoria {
+  final List<ComparativaItem> items;
+  final int totalClub;
+  final int totalComunidad;
+
+  ComparativaCategoria({
+    required this.items,
+    required this.totalClub,
+    required this.totalComunidad,
+  });
+
+  factory ComparativaCategoria.fromJson(Map<String, dynamic> json) {
+    return ComparativaCategoria(
+      items: (json['items'] as List? ?? [])
+          .map((e) => ComparativaItem.fromJson(Map<String, dynamic>.from(e as Map)))
+          .toList(),
+      totalClub: (json['totalClub'] as num?)?.toInt() ?? 0,
+      totalComunidad: (json['totalComunidad'] as num?)?.toInt() ?? 0,
+    );
+  }
+}
+
+class ComparativaItem {
+  final String nombre;
+  final int club;
+  final double porcentajeClub;
+  final double porcentajeComunidad;
+
+  ComparativaItem({
+    required this.nombre,
+    required this.club,
+    required this.porcentajeClub,
+    required this.porcentajeComunidad,
+  });
+
+  factory ComparativaItem.fromJson(Map<String, dynamic> json) {
+    return ComparativaItem(
+      nombre: json['nombre']?.toString() ?? '',
+      club: (json['club'] as num?)?.toInt() ?? 0,
+      porcentajeClub: (json['porcentajeClub'] as num?)?.toDouble() ?? 0,
+      porcentajeComunidad:
+          (json['porcentajeComunidad'] as num?)?.toDouble() ?? 0,
     );
   }
 }

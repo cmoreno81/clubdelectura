@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:club_lectura_app/models/dashboard.dart';
 import 'package:club_lectura_app/pages/notificaciones_page.dart';
 import 'package:club_lectura_app/theme/app_radius.dart';
@@ -22,6 +24,7 @@ import '../services/general_dashboard_service.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_spacing.dart';
 import '../theme/app_text_styles.dart';
+import '../utils/idioma_utils.dart';
 import '../widgets/common/club_avatar.dart';
 import '../widgets/common/club_book_cover.dart';
 import '../widgets/common/club_card.dart';
@@ -93,6 +96,12 @@ class _GeneralDashboardPageState extends State<GeneralDashboardPage> {
   bool _clubsExpanded = false;
   bool _savingProgress = false;
   bool _openingBookActions = false;
+  // Bosquejo de menú inferior: no son pestañas persistentes de verdad
+  // (Explorar/Club activo/Perfil abren su propia pantalla con push), solo
+  // marca visualmente cuál se pulsó antes de volver a "Inicio".
+  int _navIndex = 0;
+  // Etiqueta la pestaña "Mi club"/"Mi espacio" según tenga club o no.
+  bool _hasClub = false;
   final _scrollController = ScrollController();
   // _latestScrollController y _personalLibraryScrollController eliminados:
   // los carrouseles horizontales usan _HScrollGestureProxy, que no necesita
@@ -263,8 +272,12 @@ class _GeneralDashboardPageState extends State<GeneralDashboardPage> {
     }
   }
 
-  Future<GeneralDashboard> _loadDashboard() =>
-      widget.loadDashboard?.call() ?? GeneralDashboardService().load();
+  Future<GeneralDashboard> _loadDashboard() async {
+    final data = await (widget.loadDashboard?.call() ??
+        GeneralDashboardService().load());
+    if (mounted) setState(() => _hasClub = data.clubs.isNotEmpty);
+    return data;
+  }
 
   Future<void> _addBook() async {
     if (_openingNewBook) return;
@@ -302,6 +315,88 @@ class _GeneralDashboardPageState extends State<GeneralDashboardPage> {
       AppPageRoute(builder: (_) => const ExploreCatalogPage()),
     );
     if (mounted) await _reload();
+  }
+
+  // ── Menú inferior (bosquejo) ───────────────────────────────────────────
+  //
+  // "Inicio" es la única pestaña de verdad: las otras tres son atajos que
+  // abren su propia pantalla con push y, al volver, restauran el
+  // indicador a "Inicio" — no hay contenido embebido por pestaña.
+  // Evita apilar dos navegaciones si se toca dos veces seguidas antes de
+  // que la primera resuelva (mismo criterio que _openingNewBook/_openBook).
+  bool _navActionInProgress = false;
+
+  Future<void> _selectNavIndex(int index) async {
+    if (index == 0) {
+      // Tocar "Inicio" estando ya en Inicio (con scroll bajado) sube arriba
+      // del todo, como en la mayoría de apps con menú inferior.
+      if (_scrollController.hasClients) {
+        _scrollController.animateTo(
+          0,
+          duration: const Duration(milliseconds: 300),
+          curve: Curves.easeOut,
+        );
+      }
+      setState(() => _navIndex = 0);
+      return;
+    }
+    if (_navActionInProgress) return;
+    _navActionInProgress = true;
+    setState(() => _navIndex = index);
+    try {
+      switch (index) {
+        case 1:
+          await _exploreBooks();
+        case 2:
+          await _goToActiveClub();
+        case 3:
+          await _openMyProfileFromNav();
+      }
+    } finally {
+      _navActionInProgress = false;
+      if (mounted) setState(() => _navIndex = 0);
+    }
+  }
+
+  void _avisarErrorNavegacion() {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('No se ha podido abrir. Inténtalo de nuevo.')),
+    );
+  }
+
+  // "Ajustes" del menú inferior: va directa a Perfil → Más (sagas ocultas,
+  // importaciones, ajustes de cuenta…), no al resumen — eso ya se abre
+  // tocando la tarjeta "Hola, Cristina".
+  Future<void> _openMyProfileFromNav() async {
+    try {
+      final data = await _future;
+      if (!mounted) return;
+      await _openMyProfile(data.userName, data.userId, initialTab: 'MAS');
+    } catch (_) {
+      _avisarErrorNavegacion();
+    }
+  }
+
+  // Va directa al club/espacio marcado como activo. Si aún no tiene
+  // ninguno (p. ej. recién llegada sin club ni espacio personal), abre el
+  // selector para que elija uno en vez de fallar en silencio.
+  Future<void> _goToActiveClub() async {
+    try {
+      final myClubs = await ClubService().getMyClubs();
+      if (!mounted) return;
+      final active = myClubs.clubs.where((c) => c.activo).firstOrNull;
+      await Navigator.push<void>(
+        context,
+        AppPageRoute(
+          builder: (_) =>
+              active != null ? HomePage(club: active) : const ClubsPage(),
+        ),
+      );
+      if (mounted) await _reload();
+    } catch (_) {
+      _avisarErrorNavegacion();
+    }
   }
 
   // ── Apertura de ficha de libro con protección anti-doble-tap ─────────────
@@ -445,13 +540,18 @@ class _GeneralDashboardPageState extends State<GeneralDashboardPage> {
     if (mounted) await _reload();
   }
 
-  Future<void> _openMyProfile(String userName, String userId) async {
+  Future<void> _openMyProfile(
+    String userName,
+    String userId, {
+    String initialTab = 'RESUMEN',
+  }) async {
     await Navigator.push<void>(
       context,
       AppPageRoute(
         builder: (_) => PerfilUsuarioPage(
           usuario: userName,
           profileUserId: userId.isEmpty ? null : userId,
+          initialTab: initialTab,
         ),
       ),
     );
@@ -518,6 +618,44 @@ class _GeneralDashboardPageState extends State<GeneralDashboardPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.transparent,
+      bottomNavigationBar: Container(
+        decoration: const BoxDecoration(
+          border: Border(top: BorderSide(color: Color(0xFFCFB8E0), width: 1.0)),
+        ),
+        child: NavigationBar(
+          // Un poco más alto que el valor por defecto (80) para que el
+          // contenido no quede pegado al borde superior de la barra. El
+          // padding del área segura (home indicator en iOS, gesture bar en
+          // Android) se añade automáticamente POR ENCIMA de esta altura al
+          // estar en Scaffold.bottomNavigationBar, así que esto no puede
+          // recortarse en Android: solo da más aire a los iconos.
+          height: 88,
+          selectedIndex: _navIndex,
+          onDestinationSelected: _selectNavIndex,
+          destinations: [
+            const NavigationDestination(
+              icon: Icon(Icons.home_outlined),
+              selectedIcon: Icon(Icons.home_rounded),
+              label: 'Inicio',
+            ),
+            NavigationDestination(
+              icon: Icon(Icons.travel_explore_outlined),
+              selectedIcon: Icon(Icons.travel_explore_rounded),
+              label: 'Explorar',
+            ),
+            NavigationDestination(
+              icon: Icon(Icons.groups_outlined),
+              selectedIcon: Icon(Icons.groups_rounded),
+              label: _hasClub ? 'Mi club' : 'Mi espacio',
+            ),
+            const NavigationDestination(
+              icon: Icon(Icons.settings_outlined),
+              selectedIcon: Icon(Icons.settings_rounded),
+              label: 'Ajustes',
+            ),
+          ],
+        ),
+      ),
       body: FutureBuilder<GeneralDashboard>(
         future: _future,
         builder: (context, snapshot) {
@@ -920,6 +1058,10 @@ class _GeneralDashboardPageState extends State<GeneralDashboardPage> {
                         ),
                         const SizedBox(height: AppSpacing.sm),
                         _communityFormats(data.community.formats),
+                      ],
+                      if (data.community.languages.total > 0) ...[
+                        const SizedBox(height: AppSpacing.lg),
+                        _communityLanguages(data.community.languages),
                       ],
                       const SizedBox(height: AppSpacing.xl),
                       _community(data.community),
@@ -1983,6 +2125,98 @@ class _GeneralDashboardPageState extends State<GeneralDashboardPage> {
           ),
         ],
       ),
+    );
+  }
+
+  // Idioma en un donut (en vez de barras, como los formatos) para que
+  // la sección "Cómo lee la comunidad" combine dos tipos de gráfica.
+  Widget _communityLanguages(CommunityLanguageStats stats) {
+    const maxSlices = 5;
+    final ordenado = [...stats.breakdown]
+      ..sort((a, b) => b.count.compareTo(a.count));
+    final principales = ordenado.take(maxSlices).toList();
+    final restoTotal = ordenado
+        .skip(maxSlices)
+        .fold<int>(0, (sum, item) => sum + item.count);
+
+    return ClubCard(
+      elevated: false,
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          _LanguageDonut(
+            values: [
+              ...principales.map((e) => e.count),
+              if (restoTotal > 0) restoTotal,
+            ],
+          ),
+          const SizedBox(width: AppSpacing.lg),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                for (var i = 0; i < principales.length; i++) ...[
+                  if (i > 0) const SizedBox(height: AppSpacing.xs),
+                  _languageLegendRow(
+                    color: _languageColors[i % _languageColors.length],
+                    icon: banderaIdioma(principales[i].code),
+                    label: nombreIdioma(principales[i].code),
+                    value: principales[i].count,
+                    total: stats.total,
+                  ),
+                ],
+                if (restoTotal > 0) ...[
+                  const SizedBox(height: AppSpacing.xs),
+                  _languageLegendRow(
+                    color: _languageColors[principales.length % _languageColors.length],
+                    icon: '🌐',
+                    label: 'Otros idiomas',
+                    value: restoTotal,
+                    total: stats.total,
+                  ),
+                ],
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _languageLegendRow({
+    required Color color,
+    required String icon,
+    required String label,
+    required int value,
+    required int total,
+  }) {
+    final exact = total == 0 ? 0.0 : value / total * 100;
+    // Siempre con un decimal, para todos los idiomas por igual: si solo el
+    // minoritario mostrara decimales, la suma de los redondeados de los
+    // demás no llegaría a un 100% visual y parecería que faltan libros.
+    final percentageLabel = '${exact.toStringAsFixed(1)}%';
+    return Row(
+      children: [
+        Container(
+          width: 10,
+          height: 10,
+          decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+        ),
+        const SizedBox(width: AppSpacing.xs),
+        Text(icon, style: const TextStyle(fontSize: 13)),
+        const SizedBox(width: 4),
+        Expanded(
+          child: Text(
+            label,
+            overflow: TextOverflow.ellipsis,
+            style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
+          ),
+        ),
+        Text(
+          percentageLabel,
+          style: TextStyle(color: color, fontWeight: FontWeight.w900, fontSize: 13),
+        ),
+      ],
     );
   }
 
@@ -3268,5 +3502,90 @@ class _KitSesionWidgetState extends State<_KitSesionWidget> {
         ),
       ),
     );
+  }
+}
+
+// ── Donut de idiomas de "Cómo lee la comunidad" ──────────────────────────
+
+const _languageColors = [
+  Color(0xFF6D4590),
+  Color(0xFF58A486),
+  Color(0xFFE4A927),
+  Color(0xFF6D8FD6),
+  Color(0xFFE56F61),
+  AppColors.textMuted,
+];
+
+class _LanguageDonut extends StatelessWidget {
+  const _LanguageDonut({required this.values});
+
+  final List<int> values;
+
+  @override
+  Widget build(BuildContext context) {
+    final total = values.fold<int>(0, (sum, value) => sum + value);
+    return SizedBox(
+      width: 88,
+      height: 88,
+      child: Stack(
+        alignment: Alignment.center,
+        children: [
+          CustomPaint(
+            size: const Size.square(88),
+            painter: _LanguageDonutPainter(values: values),
+          ),
+          Text(
+            '$total',
+            style: AppTextStyles.title.copyWith(
+              color: AppColors.primary,
+              fontSize: 20,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _LanguageDonutPainter extends CustomPainter {
+  const _LanguageDonutPainter({required this.values});
+
+  final List<int> values;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final rect = Offset.zero & size;
+    final stroke = size.width * .16;
+    final paint = Paint()
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = stroke
+      ..strokeCap = StrokeCap.round;
+    final total = values.fold<int>(0, (sum, value) => sum + value);
+
+    if (total == 0) {
+      paint.color = AppColors.border;
+      canvas.drawArc(rect.deflate(stroke / 2), 0, math.pi * 2, false, paint);
+      return;
+    }
+
+    var start = -math.pi / 2;
+    const gap = .06;
+    for (var index = 0; index < values.length; index++) {
+      final sweep = (values[index] / total) * math.pi * 2;
+      paint.color = _languageColors[index % _languageColors.length];
+      canvas.drawArc(
+        rect.deflate(stroke / 2),
+        start + gap / 2,
+        math.max(0, sweep - gap),
+        false,
+        paint,
+      );
+      start += sweep;
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant _LanguageDonutPainter oldDelegate) {
+    return oldDelegate.values.join(',') != values.join(',');
   }
 }

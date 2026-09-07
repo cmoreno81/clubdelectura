@@ -11,6 +11,8 @@ import '../theme/app_colors.dart';
 import '../theme/app_radius.dart';
 import '../theme/app_spacing.dart';
 import '../theme/app_text_styles.dart';
+import '../utils/genero_utils.dart';
+import '../utils/idioma_utils.dart';
 import '../widgets/common/club_avatar.dart';
 import '../widgets/common/club_book_cover.dart';
 import '../widgets/common/club_card.dart';
@@ -199,6 +201,52 @@ class _TendenciasClubPageState extends State<TendenciasClubPage> {
                       ),
                     ),
                   ),
+                ],
+
+                if (data.comparativa != null) ...[
+                  const SizedBox(height: AppSpacing.xl),
+
+                  const _SectionHeader(
+                    icon: Icons.query_stats_rounded,
+                    color: AppColors.primary,
+                    title: 'Tu club frente a ClubReads',
+                    subtitle: 'Cómo lee vuestro club comparado con toda la comunidad',
+                  ),
+
+                  const SizedBox(height: AppSpacing.md),
+
+                  _ComparativaLegend(),
+
+                  const SizedBox(height: AppSpacing.sm),
+
+                  if (data.comparativa!.generos.items.isNotEmpty)
+                    _ComparativaCard(
+                      icon: '🎭',
+                      titulo: 'Género',
+                      categoria: data.comparativa!.generos,
+                      etiqueta: (nombre) => nombre,
+                    ),
+
+                  if (data.comparativa!.idiomas.items.isNotEmpty) ...[
+                    const SizedBox(height: AppSpacing.md),
+                    _ComparativaDonutsCard(
+                      icon: '🌐',
+                      titulo: 'Idioma',
+                      categoria: data.comparativa!.idiomas,
+                      etiqueta: nombreIdioma,
+                      iconoItem: banderaIdioma,
+                    ),
+                  ],
+
+                  if (data.comparativa!.formatos.items.isNotEmpty) ...[
+                    const SizedBox(height: AppSpacing.md),
+                    _ComparativaBarrasCard(
+                      icon: '📚',
+                      titulo: 'Formato',
+                      categoria: data.comparativa!.formatos,
+                      etiqueta: _nombreFormato,
+                    ),
+                  ],
                 ],
 
                 if (data.generos.isEmpty &&
@@ -591,10 +639,8 @@ class _GeneroItem extends StatelessWidget {
                         color: AppColors.success,
                       )
                     : Text(
-                        '${posicion + 1}',
-                        style: AppTextStyles.subtitle.copyWith(
-                          color: AppColors.textMuted,
-                        ),
+                        iconoGenero(item.nombre),
+                        style: const TextStyle(fontSize: 22),
                       ),
               ),
 
@@ -871,6 +917,429 @@ class _LectoraTendenciaItem extends StatelessWidget {
           ],
         ),
       ),
+    );
+  }
+}
+
+String _nombreFormato(String codigo) {
+  switch (codigo.toUpperCase()) {
+    case 'PHYSICAL':
+      return 'Físico';
+    case 'DIGITAL':
+      return 'Digital';
+    case 'AUDIOBOOK':
+      return 'Audiolibro';
+    default:
+      return codigo;
+  }
+}
+
+// ── Comparativa: tu club frente a toda la comunidad ──────────────────────────
+
+class _ComparativaLegend extends StatelessWidget {
+  const _ComparativaLegend();
+
+  @override
+  Widget build(BuildContext context) {
+    Widget dot(Color color, String label) => Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+          width: 10,
+          height: 10,
+          decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+        ),
+        const SizedBox(width: 6),
+        Text(
+          label,
+          style: AppTextStyles.caption.copyWith(
+            color: AppColors.textSecondary,
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+      ],
+    );
+
+    return Row(
+      children: [
+        dot(AppColors.primary, 'Tu club'),
+        const SizedBox(width: AppSpacing.lg),
+        dot(AppColors.gold, 'Toda ClubReads'),
+      ],
+    );
+  }
+}
+
+class _ComparativaCard extends StatelessWidget {
+  const _ComparativaCard({
+    required this.icon,
+    required this.titulo,
+    required this.categoria,
+    required this.etiqueta,
+  });
+
+  final String icon;
+  final String titulo;
+  final ComparativaCategoria categoria;
+  final String Function(String) etiqueta;
+
+  @override
+  Widget build(BuildContext context) {
+    return ClubCard(
+      elevated: false,
+      padding: const EdgeInsets.all(AppSpacing.md),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Text(icon, style: const TextStyle(fontSize: 18)),
+              const SizedBox(width: AppSpacing.xs),
+              Text(
+                titulo,
+                style: AppTextStyles.body.copyWith(fontWeight: FontWeight.w800),
+              ),
+            ],
+          ),
+          const SizedBox(height: AppSpacing.md),
+          for (var i = 0; i < categoria.items.length; i++) ...[
+            if (i > 0) const SizedBox(height: AppSpacing.md),
+            _ComparativaFila(
+              nombre: etiqueta(categoria.items[i].nombre),
+              porcentajeClub: categoria.items[i].porcentajeClub,
+              porcentajeComunidad: categoria.items[i].porcentajeComunidad,
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+class _ComparativaFila extends StatelessWidget {
+  const _ComparativaFila({
+    required this.nombre,
+    required this.porcentajeClub,
+    required this.porcentajeComunidad,
+  });
+
+  final String nombre;
+  final double porcentajeClub;
+  final double porcentajeComunidad;
+
+  @override
+  Widget build(BuildContext context) {
+    Widget barra(double porcentaje, Color color) => ClipRRect(
+      borderRadius: BorderRadius.circular(99),
+      child: LinearProgressIndicator(
+        minHeight: 7,
+        value: (porcentaje / 100).clamp(0, 1),
+        color: color,
+        backgroundColor: color.withValues(alpha: .12),
+      ),
+    );
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          nombre,
+          style: AppTextStyles.bodySecondary.copyWith(
+            fontWeight: FontWeight.w700,
+            color: AppColors.textPrimary,
+          ),
+        ),
+        const SizedBox(height: 6),
+        Row(
+          children: [
+            Expanded(child: barra(porcentajeClub, AppColors.primary)),
+            const SizedBox(width: AppSpacing.sm),
+            SizedBox(
+              width: 42,
+              child: Text(
+                '${porcentajeClub.toStringAsFixed(0)}%',
+                textAlign: TextAlign.right,
+                style: AppTextStyles.caption.copyWith(
+                  color: AppColors.primary,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 4),
+        Row(
+          children: [
+            Expanded(
+              child: barra(porcentajeComunidad, AppColors.gold),
+            ),
+            const SizedBox(width: AppSpacing.sm),
+            SizedBox(
+              width: 42,
+              child: Text(
+                '${porcentajeComunidad.toStringAsFixed(0)}%',
+                textAlign: TextAlign.right,
+                style: AppTextStyles.caption.copyWith(
+                  color: AppColors.gold,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+}
+
+// ── Idioma: dos donuts (Tu club / Toda ClubReads) con leyenda compartida ──────
+
+class _ComparativaDonutsCard extends StatelessWidget {
+  const _ComparativaDonutsCard({
+    required this.icon,
+    required this.titulo,
+    required this.categoria,
+    required this.etiqueta,
+    required this.iconoItem,
+  });
+
+  final String icon;
+  final String titulo;
+  final ComparativaCategoria categoria;
+  final String Function(String) etiqueta;
+  final String Function(String) iconoItem;
+
+  @override
+  Widget build(BuildContext context) {
+    final valoresClub = categoria.items
+        .map((item) => item.porcentajeClub.round())
+        .toList();
+    final valoresComunidad = categoria.items
+        .map((item) => item.porcentajeComunidad.round())
+        .toList();
+
+    return ClubCard(
+      elevated: false,
+      padding: const EdgeInsets.all(AppSpacing.md),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Text(icon, style: const TextStyle(fontSize: 18)),
+              const SizedBox(width: AppSpacing.xs),
+              Text(
+                titulo,
+                style: AppTextStyles.body.copyWith(fontWeight: FontWeight.w800),
+              ),
+            ],
+          ),
+          const SizedBox(height: AppSpacing.md),
+          Row(
+            children: [
+              Expanded(
+                child: Column(
+                  children: [
+                    SizedBox(
+                      width: 92,
+                      height: 92,
+                      child: CustomPaint(
+                        size: const Size.square(92),
+                        painter: _DonutPainter(values: valoresClub),
+                      ),
+                    ),
+                    const SizedBox(height: AppSpacing.xs),
+                    Text('Tu club', style: AppTextStyles.caption.copyWith(fontWeight: FontWeight.w700)),
+                  ],
+                ),
+              ),
+              Expanded(
+                child: Column(
+                  children: [
+                    SizedBox(
+                      width: 92,
+                      height: 92,
+                      child: CustomPaint(
+                        size: const Size.square(92),
+                        painter: _DonutPainter(values: valoresComunidad),
+                      ),
+                    ),
+                    const SizedBox(height: AppSpacing.xs),
+                    Text('Toda ClubReads', style: AppTextStyles.caption.copyWith(fontWeight: FontWeight.w700)),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: AppSpacing.md),
+          const Divider(height: 1),
+          const SizedBox(height: AppSpacing.sm),
+          for (var i = 0; i < categoria.items.length; i++) ...[
+            if (i > 0) const SizedBox(height: AppSpacing.xs),
+            Row(
+              children: [
+                Container(
+                  width: 10,
+                  height: 10,
+                  decoration: BoxDecoration(
+                    color: _trendColors[i % _trendColors.length],
+                    shape: BoxShape.circle,
+                  ),
+                ),
+                const SizedBox(width: AppSpacing.xs),
+                Text(iconoItem(categoria.items[i].nombre), style: const TextStyle(fontSize: 13)),
+                const SizedBox(width: 4),
+                Expanded(
+                  child: Text(
+                    etiqueta(categoria.items[i].nombre),
+                    style: AppTextStyles.bodySecondary.copyWith(fontWeight: FontWeight.w700),
+                  ),
+                ),
+                Text(
+                  '${categoria.items[i].porcentajeClub.toStringAsFixed(0)}%',
+                  style: AppTextStyles.caption.copyWith(
+                    color: AppColors.primary,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+                const SizedBox(width: AppSpacing.sm),
+                Text(
+                  '${categoria.items[i].porcentajeComunidad.toStringAsFixed(0)}%',
+                  style: AppTextStyles.caption.copyWith(
+                    color: AppColors.gold,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+// ── Formato: barras verticales agrupadas (club junto a comunidad) ────────────
+
+class _ComparativaBarrasCard extends StatelessWidget {
+  const _ComparativaBarrasCard({
+    required this.icon,
+    required this.titulo,
+    required this.categoria,
+    required this.etiqueta,
+  });
+
+  final String icon;
+  final String titulo;
+  final ComparativaCategoria categoria;
+  final String Function(String) etiqueta;
+
+  @override
+  Widget build(BuildContext context) {
+    return ClubCard(
+      elevated: false,
+      padding: const EdgeInsets.all(AppSpacing.md),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Text(icon, style: const TextStyle(fontSize: 18)),
+              const SizedBox(width: AppSpacing.xs),
+              Text(
+                titulo,
+                style: AppTextStyles.body.copyWith(fontWeight: FontWeight.w800),
+              ),
+            ],
+          ),
+          const SizedBox(height: AppSpacing.lg),
+          SizedBox(
+            height: 140,
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                for (final item in categoria.items) ...[
+                  Expanded(
+                    child: _BarraAgrupada(
+                      label: etiqueta(item.nombre),
+                      porcentajeClub: item.porcentajeClub,
+                      porcentajeComunidad: item.porcentajeComunidad,
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _BarraAgrupada extends StatelessWidget {
+  const _BarraAgrupada({
+    required this.label,
+    required this.porcentajeClub,
+    required this.porcentajeComunidad,
+  });
+
+  final String label;
+  final double porcentajeClub;
+  final double porcentajeComunidad;
+
+  static const _maxAltura = 92.0;
+
+  @override
+  Widget build(BuildContext context) {
+    Widget columna(double porcentaje, Color color) {
+      final altura = (_maxAltura * (porcentaje / 100)).clamp(3.0, _maxAltura);
+      return Expanded(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.end,
+          children: [
+            Text(
+              '${porcentaje.toStringAsFixed(0)}%',
+              style: AppTextStyles.caption.copyWith(
+                color: color,
+                fontWeight: FontWeight.w800,
+                fontSize: 11,
+              ),
+            ),
+            const SizedBox(height: 4),
+            Container(
+              height: altura,
+              margin: const EdgeInsets.symmetric(horizontal: 3),
+              decoration: BoxDecoration(
+                color: color,
+                borderRadius: const BorderRadius.vertical(
+                  top: Radius.circular(6),
+                ),
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    return Column(
+      mainAxisAlignment: MainAxisAlignment.end,
+      children: [
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.end,
+          children: [
+            columna(porcentajeClub, AppColors.primary),
+            columna(porcentajeComunidad, AppColors.gold),
+          ],
+        ),
+        const SizedBox(height: AppSpacing.xs),
+        Text(
+          label,
+          textAlign: TextAlign.center,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: AppTextStyles.caption.copyWith(fontWeight: FontWeight.w700),
+        ),
+      ],
     );
   }
 }

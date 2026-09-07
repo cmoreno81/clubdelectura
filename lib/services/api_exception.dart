@@ -141,3 +141,16 @@ class ApiException implements Exception {
   @override
   String toString() => message;
 }
+
+/// Se lanza cuando `perfilUsuario` responde `{ ok: false, privado: true }`:
+/// la usuaria consultada ha marcado su perfil como "Solo yo" en Ajustes.
+/// Tipo dedicado en vez de mirar el texto del mensaje, para no depender de
+/// que el backend siga usando exactamente la palabra "privado".
+class PerfilPrivadoException implements Exception {
+  const PerfilPrivadoException(this.message);
+
+  final String message;
+
+  @override
+  String toString() => message;
+}

@@ -7,6 +7,7 @@ import '../../theme/app_radius.dart';
 import '../../theme/app_spacing.dart';
 import '../../theme/app_text_styles.dart';
 import '../../utils/genero_utils.dart';
+import '../../utils/idioma_utils.dart';
 import '../../utils/lector_count_utils.dart';
 import '../../utils/reading_status_copy.dart';
 import '../common/club_book_cover.dart';
@@ -98,6 +99,18 @@ class LibroHeader extends StatelessWidget {
                   fontWeight: FontWeight.w700,
                 ),
               ),
+
+              if (libro.idioma.trim().isNotEmpty) ...[
+                const SizedBox(height: 2),
+                Text(
+                  '${banderaIdioma(libro.idioma)} ${nombreIdioma(libro.idioma)}',
+                  textAlign: TextAlign.center,
+                  style: AppTextStyles.bodySecondary.copyWith(
+                    color: AppColors.textSecondary,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
 
               const SizedBox(height: AppSpacing.md),
 

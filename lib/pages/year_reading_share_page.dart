@@ -64,7 +64,15 @@ class _YearReadingSharePageState extends State<YearReadingSharePage> {
       for (final book in widget.books) {
         if (book.coverUrl.trim().isEmpty) continue;
         try {
-          await precacheImage(NetworkImage(book.coverUrl), context);
+          // onError es imprescindible: precacheImage no lanza excepción si
+          // la imagen falla, así que sin esto Flutter reporta el fallo
+          // directo a FlutterError.onError (Crashlytics lo cuenta como
+          // crash fatal aunque la app siga funcionando con normalidad).
+          await precacheImage(
+            NetworkImage(book.coverUrl),
+            context,
+            onError: (_, _) {},
+          );
         } catch (_) {
           // El diseño conserva el lomo editorial si una portada no responde.
         }

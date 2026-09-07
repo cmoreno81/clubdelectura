@@ -38,7 +38,16 @@ class _MonthlyReadingSharePageState extends State<MonthlyReadingSharePage> {
       for (final book in widget.calendar.finishedBooks) {
         if (book.coverUrl.trim().isNotEmpty) {
           try {
-            await precacheImage(NetworkImage(book.coverUrl), context);
+            // onError es imprescindible: precacheImage no lanza excepción
+            // si la imagen falla (el Future completa igual), así que sin
+            // esto Flutter reporta el fallo directo a FlutterError.onError
+            // (Crashlytics lo cuenta como crash fatal aunque la app siga
+            // funcionando con normalidad).
+            await precacheImage(
+              NetworkImage(book.coverUrl),
+              context,
+              onError: (_, _) {},
+            );
           } catch (_) {
             // El póster conserva un hueco editorial si una portada no responde.
           }

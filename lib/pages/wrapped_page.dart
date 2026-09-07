@@ -1244,7 +1244,15 @@ class _SlideResumenCompartirState extends State<_SlideResumenCompartir> {
       ];
       await Future.wait(
         coverUrls.map(
-          (url) => precacheImage(NetworkImage(url), context).catchError((_) {}),
+          // El .catchError de aquí no basta: precacheImage no lanza
+          // excepción por un fallo de imagen (el Future completa igual),
+          // así que sin onError Flutter reporta el fallo directo a
+          // FlutterError.onError (Crashlytics lo cuenta como crash fatal).
+          (url) => precacheImage(
+            NetworkImage(url),
+            context,
+            onError: (_, _) {},
+          ),
         ),
       );
       if (!mounted) return;
