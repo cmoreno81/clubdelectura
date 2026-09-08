@@ -9,6 +9,8 @@ class Ranking {
 
   final List<RankingItem> mejorValorados;
 
+  final List<RankingItem> masPicantes;
+
   final List<RankingItem> masAbandonados;
 
   final List<RankingItem> topLectoras;
@@ -22,6 +24,8 @@ class Ranking {
     required this.masLeidos,
 
     required this.mejorValorados,
+
+    this.masPicantes = const [],
 
     required this.masAbandonados,
 
@@ -45,6 +49,8 @@ class Ranking {
       masLeidos: parse('masLeidos'),
 
       mejorValorados: parse('mejorValorados'),
+
+      masPicantes: parse('masPicantes'),
 
       masAbandonados: parse('masAbandonados'),
 

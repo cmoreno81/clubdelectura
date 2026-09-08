@@ -35,10 +35,20 @@ class SagasPageController {
 }
 
 class SagasPage extends StatefulWidget {
-  const SagasPage({super.key, this.showBackButton = false, this.controller});
+  const SagasPage({
+    super.key,
+    this.showBackButton = false,
+    this.controller,
+    this.sagaInicial,
+  });
 
   final bool showBackButton;
   final SagasPageController? controller;
+
+  /// Si se indica, la pantalla abre con la búsqueda ya rellena con este
+  /// nombre de saga (p. ej. al llegar desde la ficha de un libro), para
+  /// que se vean sus tomos sin tener que buscarla a mano.
+  final String? sagaInicial;
 
   @override
   State<SagasPage> createState() => _SagasPageState();
@@ -104,6 +114,11 @@ class _SagasPageState extends State<SagasPage> {
   @override
   void initState() {
     super.initState();
+    final sagaInicial = widget.sagaInicial?.trim() ?? '';
+    if (sagaInicial.isNotEmpty) {
+      _query = sagaInicial;
+      _searchController.text = sagaInicial;
+    }
     widget.controller?._refresh = _reload;
     SeriesRefreshNotifier.instance.addListener(_onSeriesInvalidated);
     _future = _load();

@@ -10,6 +10,7 @@ import '../../utils/genero_utils.dart';
 import '../../utils/idioma_utils.dart';
 import '../../utils/lector_count_utils.dart';
 import '../../utils/reading_status_copy.dart';
+import '../../pages/sagas_page.dart';
 import '../common/club_book_cover.dart';
 import '../common/club_card.dart';
 import '../ui/club_metric.dart';
@@ -114,7 +115,7 @@ class LibroHeader extends StatelessWidget {
 
               const SizedBox(height: AppSpacing.md),
 
-              _metadatosLibro(),
+              _metadatosLibro(context),
 
               if (referencia?.paginas != null) ...[
                 const SizedBox(height: AppSpacing.sm),
@@ -289,7 +290,7 @@ class LibroHeader extends StatelessWidget {
     );
   }
 
-  Widget _metadatosLibro() {
+  Widget _metadatosLibro(BuildContext context) {
     if (referencia == null) {
       return const SizedBox.shrink();
     }
@@ -311,31 +312,68 @@ class LibroHeader extends StatelessWidget {
 
     final saga = referencia!.saga.trim();
     final numeroSaga = referencia!.numSaga.trim();
+    // "Mis sagas" solo conoce las sagas de libros que la usuaria ya tiene en
+    // su biblioteca (búsqueda por perfil propio, no por catálogo del club).
+    // Si el libro no está en su biblioteca (miEstado == null) — p. ej. al
+    // entrar desde el listado del club o el Ranking a un libro ajeno — el
+    // enlace no encontraría nada y aterrizaría en "No encontramos esa
+    // saga". Por eso solo se hace pulsable cuando sabemos que sí la va a
+    // encontrar.
+    final sagaNavegable = saga.isNotEmpty && miEstado != null;
 
     return Column(
       children: [
         if (saga.isNotEmpty)
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              const Icon(
-                Icons.forest_outlined,
-                size: 18,
-                color: AppColors.textSecondary,
-              ),
-
-              const SizedBox(width: AppSpacing.xs),
-
-              Flexible(
-                child: Text(
-                  saga,
-                  textAlign: TextAlign.center,
-                  style: AppTextStyles.bodySecondary.copyWith(
-                    fontWeight: FontWeight.w700,
+          InkWell(
+            borderRadius: BorderRadius.circular(AppRadius.sm),
+            onTap: sagaNavegable
+                ? () => Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (_) =>
+                          SagasPage(showBackButton: true, sagaInicial: saga),
+                    ),
+                  )
+                : null,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(vertical: 2),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Icon(
+                    Icons.forest_outlined,
+                    size: 18,
+                    color: AppColors.textSecondary,
                   ),
-                ),
+
+                  const SizedBox(width: AppSpacing.xs),
+
+                  Flexible(
+                    child: Text(
+                      saga,
+                      textAlign: TextAlign.center,
+                      style: AppTextStyles.bodySecondary.copyWith(
+                        fontWeight: FontWeight.w700,
+                        decoration: sagaNavegable
+                            ? TextDecoration.underline
+                            : null,
+                        decorationColor: AppColors.textSecondary.withValues(
+                          alpha: 0.4,
+                        ),
+                      ),
+                    ),
+                  ),
+
+                  if (sagaNavegable) ...[
+                    const SizedBox(width: 2),
+                    const Icon(
+                      Icons.chevron_right_rounded,
+                      size: 16,
+                      color: AppColors.textSecondary,
+                    ),
+                  ],
+                ],
               ),
-            ],
+            ),
           ),
 
         if (numeroSaga.isNotEmpty) ...[

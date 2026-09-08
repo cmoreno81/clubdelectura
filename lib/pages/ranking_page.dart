@@ -120,6 +120,10 @@ class _RankingPageState extends State<RankingPage> {
               ? ranking.mejorValorados.first
               : null;
 
+          final masPicante = ranking.masPicantes.isNotEmpty
+              ? ranking.masPicantes.first
+              : null;
+
           final cementerio = ranking.masAbandonados.isNotEmpty
               ? ranking.masAbandonados.first
               : null;
@@ -155,7 +159,9 @@ class _RankingPageState extends State<RankingPage> {
                   ),
                 ],
 
-                if (libroClub != null || cementerio != null) ...[
+                if (libroClub != null ||
+                    masPicante != null ||
+                    cementerio != null) ...[
                   const SizedBox(height: AppSpacing.xl),
 
                   _SectionHeader(
@@ -169,7 +175,13 @@ class _RankingPageState extends State<RankingPage> {
 
                   if (libroClub != null) _LibroClubCard(item: libroClub),
 
-                  if (libroClub != null && cementerio != null)
+                  if (libroClub != null && masPicante != null)
+                    const SizedBox(height: AppSpacing.md),
+
+                  if (masPicante != null) _MasPicanteCard(item: masPicante),
+
+                  if ((libroClub != null || masPicante != null) &&
+                      cementerio != null)
                     const SizedBox(height: AppSpacing.md),
 
                   if (cementerio != null) _CementerioCard(item: cementerio),
@@ -436,6 +448,82 @@ class _LibroClubCard extends StatelessWidget {
                     const SizedBox(height: AppSpacing.xs),
 
                     Text(
+                      '${item.media.toStringAsFixed(2)} / 5 · '
+                      '${item.votos} ${item.votos == 1 ? 'valoración' : 'valoraciones'}',
+                      style: AppTextStyles.bodySecondary,
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _MasPicanteCard extends StatelessWidget {
+  final RankingItem item;
+
+  const _MasPicanteCard({required this.item});
+
+  @override
+  Widget build(BuildContext context) {
+    return ClubCard(
+      elevated: false,
+      padding: EdgeInsets.zero,
+      backgroundColor: const Color(0xFFFFF1EC),
+      borderColor: const Color(0xFFF6C7B2),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(AppRadius.lg),
+        onTap: () => openBookDetail(
+          context,
+          title: item.nombre,
+          bookId: item.bookId,
+          coverUrl: item.coverUrl,
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(AppSpacing.lg),
+          child: Row(
+            children: [
+              _RankedBookCover(
+                item: item,
+                icon: Icons.local_fire_department_rounded,
+                color: const Color(0xFFD9480F),
+                width: 74,
+                height: 104,
+              ),
+
+              const SizedBox(width: AppSpacing.md),
+
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const ClubChip(
+                      label: 'Libro más picante',
+                      icon: Icons.local_fire_department_rounded,
+                      variant: ClubChipVariant.danger,
+                    ),
+
+                    const SizedBox(height: AppSpacing.sm),
+
+                    Text(
+                      item.nombre,
+                      maxLines: 3,
+                      overflow: TextOverflow.ellipsis,
+                      style: AppTextStyles.subtitle.copyWith(
+                        color: AppColors.textPrimary,
+                        fontWeight: FontWeight.w800,
+                        fontSize: 20,
+                      ),
+                    ),
+
+                    const SizedBox(height: AppSpacing.xs),
+
+                    Text(
+                      '${'🌶️' * item.media.round().clamp(1, 5)} '
                       '${item.media.toStringAsFixed(2)} / 5 · '
                       '${item.votos} ${item.votos == 1 ? 'valoración' : 'valoraciones'}',
                       style: AppTextStyles.bodySecondary,

@@ -248,6 +248,7 @@ class ApiService {
   Future<GoodreadsImportPreview> previsualizarImportacionGoodreads(
     List<GoodreadsImportRow> books, {
     String source = 'GOODREADS',
+    bool requireRating = true,
   }) async {
     final response = await _client.post(
       Uri.parse('$baseUrl?action=previsualizarImportacionGoodreads'),
@@ -258,6 +259,7 @@ class ApiService {
       body: jsonEncode({
         'libros': books.map((book) => book.toJson()).toList(),
         'source': source,
+        'requireRating': requireRating,
       }),
     );
     if (response.statusCode != 200) {
@@ -279,6 +281,7 @@ class ApiService {
     List<GoodreadsImportRow> books, {
     Map<int, String> resolutions = const {},
     String source = 'GOODREADS',
+    bool requireRating = true,
   }) async {
     final response = await _client.post(
       Uri.parse('$baseUrl?action=confirmarImportacionGoodreads'),
@@ -289,6 +292,7 @@ class ApiService {
       body: jsonEncode({
         'libros': books.map((book) => book.toJson()).toList(),
         'source': source,
+        'requireRating': requireRating,
         if (resolutions.isNotEmpty)
           'resoluciones': resolutions.entries
               .map((entry) => {'index': entry.key, 'bookId': entry.value})
@@ -1371,6 +1375,23 @@ class ApiService {
     };
   }
 
+  /// Edita valoración/picante/reseña de un libro que ya terminaste, sin
+  /// tocar el estado de lectura ni crear una relectura nueva.
+  Future<bool> actualizarValoracionLibro({
+    required String bookId,
+    String? valoracion,
+    String? picante,
+    String? resena,
+  }) async {
+    final response = await _postJson('actualizarValoracionLibro', {
+      'bookId': bookId,
+      if (valoracion != null) 'valoracion': valoracion,
+      if (picante != null) 'picante': picante,
+      if (resena != null) 'resena': resena,
+    });
+    return _respuestaOk(response);
+  }
+
   Future<MiVoto> getMiVoto(String usuario) async {
     final response = await _client.get(Uri.parse('$baseUrl?action=miVoto'));
 
@@ -2341,8 +2362,7 @@ class ApiService {
     required String descripcion,
     required String email,
     String nombre = '',
-    String? imageBase64,
-    String? imageFileName,
+    List<Map<String, String>> images = const [],
   }) async {
     final response = await _postJson('enviarFeedback', {
       'category': category,
@@ -2350,8 +2370,7 @@ class ApiService {
       'descripcion': descripcion,
       'email': email,
       'nombre': nombre,
-      'imageBase64': imageBase64,
-      'imageFileName': imageFileName,
+      'images': images,
     });
     final data = _decodeJson(response) as Map<String, dynamic>;
     return data['ticketKey'] as String?;

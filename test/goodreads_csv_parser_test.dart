@@ -11,7 +11,7 @@ void main() {
   Uint8List csv(String value) => Uint8List.fromList(utf8.encode(value));
 
   test('parses Goodreads fields, quoted commas and dates', () {
-    final rows = parser.parse(
+    final result = parser.parse(
       csv(
         'Book Id,Title,Author,Additional Authors,ISBN,ISBN13,My Rating,'
         'Number of Pages,Year Published,Date Read,Date Added,Exclusive Shelf,My Review\n'
@@ -20,6 +20,7 @@ void main() {
         '"A review, with comma"\n',
       ),
     );
+    final rows = result.rows;
 
     expect(rows, hasLength(1));
     expect(rows.single.title, 'A title, with comma');
@@ -30,17 +31,19 @@ void main() {
     expect(rows.single.dateRead, '2026-07-12T12:00:00.000Z');
     expect(rows.single.dateAdded, '2024-03-02T12:00:00.000Z');
     expect(rows.single.exclusiveShelf, 'read');
+    // Trae la columna "Book Id" → se reconoce como export genuino.
+    expect(result.esGoodreadsGenuino, isTrue);
   });
 
   test('supports multiline reviews', () {
-    final rows = parser.parse(
+    final result = parser.parse(
       csv(
         'Title,Author,Exclusive Shelf,My Review\n'
         '"Book","Author",to-read,"First line\nSecond line"\n',
       ),
     );
 
-    expect(rows.single.review, 'First line\nSecond line');
+    expect(result.rows.single.review, 'First line\nSecond line');
   });
 
   test('rejects a CSV that is not a Goodreads export', () {
@@ -49,6 +52,22 @@ void main() {
       throwsFormatException,
     );
   });
+
+  test(
+    'un CSV con las mismas columnas pero sin "Book Id" no se marca como '
+    'export genuino (p. ej. el que genera ShelfBridge desde Fable)',
+    () {
+      final result = parser.parse(
+        csv(
+          'Title,Author,ISBN,My Rating,Date Read,Date Added,Exclusive Shelf\n'
+          'Book,Author,"=""ABC123""",0,2026/07/12,2026/07/01,read\n',
+        ),
+      );
+
+      expect(result.esGoodreadsGenuino, isFalse);
+      expect(result.rows.single.rating, isNull);
+    },
+  );
 
   test('la revisión identifica cada fila seleccionable', () {
     final book = GoodreadsImportPreviewBook.fromJson({

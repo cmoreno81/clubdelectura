@@ -34,6 +34,7 @@ import '../widgets/libros/finalizar_libro_dialog.dart';
 import '../widgets/libros/kit_lectura_card.dart';
 import '../widgets/libros/libro_header.dart';
 import '../widgets/libros/libro_interesadas_section.dart';
+import '../widgets/libros/mi_ficha_lectura_card.dart';
 import '../widgets/libros/libro_section.dart';
 import '../widgets/libros/libro_valoraciones_section.dart';
 import 'kit_export_page.dart';
@@ -688,6 +689,54 @@ class _DetalleLibroPageState extends State<DetalleLibroPage> {
     }
   }
 
+  /// Recarga esta ficha desde el servidor y reemplaza `libro`/`registros`
+  /// con datos reales. Usado tras editar valoración/picante/idioma de mi
+  /// propia lectura terminada, para no reconstruir el estado a mano.
+  Future<void> _recargarDesdeServidor() async {
+    if (libro.bookId.isEmpty) return;
+    try {
+      final data = await ApiService().getLibroPorId(
+        libro.bookId,
+        global: widget.globalStats,
+      );
+      if (!mounted || data['ok'] != true) return;
+      final librosActualizados = (data['libros'] as List? ?? [])
+          .map((e) => Libro.fromJson(Map<String, dynamic>.from(e as Map)))
+          .toList();
+      final finalizadosActualizados = (data['finalizados'] as List? ?? [])
+          .map(
+            (e) => LibroFinalizado.fromJson(Map<String, dynamic>.from(e as Map)),
+          )
+          .toList();
+      setState(() {
+        libro = LibroAgrupado(
+          libro: libro.libro,
+          genero: libro.genero,
+          registros: librosActualizados,
+          finalizados: finalizadosActualizados,
+          yaLoTengo: librosActualizados.any((l) => l.yaLoTengo),
+          leidoPorMi: finalizadosActualizados.any((l) => l.yaLoTengo),
+          coverUrl: libro.coverUrl,
+          bookId: libro.bookId,
+        );
+        registros = List<Libro>.from(libro.registros);
+      });
+    } catch (_) {
+      // Si falla, el snackbar de éxito del propio control ya informó del
+      // cambio; la próxima entrada a la ficha traerá los datos frescos.
+    }
+  }
+
+  /// Mi propia finalización de este libro (si la tengo), para la tarjeta
+  /// editable de valoración/picante/idioma. `registros` no la incluye porque
+  /// solo cubre lecturas activas/pendientes.
+  LibroFinalizado? get _miFinalizado {
+    for (final f in libro.finalizados) {
+      if (f.yaLoTengo) return f;
+    }
+    return null;
+  }
+
   // ── Añadir a mi biblioteca desde la ficha ───────────────────────────────
   //
   // Cubre el caso de llegar a la ficha de un libro que otras compañeras del
@@ -1157,29 +1206,47 @@ class _DetalleLibroPageState extends State<DetalleLibroPage> {
                 // Vista global: estadísticas anónimas sin nombres ni fotos
                 const SizedBox(height: AppSpacing.lg),
                 _EstadisticasGlobalesSection(libro: libro),
-              ] else if (registros.isNotEmpty) ...[
-                // Vista de club: tarjetas de cada lector con controles
-                const SizedBox(height: AppSpacing.lg),
-                LibroInteresadasSection(
-                  registros: registros,
-                  usuariosConFinalizacion: libro.finalizados
-                      .map(
-                        (finalizado) => finalizado.usuario.trim().toLowerCase(),
-                      )
-                      .where((usuario) => usuario.isNotEmpty)
-                      .toSet(),
-                  usuarioActual: usuarioActual,
-                  onCambiarEstado: _cambiarEstado,
-                  onQuitarPendientes: _quitarPendientes,
-                  onActualizarPreferencias: _actualizarPreferencias,
-                  onPedirValoracion: (registro) {
-                    return FinalizarLibroDialog.show(
-                      context,
-                      fechaInicioActual: registro.startedAt,
-                      formatoActual: registro.formato,
-                    );
-                  },
-                ),
+              ] else ...[
+                // Ya lo terminaste: "registros" (más abajo) solo cubre
+                // lecturas activas/pendientes, así que un libro finalizado
+                // necesita su propia tarjeta para poder editar
+                // valoración/picante/idioma sin pasar por "Otra vuelta" (que
+                // crearía una relectura). Va primero: es tu contenido
+                // editable, y ahora también lo es el de "Lectores
+                // interesados" (donde tu tarjeta ya se ordena la primera),
+                // así que todo lo tuyo se ve antes que el resto del club.
+                if (_miFinalizado != null) ...[
+                  const SizedBox(height: AppSpacing.lg),
+                  MiFichaLecturaCard(
+                    finalizado: _miFinalizado!,
+                    onCambiado: _recargarDesdeServidor,
+                  ),
+                ],
+                if (registros.isNotEmpty) ...[
+                  // Vista de club: tarjetas de cada lector con controles
+                  const SizedBox(height: AppSpacing.lg),
+                  LibroInteresadasSection(
+                    registros: registros,
+                    usuariosConFinalizacion: libro.finalizados
+                        .map(
+                          (finalizado) =>
+                              finalizado.usuario.trim().toLowerCase(),
+                        )
+                        .where((usuario) => usuario.isNotEmpty)
+                        .toSet(),
+                    usuarioActual: usuarioActual,
+                    onCambiarEstado: _cambiarEstado,
+                    onQuitarPendientes: _quitarPendientes,
+                    onActualizarPreferencias: _actualizarPreferencias,
+                    onPedirValoracion: (registro) {
+                      return FinalizarLibroDialog.show(
+                        context,
+                        fechaInicioActual: registro.startedAt,
+                        formatoActual: registro.formato,
+                      );
+                    },
+                  ),
+                ],
               ],
 
               const SizedBox(height: AppSpacing.lg),

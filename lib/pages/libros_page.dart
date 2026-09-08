@@ -100,9 +100,11 @@ class _LibrosPageState extends State<LibrosPage> with WidgetsBindingObserver {
   String filtroOrigen = 'DEL_CLUB'; // 'DEL_CLUB' | 'CLUBREADS'
   String filtroUsuario = 'TODAS';
   String? filtroVibe; // null = sin filtro de vibe
-  // Por defecto se filtra por español; el usuario puede cambiarlo a otro
-  // idioma o a "Todos" (null) cuando quiera.
-  String? filtroIdioma = 'es';
+  // Sin filtro por defecto (se ven todos los idiomas): filtrar por un
+  // idioma concreto puede ocultar libros cuya ficha esté en otro idioma
+  // aunque alguien los tenga también en el idioma elegido, así que dejamos
+  // que sea la propia usuaria quien lo active si lo necesita.
+  String? filtroIdioma;
   // Lista de miembros del club — se actualiza solo con datos DEL_CLUB
   List<String> _miembrosClub = [];
   List<Libro>? _cachedBooks;
@@ -1726,6 +1728,13 @@ class _LibrosPageState extends State<LibrosPage> with WidgetsBindingObserver {
     List<LibroAgrupado> resultado = [];
 
     if (filtroEstado != 'TERMINADOS') {
+      // El filtro de idioma decide qué LIBROS se muestran, no qué lectoras
+      // se cuentan dentro de cada tarjeta: si se aplicara aquí, la tarjeta
+      // agruparía solo a quienes leyeron en ese idioma y la pastilla de
+      // idioma (que es un dato de catálogo, compartido por todo el mundo)
+      // acabaría mostrando y "corrigiendo" el idioma de una lectora
+      // concreta en vez del de referencia del libro. Se aplica más abajo,
+      // como una criba sobre los grupos ya completos.
       final librosFiltrados = libros.where((libro) {
         final coincideBusqueda = normalizar(
           libro.libro,
@@ -1742,11 +1751,8 @@ class _LibrosPageState extends State<LibrosPage> with WidgetsBindingObserver {
               (g) => normalizar(libro.genero).contains(g),
             );
 
-        final coincideIdioma =
-            filtroIdioma == null || libro.idioma == filtroIdioma;
-
         return coincideBusqueda && coincideUsuario && coincideEstado &&
-            coincideVibe && coincideIdioma;
+            coincideVibe;
       }).toList();
 
       final agrupados = <String, LibroAgrupado>{};
@@ -1785,9 +1791,7 @@ class _LibrosPageState extends State<LibrosPage> with WidgetsBindingObserver {
           final coincideBusqueda = normalizar(
             finalizado.libro,
           ).contains(normalizar(filtroBusqueda));
-          final coincideIdioma =
-              filtroIdioma == null || finalizado.idioma == filtroIdioma;
-          return coincideUsuario && coincideBusqueda && coincideIdioma;
+          return coincideUsuario && coincideBusqueda;
         });
 
         for (final finalizado in finalizadosFiltrados) {
@@ -1830,10 +1834,17 @@ class _LibrosPageState extends State<LibrosPage> with WidgetsBindingObserver {
         if (filtroEstado != 'TODOS') {
           agrupado.finalizados.addAll(
             finalizados.where(
-              (f) => normalizar(f.libro) == normalizar(agrupado.libro),
+              (f) =>
+                  normalizar(f.libro) == normalizar(agrupado.libro) &&
+                  (filtroUsuario == 'TODAS' ||
+                      f.usuario.trim() == filtroUsuario),
             ),
           );
         }
+      }
+
+      if (filtroIdioma != null) {
+        resultado = resultado.where(_grupoTieneIdioma).toList();
       }
 
       _aplicarOrden(resultado);
@@ -1849,9 +1860,7 @@ class _LibrosPageState extends State<LibrosPage> with WidgetsBindingObserver {
           filtroBusqueda.isEmpty ||
           normalizar(f.libro).contains(normalizar(filtroBusqueda));
 
-      final coincideIdioma = filtroIdioma == null || f.idioma == filtroIdioma;
-
-      return coincideUsuario && coincideBusqueda && coincideIdioma;
+      return coincideUsuario && coincideBusqueda;
     }).toList();
 
     final titulosFinalizados = finalizadosFiltrados
@@ -1859,7 +1868,10 @@ class _LibrosPageState extends State<LibrosPage> with WidgetsBindingObserver {
         .toSet();
 
     final registrosRelacionados = libros.where((libro) {
-      return titulosFinalizados.contains(normalizar(libro.libro));
+      final coincideUsuario =
+          filtroUsuario == 'TODAS' || libro.usuario.trim() == filtroUsuario;
+      return coincideUsuario &&
+          titulosFinalizados.contains(normalizar(libro.libro));
     }).toList();
 
     final agrupados = <String, LibroAgrupado>{};
@@ -1913,9 +1925,23 @@ class _LibrosPageState extends State<LibrosPage> with WidgetsBindingObserver {
       }
     }
     resultado = agrupados.values.toList();
+
+    if (filtroIdioma != null) {
+      resultado = resultado.where(_grupoTieneIdioma).toList();
+    }
+
     _aplicarOrden(resultado);
 
     return resultado;
+  }
+
+  /// El filtro de idioma compara contra `agrupado.idioma`: el mismo valor
+  /// que se muestra (y se puede corregir) en la pastilla de la tarjeta. Así
+  /// nunca puede darse el caso de que un libro aparezca con un filtro pero
+  /// la pastilla muestre un idioma distinto al del filtro activo — si
+  /// alguien no encuentra un libro por esto, basta con quitar el filtro.
+  bool _grupoTieneIdioma(LibroAgrupado agrupado) {
+    return agrupado.idioma == filtroIdioma;
   }
 
   /// Devuelve las palabras clave de género (normalizadas) que corresponden

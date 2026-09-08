@@ -160,6 +160,23 @@ class LibroInteresadasSection extends StatelessWidget {
       return const SizedBox.shrink();
     }
 
+    // "Tú" siempre primero: es la única tarjeta editable de esta sección
+    // (prioridad/formato/estado, y ahora también valoración/picante/idioma
+    // en MiFichaLecturaCard cuando ya la terminaste), así que tiene sentido
+    // que no haya que buscarla entre el resto de lectoras. Partición
+    // estable: no reordena al resto entre sí.
+    final actualNormalizado = usuarioActual?.trim().toLowerCase();
+    final registrosOrdenados = actualNormalizado == null
+        ? registros
+        : [
+            ...registros.where(
+              (r) => r.usuario.trim().toLowerCase() == actualNormalizado,
+            ),
+            ...registros.where(
+              (r) => r.usuario.trim().toLowerCase() != actualNormalizado,
+            ),
+          ];
+
     return LibroSection(
       icon: Icons.people_outline_rounded,
       color: AppColors.info,
@@ -167,7 +184,7 @@ class LibroInteresadasSection extends StatelessWidget {
       subtitle:
           '${registros.length} miembros tienen este libro en su biblioteca',
       child: Column(
-        children: registros.map((registro) {
+        children: registrosOrdenados.map((registro) {
           final usuarioNormalizado = registro.usuario.trim().toLowerCase();
           final esUsuarioActual =
               usuarioActual != null &&
@@ -534,24 +551,11 @@ class _LectoraCard extends StatelessWidget {
             ),
           ],
 
-          if (registro.valoracion.isNotEmpty) ...[
-            const SizedBox(height: AppSpacing.md),
-
-            Row(
-              children: [
-                const Icon(Icons.star_rounded, color: AppColors.gold, size: 19),
-
-                const SizedBox(width: AppSpacing.xs),
-
-                Text(
-                  registro.valoracion,
-                  style: AppTextStyles.body.copyWith(
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-              ],
-            ),
-          ],
+          // No repetimos la valoración aquí para nadie: con un club grande
+          // esta tarjeta ("¿quién tiene o ha leído este libro?") se llenaba
+          // de estrellas duplicadas que ya se ven, con más detalle, en la
+          // sección "Valoraciones" — y para "Tú" además en la tarjeta "Mi
+          // valoración" de MiFichaLecturaCard, justo debajo.
 
           if (esUsuarioActual && registro.estado == 'PENDIENTE') ...[
             const SizedBox(height: AppSpacing.sm),

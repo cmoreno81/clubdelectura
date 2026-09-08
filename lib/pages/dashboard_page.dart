@@ -649,6 +649,20 @@ class _DashboardPageState extends State<DashboardPage> {
             const SizedBox(height: AppSpacing.lg),
           ],
 
+          // Racha + check-in + mapa de calor, justo tras "Leyendo ahora": es
+          // el primer incentivo que ve la lectora al entrar en su espacio,
+          // en vez de quedar escondido varias secciones más abajo.
+          RachaLectoraCard(
+            key: ValueKey('reading-streak-$_favoritosKey'),
+            loadHistory: widget.loadCheckinHistory,
+            navegable: false,
+          ),
+          const SizedBox(height: AppSpacing.md),
+          CheckinSection(),
+          const SizedBox(height: AppSpacing.md),
+          ClubCard(elevated: false, child: MapaCalorWidget()),
+          const SizedBox(height: AppSpacing.lg),
+
           // ── 2. Mi año en libros ───────────────────────────────────────────
           _PersonalYearShelfCard(
             year: year,
@@ -718,20 +732,6 @@ class _DashboardPageState extends State<DashboardPage> {
             esPersonal: true,
           ),
           const SizedBox(height: AppSpacing.sm),
-
-          RachaLectoraCard(
-            key: ValueKey('reading-streak-$_favoritosKey'),
-            loadHistory: widget.loadCheckinHistory,
-            navegable: false,
-          ),
-          // En espacio personal mostramos el check-in y el mapa de calor
-          // aquí mismo, en vez de obligar a navegar al perfil para verlos.
-          const SizedBox(height: AppSpacing.md),
-          CheckinSection(),
-          const SizedBox(height: AppSpacing.md),
-          ClubCard(elevated: false, child: MapaCalorWidget()),
-
-          const SizedBox(height: AppSpacing.md),
 
           // ── 6. Próximas lecturas (alta prioridad) ─────────────────────────
           if (highPriority.isNotEmpty) ...[

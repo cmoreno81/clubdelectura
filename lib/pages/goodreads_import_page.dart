@@ -33,6 +33,7 @@ class _GoodreadsImportPageState extends State<GoodreadsImportPage> {
   final _api = ApiService();
 
   List<GoodreadsImportRow> _rows = const [];
+  bool _requireRating = true;
   GoodreadsImportPreview? _preview;
   GoodreadsImportSummary? _result;
   String _fileName = '';
@@ -61,11 +62,38 @@ class _GoodreadsImportPageState extends State<GoodreadsImportPage> {
       final typeGroup = XTypeGroup(
         label: _isBookmory ? 'Archivos Excel' : 'Archivos CSV',
         extensions: [_isBookmory ? 'xlsx' : 'csv'],
-        uniformTypeIdentifiers: [
-          _isBookmory
-              ? 'org.openxmlformats.spreadsheetml.sheet'
-              : 'public.comma-separated-values-text',
-        ],
+        // Android: sin esto, file_selector deduce un ÚNICO tipo MIME a
+        // partir de la extensión (MimeTypeMap.getMimeTypeFromExtension) y
+        // le pide al sistema que solo muestre archivos con ese MIME
+        // exacto. Cada proveedor (Google Drive, Gmail, Descargas, apps de
+        // terceros...) puede etiquetar un mismo .csv con un MIME distinto
+        // — si no coincide con el único deducido, el archivo ni siquiera
+        // aparece en el selector. Al listar varios aquí, se piden todos a
+        // la vez (coincide con cualquiera), evitando ese caso.
+        mimeTypes: _isBookmory
+            ? null
+            : const [
+                'text/csv',
+                'text/comma-separated-values',
+                'application/csv',
+                'text/plain',
+                'application/vnd.ms-excel',
+              ],
+        uniformTypeIdentifiers: _isBookmory
+            ? const ['org.openxmlformats.spreadsheetml.sheet']
+            : const [
+                'public.comma-separated-values-text',
+                // Muchos CSV que llegan por AirDrop/iCloud Drive/apps de
+                // terceros (p. ej. exportados por extensiones de Chrome
+                // como ShelfBridge, o guardados desde el navegador) no
+                // declaran esta UTI concreta aunque tengan extensión
+                // .csv válida — iOS los oculta del todo en el selector
+                // sin este añadido. El contenido se sigue validando al
+                // parsear, así que esto no relaja ninguna comprobación
+                // real, solo evita que el archivo ni siquiera aparezca.
+                'public.plain-text',
+                'public.text',
+              ],
       );
       final file = await openFile(acceptedTypeGroups: [typeGroup]);
       if (file == null || !mounted) return;
@@ -73,19 +101,32 @@ class _GoodreadsImportPageState extends State<GoodreadsImportPage> {
       if (!mounted) return;
       setState(() => _fileName = file.name);
 
-      final rows = _isBookmory
-          ? const BookmoryXlsxParser().parse(bytes)
-          : const GoodreadsCsvParser().parse(bytes);
+      List<GoodreadsImportRow> rows;
+      bool requireRating;
+      if (_isBookmory) {
+        rows = const BookmoryXlsxParser().parse(bytes);
+        requireRating = true;
+      } else {
+        final result = const GoodreadsCsvParser().parse(bytes);
+        rows = result.rows;
+        // Un CSV que no viene de Goodreads (herramientas de terceros como
+        // ShelfBridge, para traer el histórico desde Fable) casi nunca
+        // trae valoraciones por esta vía: exigirlas dejaría fuera toda la
+        // lectura terminada en vez de solo la que de verdad no puntuaron.
+        requireRating = result.esGoodreadsGenuino;
+      }
       if (rows.isEmpty) {
         throw const FormatException('El archivo no contiene ningún libro.');
       }
       final preview = await _api.previsualizarImportacionGoodreads(
         rows,
         source: _isBookmory ? 'BOOKMORY' : 'GOODREADS',
+        requireRating: requireRating,
       );
       if (!mounted) return;
       setState(() {
         _rows = rows;
+        _requireRating = requireRating;
         _preview = preview;
         _selectedRows = preview.books
             .where((book) => book.canImport)
@@ -146,6 +187,7 @@ class _GoodreadsImportPageState extends State<GoodreadsImportPage> {
         selectedRows,
         resolutions: resolutions,
         source: _isBookmory ? 'BOOKMORY' : 'GOODREADS',
+        requireRating: _requireRating,
       );
       if (!mounted) return;
       setState(() => _result = result);

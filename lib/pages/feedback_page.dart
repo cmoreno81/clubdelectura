@@ -28,9 +28,9 @@ class _FeedbackPageState extends State<FeedbackPage> {
   bool _loading = false;
   String? _ticketKey;
 
-  // Adjunto de imagen
-  Uint8List? _imageBytes;
-  String? _imageName;
+  // Adjuntos de imagen (hasta _maxImages, igual que valida el backend)
+  static const _maxImages = 5;
+  final List<_ImagenAdjunta> _imagenes = [];
 
   @override
   void dispose() {
@@ -41,40 +41,55 @@ class _FeedbackPageState extends State<FeedbackPage> {
   }
 
   Future<void> _pickImage() async {
+    final huecoDisponible = _maxImages - _imagenes.length;
+    if (huecoDisponible <= 0) return;
+
     final picker = ImagePicker();
-    final xfile = await picker.pickImage(
-      source: ImageSource.gallery,
+    final xfiles = await picker.pickMultiImage(
       imageQuality: 80,
       maxWidth: 1920,
+      limit: huecoDisponible,
     );
-    if (xfile == null) return;
-    final bytes = await xfile.readAsBytes();
-    if (mounted) {
-      setState(() {
-        _imageBytes = bytes;
-        _imageName = xfile.name;
-      });
+    if (xfiles.isEmpty) return;
+
+    final seleccionadas = xfiles.take(huecoDisponible).toList();
+    final nuevas = await Future.wait(
+      seleccionadas.map(
+        (xfile) async => _ImagenAdjunta(
+          bytes: await xfile.readAsBytes(),
+          nombre: xfile.name,
+        ),
+      ),
+    );
+    if (!mounted) return;
+    setState(() => _imagenes.addAll(nuevas));
+
+    if (xfiles.length > huecoDisponible) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Máximo $_maxImages capturas por reporte')),
+      );
     }
   }
 
-  void _clearImage() => setState(() {
-        _imageBytes = null;
-        _imageName = null;
-      });
+  void _quitarImagen(int index) => setState(() => _imagenes.removeAt(index));
 
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
     setState(() => _loading = true);
     try {
-      final imageBase64 =
-          _imageBytes != null ? base64Encode(_imageBytes!) : null;
       final ticket = await ApiService().enviarFeedback(
         category: _category.apiKey,
         titulo: _tituloController.text.trim(),
         descripcion: _descripcionController.text.trim(),
         email: _emailController.text.trim(),
-        imageBase64: imageBase64,
-        imageFileName: _imageName,
+        images: _imagenes
+            .map(
+              (img) => {
+                'base64': base64Encode(img.bytes),
+                'fileName': img.nombre,
+              },
+            )
+            .toList(),
       );
       if (mounted) setState(() => _ticketKey = ticket ?? '✓');
     } on ApiException catch (e) {
@@ -103,10 +118,10 @@ class _FeedbackPageState extends State<FeedbackPage> {
               emailController: _emailController,
               loading: _loading,
               onSubmit: _submit,
-              imageBytes: _imageBytes,
-              imageName: _imageName,
+              imagenes: _imagenes,
+              maxImagenes: _maxImages,
               onPickImage: _pickImage,
-              onClearImage: _clearImage,
+              onQuitarImagen: _quitarImagen,
             ),
     );
   }
@@ -127,9 +142,9 @@ class _FormView extends StatelessWidget {
     required this.loading,
     required this.onSubmit,
     required this.onPickImage,
-    required this.onClearImage,
-    this.imageBytes,
-    this.imageName,
+    required this.onQuitarImagen,
+    required this.imagenes,
+    required this.maxImagenes,
   });
 
   final GlobalKey<FormState> formKey;
@@ -140,10 +155,10 @@ class _FormView extends StatelessWidget {
   final TextEditingController emailController;
   final bool loading;
   final VoidCallback onSubmit;
-  final Uint8List? imageBytes;
-  final String? imageName;
+  final List<_ImagenAdjunta> imagenes;
+  final int maxImagenes;
   final VoidCallback onPickImage;
-  final VoidCallback onClearImage;
+  final ValueChanged<int> onQuitarImagen;
 
   @override
   Widget build(BuildContext context) {
@@ -200,14 +215,17 @@ class _FormView extends StatelessWidget {
           ),
           const SizedBox(height: AppSpacing.lg),
 
-          // Adjunto de imagen
-          Text('Adjuntar evidencia (opcional)', style: AppTextStyles.caption),
+          // Adjuntos de imagen
+          Text(
+            'Adjuntar evidencia (opcional, hasta $maxImagenes capturas)',
+            style: AppTextStyles.caption,
+          ),
           const SizedBox(height: AppSpacing.sm),
-          _ImagePickerRow(
-            imageBytes: imageBytes,
-            imageName: imageName,
+          _ImagePickerGrid(
+            imagenes: imagenes,
+            maxImagenes: maxImagenes,
             onPick: onPickImage,
-            onClear: onClearImage,
+            onQuitar: onQuitarImagen,
           ),
           const SizedBox(height: AppSpacing.lg),
 
@@ -277,73 +295,108 @@ class _FormView extends StatelessWidget {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Fila de adjunto de imagen
+// Cuadrícula de adjuntos de imagen (hasta maxImagenes)
 // ─────────────────────────────────────────────────────────────────────────────
 
-class _ImagePickerRow extends StatelessWidget {
-  const _ImagePickerRow({
+class _ImagenAdjunta {
+  const _ImagenAdjunta({required this.bytes, required this.nombre});
+  final Uint8List bytes;
+  final String nombre;
+}
+
+class _ImagePickerGrid extends StatelessWidget {
+  const _ImagePickerGrid({
+    required this.imagenes,
+    required this.maxImagenes,
     required this.onPick,
-    required this.onClear,
-    this.imageBytes,
-    this.imageName,
+    required this.onQuitar,
   });
 
-  final Uint8List? imageBytes;
-  final String? imageName;
+  final List<_ImagenAdjunta> imagenes;
+  final int maxImagenes;
   final VoidCallback onPick;
-  final VoidCallback onClear;
+  final ValueChanged<int> onQuitar;
 
   @override
   Widget build(BuildContext context) {
-    if (imageBytes != null) {
-      return Row(
+    final hayHueco = imagenes.length < maxImagenes;
+
+    return Wrap(
+      spacing: AppSpacing.sm,
+      runSpacing: AppSpacing.sm,
+      children: [
+        for (var i = 0; i < imagenes.length; i++)
+          _Miniatura(
+            imagen: imagenes[i],
+            onQuitar: () => onQuitar(i),
+          ),
+        if (hayHueco)
+          GestureDetector(
+            onTap: onPick,
+            child: Container(
+              width: 72,
+              height: 72,
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(AppRadius.md),
+                border: Border.all(color: AppColors.border),
+              ),
+              alignment: Alignment.center,
+              child: Icon(
+                Icons.add_photo_alternate_outlined,
+                color: AppColors.textSecondary,
+              ),
+            ),
+          ),
+      ],
+    );
+  }
+}
+
+class _Miniatura extends StatelessWidget {
+  const _Miniatura({required this.imagen, required this.onQuitar});
+
+  final _ImagenAdjunta imagen;
+  final VoidCallback onQuitar;
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: 72,
+      height: 72,
+      child: Stack(
+        clipBehavior: Clip.none,
         children: [
-          // Miniatura
           ClipRRect(
             borderRadius: BorderRadius.circular(AppRadius.md),
             child: Image.memory(
-              imageBytes!,
+              imagen.bytes,
               width: 72,
               height: 72,
               fit: BoxFit.cover,
             ),
           ),
-          const SizedBox(width: AppSpacing.md),
-          // Nombre y botón eliminar
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  imageName ?? 'imagen.jpg',
-                  style: AppTextStyles.bodySecondary,
-                  overflow: TextOverflow.ellipsis,
-                  maxLines: 1,
+          Positioned(
+            top: -8,
+            right: -8,
+            child: GestureDetector(
+              onTap: onQuitar,
+              child: Container(
+                width: 22,
+                height: 22,
+                decoration: const BoxDecoration(
+                  color: AppColors.danger,
+                  shape: BoxShape.circle,
                 ),
-                const SizedBox(height: AppSpacing.xs),
-                TextButton.icon(
-                  onPressed: onClear,
-                  icon: const Icon(Icons.close_rounded, size: 16),
-                  label: const Text('Quitar imagen'),
-                  style: TextButton.styleFrom(
-                    foregroundColor: AppColors.textSecondary,
-                    padding: EdgeInsets.zero,
-                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                  ),
+                alignment: Alignment.center,
+                child: const Icon(
+                  Icons.close_rounded,
+                  size: 14,
+                  color: Colors.white,
                 ),
-              ],
+              ),
             ),
           ),
         ],
-      );
-    }
-
-    return OutlinedButton.icon(
-      onPressed: onPick,
-      icon: const Icon(Icons.image_outlined),
-      label: const Text('Adjuntar captura de pantalla'),
-      style: OutlinedButton.styleFrom(
-        minimumSize: const Size.fromHeight(48),
       ),
     );
   }

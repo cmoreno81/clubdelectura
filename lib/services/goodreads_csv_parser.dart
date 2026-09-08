@@ -3,10 +3,30 @@ import 'dart:typed_data';
 
 import '../models/goodreads_import.dart';
 
+/// Resultado de leer un CSV estilo Goodreads: las filas, más si el archivo
+/// parece un export genuino de Goodreads o una imitación de un tercero.
+class GoodreadsCsvParseResult {
+  const GoodreadsCsvParseResult({
+    required this.rows,
+    required this.esGoodreadsGenuino,
+  });
+
+  final List<GoodreadsImportRow> rows;
+
+  /// Un export real de Goodreads siempre incluye la columna "Book Id" (su
+  /// identificador interno). Herramientas de terceros que imitan el mismo
+  /// formato de columnas para poder "hacerse pasar" por un export de
+  /// Goodreads — como ShelfBridge, para traer el histórico desde Fable —
+  /// no la tienen, porque no existe fuera de Goodreads. Es la señal más
+  /// fiable para distinguir un caso del otro sin tener que reconocer cada
+  /// herramienta de origen una a una.
+  final bool esGoodreadsGenuino;
+}
+
 class GoodreadsCsvParser {
   const GoodreadsCsvParser();
 
-  List<GoodreadsImportRow> parse(Uint8List bytes) {
+  GoodreadsCsvParseResult parse(Uint8List bytes) {
     final text = utf8
         .decode(bytes, allowMalformed: true)
         .replaceFirst('\ufeff', '');
@@ -33,7 +53,7 @@ class GoodreadsCsvParser {
       return row[index].trim();
     }
 
-    return table
+    final rows = table
         .skip(1)
         .where((row) => row.any((cell) => cell.trim().isNotEmpty))
         .map((row) {
@@ -62,6 +82,11 @@ class GoodreadsCsvParser {
           );
         })
         .toList(growable: false);
+
+    return GoodreadsCsvParseResult(
+      rows: rows,
+      esGoodreadsGenuino: headers.containsKey('book id'),
+    );
   }
 
   List<List<String>> _parseCsv(String input) {

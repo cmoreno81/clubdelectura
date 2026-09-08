@@ -253,8 +253,11 @@ const List<_HelpSection> _secciones = [
         pregunta: '¿Puedo filtrar mi biblioteca por idioma?',
         respuesta:
             'Sí. En la Biblioteca verás un filtro "Idioma" junto al de estado. '
-            'Por defecto se muestra solo el español, así que si buscas un libro '
-            'y no aparece, prueba a cambiar el filtro a "Todos los idiomas".\n\n'
+            'Por defecto se muestran todos, así que si buscas un libro y solo '
+            'quieres ver los que están en un idioma concreto, actívalo ahí.\n\n'
+            'Compara con el idioma de la ficha del libro (el mismo que se ve y '
+            'se corrige en su pastilla), así que si un libro no aparece con un '
+            'idioma filtrado, prueba a quitar el filtro.\n\n'
             'Los idiomas sin bandera propia (catalán, euskera, gallego…) muestran '
             'un icono de globo 🌐 junto al nombre del idioma para distinguirlos.',
       ),
@@ -357,10 +360,29 @@ const List<_HelpSection> _secciones = [
       _HelpItem(
         pregunta: '¿Qué libros se importan?',
         respuesta:
-            'Solo se importan los libros terminados que tengan valoración. '
-            'Los pendientes, los que estás leyendo y los terminados sin valorar '
-            'se omiten. Si falta la fecha de finalización, ClubReads asigna una '
-            'fecha segura para poder conservar el libro en tu historial.',
+            'De un export real de Goodreads, solo los libros terminados que '
+            'tengan valoración puesta; los terminados sin valorar se omiten, '
+            'igual que los pendientes y los que estás leyendo. Si el archivo '
+            'viene de otra app que imita el formato de Goodreads (como Fable, '
+            'ver pregunta siguiente), se importan todos los terminados aunque '
+            'no tengan nota, porque esas apps no suelen exportar valoraciones '
+            'por esta vía. Si falta la fecha de finalización, ClubReads asigna '
+            'una fecha segura para poder conservar el libro en tu historial.',
+      ),
+      _HelpItem(
+        pregunta: '¿Puedo importar mi historial desde Fable?',
+        respuesta:
+            'Sí, con un paso intermedio. Fable no tiene exportación propia, '
+            'pero la extensión de Chrome gratuita "ShelfBridge" convierte tu '
+            'biblioteca de Fable en un archivo con el mismo formato que usa '
+            'Goodreads:\n\n'
+            '1. Instala ShelfBridge en Chrome (ordenador) y conéctala a tu '
+            'cuenta de Fable.\n'
+            '2. Revisa la tabla de libros que genera y descarga el CSV.\n'
+            '3. Pásate el archivo al móvil (por correo, Drive, AirDrop…).\n'
+            '4. En ClubReads, ve a Perfil → Más → "Importar desde Goodreads" '
+            'y selecciona ese CSV — funciona exactamente igual que un export '
+            'real de Goodreads.',
       ),
       _HelpItem(
         pregunta: '¿Qué significan "Nuevos" y "Para añadir"?',
