@@ -213,11 +213,11 @@ class _ComoSePuntua extends StatelessWidget {
 
   static const _filas = [
     ('Check-in diario', '10 pts'),
-    ('Bonus por racha', 'hasta 15 pts/día'),
-    ('Páginas leídas', '1 pt / 20 págs'),
+    ('Bonus por racha', '+1 pt por día seguido (máx. 15/día)'),
+    ('Páginas leídas', '1 pt cada 20 págs'),
     ('Terminar un libro', '40 pts'),
     ('Terminar una saga', '100 pts'),
-    ('Reseña con texto', '15 pts'),
+    ('Reseña (más de 200 caracteres)', '15 pts'),
   ];
 
   @override
@@ -244,19 +244,31 @@ class _ComoSePuntua extends StatelessWidget {
             Padding(
               padding: const EdgeInsets.symmetric(vertical: 3),
               child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(accion, style: AppTextStyles.bodySecondary),
-                  Text(
-                    puntos,
-                    style: AppTextStyles.bodySecondary.copyWith(
-                      fontWeight: FontWeight.w700,
-                      color: AppColors.primary,
+                  Expanded(
+                    child: Text(accion, style: AppTextStyles.bodySecondary),
+                  ),
+                  const SizedBox(width: AppSpacing.md),
+                  Flexible(
+                    child: Text(
+                      puntos,
+                      textAlign: TextAlign.end,
+                      style: AppTextStyles.bodySecondary.copyWith(
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.primary,
+                      ),
                     ),
                   ),
                 ],
               ),
             ),
+          const SizedBox(height: AppSpacing.sm),
+          Text(
+            'El check-in y el bonus de racha se suman cada día: con 15 días '
+            'seguidos o más, son 25 pts diarios solo por leer.',
+            style: AppTextStyles.caption.copyWith(color: AppColors.textMuted),
+          ),
         ],
       ),
     );

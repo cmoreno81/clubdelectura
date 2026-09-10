@@ -642,10 +642,16 @@ const List<_HelpSection> _secciones = [
       _HelpItem(
         pregunta: '¿Cómo se ganan puntos?',
         respuesta:
-            'Las Ligas premian el hábito constante más que leer mucho de golpe:\n\n'
-            '✅ Check-in diario: 10 puntos.\n'
-            '🔥 Bonus por racha: 1 punto por cada día de racha, hasta 15 al día.\n'
-            '📄 Páginas leídas ese día: 1 punto por cada 20 páginas, hasta 10 al día.\n'
+            'Las Ligas premian el hábito constante más que leer mucho de golpe.\n\n'
+            'Cada día que lees:\n'
+            '✅ Check-in diario: 10 puntos fijos.\n'
+            '🔥 Bonus por racha: además del check-in, sumas 1 punto por cada día '
+            'seguido que llevas de racha, hasta un máximo de 15 al día. Es decir: '
+            'el día 3 de racha son +3, el día 10 son +10, y del día 15 en adelante '
+            'siempre +15. Con una racha larga, cada día de lectura son 25 puntos '
+            '(10 + 15). La racha cuenta desde antes de entrar en la liga.\n'
+            '📄 Páginas leídas: 1 punto por cada 20 páginas de ese día, hasta 10.\n\n'
+            'Además:\n'
             '📕 Terminar un libro: 40 puntos (20 si es una relectura o un libro de '
             'menos de 50 páginas).\n'
             '📆 Primer libro terminado del mes: +25 puntos.\n'
