@@ -8,6 +8,7 @@ import '../../theme/app_colors.dart';
 import '../../theme/app_radius.dart';
 import '../../theme/app_spacing.dart';
 import '../../theme/app_text_styles.dart';
+import '../../utils/conversacion_libro_utils.dart';
 import '../lectura/fecha_relativa.dart';
 import '../common/club_card.dart';
 import '../common/club_chip.dart';
@@ -18,10 +19,17 @@ class ConversacionesLibroCard extends StatefulWidget {
   final String libro;
   final String coverUrl;
 
+  /// Si es `true`, cuando no hay ninguna conversación abierta se ofrece un
+  /// botón para abrir una directamente, sin esperar a que haya 2 lectoras
+  /// leyendo el libro a la vez (solo tiene sentido si la usuaria actual lo
+  /// está leyendo).
+  final bool permiteAbrirConversacion;
+
   const ConversacionesLibroCard({
     super.key,
     required this.libro,
     this.coverUrl = '',
+    this.permiteAbrirConversacion = false,
   });
 
   @override
@@ -34,12 +42,30 @@ class _ConversacionesLibroCardState extends State<ConversacionesLibroCard> {
   String? _cursor;
   bool _hasMore = true;
   bool _loadingMore = false;
+  bool _abriendoConversacion = false;
   late Future<void> _initialLoad;
 
   @override
   void initState() {
     super.initState();
     _initialLoad = _loadMore();
+  }
+
+  /// Lleva a configurar una lectura libre para este libro (sin esperar a
+  /// que haya más gente leyéndolo) y, si se crea, entra directamente en la
+  /// conversación recién abierta.
+  Future<void> _abrirNuevaConversacion() async {
+    if (_abriendoConversacion) return;
+    setState(() => _abriendoConversacion = true);
+    try {
+      await abrirNuevaConversacion(
+        context,
+        libro: widget.libro,
+        coverUrl: widget.coverUrl,
+      );
+    } finally {
+      if (mounted) setState(() => _abriendoConversacion = false);
+    }
   }
 
   Future<void> _loadMore() async {
@@ -99,7 +125,73 @@ class _ConversacionesLibroCardState extends State<ConversacionesLibroCard> {
         final conversaciones = _conversaciones;
 
         if (conversaciones.isEmpty) {
-          return const SizedBox.shrink();
+          if (!widget.permiteAbrirConversacion) {
+            return const SizedBox.shrink();
+          }
+          // Aún no hay nadie más leyéndolo a la vez, pero la usuaria actual
+          // sí lo está leyendo: no hace falta esperar a que se sume otra
+          // persona para poder comentar su lectura.
+          return LibroSection(
+            icon: Icons.forum_outlined,
+            color: AppColors.primary,
+            title: 'Conversaciones',
+            subtitle: 'Aún no hay ninguna sobre este libro',
+            child: ClubCard(
+              elevated: false,
+              padding: const EdgeInsets.all(AppSpacing.md),
+              backgroundColor: const Color(0xFFF3F7FD),
+              borderColor: AppColors.info.withValues(alpha: 0.20),
+              onTap: _abriendoConversacion ? null : _abrirNuevaConversacion,
+              child: Row(
+                children: [
+                  Container(
+                    width: 48,
+                    height: 48,
+                    decoration: BoxDecoration(
+                      color: AppColors.info.withValues(alpha: 0.13),
+                      borderRadius: BorderRadius.circular(AppRadius.lg),
+                    ),
+                    alignment: Alignment.center,
+                    child: _abriendoConversacion
+                        ? const SizedBox.square(
+                            dimension: 20,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
+                        : const Icon(
+                            Icons.chat_bubble_outline_rounded,
+                            color: AppColors.info,
+                          ),
+                  ),
+                  const SizedBox(width: AppSpacing.md),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Abrir una conversación',
+                          style: AppTextStyles.subtitle.copyWith(
+                            color: AppColors.textPrimary,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                        const SizedBox(height: AppSpacing.xs),
+                        Text(
+                          'Empieza a comentarlo ya, sin esperar a que nadie '
+                          'más se sume a la lectura.',
+                          style: AppTextStyles.bodySecondary,
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: AppSpacing.sm),
+                  const Icon(
+                    Icons.chevron_right_rounded,
+                    color: AppColors.info,
+                  ),
+                ],
+              ),
+            ),
+          );
         }
 
         return LibroSection(

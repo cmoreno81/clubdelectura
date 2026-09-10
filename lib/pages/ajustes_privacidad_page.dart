@@ -61,6 +61,16 @@ const _etiquetasNotificacion = <String, (String, String, String)>{
     'Libro del año del club',
     'Novedades sobre el Libro del Año de tu club',
   ),
+  'LIGA_RESULTADO': (
+    '🏆',
+    'Resultado de las Ligas',
+    'Cuando termina una temporada y sabes en qué puesto quedaste',
+  ),
+  'LIGA_CIERRE_PROXIMO': (
+    '⏳',
+    'Cierre de temporada de Ligas',
+    'Un aviso cuando quedan pocas horas para el fin de la temporada',
+  ),
 };
 
 class AjustesPrivacidadPage extends StatefulWidget {

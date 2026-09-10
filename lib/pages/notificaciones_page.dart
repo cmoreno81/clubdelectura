@@ -15,6 +15,7 @@ import '../theme/app_text_styles.dart';
 import '../widgets/common/club_card.dart';
 import '../widgets/error_view.dart';
 import 'clubvision_menu_page.dart';
+import 'liga_page.dart';
 import 'home_page.dart';
 import 'lectura_page.dart';
 import 'package:club_lectura_app/widgets/common/club_shimmer.dart';
@@ -305,6 +306,13 @@ class _NotificacionesPageState extends State<NotificacionesPage> {
         await Navigator.push<void>(
           context,
           AppPageRoute(builder: (_) => const ClubvisionMenuPage()),
+        );
+        return;
+      case 'LIGA_RESULTADO':
+      case 'LIGA_CIERRE_PROXIMO':
+        await Navigator.push<void>(
+          context,
+          AppPageRoute(builder: (_) => const LigaPage()),
         );
         return;
       case 'NUEVA_MIEMBRO':

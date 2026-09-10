@@ -13,6 +13,7 @@ import '../theme/app_text_styles.dart';
 import '../widgets/common/checkin_button.dart';
 import '../widgets/common/mapa_calor_widget.dart';
 import '../utils/wrapped_availability.dart';
+import 'book_of_year_page.dart';
 import 'mis_logros_page.dart';
 import 'personalidad_lectora_page.dart';
 import 'share_reader_card_page.dart';
@@ -96,6 +97,10 @@ class _MiEspacioPageState extends State<MiEspacioPage>
                     WrappedPage(anio: WrappedAvailability().wrappedYear),
               ),
             ),
+            onVerLibroDelAno: () => Navigator.push<void>(
+              context,
+              AppPageRoute(builder: (_) => const BookOfYearPage()),
+            ),
             onOpenQuiz: () => Navigator.push<void>(
               context,
               AppPageRoute(
@@ -156,6 +161,7 @@ class _Content extends StatelessWidget {
     required this.streakPulse,
     required this.onVerTodos,
     required this.onVerWrapped,
+    required this.onVerLibroDelAno,
     required this.onOpenQuiz,
     required this.onShareCard,
   });
@@ -164,6 +170,7 @@ class _Content extends StatelessWidget {
   final Animation<double> streakPulse;
   final VoidCallback onVerTodos;
   final VoidCallback onVerWrapped;
+  final VoidCallback onVerLibroDelAno;
   final VoidCallback onOpenQuiz;
   final VoidCallback onShareCard;
 
@@ -372,6 +379,19 @@ class _Content extends StatelessWidget {
             ),
             sliver: SliverToBoxAdapter(
               child: MiEspacioWrappedCta(onTap: onVerWrapped),
+            ),
+          ),
+
+          // ── Libro del año (cuadro personal) ───────────────────────────────
+          SliverPadding(
+            padding: const EdgeInsets.fromLTRB(
+              AppSpacing.md,
+              AppSpacing.md,
+              AppSpacing.md,
+              0,
+            ),
+            sliver: SliverToBoxAdapter(
+              child: _LibroDelAnoCta(onTap: onVerLibroDelAno),
             ),
           ),
 
@@ -1131,6 +1151,70 @@ class _SectionLabel extends StatelessWidget {
 // ────────────────────────────────────────────────────────────────────────────
 // _ShareCardCta
 // ────────────────────────────────────────────────────────────────────────────
+
+class _LibroDelAnoCta extends StatelessWidget {
+  const _LibroDelAnoCta({required this.onTap});
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.all(AppSpacing.lg),
+        decoration: BoxDecoration(
+          gradient: const LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [Color(0xFF7A4B12), Color(0xFFB07B2A), Color(0xFFD9A441)],
+          ),
+          borderRadius: BorderRadius.circular(AppRadius.lg),
+          boxShadow: [
+            BoxShadow(
+              color: const Color(0xFFB07B2A).withValues(alpha: .35),
+              blurRadius: 14,
+              offset: const Offset(0, 5),
+            ),
+          ],
+        ),
+        child: Row(
+          children: [
+            const Text('🏆', style: TextStyle(fontSize: 32)),
+            const SizedBox(width: AppSpacing.md),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'Mi libro del año',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 16,
+                      fontWeight: FontWeight.w900,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    'Elige tu favorito de cada mes y descubre tu ganador en un cuadro eliminatorio',
+                    style: TextStyle(
+                      color: Colors.white.withValues(alpha: .80),
+                      fontSize: 13,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Icon(
+              Icons.arrow_forward_ios_rounded,
+              color: Colors.white.withValues(alpha: .70),
+              size: 18,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
 
 class _QuizCta extends StatelessWidget {
   const _QuizCta({required this.onTap});

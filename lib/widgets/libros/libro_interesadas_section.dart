@@ -4,6 +4,7 @@ import '../../models/libro.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_spacing.dart';
 import '../../theme/app_text_styles.dart';
+import '../../utils/corregir_finalizacion_utils.dart';
 import '../../utils/reading_status_copy.dart';
 import '../common/club_avatar.dart';
 import '../common/club_card.dart';
@@ -297,31 +298,6 @@ class _LectoraCard extends StatelessWidget {
     ];
   }
 
-  Future<bool> _confirmarCorreccionFinalizacion(BuildContext context) async {
-    final confirmado = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Corregir finalización'),
-        content: const Text(
-          'El libro volverá a Pendiente y se eliminará del historial la '
-          'última finalización marcada por error.',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('Cancelar'),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.pop(context, true),
-            child: const Text('Corregir'),
-          ),
-        ],
-      ),
-    );
-
-    return confirmado ?? false;
-  }
-
   @override
   Widget build(BuildContext context) {
     return ClubCard(
@@ -438,7 +414,7 @@ class _LectoraCard extends StatelessWidget {
                 }
 
                 if (registro.estado == 'FINALIZADO' && value == 'PENDIENTE') {
-                  final confirmado = await _confirmarCorreccionFinalizacion(
+                  final confirmado = await confirmarCorreccionFinalizacion(
                     context,
                   );
                   if (!confirmado) return;

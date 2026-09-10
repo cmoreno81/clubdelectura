@@ -28,6 +28,7 @@ import '../models/libro_agrupado.dart';
 import '../models/libro.dart';
 import '../models/libro_finalizado.dart';
 import '../models/libros_data.dart';
+import '../services/api_exception.dart';
 import '../services/api_service.dart';
 import '../services/club_service.dart';
 import '../services/auth_session_service.dart';
@@ -68,15 +69,23 @@ class LibrosPage extends StatefulWidget {
     this.loadData,
     this.esPersonal = false,
     this.clubId,
+    this.initialFiltroOrigen = 'DEL_CLUB',
   });
 
   final VoidCallback? onBackToClub;
   final LibrosPageController? controller;
   final LibraryDataLoader? loadData;
+
   /// true cuando el usuario está en modo lector solitario (sin club).
   final bool esPersonal;
+
   /// ID del club activo — se usa para aislar el caché entre clubs.
   final String? clubId;
+
+  /// 'DEL_CLUB' | 'CLUBREADS'. Permite abrir la biblioteca ya filtrada al
+  /// catálogo general (p. ej. desde "Explorar" en el menú inferior, fuera
+  /// de un club concreto).
+  final String initialFiltroOrigen;
 
   @override
   State<LibrosPage> createState() => _LibrosPageState();
@@ -97,7 +106,8 @@ class _LibrosPageState extends State<LibrosPage> with WidgetsBindingObserver {
 
   String filtroBusqueda = '';
   String filtroEstado = 'TODOS';
-  String filtroOrigen = 'DEL_CLUB'; // 'DEL_CLUB' | 'CLUBREADS'
+  late String filtroOrigen =
+      widget.initialFiltroOrigen; // 'DEL_CLUB' | 'CLUBREADS'
   String filtroUsuario = 'TODAS';
   String? filtroVibe; // null = sin filtro de vibe
   // Sin filtro por defecto (se ven todos los idiomas): filtrar por un
@@ -346,16 +356,15 @@ class _LibrosPageState extends State<LibrosPage> with WidgetsBindingObserver {
             filtroUsuario = 'TODAS';
           }
 
-          final idiomasDisponibles =
-              {
-                ...libros.map((e) => e.idioma.trim()).where((i) => i.isNotEmpty),
-                ...finalizados
-                    .map((e) => e.idioma.trim())
-                    .where((i) => i.isNotEmpty),
-              }.toList()
-                ..sort();
+          final idiomasDisponibles = {
+            ...libros.map((e) => e.idioma.trim()).where((i) => i.isNotEmpty),
+            ...finalizados
+                .map((e) => e.idioma.trim())
+                .where((i) => i.isNotEmpty),
+          }.toList()..sort();
 
-          if (filtroIdioma != null && !idiomasDisponibles.contains(filtroIdioma)) {
+          if (filtroIdioma != null &&
+              !idiomasDisponibles.contains(filtroIdioma)) {
             filtroIdioma = null;
           }
 
@@ -372,11 +381,26 @@ class _LibrosPageState extends State<LibrosPage> with WidgetsBindingObserver {
                     featureKey: 'hint_biblioteca_v2',
                     titulo: 'Cómo sacar el máximo a tu biblioteca',
                     tips: const [
-                      ScreenHintTip('📖', 'Mantén pulsado un libro para ver acciones rápidas'),
-                      ScreenHintTip('✅', 'Marca "Finalizar" cuando termines un libro para registrarlo en tu historial'),
-                      ScreenHintTip('🔍', 'Filtra por estado: leyendo, pausado, pendiente o finalizado'),
-                      ScreenHintTip('⭐', 'Puntúa y añade reseñas a los libros que terminas'),
-                      ScreenHintTip('🌈', 'En la pestaña Pendientes aparece el Vibe Reader para filtrar por estado de ánimo lector'),
+                      ScreenHintTip(
+                        '📖',
+                        'Mantén pulsado un libro para ver acciones rápidas',
+                      ),
+                      ScreenHintTip(
+                        '✅',
+                        'Marca "Finalizar" cuando termines un libro para registrarlo en tu historial',
+                      ),
+                      ScreenHintTip(
+                        '🔍',
+                        'Filtra por estado: leyendo, pausado, pendiente o finalizado',
+                      ),
+                      ScreenHintTip(
+                        '⭐',
+                        'Puntúa y añade reseñas a los libros que terminas',
+                      ),
+                      ScreenHintTip(
+                        '🌈',
+                        'En la pestaña Pendientes aparece el Vibe Reader para filtrar por estado de ánimo lector',
+                      ),
                     ],
                   ),
                   _cabeceraFiltros(
@@ -480,7 +504,7 @@ class _LibrosPageState extends State<LibrosPage> with WidgetsBindingObserver {
             decoration: InputDecoration(
               isDense: true,
               contentPadding: const EdgeInsets.symmetric(vertical: 10),
-              hintText: 'Buscar en la biblioteca...',
+              hintText: 'Buscar por título, saga o autor...',
               prefixIconConstraints: const BoxConstraints(minWidth: 42),
               prefixIcon: const Icon(Icons.search_rounded, size: 21),
               suffixIcon: filtroBusqueda.isEmpty
@@ -806,7 +830,10 @@ class _LibrosPageState extends State<LibrosPage> with WidgetsBindingObserver {
                 : AppColors.surfaceSoft,
             borderRadius: BorderRadius.circular(14),
           ),
-          child: Icon(icono, color: seleccionada ? color : AppColors.textSecondary),
+          child: Icon(
+            icono,
+            color: seleccionada ? color : AppColors.textSecondary,
+          ),
         ),
         title: Text(
           titulo,
@@ -919,7 +946,10 @@ class _LibrosPageState extends State<LibrosPage> with WidgetsBindingObserver {
         selected: seleccionada,
         selectedTileColor: color.withValues(alpha: 0.08),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        leading: Text(banderaIdioma(codigo), style: const TextStyle(fontSize: 22)),
+        leading: Text(
+          banderaIdioma(codigo),
+          style: const TextStyle(fontSize: 22),
+        ),
         title: Text(
           nombreIdioma(codigo),
           style: AppTextStyles.body.copyWith(fontWeight: FontWeight.w700),
@@ -1031,7 +1061,10 @@ class _LibrosPageState extends State<LibrosPage> with WidgetsBindingObserver {
         selected: seleccionado,
         selectedTileColor: color.withValues(alpha: 0.08),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        leading: Text(iconoGenero(genero), style: const TextStyle(fontSize: 22)),
+        leading: Text(
+          iconoGenero(genero),
+          style: const TextStyle(fontSize: 22),
+        ),
         title: Text(
           genero,
           style: AppTextStyles.body.copyWith(fontWeight: FontWeight.w700),
@@ -1707,7 +1740,8 @@ class _LibrosPageState extends State<LibrosPage> with WidgetsBindingObserver {
   }) {
     final filterKey =
         '$filtroBusqueda\u0000$filtroEstado\u0000$filtroUsuario\u0000$ordenSeleccionado';
-    final filterKeyFull = '$filterKey|${filtroVibe ?? ''}|${filtroIdioma ?? ''}';
+    final filterKeyFull =
+        '$filterKey|${filtroVibe ?? ''}|${filtroIdioma ?? ''}';
     if (identical(_cachedBooks, libros) &&
         identical(_cachedFinishedBooks, finalizados) &&
         _cachedFilterKey == filterKeyFull) {
@@ -1736,9 +1770,11 @@ class _LibrosPageState extends State<LibrosPage> with WidgetsBindingObserver {
       // concreta en vez del de referencia del libro. Se aplica más abajo,
       // como una criba sobre los grupos ya completos.
       final librosFiltrados = libros.where((libro) {
-        final coincideBusqueda = normalizar(
+        final coincideBusqueda = _coincideBusqueda(
           libro.libro,
-        ).contains(normalizar(filtroBusqueda));
+          saga: libro.saga,
+          autor: libro.autor,
+        );
 
         final coincideUsuario =
             filtroUsuario == 'TODAS' || libro.usuario.trim() == filtroUsuario;
@@ -1746,12 +1782,15 @@ class _LibrosPageState extends State<LibrosPage> with WidgetsBindingObserver {
         final coincideEstado =
             filtroEstado == 'TODOS' || libro.estado == filtroEstado;
 
-        final coincideVibe = filtroVibe == null ||
-            _vibeGeneros(filtroVibe!).any(
-              (g) => normalizar(libro.genero).contains(g),
-            );
+        final coincideVibe =
+            filtroVibe == null ||
+            _vibeGeneros(
+              filtroVibe!,
+            ).any((g) => normalizar(libro.genero).contains(g));
 
-        return coincideBusqueda && coincideUsuario && coincideEstado &&
+        return coincideBusqueda &&
+            coincideUsuario &&
+            coincideEstado &&
             coincideVibe;
       }).toList();
 
@@ -1788,9 +1827,11 @@ class _LibrosPageState extends State<LibrosPage> with WidgetsBindingObserver {
           final coincideUsuario =
               filtroUsuario == 'TODAS' ||
               finalizado.usuario.trim() == filtroUsuario;
-          final coincideBusqueda = normalizar(
+          final coincideBusqueda = _coincideBusqueda(
             finalizado.libro,
-          ).contains(normalizar(filtroBusqueda));
+            saga: finalizado.saga,
+            autor: finalizado.autor,
+          );
           return coincideUsuario && coincideBusqueda;
         });
 
@@ -1856,9 +1897,11 @@ class _LibrosPageState extends State<LibrosPage> with WidgetsBindingObserver {
       final coincideUsuario =
           filtroUsuario == 'TODAS' || f.usuario.trim() == filtroUsuario;
 
-      final coincideBusqueda =
-          filtroBusqueda.isEmpty ||
-          normalizar(f.libro).contains(normalizar(filtroBusqueda));
+      final coincideBusqueda = _coincideBusqueda(
+        f.libro,
+        saga: f.saga,
+        autor: f.autor,
+      );
 
       return coincideUsuario && coincideBusqueda;
     }).toList();
@@ -1949,17 +1992,61 @@ class _LibrosPageState extends State<LibrosPage> with WidgetsBindingObserver {
   static List<String> _vibeGeneros(String vibe) {
     switch (vibe) {
       case '🌙 Oscuro':
-        return ['thriller', 'terror', 'misterio', 'crimen', 'horror', 'noir', 'suspense', 'policíac', 'policiaco'];
+        return [
+          'thriller',
+          'terror',
+          'misterio',
+          'crimen',
+          'horror',
+          'noir',
+          'suspense',
+          'policíac',
+          'policiaco',
+        ];
       case '☀️ Ligero':
-        return ['comedia', 'humor', 'cozy', 'chick', 'ligero', 'contemporary', 'contemporan'];
+        return [
+          'comedia',
+          'humor',
+          'cozy',
+          'chick',
+          'ligero',
+          'contemporary',
+          'contemporan',
+        ];
       case '💕 Romántico':
         return ['romance', 'amor', 'romantico', 'erotico', 'erotica'];
       case '🌟 Aventura':
-        return ['fantasia', 'aventura', 'accion', 'ciencia ficcion', 'sci-fi', 'distopia', 'epico', 'epica', 'fantasyado'];
+        return [
+          'fantasia',
+          'aventura',
+          'accion',
+          'ciencia ficcion',
+          'sci-fi',
+          'distopia',
+          'epico',
+          'epica',
+          'fantasyado',
+        ];
       case '🧠 Reflexivo':
-        return ['ensayo', 'psicolog', 'filosofia', 'no ficcion', 'autobiograf', 'memorias', 'historic', 'biograf'];
+        return [
+          'ensayo',
+          'psicolog',
+          'filosofia',
+          'no ficcion',
+          'autobiograf',
+          'memorias',
+          'historic',
+          'biograf',
+        ];
       case '💔 Emotivo':
-        return ['drama', 'literaria', 'literario', 'ficcion literaria', 'contemporan', 'realista'];
+        return [
+          'drama',
+          'literaria',
+          'literario',
+          'ficcion literaria',
+          'contemporan',
+          'realista',
+        ];
       default:
         return [];
     }
@@ -1974,10 +2061,10 @@ class _LibrosPageState extends State<LibrosPage> with WidgetsBindingObserver {
       filtroUsuario = 'TODAS';
       filtroVibe = null;
       filtroIdioma = null;
-      filtroOrigen = 'DEL_CLUB';
+      filtroOrigen = widget.initialFiltroOrigen;
     });
-    // Recargar solo si el origen cambió (ClubReads → Del club)
-    if (origenAnterior != 'DEL_CLUB') {
+    // Recargar solo si el origen cambió respecto al que había antes de limpiar
+    if (origenAnterior != widget.initialFiltroOrigen) {
       librosFuture = _startReload(notify: false);
     }
   }
@@ -2007,83 +2094,97 @@ class _LibrosPageState extends State<LibrosPage> with WidgetsBindingObserver {
       return;
     }
 
-    final respuesta = await ApiService().anadirLibroExistente(
-      usuario: usuario,
-      libro: libro.libro,
-      prioridad: preferencias.priority,
-      formato: preferencias.format,
-      idioma: preferencias.idioma,
-    );
+    try {
+      final respuesta = await ApiService().anadirLibroExistente(
+        usuario: usuario,
+        libro: libro.libro,
+        prioridad: preferencias.priority,
+        formato: preferencias.format,
+        idioma: preferencias.idioma,
+      );
 
-    if (!mounted) return;
+      if (!mounted) return;
 
-    final ok = respuesta['ok'] == true;
-    if (!ok) {
+      final ok = respuesta['ok'] == true;
+      if (!ok) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(respuesta['mensaje'] ?? 'No se ha podido añadir'),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+        return;
+      }
+
+      // El estado inicial (leyendo/finalizado) elegido en el sheet no lo aplica
+      // anadirLibroExistente (siempre crea como pendiente): lo aplicamos aquí
+      // reutilizando la lógica ya validada de actualizarEstado. El libro ya
+      // quedó añadido en la llamada anterior, así que un fallo aquí solo baja
+      // el estado a "sigue pendiente", nunca se trata como que no se añadió.
+      final estadoFinal = await aplicarEstadoInicial(
+        context,
+        usuario: usuario,
+        libro: libro.libro,
+        estadoElegido: preferencias.status,
+        formato: preferencias.format,
+      );
+
+      if (!mounted) return;
+      HapticFeedback.mediumImpact();
+      LibraryRefreshNotifier.instance.invalidate();
+      _recargar();
+
+      if (estadoFinal == 'FINALIZADO') {
+        await mostrarCelebracionFinalizado(
+          context,
+          titulo: libro.libro,
+          coverUrl: libro.coverUrl,
+        );
+      } else {
+        final messenger = ScaffoldMessenger.of(context);
+        final noSeAplico = noSeAplicoEstadoElegido(
+          estadoElegido: preferencias.status,
+          estadoFinal: estadoFinal,
+        );
+        // "Deshacer" solo tiene sentido si el libro sigue pendiente de verdad:
+        // quitarLibroPendientes rechaza libros ya en lectura o finalizados.
+        messenger.showSnackBar(
+          SnackBar(
+            content: Text(
+              noSeAplico
+                  ? mensajeEstadoNoAplicado(libro.libro)
+                  : '📚 Añadido a tu lista',
+            ),
+            behavior: SnackBarBehavior.floating,
+            action: estadoFinal != 'PENDIENTE'
+                ? null
+                : SnackBarAction(
+                    label: 'Deshacer',
+                    onPressed: () async {
+                      final u = await UsuarioService().obtenerUsuario();
+                      if (u == null || u.trim().isEmpty) return;
+                      await ApiService().quitarLibroPendientes(
+                        usuario: u,
+                        libro: libro.libro,
+                      );
+                      if (!mounted) return;
+                      LibraryRefreshNotifier.instance.invalidate();
+                      _recargar();
+                    },
+                  ),
+          ),
+        );
+      }
+    } on ApiException catch (e) {
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(respuesta['mensaje'] ?? 'No se ha podido añadir'),
-          behavior: SnackBarBehavior.floating,
-        ),
-      );
-      return;
-    }
-
-    // El estado inicial (leyendo/finalizado) elegido en el sheet no lo aplica
-    // anadirLibroExistente (siempre crea como pendiente): lo aplicamos aquí
-    // reutilizando la lógica ya validada de actualizarEstado. El libro ya
-    // quedó añadido en la llamada anterior, así que un fallo aquí solo baja
-    // el estado a "sigue pendiente", nunca se trata como que no se añadió.
-    final estadoFinal = await aplicarEstadoInicial(
-      context,
-      usuario: usuario,
-      libro: libro.libro,
-      estadoElegido: preferencias.status,
-      formato: preferencias.format,
-    );
-
-    if (!mounted) return;
-    HapticFeedback.mediumImpact();
-    LibraryRefreshNotifier.instance.invalidate();
-    _recargar();
-
-    if (estadoFinal == 'FINALIZADO') {
-      await mostrarCelebracionFinalizado(
-        context,
-        titulo: libro.libro,
-        coverUrl: libro.coverUrl,
-      );
-    } else {
-      final messenger = ScaffoldMessenger.of(context);
-      final noSeAplico = noSeAplicoEstadoElegido(
-        estadoElegido: preferencias.status,
-        estadoFinal: estadoFinal,
-      );
-      // "Deshacer" solo tiene sentido si el libro sigue pendiente de verdad:
-      // quitarLibroPendientes rechaza libros ya en lectura o finalizados.
-      messenger.showSnackBar(
-        SnackBar(
           content: Text(
-            noSeAplico
-                ? mensajeEstadoNoAplicado(libro.libro)
-                : '📚 Añadido a tu lista',
+            e.isTemporary
+                ? 'No se ha podido añadir: problema de conexión. Inténtalo de nuevo.'
+                : e.message,
           ),
           behavior: SnackBarBehavior.floating,
-          action: estadoFinal != 'PENDIENTE'
-              ? null
-              : SnackBarAction(
-                  label: 'Deshacer',
-                  onPressed: () async {
-                    final u = await UsuarioService().obtenerUsuario();
-                    if (u == null || u.trim().isEmpty) return;
-                    await ApiService().quitarLibroPendientes(
-                      usuario: u,
-                      libro: libro.libro,
-                    );
-                    if (!mounted) return;
-                    LibraryRefreshNotifier.instance.invalidate();
-                    _recargar();
-                  },
-                ),
         ),
       );
     }
@@ -2162,8 +2263,9 @@ class _LibrosPageState extends State<LibrosPage> with WidgetsBindingObserver {
 
     final nuevaFecha = await showDatePicker(
       context: context,
-      initialDate:
-          fechaActual.isAfter(DateTime.now()) ? DateTime.now() : fechaActual,
+      initialDate: fechaActual.isAfter(DateTime.now())
+          ? DateTime.now()
+          : fechaActual,
       firstDate: DateTime(1950),
       lastDate: DateTime.now(),
       helpText: 'Fecha en que empezaste a leer',
@@ -2409,6 +2511,17 @@ class _LibrosPageState extends State<LibrosPage> with WidgetsBindingObserver {
         .replaceAll('ú', 'u')
         .replaceAll('ü', 'u');
   }
+
+  /// La búsqueda de la biblioteca casa por título, saga y autor —así se puede
+  /// buscar "coven of bones" (nombre de saga) y encontrar sus libros aunque
+  /// ninguno se titule exactamente así.
+  bool _coincideBusqueda(String titulo, {String saga = '', String autor = ''}) {
+    if (filtroBusqueda.isEmpty) return true;
+    final q = normalizar(filtroBusqueda);
+    return normalizar(titulo).contains(q) ||
+        (saga.isNotEmpty && normalizar(saga).contains(q)) ||
+        (autor.isNotEmpty && normalizar(autor).contains(q));
+  }
 }
 
 /// Badge compacto para mostrar sobre la portada del libro.
@@ -2489,9 +2602,7 @@ class _VibeBanner extends StatelessWidget {
     return Container(
       decoration: BoxDecoration(
         color: const Color(0xFFF5EDF8),
-        border: Border(
-          bottom: BorderSide(color: AppColors.border, width: .8),
-        ),
+        border: Border(bottom: BorderSide(color: AppColors.border, width: .8)),
       ),
       padding: const EdgeInsets.fromLTRB(
         AppSpacing.md,
@@ -2542,8 +2653,7 @@ class _VibeBanner extends StatelessWidget {
                     emoji: emoji,
                     label: label.replaceFirst('$emoji ', ''),
                     selected: selected,
-                    onTap: () =>
-                        onVibeChanged(selected ? null : label),
+                    onTap: () => onVibeChanged(selected ? null : label),
                   ),
                 );
               }).toList(),
@@ -2579,14 +2689,10 @@ class _VibeChip extends StatelessWidget {
         duration: const Duration(milliseconds: 180),
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
         decoration: BoxDecoration(
-          color: selected
-              ? AppColors.primary
-              : AppColors.surface,
+          color: selected ? AppColors.primary : AppColors.surface,
           borderRadius: BorderRadius.circular(AppRadius.pill),
           border: Border.all(
-            color: selected
-                ? AppColors.primary
-                : AppColors.border,
+            color: selected ? AppColors.primary : AppColors.border,
             width: selected ? 1.5 : 1.0,
           ),
           boxShadow: selected

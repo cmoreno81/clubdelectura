@@ -615,6 +615,61 @@ const List<_HelpSection> _secciones = [
     ],
   ),
   _HelpSection(
+    icono: '🏆',
+    titulo: 'Ligas de ClubReads',
+    items: [
+      _HelpItem(
+        pregunta: '¿Qué son las Ligas de ClubReads?',
+        respuesta:
+            'Un ranking individual y opcional donde compites con lectoras de toda '
+            'la comunidad (no solo tu club) por temporadas de dos semanas. Al '
+            'terminar cada temporada los puntos se reinician y empieza una carrera '
+            'nueva, así que siempre tienes opciones de remontar.\n\n'
+            'Es totalmente opcional: si no te unes, no apareces en ninguna tabla '
+            'ni ves la sección competitiva.',
+      ),
+      _HelpItem(
+        pregunta: '¿Cómo me uno o me salgo?',
+        respuesta:
+            'Desde el dashboard global (tarjeta "🏆 Ligas de ClubReads") o desde '
+            'Perfil → Más → "Ligas de ClubReads". Pulsa "Unirme a la liga" para '
+            'empezar a puntuar.\n\n'
+            'Para salir, entra en la pantalla de la liga y usa el menú "⋮" → '
+            '"Dejar de participar". Dejarás de puntuar y de aparecer en la tabla, '
+            'pero tu histórico (temporadas jugadas, mejor puesto, podios) se '
+            'conserva por si vuelves.',
+      ),
+      _HelpItem(
+        pregunta: '¿Cómo se ganan puntos?',
+        respuesta:
+            'Las Ligas premian el hábito constante más que leer mucho de golpe:\n\n'
+            '✅ Check-in diario: 10 puntos.\n'
+            '🔥 Bonus por racha: 1 punto por cada día de racha, hasta 15 al día.\n'
+            '📄 Páginas leídas ese día: 1 punto por cada 20 páginas, hasta 10 al día.\n'
+            '📕 Terminar un libro: 40 puntos (20 si es una relectura o un libro de '
+            'menos de 50 páginas).\n'
+            '📆 Primer libro terminado del mes: +25 puntos.\n'
+            '📚 Completar una saga entera: +100 puntos.\n'
+            '✍️ Reseña con texto (más de 200 caracteres): +15 puntos.\n'
+            '👑 Elegir tu Libro del año del mes: +10 puntos.',
+      ),
+      _HelpItem(
+        pregunta: '¿Qué pasa si revierto una lectura o quito una marca de racha?',
+        respuesta:
+            'Los puntos que dependían de esa acción desaparecen en el siguiente '
+            'recálculo (cada pocas horas). No se puede "farmear" terminando y '
+            'des-terminando un libro.',
+      ),
+      _HelpItem(
+        pregunta: '¿Cuándo se actualiza la tabla?',
+        respuesta:
+            'Tu puntuación se recalcula al abrir la pantalla de la liga, y la de '
+            'todas las participantes cada pocas horas. La cuenta atrás de la '
+            'cabecera indica cuánto queda para el cierre de la temporada.',
+      ),
+    ],
+  ),
+  _HelpSection(
     icono: '📈',
     titulo: 'Rankings',
     items: [

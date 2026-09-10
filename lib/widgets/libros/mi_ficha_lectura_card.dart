@@ -5,6 +5,7 @@ import '../../services/api_service.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_spacing.dart';
 import '../../theme/app_text_styles.dart';
+import '../../utils/corregir_finalizacion_utils.dart';
 import '../../utils/idioma_utils.dart';
 import '../common/club_avatar.dart';
 import '../common/club_card.dart';
@@ -36,6 +37,7 @@ class _MiFichaLecturaCardState extends State<MiFichaLecturaCard> {
   bool _guardandoValoracion = false;
   bool _guardandoPicante = false;
   bool _guardandoIdioma = false;
+  bool _corrigiendoFinalizacion = false;
 
   @override
   void initState() {
@@ -203,6 +205,36 @@ class _MiFichaLecturaCardState extends State<MiFichaLecturaCard> {
     );
   }
 
+  /// Deshace un "terminado" marcado por error: vuelve el libro a Pendiente
+  /// (mismo camino que ya existía para el resto de lectoras en
+  /// LibroInteresadasSection, pero esta ficha es la única forma de llegar
+  /// a él una vez el libro pasa a "finalizados").
+  Future<void> _corregirFinalizacion() async {
+    if (_corrigiendoFinalizacion) return;
+    final confirmado = await confirmarCorreccionFinalizacion(context);
+    if (!confirmado || !mounted) return;
+
+    setState(() => _corrigiendoFinalizacion = true);
+    try {
+      final ok = await ApiService().actualizarEstado(
+        usuario: widget.finalizado.usuario,
+        libro: widget.finalizado.libro,
+        estado: 'PENDIENTE',
+      );
+      if (!mounted) return;
+      if (ok) {
+        widget.onCambiado();
+      } else {
+        _avisarError();
+      }
+    } catch (_) {
+      if (!mounted) return;
+      _avisarError();
+    } finally {
+      if (mounted) setState(() => _corrigiendoFinalizacion = false);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return ClubCard(
@@ -261,6 +293,21 @@ class _MiFichaLecturaCardState extends State<MiFichaLecturaCard> {
                     ),
                   ],
                 ),
+              ),
+              IconButton(
+                onPressed: _corrigiendoFinalizacion
+                    ? null
+                    : _corregirFinalizacion,
+                tooltip: '¿Lo marcaste terminado por error? Corregir',
+                icon: _corrigiendoFinalizacion
+                    ? const SizedBox.square(
+                        dimension: 18,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : const Icon(
+                        Icons.settings_backup_restore_rounded,
+                        color: AppColors.textSecondary,
+                      ),
               ),
             ],
           ),

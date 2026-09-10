@@ -45,6 +45,7 @@ import 'ayuda_page.dart';
 import 'change_password_page.dart';
 import 'goodreads_import_page.dart';
 import 'hidden_series_page.dart';
+import 'liga_page.dart';
 import '../services/auth_service.dart';
 import '../services/auth_session_service.dart';
 import '../services/favoritos_service.dart';
@@ -186,6 +187,7 @@ class _PerfilUsuarioPageState extends State<PerfilUsuarioPage> {
   Future<List<LibroFavorito>>? _publicFavoritesFuture;
   String? _publicFavoritesOwner;
   bool _openingFavoriteBook = false;
+  int _rachaKey = 0;
 
   final _scrollController = ScrollController();
 
@@ -247,6 +249,15 @@ class _PerfilUsuarioPageState extends State<PerfilUsuarioPage> {
       future = _cargarPerfil();
     }
     _cargarUsuarioActual();
+    // Al editar un libro (título, portada, género…) desde su ficha, se
+    // invalida la caché de biblioteca. Escuchamos ese aviso para recargar
+    // el perfil y que el histórico refleje el cambio al volver, sin tener
+    // que hacer pull-to-refresh a mano.
+    LibraryRefreshNotifier.instance.addListener(_onLibraryInvalidated);
+  }
+
+  void _onLibraryInvalidated() {
+    if (mounted) _recargar();
   }
 
   @override
@@ -264,6 +275,7 @@ class _PerfilUsuarioPageState extends State<PerfilUsuarioPage> {
 
   @override
   void dispose() {
+    LibraryRefreshNotifier.instance.removeListener(_onLibraryInvalidated);
     _scrollController.dispose();
     super.dispose();
   }
@@ -914,9 +926,14 @@ class _PerfilUsuarioPageState extends State<PerfilUsuarioPage> {
           widget.trackingContentBuilder?.call() ??
               Column(
                 children: [
-                  CheckinSection(),
+                  CheckinSection(key: ValueKey('checkin-$_rachaKey')),
                   const SizedBox(height: AppSpacing.md),
-                  ClubCard(elevated: false, child: MapaCalorWidget()),
+                  ClubCard(
+                    elevated: false,
+                    child: MapaCalorWidget(
+                      onChanged: () => setState(() => _rachaKey++),
+                    ),
+                  ),
                 ],
               ),
         ],
@@ -994,6 +1011,27 @@ class _PerfilUsuarioPageState extends State<PerfilUsuarioPage> {
                     contentBuilder: widget.hiddenSeriesBuilder,
                   ),
                 ),
+              ),
+            ),
+          ),
+        ),
+        const SizedBox(height: AppSpacing.sm),
+        ClubCard(
+          elevated: false,
+          padding: EdgeInsets.zero,
+          child: Material(
+            color: Colors.transparent,
+            child: ListTile(
+              key: const ValueKey('ligas-clubreads'),
+              leading: const Icon(Icons.emoji_events_outlined),
+              title: const Text('Ligas de ClubReads'),
+              subtitle: const Text(
+                'Únete o sal del ranking competitivo por temporadas',
+              ),
+              trailing: const Icon(Icons.chevron_right_rounded),
+              onTap: () => Navigator.push<void>(
+                context,
+                AppPageRoute(builder: (_) => const LigaPage()),
               ),
             ),
           ),

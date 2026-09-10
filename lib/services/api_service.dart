@@ -2062,11 +2062,36 @@ class ApiService {
   // ── Check-in lector ─────────────────────────────────────────────────────────
 
   /// Registra el check-in del día. Devuelve {ok, date, streak, checkedToday}.
-  Future<Map<String, dynamic>> doCheckin({String? nota}) async {
+  /// Marca el check-in de hoy, o de [fecha] ("YYYY-MM-DD") para corregir
+  /// cualquier día pasado. Si se indica [rango] (uno de "HASTA_50",
+  /// "DE_50_A_75", "DE_75_A_100", "MAS_DE_100"), también registra ese
+  /// tramo de páginas leídas ese día, para que el mapa de calor pinte el
+  /// nivel real en vez de quedarse en "hubo actividad".
+  Future<Map<String, dynamic>> doCheckin({
+    String? nota,
+    String? fecha,
+    String? rango,
+  }) async {
     final response = await _client.post(
       Uri.parse('$baseUrl?action=doCheckin'),
       headers: const {'Content-Type': 'application/json'},
-      body: jsonEncode({'nota': nota}),
+      body: jsonEncode({
+        'nota': nota,
+        if (fecha != null) 'fecha': fecha,
+        if (rango != null) 'rango': rango,
+      }),
+    );
+    if (response.statusCode != 200) throw ApiException.fromResponse(response);
+    return _decodeJson(response) as Map<String, dynamic>;
+  }
+
+  /// Deshace el check-in de [fecha] ("YYYY-MM-DD") — y las páginas
+  /// registradas ese día, si las había — marcado por error.
+  Future<Map<String, dynamic>> undoCheckin({required String fecha}) async {
+    final response = await _client.post(
+      Uri.parse('$baseUrl?action=undoCheckin'),
+      headers: const {'Content-Type': 'application/json'},
+      body: jsonEncode({'fecha': fecha}),
     );
     if (response.statusCode != 200) throw ApiException.fromResponse(response);
     return _decodeJson(response) as Map<String, dynamic>;
@@ -2098,6 +2123,31 @@ class ApiService {
     final response = await _client.get(
       Uri.parse('$baseUrl?action=wrappedAnual&anio=$year'),
     );
+    if (response.statusCode != 200) throw ApiException.fromResponse(response);
+    return _decodeJson(response) as Map<String, dynamic>;
+  }
+
+  // ── Ligas de ClubReads ─────────────────────────────────────────────────────
+
+  /// Estado de la liga: si participo, tabla de la temporada, mi puesto e
+  /// histórico. Si no participo, solo devuelve `participando: false` y la
+  /// temporada en curso.
+  Future<Map<String, dynamic>> getLiga() async {
+    final response = await _client.get(Uri.parse('$baseUrl?action=liga'));
+    if (response.statusCode != 200) throw ApiException.fromResponse(response);
+    return _decodeJson(response) as Map<String, dynamic>;
+  }
+
+  /// Opt-in: empieza a participar en las Ligas. Devuelve el estado de la liga.
+  Future<Map<String, dynamic>> unirseLiga() async {
+    final response = await _postJson('unirseLiga');
+    if (response.statusCode != 200) throw ApiException.fromResponse(response);
+    return _decodeJson(response) as Map<String, dynamic>;
+  }
+
+  /// Opt-out: deja de participar (el histórico se conserva, oculto).
+  Future<Map<String, dynamic>> salirLiga() async {
+    final response = await _postJson('salirLiga');
     if (response.statusCode != 200) throw ApiException.fromResponse(response);
     return _decodeJson(response) as Map<String, dynamic>;
   }

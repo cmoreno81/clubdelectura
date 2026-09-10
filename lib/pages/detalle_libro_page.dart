@@ -22,6 +22,7 @@ import '../services/library_refresh_notifier.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_spacing.dart';
 import '../theme/app_text_styles.dart';
+import '../utils/conversacion_libro_utils.dart';
 import '../utils/reading_status_copy.dart';
 import '../widgets/common/club_book_cover.dart';
 import '../widgets/common/club_card.dart';
@@ -261,6 +262,14 @@ class _DetalleLibroPageState extends State<DetalleLibroPage> {
             await _mostrarPromptStory(libro, kit, finalizado: true);
           }
         }
+
+        // El parche optimista de arriba deja el registro como FINALIZADO
+        // dentro de "registros" (no lo mueve a "finalizados"), así que la
+        // ficha seguiría mostrando el selector de estado antiguo en vez de
+        // "Mi valoración" hasta recargar a mano. Recargamos de verdad para
+        // que ya se vea bien sin tener que salir y volver a entrar.
+        if (!mounted) return;
+        await _recargarDesdeServidor();
       } else if (nuevoEstado == 'LEYENDO') {
         // Feature 3: prompt para preparar el kit si aún no lo tiene
         ScaffoldMessenger.of(
@@ -276,6 +285,17 @@ class _DetalleLibroPageState extends State<DetalleLibroPage> {
             await _mostrarPromptKit(libro);
           }
         }
+
+        // Feature: prompt para abrir conversación si aún no hay ninguna.
+        // Encadenado DESPUÉS del prompt del kit (no a la vez), y solo si el
+        // libro todavía no tiene ninguna lectura/conversación configurada
+        // — así no se repite cada vez que alguien vuelve a marcarlo.
+        if (!mounted) return;
+        final yaTieneConversacion = await existeConversacionParaLibro(
+          libro.libro,
+        );
+        if (!mounted || yaTieneConversacion) return;
+        await _mostrarPromptConversacion(libro);
       } else {
         ScaffoldMessenger.of(
           context,
@@ -341,6 +361,78 @@ class _DetalleLibroPageState extends State<DetalleLibroPage> {
             TextButton(
               onPressed: () => Navigator.pop(ctx),
               child: const Text('Más tarde'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // ── Prompt para abrir conversación al empezar a leer ───────────────────
+  Future<void> _mostrarPromptConversacion(Libro libro) async {
+    await showModalBottomSheet<void>(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (ctx) => Padding(
+        padding: EdgeInsets.fromLTRB(
+          24,
+          24,
+          24,
+          MediaQuery.of(ctx).padding.bottom + 24,
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 44,
+              height: 4,
+              margin: const EdgeInsets.only(bottom: 20),
+              decoration: BoxDecoration(
+                color: AppColors.border,
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            const Text('💬', style: TextStyle(fontSize: 36)),
+            const SizedBox(height: 12),
+            Text(
+              '¿Abrimos una conversación sobre esta lectura?',
+              textAlign: TextAlign.center,
+              style: AppTextStyles.title.copyWith(fontSize: 20),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Empieza a comentar tus impresiones ya, sin esperar a que '
+              'nadie más se sume a la lectura.',
+              textAlign: TextAlign.center,
+              style: AppTextStyles.bodySecondary,
+            ),
+            const SizedBox(height: 20),
+            FilledButton.icon(
+              onPressed: () {
+                Navigator.pop(ctx);
+                abrirNuevaConversacion(
+                  context,
+                  libro: libro.libro,
+                  coverUrl: this.libro.coverUrl,
+                );
+              },
+              icon: const Icon(Icons.chat_bubble_outline_rounded),
+              label: const Text('Abrir conversación'),
+              style: FilledButton.styleFrom(
+                minimumSize: const Size(double.infinity, 48),
+              ),
+            ),
+            const SizedBox(height: 10),
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: const Text('Más tarde'),
+            ),
+            Text(
+              'Podrás abrirla cuando quieras desde la ficha del libro.',
+              textAlign: TextAlign.center,
+              style: AppTextStyles.caption,
             ),
           ],
         ),
@@ -1254,6 +1346,11 @@ class _DetalleLibroPageState extends State<DetalleLibroPage> {
               ConversacionesLibroCard(
                 libro: libro.libro,
                 coverUrl: libro.coverUrl,
+                // Solo tiene sentido ofrecer abrir una conversación desde
+                // cero cuando la usuaria está leyendo el libro ahora mismo;
+                // para el resto de estados (pendiente, pausado, terminado…)
+                // no hay nada que comentar todavía.
+                permiteAbrirConversacion: miEstado == 'LEYENDO',
               ),
 
               // En vista global las valoraciones ya están integradas en

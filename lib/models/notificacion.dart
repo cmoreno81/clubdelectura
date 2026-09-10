@@ -50,6 +50,8 @@ class Notificacion {
     'CLUBVISION_ABIERTA' => '🗳️',
     'CLUBVISION_RESULTADOS' => '🏆',
     'CLUB_BOOK_OF_YEAR' => '🏆',
+    'LIGA_RESULTADO' => '🏆',
+    'LIGA_CIERRE_PROXIMO' => '⏳',
     'LECTURA_NUEVA' => '📖',
     'COMENTARIO_LECTURA' => '💬',
     'LIBRO_TERMINADO' => '✅',

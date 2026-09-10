@@ -658,9 +658,14 @@ class _DashboardPageState extends State<DashboardPage> {
             navegable: false,
           ),
           const SizedBox(height: AppSpacing.md),
-          CheckinSection(),
+          CheckinSection(key: ValueKey('checkin-$_favoritosKey')),
           const SizedBox(height: AppSpacing.md),
-          ClubCard(elevated: false, child: MapaCalorWidget()),
+          ClubCard(
+            elevated: false,
+            child: MapaCalorWidget(
+              onChanged: () => setState(() => _favoritosKey++),
+            ),
+          ),
           const SizedBox(height: AppSpacing.lg),
 
           // ── 2. Mi año en libros ───────────────────────────────────────────

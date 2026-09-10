@@ -112,6 +112,17 @@ const List<_TutorialStep> _pasos = [
         'y permanece bloqueado fuera de su periodo disponible.',
   ),
   _TutorialStep(
+    emoji: '🏆',
+    titulo: 'Ligas de ClubReads',
+    descripcion:
+        'Un ranking opcional donde compites con toda la comunidad en temporadas '
+        'de dos semanas. Ganas puntos por hacer check-in a diario, mantener la '
+        'racha, terminar libros y completar sagas.',
+    detalle:
+        'Al acabar cada temporada los puntos se reinician. Únete o sal cuando '
+        'quieras desde el dashboard global o desde Perfil → Más.',
+  ),
+  _TutorialStep(
     emoji: '🏛️',
     titulo: 'Lee en comunidad',
     descripcion:

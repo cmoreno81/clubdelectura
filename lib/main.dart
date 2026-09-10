@@ -1,9 +1,14 @@
+import 'dart:async';
+import 'dart:io';
+
 import 'package:club_lectura_app/services/atmosfera_scope.dart';
+import 'package:club_lectura_app/services/api_exception.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:http/http.dart' as http;
 
 import 'dev/ui_performance_diagnostics.dart';
 import 'firebase_options.dart';
@@ -22,6 +27,17 @@ import 'widgets/atmosferas/atmosfera_ambient_layer.dart';
 /// sepan cuándo su ruta vuelve al frente (didPopNext).
 final routeObserver = RouteObserver<ModalRoute<void>>();
 
+/// Un fallo de red pasajero, no un bug: mala cobertura, servidor lento,
+/// descarga de portada cortada… Se registra pero no como crash.
+bool _esErrorDeRedTransitorio(Object error) {
+  if (error is ApiException) return error.isTemporary;
+  return error is SocketException ||
+      error is HttpException ||
+      error is TimeoutException ||
+      error is http.ClientException ||
+      error is HandshakeException;
+}
+
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   configureUiPerformanceDiagnostics();
@@ -30,9 +46,29 @@ Future<void> main() async {
 
   // Redirigir errores de Flutter y errores no capturados a Crashlytics.
   // En debug se siguen mostrando en consola normalmente.
-  FlutterError.onError = FirebaseCrashlytics.instance.recordFlutterFatalError;
+  //
+  // Los fallos de red transitorios (timeout, conexión caída, sin internet…)
+  // se siguen registrando para poder ver su frecuencia, pero como NO fatales:
+  // no rompen la app, son recuperables y, si contaran como "Falla", hundirían
+  // la tasa de sesiones sin fallos y enterrarían los crashes de verdad.
+  FlutterError.onError = (details) {
+    if (_esErrorDeRedTransitorio(details.exception)) {
+      FirebaseCrashlytics.instance.recordError(
+        details.exception,
+        details.stack,
+        reason: details.context?.toString(),
+        fatal: false,
+      );
+      return;
+    }
+    FirebaseCrashlytics.instance.recordFlutterFatalError(details);
+  };
   PlatformDispatcher.instance.onError = (error, stack) {
-    FirebaseCrashlytics.instance.recordError(error, stack, fatal: true);
+    FirebaseCrashlytics.instance.recordError(
+      error,
+      stack,
+      fatal: !_esErrorDeRedTransitorio(error),
+    );
     return true;
   };
 

@@ -26,6 +26,7 @@ class _FeedbackPageState extends State<FeedbackPage> {
 
   _Category _category = _Category.bug;
   bool _loading = false;
+  bool _seleccionandoImagen = false;
   String? _ticketKey;
 
   // Adjuntos de imagen (hasta _maxImages, igual que valida el backend)
@@ -43,31 +44,48 @@ class _FeedbackPageState extends State<FeedbackPage> {
   Future<void> _pickImage() async {
     final huecoDisponible = _maxImages - _imagenes.length;
     if (huecoDisponible <= 0) return;
+    // El selector de imágenes nativo solo admite una instancia activa: si se
+    // pulsa dos veces seguidas (o antes de que la primera resuelva) lanza
+    // PlatformException(already_active). Con este flag lo ignoramos sin ruido.
+    if (_seleccionandoImagen) return;
+    _seleccionandoImagen = true;
 
-    final picker = ImagePicker();
-    final xfiles = await picker.pickMultiImage(
-      imageQuality: 80,
-      maxWidth: 1920,
-      limit: huecoDisponible,
-    );
-    if (xfiles.isEmpty) return;
-
-    final seleccionadas = xfiles.take(huecoDisponible).toList();
-    final nuevas = await Future.wait(
-      seleccionadas.map(
-        (xfile) async => _ImagenAdjunta(
-          bytes: await xfile.readAsBytes(),
-          nombre: xfile.name,
-        ),
-      ),
-    );
-    if (!mounted) return;
-    setState(() => _imagenes.addAll(nuevas));
-
-    if (xfiles.length > huecoDisponible) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Máximo $_maxImages capturas por reporte')),
+    try {
+      final picker = ImagePicker();
+      final xfiles = await picker.pickMultiImage(
+        imageQuality: 80,
+        maxWidth: 1920,
+        limit: huecoDisponible,
       );
+      if (xfiles.isEmpty) return;
+
+      final seleccionadas = xfiles.take(huecoDisponible).toList();
+      final nuevas = await Future.wait(
+        seleccionadas.map(
+          (xfile) async => _ImagenAdjunta(
+            bytes: await xfile.readAsBytes(),
+            nombre: xfile.name,
+          ),
+        ),
+      );
+      if (!mounted) return;
+      setState(() => _imagenes.addAll(nuevas));
+
+      if (xfiles.length > huecoDisponible) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Máximo $_maxImages capturas por reporte')),
+        );
+      }
+    } on PlatformException catch (e) {
+      // already_active u otros fallos del selector: no es un crash, solo
+      // significa que no se pudo abrir. No molestamos con un aviso.
+      if (e.code != 'already_active' && mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('No se ha podido abrir la galería.')),
+        );
+      }
+    } finally {
+      _seleccionandoImagen = false;
     }
   }
 
@@ -94,9 +112,9 @@ class _FeedbackPageState extends State<FeedbackPage> {
       if (mounted) setState(() => _ticketKey = ticket ?? '✓');
     } on ApiException catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(e.message)),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(e.message)));
       }
     } finally {
       if (mounted) setState(() => _loading = false);
@@ -108,7 +126,10 @@ class _FeedbackPageState extends State<FeedbackPage> {
     return Scaffold(
       appBar: AppBar(title: const Text('Contacto y ayuda')),
       body: _ticketKey != null
-          ? _SuccessView(ticketKey: _ticketKey!, onClose: () => Navigator.pop(context))
+          ? _SuccessView(
+              ticketKey: _ticketKey!,
+              onClose: () => Navigator.pop(context),
+            )
           : _FormView(
               formKey: _formKey,
               category: _category,
@@ -191,9 +212,8 @@ class _FormView extends StatelessWidget {
               hintText: _titleHint(category),
               counterText: '',
             ),
-            validator: (v) => (v?.trim().isEmpty ?? true)
-                ? 'Escribe un resumen breve'
-                : null,
+            validator: (v) =>
+                (v?.trim().isEmpty ?? true) ? 'Escribe un resumen breve' : null,
           ),
           const SizedBox(height: AppSpacing.lg),
 
@@ -209,9 +229,8 @@ class _FormView extends StatelessWidget {
               hintText: _descriptionHint(category),
               alignLabelWithHint: true,
             ),
-            validator: (v) => (v?.trim().isEmpty ?? true)
-                ? 'Añade más detalles'
-                : null,
+            validator: (v) =>
+                (v?.trim().isEmpty ?? true) ? 'Añade más detalles' : null,
           ),
           const SizedBox(height: AppSpacing.lg),
 
@@ -230,7 +249,10 @@ class _FormView extends StatelessWidget {
           const SizedBox(height: AppSpacing.lg),
 
           // Email
-          Text('Tu email (para enviarte confirmación)', style: AppTextStyles.caption),
+          Text(
+            'Tu email (para enviarte confirmación)',
+            style: AppTextStyles.caption,
+          ),
           const SizedBox(height: AppSpacing.sm),
           TextFormField(
             controller: emailController,
@@ -242,7 +264,9 @@ class _FormView extends StatelessWidget {
             ),
             validator: (v) {
               final email = v?.trim() ?? '';
-              if (email.isEmpty) return 'El email es necesario para enviarte confirmación';
+              if (email.isEmpty) {
+                return 'El email es necesario para enviarte confirmación';
+              }
               if (!RegExp(r'^[^\s@]+@[^\s@]+\.[^\s@]+$').hasMatch(email)) {
                 return 'Email no válido';
               }
@@ -280,18 +304,18 @@ class _FormView extends StatelessWidget {
   }
 
   String _titleHint(_Category cat) => switch (cat) {
-        _Category.bug => 'Ej: No puedo marcar un libro como leído',
-        _Category.sugerencia => 'Ej: Añadir estadísticas de lecturas',
-        _Category.pregunta => 'Ej: ¿Cómo invito a alguien al club?',
-      };
+    _Category.bug => 'Ej: No puedo marcar un libro como leído',
+    _Category.sugerencia => 'Ej: Añadir estadísticas de lecturas',
+    _Category.pregunta => 'Ej: ¿Cómo invito a alguien al club?',
+  };
 
   String _descriptionHint(_Category cat) => switch (cat) {
-        _Category.bug =>
-          'Describe qué pasó, en qué pantalla ocurrió y qué esperabas que sucediera…',
-        _Category.sugerencia =>
-          'Explica qué te gustaría poder hacer y por qué crees que sería útil para el club…',
-        _Category.pregunta => 'Cuéntanos tu duda con el mayor detalle posible…',
-      };
+    _Category.bug =>
+      'Describe qué pasó, en qué pantalla ocurrió y qué esperabas que sucediera…',
+    _Category.sugerencia =>
+      'Explica qué te gustaría poder hacer y por qué crees que sería útil para el club…',
+    _Category.pregunta => 'Cuéntanos tu duda con el mayor detalle posible…',
+  };
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -326,10 +350,7 @@ class _ImagePickerGrid extends StatelessWidget {
       runSpacing: AppSpacing.sm,
       children: [
         for (var i = 0; i < imagenes.length; i++)
-          _Miniatura(
-            imagen: imagenes[i],
-            onQuitar: () => onQuitar(i),
-          ),
+          _Miniatura(imagen: imagenes[i], onQuitar: () => onQuitar(i)),
         if (hayHueco)
           GestureDetector(
             onTap: onPick,
@@ -407,10 +428,7 @@ class _Miniatura extends StatelessWidget {
 // ─────────────────────────────────────────────────────────────────────────────
 
 class _CategorySelector extends StatelessWidget {
-  const _CategorySelector({
-    required this.selected,
-    required this.onChanged,
-  });
+  const _CategorySelector({required this.selected, required this.onChanged});
   final _Category selected;
   final ValueChanged<_Category> onChanged;
 
@@ -436,9 +454,7 @@ class _CategorySelector extends StatelessWidget {
                       : AppColors.surface,
                   borderRadius: BorderRadius.circular(AppRadius.lg),
                   border: Border.all(
-                    color: isSelected
-                        ? cat.color
-                        : AppColors.border,
+                    color: isSelected ? cat.color : AppColors.border,
                     width: isSelected ? 2 : 1,
                   ),
                 ),
@@ -518,7 +534,9 @@ class _SuccessView extends StatelessWidget {
                   decoration: BoxDecoration(
                     color: AppColors.primary.withValues(alpha: .08),
                     borderRadius: BorderRadius.circular(AppRadius.lg),
-                    border: Border.all(color: AppColors.primary.withValues(alpha: .3)),
+                    border: Border.all(
+                      color: AppColors.primary.withValues(alpha: .3),
+                    ),
                   ),
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
@@ -533,8 +551,11 @@ class _SuccessView extends StatelessWidget {
                         ),
                       ),
                       const SizedBox(width: AppSpacing.sm),
-                      Icon(Icons.copy_outlined,
-                          size: 18, color: AppColors.primary),
+                      Icon(
+                        Icons.copy_outlined,
+                        size: 18,
+                        color: AppColors.primary,
+                      ),
                     ],
                   ),
                 ),
@@ -553,10 +574,7 @@ class _SuccessView extends StatelessWidget {
               ),
             ],
             const SizedBox(height: AppSpacing.xl),
-            FilledButton(
-              onPressed: onClose,
-              child: const Text('Listo'),
-            ),
+            FilledButton(onPressed: onClose, child: const Text('Listo')),
           ],
         ),
       ),

@@ -38,6 +38,8 @@ import 'clubvision_menu_page.dart';
 import 'elegir_modo_page.dart';
 import 'home_page.dart';
 import 'explore_catalog_page.dart';
+import 'liga_page.dart';
+import 'libros_page.dart';
 import 'detalle_libro_page.dart';
 import 'monthly_reading_share_page.dart';
 import 'nuevo_libro_page.dart';
@@ -317,9 +319,26 @@ class _GeneralDashboardPageState extends State<GeneralDashboardPage> {
     if (mounted) await _reload();
   }
 
+  // Pestaña "Explorar" del menú inferior: va directa a la Biblioteca ya
+  // filtrada en "De ClubReads", que es la vista completa (búsqueda, filtros,
+  // añadir libro). La tarjeta "Explorar la biblioteca" del dashboard sigue
+  // abriendo _exploreBooks (buscador simple) tal cual estaba.
+  Future<void> _exploreCatalogFromNav() async {
+    await Navigator.push<void>(
+      context,
+      AppPageRoute(
+        builder: (_) => const LibrosPage(
+          esPersonal: true,
+          initialFiltroOrigen: 'CLUBREADS',
+        ),
+      ),
+    );
+    if (mounted) await _reload();
+  }
+
   // ── Menú inferior (bosquejo) ───────────────────────────────────────────
   //
-  // "Inicio" es la única pestaña de verdad: las otras tres son atajos que
+  // "Inicio" es la única pestaña de verdad: las otras cuatro son atajos que
   // abren su propia pantalla con push y, al volver, restauran el
   // indicador a "Inicio" — no hay contenido embebido por pestaña.
   // Evita apilar dos navegaciones si se toca dos veces seguidas antes de
@@ -346,10 +365,15 @@ class _GeneralDashboardPageState extends State<GeneralDashboardPage> {
     try {
       switch (index) {
         case 1:
-          await _exploreBooks();
+          await _exploreCatalogFromNav();
         case 2:
-          await _goToActiveClub();
+          await Navigator.push<void>(
+            context,
+            AppPageRoute(builder: (_) => const LigaPage()),
+          );
         case 3:
+          await _goToActiveClub();
+        case 4:
           await _openMyProfileFromNav();
       }
     } finally {
@@ -641,7 +665,12 @@ class _GeneralDashboardPageState extends State<GeneralDashboardPage> {
             NavigationDestination(
               icon: Icon(Icons.travel_explore_outlined),
               selectedIcon: Icon(Icons.travel_explore_rounded),
-              label: 'Explorar',
+              label: 'Catálogo',
+            ),
+            const NavigationDestination(
+              icon: Icon(Icons.emoji_events_outlined),
+              selectedIcon: Icon(Icons.emoji_events_rounded),
+              label: 'Ligas',
             ),
             NavigationDestination(
               icon: Icon(Icons.groups_outlined),
@@ -1028,6 +1057,13 @@ class _GeneralDashboardPageState extends State<GeneralDashboardPage> {
                           data.trendingAuthors.isNotEmpty) ...[
                         const SizedBox(height: AppSpacing.xl),
                         _communityDivider(),
+                        const SizedBox(height: AppSpacing.md),
+                        _LigaDashboardCta(
+                          onTap: () => Navigator.push<void>(
+                            context,
+                            AppPageRoute(builder: (_) => const LigaPage()),
+                          ),
+                        ),
                       ],
                       if (data.trending.isNotEmpty) ...[
                         const SizedBox(height: AppSpacing.xl),
@@ -3587,5 +3623,73 @@ class _LanguageDonutPainter extends CustomPainter {
   @override
   bool shouldRepaint(covariant _LanguageDonutPainter oldDelegate) {
     return oldDelegate.values.join(',') != values.join(',');
+  }
+}
+
+// ── CTA de Ligas de ClubReads (sección "Toda la comunidad") ──────────────────
+
+class _LigaDashboardCta extends StatelessWidget {
+  const _LigaDashboardCta({required this.onTap});
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return ClubCard(
+      onTap: onTap,
+      padding: EdgeInsets.zero,
+      child: Container(
+        decoration: BoxDecoration(
+          gradient: const LinearGradient(
+            begin: Alignment.centerLeft,
+            end: Alignment.centerRight,
+            colors: [Color(0xFFB07B2A), Color(0xFFD9A441)],
+          ),
+          borderRadius: const BorderRadius.only(
+            topLeft: Radius.circular(24),
+            topRight: Radius.circular(12),
+            bottomRight: Radius.circular(24),
+            bottomLeft: Radius.circular(16),
+          ),
+        ),
+        padding: const EdgeInsets.symmetric(
+          horizontal: AppSpacing.lg,
+          vertical: AppSpacing.md,
+        ),
+        child: Row(
+          children: [
+            const Text('🏆', style: TextStyle(fontSize: 28)),
+            const SizedBox(width: AppSpacing.md),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'Ligas de ClubReads',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.w900,
+                      fontSize: 15,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    'Compite cada quincena por leer a diario y terminar libros',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: Colors.white.withValues(alpha: .85),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(width: AppSpacing.sm),
+            Icon(
+              Icons.arrow_forward_rounded,
+              color: Colors.white.withValues(alpha: .9),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }
