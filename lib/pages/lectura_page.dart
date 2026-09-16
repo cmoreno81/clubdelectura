@@ -14,6 +14,7 @@ import '../widgets/common/club_card.dart';
 import '../widgets/ui/club_section_title.dart';
 import '../widgets/lectura/capitulo_tile.dart';
 import 'capitulo_page.dart';
+import 'configurar_lectura_page.dart';
 import 'package:club_lectura_app/widgets/common/club_shimmer.dart';
 
 class LecturaPage extends StatefulWidget {
@@ -175,10 +176,44 @@ class _LecturaPageState extends State<LecturaPage> {
     );
   }
 
+  Future<void> _editarLectura(ConfiguracionLectura config) async {
+    final actualizado = await Navigator.push<bool>(
+      context,
+      AppPageRoute(
+        builder: (_) => ConfigurarLecturaPage(
+          libro: widget.libro,
+          editando: true,
+          capitulosIniciales: config.capitulos,
+          prologoInicial: config.prologo,
+          epilogoInicial: config.epilogo,
+        ),
+      ),
+    );
+    if (actualizado == true) {
+      setState(_recargar);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Lectura')),
+      appBar: AppBar(
+        title: const Text('Lectura'),
+        actions: [
+          FutureBuilder<ConfiguracionLectura>(
+            future: future,
+            builder: (context, snapshot) {
+              final config = snapshot.data;
+              if (config == null) return const SizedBox.shrink();
+              return IconButton(
+                onPressed: () => _editarLectura(config),
+                icon: const Icon(Icons.tune_rounded),
+                tooltip: 'Editar configuración',
+              );
+            },
+          ),
+        ],
+      ),
       body: FutureBuilder<ConfiguracionLectura>(
         future: future,
         builder: (context, snapshot) {

@@ -71,6 +71,11 @@ const _etiquetasNotificacion = <String, (String, String, String)>{
     'Cierre de temporada de Ligas',
     'Un aviso cuando quedan pocas horas para el fin de la temporada',
   ),
+  'LIGA_RACHA_EN_RIESGO': (
+    '🔥',
+    'Racha de las Ligas en riesgo',
+    'Un aviso por la tarde si aún no has hecho check-in y podrías romper tu racha',
+  ),
 };
 
 class AjustesPrivacidadPage extends StatefulWidget {

@@ -173,8 +173,10 @@ class _VistaInvitacion extends StatelessWidget {
         const SizedBox(height: AppSpacing.sm),
         Text(
           'Cada quincena, una liga nueva. Ganas puntos por leer a diario, '
-          'mantener la racha, terminar libros y completar sagas. Al acabar la '
-          'temporada, los puntos se reinician y empieza otra carrera.',
+          'mantener la racha, terminar libros y completar sagas. Empiezas en '
+          'Bronce y vas ascendiendo de división según tu puesto: 🥉 Bronce · '
+          '🥈 Plata · 🥇 Oro · 💎 Platino · 👑 Diamante. Al acabar la temporada, '
+          'los puntos se reinician y empieza otra carrera.',
           textAlign: TextAlign.center,
           style: AppTextStyles.bodySecondary,
         ),
@@ -208,17 +210,105 @@ class _VistaInvitacion extends StatelessWidget {
   }
 }
 
+const _kFilasPuntos = [
+  (
+    'Check-in diario',
+    'Marca que has leído hoy desde el botón de check-in.',
+    '10 pts',
+  ),
+  (
+    'Bonus por racha',
+    'Se suma sobre el check-in del día y crece con tu racha activa.',
+    '+1 pt/día (tope 15)',
+  ),
+  (
+    'Páginas leídas',
+    'Según las páginas que registres ese mismo día.',
+    '1 pt cada 20 págs',
+  ),
+  (
+    'Terminar un libro',
+    'Al marcar una lectura como terminada (menos si es relectura o '
+        'tiene menos de 50 páginas).',
+    '40 pts',
+  ),
+  (
+    'Terminar una saga',
+    'Al completar todos los tomos de una saga entera.',
+    '100 pts',
+  ),
+  (
+    'Reseña',
+    'Si escribes una reseña de más de 200 caracteres al terminar.',
+    '15 pts',
+  ),
+  (
+    'Primer libro del mes',
+    'El primer libro que termines dentro de cada mes natural.',
+    '25 pts',
+  ),
+  (
+    'Elegir Libro del año del mes',
+    'Al seleccionar tu favorito del mes en Perfil → Favoritos.',
+    '10 pts',
+  ),
+];
+
+Widget _filasPuntosWidget() => Column(
+  crossAxisAlignment: CrossAxisAlignment.start,
+  children: [
+    for (final (accion, explicacion, puntos) in _kFilasPuntos)
+      Padding(
+        padding: const EdgeInsets.symmetric(vertical: 6),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    accion,
+                    style: AppTextStyles.bodySecondary.copyWith(
+                      fontWeight: FontWeight.w700,
+                      color: AppColors.textPrimary,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    explicacion,
+                    style: AppTextStyles.caption.copyWith(
+                      color: AppColors.textMuted,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(width: AppSpacing.md),
+            Text(
+              puntos,
+              textAlign: TextAlign.end,
+              style: AppTextStyles.bodySecondary.copyWith(
+                fontWeight: FontWeight.w700,
+                color: AppColors.primary,
+              ),
+            ),
+          ],
+        ),
+      ),
+    const SizedBox(height: AppSpacing.sm),
+    Text(
+      'El bonus no es un check-in aparte: es un extra que se suma sobre '
+      'los 10 pts del check-in de ese día, y crece con tu racha. Día 1 de '
+      'racha: +1 (11 en total). Día 8: +8 (18 en total). Del día 15 en '
+      'adelante siempre +15 (25 en total), sin volver a subir.',
+      style: AppTextStyles.caption.copyWith(color: AppColors.textMuted),
+    ),
+  ],
+);
+
 class _ComoSePuntua extends StatelessWidget {
   const _ComoSePuntua();
-
-  static const _filas = [
-    ('Check-in diario', '10 pts'),
-    ('Bonus por racha', '+1 pt por día seguido (máx. 15/día)'),
-    ('Páginas leídas', '1 pt cada 20 págs'),
-    ('Terminar un libro', '40 pts'),
-    ('Terminar una saga', '100 pts'),
-    ('Reseña (más de 200 caracteres)', '15 pts'),
-  ];
 
   @override
   Widget build(BuildContext context) {
@@ -240,35 +330,242 @@ class _ComoSePuntua extends StatelessWidget {
             ),
           ),
           const SizedBox(height: AppSpacing.sm),
-          for (final (accion, puntos) in _filas)
-            Padding(
-              padding: const EdgeInsets.symmetric(vertical: 3),
+          _filasPuntosWidget(),
+        ],
+      ),
+    );
+  }
+}
+
+/// Leyenda plegable con las 5 divisiones y una explicación breve de cada
+/// una. La división actual se resalta con su color.
+class _LeyendaDivisionesPlegable extends StatefulWidget {
+  const _LeyendaDivisionesPlegable({required this.actual});
+  final LigaDivision actual;
+
+  @override
+  State<_LeyendaDivisionesPlegable> createState() =>
+      _LeyendaDivisionesPlegableState();
+}
+
+class _LeyendaDivisionesPlegableState
+    extends State<_LeyendaDivisionesPlegable> {
+  bool _abierta = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(AppRadius.lg),
+        border: Border.all(color: AppColors.border),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          InkWell(
+            borderRadius: BorderRadius.circular(AppRadius.lg),
+            onTap: () => setState(() => _abierta = !_abierta),
+            child: Padding(
+              padding: const EdgeInsets.all(AppSpacing.md),
               child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Expanded(
-                    child: Text(accion, style: AppTextStyles.bodySecondary),
+                  const Icon(
+                    Icons.stairs_outlined,
+                    size: 18,
+                    color: AppColors.primary,
                   ),
-                  const SizedBox(width: AppSpacing.md),
-                  Flexible(
+                  const SizedBox(width: AppSpacing.sm),
+                  Expanded(
                     child: Text(
-                      puntos,
-                      textAlign: TextAlign.end,
-                      style: AppTextStyles.bodySecondary.copyWith(
+                      'Cómo funcionan las divisiones',
+                      style: AppTextStyles.body.copyWith(
                         fontWeight: FontWeight.w700,
-                        color: AppColors.primary,
                       ),
+                    ),
+                  ),
+                  AnimatedRotation(
+                    turns: _abierta ? 0.5 : 0,
+                    duration: const Duration(milliseconds: 200),
+                    child: const Icon(
+                      Icons.keyboard_arrow_down_rounded,
+                      color: AppColors.textMuted,
                     ),
                   ),
                 ],
               ),
             ),
-          const SizedBox(height: AppSpacing.sm),
-          Text(
-            'El check-in y el bonus de racha se suman cada día: con 15 días '
-            'seguidos o más, son 25 pts diarios solo por leer.',
-            style: AppTextStyles.caption.copyWith(color: AppColors.textMuted),
           ),
+          if (_abierta)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(
+                AppSpacing.md,
+                0,
+                AppSpacing.md,
+                AppSpacing.md,
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  for (final division in LigaDivision.values)
+                    Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 6),
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Container(
+                            width: 30,
+                            height: 30,
+                            alignment: Alignment.center,
+                            decoration: BoxDecoration(
+                              color: division == widget.actual
+                                  ? division.color.withValues(alpha: .18)
+                                  : AppColors.surfaceSoft,
+                              shape: BoxShape.circle,
+                            ),
+                            child: Text(
+                              division.icono,
+                              style: const TextStyle(fontSize: 15),
+                            ),
+                          ),
+                          const SizedBox(width: AppSpacing.sm),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  division.etiqueta,
+                                  style: AppTextStyles.bodySecondary.copyWith(
+                                    fontWeight: FontWeight.w700,
+                                    color: division == widget.actual
+                                        ? division.color
+                                        : AppColors.textPrimary,
+                                  ),
+                                ),
+                                Text(
+                                  division.descripcion,
+                                  style: AppTextStyles.caption.copyWith(
+                                    color: AppColors.textMuted,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          if (division == widget.actual)
+                            Padding(
+                              padding: const EdgeInsets.only(
+                                left: AppSpacing.sm,
+                              ),
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: AppSpacing.sm,
+                                  vertical: 2,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: division.color.withValues(alpha: .18),
+                                  borderRadius: BorderRadius.circular(
+                                    AppRadius.md,
+                                  ),
+                                ),
+                                child: Text(
+                                  'Tú',
+                                  style: TextStyle(
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.w800,
+                                    color: division.color,
+                                  ),
+                                ),
+                              ),
+                            ),
+                        ],
+                      ),
+                    ),
+                  const SizedBox(height: AppSpacing.sm),
+                  Text(
+                    'Al cerrar la temporada, quien queda entre las primeras '
+                    'de su división asciende, y quien queda entre las '
+                    'últimas desciende (salvo en Bronce y Diamante, que son '
+                    'el suelo y el techo).',
+                    style: AppTextStyles.caption.copyWith(
+                      color: AppColors.textMuted,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Misma leyenda que `_ComoSePuntua`, pero plegable — para no alargar la
+/// pantalla de la temporada en curso, que ya tiene cabecera y tabla.
+class _LeyendaPuntosPlegable extends StatefulWidget {
+  const _LeyendaPuntosPlegable();
+
+  @override
+  State<_LeyendaPuntosPlegable> createState() =>
+      _LeyendaPuntosPlegableState();
+}
+
+class _LeyendaPuntosPlegableState extends State<_LeyendaPuntosPlegable> {
+  bool _abierta = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(AppRadius.lg),
+        border: Border.all(color: AppColors.border),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          InkWell(
+            borderRadius: BorderRadius.circular(AppRadius.lg),
+            onTap: () => setState(() => _abierta = !_abierta),
+            child: Padding(
+              padding: const EdgeInsets.all(AppSpacing.md),
+              child: Row(
+                children: [
+                  const Icon(
+                    Icons.emoji_events_outlined,
+                    size: 18,
+                    color: AppColors.primary,
+                  ),
+                  const SizedBox(width: AppSpacing.sm),
+                  Expanded(
+                    child: Text(
+                      'Cómo se consiguen los puntos',
+                      style: AppTextStyles.body.copyWith(
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ),
+                  AnimatedRotation(
+                    turns: _abierta ? 0.5 : 0,
+                    duration: const Duration(milliseconds: 200),
+                    child: const Icon(
+                      Icons.keyboard_arrow_down_rounded,
+                      color: AppColors.textMuted,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          if (_abierta)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(
+                AppSpacing.md,
+                0,
+                AppSpacing.md,
+                AppSpacing.md,
+              ),
+              child: _filasPuntosWidget(),
+            ),
         ],
       ),
     );
@@ -315,13 +612,47 @@ class _VistaParticipando extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                'Temporada ${t.numero + 1}',
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 18,
-                  fontWeight: FontWeight.w900,
-                ),
+              Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      'Temporada ${t.numero + 1}',
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 18,
+                        fontWeight: FontWeight.w900,
+                      ),
+                    ),
+                  ),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: AppSpacing.sm,
+                      vertical: 3,
+                    ),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: .22),
+                      borderRadius: BorderRadius.circular(AppRadius.md),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          t.division.icono,
+                          style: const TextStyle(fontSize: 13),
+                        ),
+                        const SizedBox(width: 4),
+                        Text(
+                          t.division.etiqueta,
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 12,
+                            fontWeight: FontWeight.w800,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
               ),
               const SizedBox(height: 2),
               Text(
@@ -343,13 +674,57 @@ class _VistaParticipando extends StatelessWidget {
                   const SizedBox(width: AppSpacing.sm),
                   _PillCabecera(
                     valor: '${t.totalParticipantes}',
-                    etiqueta: 'Participantes',
+                    etiqueta: 'En tu división',
                   ),
                 ],
               ),
+              if (estado.siguienteObjetivo != null) ...[
+                const SizedBox(height: AppSpacing.md),
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: AppSpacing.md,
+                    vertical: AppSpacing.sm,
+                  ),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: .16),
+                    borderRadius: BorderRadius.circular(AppRadius.md),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(
+                        Icons.flag_rounded,
+                        color: Colors.white,
+                        size: 16,
+                      ),
+                      const SizedBox(width: AppSpacing.sm),
+                      Expanded(
+                        child: Text(
+                          'A ${estado.siguienteObjetivo!.diferencia} pts de '
+                          '${estado.siguienteObjetivo!.nombre}',
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.w700,
+                            fontSize: 13,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
             ],
           ),
         ),
+        const SizedBox(height: AppSpacing.lg),
+
+        if (estado.retoSemanal != null) ...[
+          _RetoSemanalCard(reto: estado.retoSemanal!),
+          const SizedBox(height: AppSpacing.lg),
+        ],
+
+        const _LeyendaPuntosPlegable(),
+        const SizedBox(height: AppSpacing.sm),
+        _LeyendaDivisionesPlegable(actual: t.division),
         const SizedBox(height: AppSpacing.lg),
 
         if (estado.historico.temporadasJugadas > 0) ...[
@@ -357,12 +732,24 @@ class _VistaParticipando extends StatelessWidget {
           const SizedBox(height: AppSpacing.lg),
         ],
 
-        Text(
-          'Clasificación',
-          style: AppTextStyles.caption.copyWith(
-            fontWeight: FontWeight.w800,
-            color: AppColors.textSecondary,
-          ),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(
+              'Clasificación',
+              style: AppTextStyles.caption.copyWith(
+                fontWeight: FontWeight.w800,
+                color: AppColors.textSecondary,
+              ),
+            ),
+            if (estado.tabla.isNotEmpty)
+              Text(
+                'Toca una fila para ver su desglose',
+                style: AppTextStyles.caption.copyWith(
+                  color: AppColors.textMuted,
+                ),
+              ),
+          ],
         ),
         const SizedBox(height: AppSpacing.sm),
 
@@ -454,56 +841,367 @@ class _FilaLiga extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: AppSpacing.xs),
-      padding: const EdgeInsets.symmetric(
-        horizontal: AppSpacing.md,
-        vertical: AppSpacing.sm,
-      ),
-      decoration: BoxDecoration(
-        color: fila.esTu
-            ? AppColors.primary.withValues(alpha: .10)
-            : AppColors.surface,
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
         borderRadius: BorderRadius.circular(AppRadius.md),
-        border: Border.all(
-          color: fila.esTu ? AppColors.primary : AppColors.border,
-          width: fila.esTu ? 1.4 : 1,
+        onTap: () => _abrirDesglose(context, fila),
+        child: Container(
+          margin: const EdgeInsets.only(bottom: AppSpacing.xs),
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppSpacing.md,
+            vertical: AppSpacing.sm,
+          ),
+          decoration: BoxDecoration(
+            color: fila.esTu
+                ? AppColors.primary.withValues(alpha: .10)
+                : AppColors.surface,
+            borderRadius: BorderRadius.circular(AppRadius.md),
+            border: Border.all(
+              color: fila.esTu ? AppColors.primary : AppColors.border,
+              width: fila.esTu ? 1.4 : 1,
+            ),
+          ),
+          child: Row(
+            children: [
+              SizedBox(
+                width: 30,
+                child: Text(
+                  _medalla.isNotEmpty ? _medalla : '${fila.puesto}',
+                  style: AppTextStyles.body.copyWith(
+                    fontWeight: FontWeight.w800,
+                    color: AppColors.textSecondary,
+                  ),
+                ),
+              ),
+              SizedBox(width: 22, child: _IndicadorTendencia(fila: fila)),
+              ClubAvatar(
+                nombre: fila.nombre,
+                imageUrl: fila.avatarUrl,
+                size: 34,
+              ),
+              const SizedBox(width: AppSpacing.sm),
+              Expanded(
+                child: Row(
+                  children: [
+                    Flexible(
+                      child: Text(
+                        fila.nombre,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: AppTextStyles.body.copyWith(
+                          fontWeight: fila.esTu
+                              ? FontWeight.w800
+                              : FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                    if ((fila.rachaHoy ?? 0) >= 7) ...[
+                      const SizedBox(width: 4),
+                      Tooltip(
+                        message: 'Racha activa de ${fila.rachaHoy} días',
+                        child: const Text('🔥', style: TextStyle(fontSize: 14)),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+              const SizedBox(width: AppSpacing.xs),
+              Text(
+                '${fila.puntos}',
+                style: AppTextStyles.body.copyWith(
+                  fontWeight: FontWeight.w800,
+                  color: AppColors.primary,
+                ),
+              ),
+              Text(
+                ' pts',
+                style: AppTextStyles.caption.copyWith(
+                  color: AppColors.textMuted,
+                ),
+              ),
+              const SizedBox(width: 2),
+              const Icon(
+                Icons.chevron_right_rounded,
+                size: 18,
+                color: AppColors.textMuted,
+              ),
+            ],
+          ),
         ),
       ),
+    );
+  }
+}
+
+/// Flechita estilo parrilla de F1: sube/baja puestos desde el último ciclo
+/// del cron (cada 1-3 h). Sin dato aún (recién unida) no muestra nada.
+class _IndicadorTendencia extends StatelessWidget {
+  const _IndicadorTendencia({required this.fila});
+  final LigaFila fila;
+
+  @override
+  Widget build(BuildContext context) {
+    final tendencia = fila.tendencia;
+    if (tendencia == null || tendencia == LigaTendencia.igual) {
+      return Icon(
+        Icons.remove_rounded,
+        size: 14,
+        color: AppColors.textMuted.withValues(alpha: .5),
+      );
+    }
+    final sube = tendencia == LigaTendencia.sube;
+    final color = sube ? AppColors.success : AppColors.danger;
+    final delta = (fila.delta ?? 0).abs();
+    return Tooltip(
+      message: sube ? 'Ha subido $delta puestos' : 'Ha bajado $delta puestos',
       child: Row(
+        mainAxisSize: MainAxisSize.min,
         children: [
-          SizedBox(
-            width: 34,
-            child: Text(
-              _medalla.isNotEmpty ? _medalla : '${fila.puesto}',
-              style: AppTextStyles.body.copyWith(
-                fontWeight: FontWeight.w800,
-                color: AppColors.textSecondary,
+          Icon(
+            sube ? Icons.arrow_drop_up_rounded : Icons.arrow_drop_down_rounded,
+            size: 20,
+            color: color,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Desglose de puntos de una participante
+// ─────────────────────────────────────────────────────────────────────────────
+
+void _abrirDesglose(BuildContext context, LigaFila fila) {
+  showModalBottomSheet<void>(
+    context: context,
+    isScrollControlled: true,
+    backgroundColor: AppColors.background,
+    shape: const RoundedRectangleBorder(
+      borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+    ),
+    builder: (ctx) => _DesgloseSheet(fila: fila),
+  );
+}
+
+class _DesgloseSheet extends StatefulWidget {
+  const _DesgloseSheet({required this.fila});
+  final LigaFila fila;
+
+  @override
+  State<_DesgloseSheet> createState() => _DesgloseSheetState();
+}
+
+class _DesgloseSheetState extends State<_DesgloseSheet> {
+  late Future<LigaDesglose> _future;
+
+  @override
+  void initState() {
+    super.initState();
+    _future = _cargar();
+  }
+
+  Future<LigaDesglose> _cargar() async {
+    final data = await ApiService().getLigaDesglose(widget.fila.userId);
+    return LigaDesglose.fromJson(data);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return SafeArea(
+      child: Padding(
+        padding: EdgeInsets.only(
+          left: AppSpacing.lg,
+          right: AppSpacing.lg,
+          top: AppSpacing.lg,
+          bottom: MediaQuery.of(context).viewInsets.bottom + AppSpacing.lg,
+        ),
+        child: FutureBuilder<LigaDesglose>(
+          future: _future,
+          builder: (context, snapshot) {
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return const SizedBox(
+                height: 160,
+                child: Center(child: CircularProgressIndicator()),
+              );
+            }
+            if (snapshot.hasError || snapshot.data?.ok != true) {
+              return SizedBox(
+                height: 120,
+                child: Center(
+                  child: Text(
+                    snapshot.data?.mensaje ??
+                        'No se ha podido cargar el desglose.',
+                    style: AppTextStyles.bodySecondary,
+                  ),
+                ),
+              );
+            }
+            final d = snapshot.data!;
+            return Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Center(
+                  child: Container(
+                    width: 44,
+                    height: 4,
+                    margin: const EdgeInsets.only(bottom: AppSpacing.md),
+                    decoration: BoxDecoration(
+                      color: AppColors.border,
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                ),
+                Row(
+                  children: [
+                    ClubAvatar(
+                      nombre: d.nombre,
+                      imageUrl: d.avatarUrl,
+                      size: 44,
+                    ),
+                    const SizedBox(width: AppSpacing.md),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(d.nombre, style: AppTextStyles.title.copyWith(fontSize: 17)),
+                          Text(
+                            d.puesto != null
+                                ? '#${d.puesto} · ${d.puntos} pts · ${d.division.icono} ${d.division.etiqueta}'
+                                : '${d.puntos} pts · ${d.division.icono} ${d.division.etiqueta}',
+                            style: AppTextStyles.bodySecondary,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: AppSpacing.lg),
+                if (d.desglose.isEmpty)
+                  Padding(
+                    padding: const EdgeInsets.symmetric(
+                      vertical: AppSpacing.lg,
+                    ),
+                    child: Center(
+                      child: Text(
+                        'Aún no tiene puntos esta temporada.',
+                        style: AppTextStyles.bodySecondary,
+                      ),
+                    ),
+                  )
+                else
+                  for (final item in d.desglose)
+                    Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 6),
+                      child: Row(
+                        children: [
+                          Text(item.emoji, style: const TextStyle(fontSize: 18)),
+                          const SizedBox(width: AppSpacing.sm),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  item.etiqueta,
+                                  style: AppTextStyles.body.copyWith(
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                                Text(
+                                  '${item.eventos} ${item.eventos == 1 ? 'vez' : 'veces'}',
+                                  style: AppTextStyles.caption.copyWith(
+                                    color: AppColors.textMuted,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          Text(
+                            '+${item.puntos}',
+                            style: AppTextStyles.body.copyWith(
+                              fontWeight: FontWeight.w800,
+                              color: AppColors.primary,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+              ],
+            );
+          },
+        ),
+      ),
+    );
+  }
+}
+
+class _RetoSemanalCard extends StatelessWidget {
+  const _RetoSemanalCard({required this.reto});
+  final LigaRetoSemanal reto;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(AppSpacing.md),
+      decoration: BoxDecoration(
+        color: reto.completado
+            ? AppColors.success.withValues(alpha: .10)
+            : AppColors.surface,
+        borderRadius: BorderRadius.circular(AppRadius.lg),
+        border: Border.all(
+          color: reto.completado ? AppColors.success : AppColors.border,
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Text('🎯', style: TextStyle(fontSize: 18)),
+              const SizedBox(width: AppSpacing.sm),
+              Expanded(
+                child: Text(
+                  'Reto de la semana',
+                  style: AppTextStyles.body.copyWith(
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
               ),
-            ),
+              if (reto.completado)
+                const Icon(
+                  Icons.check_circle_rounded,
+                  color: AppColors.success,
+                  size: 20,
+                )
+              else
+                Text(
+                  '+${reto.puntos} pts',
+                  style: AppTextStyles.body.copyWith(
+                    fontWeight: FontWeight.w800,
+                    color: AppColors.primary,
+                  ),
+                ),
+            ],
           ),
-          ClubAvatar(nombre: fila.nombre, imageUrl: fila.avatarUrl, size: 34),
-          const SizedBox(width: AppSpacing.sm),
-          Expanded(
-            child: Text(
-              fila.nombre,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: AppTextStyles.body.copyWith(
-                fontWeight: fila.esTu ? FontWeight.w800 : FontWeight.w600,
-              ),
-            ),
-          ),
+          const SizedBox(height: 4),
           Text(
-            '${fila.puntos}',
-            style: AppTextStyles.body.copyWith(
-              fontWeight: FontWeight.w800,
-              color: AppColors.primary,
-            ),
+            reto.completado
+                ? '¡Reto cumplido! Ya has sumado los ${reto.puntos} pts esta semana.'
+                : 'Haz check-in ${reto.objetivo} días esta semana '
+                      '(llevas ${reto.progreso}/${reto.objetivo}).',
+            style: AppTextStyles.bodySecondary,
           ),
-          Text(
-            ' pts',
-            style: AppTextStyles.caption.copyWith(color: AppColors.textMuted),
+          const SizedBox(height: AppSpacing.sm),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(6),
+            child: LinearProgressIndicator(
+              value: reto.objetivo == 0 ? 0 : reto.progreso / reto.objetivo,
+              minHeight: 8,
+              backgroundColor: AppColors.border,
+              color: reto.completado ? AppColors.success : AppColors.primary,
+            ),
           ),
         ],
       ),
@@ -521,6 +1219,11 @@ class _Historico extends StatelessWidget {
       ('Temporadas', '${historico.temporadasJugadas}'),
       ('Mejor puesto', historico.mejorPuesto != null ? '#${historico.mejorPuesto}' : '—'),
       ('Podios', '${historico.podios}'),
+      if (historico.mejorDivision != null)
+        (
+          'Mejor división',
+          '${historico.mejorDivision!.icono} ${historico.mejorDivision!.etiqueta}',
+        ),
     ];
     return Container(
       padding: const EdgeInsets.all(AppSpacing.md),

@@ -644,12 +644,13 @@ const List<_HelpSection> _secciones = [
         respuesta:
             'Las Ligas premian el hábito constante más que leer mucho de golpe.\n\n'
             'Cada día que lees:\n'
-            '✅ Check-in diario: 10 puntos fijos.\n'
-            '🔥 Bonus por racha: además del check-in, sumas 1 punto por cada día '
-            'seguido que llevas de racha, hasta un máximo de 15 al día. Es decir: '
-            'el día 3 de racha son +3, el día 10 son +10, y del día 15 en adelante '
-            'siempre +15. Con una racha larga, cada día de lectura son 25 puntos '
-            '(10 + 15). La racha cuenta desde antes de entrar en la liga.\n'
+            '✅ Check-in diario: 10 puntos fijos (uno por día, como siempre).\n'
+            '🔥 Bonus por racha: NO es otro check-in aparte, es un extra que se '
+            'suma automáticamente a esos 10 puntos según cuántos días seguidos '
+            'llevas de racha ese día, hasta un máximo de +15. Es decir: el día 3 '
+            'de racha son 10+3=13, el día 10 son 10+10=20, y del día 15 en '
+            'adelante siempre 10+15=25, sin volver a subir. La racha cuenta '
+            'desde antes de entrar en la liga.\n'
             '📄 Páginas leídas: 1 punto por cada 20 páginas de ese día, hasta 10.\n\n'
             'Además:\n'
             '📕 Terminar un libro: 40 puntos (20 si es una relectura o un libro de '
@@ -672,6 +673,34 @@ const List<_HelpSection> _secciones = [
             'Tu puntuación se recalcula al abrir la pantalla de la liga, y la de '
             'todas las participantes cada pocas horas. La cuenta atrás de la '
             'cabecera indica cuánto queda para el cierre de la temporada.',
+      ),
+      _HelpItem(
+        pregunta: '¿Qué son las divisiones?',
+        respuesta:
+            'Compites solo contra las participantes de tu misma división, no '
+            'contra toda la comunidad: 🥉 Bronce · 🥈 Plata · 🥇 Oro · 💎 Platino '
+            '· 👑 Diamante. Todo el mundo empieza en Bronce.\n\n'
+            'Al cerrar cada temporada, quien queda entre las primeras de su '
+            'división asciende a la siguiente, y quien queda entre las últimas '
+            'desciende (salvo en Bronce, que es el suelo, y en Diamante, que es '
+            'el techo). Con pocas participantes en una división, puede que nadie '
+            'suba ni baje esa temporada.',
+      ),
+      _HelpItem(
+        pregunta: '¿Qué es el reto semanal?',
+        respuesta:
+            'Un objetivo aparte de la temporada, de lunes a domingo: hacer '
+            'check-in al menos 5 de los 7 días de la semana suma +30 puntos '
+            'extra. Tu progreso se ve en una tarjeta con barra en la pantalla '
+            'de la liga.',
+      ),
+      _HelpItem(
+        pregunta: '¿Qué es el aviso de "racha en riesgo"?',
+        respuesta:
+            'Si llevas 3 días seguidos o más de racha y por la tarde-noche '
+            '(entre las 20:00 y las 23:00) todavía no has hecho check-in, '
+            'recibes un aviso para que no se te rompa sin darte cuenta. Como '
+            'mucho uno al día, y solo si tenías una racha real en juego.',
       ),
     ],
   ),

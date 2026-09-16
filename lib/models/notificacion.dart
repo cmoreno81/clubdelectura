@@ -52,6 +52,7 @@ class Notificacion {
     'CLUB_BOOK_OF_YEAR' => '🏆',
     'LIGA_RESULTADO' => '🏆',
     'LIGA_CIERRE_PROXIMO' => '⏳',
+    'LIGA_RACHA_EN_RIESGO' => '🔥',
     'LECTURA_NUEVA' => '📖',
     'COMENTARIO_LECTURA' => '💬',
     'LIBRO_TERMINADO' => '✅',

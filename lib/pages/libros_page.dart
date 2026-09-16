@@ -109,6 +109,17 @@ class _LibrosPageState extends State<LibrosPage> with WidgetsBindingObserver {
   late String filtroOrigen =
       widget.initialFiltroOrigen; // 'DEL_CLUB' | 'CLUBREADS'
   String filtroUsuario = 'TODAS';
+
+  /// En modo personal el selector de "Lector" está oculto (no tiene sentido
+  /// elegir entre compañeras de club), pero `_getLibros`/`_getLibrosFinalizadosTodos`
+  /// del backend siguen devolviendo TODO el club activo, no solo mis libros.
+  /// Sin este filtro, "Mi biblioteca" mostraría las lecturas de cualquier
+  /// compañera de club (ver libros_page.dart:1780 y alrededores).
+  String get _filtroUsuarioEfectivo => widget.esPersonal
+      ? (AuthSessionService.instance.user?.nombre.trim().isNotEmpty == true
+            ? AuthSessionService.instance.user!.nombre.trim()
+            : filtroUsuario)
+      : filtroUsuario;
   String? filtroVibe; // null = sin filtro de vibe
   // Sin filtro por defecto (se ven todos los idiomas): filtrar por un
   // idioma concreto puede ocultar libros cuya ficha esté en otro idioma
@@ -1777,7 +1788,8 @@ class _LibrosPageState extends State<LibrosPage> with WidgetsBindingObserver {
         );
 
         final coincideUsuario =
-            filtroUsuario == 'TODAS' || libro.usuario.trim() == filtroUsuario;
+            _filtroUsuarioEfectivo == 'TODAS' ||
+            libro.usuario.trim() == _filtroUsuarioEfectivo;
 
         final coincideEstado =
             filtroEstado == 'TODOS' || libro.estado == filtroEstado;
@@ -1825,8 +1837,8 @@ class _LibrosPageState extends State<LibrosPage> with WidgetsBindingObserver {
       if (filtroEstado == 'TODOS') {
         final finalizadosFiltrados = finalizados.where((finalizado) {
           final coincideUsuario =
-              filtroUsuario == 'TODAS' ||
-              finalizado.usuario.trim() == filtroUsuario;
+              _filtroUsuarioEfectivo == 'TODAS' ||
+              finalizado.usuario.trim() == _filtroUsuarioEfectivo;
           final coincideBusqueda = _coincideBusqueda(
             finalizado.libro,
             saga: finalizado.saga,
@@ -1877,8 +1889,8 @@ class _LibrosPageState extends State<LibrosPage> with WidgetsBindingObserver {
             finalizados.where(
               (f) =>
                   normalizar(f.libro) == normalizar(agrupado.libro) &&
-                  (filtroUsuario == 'TODAS' ||
-                      f.usuario.trim() == filtroUsuario),
+                  (_filtroUsuarioEfectivo == 'TODAS' ||
+                      f.usuario.trim() == _filtroUsuarioEfectivo),
             ),
           );
         }
@@ -1895,7 +1907,8 @@ class _LibrosPageState extends State<LibrosPage> with WidgetsBindingObserver {
 
     final finalizadosFiltrados = finalizados.where((f) {
       final coincideUsuario =
-          filtroUsuario == 'TODAS' || f.usuario.trim() == filtroUsuario;
+          _filtroUsuarioEfectivo == 'TODAS' ||
+          f.usuario.trim() == _filtroUsuarioEfectivo;
 
       final coincideBusqueda = _coincideBusqueda(
         f.libro,
@@ -1912,7 +1925,8 @@ class _LibrosPageState extends State<LibrosPage> with WidgetsBindingObserver {
 
     final registrosRelacionados = libros.where((libro) {
       final coincideUsuario =
-          filtroUsuario == 'TODAS' || libro.usuario.trim() == filtroUsuario;
+          _filtroUsuarioEfectivo == 'TODAS' ||
+          libro.usuario.trim() == _filtroUsuarioEfectivo;
       return coincideUsuario &&
           titulosFinalizados.contains(normalizar(libro.libro));
     }).toList();

@@ -850,6 +850,41 @@ class ApiService {
     return _respuestaOk(response);
   }
 
+  /// Vincula dos fichas como la misma obra (p. ej. una edición en español y
+  /// otra en inglés que se han dejado separadas) para que, al leerlas en
+  /// grupo, compartan lectura conjunta y conversación por capítulo. No
+  /// fusiona nada: cada ficha conserva su idioma, carátula y lectoras.
+  Future<bool> vincularEdicionLibro({
+    required String libro,
+    required String otroBookId,
+  }) async {
+    final response = await _postJson('vincularEdicionLibro', {
+      'libro': libro,
+      'otroBookId': otroBookId,
+    });
+
+    return _respuestaOk(response);
+  }
+
+  /// Corrige capítulos/prólogo/epílogo de una lectura conjunta ya creada.
+  /// Si se intenta quitar un espacio que ya tiene comentarios, el backend
+  /// rechaza el cambio entero y devuelve `mensaje` explicando cuál.
+  Future<Map<String, dynamic>> editarLectura({
+    required String libro,
+    required int capitulos,
+    required bool prologo,
+    required bool epilogo,
+  }) async {
+    final response = await _postJson('editarLectura', {
+      'libro': libro,
+      'capitulos': capitulos,
+      'prologo': prologo ? 1 : 0,
+      'epilogo': epilogo ? 1 : 0,
+    });
+    if (response.statusCode != 200) throw ApiException.fromResponse(response);
+    return _decodeJson(response) as Map<String, dynamic>;
+  }
+
   Future<ConfiguracionLectura> getConfiguracionLectura({
     required String libro,
   }) async {
@@ -2148,6 +2183,18 @@ class ApiService {
   /// Opt-out: deja de participar (el histórico se conserva, oculto).
   Future<Map<String, dynamic>> salirLiga() async {
     final response = await _postJson('salirLiga');
+    if (response.statusCode != 200) throw ApiException.fromResponse(response);
+    return _decodeJson(response) as Map<String, dynamic>;
+  }
+
+  /// Desglose de puntos de una participante de la liga esta temporada:
+  /// cuánto ha aportado cada tipo de acción (check-in, racha, libros…).
+  Future<Map<String, dynamic>> getLigaDesglose(String userId) async {
+    final response = await _client.get(
+      Uri.parse(
+        baseUrl,
+      ).replace(queryParameters: {'action': 'ligaDesglose', 'userId': userId}),
+    );
     if (response.statusCode != 200) throw ApiException.fromResponse(response);
     return _decodeJson(response) as Map<String, dynamic>;
   }

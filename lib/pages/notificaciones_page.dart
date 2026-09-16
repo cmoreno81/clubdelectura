@@ -310,6 +310,7 @@ class _NotificacionesPageState extends State<NotificacionesPage> {
         return;
       case 'LIGA_RESULTADO':
       case 'LIGA_CIERRE_PROXIMO':
+      case 'LIGA_RACHA_EN_RIESGO':
         await Navigator.push<void>(
           context,
           AppPageRoute(builder: (_) => const LigaPage()),

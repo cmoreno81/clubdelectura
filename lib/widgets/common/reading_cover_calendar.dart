@@ -42,22 +42,20 @@ class ReadingCoverCalendar extends StatelessWidget {
     final offset = first.weekday - 1;
     final cells = ((offset + days + 6) ~/ 7) * 7;
 
-    // Mapa de fecha → rating para los libros terminados ese día
-    // Solo marcamos el ÚLTIMO día de lectura (fechaFin) de cada libro.
-    final ratingsByFinishDate = <DateTime, double>{};
+    // Mapa "bookId|fecha" → rating para los libros terminados ese día.
+    // Se indexa por libro Y fecha (no solo fecha) para que, si dos libros
+    // terminan el mismo día, cada portada se quede con SU propia valoración
+    // en vez de que una pise a la otra.
+    final ratingsByBookAndDay = <String, double>{};
     for (final book in calendar.finishedBooks) {
       final finish = DateTime.tryParse(book.finishedAt)?.toLocal();
       if (finish == null) continue;
-      final day = DateTime(finish.year, finish.month, finish.day);
+      final key = _finishKey(book.bookId, finish);
       if (book.rating != null && book.rating! > 0) {
-        // Si hay más de un libro terminado el mismo día, guardamos el mayor
-        final existing = ratingsByFinishDate[day];
-        if (existing == null || book.rating! > existing) {
-          ratingsByFinishDate[day] = book.rating!;
-        }
+        ratingsByBookAndDay[key] = book.rating!;
       } else {
         // Sin rating pero sí terminado → marcamos con 0 para poner la estrella vacía
-        ratingsByFinishDate.putIfAbsent(day, () => 0);
+        ratingsByBookAndDay.putIfAbsent(key, () => 0);
       }
     }
 
@@ -112,13 +110,11 @@ class ReadingCoverCalendar extends StatelessWidget {
                   .where((reading) => _contains(reading, date))
                   .toList(growable: false);
 
-              // ¿Hay algún libro terminado exactamente este día?
-              final finishRating = ratingsByFinishDate[date];
-
               return _ReadingDayCell(
                 day: day,
+                date: date,
                 readings: readings,
-                finishRating: finishRating,
+                ratingsByBookAndDay: ratingsByBookAndDay,
                 onBookTap: onBookTap,
                 highResolution: highResolution,
               );
@@ -128,6 +124,9 @@ class ReadingCoverCalendar extends StatelessWidget {
       ],
     );
   }
+
+  static String _finishKey(String bookId, DateTime finish) =>
+      '$bookId|${finish.year}-${finish.month}-${finish.day}';
 
   bool _contains(MonthlyReadingSpan reading, DateTime date) {
     final start = DateTime.tryParse(reading.startedAt)?.toLocal();
@@ -143,19 +142,25 @@ class ReadingCoverCalendar extends StatelessWidget {
 class _ReadingDayCell extends StatelessWidget {
   const _ReadingDayCell({
     required this.day,
+    required this.date,
     required this.readings,
     required this.onBookTap,
     required this.highResolution,
-    this.finishRating,
+    required this.ratingsByBookAndDay,
   });
 
   final int day;
+  final DateTime date;
   final List<MonthlyReadingSpan> readings;
   final ValueChanged<MonthlyReadingSpan>? onBookTap;
   final bool highResolution;
 
-  /// Rating del libro terminado este día exacto (null = no termina ninguno hoy).
-  final double? finishRating;
+  /// "bookId|fecha" → rating, para poder darle a cada portada la suya
+  /// cuando dos libros terminan el mismo día.
+  final Map<String, double> ratingsByBookAndDay;
+
+  double? _ratingFor(MonthlyReadingSpan reading) =>
+      ratingsByBookAndDay[ReadingCoverCalendar._finishKey(reading.bookId, date)];
 
   @override
   Widget build(BuildContext context) {
@@ -177,9 +182,20 @@ class _ReadingDayCell extends StatelessWidget {
                       onTap: onBookTap == null
                           ? null
                           : () => onBookTap!(reading),
-                      child: _CalendarCover(
-                        reading: reading,
-                        highResolution: highResolution,
+                      child: Stack(
+                        fit: StackFit.expand,
+                        children: [
+                          _CalendarCover(
+                            reading: reading,
+                            highResolution: highResolution,
+                          ),
+                          if (_ratingFor(reading) != null)
+                            Positioned(
+                              right: 2,
+                              bottom: 2,
+                              child: _FinishBadge(rating: _ratingFor(reading)!),
+                            ),
+                        ],
                       ),
                     ),
                   ),
@@ -235,13 +251,6 @@ class _ReadingDayCell extends StatelessWidget {
               ),
             ),
 
-          // ⭐ Badge de finalización en esquina inferior derecha
-          if (finishRating != null)
-            Positioned(
-              right: 2,
-              bottom: 2,
-              child: _FinishBadge(rating: finishRating!),
-            ),
         ],
       ),
     );

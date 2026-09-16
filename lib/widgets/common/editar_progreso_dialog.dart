@@ -28,9 +28,10 @@ class _EditarProgresoDialogState extends State<EditarProgresoDialog> {
   String? errorPorcentaje;
   String? errorTotalPaginas;
 
+  // El campo es editable aunque ya se conozca un total (para corregirlo si
+  // tu edición tiene otra paginación), así que prevalece lo escrito.
   int? get totalPaginas =>
-      widget.lectura.paginasTotales ??
-      int.tryParse(totalPaginasController.text);
+      int.tryParse(totalPaginasController.text) ?? widget.lectura.paginasTotales;
 
   bool get tienePaginas => (totalPaginas ?? 0) > 0;
 
@@ -43,7 +44,9 @@ class _EditarProgresoDialogState extends State<EditarProgresoDialog> {
             (widget.lectura.paginasTotales ?? 0) > 0
         ? _ModoProgreso.pagina
         : _ModoProgreso.porcentaje;
-    totalPaginasController = TextEditingController();
+    totalPaginasController = TextEditingController(
+      text: widget.lectura.paginasTotales?.toString() ?? '',
+    );
     paginaController = TextEditingController(
       text: widget.lectura.paginaActual?.toString() ?? '',
     );
@@ -66,28 +69,34 @@ class _EditarProgresoDialogState extends State<EditarProgresoDialog> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            if (widget.lectura.paginasTotales == null) ...[
-              TextField(
-                controller: totalPaginasController,
-                keyboardType: TextInputType.number,
-                inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                decoration: InputDecoration(
-                  labelText: 'Páginas del libro (opcional)',
-                  hintText: 'Ej. 420',
-                  prefixIcon: const Icon(Icons.menu_book_outlined),
-                  errorText: errorTotalPaginas,
-                ),
-                onChanged: (_) {
-                  setState(() {
-                    errorTotalPaginas = null;
-                    if (!tienePaginas) {
-                      modo = _ModoProgreso.porcentaje;
-                    }
-                  });
-                },
+            TextField(
+              controller: totalPaginasController,
+              keyboardType: TextInputType.number,
+              inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+              decoration: InputDecoration(
+                labelText: widget.lectura.paginasTotales == null
+                    ? 'Páginas del libro (opcional)'
+                    : 'Páginas de tu edición',
+                hintText: 'Ej. 420',
+                helperText: widget.lectura.paginasTotales == null
+                    ? null
+                    : 'Si tu ejemplar tiene otra paginación (p. ej. otro '
+                          'idioma), cámbiala aquí: solo afecta a tu progreso, '
+                          'no al del resto.',
+                helperMaxLines: 3,
+                prefixIcon: const Icon(Icons.menu_book_outlined),
+                errorText: errorTotalPaginas,
               ),
-              const SizedBox(height: AppSpacing.md),
-            ],
+              onChanged: (_) {
+                setState(() {
+                  errorTotalPaginas = null;
+                  if (!tienePaginas) {
+                    modo = _ModoProgreso.porcentaje;
+                  }
+                });
+              },
+            ),
+            const SizedBox(height: AppSpacing.md),
             if (tienePaginas) ...[
               SizedBox(
                 width: double.infinity,
@@ -245,13 +254,15 @@ class _EditarProgresoDialogState extends State<EditarProgresoDialog> {
     }
 
     int? paginasTotales;
-    if (widget.lectura.paginasTotales == null &&
-        totalPaginasController.text.isNotEmpty) {
-      paginasTotales = int.tryParse(totalPaginasController.text);
-      if (paginasTotales == null || paginasTotales <= 0) {
+    if (totalPaginasController.text.isNotEmpty) {
+      final valor = int.tryParse(totalPaginasController.text);
+      if (valor == null || valor <= 0) {
         setState(() => errorTotalPaginas = 'Indica un número mayor que 0');
         return;
       }
+      // Solo se envía si cambia respecto al total ya conocido, para no
+      // reenviar de más en cada guardado.
+      if (valor != widget.lectura.paginasTotales) paginasTotales = valor;
     }
 
     int? paginaActual;
