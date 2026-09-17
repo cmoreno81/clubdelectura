@@ -89,6 +89,11 @@ class _MyAppState extends State<MyApp> {
   final scaffoldMessengerKey = GlobalKey<ScaffoldMessengerState>();
   bool _expiryPresented = false;
 
+  /// El arranque de sesión (leer el token guardado, refrescarlo si toca)
+  /// suele resolverse casi al instante, así que sin este mínimo la pantalla
+  /// de carga con el logo apenas llega a verse — un parpadeo, no una marca.
+  bool _splashMinimoCumplido = false;
+
   @override
   void initState() {
     super.initState();
@@ -96,6 +101,9 @@ class _MyAppState extends State<MyApp> {
     atmosferaController = AtmosferaController();
     authSession.addListener(_onAuthChanged);
     authSession.bootstrap(refreshSession: AuthService().refreshExistingSession);
+    Future.delayed(const Duration(milliseconds: 1100), () {
+      if (mounted) setState(() => _splashMinimoCumplido = true);
+    });
   }
 
   void _onAuthChanged() {
@@ -181,7 +189,9 @@ class _MyAppState extends State<MyApp> {
             home: AnimatedBuilder(
               animation: authSession,
               builder: (context, _) {
-                if (!authSession.initialized) return const SplashPage();
+                if (!authSession.initialized || !_splashMinimoCumplido) {
+                  return const SplashPage();
+                }
                 return authSession.isAuthenticated
                     ? const ClubGatePage()
                     : authSession.sessionExpired

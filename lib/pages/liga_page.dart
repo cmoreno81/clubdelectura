@@ -301,7 +301,9 @@ Widget _filasPuntosWidget() => Column(
       'El bonus no es un check-in aparte: es un extra que se suma sobre '
       'los 10 pts del check-in de ese día, y crece con tu racha. Día 1 de '
       'racha: +1 (11 en total). Día 8: +8 (18 en total). Del día 15 en '
-      'adelante siempre +15 (25 en total), sin volver a subir.',
+      'adelante siempre +15 (25 en total), sin volver a subir. La racha no '
+      'se rompe si otro día solo actualizas el progreso de un libro sin '
+      'hacer check-in — cuenta igual que en el mapa de calor.',
       style: AppTextStyles.caption.copyWith(color: AppColors.textMuted),
     ),
   ],

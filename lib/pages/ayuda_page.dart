@@ -649,8 +649,11 @@ const List<_HelpSection> _secciones = [
             'suma automáticamente a esos 10 puntos según cuántos días seguidos '
             'llevas de racha ese día, hasta un máximo de +15. Es decir: el día 3 '
             'de racha son 10+3=13, el día 10 son 10+10=20, y del día 15 en '
-            'adelante siempre 10+15=25, sin volver a subir. La racha cuenta '
-            'desde antes de entrar en la liga.\n'
+            'adelante siempre 10+15=25, sin volver a subir. Los 10 puntos '
+            'del check-in solo se ganan el día que haces check-in, pero la '
+            'racha en sí no se rompe si otro día solo actualizas el '
+            'progreso de un libro — cuenta igual que para el mapa de calor. '
+            'La racha cuenta desde antes de entrar en la liga.\n'
             '📄 Páginas leídas: 1 punto por cada 20 páginas de ese día, hasta 10.\n\n'
             'Además:\n'
             '📕 Terminar un libro: 40 puntos (20 si es una relectura o un libro de '
@@ -1045,10 +1048,13 @@ const List<_HelpSection> _secciones = [
       _HelpItem(
         pregunta: '¿Cómo funciona la racha de lectura?',
         respuesta:
-            'La racha cuenta los días consecutivos en los que has hecho '
-            'check-in. Si hoy ya lo hiciste, o si ayer lo hiciste y hoy '
-            'aún no has tenido tiempo, la racha se mantiene. '
-            'Si no hay actividad ni de ayer ni de hoy, la racha vuelve a 0.\n\n'
+            'La racha cuenta los días consecutivos con actividad lectora: '
+            'hacer check-in, actualizar el progreso de un libro, o '
+            'terminarlo — cualquiera de los tres cuenta, exactamente igual '
+            'que para colorear el mapa de calor. Si hoy ya hiciste algo de '
+            'eso, o si ayer lo hiciste y hoy aún no has tenido tiempo, la '
+            'racha se mantiene. Si no hay actividad ni de ayer ni de hoy, '
+            'la racha vuelve a 0.\n\n'
             'La racha aparece en el banner de "Mi espacio" y junto al '
             'botón de check-in.',
       ),

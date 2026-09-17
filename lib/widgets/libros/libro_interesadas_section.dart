@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 
 import '../../models/libro.dart';
+import '../../services/api_service.dart';
+import '../../services/library_refresh_notifier.dart';
+import '../../services/usuario_service.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_spacing.dart';
 import '../../theme/app_text_styles.dart';
@@ -457,6 +460,34 @@ class _LectoraCard extends StatelessWidget {
                 );
               },
             ),
+
+            // Botón aparte y con su propio texto — a propósito, para no
+            // meterlo como una pastilla más junto a "Otra vuelta" y compañía
+            // (una usuaria nos reportó que le dio sin querer a "Otra vuelta"
+            // buscando esto mismo, porque las pastillas están muy juntas).
+            if (registro.startedAt != null &&
+                registro.estado != 'PENDIENTE' &&
+                registro.estado != 'FINALIZADO') ...[
+              const SizedBox(height: AppSpacing.sm),
+              Align(
+                alignment: Alignment.centerLeft,
+                child: TextButton.icon(
+                  onPressed: () => _editarFechaInicio(context),
+                  style: TextButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: AppSpacing.sm,
+                      vertical: AppSpacing.xs,
+                    ),
+                    visualDensity: VisualDensity.compact,
+                  ),
+                  icon: const Icon(
+                    Icons.edit_calendar_outlined,
+                    size: 17,
+                  ),
+                  label: const Text('Editar fecha de inicio'),
+                ),
+              ),
+            ],
           ],
           if (registro.estado == 'PAUSADO') ...[
             const SizedBox(height: AppSpacing.md),
@@ -628,6 +659,45 @@ class _LectoraCard extends StatelessWidget {
         return ClubChipVariant.danger;
       default:
         return ClubChipVariant.warning;
+    }
+  }
+
+  Future<void> _editarFechaInicio(BuildContext context) async {
+    final hoy = DateTime.now();
+    final inicial = registro.startedAt ?? hoy;
+    final elegida = await showDatePicker(
+      context: context,
+      initialDate: inicial.isAfter(hoy) ? hoy : inicial,
+      firstDate: DateTime(1950),
+      lastDate: hoy,
+      helpText: 'Fecha en que empezaste a leer',
+      confirmText: 'Aceptar',
+      cancelText: 'Cancelar',
+    );
+    if (elegida == null || !context.mounted) return;
+
+    final usuario = await UsuarioService().obtenerUsuario();
+    if (usuario == null || usuario.trim().isEmpty || !context.mounted) return;
+
+    final ok = await ApiService().editarFechaInicioLectura(
+      usuario: usuario,
+      libro: registro.libro,
+      fechaInicio: elegida,
+    );
+
+    if (!context.mounted) return;
+
+    if (ok) {
+      LibraryRefreshNotifier.instance.invalidate();
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Fecha de inicio actualizada')),
+      );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('No se ha podido actualizar la fecha.'),
+        ),
+      );
     }
   }
 }

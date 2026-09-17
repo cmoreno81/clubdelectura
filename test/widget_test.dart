@@ -7,5 +7,10 @@ void main() {
     await tester.pumpWidget(const MyApp());
 
     expect(find.byType(CircularProgressIndicator), findsOneWidget);
+
+    // La pantalla de carga se mantiene un mínimo de tiempo visible aunque
+    // la sesión ya esté lista (ver _MyAppState.initState); sin avanzar el
+    // reloj falso ese temporizador queda pendiente al terminar el test.
+    await tester.pump(const Duration(milliseconds: 1200));
   });
 }

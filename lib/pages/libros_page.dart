@@ -115,7 +115,11 @@ class _LibrosPageState extends State<LibrosPage> with WidgetsBindingObserver {
   /// del backend siguen devolviendo TODO el club activo, no solo mis libros.
   /// Sin este filtro, "Mi biblioteca" mostraría las lecturas de cualquier
   /// compañera de club (ver libros_page.dart:1780 y alrededores).
-  String get _filtroUsuarioEfectivo => widget.esPersonal
+  ///
+  /// Solo aplica a 'DEL_CLUB' (ahí es donde vive "Mi biblioteca"): el origen
+  /// 'CLUBREADS' es el catálogo global de toda la app y debe seguir sin
+  /// restringirse a la usuaria actual.
+  String get _filtroUsuarioEfectivo => widget.esPersonal && filtroOrigen == 'DEL_CLUB'
       ? (AuthSessionService.instance.user?.nombre.trim().isNotEmpty == true
             ? AuthSessionService.instance.user!.nombre.trim()
             : filtroUsuario)
