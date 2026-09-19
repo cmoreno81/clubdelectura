@@ -80,6 +80,16 @@ class ClubService {
     await _request('eliminarClub', body: {'clubId': clubId});
   }
 
+  Future<void> transferirPropiedad({
+    required String clubId,
+    required String nuevoOwnerId,
+  }) async {
+    await _request(
+      'transferirPropiedadClub',
+      body: {'clubId': clubId, 'nuevoOwnerId': nuevoOwnerId},
+    );
+  }
+
   Future<void> updateClub({
     required String clubId,
     String? nombre,

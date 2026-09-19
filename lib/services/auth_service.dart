@@ -114,6 +114,23 @@ class AuthService {
     }
   }
 
+  /// Elimina la cuenta (requiere la contraseña actual). El backend anonimiza
+  /// los datos personales y revoca las sesiones; aquí solo falta limpiar la
+  /// sesión local, igual que en [logout].
+  Future<void> eliminarCuenta({required String password}) async {
+    final response = await _authenticatedClient.post(
+      _uri('eliminarCuenta'),
+      headers: const {
+        'Content-Type': 'application/json',
+        AuthenticatedHttpClient.noRetryHeader: 'true',
+      },
+      body: jsonEncode({'password': password}),
+    );
+    _ensureSuccess(response);
+    NotificacionesService.instance.limpiar();
+    await _session.clear();
+  }
+
   Future<bool> refreshExistingSession() async {
     final refreshToken = _session.refreshToken;
     if (refreshToken == null || refreshToken.isEmpty) return false;

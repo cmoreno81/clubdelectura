@@ -11,6 +11,7 @@ class AuthFormHeader extends StatelessWidget {
   final String title;
   final String message;
   final String? eyebrow;
+  final Color? iconBackgroundColor;
 
   const AuthFormHeader({
     super.key,
@@ -18,6 +19,7 @@ class AuthFormHeader extends StatelessWidget {
     required this.title,
     required this.message,
     this.eyebrow,
+    this.iconBackgroundColor,
   });
 
   @override
@@ -38,11 +40,12 @@ class AuthFormHeader extends StatelessWidget {
             width: 58,
             height: 58,
             decoration: BoxDecoration(
-              color: AppColors.primary,
+              color: iconBackgroundColor ?? AppColors.primary,
               borderRadius: BorderRadius.circular(AppRadius.lg),
               boxShadow: [
                 BoxShadow(
-                  color: AppColors.primary.withValues(alpha: .18),
+                  color: (iconBackgroundColor ?? AppColors.primary)
+                      .withValues(alpha: .18),
                   blurRadius: 18,
                   offset: const Offset(0, 8),
                 ),

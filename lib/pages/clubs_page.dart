@@ -528,6 +528,70 @@ class _ClubSettingsPageState extends State<_ClubSettingsPage> {
     }
   }
 
+  Future<void> _transferirPropiedad() async {
+    final members = await _membersFuture;
+    if (!mounted) return;
+    final candidatos = members.where((m) => !m.esOwner).toList();
+    if (candidatos.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'No hay nadie más en el club a quien transferir la propiedad.',
+          ),
+        ),
+      );
+      return;
+    }
+
+    final elegido = await showDialog<ClubMember>(
+      context: context,
+      builder: (_) => _TransferOwnershipDialog(miembros: candidatos),
+    );
+    if (elegido == null || !mounted) return;
+
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: const Text('¿Transferir la propiedad?'),
+        content: Text(
+          '${elegido.nombre} pasará a ser la propietaria de '
+          '"${widget.club.nombre}". Tú seguirás dentro como '
+          'administradora.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancelar'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Transferir'),
+          ),
+        ],
+      ),
+    );
+    if (confirm != true || !mounted) return;
+
+    setState(() => _busy = true);
+    try {
+      await ClubService().transferirPropiedad(
+        clubId: widget.club.id,
+        nuevoOwnerId: elegido.id,
+      );
+      ClubContextController.instance.refresh();
+      if (!mounted) return;
+      Navigator.pop(context, true);
+    } on ApiException catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(e.message)));
+      }
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+
   Future<void> _leaveClub() async {
     final confirm = await showDialog<bool>(
       context: context,
@@ -720,6 +784,21 @@ class _ClubSettingsPageState extends State<_ClubSettingsPage> {
                     onTap: _busy ? null : _leaveClub,
                   ),
                 ],
+                if (widget.club.rol == 'OWNER' && !widget.club.esPersonal) ...[
+                  const Divider(height: 1),
+                  ListTile(
+                    leading: const Icon(Icons.swap_horiz_rounded),
+                    title: const Text(
+                      'Transferir propiedad',
+                      style: TextStyle(fontWeight: FontWeight.w700),
+                    ),
+                    subtitle: const Text(
+                      'Cede el club a otra persona y pasa a administradora',
+                    ),
+                    trailing: const Icon(Icons.chevron_right_rounded),
+                    onTap: _busy ? null : _transferirPropiedad,
+                  ),
+                ],
                 if (widget.club.rol == 'OWNER') ...[
                   const Divider(height: 1),
                   ListTile(
@@ -819,6 +898,65 @@ class _MembersPage extends StatelessWidget {
     'ADMIN' => 'Administración',
     _ => 'Miembro',
   };
+}
+
+class _TransferOwnershipDialog extends StatefulWidget {
+  const _TransferOwnershipDialog({required this.miembros});
+  final List<ClubMember> miembros;
+
+  @override
+  State<_TransferOwnershipDialog> createState() =>
+      _TransferOwnershipDialogState();
+}
+
+class _TransferOwnershipDialogState extends State<_TransferOwnershipDialog> {
+  ClubMember? _elegido;
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: const Text('¿A quién se la transfieres?'),
+      content: SizedBox(
+        width: double.maxFinite,
+        child: ListView.builder(
+          shrinkWrap: true,
+          itemCount: widget.miembros.length,
+          itemBuilder: (context, i) {
+            final m = widget.miembros[i];
+            final seleccionado = _elegido?.id == m.id;
+            return ListTile(
+              contentPadding: EdgeInsets.zero,
+              onTap: () => setState(() => _elegido = m),
+              leading: ClubAvatar(
+                nombre: m.nombre,
+                imageUrl: m.avatarUrl,
+                size: 36,
+              ),
+              title: Text(m.nombre),
+              trailing: Icon(
+                seleccionado
+                    ? Icons.radio_button_checked_rounded
+                    : Icons.radio_button_unchecked_rounded,
+                color: seleccionado ? AppColors.primary : null,
+              ),
+            );
+          },
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: const Text('Cancelar'),
+        ),
+        FilledButton(
+          onPressed: _elegido == null
+              ? null
+              : () => Navigator.pop(context, _elegido),
+          child: const Text('Continuar'),
+        ),
+      ],
+    );
+  }
 }
 
 class _EditClubDialog extends StatefulWidget {

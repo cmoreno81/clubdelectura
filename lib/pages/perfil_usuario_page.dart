@@ -43,6 +43,7 @@ import 'acerca_de_page.dart';
 import 'ajustes_privacidad_page.dart';
 import 'ayuda_page.dart';
 import 'change_password_page.dart';
+import 'delete_account_page.dart';
 import 'goodreads_import_page.dart';
 import 'hidden_series_page.dart';
 import 'liga_page.dart';
@@ -1189,6 +1190,29 @@ class _PerfilUsuarioPageState extends State<PerfilUsuarioPage> {
                   onTap: _cerrarSesion,
                 ),
               ],
+            ),
+          ),
+        ),
+        const SizedBox(height: AppSpacing.sm),
+        ClubCard(
+          elevated: false,
+          padding: EdgeInsets.zero,
+          child: Material(
+            color: Colors.transparent,
+            child: ListTile(
+              leading: const Icon(
+                Icons.person_remove_outlined,
+                color: AppColors.danger,
+              ),
+              title: const Text(
+                'Eliminar cuenta',
+                style: TextStyle(color: AppColors.danger),
+              ),
+              trailing: const Icon(Icons.chevron_right_rounded),
+              onTap: () => Navigator.push<void>(
+                context,
+                AppPageRoute(builder: (_) => const DeleteAccountPage()),
+              ),
             ),
           ),
         ),
