@@ -60,6 +60,7 @@ class _CapituloPageState extends State<CapituloPage> {
   /// Colores de los subrayadores del kit (uno por categoría).
   List<Color> coloresSubrayadores = const [];
   Timer? _temporizadorBorrador;
+  Timer? _temporizadorAvisoComentario;
 
   bool get esReflexion => widget.capitulo.trim() == '💭 Reflexión final';
 
@@ -353,12 +354,17 @@ class _CapituloPageState extends State<CapituloPage> {
           ),
         );
       } else {
-        ScaffoldMessenger.of(context).showSnackBar(
+        // Los avisos con acción pueden no caducar solos (ver
+        // wishlist_page.dart._showPurchasedNotice); lo cerramos nosotros.
+        _temporizadorAvisoComentario?.cancel();
+        final aviso = ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: const Text('Comentario publicado'),
             action: SnackBarAction(label: 'Ir al final', onPressed: _irAlFinal),
+            duration: const Duration(seconds: 4),
           ),
         );
+        _temporizadorAvisoComentario = Timer(const Duration(seconds: 4), aviso.close);
       }
     } catch (_) {
       if (!mounted) return;
@@ -736,6 +742,7 @@ class _CapituloPageState extends State<CapituloPage> {
   @override
   void dispose() {
     _temporizadorBorrador?.cancel();
+    _temporizadorAvisoComentario?.cancel();
     controller.removeListener(_programarGuardadoBorrador);
     unawaited(_guardarBorrador(controller.text));
     controller.dispose();

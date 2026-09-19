@@ -41,6 +41,129 @@ enum LigaDivision {
   };
 }
 
+/// Medallas de temporada — trofeos acumulables tipo videojuego, ganados al
+/// cerrar una temporada (ver SeasonMedal/MedalTier en el backend).
+enum LigaMedallaTier {
+  podioOro('🏆', Color(0xFFD5A94E)),
+  podioPlata('🎖️', Color(0xFF9AA4B2)),
+  podioBronce('🏅', Color(0xFFA9714B)),
+  ascenso('🚀', Color(0xFF5FA8B8)),
+  diamante('💎', Color(0xFF7C5CBF)),
+  constancia('⭐', Color(0xFFD97757));
+
+  const LigaMedallaTier(this.icono, this.color);
+  final String icono;
+  final Color color;
+
+  String get etiqueta => switch (this) {
+    LigaMedallaTier.podioOro => 'Oro de temporada',
+    LigaMedallaTier.podioPlata => 'Plata de temporada',
+    LigaMedallaTier.podioBronce => 'Bronce de temporada',
+    LigaMedallaTier.ascenso => 'Ascenso de división',
+    LigaMedallaTier.diamante => 'Alcanzó Diamante',
+    LigaMedallaTier.constancia => 'Constancia',
+  };
+
+  /// Cómo se consigue, para la leyenda.
+  String get descripcion => switch (this) {
+    LigaMedallaTier.podioOro => 'Quedar 1ª de tu división al cerrar una temporada.',
+    LigaMedallaTier.podioPlata => 'Quedar 2ª de tu división al cerrar una temporada.',
+    LigaMedallaTier.podioBronce => 'Quedar 3ª de tu división al cerrar una temporada.',
+    LigaMedallaTier.ascenso => 'Subir de división al cerrar una temporada.',
+    LigaMedallaTier.diamante => 'Llegar a la división Diamante por primera vez.',
+    LigaMedallaTier.constancia =>
+      'Jugar temporadas seguidas sin parar (3, 5, 10, 20, 30...).',
+  };
+
+  static LigaMedallaTier? fromJson(String? value) => switch (value) {
+    'PODIO_ORO' => LigaMedallaTier.podioOro,
+    'PODIO_PLATA' => LigaMedallaTier.podioPlata,
+    'PODIO_BRONCE' => LigaMedallaTier.podioBronce,
+    'ASCENSO' => LigaMedallaTier.ascenso,
+    'DIAMANTE' => LigaMedallaTier.diamante,
+    'CONSTANCIA' => LigaMedallaTier.constancia,
+    _ => null,
+  };
+}
+
+/// La medalla más reciente de una participante — lo justo para el icono
+/// junto a su nombre en la clasificación.
+class LigaMedallaReciente {
+  final LigaMedallaTier tier;
+  final int seasonNumber;
+
+  const LigaMedallaReciente({required this.tier, required this.seasonNumber});
+
+  static LigaMedallaReciente? fromJson(Map<String, dynamic>? json) {
+    if (json == null) return null;
+    final tier = LigaMedallaTier.fromJson(json['tier']?.toString());
+    if (tier == null) return null;
+    return LigaMedallaReciente(
+      tier: tier,
+      seasonNumber: (json['seasonNumber'] as num?)?.toInt() ?? 0,
+    );
+  }
+}
+
+/// Una medalla del medallero completo de una participante (perfil).
+class LigaMedalla {
+  final LigaMedallaTier tier;
+  final int seasonNumber;
+  final LigaDivision division;
+  final int? rank;
+  final int? streak;
+  final DateTime awardedAt;
+
+  const LigaMedalla({
+    required this.tier,
+    required this.seasonNumber,
+    required this.division,
+    required this.rank,
+    required this.streak,
+    required this.awardedAt,
+  });
+
+  static LigaMedalla? fromJson(Map<String, dynamic> json) {
+    final tier = LigaMedallaTier.fromJson(json['tier']?.toString());
+    if (tier == null) return null;
+    return LigaMedalla(
+      tier: tier,
+      seasonNumber: (json['seasonNumber'] as num?)?.toInt() ?? 0,
+      division: LigaDivision.fromJson(json['division']?.toString()),
+      rank: (json['rank'] as num?)?.toInt(),
+      streak: (json['streak'] as num?)?.toInt(),
+      awardedAt:
+          DateTime.tryParse(json['awardedAt']?.toString() ?? '')?.toLocal() ??
+          DateTime.now(),
+    );
+  }
+}
+
+/// Medallero completo de una participante (respuesta de `ligaMedallas`):
+/// todas sus medallas, más un recuento por tipo para el resumen del perfil.
+class LigaMedallero {
+  final List<LigaMedalla> medallas;
+  final Map<LigaMedallaTier, int> resumen;
+
+  const LigaMedallero({required this.medallas, required this.resumen});
+
+  static LigaMedallero? fromJson(Map<String, dynamic> json) {
+    if (json['ok'] != true) return null;
+    final medallas = ((json['medallas'] as List?) ?? const [])
+        .map((e) => LigaMedalla.fromJson(Map<String, dynamic>.from(e as Map)))
+        .whereType<LigaMedalla>()
+        .toList();
+    final resumenJson =
+        (json['resumen'] as Map?)?.cast<String, dynamic>() ?? const {};
+    final resumen = <LigaMedallaTier, int>{};
+    for (final entry in resumenJson.entries) {
+      final tier = LigaMedallaTier.fromJson(entry.key);
+      if (tier != null) resumen[tier] = (entry.value as num?)?.toInt() ?? 0;
+    }
+    return LigaMedallero(medallas: medallas, resumen: resumen);
+  }
+}
+
 class LigaTemporada {
   final int numero;
   final DateTime terminaEn;
@@ -86,6 +209,7 @@ class LigaFila {
   final LigaTendencia? tendencia;
   final int? delta;
   final int? rachaHoy;
+  final LigaMedallaReciente? medallaReciente;
 
   const LigaFila({
     required this.puesto,
@@ -97,6 +221,7 @@ class LigaFila {
     this.tendencia,
     this.delta,
     this.rachaHoy,
+    this.medallaReciente,
   });
 
   factory LigaFila.fromJson(Map<String, dynamic> json) => LigaFila(
@@ -111,6 +236,9 @@ class LigaFila {
     tendencia: LigaTendencia.fromJson(json['tendencia']?.toString()),
     delta: (json['delta'] as num?)?.toInt(),
     rachaHoy: (json['rachaHoy'] as num?)?.toInt(),
+    medallaReciente: LigaMedallaReciente.fromJson(
+      (json['medallaReciente'] as Map?)?.cast<String, dynamic>(),
+    ),
   );
 }
 

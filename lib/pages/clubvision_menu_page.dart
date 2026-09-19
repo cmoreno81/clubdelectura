@@ -363,7 +363,15 @@ class _ClubvisionMenuPageState extends State<ClubvisionMenuPage> {
         return [_LecturasLibresCard(onTap: _abrirLecturasLibres)];
 
       default:
-        // Sin ciclo Clubvisión activo
+        // Sin ciclo Clubvisión activo. Un club recién nacido y pequeño no
+        // va a alcanzar el mínimo de la mensual todavía — usamos los
+        // mismos datos de la bienvenida (siempre presentes, sean o no
+        // admin) como proxy barato de "esto va para largo" para no decirle
+        // a nadie que la próxima edición "está al caer" cuando en realidad
+        // le falta gente o libros en común.
+        final clubDemasiadoPequeno =
+            club.bienvenida.miembros < club.bienvenida.minimoMiembros ||
+            club.bienvenida.candidatas < club.bienvenida.minimoCandidatas;
         return [
           if (club.bienvenida.esAdmin)
             _WelcomeClubvisionCard(
@@ -371,6 +379,8 @@ class _ClubvisionMenuPageState extends State<ClubvisionMenuPage> {
               loading: _iniciandoBienvenida,
               onStart: club.bienvenida.disponible ? _iniciarBienvenida : null,
             )
+          else if (clubDemasiadoPequeno)
+            const _ClubPequenoCard()
           else
             const _EstadoEnEsperaCard(),
           const SizedBox(height: AppSpacing.md),
@@ -1678,6 +1688,51 @@ class _WelcomeClubvisionCard extends StatelessWidget {
             icon: Icons.how_to_vote_outlined,
             loading: loading,
             onPressed: onStart,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Mismo hueco que _EstadoEnEsperaCard, pero cuando la razón real es que el
+/// club es nuevo o pequeño y no llega al mínimo — decirle "está al caer" en
+/// ese caso sería falso, así que en su lugar explicamos qué falta y qué
+/// pueden hacer.
+class _ClubPequenoCard extends StatelessWidget {
+  const _ClubPequenoCard();
+
+  @override
+  Widget build(BuildContext context) {
+    return ClubCard(
+      elevated: false,
+      padding: const EdgeInsets.all(AppSpacing.xl),
+      backgroundColor: AppColors.surfaceSoft,
+      child: Column(
+        children: [
+          const Icon(
+            Icons.groups_outlined,
+            color: AppColors.textMuted,
+            size: 38,
+          ),
+
+          const SizedBox(height: AppSpacing.md),
+
+          Text(
+            'Todavía os faltan libros en común',
+            textAlign: TextAlign.center,
+            style: AppTextStyles.subtitle,
+          ),
+
+          const SizedBox(height: AppSpacing.sm),
+
+          Text(
+            'Para que Clubvisión pueda arrancar, varias personas del club '
+            'necesitáis tener el mismo libro en "Pendiente". Añade libros '
+            'a tu lista — cuantas más personas coincidáis, antes tendréis '
+            'candidatas para votar.',
+            textAlign: TextAlign.center,
+            style: AppTextStyles.bodySecondary,
           ),
         ],
       ),

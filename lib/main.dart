@@ -101,7 +101,7 @@ class _MyAppState extends State<MyApp> {
     atmosferaController = AtmosferaController();
     authSession.addListener(_onAuthChanged);
     authSession.bootstrap(refreshSession: AuthService().refreshExistingSession);
-    Future.delayed(const Duration(milliseconds: 1100), () {
+    Future.delayed(const Duration(milliseconds: 2200), () {
       if (mounted) setState(() => _splashMinimoCumplido = true);
     });
   }

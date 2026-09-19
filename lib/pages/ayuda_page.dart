@@ -687,7 +687,29 @@ const List<_HelpSection> _secciones = [
             'división asciende a la siguiente, y quien queda entre las últimas '
             'desciende (salvo en Bronce, que es el suelo, y en Diamante, que es '
             'el techo). Con pocas participantes en una división, puede que nadie '
-            'suba ni baje esa temporada.',
+            'suba ni baje esa temporada.\n\n'
+            'En la clasificación, esas posiciones se marcan de un vistazo como '
+            'en una tabla de fútbol: en verde quien va a ascender, en rojo quien '
+            'va a descender si la temporada cerrara ahora mismo.',
+      ),
+      _HelpItem(
+        pregunta: '¿Qué son las medallas de temporada?',
+        respuesta:
+            'Un medallero que vas acumulando temporada tras temporada, como en '
+            'un videojuego:\n\n'
+            '🏆 Oro / 🎖️ Plata / 🏅 Bronce — quedar 1ª, 2ª o 3ª de tu división al '
+            'cerrar una temporada. Se pueden ganar varias veces, una por cada '
+            'temporada que lo consigas.\n'
+            '🚀 Ascenso — subir de división al cerrar la temporada.\n'
+            '💎 Diamante — llegar a la división más alta por primera vez. Esta '
+            'solo se gana una vez.\n'
+            '⭐ Constancia — jugar temporadas seguidas sin parar, en las rachas '
+            '3, 5, 10, 20 y 30.\n\n'
+            'La medalla más reciente se ve junto a tu nombre en la '
+            'clasificación, y el medallero completo en tu perfil, dentro de '
+            '"Logros". También hay una leyenda plegable en la propia pantalla '
+            'de Ligas ("Medallero: cómo se ganan las medallas") con el detalle '
+            'de cada una.',
       ),
       _HelpItem(
         pregunta: '¿Qué es el reto semanal?',

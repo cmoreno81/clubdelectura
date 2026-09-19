@@ -2199,6 +2199,18 @@ class ApiService {
     return _decodeJson(response) as Map<String, dynamic>;
   }
 
+  /// Medallero completo de una participante: todas las medallas de temporada
+  /// que ha ganado, más recientes primero.
+  Future<Map<String, dynamic>> getLigaMedallas(String userId) async {
+    final response = await _client.get(
+      Uri.parse(
+        baseUrl,
+      ).replace(queryParameters: {'action': 'ligaMedallas', 'userId': userId}),
+    );
+    if (response.statusCode != 200) throw ApiException.fromResponse(response);
+    return _decodeJson(response) as Map<String, dynamic>;
+  }
+
   // ── Favoritos ──────────────────────────────────────────────────────────────
 
   Future<Map<String, dynamic>> toggleFavorito(String bookId) async {

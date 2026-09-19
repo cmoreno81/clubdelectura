@@ -2166,7 +2166,14 @@ class _LibrosPageState extends State<LibrosPage> with WidgetsBindingObserver {
         );
         // "Deshacer" solo tiene sentido si el libro sigue pendiente de verdad:
         // quitarLibroPendientes rechaza libros ya en lectura o finalizados.
-        messenger.showSnackBar(
+        //
+        // El SnackBar con acción ("Deshacer") a veces se quedaba en pantalla
+        // indefinidamente: el temporizador de auto-cierre de Flutter solo se
+        // programa si la animación de entrada llega a completarse en el
+        // build en que aparece, y con acción esa comprobación puede fallar
+        // (ver ~ noviembre 2026, reportado como "el aviso de añadido no se
+        // va"). Cerramos el snackbar nosotros mismos, sin depender de eso.
+        final controller = messenger.showSnackBar(
           SnackBar(
             content: Text(
               noSeAplico
@@ -2192,6 +2199,7 @@ class _LibrosPageState extends State<LibrosPage> with WidgetsBindingObserver {
                   ),
           ),
         );
+        Future.delayed(const Duration(seconds: 4), controller.close);
       }
     } on ApiException catch (e) {
       if (!mounted) return;

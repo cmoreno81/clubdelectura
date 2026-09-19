@@ -55,6 +55,7 @@ import 'personalidad_lectora_page.dart';
 import 'share_reader_card_page.dart';
 import 'year_reading_share_page.dart';
 import '../models/achievements/achievement.dart';
+import '../models/liga.dart';
 import '../services/achievement_service.dart';
 import 'package:club_lectura_app/widgets/common/club_shimmer.dart';
 import 'feedback_page.dart';
@@ -532,7 +533,10 @@ class _PerfilUsuarioPageState extends State<PerfilUsuarioPage> {
         );
 
       case 'LOGROS':
-        return _PerfilLogrosSection(usuario: perfil.usuario);
+        return _PerfilLogrosSection(
+          usuario: perfil.usuario,
+          userId: perfil.userId,
+        );
 
       case 'MAS':
         if (!esMiPerfil) return const SizedBox.shrink();
@@ -2286,8 +2290,12 @@ class _ProfileSectionChip extends StatelessWidget {
 // ─── Sección de logros en perfil ─────────────────────────────────────────────
 
 class _PerfilLogrosSection extends StatefulWidget {
-  const _PerfilLogrosSection({required this.usuario});
+  const _PerfilLogrosSection({required this.usuario, this.userId});
   final String usuario;
+  /// Sin esto (p. ej. la ruta rápida desde "logros del club", que aún no ha
+  /// cargado el perfil completo) no se puede pedir el medallero, así que
+  /// esa sección simplemente no se muestra.
+  final String? userId;
 
   @override
   State<_PerfilLogrosSection> createState() => _PerfilLogrosSectionState();
@@ -2295,11 +2303,19 @@ class _PerfilLogrosSection extends StatefulWidget {
 
 class _PerfilLogrosSectionState extends State<_PerfilLogrosSection> {
   late Future<List<UserAchievement>> _future;
+  Future<LigaMedallero?>? _medallasFuture;
 
   @override
   void initState() {
     super.initState();
     _future = ApiService().getAchievements(user: widget.usuario);
+    final userId = widget.userId;
+    if (userId != null && userId.trim().isNotEmpty) {
+      _medallasFuture = ApiService()
+          .getLigaMedallas(userId)
+          .then(LigaMedallero.fromJson)
+          .catchError((_) => null);
+    }
   }
 
   @override
@@ -2377,9 +2393,136 @@ class _PerfilLogrosSectionState extends State<_PerfilLogrosSection> {
                 ),
               ],
             ],
+            if (_medallasFuture != null) ...[
+              const SizedBox(height: AppSpacing.xl),
+              _PerfilMedallasLiga(future: _medallasFuture!),
+            ],
           ],
         );
       },
+    );
+  }
+}
+
+// ─── Medallas de Liga en el perfil ───────────────────────────────────────────
+
+class _PerfilMedallasLiga extends StatelessWidget {
+  const _PerfilMedallasLiga({required this.future});
+  final Future<LigaMedallero?> future;
+
+  @override
+  Widget build(BuildContext context) {
+    return FutureBuilder<LigaMedallero?>(
+      future: future,
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const SizedBox.shrink();
+        }
+        final medallero = snapshot.data;
+        if (medallero == null || medallero.medallas.isEmpty) {
+          return const SizedBox.shrink();
+        }
+
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            ClubSectionTitle(
+              title: 'Medallas de Liga',
+              subtitle: '${medallero.medallas.length} en total',
+              icon: Icons.emoji_events_outlined,
+              padding: EdgeInsets.zero,
+            ),
+            const SizedBox(height: AppSpacing.sm),
+            Wrap(
+              spacing: AppSpacing.sm,
+              runSpacing: AppSpacing.sm,
+              children: [
+                for (final tier in LigaMedallaTier.values)
+                  if ((medallero.resumen[tier] ?? 0) > 0)
+                    _ResumenMedallaChip(
+                      tier: tier,
+                      cantidad: medallero.resumen[tier]!,
+                    ),
+              ],
+            ),
+            const SizedBox(height: AppSpacing.md),
+            for (final medalla in medallero.medallas)
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 4),
+                child: Row(
+                  children: [
+                    Text(
+                      medalla.tier.icono,
+                      style: const TextStyle(fontSize: 18),
+                    ),
+                    const SizedBox(width: AppSpacing.sm),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            medalla.tier.etiqueta,
+                            style: AppTextStyles.bodySecondary.copyWith(
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                          Text(
+                            medalla.streak != null
+                                ? 'Racha de ${medalla.streak} temporadas seguidas'
+                                : 'Temporada ${medalla.seasonNumber} · '
+                                      '${medalla.division.icono} ${medalla.division.etiqueta}',
+                            style: AppTextStyles.caption.copyWith(
+                              color: AppColors.textMuted,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+          ],
+        );
+      },
+    );
+  }
+}
+
+class _ResumenMedallaChip extends StatelessWidget {
+  const _ResumenMedallaChip({required this.tier, required this.cantidad});
+  final LigaMedallaTier tier;
+  final int cantidad;
+
+  @override
+  Widget build(BuildContext context) {
+    return Tooltip(
+      message: tier.etiqueta,
+      child: Container(
+        padding: const EdgeInsets.symmetric(
+          horizontal: AppSpacing.sm,
+          vertical: 4,
+        ),
+        decoration: BoxDecoration(
+          color: tier.color.withValues(alpha: .12),
+          borderRadius: BorderRadius.circular(AppRadius.pill),
+          border: Border.all(color: tier.color.withValues(alpha: .3)),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(tier.icono, style: const TextStyle(fontSize: 14)),
+            const SizedBox(width: 4),
+            Text(
+              '×$cantidad',
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w800,
+                color: tier.color,
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }
