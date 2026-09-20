@@ -2484,4 +2484,39 @@ class ApiService {
     final data = _decodeJson(response) as Map<String, dynamic>;
     return data['ticketKey'] as String?;
   }
+
+  /// Reporta un comentario o reseña — crea el mismo ticket de Jira que
+  /// [enviarFeedback], para que quien administra la app pueda revisarlo.
+  Future<bool> reportarContenido({
+    required String tipo, // 'comentario' | 'resena'
+    required String id,
+    String motivo = '',
+  }) async {
+    final response = await _postJson('reportarContenido', {
+      'tipo': tipo,
+      'id': id,
+      'motivo': motivo,
+    });
+    return _respuestaOk(response);
+  }
+
+  Future<bool> bloquearUsuario({required String nombre}) async {
+    final response = await _postJson('bloquearUsuario', {'nombre': nombre});
+    return _respuestaOk(response);
+  }
+
+  Future<bool> desbloquearUsuario({required String nombre}) async {
+    final response = await _postJson('desbloquearUsuario', {'nombre': nombre});
+    return _respuestaOk(response);
+  }
+
+  /// Devuelve la lista de personas bloqueadas: [{nombre, avatarUrl}, ...]
+  Future<List<Map<String, dynamic>>> usuariosBloqueados() async {
+    final response = await _client.get(
+      Uri.parse('$baseUrl?action=usuariosBloqueados'),
+    );
+    final data = _decodeJson(response) as Map<String, dynamic>;
+    final lista = data['bloqueadas'] as List? ?? const [];
+    return lista.cast<Map<String, dynamic>>();
+  }
 }

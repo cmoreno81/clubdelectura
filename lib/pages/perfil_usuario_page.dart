@@ -44,6 +44,7 @@ import 'ajustes_privacidad_page.dart';
 import 'ayuda_page.dart';
 import 'change_password_page.dart';
 import 'delete_account_page.dart';
+import 'usuarias_bloqueadas_page.dart';
 import 'goodreads_import_page.dart';
 import 'hidden_series_page.dart';
 import 'liga_page.dart';
@@ -1181,6 +1182,16 @@ class _PerfilUsuarioPageState extends State<PerfilUsuarioPage> {
                   onTap: () => Navigator.push<void>(
                     context,
                     AppPageRoute(builder: (_) => const ChangePasswordPage()),
+                  ),
+                ),
+                const Divider(height: 1),
+                ListTile(
+                  leading: const Icon(Icons.block_rounded),
+                  title: const Text('Usuarias bloqueadas'),
+                  trailing: const Icon(Icons.chevron_right_rounded),
+                  onTap: () => Navigator.push<void>(
+                    context,
+                    AppPageRoute(builder: (_) => const UsuariasBloqueadasPage()),
                   ),
                 ),
                 const Divider(height: 1),

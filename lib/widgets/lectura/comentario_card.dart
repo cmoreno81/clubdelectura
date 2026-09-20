@@ -331,6 +331,101 @@ class _ComentarioCardState extends State<ComentarioCard> {
     if (accion == 'eliminar') {
       _eliminarComentario();
     }
+
+    if (accion == 'reportar') {
+      _reportarComentario();
+    }
+
+    if (accion == 'bloquear') {
+      _bloquearUsuario();
+    }
+  }
+
+  Future<void> _reportarComentario() async {
+    final motivoController = TextEditingController();
+    final confirmar = await showDialog<bool>(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: const Text('Reportar comentario'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text('Cuéntanos brevemente qué pasa con este comentario.'),
+            const SizedBox(height: AppSpacing.sm),
+            TextField(
+              controller: motivoController,
+              maxLines: 3,
+              decoration: const InputDecoration(hintText: 'Motivo (opcional)'),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancelar'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Reportar'),
+          ),
+        ],
+      ),
+    );
+    if (confirmar != true) return;
+
+    final ok = await ApiService().reportarContenido(
+      tipo: 'comentario',
+      id: widget.comentario.id,
+      motivo: motivoController.text.trim(),
+    );
+
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          ok
+              ? 'Gracias, lo revisaremos en breve.'
+              : 'No se pudo enviar el reporte, inténtalo de nuevo.',
+        ),
+      ),
+    );
+  }
+
+  Future<void> _bloquearUsuario() async {
+    final nombre = widget.comentario.usuario;
+    final confirmar = await showDialog<bool>(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: const Text('¿Bloquear a esta persona?'),
+        content: Text(
+          'Dejarás de ver los comentarios de $nombre. Puedes deshacerlo '
+          'cuando quieras desde Perfil → Más → Usuarias bloqueadas.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancelar'),
+          ),
+          FilledButton(
+            style: FilledButton.styleFrom(backgroundColor: AppColors.danger),
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Bloquear'),
+          ),
+        ],
+      ),
+    );
+    if (confirmar != true) return;
+
+    final ok = await ApiService().bloquearUsuario(nombre: nombre);
+
+    if (!mounted) return;
+    if (ok) {
+      widget.onActualizar();
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Has bloqueado a $nombre.')),
+      );
+    }
   }
 
   @override
@@ -473,6 +568,19 @@ class _ComentarioCardState extends State<ComentarioCard> {
                     itemBuilder: (_) => const [
                       PopupMenuItem(value: 'editar', child: Text('Editar')),
                       PopupMenuItem(value: 'eliminar', child: Text('Eliminar')),
+                    ],
+                  )
+                else
+                  PopupMenuButton<String>(
+                    padding: EdgeInsets.zero,
+                    icon: const Icon(
+                      Icons.more_horiz_rounded,
+                      color: AppColors.textMuted,
+                    ),
+                    onSelected: _accion,
+                    itemBuilder: (_) => const [
+                      PopupMenuItem(value: 'reportar', child: Text('Reportar')),
+                      PopupMenuItem(value: 'bloquear', child: Text('Bloquear')),
                     ],
                   ),
               ],
