@@ -194,6 +194,64 @@ class _LecturaPageState extends State<LecturaPage> {
     }
   }
 
+  Future<void> _renombrarCapitulo(String tituloActual) async {
+    final controller = TextEditingController(text: tituloActual);
+    final nuevoTitulo = await showDialog<String>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Renombrar capítulo'),
+        content: TextField(
+          controller: controller,
+          autofocus: true,
+          maxLength: 60,
+          decoration: const InputDecoration(
+            hintText: 'Título del capítulo',
+          ),
+          onSubmitted: (value) => Navigator.pop(dialogContext, value),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext),
+            child: const Text('Cancelar'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(dialogContext, controller.text),
+            child: const Text('Guardar'),
+          ),
+        ],
+      ),
+    );
+
+    if (nuevoTitulo == null || nuevoTitulo.trim() == tituloActual) return;
+    if (nuevoTitulo.trim().isEmpty) return;
+
+    try {
+      final resultado = await ApiService().renombrarCapitulo(
+        libro: widget.libro,
+        tituloActual: tituloActual,
+        tituloNuevo: nuevoTitulo.trim(),
+      );
+      if (!mounted) return;
+      if (resultado['ok'] != true) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              resultado['mensaje']?.toString() ??
+                  'No se pudo renombrar el capítulo',
+            ),
+          ),
+        );
+        return;
+      }
+      setState(_recargar);
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('No se pudo renombrar el capítulo')),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -329,6 +387,9 @@ class _LecturaPageState extends State<LecturaPage> {
                       onTap: () {
                         _abrirCapitulo(capitulo, config.bookId);
                       },
+                      onRename: capitulo.nombre == '💭 Reflexión final'
+                          ? null
+                          : () => _renombrarCapitulo(capitulo.nombre),
                     ),
                   ),
                 ),

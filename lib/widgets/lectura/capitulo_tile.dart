@@ -21,12 +21,17 @@ class CapituloTile extends StatelessWidget {
   /// Pliega o despliega solamente esta tarjeta.
   final VoidCallback onTogglePlegado;
 
+  /// Si se indica, muestra un botón para renombrar el capítulo (útil
+  /// cuando el libro no numera sus capítulos).
+  final VoidCallback? onRename;
+
   const CapituloTile({
     super.key,
     required this.capitulo,
     required this.plegado,
     required this.onTap,
     required this.onTogglePlegado,
+    this.onRename,
   });
 
   @override
@@ -59,6 +64,7 @@ class CapituloTile extends StatelessWidget {
               tieneNovedades: tieneNovedades,
               colorPrincipal: colorPrincipal,
               onTogglePlegado: onTogglePlegado,
+              onRename: onRename,
             ),
 
             if (!plegado)
@@ -82,6 +88,7 @@ class _CabeceraCapitulo extends StatelessWidget {
   final bool tieneNovedades;
   final Color colorPrincipal;
   final VoidCallback onTogglePlegado;
+  final VoidCallback? onRename;
 
   const _CabeceraCapitulo({
     required this.capitulo,
@@ -89,6 +96,7 @@ class _CabeceraCapitulo extends StatelessWidget {
     required this.tieneNovedades,
     required this.colorPrincipal,
     required this.onTogglePlegado,
+    this.onRename,
   });
 
   @override
@@ -140,6 +148,15 @@ class _CabeceraCapitulo extends StatelessWidget {
                 ],
               ),
             ),
+
+            if (onRename != null)
+              IconButton(
+                icon: const Icon(Icons.edit_outlined, size: 18),
+                color: AppColors.textSecondary,
+                tooltip: 'Renombrar capítulo',
+                visualDensity: VisualDensity.compact,
+                onPressed: onRename,
+              ),
 
             const SizedBox(width: AppSpacing.sm),
 

@@ -885,6 +885,23 @@ class ApiService {
     return _decodeJson(response) as Map<String, dynamic>;
   }
 
+  /// Cambia el título de un capítulo (por ejemplo, cuando el libro no
+  /// numera capítulos y se prefiere poner el título real). Los comentarios
+  /// ya escritos se conservan.
+  Future<Map<String, dynamic>> renombrarCapitulo({
+    required String libro,
+    required String tituloActual,
+    required String tituloNuevo,
+  }) async {
+    final response = await _postJson('renombrarCapitulo', {
+      'libro': libro,
+      'tituloActual': tituloActual,
+      'tituloNuevo': tituloNuevo,
+    });
+    if (response.statusCode != 200) throw ApiException.fromResponse(response);
+    return _decodeJson(response) as Map<String, dynamic>;
+  }
+
   Future<ConfiguracionLectura> getConfiguracionLectura({
     required String libro,
   }) async {
