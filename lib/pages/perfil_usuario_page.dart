@@ -1187,7 +1187,7 @@ class _PerfilUsuarioPageState extends State<PerfilUsuarioPage> {
                 const Divider(height: 1),
                 ListTile(
                   leading: const Icon(Icons.block_rounded),
-                  title: const Text('Usuarias bloqueadas'),
+                  title: const Text('Cuentas bloqueadas'),
                   trailing: const Icon(Icons.chevron_right_rounded),
                   onTap: () => Navigator.push<void>(
                     context,

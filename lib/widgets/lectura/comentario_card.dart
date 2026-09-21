@@ -400,7 +400,7 @@ class _ComentarioCardState extends State<ComentarioCard> {
         title: const Text('¿Bloquear a esta persona?'),
         content: Text(
           'Dejarás de ver los comentarios de $nombre. Puedes deshacerlo '
-          'cuando quieras desde Perfil → Más → Usuarias bloqueadas.',
+          'cuando quieras desde Perfil → Más → Cuentas bloqueadas.',
         ),
         actions: [
           TextButton(
