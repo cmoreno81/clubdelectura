@@ -4,6 +4,7 @@ import 'package:http/http.dart' as http;
 
 import '../models/club_directory.dart';
 import '../models/club_membership.dart';
+import '../models/club_wrapped.dart';
 import '../utils/app_config.dart';
 import 'authenticated_http_client.dart';
 import 'http_response_handler.dart';
@@ -175,5 +176,18 @@ class ClubService {
       'responderSolicitudClub',
       body: {'clubId': clubId, 'requestId': requestId, 'aceptar': aceptar},
     );
+  }
+
+  /// Club Wrapped: el resumen anual del club (libro del año, favorito,
+  /// libros y comentarios, racha). Por defecto, el año en curso.
+  Future<ClubWrapped> getClubWrapped(String clubId, {int? year}) async {
+    final data = await _request(
+      'clubWrapped',
+      query: {
+        'clubId': clubId,
+        'year': '${year ?? DateTime.now().year}',
+      },
+    );
+    return ClubWrapped.fromJson(data);
   }
 }

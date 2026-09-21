@@ -11,6 +11,8 @@ class ClubMembership {
     this.avatarUrl = '',
     this.tipo = TipoClub.social,
     this.esPublico = false,
+    this.miembros = 0,
+    this.racha = 0,
   });
 
   final String id;
@@ -22,6 +24,9 @@ class ClubMembership {
   final String avatarUrl;
   final TipoClub tipo;
   final bool esPublico;
+  final int miembros;
+  /// Días consecutivos con actividad de alguien del club (0 si duerme).
+  final int racha;
 
   /// Espacio lector personal (modo solitario).
   bool get esPersonal => tipo == TipoClub.personal;
@@ -38,6 +43,8 @@ class ClubMembership {
         ? TipoClub.personal
         : TipoClub.social,
     esPublico: json['visibility']?.toString() == 'PUBLIC',
+    miembros: (json['miembros'] as num?)?.toInt() ?? 0,
+    racha: (json['racha'] as num?)?.toInt() ?? 0,
   );
 }
 

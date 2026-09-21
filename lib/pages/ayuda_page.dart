@@ -139,6 +139,48 @@ const List<_HelpSection> _secciones = [
             'Los miembros pueden votar, comentar y proponer libros según las '
             'reglas de cada sección.',
       ),
+      _HelpItem(
+        pregunta: '¿Qué es un club público y cómo lo activo?',
+        respuesta:
+            'Por defecto un club solo se puede encontrar con código de '
+            'invitación. Si eres administradora, puedes hacerlo público desde '
+            'los ajustes del club, con el interruptor "Club público": '
+            'cualquiera podrá encontrarlo en el directorio y pedir unirse, '
+            'aunque tú sigues decidiendo quién entra.',
+      ),
+      _HelpItem(
+        pregunta: '¿Cómo encuentro y me uno a un club público?',
+        respuesta:
+            'Desde "Mis clubes" pulsa "Buscar clubes públicos" y busca por '
+            'nombre. Al pulsar "Solicitar" se envía una solicitud a quien '
+            'administra ese club — no entras al instante. Te avisaremos '
+            'cuando la acepten o la rechacen.',
+      ),
+      _HelpItem(
+        pregunta: '¿Cómo gestiono las solicitudes de mi club?',
+        respuesta:
+            'Si tu club es público, en sus ajustes aparece "Solicitudes '
+            'pendientes" con la lista de quien quiere unirse. Puedes aceptar '
+            '(entra directamente como miembro) o rechazar cada una.',
+      ),
+      _HelpItem(
+        pregunta: '¿Qué es la racha del club?',
+        respuesta:
+            'El 🔥 que ves junto al nombre del club en "Mis clubes" son los '
+            'días seguidos con actividad de lectura de al menos una persona '
+            'del club — no hace falta que sea siempre la misma. Se calcula '
+            'igual que la racha individual (check-in, progreso o libro '
+            'terminado), pero basta con que UNA persona del club haya estado '
+            'activa cada día para que la racha del club siga viva.',
+      ),
+      _HelpItem(
+        pregunta: '¿Qué es el Club Wrapped?',
+        respuesta:
+            'Es el resumen anual del club entero: libros leídos, páginas, '
+            'género más leído, libro del año, favorito del club, comentarios '
+            'y racha. Lo encuentras en los ajustes del club, y puedes '
+            'compartirlo como imagen igual que el Clubvisión compartible.',
+      ),
     ],
   ),
   _HelpSection(

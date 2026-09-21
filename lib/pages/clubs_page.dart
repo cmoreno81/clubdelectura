@@ -18,6 +18,7 @@ import '../widgets/common/optimized_network_image.dart';
 import 'package:club_lectura_app/widgets/common/club_shimmer.dart';
 import 'club_directorio_page.dart';
 import 'club_solicitudes_page.dart';
+import 'club_wrapped_page.dart';
 
 class ClubsPage extends StatefulWidget {
   const ClubsPage({
@@ -347,6 +348,18 @@ class _ClubCard extends StatelessWidget {
                         color: AppColors.textMuted,
                       ),
                     ),
+                    if (!club.esPersonal && club.racha > 0) ...[
+                      const SizedBox(width: AppSpacing.sm),
+                      const Text('🔥', style: TextStyle(fontSize: 12)),
+                      const SizedBox(width: 2),
+                      Text(
+                        '${club.racha}',
+                        style: AppTextStyles.caption.copyWith(
+                          color: const Color(0xFFB4552E),
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ],
                   ],
                 ),
               ],
@@ -837,6 +850,24 @@ class _ClubSettingsPageState extends State<_ClubSettingsPage> {
                     );
                   },
                 ),
+                if (!widget.club.esPersonal) ...[
+                  const Divider(height: 1),
+                  ListTile(
+                    leading: const Icon(Icons.auto_awesome_rounded),
+                    title: const Text(
+                      'Club Wrapped',
+                      style: TextStyle(fontWeight: FontWeight.w700),
+                    ),
+                    subtitle: const Text('El resumen del año, listo para compartir'),
+                    trailing: const Icon(Icons.chevron_right_rounded),
+                    onTap: () => Navigator.push<void>(
+                      context,
+                      AppPageRoute(
+                        builder: (_) => ClubWrappedPage(clubId: widget.club.id),
+                      ),
+                    ),
+                  ),
+                ],
                 if (widget.club.rol != 'OWNER') ...[
                   const Divider(height: 1),
                   ListTile(
