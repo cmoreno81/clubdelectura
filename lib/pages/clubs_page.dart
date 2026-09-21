@@ -142,11 +142,13 @@ class _ClubsPageState extends State<ClubsPage> {
   }
 
   Future<void> _openClubSettings(ClubMembership club) async {
-    final changed = await Navigator.push<bool>(
+    await Navigator.push<bool>(
       context,
       AppPageRoute(builder: (_) => _ClubSettingsPage(club: club)),
     );
-    if (changed == true) _reload();
+    // Siempre recargamos: los ajustes tienen cambios (visibilidad, foto...)
+    // que no siempre se propagan con un valor de retorno explícito.
+    _reload();
   }
 
   void _snack(String msg) =>

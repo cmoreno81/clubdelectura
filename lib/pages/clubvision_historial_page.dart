@@ -380,19 +380,19 @@ class _EdicionCard extends StatelessWidget {
                           : 'Edición de Clubvisión',
                       style: AppTextStyles.bodySecondary,
                     ),
+
+                    if (destacada) ...[
+                      const SizedBox(height: AppSpacing.xs),
+                      const ClubChip(
+                        label: 'Más reciente',
+                        icon: Icons.auto_awesome_rounded,
+                        variant: ClubChipVariant.warning,
+                      ),
+                    ],
                   ],
                 ),
               ),
 
-              if (destacada)
-                const Padding(
-                  padding: EdgeInsets.only(right: AppSpacing.xs),
-                  child: ClubChip(
-                    label: 'Más reciente',
-                    icon: Icons.auto_awesome_rounded,
-                    variant: ClubChipVariant.warning,
-                  ),
-                ),
               IconButton(
                 tooltip: 'Compartir resultado',
                 icon: const Icon(Icons.ios_share_rounded),
