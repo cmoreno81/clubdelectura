@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../models/historial_clubvision.dart';
 import '../navigation/book_detail_navigation.dart';
 import '../services/api_service.dart';
+import 'clubvision_share_page.dart';
 import '../services/cursor_pagination_controller.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_radius.dart';
@@ -384,11 +385,28 @@ class _EdicionCard extends StatelessWidget {
               ),
 
               if (destacada)
-                const ClubChip(
-                  label: 'Más reciente',
-                  icon: Icons.auto_awesome_rounded,
-                  variant: ClubChipVariant.warning,
+                const Padding(
+                  padding: EdgeInsets.only(right: AppSpacing.xs),
+                  child: ClubChip(
+                    label: 'Más reciente',
+                    icon: Icons.auto_awesome_rounded,
+                    variant: ClubChipVariant.warning,
+                  ),
                 ),
+              IconButton(
+                tooltip: 'Compartir resultado',
+                icon: const Icon(Icons.ios_share_rounded),
+                color: AppColors.primary,
+                onPressed: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => ClubvisionSharePage(
+                      historial: historial,
+                      mes: mes,
+                    ),
+                  ),
+                ),
+              ),
             ],
           ),
 

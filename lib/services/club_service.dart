@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:http/http.dart' as http;
 
+import '../models/club_directory.dart';
 import '../models/club_membership.dart';
 import '../utils/app_config.dart';
 import 'authenticated_http_client.dart';
@@ -114,5 +115,65 @@ class ClubService {
         .cast<Map<String, dynamic>>()
         .map(ClubMember.fromJson)
         .toList(growable: false);
+  }
+
+  // ── Directorio de clubes públicos ───────────────────────────────────────
+
+  /// Cambia la visibilidad del club entre 'PUBLIC' y 'PRIVATE'. Solo
+  /// owner/admin.
+  Future<void> cambiarVisibilidadClub({
+    required String clubId,
+    required bool publico,
+  }) async {
+    await _request(
+      'cambiarVisibilidadClub',
+      body: {
+        'clubId': clubId,
+        'visibility': publico ? 'PUBLIC' : 'PRIVATE',
+      },
+    );
+  }
+
+  /// Lista de clubes públicos, opcionalmente filtrada por nombre.
+  Future<List<ClubPublico>> getClubesPublicos({String? search}) async {
+    final data = await _request(
+      'clubesPublicos',
+      query: (search != null && search.trim().isNotEmpty)
+          ? {'q': search.trim()}
+          : null,
+    );
+    final list = data['clubes'] as List<dynamic>? ?? [];
+    return list
+        .cast<Map<String, dynamic>>()
+        .map(ClubPublico.fromJson)
+        .toList(growable: false);
+  }
+
+  /// Solicita unirse a un club público. Queda pendiente hasta que
+  /// owner/admin la resuelva.
+  Future<void> solicitarUnirseClub(String clubId) async {
+    await _request('solicitarUnirseClub', body: {'clubId': clubId});
+  }
+
+  /// Solicitudes pendientes de un club. Solo owner/admin.
+  Future<List<SolicitudClub>> getSolicitudesClub(String clubId) async {
+    final data = await _request('solicitudesClub', query: {'clubId': clubId});
+    final list = data['solicitudes'] as List<dynamic>? ?? [];
+    return list
+        .cast<Map<String, dynamic>>()
+        .map(SolicitudClub.fromJson)
+        .toList(growable: false);
+  }
+
+  /// Acepta o rechaza una solicitud pendiente. Solo owner/admin.
+  Future<void> responderSolicitudClub({
+    required String clubId,
+    required String requestId,
+    required bool aceptar,
+  }) async {
+    await _request(
+      'responderSolicitudClub',
+      body: {'clubId': clubId, 'requestId': requestId, 'aceptar': aceptar},
+    );
   }
 }

@@ -11,6 +11,7 @@ import '../theme/app_spacing.dart';
 import '../theme/app_text_styles.dart';
 import '../widgets/common/club_avatar.dart';
 import '../widgets/error_view.dart';
+import 'liga_clubes_page.dart';
 
 /// Ligas de ClubReads — ranking individual por temporadas quincenales.
 class LigaPage extends StatefulWidget {
@@ -97,6 +98,14 @@ class _LigaPageState extends State<LigaPage> {
       appBar: AppBar(
         title: const Text('Ligas de ClubReads'),
         actions: [
+          IconButton(
+            tooltip: 'Ligas entre clubes',
+            icon: const Icon(Icons.groups_rounded),
+            onPressed: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const LigaClubesPage()),
+            ),
+          ),
           FutureBuilder<LigaEstado>(
             future: _future,
             builder: (context, snapshot) {

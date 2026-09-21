@@ -612,6 +612,14 @@ const List<_HelpSection> _secciones = [
             'anteriores con el libro ganador de cada una. También hay un apartado '
             '"Estadísticas" con gráficas y datos de todas las ediciones del club.',
       ),
+      _HelpItem(
+        pregunta: '¿Puedo compartir el resultado de una edición?',
+        respuesta:
+            'Sí. Entra en Clubvisión → "Historial" y pulsa el icono de compartir '
+            '(⬆️) en la edición que quieras. Se genera una tarjeta con el libro '
+            'ganador, los puntos y el podio (2º y 3er puesto), lista para subir a '
+            'Instagram o compartir donde quieras.',
+      ),
     ],
   ),
   _HelpSection(
@@ -726,6 +734,25 @@ const List<_HelpSection> _secciones = [
             '(entre las 20:00 y las 23:00) todavía no has hecho check-in, '
             'recibes un aviso para que no se te rompa sin darte cuenta. Como '
             'mucho uno al día, y solo si tenías una racha real en juego.',
+      ),
+      _HelpItem(
+        pregunta: '¿Qué son las Ligas entre clubes?',
+        respuesta:
+            'Además del ranking individual, los clubes también compiten entre sí. '
+            'Se accede desde la pantalla de Ligas pulsando el icono de grupos '
+            '(👥) en la esquina superior derecha.\n\n'
+            'Hay dos tablas, porque sumar puntos sin más siempre favorecería al '
+            'club con más gente:\n\n'
+            '📈 Más activos — la suma total de los puntos de todas las '
+            'participantes del club esa temporada. Premia el volumen.\n'
+            '⚖️ Más eficientes — la media de puntos por participante. El '
+            'ranking justo: un club pequeño y constante puede ganar aquí a uno '
+            'grande y disperso.\n\n'
+            'Solo compiten los clubes sociales (no los espacios personales), y '
+            'solo cuentan como "participantes" quienes están apuntadas a las '
+            'Ligas individuales. Para el ranking de eficiencia hace falta un '
+            'mínimo de 3 participantes en el club, para que uno de una sola '
+            'persona no lo gane por defecto.',
       ),
     ],
   ),

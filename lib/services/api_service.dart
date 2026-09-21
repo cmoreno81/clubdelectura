@@ -2211,6 +2211,22 @@ class ApiService {
     return _decodeJson(response) as Map<String, dynamic>;
   }
 
+  /// Ranking de clubes de la temporada (por defecto, la actual): las dos
+  /// tablas "más activos" (suma total de puntos) y "más eficientes" (media
+  /// por miembro participante — el ranking justo por tamaño de club).
+  Future<Map<String, dynamic>> getLigaClubes({int? season}) async {
+    final response = await _client.get(
+      Uri.parse(baseUrl).replace(
+        queryParameters: {
+          'action': 'ligaClubes',
+          if (season != null) 'season': '$season',
+        },
+      ),
+    );
+    if (response.statusCode != 200) throw ApiException.fromResponse(response);
+    return _decodeJson(response) as Map<String, dynamic>;
+  }
+
   // ── Favoritos ──────────────────────────────────────────────────────────────
 
   Future<Map<String, dynamic>> toggleFavorito(String bookId) async {

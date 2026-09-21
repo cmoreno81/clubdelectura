@@ -10,6 +10,7 @@ class ClubMembership {
     this.descripcion = '',
     this.avatarUrl = '',
     this.tipo = TipoClub.social,
+    this.esPublico = false,
   });
 
   final String id;
@@ -20,6 +21,7 @@ class ClubMembership {
   final String descripcion;
   final String avatarUrl;
   final TipoClub tipo;
+  final bool esPublico;
 
   /// Espacio lector personal (modo solitario).
   bool get esPersonal => tipo == TipoClub.personal;
@@ -35,6 +37,7 @@ class ClubMembership {
     tipo: json['tipo']?.toString() == 'PERSONAL'
         ? TipoClub.personal
         : TipoClub.social,
+    esPublico: json['visibility']?.toString() == 'PUBLIC',
   );
 }
 

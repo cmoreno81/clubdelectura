@@ -16,6 +16,8 @@ import '../widgets/perfil/editar_avatar_dialog.dart';
 import '../widgets/common/club_card.dart';
 import '../widgets/common/optimized_network_image.dart';
 import 'package:club_lectura_app/widgets/common/club_shimmer.dart';
+import 'club_directorio_page.dart';
+import 'club_solicitudes_page.dart';
 
 class ClubsPage extends StatefulWidget {
   const ClubsPage({
@@ -228,6 +230,17 @@ class _ClubsPageState extends State<ClubsPage> {
                   label: const Text('Entrar con invitación'),
                 ),
               ),
+              const SizedBox(height: AppSpacing.sm),
+              OutlinedButton.icon(
+                onPressed: _busy
+                    ? null
+                    : () => Navigator.push<void>(
+                        context,
+                        AppPageRoute(builder: (_) => const ClubDirectorioPage()),
+                      ),
+                icon: const Icon(Icons.explore_outlined),
+                label: const Text('Buscar clubes públicos'),
+              ),
               // Mostrar solo si el usuario NO tiene aún espacio personal
               if (!clubs.any((c) => c.esPersonal)) ...[
                 const SizedBox(height: AppSpacing.sm),
@@ -381,11 +394,29 @@ class _ClubSettingsPage extends StatefulWidget {
 class _ClubSettingsPageState extends State<_ClubSettingsPage> {
   late Future<List<ClubMember>> _membersFuture;
   bool _busy = false;
+  late bool _esPublico;
 
   @override
   void initState() {
     super.initState();
     _membersFuture = ClubService().getClubMembers(widget.club.id);
+    _esPublico = widget.club.esPublico;
+  }
+
+  Future<void> _toggleVisibilidad(bool publico) async {
+    setState(() => _esPublico = publico);
+    try {
+      await ClubService().cambiarVisibilidadClub(
+        clubId: widget.club.id,
+        publico: publico,
+      );
+    } on ApiException catch (e) {
+      if (!mounted) return;
+      setState(() => _esPublico = !publico);
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(e.message)));
+    }
   }
 
   bool get _isAdmin => widget.club.rol == 'OWNER' || widget.club.rol == 'ADMIN';
@@ -732,6 +763,50 @@ class _ClubSettingsPageState extends State<_ClubSettingsPage> {
                     trailing: const Icon(Icons.chevron_right_rounded),
                     onTap: _busy ? null : _editClub,
                   ),
+                  if (!widget.club.esPersonal) ...[
+                    const Divider(height: 1),
+                    SwitchListTile(
+                      secondary: Icon(
+                        _esPublico
+                            ? Icons.public_rounded
+                            : Icons.lock_outline_rounded,
+                      ),
+                      title: const Text(
+                        'Club público',
+                        style: TextStyle(fontWeight: FontWeight.w700),
+                      ),
+                      subtitle: Text(
+                        _esPublico
+                            ? 'Cualquiera puede encontrarlo y pedir unirse'
+                            : 'Solo se entra con código de invitación',
+                      ),
+                      value: _esPublico,
+                      onChanged: _busy ? null : _toggleVisibilidad,
+                    ),
+                    if (_esPublico) ...[
+                      const Divider(height: 1),
+                      ListTile(
+                        leading: const Icon(Icons.mark_email_unread_outlined),
+                        title: const Text(
+                          'Solicitudes pendientes',
+                          style: TextStyle(fontWeight: FontWeight.w700),
+                        ),
+                        subtitle: const Text(
+                          'Revisa y acepta quién quiere unirse',
+                        ),
+                        trailing: const Icon(Icons.chevron_right_rounded),
+                        onTap: () => Navigator.push<void>(
+                          context,
+                          AppPageRoute(
+                            builder: (_) => SolicitudesClubPage(
+                              clubId: widget.club.id,
+                              clubNombre: widget.club.nombre,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ],
                   const Divider(height: 1),
                 ],
                 FutureBuilder<List<ClubMember>>(
