@@ -74,6 +74,7 @@ class _NuevoLibroPageState extends State<NuevoLibroPage> {
     _GeneroOption('💬', 'Cómic', 'Cómic'),
     _GeneroOption('🧠', 'No ficción', 'No ficción'),
     _GeneroOption('🎈', 'Infantil', 'Infantil'),
+    _GeneroOption('🎒', 'Juvenil', 'Juvenil'),
     _GeneroOption('🪶', 'Poesía', 'Poesía'),
   ];
 

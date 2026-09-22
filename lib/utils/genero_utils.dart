@@ -20,6 +20,7 @@ const generosSoportados = [
   'Cómic',
   'No ficción',
   'Infantil',
+  'Juvenil',
   'Poesía',
 ];
 
@@ -67,6 +68,8 @@ String iconoGenero(String genero) {
       return '🧠';
     case 'infantil':
       return '🎈';
+    case 'juvenil':
+      return '🎒';
     case 'poesía':
     case 'poesia':
       return '🪶';

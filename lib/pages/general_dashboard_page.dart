@@ -165,7 +165,7 @@ class _GeneralDashboardPageState extends State<GeneralDashboardPage> {
       progreso: book.progress,
       paginaActual: book.currentPage,
       paginasTotales: book.pages,
-      comentario: '',
+      comentario: book.note,
       actualizadoEn: null,
       reacciones: {},
       miReaccion: null,
@@ -2863,6 +2863,18 @@ class _CurrentBookCard extends StatelessWidget {
                         color: AppColors.textMuted,
                       ),
                     ),
+                    if (book.note.trim().isNotEmpty) ...[
+                      const SizedBox(height: 4),
+                      Text(
+                        book.note,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: AppTextStyles.caption.copyWith(
+                          color: AppColors.textSecondary,
+                          fontStyle: FontStyle.italic,
+                        ),
+                      ),
+                    ],
                   ],
                 ),
               ),

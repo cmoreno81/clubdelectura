@@ -453,6 +453,7 @@ class GeneralBook {
     required this.progress,
     this.currentPage,
     this.pages,
+    this.note = '',
   });
 
   final String id;
@@ -462,6 +463,7 @@ class GeneralBook {
   final int progress;
   final int? currentPage;
   final int? pages;
+  final String note;
 
   factory GeneralBook.fromJson(Map<String, dynamic> json) => GeneralBook(
     id: json['id']?.toString() ?? '',
@@ -471,6 +473,7 @@ class GeneralBook {
     progress: _integer(json['progreso']),
     currentPage: _nullableInteger(json['paginaActual']),
     pages: _nullableInteger(json['paginas']),
+    note: json['comentario']?.toString() ?? '',
   );
 }
 
