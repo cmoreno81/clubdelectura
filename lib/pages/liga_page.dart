@@ -239,18 +239,20 @@ const _kFilasPuntos = [
   ),
   (
     'Terminar un libro',
-    'Al marcar una lectura como terminada (menos si es relectura o '
-        'tiene menos de 50 páginas).',
+    'Al terminar un libro que estabas leyendo en la app (menos si es '
+        'relectura o tiene menos de 50 páginas). Las lecturas pasadas '
+        'que añades como ya leídas no puntúan.',
     '40 pts',
   ),
   (
     'Terminar una saga',
-    'Al completar todos los tomos de una saga entera.',
+    'Al completar una saga terminando en la app alguno de sus tomos.',
     '100 pts',
   ),
   (
     'Reseña',
-    'Si escribes una reseña de más de 200 caracteres al terminar.',
+    'Si escribes una reseña de más de 200 caracteres en los 30 días '
+        'siguientes a terminar un libro leído en la app.',
     '15 pts',
   ),
   (
@@ -260,7 +262,8 @@ const _kFilasPuntos = [
   ),
   (
     'Elegir Libro del año del mes',
-    'Al seleccionar tu favorito del mes en Perfil → Favoritos.',
+    'Al seleccionar tu favorito del mes en Perfil → Favoritos, durante '
+        'ese mes o el siguiente. Rellenar meses atrasados no puntúa.',
     '10 pts',
   ),
 ];
