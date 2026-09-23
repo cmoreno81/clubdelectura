@@ -138,7 +138,7 @@ class _Layout {
   static const monthStart = 54.0;
   static const monthStep = 108.0;
   static const monthHeight = 88.0;
-  static const duelHeight = 132.0;
+  static const duelHeight = 148.0;
   static const winnerTop = 510.0;
 
   static double monthTop(int index) => monthStart + index * monthStep;
@@ -208,62 +208,64 @@ class _DuelNode extends StatelessWidget {
         border: Border.all(color: AppColors.border),
         boxShadow: const [BoxShadow(color: Color(0x10000000), blurRadius: 8)],
       ),
-      child: Column(
-        children: [
-          Row(
-            children: [
-              Expanded(
-                child: Text(
-                  label,
-                  style: const TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w800,
+      child: ClipRect(
+        child: Column(
+          children: [
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    label,
+                    style: const TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w800,
+                    ),
                   ),
                 ),
-              ),
-              if (locked)
-                const Icon(
-                  Icons.lock_outline,
-                  size: 15,
-                  color: AppColors.textMuted,
-                ),
-            ],
-          ),
-          const SizedBox(height: 4),
-          Expanded(
-            child: candidates.isEmpty
-                ? const _PendingContent(locked: true)
-                : Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                    children: candidates.take(2).map((book) {
-                      final selected = item?.winner?.id == book.id;
-                      return _Candidate(
-                        key: ValueKey(
-                          'bracket-duel-${item!.phase}-${item.position}-${book.id}',
-                        ),
-                        book: book,
-                        selected: selected,
-                        enabled: editable && !locked,
-                        onTap: () => onChoose(item, book),
-                      );
-                    }).toList(),
+                if (locked)
+                  const Icon(
+                    Icons.lock_outline,
+                    size: 15,
+                    color: AppColors.textMuted,
                   ),
-          ),
-          Text(
-            item?.winner != null
-                ? 'Libro elegido'
-                : locked
-                ? 'Bloqueada'
-                : 'Pendiente',
-            style: TextStyle(
-              fontSize: 11,
-              fontWeight: FontWeight.w700,
-              color: item?.winner != null
-                  ? AppColors.success
-                  : AppColors.textMuted,
+              ],
             ),
-          ),
-        ],
+            const SizedBox(height: 4),
+            Expanded(
+              child: candidates.isEmpty
+                  ? const _PendingContent(locked: true)
+                  : Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                      children: candidates.take(2).map((book) {
+                        final selected = item?.winner?.id == book.id;
+                        return _Candidate(
+                          key: ValueKey(
+                            'bracket-duel-${item!.phase}-${item.position}-${book.id}',
+                          ),
+                          book: book,
+                          selected: selected,
+                          enabled: editable && !locked,
+                          onTap: () => onChoose(item, book),
+                        );
+                      }).toList(),
+                    ),
+            ),
+            Text(
+              item?.winner != null
+                  ? 'Libro elegido'
+                  : locked
+                  ? 'Bloqueada'
+                  : 'Pendiente',
+              style: TextStyle(
+                fontSize: 11,
+                fontWeight: FontWeight.w700,
+                color: item?.winner != null
+                    ? AppColors.success
+                    : AppColors.textMuted,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

@@ -1,7 +1,10 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 
 import '../navigation/app_page_route.dart';
 
+import '../models/catalog_book.dart';
 import '../models/clubvision.dart';
 import '../models/propuesta_lectura.dart';
 import '../services/api_service.dart';
@@ -9,6 +12,7 @@ import '../theme/app_colors.dart';
 import '../theme/app_radius.dart';
 import '../theme/app_spacing.dart';
 import '../theme/app_text_styles.dart';
+import '../widgets/common/club_book_cover.dart';
 import '../widgets/common/club_card.dart';
 import '../widgets/common/club_button.dart';
 import '../widgets/common/club_chip.dart';
@@ -158,6 +162,38 @@ class _ClubvisionMenuPageState extends State<ClubvisionMenuPage> {
     );
   }
 
+  Future<void> _forzarCandidata() async {
+    final libro = await showModalBottomSheet<CatalogBook>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => const _ForzarCandidataSheet(),
+    );
+
+    if (libro == null || !mounted) return;
+
+    final resultado = await ApiService().forzarCandidataClubvision(
+      bookId: libro.id,
+    );
+
+    if (!mounted) return;
+
+    final ok = resultado['ok'] == true;
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          ok
+              ? 'Añadida como candidata para la edición de ${resultado['edition']}'
+              : (resultado['mensaje']?.toString() ??
+                    'No se ha podido forzar la candidata.'),
+        ),
+      ),
+    );
+
+    if (ok) setState(_recargar);
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -280,6 +316,29 @@ class _ClubvisionMenuPageState extends State<ClubvisionMenuPage> {
                     );
                   },
                 ),
+
+                if (club.esAdmin) ...[
+                  const SizedBox(height: AppSpacing.xl),
+
+                  const _SectionHeader(
+                    icon: Icons.admin_panel_settings_outlined,
+                    color: AppColors.warning,
+                    title: 'Administración',
+                    subtitle: 'Herramientas solo visibles para admins del club',
+                  ),
+
+                  const SizedBox(height: AppSpacing.md),
+
+                  _MenuCard(
+                    icon: Icons.add_circle_outline_rounded,
+                    color: AppColors.warning,
+                    title: 'Forzar candidata',
+                    subtitle:
+                        'Añade a mano un libro como candidata de la próxima edición',
+                    actionLabel: 'Añadir candidata manualmente',
+                    onTap: _forzarCandidata,
+                  ),
+                ],
               ],
             ),
           );
@@ -291,7 +350,7 @@ class _ClubvisionMenuPageState extends State<ClubvisionMenuPage> {
   List<Widget> _opcionesPrincipales(ClubvisionData club) {
     switch (club.estado?.trim().toUpperCase()) {
       case 'VOTACION':
-        if (club.candidatas.length >= 5) {
+        if (club.candidatas.length >= 2) {
           return [
             _MenuCard(
               icon: club.haVotado
@@ -301,7 +360,7 @@ class _ClubvisionMenuPageState extends State<ClubvisionMenuPage> {
               title: club.haVotado ? 'Mi voto' : 'Votación abierta',
               subtitle: club.haVotado
                   ? 'Consulta la clasificación que enviaste'
-                  : 'Elige las cinco historias que prefieres',
+                  : 'Elige las historias que prefieres',
               actionLabel: club.haVotado ? 'Consultar voto' : 'Votar ahora',
               badge: club.haVotado
                   ? 'Voto registrado'
@@ -1858,6 +1917,233 @@ class _LecturasLibresCard extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+// ── Forzar candidata (solo admins) ──────────────────────────────
+
+/// Bottom sheet para que un admin busque un libro del catálogo de
+/// ClubReads y lo fuerce como candidata de la próxima edición de
+/// Clubvisión. Devuelve el [CatalogBook] elegido vía [Navigator.pop],
+/// o null si se cancela.
+class _ForzarCandidataSheet extends StatefulWidget {
+  const _ForzarCandidataSheet();
+
+  @override
+  State<_ForzarCandidataSheet> createState() => _ForzarCandidataSheetState();
+}
+
+class _ForzarCandidataSheetState extends State<_ForzarCandidataSheet> {
+  final _searchCtrl = TextEditingController();
+  Timer? _debounce;
+
+  bool _buscando = false;
+  bool _busquedaHecha = false;
+  String? _error;
+  List<CatalogBook> _resultados = [];
+
+  @override
+  void dispose() {
+    _searchCtrl.dispose();
+    _debounce?.cancel();
+    super.dispose();
+  }
+
+  void _onChanged(String query) {
+    _debounce?.cancel();
+
+    if (query.trim().length < 3) {
+      setState(() {
+        _resultados = [];
+        _busquedaHecha = false;
+        _error = null;
+      });
+      return;
+    }
+
+    _debounce = Timer(const Duration(milliseconds: 500), () async {
+      if (!mounted) return;
+
+      setState(() {
+        _buscando = true;
+        _busquedaHecha = false;
+        _error = null;
+      });
+
+      try {
+        final libros = await ApiService().getCatalogoGeneral(
+          query: query.trim(),
+        );
+
+        if (!mounted || _searchCtrl.text.trim() != query.trim()) return;
+
+        setState(() {
+          // Solo libros ya presentes en el catálogo de ClubReads tienen un
+          // id válido para forzarCandidataClubvision (bookId).
+          _resultados = libros
+              .where((libro) => libro.source == 'CLUBREADS')
+              .take(10)
+              .toList();
+          _buscando = false;
+          _busquedaHecha = true;
+        });
+      } catch (_) {
+        if (!mounted || _searchCtrl.text.trim() != query.trim()) return;
+
+        setState(() {
+          _resultados = [];
+          _buscando = false;
+          _busquedaHecha = true;
+          _error = 'No se ha podido consultar el catálogo de ClubReads.';
+        });
+      }
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: EdgeInsets.only(
+        bottom: MediaQuery.viewInsetsOf(context).bottom,
+      ),
+      child: Container(
+        constraints: BoxConstraints(
+          maxHeight: MediaQuery.sizeOf(context).height * 0.8,
+        ),
+        decoration: BoxDecoration(
+          color: Theme.of(context).colorScheme.surface,
+          borderRadius: const BorderRadius.vertical(
+            top: Radius.circular(AppRadius.xl),
+          ),
+        ),
+        padding: const EdgeInsets.fromLTRB(
+          AppSpacing.lg,
+          AppSpacing.md,
+          AppSpacing.lg,
+          AppSpacing.xl,
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Center(
+              child: Container(
+                width: 36,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: AppColors.border,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+            ),
+            const SizedBox(height: AppSpacing.lg),
+
+            Text('Forzar candidata', style: AppTextStyles.section),
+            const SizedBox(height: AppSpacing.xs),
+            Text(
+              'Busca un libro del catálogo de ClubReads para añadirlo como '
+              'candidata de la próxima edición que aún no se haya abierto.',
+              style: AppTextStyles.bodySecondary,
+            ),
+            const SizedBox(height: AppSpacing.lg),
+
+            TextField(
+              controller: _searchCtrl,
+              autofocus: true,
+              onChanged: _onChanged,
+              decoration: InputDecoration(
+                hintText: 'Título del libro',
+                prefixIcon: const Icon(Icons.search_rounded),
+                filled: true,
+                fillColor: AppColors.surfaceSoft,
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(AppRadius.md),
+                  borderSide: BorderSide.none,
+                ),
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: AppSpacing.md,
+                  vertical: AppSpacing.md,
+                ),
+              ),
+            ),
+            const SizedBox(height: AppSpacing.md),
+
+            Flexible(child: _buildResultados()),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildResultados() {
+    if (_buscando) {
+      return const Padding(
+        padding: EdgeInsets.symmetric(vertical: AppSpacing.lg),
+        child: Center(child: CircularProgressIndicator()),
+      );
+    }
+
+    if (_error != null) {
+      return Padding(
+        padding: const EdgeInsets.symmetric(vertical: AppSpacing.md),
+        child: Text(_error!, style: AppTextStyles.bodySecondary),
+      );
+    }
+
+    if (!_busquedaHecha) {
+      return Padding(
+        padding: const EdgeInsets.symmetric(vertical: AppSpacing.md),
+        child: Text(
+          'Escribe al menos 3 letras para buscar.',
+          style: AppTextStyles.bodySecondary,
+        ),
+      );
+    }
+
+    if (_resultados.isEmpty) {
+      return Padding(
+        padding: const EdgeInsets.symmetric(vertical: AppSpacing.md),
+        child: Text(
+          'No hay libros de ClubReads que coincidan con la búsqueda.',
+          style: AppTextStyles.bodySecondary,
+        ),
+      );
+    }
+
+    return ListView.separated(
+      shrinkWrap: true,
+      itemCount: _resultados.length,
+      separatorBuilder: (_, _) => const SizedBox(height: AppSpacing.sm),
+      itemBuilder: (context, index) {
+        final libro = _resultados[index];
+
+        return ListTile(
+          contentPadding: EdgeInsets.zero,
+          leading: ClubBookCover(
+            title: libro.title,
+            imageUrl: libro.coverUrl,
+            width: 40,
+            height: 58,
+            borderRadius: BorderRadius.circular(AppRadius.xs),
+          ),
+          title: Text(
+            libro.title,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+            style: AppTextStyles.body.copyWith(fontWeight: FontWeight.w700),
+          ),
+          subtitle: libro.authors.isEmpty
+              ? null
+              : Text(
+                  libro.authors.join(', '),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: AppTextStyles.caption,
+                ),
+          onTap: () => Navigator.pop(context, libro),
+        );
+      },
     );
   }
 }

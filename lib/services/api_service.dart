@@ -1498,13 +1498,13 @@ class ApiService {
     required String usuario,
     required List<String> votos,
   }) async {
-    final response = await _postJson('enviarVotacion', {
-      'v1': votos.isNotEmpty ? votos[0] : '',
-      'v2': votos.length > 1 ? votos[1] : '',
-      'v3': votos.length > 2 ? votos[2] : '',
-      'v4': votos.length > 3 ? votos[3] : '',
-      'v5': votos.length > 4 ? votos[4] : '',
-    });
+    final body = <String, dynamic>{};
+    const campos = ['v1', 'v2', 'v3', 'v4', 'v5'];
+    for (var i = 0; i < votos.length && i < campos.length; i++) {
+      body[campos[i]] = votos[i];
+    }
+
+    final response = await _postJson('enviarVotacion', body);
 
     if (response.statusCode != 200) {
       return false;
@@ -1513,6 +1513,29 @@ class ApiService {
     final json = _decodeJson(response);
 
     return json["ok"] == true;
+  }
+
+  /// Fuerza a mano una candidata para la próxima edición de Clubvisión que
+  /// todavía no se haya abierto (solo OWNER/ADMIN del club). [edition] es
+  /// opcional (formato yyyy-MM); si se omite, el backend usa la edición de
+  /// mañana.
+  Future<Map<String, dynamic>> forzarCandidataClubvision({
+    required String bookId,
+    String? edition,
+  }) async {
+    final body = <String, dynamic>{'bookId': bookId};
+    if (edition != null && edition.isNotEmpty) {
+      body['edition'] = edition;
+    }
+
+    final response = await _postJson('forzarCandidataClubvision', body);
+    final json = _decodeJson(response);
+
+    if (json is Map<String, dynamic>) {
+      return json;
+    }
+
+    return {'ok': false, 'mensaje': 'Error inesperado'};
   }
 
   Future<Map<String, dynamic>> toggleLikeComentario({

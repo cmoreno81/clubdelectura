@@ -73,7 +73,7 @@ class _ClubvisionVotacionPageState extends State<ClubvisionVotacionPage> {
         .toList();
   }
 
-  void _cambiarSeleccion(CandidataClubvision candidata) {
+  void _cambiarSeleccion(CandidataClubvision candidata, int maxSeleccion) {
     setState(() {
       final seleccionada = seleccionadas.contains(candidata.libro);
 
@@ -82,13 +82,17 @@ class _ClubvisionVotacionPageState extends State<ClubvisionVotacionPage> {
         return;
       }
 
-      if (seleccionadas.length < 5) {
+      if (seleccionadas.length < maxSeleccion) {
         seleccionadas.add(candidata.libro);
         return;
       }
 
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Tu papeleta ya tiene cinco libros.')),
+        SnackBar(
+          content: Text(
+            'Tu papeleta ya tiene ${maxSeleccion == 1 ? 'un libro' : '$maxSeleccion libros'}.',
+          ),
+        ),
       );
     });
   }
@@ -226,11 +230,19 @@ class _ClubvisionVotacionPageState extends State<ClubvisionVotacionPage> {
 
           final clubvision = snapshot.data!;
 
-          if (clubvision.candidatas.length < 5) {
+          if (clubvision.candidatas.length < 2) {
             return _SinCandidatasSuficientes(
               count: clubvision.candidatas.length,
             );
           }
+
+          // La papeleta se adapta al número real de candidatas: se rankean
+          // todas si hay 5 o menos, o solo las 5 primeras (por orden de
+          // llegada, igual que el backend) si hay más.
+          final candidatos = clubvision.candidatas.length > 5
+              ? clubvision.candidatas.sublist(0, 5)
+              : clubvision.candidatas;
+          final tamanoPapeleta = candidatos.length;
 
           final votos = _votos(clubvision);
 
@@ -268,10 +280,10 @@ class _ClubvisionVotacionPageState extends State<ClubvisionVotacionPage> {
                     color: AppColors.primary,
                     title: 'Tu papeleta',
                     subtitle: seleccionadas.isEmpty
-                        ? 'Elige cinco libros en orden de preferencia'
-                        : seleccionadas.length == 5
+                        ? 'Elige $tamanoPapeleta libros en orden de preferencia'
+                        : seleccionadas.length == tamanoPapeleta
                         ? 'Tu clasificación está completa'
-                        : 'Te faltan ${5 - seleccionadas.length} libros',
+                        : 'Te faltan ${tamanoPapeleta - seleccionadas.length} libros',
                   ),
 
                   const SizedBox(height: AppSpacing.md),
@@ -279,7 +291,8 @@ class _ClubvisionVotacionPageState extends State<ClubvisionVotacionPage> {
                   _PapeletaCard(
                     votos: votos,
                     seleccionadas: seleccionadas,
-                    onEnviar: seleccionadas.length == 5
+                    tamanoPapeleta: tamanoPapeleta,
+                    onEnviar: seleccionadas.length == tamanoPapeleta
                         ? () => _confirmarEnvio(clubvision)
                         : null,
                     enviando: enviando,
@@ -304,18 +317,20 @@ class _ClubvisionVotacionPageState extends State<ClubvisionVotacionPage> {
 
                   for (
                     var index = 0;
-                    index < clubvision.candidatas.length;
+                    index < candidatos.length;
                     index++
                   ) ...[
                     _CandidataCard(
-                      candidata: clubvision.candidatas[index],
+                      candidata: candidatos[index],
                       rankingPopularidad: index,
                       posicionSeleccionada: seleccionadas.indexOf(
-                        clubvision.candidatas[index].libro,
+                        candidatos[index].libro,
                       ),
                       totalIntereses: totalIntereses,
-                      onTap: () =>
-                          _cambiarSeleccion(clubvision.candidatas[index]),
+                      onTap: () => _cambiarSeleccion(
+                        candidatos[index],
+                        tamanoPapeleta,
+                      ),
                     ),
 
                     const SizedBox(height: AppSpacing.md),
@@ -494,6 +509,7 @@ class _SectionHeader extends StatelessWidget {
 class _PapeletaCard extends StatelessWidget {
   final List<CandidataClubvision> votos;
   final List<String> seleccionadas;
+  final int tamanoPapeleta;
   final VoidCallback? onEnviar;
   final bool enviando;
   final void Function(int oldIndex, int newIndex)? onReorder;
@@ -501,6 +517,7 @@ class _PapeletaCard extends StatelessWidget {
   const _PapeletaCard({
     required this.votos,
     required this.seleccionadas,
+    required this.tamanoPapeleta,
     required this.onEnviar,
     required this.enviando,
     this.onReorder,
@@ -584,7 +601,9 @@ class _PapeletaCard extends StatelessWidget {
                 child: ClipRRect(
                   borderRadius: BorderRadius.circular(AppRadius.pill),
                   child: LinearProgressIndicator(
-                    value: seleccionadas.length / 5,
+                    value: tamanoPapeleta == 0
+                        ? 0
+                        : seleccionadas.length / tamanoPapeleta,
                     minHeight: 9,
                     backgroundColor: Colors.white.withValues(alpha: 0.8),
                     valueColor: const AlwaysStoppedAnimation<Color>(
@@ -597,7 +616,7 @@ class _PapeletaCard extends StatelessWidget {
               const SizedBox(width: AppSpacing.sm),
 
               Text(
-                '${seleccionadas.length}/5',
+                '${seleccionadas.length}/$tamanoPapeleta',
                 style: AppTextStyles.body.copyWith(
                   color: AppColors.primary,
                   fontWeight: FontWeight.w800,
@@ -618,8 +637,8 @@ class _PapeletaCard extends StatelessWidget {
             Text(
               seleccionadas.isEmpty
                   ? 'Empieza seleccionando tu libro favorito.'
-                  : 'Selecciona ${5 - seleccionadas.length} '
-                        '${5 - seleccionadas.length == 1 ? 'libro' : 'libros'} más.',
+                  : 'Selecciona ${tamanoPapeleta - seleccionadas.length} '
+                        '${tamanoPapeleta - seleccionadas.length == 1 ? 'libro' : 'libros'} más.',
               textAlign: TextAlign.center,
               style: AppTextStyles.caption.copyWith(
                 fontStyle: FontStyle.italic,
@@ -1102,7 +1121,7 @@ class _SinCandidatasSuficientes extends StatelessWidget {
             ),
             const SizedBox(height: AppSpacing.sm),
             Text(
-              'Se necesitan al menos 5 libros candidatos para abrir la votación. '
+              'Se necesitan al menos 2 libros candidatos para abrir la votación. '
               'Ahora mismo hay $count.\n\n¡Propón el tuyo para llegar antes a la votación!',
               textAlign: TextAlign.center,
               style: AppTextStyles.bodySecondary.copyWith(height: 1.5),

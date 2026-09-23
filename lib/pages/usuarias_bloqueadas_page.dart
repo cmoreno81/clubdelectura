@@ -42,7 +42,7 @@ class _UsuariasBloqueadasPageState extends State<UsuariasBloqueadasPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Cuentas bloqueadas')),
+      appBar: AppBar(title: const Text('Usuarios bloqueados')),
       body: FutureBuilder<List<Map<String, dynamic>>>(
         future: _future,
         builder: (context, snapshot) {
