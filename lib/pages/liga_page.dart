@@ -239,20 +239,20 @@ const _kFilasPuntos = [
   ),
   (
     'Terminar un libro',
-    'Al terminar un libro que estabas leyendo en la app (menos si es '
-        'relectura o tiene menos de 50 páginas). Las lecturas pasadas '
-        'que añades como ya leídas no puntúan.',
+    'Cada libro que termines tras tenerlo en Leyendo ahora. Si lo '
+        'marcas directamente como terminado, puntúa uno al día (menos si '
+        'es relectura o tiene menos de 50 páginas).',
     '40 pts',
   ),
   (
     'Terminar una saga',
-    'Al completar una saga terminando en la app alguno de sus tomos.',
+    'Al completar una saga con un tomo que te dé puntos.',
     '100 pts',
   ),
   (
     'Reseña',
     'Si escribes una reseña de más de 200 caracteres en los 30 días '
-        'siguientes a terminar un libro leído en la app.',
+        'siguientes a terminar un libro que te dé puntos.',
     '15 pts',
   ),
   (
