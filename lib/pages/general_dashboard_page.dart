@@ -849,6 +849,11 @@ class _GeneralDashboardPageState extends State<GeneralDashboardPage> {
                       const SizedBox(height: AppSpacing.sm),
                       _metrics(data),
                       const SizedBox(height: AppSpacing.md),
+                      // Check-in bien arriba, visible sin scroll: es el
+                      // primer incentivo del día y no todo el mundo tiene
+                      // un espacio lector personal desde el que llegar a él.
+                      const CheckinSection(),
+                      const SizedBox(height: AppSpacing.md),
                       ClubCard(
                         onTap: _exploreBooks,
                         padding: EdgeInsets.zero,
