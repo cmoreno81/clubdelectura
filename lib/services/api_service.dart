@@ -2294,6 +2294,17 @@ class ApiService {
     return _decodeJson(response) as Map<String, dynamic>;
   }
 
+  /// Tabla EN VIVO de la temporada actual para [division], sea o no la mía.
+  Future<Map<String, dynamic>> getLigaDivision(String division) async {
+    final response = await _client.get(
+      Uri.parse(baseUrl).replace(
+        queryParameters: {'action': 'ligaDivision', 'division': division},
+      ),
+    );
+    if (response.statusCode != 200) throw ApiException.fromResponse(response);
+    return _decodeJson(response) as Map<String, dynamic>;
+  }
+
   /// Ranking de clubes de la temporada (por defecto, la actual): las dos
   /// tablas "más activos" (suma total de puntos) y "más eficientes" (media
   /// por miembro participante — el ranking justo por tamaño de club).

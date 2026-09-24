@@ -13,6 +13,7 @@ import '../navigation/app_page_route.dart';
 import '../widgets/common/club_avatar.dart';
 import '../widgets/error_view.dart';
 import 'liga_clubes_page.dart';
+import 'liga_division_page.dart';
 import 'liga_historial_page.dart';
 import 'liga_temporada_page.dart';
 import 'mi_espacio_page.dart';
@@ -947,48 +948,63 @@ class _EscaleraDivisiones extends StatelessWidget {
         children: [
           for (final division in divisiones) ...[
             Expanded(
-              child: Column(
-                children: [
-                  Container(
-                    width: 34,
-                    height: 34,
-                    alignment: Alignment.center,
-                    decoration: BoxDecoration(
-                      color: division == actual
-                          ? division.color.withValues(alpha: .18)
-                          : Colors.transparent,
-                      shape: BoxShape.circle,
-                      border: Border.all(
-                        color: division == actual
-                            ? division.color
-                            : AppColors.border,
-                        width: division == actual ? 1.6 : 1,
-                      ),
-                    ),
-                    child: Text(
-                      division.icono,
-                      style: TextStyle(
-                        fontSize: division == actual ? 17 : 14,
-                      ),
+              child: Material(
+                color: Colors.transparent,
+                child: InkWell(
+                  borderRadius: BorderRadius.circular(AppRadius.md),
+                  onTap: () => Navigator.push(
+                    context,
+                    AppPageRoute(
+                      builder: (_) => LigaDivisionPage(division: division),
                     ),
                   ),
-                  const SizedBox(height: 3),
-                  Text(
-                    division.etiqueta,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    softWrap: false,
-                    style: AppTextStyles.caption.copyWith(
-                      fontSize: 10,
-                      fontWeight: division == actual
-                          ? FontWeight.w800
-                          : FontWeight.w500,
-                      color: division == actual
-                          ? division.color
-                          : AppColors.textMuted,
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 4),
+                    child: Column(
+                      children: [
+                        Container(
+                          width: 34,
+                          height: 34,
+                          alignment: Alignment.center,
+                          decoration: BoxDecoration(
+                            color: division == actual
+                                ? division.color.withValues(alpha: .18)
+                                : Colors.transparent,
+                            shape: BoxShape.circle,
+                            border: Border.all(
+                              color: division == actual
+                                  ? division.color
+                                  : AppColors.border,
+                              width: division == actual ? 1.6 : 1,
+                            ),
+                          ),
+                          child: Text(
+                            division.icono,
+                            style: TextStyle(
+                              fontSize: division == actual ? 17 : 14,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 3),
+                        Text(
+                          division.etiqueta,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          softWrap: false,
+                          style: AppTextStyles.caption.copyWith(
+                            fontSize: 10,
+                            fontWeight: division == actual
+                                ? FontWeight.w800
+                                : FontWeight.w500,
+                            color: division == actual
+                                ? division.color
+                                : AppColors.textMuted,
+                          ),
+                        ),
+                      ],
                     ),
                   ),
-                ],
+                ),
               ),
             ),
             if (division != divisiones.last)

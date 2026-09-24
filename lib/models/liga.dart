@@ -39,6 +39,15 @@ enum LigaDivision {
     'DIAMANTE' => LigaDivision.diamante,
     _ => LigaDivision.bronce,
   };
+
+  /// El valor que espera el backend (RankingDivision de Prisma).
+  String get valorApi => switch (this) {
+    LigaDivision.bronce => 'BRONCE',
+    LigaDivision.plata => 'PLATA',
+    LigaDivision.oro => 'ORO',
+    LigaDivision.platino => 'PLATINO',
+    LigaDivision.diamante => 'DIAMANTE',
+  };
 }
 
 /// Medallas de temporada — trofeos acumulables tipo videojuego, ganados al
@@ -567,6 +576,53 @@ class LigaPodiosTemporada {
               Map<String, dynamic>.from(e as Map),
             ),
           )
+          .toList(),
+    );
+  }
+}
+
+/// Respuesta de `ligaDivision`: tabla EN VIVO de la temporada actual para
+/// cualquier división, no solo la del usuario — para poder curiosear cómo
+/// van otras divisiones. [tuDivision] es la división real del usuario,
+/// independientemente de cuál esté mirando, para poder avisar "esta no es
+/// tu división".
+class LigaDivisionTabla {
+  final bool ok;
+  final String mensaje;
+  final int? temporadaNumero;
+  final DateTime? terminaEn;
+  final LigaDivision division;
+  final LigaDivision? tuDivision;
+  final int totalParticipantes;
+  final List<LigaFila> tabla;
+
+  const LigaDivisionTabla({
+    required this.ok,
+    required this.mensaje,
+    required this.temporadaNumero,
+    required this.terminaEn,
+    required this.division,
+    required this.tuDivision,
+    required this.totalParticipantes,
+    required this.tabla,
+  });
+
+  bool get esTuDivision => tuDivision != null && tuDivision == division;
+
+  factory LigaDivisionTabla.fromJson(Map<String, dynamic> json) {
+    final temporada = (json['temporada'] as Map?)?.cast<String, dynamic>();
+    return LigaDivisionTabla(
+      ok: json['ok'] == true,
+      mensaje: json['mensaje']?.toString() ?? '',
+      temporadaNumero: (temporada?['numero'] as num?)?.toInt(),
+      terminaEn: DateTime.tryParse(temporada?['terminaEn']?.toString() ?? ''),
+      division: LigaDivision.fromJson(json['division']?.toString()),
+      tuDivision: json['tuDivision'] == null
+          ? null
+          : LigaDivision.fromJson(json['tuDivision']?.toString()),
+      totalParticipantes: (json['totalParticipantes'] as num?)?.toInt() ?? 0,
+      tabla: ((json['tabla'] as List?) ?? const [])
+          .map((e) => LigaFila.fromJson(Map<String, dynamic>.from(e as Map)))
           .toList(),
     );
   }
