@@ -119,8 +119,10 @@ const List<_TutorialStep> _pasos = [
         'de dos semanas. Ganas puntos por hacer check-in a diario, mantener la '
         'racha, terminar libros y completar sagas.',
     detalle:
-        'Al acabar cada temporada los puntos se reinician. Únete o sal cuando '
-        'quieras desde el dashboard global o desde Perfil → Más.',
+        'Compites solo contra tu división (Bronce, Plata, Oro, Platino o '
+        'Diamante), pero puedes curiosear las demás tocando la escalera de '
+        'arriba. Al acabar cada temporada los puntos se reinician. Únete o sal '
+        'cuando quieras desde el dashboard global o desde Perfil → Más.',
   ),
   _TutorialStep(
     emoji: '🏛️',

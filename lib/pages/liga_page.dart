@@ -16,7 +16,6 @@ import 'liga_clubes_page.dart';
 import 'liga_division_page.dart';
 import 'liga_historial_page.dart';
 import 'liga_temporada_page.dart';
-import 'mi_espacio_page.dart';
 
 /// Ligas de ClubReads — ranking individual por temporadas quincenales.
 class LigaPage extends StatefulWidget {
@@ -833,11 +832,6 @@ class _VistaParticipando extends StatelessWidget {
         _EscaleraDivisiones(actual: t.division),
         const SizedBox(height: AppSpacing.lg),
 
-        if (estado.retoSemanal != null) ...[
-          _RetoSemanalCard(reto: estado.retoSemanal!),
-          const SizedBox(height: AppSpacing.lg),
-        ],
-
         _LeyendaLigaPlegable(actual: t.division),
         const SizedBox(height: AppSpacing.lg),
 
@@ -944,79 +938,91 @@ class _EscaleraDivisiones extends StatelessWidget {
         borderRadius: BorderRadius.circular(AppRadius.lg),
         border: Border.all(color: AppColors.border),
       ),
-      child: Row(
+      child: Column(
         children: [
-          for (final division in divisiones) ...[
-            Expanded(
-              child: Material(
-                color: Colors.transparent,
-                child: InkWell(
-                  borderRadius: BorderRadius.circular(AppRadius.md),
-                  onTap: () => Navigator.push(
-                    context,
-                    AppPageRoute(
-                      builder: (_) => LigaDivisionPage(division: division),
-                    ),
-                  ),
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 4),
-                    child: Column(
-                      children: [
-                        Container(
-                          width: 34,
-                          height: 34,
-                          alignment: Alignment.center,
-                          decoration: BoxDecoration(
-                            color: division == actual
-                                ? division.color.withValues(alpha: .18)
-                                : Colors.transparent,
-                            shape: BoxShape.circle,
-                            border: Border.all(
-                              color: division == actual
-                                  ? division.color
-                                  : AppColors.border,
-                              width: division == actual ? 1.6 : 1,
-                            ),
-                          ),
-                          child: Text(
-                            division.icono,
-                            style: TextStyle(
-                              fontSize: division == actual ? 17 : 14,
-                            ),
-                          ),
+          Row(
+            children: [
+              for (final division in divisiones) ...[
+                Expanded(
+                  child: Material(
+                    color: Colors.transparent,
+                    child: InkWell(
+                      borderRadius: BorderRadius.circular(AppRadius.md),
+                      onTap: () => Navigator.push(
+                        context,
+                        AppPageRoute(
+                          builder: (_) => LigaDivisionPage(division: division),
                         ),
-                        const SizedBox(height: 3),
-                        Text(
-                          division.etiqueta,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          softWrap: false,
-                          style: AppTextStyles.caption.copyWith(
-                            fontSize: 10,
-                            fontWeight: division == actual
-                                ? FontWeight.w800
-                                : FontWeight.w500,
-                            color: division == actual
-                                ? division.color
-                                : AppColors.textMuted,
-                          ),
+                      ),
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 4),
+                        child: Column(
+                          children: [
+                            Container(
+                              width: 34,
+                              height: 34,
+                              alignment: Alignment.center,
+                              decoration: BoxDecoration(
+                                color: division == actual
+                                    ? division.color.withValues(alpha: .18)
+                                    : Colors.transparent,
+                                shape: BoxShape.circle,
+                                border: Border.all(
+                                  color: division == actual
+                                      ? division.color
+                                      : AppColors.border,
+                                  width: division == actual ? 1.6 : 1,
+                                ),
+                              ),
+                              child: Text(
+                                division.icono,
+                                style: TextStyle(
+                                  fontSize: division == actual ? 17 : 14,
+                                ),
+                              ),
+                            ),
+                            const SizedBox(height: 3),
+                            Text(
+                              division.etiqueta,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              softWrap: false,
+                              style: AppTextStyles.caption.copyWith(
+                                fontSize: 10,
+                                fontWeight: division == actual
+                                    ? FontWeight.w800
+                                    : FontWeight.w500,
+                                color: division == actual
+                                    ? division.color
+                                    : AppColors.textMuted,
+                              ),
+                            ),
+                          ],
                         ),
-                      ],
+                      ),
                     ),
                   ),
                 ),
-              ),
+                if (division != divisiones.last)
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 16),
+                    child: Icon(
+                      Icons.chevron_right_rounded,
+                      size: 16,
+                      color: AppColors.textMuted.withValues(alpha: .5),
+                    ),
+                  ),
+              ],
+            ],
+          ),
+          const SizedBox(height: 4),
+          Text(
+            'Toca una división para curiosear su clasificación',
+            style: AppTextStyles.caption.copyWith(
+              fontSize: 10,
+              color: AppColors.textMuted,
             ),
-            if (division != divisiones.last)
-              Padding(
-                padding: const EdgeInsets.only(bottom: 16),
-                child: Icon(
-                  Icons.chevron_right_rounded,
-                  size: 16,
-                  color: AppColors.textMuted.withValues(alpha: .5),
-                ),
-              ),
-          ],
+          ),
         ],
       ),
     );
@@ -1407,92 +1413,6 @@ class _DesgloseSheetState extends State<_DesgloseSheet> {
               ],
             );
           },
-        ),
-      ),
-    );
-  }
-}
-
-class _RetoSemanalCard extends StatelessWidget {
-  const _RetoSemanalCard({required this.reto});
-  final LigaRetoSemanal reto;
-
-  @override
-  Widget build(BuildContext context) {
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        borderRadius: BorderRadius.circular(AppRadius.lg),
-        onTap: reto.completado
-            ? null
-            : () => Navigator.push(
-                context,
-                AppPageRoute(
-                  builder: (_) => const MiEspacioPage(scrollToCheckin: true),
-                ),
-              ),
-        child: Container(
-      padding: const EdgeInsets.all(AppSpacing.md),
-      decoration: BoxDecoration(
-        color: reto.completado
-            ? AppColors.success.withValues(alpha: .10)
-            : AppColors.surface,
-        borderRadius: BorderRadius.circular(AppRadius.lg),
-        border: Border.all(
-          color: reto.completado ? AppColors.success : AppColors.border,
-        ),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              const Text('🎯', style: TextStyle(fontSize: 18)),
-              const SizedBox(width: AppSpacing.sm),
-              Expanded(
-                child: Text(
-                  'Reto de la semana',
-                  style: AppTextStyles.body.copyWith(
-                    fontWeight: FontWeight.w800,
-                  ),
-                ),
-              ),
-              if (reto.completado)
-                const Icon(
-                  Icons.check_circle_rounded,
-                  color: AppColors.success,
-                  size: 20,
-                )
-              else
-                Text(
-                  '+${reto.puntos} pts',
-                  style: AppTextStyles.body.copyWith(
-                    fontWeight: FontWeight.w800,
-                    color: AppColors.primary,
-                  ),
-                ),
-            ],
-          ),
-          const SizedBox(height: 4),
-          Text(
-            reto.completado
-                ? '¡Reto cumplido! Ya has sumado los ${reto.puntos} pts esta semana.'
-                : 'Haz check-in ${reto.objetivo} días esta semana '
-                      '(llevas ${reto.progreso}/${reto.objetivo}).',
-            style: AppTextStyles.bodySecondary,
-          ),
-          const SizedBox(height: AppSpacing.sm),
-          ClipRRect(
-            borderRadius: BorderRadius.circular(6),
-            child: LinearProgressIndicator(
-              value: reto.objetivo == 0 ? 0 : reto.progreso / reto.objetivo,
-              minHeight: 8,
-              backgroundColor: AppColors.border,
-              color: reto.completado ? AppColors.success : AppColors.primary,
-            ),
-          ),
-        ],
-          ),
         ),
       ),
     );

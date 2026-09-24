@@ -402,6 +402,23 @@ class _Content extends StatelessWidget {
               ),
             ),
           ),
+          SliverPadding(
+            padding: const EdgeInsets.fromLTRB(
+              AppSpacing.md,
+              AppSpacing.xs,
+              AppSpacing.md,
+              0,
+            ),
+            sliver: SliverToBoxAdapter(
+              child: Text(
+                '🎯 Bonus en Ligas: haz check-in 5 días esta semana y suma '
+                '+30 puntos extra.',
+                style: AppTextStyles.caption.copyWith(
+                  color: AppColors.textMuted,
+                ),
+              ),
+            ),
+          ),
 
           // ── Mapa de calor ─────────────────────────────────────────────────
           SliverPadding(

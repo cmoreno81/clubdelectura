@@ -704,14 +704,18 @@ const List<_HelpSection> _secciones = [
             'racha en sí no se rompe si otro día solo actualizas el '
             'progreso de un libro — cuenta igual que para el mapa de calor. '
             'La racha cuenta desde antes de entrar en la liga.\n'
-            '📄 Páginas leídas: 1 punto por cada 20 páginas de ese día, hasta 10.\n\n'
+            '📄 Páginas leídas: según el tramo de páginas de ese día, igual que en '
+            'tu mapa de calor — de 1 a 4 puntos.\n\n'
             'Además:\n'
-            '📕 Terminar un libro: 40 puntos (20 si es una relectura o un libro de '
-            'menos de 50 páginas).\n'
+            '📕 Terminar un libro: 40 puntos (20 si tiene menos de 100 páginas; '
+            'las relecturas puntúan igual que una primera lectura).\n'
             '📆 Primer libro terminado del mes: +25 puntos.\n'
             '📚 Completar una saga entera: +100 puntos.\n'
             '✍️ Reseña con texto (más de 200 caracteres): +15 puntos.\n'
-            '👑 Elegir tu Libro del año del mes: +10 puntos.',
+            '👑 Elegir tu Libro del año del mes: +10 puntos.\n\n'
+            'Y entre temporadas:\n'
+            '🌱 Constancia — si sumaste puntos la temporada anterior, la '
+            'siguiente empieza con +15 puntos por seguir jugando.',
       ),
       _HelpItem(
         pregunta: '¿Qué pasa si revierto una lectura o quito una marca de racha?',
@@ -740,7 +744,26 @@ const List<_HelpSection> _secciones = [
             'suba ni baje esa temporada.\n\n'
             'En la clasificación, esas posiciones se marcan de un vistazo como '
             'en una tabla de fútbol: en verde quien va a ascender, en rojo quien '
-            'va a descender si la temporada cerrara ahora mismo.',
+            'va a descender si la temporada cerrara ahora mismo.\n\n'
+            'Justo debajo de la cabecera hay una escalera con las 5 divisiones, '
+            'con la tuya resaltada. Puedes pulsar sobre cualquiera de las otras '
+            'para curiosear su clasificación en vivo, aunque no compitas ahí — '
+            'la pantalla te avisa de que solo estás mirando.',
+      ),
+      _HelpItem(
+        pregunta: '¿Puedo ver temporadas anteriores o el podio de otras divisiones?',
+        respuesta:
+            'Sí. En la pantalla de Ligas, debajo del reto semanal, tienes dos '
+            'accesos:\n\n'
+            '🏆 "Temporada anterior" — la tabla final de tu división en la '
+            'última temporada cerrada, con tu puesto, tus puntos y las medallas '
+            'que ganaste. Desde ahí, el botón "Ver podios de todas las '
+            'divisiones" muestra el top 3 de cada división esa temporada — como '
+            'ver quién ganó en 1ª, 2ª y 3ª de una liga de fútbol.\n'
+            '🕓 "Ver histórico" — todas las temporadas que has jugado, más '
+            'reciente primero, con tu división, puesto y medallas de cada una.\n\n'
+            'Estos dos accesos solo aparecen una vez que has jugado al menos una '
+            'temporada completa.',
       ),
       _HelpItem(
         pregunta: '¿Qué son las medallas de temporada?',
@@ -766,8 +789,8 @@ const List<_HelpSection> _secciones = [
         respuesta:
             'Un objetivo aparte de la temporada, de lunes a domingo: hacer '
             'check-in al menos 5 de los 7 días de la semana suma +30 puntos '
-            'extra. Tu progreso se ve en una tarjeta con barra en la pantalla '
-            'de la liga.',
+            'extra, de forma automática — no hay que activarlo. El aviso está '
+            'justo debajo del botón de check-in, en Mi espacio lector.',
       ),
       _HelpItem(
         pregunta: '¿Qué es el aviso de "racha en riesgo"?',
