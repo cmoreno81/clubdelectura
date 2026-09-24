@@ -8,6 +8,7 @@ import '../theme/app_spacing.dart';
 import '../theme/app_text_styles.dart';
 import '../widgets/common/club_avatar.dart';
 import '../widgets/error_view.dart';
+import 'liga_page.dart' show abrirDesgloseLiga;
 
 /// Tabla EN VIVO de una división cualquiera de las Ligas de ClubReads — no
 /// solo la del usuario. Deja claro si es o no su propia división.
@@ -81,12 +82,24 @@ class _LigaDivisionPageState extends State<LigaDivisionPage> {
                   esTuDivision: data.esTuDivision,
                 ),
                 const SizedBox(height: AppSpacing.lg),
-                Text(
-                  'Clasificación en vivo',
-                  style: AppTextStyles.caption.copyWith(
-                    fontWeight: FontWeight.w800,
-                    color: AppColors.textSecondary,
-                  ),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      'Clasificación en vivo',
+                      style: AppTextStyles.caption.copyWith(
+                        fontWeight: FontWeight.w800,
+                        color: AppColors.textSecondary,
+                      ),
+                    ),
+                    if (data.tabla.isNotEmpty)
+                      Text(
+                        'Toca una fila para ver su desglose',
+                        style: AppTextStyles.caption.copyWith(
+                          color: AppColors.textMuted,
+                        ),
+                      ),
+                  ],
                 ),
                 const SizedBox(height: AppSpacing.sm),
                 if (data.tabla.isEmpty)
@@ -203,7 +216,12 @@ class _FilaDivision extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(AppRadius.md),
+        onTap: () => abrirDesgloseLiga(context, fila),
+        child: Container(
       margin: const EdgeInsets.only(bottom: AppSpacing.xs),
       padding: const EdgeInsets.symmetric(
         horizontal: AppSpacing.md,
@@ -256,6 +274,8 @@ class _FilaDivision extends StatelessWidget {
             style: AppTextStyles.caption.copyWith(color: AppColors.textMuted),
           ),
         ],
+      ),
+        ),
       ),
     );
   }

@@ -1105,7 +1105,7 @@ class _FilaLiga extends StatelessWidget {
       color: Colors.transparent,
       child: InkWell(
         borderRadius: BorderRadius.circular(AppRadius.md),
-        onTap: () => _abrirDesglose(context, fila),
+        onTap: () => abrirDesgloseLiga(context, fila),
         child: Container(
           margin: const EdgeInsets.only(bottom: AppSpacing.xs),
           padding: const EdgeInsets.symmetric(
@@ -1249,7 +1249,7 @@ class _IndicadorTendencia extends StatelessWidget {
 // Desglose de puntos de una participante
 // ─────────────────────────────────────────────────────────────────────────────
 
-void _abrirDesglose(BuildContext context, LigaFila fila) {
+void abrirDesgloseLiga(BuildContext context, LigaFila fila) {
   showModalBottomSheet<void>(
     context: context,
     isScrollControlled: true,
