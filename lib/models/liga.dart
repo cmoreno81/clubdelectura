@@ -318,6 +318,197 @@ class LigaDesglose {
   );
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+// Histórico de temporadas cerradas (`ligaHistorial` / `ligaTemporadaCerrada`)
+// ─────────────────────────────────────────────────────────────────────────────
+
+/// Una medalla ganada en una temporada del histórico — versión reducida de
+/// [LigaMedalla] (sin `seasonNumber`/`awardedAt`, ya implícitos en el
+/// contexto de la temporada que la contiene).
+class LigaHistorialMedalla {
+  final LigaMedallaTier tier;
+  final LigaDivision division;
+
+  const LigaHistorialMedalla({required this.tier, required this.division});
+
+  static LigaHistorialMedalla? fromJson(Map<String, dynamic> json) {
+    final tier = LigaMedallaTier.fromJson(json['tier']?.toString());
+    if (tier == null) return null;
+    return LigaHistorialMedalla(
+      tier: tier,
+      division: LigaDivision.fromJson(json['division']?.toString()),
+    );
+  }
+}
+
+/// Una temporada cerrada en la que la usuaria participó, para la lista del
+/// histórico (`ligaHistorial`).
+class LigaHistorialTemporada {
+  final int temporada;
+  final LigaDivision division;
+  final int puesto;
+  final int puntos;
+  final int totalParticipantes;
+  final DateTime inicio;
+  final DateTime fin;
+  final List<LigaHistorialMedalla> medallas;
+
+  const LigaHistorialTemporada({
+    required this.temporada,
+    required this.division,
+    required this.puesto,
+    required this.puntos,
+    required this.totalParticipantes,
+    required this.inicio,
+    required this.fin,
+    required this.medallas,
+  });
+
+  factory LigaHistorialTemporada.fromJson(Map<String, dynamic> json) =>
+      LigaHistorialTemporada(
+        temporada: (json['temporada'] as num?)?.toInt() ?? 0,
+        division: LigaDivision.fromJson(json['division']?.toString()),
+        puesto: (json['puesto'] as num?)?.toInt() ?? 0,
+        puntos: (json['puntos'] as num?)?.toInt() ?? 0,
+        totalParticipantes: (json['totalParticipantes'] as num?)?.toInt() ?? 0,
+        inicio: DateTime.tryParse(json['inicio']?.toString() ?? '') ??
+            DateTime.now(),
+        fin: DateTime.tryParse(json['fin']?.toString() ?? '') ??
+            DateTime.now(),
+        medallas: ((json['medallas'] as List?) ?? const [])
+            .map(
+              (e) => LigaHistorialMedalla.fromJson(
+                Map<String, dynamic>.from(e as Map),
+              ),
+            )
+            .whereType<LigaHistorialMedalla>()
+            .toList(),
+      );
+}
+
+/// Respuesta de `ligaHistorial`: todas las temporadas cerradas de la
+/// usuaria, más reciente primero.
+class LigaHistorial {
+  final List<LigaHistorialTemporada> temporadas;
+
+  const LigaHistorial({required this.temporadas});
+
+  factory LigaHistorial.fromJson(Map<String, dynamic> json) => LigaHistorial(
+    temporadas: ((json['temporadas'] as List?) ?? const [])
+        .map(
+          (e) => LigaHistorialTemporada.fromJson(
+            Map<String, dynamic>.from(e as Map),
+          ),
+        )
+        .toList(),
+  );
+}
+
+/// Cabecera de una temporada cerrada (`ligaTemporadaCerrada`).
+class LigaTemporadaCerradaInfo {
+  final int numero;
+  final LigaDivision division;
+  final DateTime inicio;
+  final DateTime fin;
+  final int totalParticipantes;
+
+  const LigaTemporadaCerradaInfo({
+    required this.numero,
+    required this.division,
+    required this.inicio,
+    required this.fin,
+    required this.totalParticipantes,
+  });
+
+  factory LigaTemporadaCerradaInfo.fromJson(Map<String, dynamic> json) =>
+      LigaTemporadaCerradaInfo(
+        numero: (json['numero'] as num?)?.toInt() ?? 0,
+        division: LigaDivision.fromJson(json['division']?.toString()),
+        inicio: DateTime.tryParse(json['inicio']?.toString() ?? '') ??
+            DateTime.now(),
+        fin: DateTime.tryParse(json['fin']?.toString() ?? '') ??
+            DateTime.now(),
+        totalParticipantes: (json['totalParticipantes'] as num?)?.toInt() ?? 0,
+      );
+}
+
+/// Una medalla ganada al cerrar esta temporada concreta, con su puesto y/o
+/// racha (`ligaTemporadaCerrada`).
+class LigaMedallaCerrada {
+  final LigaMedallaTier tier;
+  final LigaDivision division;
+  final int? rank;
+  final int? streak;
+
+  const LigaMedallaCerrada({
+    required this.tier,
+    required this.division,
+    required this.rank,
+    required this.streak,
+  });
+
+  static LigaMedallaCerrada? fromJson(Map<String, dynamic> json) {
+    final tier = LigaMedallaTier.fromJson(json['tier']?.toString());
+    if (tier == null) return null;
+    return LigaMedallaCerrada(
+      tier: tier,
+      division: LigaDivision.fromJson(json['division']?.toString()),
+      rank: (json['rank'] as num?)?.toInt(),
+      streak: (json['streak'] as num?)?.toInt(),
+    );
+  }
+}
+
+/// Respuesta de `ligaTemporadaCerrada`: detalle completo de una temporada ya
+/// cerrada (tabla final, tu puesto y las medallas que ganaste). `ok: false`
+/// cuando la temporada no existe, no ha cerrado o no la jugaste — en ese
+/// caso solo [mensaje] tiene contenido útil.
+class LigaTemporadaCerrada {
+  final bool ok;
+  final String mensaje;
+  final LigaTemporadaCerradaInfo? temporada;
+  final int? miPuesto;
+  final int? misPuntos;
+  final List<LigaFila> tabla;
+  final List<LigaMedallaCerrada> medallas;
+
+  const LigaTemporadaCerrada({
+    required this.ok,
+    required this.mensaje,
+    required this.temporada,
+    required this.miPuesto,
+    required this.misPuntos,
+    required this.tabla,
+    required this.medallas,
+  });
+
+  factory LigaTemporadaCerrada.fromJson(Map<String, dynamic> json) {
+    final ok = json['ok'] == true;
+    return LigaTemporadaCerrada(
+      ok: ok,
+      mensaje: json['mensaje']?.toString() ?? '',
+      temporada: (json['temporada'] as Map?) == null
+          ? null
+          : LigaTemporadaCerradaInfo.fromJson(
+              Map<String, dynamic>.from(json['temporada'] as Map),
+            ),
+      miPuesto: (json['miPuesto'] as num?)?.toInt(),
+      misPuntos: (json['misPuntos'] as num?)?.toInt(),
+      tabla: ((json['tabla'] as List?) ?? const [])
+          .map((e) => LigaFila.fromJson(Map<String, dynamic>.from(e as Map)))
+          .toList(),
+      medallas: ((json['medallas'] as List?) ?? const [])
+          .map(
+            (e) => LigaMedallaCerrada.fromJson(
+              Map<String, dynamic>.from(e as Map),
+            ),
+          )
+          .whereType<LigaMedallaCerrada>()
+          .toList(),
+    );
+  }
+}
+
 class LigaHistorico {
   final int temporadasJugadas;
   final int? mejorPuesto;

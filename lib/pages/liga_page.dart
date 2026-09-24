@@ -9,9 +9,12 @@ import '../theme/app_colors.dart';
 import '../theme/app_radius.dart';
 import '../theme/app_spacing.dart';
 import '../theme/app_text_styles.dart';
+import '../navigation/app_page_route.dart';
 import '../widgets/common/club_avatar.dart';
 import '../widgets/error_view.dart';
 import 'liga_clubes_page.dart';
+import 'liga_historial_page.dart';
+import 'liga_temporada_page.dart';
 
 /// Ligas de ClubReads — ranking individual por temporadas quincenales.
 class LigaPage extends StatefulWidget {
@@ -828,6 +831,8 @@ class _VistaParticipando extends StatelessWidget {
 
         if (estado.historico.temporadasJugadas > 0) ...[
           _Historico(historico: estado.historico),
+          const SizedBox(height: AppSpacing.sm),
+          _AccesosHistorial(temporadaActual: t.numero),
           const SizedBox(height: AppSpacing.lg),
         ],
 
@@ -1415,6 +1420,48 @@ class _Historico extends StatelessWidget {
             ),
         ],
       ),
+    );
+  }
+}
+
+/// Accesos a la temporada cerrada más reciente y al histórico completo —
+/// se muestran solo cuando ya hay al menos una temporada cerrada
+/// ([estado.historico.temporadasJugadas] > 0, comprobado por quien llama).
+class _AccesosHistorial extends StatelessWidget {
+  const _AccesosHistorial({required this.temporadaActual});
+
+  /// Nº de la temporada en curso — la anterior (ya cerrada) es esta menos 1.
+  final int temporadaActual;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Expanded(
+          child: OutlinedButton.icon(
+            onPressed: () => Navigator.push(
+              context,
+              AppPageRoute(
+                builder: (_) =>
+                    LigaTemporadaPage(temporada: temporadaActual - 1),
+              ),
+            ),
+            icon: const Icon(Icons.emoji_events_outlined, size: 18),
+            label: const Text('Temporada anterior'),
+          ),
+        ),
+        const SizedBox(width: AppSpacing.sm),
+        Expanded(
+          child: OutlinedButton.icon(
+            onPressed: () => Navigator.push(
+              context,
+              AppPageRoute(builder: (_) => const LigaHistorialPage()),
+            ),
+            icon: const Icon(Icons.history_rounded, size: 18),
+            label: const Text('Ver histórico'),
+          ),
+        ),
+      ],
     );
   }
 }
