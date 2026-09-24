@@ -853,6 +853,14 @@ class _GeneralDashboardPageState extends State<GeneralDashboardPage> {
                       // primer incentivo del día y no todo el mundo tiene
                       // un espacio lector personal desde el que llegar a él.
                       const CheckinSection(),
+                      const SizedBox(height: AppSpacing.xs),
+                      Text(
+                        '🎯 Bonus en Ligas: haz check-in 5 días esta semana y '
+                        'suma +30 puntos extra.',
+                        style: AppTextStyles.caption.copyWith(
+                          color: AppColors.textMuted,
+                        ),
+                      ),
                       const SizedBox(height: AppSpacing.md),
                       ClubCard(
                         onTap: _exploreBooks,
