@@ -15,6 +15,7 @@ import '../widgets/error_view.dart';
 import 'liga_clubes_page.dart';
 import 'liga_historial_page.dart';
 import 'liga_temporada_page.dart';
+import 'mi_espacio_page.dart';
 
 /// Ligas de ClubReads — ranking individual por temporadas quincenales.
 class LigaPage extends StatefulWidget {
@@ -819,6 +820,8 @@ class _VistaParticipando extends StatelessWidget {
             ],
           ),
         ),
+        const SizedBox(height: AppSpacing.sm),
+        _EscaleraDivisiones(actual: t.division),
         const SizedBox(height: AppSpacing.lg),
 
         if (estado.retoSemanal != null) ...[
@@ -830,7 +833,7 @@ class _VistaParticipando extends StatelessWidget {
         const SizedBox(height: AppSpacing.lg),
 
         if (estado.historico.temporadasJugadas > 0) ...[
-          _Historico(historico: estado.historico),
+          _Historico(historico: estado.historico, divisionActual: t.division),
           const SizedBox(height: AppSpacing.sm),
           _AccesosHistorial(temporadaActual: t.numero),
           const SizedBox(height: AppSpacing.lg),
@@ -909,6 +912,88 @@ class _VistaParticipando extends StatelessWidget {
   final tope = (size - 1) ~/ 2;
   final n = math.min(cuota, tope);
   return (suben: n, bajan: n);
+}
+
+/// Escalera de las 5 divisiones (como los grupos de una liga de fútbol),
+/// siempre visible bajo la cabecera — deja claro de un vistazo que la tabla
+/// de abajo es solo tu división, no un listado único de todo el mundo.
+class _EscaleraDivisiones extends StatelessWidget {
+  const _EscaleraDivisiones({required this.actual});
+  final LigaDivision actual;
+
+  @override
+  Widget build(BuildContext context) {
+    // Diamante arriba, Bronce abajo — igual que una escalera de ascensos.
+    final divisiones = LigaDivision.values.reversed.toList();
+    return Container(
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.md,
+        vertical: AppSpacing.sm,
+      ),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(AppRadius.lg),
+        border: Border.all(color: AppColors.border),
+      ),
+      child: Row(
+        children: [
+          for (final division in divisiones) ...[
+            Expanded(
+              child: Column(
+                children: [
+                  Container(
+                    width: 34,
+                    height: 34,
+                    alignment: Alignment.center,
+                    decoration: BoxDecoration(
+                      color: division == actual
+                          ? division.color.withValues(alpha: .18)
+                          : Colors.transparent,
+                      shape: BoxShape.circle,
+                      border: Border.all(
+                        color: division == actual
+                            ? division.color
+                            : AppColors.border,
+                        width: division == actual ? 1.6 : 1,
+                      ),
+                    ),
+                    child: Text(
+                      division.icono,
+                      style: TextStyle(
+                        fontSize: division == actual ? 17 : 14,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 3),
+                  Text(
+                    division.etiqueta,
+                    style: AppTextStyles.caption.copyWith(
+                      fontSize: 10,
+                      fontWeight: division == actual
+                          ? FontWeight.w800
+                          : FontWeight.w500,
+                      color: division == actual
+                          ? division.color
+                          : AppColors.textMuted,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            if (division != divisiones.last)
+              Padding(
+                padding: const EdgeInsets.only(bottom: 16),
+                child: Icon(
+                  Icons.chevron_right_rounded,
+                  size: 16,
+                  color: AppColors.textMuted.withValues(alpha: .5),
+                ),
+              ),
+          ],
+        ],
+      ),
+    );
+  }
 }
 
 class _PillCabecera extends StatelessWidget {
@@ -1307,7 +1392,17 @@ class _RetoSemanalCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(AppRadius.lg),
+        onTap: reto.completado
+            ? null
+            : () => Navigator.push(
+                context,
+                AppPageRoute(builder: (_) => const MiEspacioPage()),
+              ),
+        child: Container(
       padding: const EdgeInsets.all(AppSpacing.md),
       decoration: BoxDecoration(
         color: reto.completado
@@ -1368,14 +1463,17 @@ class _RetoSemanalCard extends StatelessWidget {
             ),
           ),
         ],
+          ),
+        ),
       ),
     );
   }
 }
 
 class _Historico extends StatelessWidget {
-  const _Historico({required this.historico});
+  const _Historico({required this.historico, required this.divisionActual});
   final LigaHistorico historico;
+  final LigaDivision divisionActual;
 
   @override
   Widget build(BuildContext context) {
@@ -1386,11 +1484,10 @@ class _Historico extends StatelessWidget {
         historico.mejorPuesto != null ? '#${historico.mejorPuesto}' : '—',
       ),
       ('Podios', '${historico.podios}'),
-      if (historico.mejorDivision != null)
-        (
-          'Mejor división',
-          '${historico.mejorDivision!.icono} ${historico.mejorDivision!.etiqueta}',
-        ),
+      (
+        'División',
+        '${divisionActual.icono} ${divisionActual.etiqueta}',
+      ),
     ];
     return Container(
       padding: const EdgeInsets.all(AppSpacing.md),
@@ -1438,30 +1535,66 @@ class _AccesosHistorial extends StatelessWidget {
     return Row(
       children: [
         Expanded(
-          child: OutlinedButton.icon(
-            onPressed: () => Navigator.push(
+          child: _BotonHistorial(
+            icon: Icons.emoji_events_outlined,
+            label: 'Temporada anterior',
+            onTap: () => Navigator.push(
               context,
               AppPageRoute(
                 builder: (_) =>
                     LigaTemporadaPage(temporada: temporadaActual - 1),
               ),
             ),
-            icon: const Icon(Icons.emoji_events_outlined, size: 18),
-            label: const Text('Temporada anterior'),
           ),
         ),
         const SizedBox(width: AppSpacing.sm),
         Expanded(
-          child: OutlinedButton.icon(
-            onPressed: () => Navigator.push(
+          child: _BotonHistorial(
+            icon: Icons.history_rounded,
+            label: 'Ver histórico',
+            onTap: () => Navigator.push(
               context,
               AppPageRoute(builder: (_) => const LigaHistorialPage()),
             ),
-            icon: const Icon(Icons.history_rounded, size: 18),
-            label: const Text('Ver histórico'),
           ),
         ),
       ],
+    );
+  }
+}
+
+class _BotonHistorial extends StatelessWidget {
+  const _BotonHistorial({
+    required this.icon,
+    required this.label,
+    required this.onTap,
+  });
+
+  final IconData icon;
+  final String label;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return OutlinedButton(
+      onPressed: onTap,
+      style: OutlinedButton.styleFrom(alignment: Alignment.center),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 18),
+          const SizedBox(width: AppSpacing.xs),
+          Flexible(
+            child: Text(
+              label,
+              textAlign: TextAlign.center,
+              overflow: TextOverflow.ellipsis,
+              maxLines: 2,
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
