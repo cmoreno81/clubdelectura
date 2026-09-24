@@ -975,6 +975,9 @@ class _EscaleraDivisiones extends StatelessWidget {
                   const SizedBox(height: 3),
                   Text(
                     division.etiqueta,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    softWrap: false,
                     style: AppTextStyles.caption.copyWith(
                       fontSize: 10,
                       fontWeight: division == actual

@@ -510,6 +510,68 @@ class LigaTemporadaCerrada {
   }
 }
 
+/// Podio (top 3) de una división concreta en una temporada cerrada.
+class LigaPodioDivision {
+  final LigaDivision division;
+  final int totalParticipantes;
+  final List<LigaFila> podio;
+
+  const LigaPodioDivision({
+    required this.division,
+    required this.totalParticipantes,
+    required this.podio,
+  });
+
+  factory LigaPodioDivision.fromJson(Map<String, dynamic> json) =>
+      LigaPodioDivision(
+        division: LigaDivision.fromJson(json['division']?.toString()),
+        totalParticipantes: (json['totalParticipantes'] as num?)?.toInt() ?? 0,
+        podio: ((json['podio'] as List?) ?? const [])
+            .map((e) => LigaFila.fromJson(Map<String, dynamic>.from(e as Map)))
+            .toList(),
+      );
+}
+
+/// Respuesta de `ligaPodiosTemporada`: top 3 de CADA división en una
+/// temporada cerrada, no solo la del usuario — para ver de un vistazo quién
+/// ganó en Bronce, Plata, Oro... `ok: false` cuando la temporada no existe o
+/// todavía no ha cerrado.
+class LigaPodiosTemporada {
+  final bool ok;
+  final String mensaje;
+  final int? temporadaNumero;
+  final DateTime? inicio;
+  final DateTime? fin;
+  final List<LigaPodioDivision> divisiones;
+
+  const LigaPodiosTemporada({
+    required this.ok,
+    required this.mensaje,
+    required this.temporadaNumero,
+    required this.inicio,
+    required this.fin,
+    required this.divisiones,
+  });
+
+  factory LigaPodiosTemporada.fromJson(Map<String, dynamic> json) {
+    final temporada = (json['temporada'] as Map?)?.cast<String, dynamic>();
+    return LigaPodiosTemporada(
+      ok: json['ok'] == true,
+      mensaje: json['mensaje']?.toString() ?? '',
+      temporadaNumero: (temporada?['numero'] as num?)?.toInt(),
+      inicio: DateTime.tryParse(temporada?['inicio']?.toString() ?? ''),
+      fin: DateTime.tryParse(temporada?['fin']?.toString() ?? ''),
+      divisiones: ((json['divisiones'] as List?) ?? const [])
+          .map(
+            (e) => LigaPodioDivision.fromJson(
+              Map<String, dynamic>.from(e as Map),
+            ),
+          )
+          .toList(),
+    );
+  }
+}
+
 class LigaHistorico {
   final int temporadasJugadas;
   final int? mejorPuesto;

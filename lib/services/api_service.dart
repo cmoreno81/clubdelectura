@@ -2278,6 +2278,22 @@ class ApiService {
     return _decodeJson(response) as Map<String, dynamic>;
   }
 
+  /// Podio (top 3) de CADA división en una temporada ya cerrada [temporada]
+  /// — no solo la mía. Si la temporada no existe o todavía no ha cerrado,
+  /// el `Map` devuelto trae `ok: false` y un `mensaje` para mostrar.
+  Future<Map<String, dynamic>> getLigaPodiosTemporada(int temporada) async {
+    final response = await _client.get(
+      Uri.parse(baseUrl).replace(
+        queryParameters: {
+          'action': 'ligaPodiosTemporada',
+          'temporada': '$temporada',
+        },
+      ),
+    );
+    if (response.statusCode != 200) throw ApiException.fromResponse(response);
+    return _decodeJson(response) as Map<String, dynamic>;
+  }
+
   /// Ranking de clubes de la temporada (por defecto, la actual): las dos
   /// tablas "más activos" (suma total de puntos) y "más eficientes" (media
   /// por miembro participante — el ranking justo por tamaño de club).

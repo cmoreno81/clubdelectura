@@ -1,12 +1,14 @@
 import 'package:flutter/material.dart';
 
 import '../models/liga.dart';
+import '../navigation/app_page_route.dart';
 import '../services/api_service.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_radius.dart';
 import '../theme/app_spacing.dart';
 import '../theme/app_text_styles.dart';
 import '../widgets/common/club_avatar.dart';
+import 'liga_podios_temporada_page.dart';
 
 /// Detalle de una temporada ya cerrada de las Ligas de ClubReads: su tabla
 /// final completa, mi puesto/puntos y las medallas que gané esa temporada.
@@ -67,6 +69,18 @@ class _LigaTemporadaPageState extends State<LigaTemporadaPage> {
               ),
               children: [
                 _CabeceraTemporada(temporada: t, data: data),
+                const SizedBox(height: AppSpacing.sm),
+                OutlinedButton.icon(
+                  onPressed: () => Navigator.push(
+                    context,
+                    AppPageRoute(
+                      builder: (_) =>
+                          LigaPodiosTemporadaPage(temporada: t.numero),
+                    ),
+                  ),
+                  icon: const Icon(Icons.workspace_premium_rounded, size: 18),
+                  label: const Text('Ver podios de todas las divisiones'),
+                ),
                 if (data.medallas.isNotEmpty) ...[
                   const SizedBox(height: AppSpacing.lg),
                   _MedallasTemporada(medallas: data.medallas),
