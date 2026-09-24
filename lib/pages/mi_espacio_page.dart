@@ -22,7 +22,12 @@ import 'wrapped_page.dart';
 /// Pantalla de logros y estadísticas personales para el modo lector solitario.
 /// Diseñada para motivar al lector con datos propios y hitos alcanzados.
 class MiEspacioPage extends StatefulWidget {
-  const MiEspacioPage({super.key});
+  const MiEspacioPage({super.key, this.scrollToCheckin = false});
+
+  /// Si viene true, en cuanto cargue baja directa a "Check-in diario" — para
+  /// cuando se llega desde el reto semanal de Ligas, que es justo lo que se
+  /// quiere hacer.
+  final bool scrollToCheckin;
 
   @override
   State<MiEspacioPage> createState() => _MiEspacioPageState();
@@ -31,6 +36,9 @@ class MiEspacioPage extends StatefulWidget {
 class _MiEspacioPageState extends State<MiEspacioPage>
     with TickerProviderStateMixin {
   late Future<_PageData> _future;
+  final _checkinKey = GlobalKey();
+  final _scrollCtrl = ScrollController();
+  bool _yaHizoAutoScroll = false;
 
   late final AnimationController _streakCtrl;
   late final Animation<double> _streakPulse;
@@ -67,7 +75,30 @@ class _MiEspacioPageState extends State<MiEspacioPage>
   @override
   void dispose() {
     _streakCtrl.dispose();
+    _scrollCtrl.dispose();
     super.dispose();
+  }
+
+  /// Baja hasta el check-in cuando se llega desde el reto semanal de Ligas.
+  /// Repite `ensureVisible` varias veces en vez de una sola pasada: el
+  /// contenido de más abajo (mapa de calor, wrapped...) todavía está
+  /// asentando su layout justo después de cargar, así que una sola llamada
+  /// calcula el destino con una página más corta de lo que acaba siendo y se
+  /// queda corta — cada pasada siguiente se corrige con la geometría ya
+  /// estable.
+  Future<void> _autoScrollToCheckin() async {
+    for (var i = 0; i < 4; i++) {
+      await Future.delayed(const Duration(milliseconds: 150));
+      if (!mounted) return;
+      final ctx = _checkinKey.currentContext;
+      if (ctx == null) return;
+      await Scrollable.ensureVisible(
+        ctx,
+        duration: const Duration(milliseconds: 300),
+        curve: Curves.easeOut,
+        alignment: 0.1,
+      );
+    }
   }
 
   @override
@@ -83,8 +114,14 @@ class _MiEspacioPageState extends State<MiEspacioPage>
           if (snapshot.hasError || snapshot.data == null) {
             return _ErrorView(onRetry: () => setState(() => _future = _load()));
           }
+          if (widget.scrollToCheckin && !_yaHizoAutoScroll) {
+            _yaHizoAutoScroll = true;
+            _autoScrollToCheckin();
+          }
           return _Content(
             data: snapshot.data!,
+            checkinKey: _checkinKey,
+            scrollController: _scrollCtrl,
             streakPulse: _streakPulse,
             onVerTodos: () => Navigator.push<void>(
               context,
@@ -158,6 +195,8 @@ class _PageData {
 class _Content extends StatelessWidget {
   const _Content({
     required this.data,
+    required this.checkinKey,
+    required this.scrollController,
     required this.streakPulse,
     required this.onVerTodos,
     required this.onVerWrapped,
@@ -167,6 +206,8 @@ class _Content extends StatelessWidget {
   });
 
   final _PageData data;
+  final GlobalKey checkinKey;
+  final ScrollController scrollController;
   final Animation<double> streakPulse;
   final VoidCallback onVerTodos;
   final VoidCallback onVerWrapped;
@@ -202,6 +243,7 @@ class _Content extends StatelessWidget {
     return RefreshIndicator(
       onRefresh: () async {},
       child: CustomScrollView(
+        controller: scrollController,
         slivers: [
           // ── AppBar con hero de racha ──────────────────────────────────────
           SliverAppBar(
@@ -351,9 +393,12 @@ class _Content extends StatelessWidget {
               0,
             ),
             sliver: SliverToBoxAdapter(
-              child: CheckinButton(
-                checkedToday: data.checkedToday,
-                streak: data.streak,
+              child: KeyedSubtree(
+                key: checkinKey,
+                child: CheckinButton(
+                  checkedToday: data.checkedToday,
+                  streak: data.streak,
+                ),
               ),
             ),
           ),

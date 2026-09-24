@@ -238,14 +238,16 @@ const _kFilasPuntos = [
   ),
   (
     'Páginas leídas',
-    'Según las páginas que registres ese mismo día.',
-    '1 pt cada 20 págs',
+    'Según el tramo de páginas que registres ese día, igual que en tu '
+        'mapa de calor.',
+    '1 a 4 pts',
   ),
   (
     'Terminar un libro',
-    'Cada libro que termines tras tenerlo en Leyendo ahora. Si lo '
-        'marcas directamente como terminado, puntúa uno al día (menos si '
-        'es relectura o tiene menos de 50 páginas).',
+    'Cada libro que termines tras tenerlo en Leyendo ahora (las '
+        'relecturas puntúan igual). Si lo marcas directamente como '
+        'terminado, puntúa uno al día (menos si tiene menos de 100 '
+        'páginas).',
     '40 pts',
   ),
   (
@@ -269,6 +271,12 @@ const _kFilasPuntos = [
     'Al seleccionar tu favorito del mes en Perfil → Favoritos, durante '
         'ese mes o el siguiente. Rellenar meses atrasados no puntúa.',
     '10 pts',
+  ),
+  (
+    'Constancia entre temporadas',
+    'Si en la temporada anterior sumaste puntos, esta empieza con un '
+        'pequeño extra por seguir jugando.',
+    '15 pts',
   ),
 ];
 
@@ -1400,7 +1408,9 @@ class _RetoSemanalCard extends StatelessWidget {
             ? null
             : () => Navigator.push(
                 context,
-                AppPageRoute(builder: (_) => const MiEspacioPage()),
+                AppPageRoute(
+                  builder: (_) => const MiEspacioPage(scrollToCheckin: true),
+                ),
               ),
         child: Container(
       padding: const EdgeInsets.all(AppSpacing.md),

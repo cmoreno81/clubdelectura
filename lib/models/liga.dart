@@ -255,6 +255,7 @@ const Map<String, (String emoji, String etiqueta)> kLigaTiposPuntos = {
   'BOOK_OF_YEAR_PICK': ('👑', 'Libro del año elegido'),
   'QUIZ': ('🧠', 'Quizzes'),
   'WEEKLY_CHALLENGE': ('🎯', 'Reto semanal'),
+  'CONSTANCIA_TEMPORADA': ('🌱', 'Constancia entre temporadas'),
 };
 
 class LigaDesgloseItem {
