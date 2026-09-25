@@ -1128,6 +1128,32 @@ const List<_HelpSection> _secciones = [
             '🏅 Año legendario (Legendario) — 100 libros en un solo año',
       ),
       _HelpItem(
+        pregunta: '¿Qué es el Bingo lector?',
+        respuesta:
+            'Un cartón anual de 25 retos de book journal sobre tus lecturas '
+            '(una portada amarilla, terminar una saga, un libro de más de '
+            '500 páginas, un autor debut…). A diferencia de los logros, aquí '
+            'no se calcula nada solo: eres tú quien decide qué libro cumple '
+            'cada casilla y la marcas a mano, pudiendo anotar opcionalmente '
+            'qué libro la cumplió. Si te equivocas, puedes desmarcarla desde '
+            'la misma casilla.\n\n'
+            'Al completar una fila, columna o diagonal, o el cartón entero, '
+            'verás un aviso de celebración en pantalla.\n\n'
+            'Dónde encontrarlo:\n'
+            '• Con espacio personal → "Mi espacio", justo antes del Wrapped\n'
+            '• Sin espacio personal → "Mi universo lector" (Inicio), justo '
+            'debajo de la Ruleta del TBR\n\n'
+            'El cartón se reinicia cada año, igual que los logros.',
+      ),
+      _HelpItem(
+        pregunta: '🎯 Categoría Bingo lector — ¿cómo se desbloquea?',
+        respuesta:
+            'Se consiguen marcando casillas del Bingo lector:\n\n'
+            '🎯 Línea de bingo (Raro) — completa una fila, columna o '
+            'diagonal del cartón\n'
+            '🏆 Bingo completo (Legendario) — marca las 25 casillas del año',
+      ),
+      _HelpItem(
         pregunta: '¿Qué es el Reto lector?',
         respuesta:
             'El Reto lector te permite marcarte un objetivo personal de libros '
@@ -1261,6 +1287,8 @@ const List<_HelpSection> _secciones = [
             '• La estantería del mes y el calendario de lectura\n'
             '• Tus clubes activos\n'
             '• Novedades disponibles y próximos lanzamientos\n'
+            '• El Bingo lector, justo debajo de la Ruleta del TBR — solo si no '
+            'tienes espacio personal, porque ahí ya tiene su propio sitio\n'
             '• La tarjeta "Tu lista de deseos" con el precio total y los libros guardados\n'
             '• Tus logros del año\n'
             '• Las tendencias de la comunidad (libros y autores)\n\n'
