@@ -31,6 +31,7 @@ import '../widgets/common/club_card.dart';
 import '../widgets/common/calendar_edit_fechas_sheet.dart';
 import '../widgets/common/reading_cover_calendar.dart';
 import '../widgets/common/optimized_network_image.dart';
+import '../widgets/dashboard/bingo_lector_card.dart';
 import '../widgets/dashboard/monthly_reading_shelf.dart';
 import '../widgets/dashboard/tbr_roulette_card.dart';
 import 'clubs_page.dart';
@@ -1028,6 +1029,13 @@ class _GeneralDashboardPageState extends State<GeneralDashboardPage> {
                           onOpenBook: (book) =>
                               _openPersonalBook(book, data.userName),
                         ),
+                        // El bingo lector vive en Mi espacio para quien
+                        // tiene espacio personal; para cuentas solo-club
+                        // (sin esa pestaña) este es su único hueco.
+                        if (!data.clubs.any((c) => c.esPersonal)) ...[
+                          const SizedBox(height: AppSpacing.xl),
+                          ClubCard(child: const BingoLectorSection()),
+                        ],
                       ],
                       const SizedBox(height: AppSpacing.xl),
                       _sectionTitle(

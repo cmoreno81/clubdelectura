@@ -33,7 +33,7 @@ const kBingoCasillas = <BingoCasilla>[
   BingoCasilla('adaptado_pantalla', '🎬', 'Adaptado a pantalla'),
   BingoCasilla('recomendado', '🗣️', 'Recomendado por alguien'),
   BingoCasilla('tbr_mas_de_un_anio', '📌', 'En tu pila +1 año'),
-  BingoCasilla('narrador_poco_fiable', '🎭', 'Narrador poco fiable'),
+  BingoCasilla('te_hizo_llorar', '😭', 'Un libro que te hizo llorar'),
   BingoCasilla('coescrito', '🧑‍🤝‍🧑', 'Escrito a dos manos'),
   BingoCasilla('elegido_al_azar', '🎲', 'Elegido al azar'),
 ];

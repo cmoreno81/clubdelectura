@@ -51,7 +51,6 @@ import 'liga_page.dart';
 import '../services/auth_service.dart';
 import '../services/auth_session_service.dart';
 import '../services/favoritos_service.dart';
-import '../widgets/dashboard/bingo_lector_card.dart';
 import '../widgets/dashboard/year_reading_shelf.dart';
 import '../models/general_dashboard.dart' show YearShelfBook;
 import 'personalidad_lectora_page.dart';
@@ -539,7 +538,6 @@ class _PerfilUsuarioPageState extends State<PerfilUsuarioPage> {
         return _PerfilLogrosSection(
           usuario: perfil.usuario,
           userId: perfil.userId,
-          esMiPerfil: esMiPerfil,
         );
 
       case 'MAS':
@@ -2330,17 +2328,12 @@ class _PerfilLogrosSection extends StatefulWidget {
   const _PerfilLogrosSection({
     required this.usuario,
     this.userId,
-    this.esMiPerfil = false,
   });
   final String usuario;
   /// Sin esto (p. ej. la ruta rápida desde "logros del club", que aún no ha
   /// cargado el perfil completo) no se puede pedir el medallero, así que
   /// esa sección simplemente no se muestra.
   final String? userId;
-  /// El bingo lector es editable y siempre es el MÍO, nunca el de la
-  /// persona cuyo perfil se está mirando — así que solo se muestra en el
-  /// propio perfil.
-  final bool esMiPerfil;
 
   @override
   State<_PerfilLogrosSection> createState() => _PerfilLogrosSectionState();
@@ -2386,10 +2379,6 @@ class _PerfilLogrosSectionState extends State<_PerfilLogrosSection> {
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            if (widget.esMiPerfil) ...[
-              const BingoLectorSection(),
-              const SizedBox(height: AppSpacing.xl),
-            ],
             ClubSectionTitle(
               title: 'Logros de ${widget.usuario.split(' ').first}',
               subtitle:
