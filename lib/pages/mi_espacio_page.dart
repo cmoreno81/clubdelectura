@@ -260,9 +260,7 @@ class _Content extends StatelessWidget {
                   borderRadius: BorderRadius.circular(AppRadius.lg),
                   border: Border.all(color: AppColors.border),
                 ),
-                child: BingoLectorSection(
-                  future: Future.value(data.achievements),
-                ),
+                child: const BingoLectorSection(),
               ),
             ),
           ),

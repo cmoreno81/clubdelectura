@@ -2305,6 +2305,42 @@ class ApiService {
     return _decodeJson(response) as Map<String, dynamic>;
   }
 
+  /// Casillas del bingo lector marcadas en [anio] (año en curso si se omite).
+  Future<Map<String, dynamic>> getBingoLector({int? anio}) async {
+    final response = await _client.get(
+      Uri.parse(baseUrl).replace(
+        queryParameters: {
+          'action': 'bingoLector',
+          if (anio != null) 'anio': '$anio',
+        },
+      ),
+    );
+    if (response.statusCode != 200) throw ApiException.fromResponse(response);
+    return _decodeJson(response) as Map<String, dynamic>;
+  }
+
+  /// Marca o desmarca [squareKey] del bingo lector, con [nota] opcional del
+  /// libro que la cumplió.
+  Future<Map<String, dynamic>> marcarCasillaBingo({
+    required String squareKey,
+    required bool marcar,
+    String? nota,
+    int? anio,
+  }) async {
+    final response = await _client.post(
+      Uri.parse('$baseUrl?action=bingoLectorMarcar'),
+      headers: const {'Content-Type': 'application/json'},
+      body: jsonEncode({
+        'squareKey': squareKey,
+        'marcar': marcar,
+        if (nota != null) 'nota': nota,
+        if (anio != null) 'anio': anio,
+      }),
+    );
+    if (response.statusCode != 200) throw ApiException.fromResponse(response);
+    return _decodeJson(response) as Map<String, dynamic>;
+  }
+
   /// Ranking de clubes de la temporada (por defecto, la actual): las dos
   /// tablas "más activos" (suma total de puntos) y "más eficientes" (media
   /// por miembro participante — el ranking justo por tamaño de club).

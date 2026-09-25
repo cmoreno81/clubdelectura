@@ -1,39 +1,97 @@
 import 'package:flutter/material.dart';
 
-import '../../models/achievements/achievement.dart';
-import '../../navigation/app_page_route.dart';
-import '../../pages/mis_logros_page.dart';
+import '../../models/bingo_lector.dart';
+import '../../services/api_service.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_radius.dart';
 import '../../theme/app_spacing.dart';
 import '../../theme/app_text_styles.dart';
 import '../common/club_shimmer.dart';
 
-/// Bingo lector: los logros de siempre, pero como cartón de bingo en vez de
-/// lista — pensado para que apetezca volver a mirarlo. El orden es siempre
-/// el que da el backend, para que cada casilla se quede en su sitio de una
-/// visita a otra en vez de saltar al desbloquear cosas.
-class BingoLectorSection extends StatelessWidget {
-  const BingoLectorSection({super.key, required this.future});
-  final Future<List<UserAchievement>> future;
+/// Bingo lector: 25 retos de book journal (portada de un color, terminar
+/// una saga, autor debut...) que la propia lectora marca a mano cuando un
+/// libro los cumple — a propósito distinto de los logros, que se calculan
+/// solos. Es autónomo: carga y guarda sus propias marcas.
+class BingoLectorSection extends StatefulWidget {
+  const BingoLectorSection({super.key});
 
-  static const _casillas = 25;
+  @override
+  State<BingoLectorSection> createState() => _BingoLectorSectionState();
+}
+
+class _BingoLectorSectionState extends State<BingoLectorSection> {
+  late Future<BingoLector> _future;
+
+  @override
+  void initState() {
+    super.initState();
+    _future = _cargar();
+  }
+
+  Future<BingoLector> _cargar() async {
+    final data = await ApiService().getBingoLector();
+    return BingoLector.fromJson(data);
+  }
+
+  Future<void> _tocarCasilla(BingoCasilla casilla, BingoLector actual) async {
+    final marcada = actual.marcadas[casilla.key];
+    final resultado = await showModalBottomSheet<_BingoDialogResultado>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: AppColors.background,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (_) => _BingoCasillaSheet(casilla: casilla, marcaActual: marcada),
+    );
+    if (resultado == null) return;
+
+    // Optimista: se ve al instante, y si falla se recarga desde el server.
+    setState(() {
+      _future = Future.value(
+        BingoLector(
+          ok: actual.ok,
+          year: actual.year,
+          marcadas: {...actual.marcadas}
+            ..removeWhere((k, _) => k == casilla.key)
+            ..addEntries(
+              resultado.marcar
+                  ? [
+                      MapEntry(
+                        casilla.key,
+                        BingoMarca(squareKey: casilla.key, nota: resultado.nota),
+                      ),
+                    ]
+                  : const [],
+            ),
+        ),
+      );
+    });
+    try {
+      await ApiService().marcarCasillaBingo(
+        squareKey: casilla.key,
+        marcar: resultado.marcar,
+        nota: resultado.nota,
+      );
+    } catch (_) {
+      if (mounted) setState(() => _future = _cargar());
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
-    return FutureBuilder<List<UserAchievement>>(
-      future: future,
+    return FutureBuilder<BingoLector>(
+      future: _future,
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
-          return const BingoSkeleton();
+          return const _BingoSkeleton();
         }
-        final achievements = snapshot.data ?? const [];
-        if (achievements.isEmpty) return const SizedBox.shrink();
+        final bingo = snapshot.data;
+        if (bingo == null || !bingo.ok) return const SizedBox.shrink();
 
-        final unlocked = achievements.where((a) => a.unlocked).length;
-        final total = achievements.length;
-        final pct = total > 0 ? unlocked / total : 0.0;
-        final casillas = achievements.take(_casillas).toList();
+        final marcadas = bingo.marcadas.length;
+        final total = kBingoCasillas.length;
+        final pct = total > 0 ? marcadas / total : 0.0;
 
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -47,26 +105,19 @@ class BingoLectorSection extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'Bingo lector ${DateTime.now().year}',
+                        'Bingo lector ${bingo.year}',
                         style: AppTextStyles.subtitle.copyWith(
                           fontWeight: FontWeight.w800,
                         ),
                       ),
                       Text(
-                        '$unlocked de $total casillas',
+                        '$marcadas de $total casillas · toca una para marcarla',
                         style: AppTextStyles.caption.copyWith(
                           color: AppColors.textMuted,
                         ),
                       ),
                     ],
                   ),
-                ),
-                TextButton(
-                  onPressed: () => Navigator.push<void>(
-                    context,
-                    AppPageRoute(builder: (_) => const MisLogrosPage()),
-                  ),
-                  child: const Text('Ver todas'),
                 ),
               ],
             ),
@@ -91,8 +142,15 @@ class BingoLectorSection extends StatelessWidget {
                 mainAxisSpacing: 6,
                 childAspectRatio: 1,
               ),
-              itemCount: casillas.length,
-              itemBuilder: (context, i) => BingoCell(achievement: casillas[i]),
+              itemCount: kBingoCasillas.length,
+              itemBuilder: (context, i) {
+                final casilla = kBingoCasillas[i];
+                return _BingoCell(
+                  casilla: casilla,
+                  marca: bingo.marcadas[casilla.key],
+                  onTap: () => _tocarCasilla(casilla, bingo),
+                );
+              },
             ),
           ],
         );
@@ -101,10 +159,8 @@ class BingoLectorSection extends StatelessWidget {
   }
 }
 
-/// Placeholder con las mismas dimensiones que el cartón cargado, para no
-/// dar un salto de layout mientras el future de achievements está en vuelo.
-class BingoSkeleton extends StatelessWidget {
-  const BingoSkeleton({super.key});
+class _BingoSkeleton extends StatelessWidget {
+  const _BingoSkeleton();
 
   static BorderRadius _r(double r) => BorderRadius.circular(r);
 
@@ -123,11 +179,10 @@ class BingoSkeleton extends StatelessWidget {
                 children: [
                   ClubShimmer(width: 140, height: 14, borderRadius: _r(4)),
                   const SizedBox(height: 4),
-                  ClubShimmer(width: 100, height: 11, borderRadius: _r(4)),
+                  ClubShimmer(width: 180, height: 11, borderRadius: _r(4)),
                 ],
               ),
             ),
-            ClubShimmer(width: 60, height: 28, borderRadius: _r(8)),
           ],
         ),
         const SizedBox(height: AppSpacing.xs),
@@ -144,104 +199,169 @@ class BingoSkeleton extends StatelessWidget {
             childAspectRatio: 1,
           ),
           itemCount: 25,
-          itemBuilder: (_, i) =>
-              ClubShimmer(width: double.infinity, height: double.infinity, borderRadius: _r(8)),
+          itemBuilder: (_, i) => ClubShimmer(
+            width: double.infinity,
+            height: double.infinity,
+            borderRadius: _r(8),
+          ),
         ),
       ],
     );
   }
 }
 
-/// Una casilla del cartón: sellada (con su check dorado) si está
-/// desbloqueada, apagada con el progreso debajo si no.
-class BingoCell extends StatelessWidget {
-  const BingoCell({super.key, required this.achievement});
-  final UserAchievement achievement;
-
-  Color get _color => switch (achievement.rarity) {
-    'legendary' => AppColors.gold,               // dorado
-    'epic'      => AppColors.primary,            // ciruela
-    'rare'      => const Color(0xFF5A7A60),      // salvia tierra
-    _           => AppColors.textSecondary,      // marrón grisáceo — común
-  };
+class _BingoCell extends StatelessWidget {
+  const _BingoCell({required this.casilla, required this.marca, required this.onTap});
+  final BingoCasilla casilla;
+  final BingoMarca? marca;
+  final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
-    final unlocked = achievement.unlocked;
-    final color = _color;
-    final progresoTexto = !unlocked && achievement.target > 1
-        ? '${achievement.progress}/${achievement.target}'
-        : null;
+    final marcada = marca != null;
+    final color = AppColors.gold;
     return Tooltip(
-      message: unlocked
-          ? '${achievement.title}\n${achievement.description}'
-          : '${achievement.title}\n${achievement.description}'
-                '${progresoTexto != null ? '\n$progresoTexto' : ''}',
-      child: Stack(
-        clipBehavior: Clip.none,
-        children: [
-          Container(
-            decoration: BoxDecoration(
-              color: unlocked
-                  ? color.withValues(alpha: .16)
-                  : AppColors.surfaceSoft,
-              borderRadius: BorderRadius.circular(AppRadius.sm),
-              border: Border.all(
-                color: unlocked ? color.withValues(alpha: .55) : AppColors.border,
-                width: unlocked ? 1.6 : 1,
-              ),
-            ),
-            alignment: Alignment.center,
-            child: Opacity(
-              opacity: unlocked ? 1 : .32,
-              child: Text(
-                achievement.icon,
-                style: const TextStyle(fontSize: 17),
-              ),
-            ),
-          ),
-          if (progresoTexto != null)
-            Positioned(
-              left: 0,
-              right: 0,
-              bottom: 2,
-              child: Text(
-                progresoTexto,
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontSize: 7,
-                  fontWeight: FontWeight.w800,
-                  color: AppColors.textMuted,
+      message: marcada
+          ? '${casilla.etiqueta}${marca?.nota != null ? '\n${marca!.nota}' : ''}'
+          : casilla.etiqueta,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(AppRadius.sm),
+        onTap: onTap,
+        child: Stack(
+          clipBehavior: Clip.none,
+          children: [
+            Container(
+              decoration: BoxDecoration(
+                color: marcada ? color.withValues(alpha: .16) : AppColors.surfaceSoft,
+                borderRadius: BorderRadius.circular(AppRadius.sm),
+                border: Border.all(
+                  color: marcada ? color.withValues(alpha: .55) : AppColors.border,
+                  width: marcada ? 1.6 : 1,
                 ),
               ),
+              alignment: Alignment.center,
+              child: Opacity(
+                opacity: marcada ? 1 : .55,
+                child: Text(casilla.icono, style: const TextStyle(fontSize: 17)),
+              ),
             ),
-          if (unlocked)
-            Positioned(
-              right: -4,
-              top: -4,
-              child: Transform.rotate(
-                angle: -0.35,
-                child: Container(
-                  padding: const EdgeInsets.all(2),
-                  decoration: BoxDecoration(
-                    color: color,
-                    shape: BoxShape.circle,
-                    boxShadow: [
-                      BoxShadow(
-                        color: color.withValues(alpha: .5),
-                        blurRadius: 3,
+            if (marcada)
+              Positioned(
+                right: -4,
+                top: -4,
+                child: Transform.rotate(
+                  angle: -0.35,
+                  child: Container(
+                    padding: const EdgeInsets.all(2),
+                    decoration: BoxDecoration(
+                      color: color,
+                      shape: BoxShape.circle,
+                      boxShadow: [
+                        BoxShadow(color: color.withValues(alpha: .5), blurRadius: 3),
+                      ],
+                    ),
+                    child: const Icon(Icons.check_rounded, size: 9, color: Colors.white),
+                  ),
+                ),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _BingoDialogResultado {
+  const _BingoDialogResultado({required this.marcar, this.nota});
+  final bool marcar;
+  final String? nota;
+}
+
+class _BingoCasillaSheet extends StatefulWidget {
+  const _BingoCasillaSheet({required this.casilla, required this.marcaActual});
+  final BingoCasilla casilla;
+  final BingoMarca? marcaActual;
+
+  @override
+  State<_BingoCasillaSheet> createState() => _BingoCasillaSheetState();
+}
+
+class _BingoCasillaSheetState extends State<_BingoCasillaSheet> {
+  late final _notaCtrl = TextEditingController(text: widget.marcaActual?.nota ?? '');
+
+  @override
+  void dispose() {
+    _notaCtrl.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final yaMarcada = widget.marcaActual != null;
+    return SafeArea(
+      child: Padding(
+        padding: EdgeInsets.only(
+          left: AppSpacing.lg,
+          right: AppSpacing.lg,
+          top: AppSpacing.lg,
+          bottom: MediaQuery.of(context).viewInsets.bottom + AppSpacing.lg,
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Text(widget.casilla.icono, style: const TextStyle(fontSize: 28)),
+                const SizedBox(width: AppSpacing.sm),
+                Expanded(
+                  child: Text(
+                    widget.casilla.etiqueta,
+                    style: AppTextStyles.subtitle.copyWith(fontWeight: FontWeight.w800),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: AppSpacing.md),
+            TextField(
+              controller: _notaCtrl,
+              maxLength: 120,
+              decoration: const InputDecoration(
+                labelText: '¿Qué libro la cumplió? (opcional)',
+                border: OutlineInputBorder(),
+              ),
+            ),
+            const SizedBox(height: AppSpacing.sm),
+            Row(
+              children: [
+                if (yaMarcada)
+                  Expanded(
+                    child: OutlinedButton(
+                      onPressed: () => Navigator.pop(
+                        context,
+                        const _BingoDialogResultado(marcar: false),
                       ),
-                    ],
+                      style: OutlinedButton.styleFrom(foregroundColor: AppColors.danger),
+                      child: const Text('Desmarcar'),
+                    ),
                   ),
-                  child: const Icon(
-                    Icons.check_rounded,
-                    size: 9,
-                    color: Colors.white,
+                if (yaMarcada) const SizedBox(width: AppSpacing.sm),
+                Expanded(
+                  child: FilledButton(
+                    onPressed: () => Navigator.pop(
+                      context,
+                      _BingoDialogResultado(
+                        marcar: true,
+                        nota: _notaCtrl.text.trim().isEmpty ? null : _notaCtrl.text.trim(),
+                      ),
+                    ),
+                    child: Text(yaMarcada ? 'Guardar' : 'Marcar casilla'),
                   ),
                 ),
-              ),
+              ],
             ),
-        ],
+          ],
+        ),
       ),
     );
   }
