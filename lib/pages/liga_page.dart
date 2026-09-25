@@ -12,6 +12,7 @@ import '../theme/app_text_styles.dart';
 import '../navigation/app_page_route.dart';
 import '../widgets/common/club_avatar.dart';
 import '../widgets/error_view.dart';
+import '../widgets/ligas/indicador_tendencia.dart';
 import 'liga_clubes_page.dart';
 import 'liga_division_page.dart';
 import 'liga_historial_page.dart';
@@ -1138,7 +1139,7 @@ class _FilaLiga extends StatelessWidget {
                   ),
                 ),
               ),
-              SizedBox(width: 22, child: _IndicadorTendencia(fila: fila)),
+              SizedBox(width: 22, child: IndicadorTendencia(fila: fila)),
               ClubAvatar(
                 nombre: fila.nombre,
                 imageUrl: fila.avatarUrl,
@@ -1205,41 +1206,6 @@ class _FilaLiga extends StatelessWidget {
             ],
           ),
         ),
-      ),
-    );
-  }
-}
-
-/// Flechita estilo parrilla de F1: sube/baja puestos desde el último ciclo
-/// del cron (cada 1-3 h). Sin dato aún (recién unida) no muestra nada.
-class _IndicadorTendencia extends StatelessWidget {
-  const _IndicadorTendencia({required this.fila});
-  final LigaFila fila;
-
-  @override
-  Widget build(BuildContext context) {
-    final tendencia = fila.tendencia;
-    if (tendencia == null || tendencia == LigaTendencia.igual) {
-      return Icon(
-        Icons.remove_rounded,
-        size: 14,
-        color: AppColors.textMuted.withValues(alpha: .5),
-      );
-    }
-    final sube = tendencia == LigaTendencia.sube;
-    final color = sube ? AppColors.success : AppColors.danger;
-    final delta = (fila.delta ?? 0).abs();
-    return Tooltip(
-      message: sube ? 'Ha subido $delta puestos' : 'Ha bajado $delta puestos',
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(
-            sube ? Icons.arrow_drop_up_rounded : Icons.arrow_drop_down_rounded,
-            size: 20,
-            color: color,
-          ),
-        ],
       ),
     );
   }

@@ -8,6 +8,7 @@ import '../theme/app_spacing.dart';
 import '../theme/app_text_styles.dart';
 import '../widgets/common/club_avatar.dart';
 import '../widgets/error_view.dart';
+import '../widgets/ligas/indicador_tendencia.dart';
 import 'liga_page.dart' show abrirDesgloseLiga;
 
 /// Tabla EN VIVO de una división cualquiera de las Ligas de ClubReads — no
@@ -249,6 +250,7 @@ class _FilaDivision extends StatelessWidget {
               ),
             ),
           ),
+          SizedBox(width: 22, child: IndicadorTendencia(fila: fila)),
           ClubAvatar(nombre: fila.nombre, imageUrl: fila.avatarUrl, size: 34),
           const SizedBox(width: AppSpacing.sm),
           Expanded(

@@ -7,11 +7,13 @@ import '../theme/app_colors.dart';
 import '../theme/app_radius.dart';
 import '../theme/app_spacing.dart';
 import '../theme/app_text_styles.dart';
+import '../widgets/common/club_avatar.dart';
 import '../widgets/error_view.dart';
 import 'liga_temporada_page.dart';
 
-/// Histórico completo de temporadas cerradas de las Ligas de ClubReads, más
-/// reciente primero. Cada temporada se puede abrir para ver su detalle.
+/// Histórico de las Ligas de ClubReads, en dos pestañas: "Por temporadas"
+/// (cada temporada cerrada, con su división y puesto) y "Acumulado" (el
+/// ranking de todo el mundo sumando los puntos de todas sus temporadas).
 class LigaHistorialPage extends StatefulWidget {
   const LigaHistorialPage({super.key});
 
@@ -19,7 +21,48 @@ class LigaHistorialPage extends StatefulWidget {
   State<LigaHistorialPage> createState() => _LigaHistorialPageState();
 }
 
-class _LigaHistorialPageState extends State<LigaHistorialPage> {
+class _LigaHistorialPageState extends State<LigaHistorialPage>
+    with SingleTickerProviderStateMixin {
+  late final TabController _tabController = TabController(
+    length: 2,
+    vsync: this,
+  );
+
+  @override
+  void dispose() {
+    _tabController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Histórico de ligas'),
+        bottom: TabBar(
+          controller: _tabController,
+          tabs: const [
+            Tab(text: 'Por temporadas'),
+            Tab(text: 'Acumulado'),
+          ],
+        ),
+      ),
+      body: TabBarView(
+        controller: _tabController,
+        children: const [_TemporadasTab(), _AcumuladoTab()],
+      ),
+    );
+  }
+}
+
+class _TemporadasTab extends StatefulWidget {
+  const _TemporadasTab();
+
+  @override
+  State<_TemporadasTab> createState() => _TemporadasTabState();
+}
+
+class _TemporadasTabState extends State<_TemporadasTab> {
   late Future<LigaHistorial> _future;
 
   @override
@@ -48,54 +91,210 @@ class _LigaHistorialPageState extends State<LigaHistorialPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('Histórico de temporadas')),
-      body: FutureBuilder<LigaHistorial>(
-        future: _future,
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
-          }
-          if (snapshot.hasError) {
-            return ErrorView(onRetry: _recargar);
-          }
-          final temporadas = snapshot.data!.temporadas;
-          if (temporadas.isEmpty) {
-            return RefreshIndicator(
-              onRefresh: () async => _recargar(),
-              child: ListView(
-                padding: const EdgeInsets.all(AppSpacing.lg),
-                children: [
-                  const SizedBox(height: AppSpacing.xl),
-                  const Center(child: Text('📅', style: TextStyle(fontSize: 48))),
-                  const SizedBox(height: AppSpacing.md),
-                  Text(
-                    'Aún no has completado ninguna temporada.\nCuando '
-                    'cierre la primera, aparecerá aquí.',
-                    textAlign: TextAlign.center,
-                    style: AppTextStyles.bodySecondary,
-                  ),
-                ],
-              ),
-            );
-          }
+    return FutureBuilder<LigaHistorial>(
+      future: _future,
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Center(child: CircularProgressIndicator());
+        }
+        if (snapshot.hasError) {
+          return ErrorView(onRetry: _recargar);
+        }
+        final temporadas = snapshot.data!.temporadas;
+        if (temporadas.isEmpty) {
           return RefreshIndicator(
             onRefresh: () async => _recargar(),
-            child: ListView.builder(
-              padding: EdgeInsets.fromLTRB(
-                AppSpacing.md,
-                AppSpacing.md,
-                AppSpacing.md,
-                AppSpacing.md + MediaQuery.of(context).padding.bottom,
-              ),
-              itemCount: temporadas.length,
-              itemBuilder: (context, index) => _TarjetaTemporada(
-                temporada: temporadas[index],
-                onTap: () => _abrirTemporada(temporadas[index].temporada),
-              ),
+            child: ListView(
+              padding: const EdgeInsets.all(AppSpacing.lg),
+              children: [
+                const SizedBox(height: AppSpacing.xl),
+                const Center(child: Text('📅', style: TextStyle(fontSize: 48))),
+                const SizedBox(height: AppSpacing.md),
+                Text(
+                  'Aún no has completado ninguna temporada.\nCuando '
+                  'cierre la primera, aparecerá aquí.',
+                  textAlign: TextAlign.center,
+                  style: AppTextStyles.bodySecondary,
+                ),
+              ],
             ),
           );
-        },
+        }
+        return RefreshIndicator(
+          onRefresh: () async => _recargar(),
+          child: ListView.builder(
+            padding: EdgeInsets.fromLTRB(
+              AppSpacing.md,
+              AppSpacing.md,
+              AppSpacing.md,
+              AppSpacing.md + MediaQuery.of(context).padding.bottom,
+            ),
+            itemCount: temporadas.length,
+            itemBuilder: (context, index) => _TarjetaTemporada(
+              temporada: temporadas[index],
+              onTap: () => _abrirTemporada(temporadas[index].temporada),
+            ),
+          ),
+        );
+      },
+    );
+  }
+}
+
+class _AcumuladoTab extends StatefulWidget {
+  const _AcumuladoTab();
+
+  @override
+  State<_AcumuladoTab> createState() => _AcumuladoTabState();
+}
+
+class _AcumuladoTabState extends State<_AcumuladoTab> {
+  late Future<LigaAcumulado> _future;
+
+  @override
+  void initState() {
+    super.initState();
+    _future = _cargar();
+  }
+
+  Future<LigaAcumulado> _cargar() async {
+    final data = await ApiService().getLigaAcumulado();
+    return LigaAcumulado.fromJson(data);
+  }
+
+  void _recargar() {
+    setState(() => _future = _cargar());
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return FutureBuilder<LigaAcumulado>(
+      future: _future,
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Center(child: CircularProgressIndicator());
+        }
+        if (snapshot.hasError) {
+          return ErrorView(onRetry: _recargar);
+        }
+        final tabla = snapshot.data!.tabla;
+        if (tabla.isEmpty) {
+          return RefreshIndicator(
+            onRefresh: () async => _recargar(),
+            child: ListView(
+              padding: const EdgeInsets.all(AppSpacing.lg),
+              children: [
+                const SizedBox(height: AppSpacing.xl),
+                const Center(child: Text('🏆', style: TextStyle(fontSize: 48))),
+                const SizedBox(height: AppSpacing.md),
+                Text(
+                  'Todavía no hay ninguna temporada cerrada.\nEn cuanto '
+                  'cierre la primera, aquí verás el acumulado de todo el mundo.',
+                  textAlign: TextAlign.center,
+                  style: AppTextStyles.bodySecondary,
+                ),
+              ],
+            ),
+          );
+        }
+        return RefreshIndicator(
+          onRefresh: () async => _recargar(),
+          child: ListView.builder(
+            padding: EdgeInsets.fromLTRB(
+              AppSpacing.md,
+              AppSpacing.md,
+              AppSpacing.md,
+              AppSpacing.md + MediaQuery.of(context).padding.bottom,
+            ),
+            itemCount: tabla.length,
+            itemBuilder: (context, index) => _FilaAcumulado(fila: tabla[index]),
+          ),
+        );
+      },
+    );
+  }
+}
+
+class _FilaAcumulado extends StatelessWidget {
+  const _FilaAcumulado({required this.fila});
+  final LigaFila fila;
+
+  String get _medalla => switch (fila.puesto) {
+    1 => '🥇',
+    2 => '🥈',
+    3 => '🥉',
+    _ => '',
+  };
+
+  @override
+  Widget build(BuildContext context) {
+    final temporadas = fila.temporadasJugadas ?? 0;
+    return Container(
+      margin: const EdgeInsets.only(bottom: AppSpacing.xs),
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.md,
+        vertical: AppSpacing.sm,
+      ),
+      decoration: BoxDecoration(
+        color: fila.esTu
+            ? AppColors.primary.withValues(alpha: .10)
+            : AppColors.surface,
+        borderRadius: BorderRadius.circular(AppRadius.md),
+        border: Border.all(
+          color: fila.esTu ? AppColors.primary : AppColors.border,
+          width: fila.esTu ? 1.4 : 1,
+        ),
+      ),
+      child: Row(
+        children: [
+          SizedBox(
+            width: 30,
+            child: Text(
+              _medalla.isNotEmpty ? _medalla : '${fila.puesto}',
+              style: AppTextStyles.body.copyWith(
+                fontWeight: FontWeight.w800,
+                color: AppColors.textSecondary,
+              ),
+            ),
+          ),
+          ClubAvatar(nombre: fila.nombre, imageUrl: fila.avatarUrl, size: 34),
+          const SizedBox(width: AppSpacing.sm),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  fila.nombre,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: AppTextStyles.body.copyWith(
+                    fontWeight: fila.esTu ? FontWeight.w800 : FontWeight.w600,
+                  ),
+                ),
+                Text(
+                  temporadas == 1
+                      ? '1 temporada'
+                      : '$temporadas temporadas',
+                  style: AppTextStyles.caption.copyWith(
+                    color: AppColors.textMuted,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: AppSpacing.xs),
+          Text(
+            '${fila.puntos}',
+            style: AppTextStyles.body.copyWith(
+              fontWeight: FontWeight.w800,
+              color: AppColors.primary,
+            ),
+          ),
+          Text(
+            ' pts',
+            style: AppTextStyles.caption.copyWith(color: AppColors.textMuted),
+          ),
+        ],
       ),
     );
   }

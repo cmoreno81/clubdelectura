@@ -2261,6 +2261,16 @@ class ApiService {
     return _decodeJson(response) as Map<String, dynamic>;
   }
 
+  /// Ranking histórico acumulado: suma de puntos de todas las temporadas ya
+  /// cerradas de cada usuaria, sin importar en qué división jugara cada una.
+  Future<Map<String, dynamic>> getLigaAcumulado() async {
+    final response = await _client.get(
+      Uri.parse(baseUrl).replace(queryParameters: {'action': 'ligaAcumulado'}),
+    );
+    if (response.statusCode != 200) throw ApiException.fromResponse(response);
+    return _decodeJson(response) as Map<String, dynamic>;
+  }
+
   /// Detalle de una temporada ya cerrada [temporada]: tabla final completa,
   /// mi puesto/puntos y las medallas ganadas esa temporada. Si la temporada
   /// no existe, no ha cerrado o no la jugué, el `Map` devuelto trae

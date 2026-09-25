@@ -219,6 +219,9 @@ class LigaFila {
   final int? delta;
   final int? rachaHoy;
   final LigaMedallaReciente? medallaReciente;
+  /// Solo presente en el ranking histórico acumulado (`LigaAcumulado`):
+  /// número de temporadas cerradas que suman los [puntos].
+  final int? temporadasJugadas;
 
   const LigaFila({
     required this.puesto,
@@ -231,6 +234,7 @@ class LigaFila {
     this.delta,
     this.rachaHoy,
     this.medallaReciente,
+    this.temporadasJugadas,
   });
 
   factory LigaFila.fromJson(Map<String, dynamic> json) => LigaFila(
@@ -248,6 +252,21 @@ class LigaFila {
     medallaReciente: LigaMedallaReciente.fromJson(
       (json['medallaReciente'] as Map?)?.cast<String, dynamic>(),
     ),
+    temporadasJugadas: (json['temporadasJugadas'] as num?)?.toInt(),
+  );
+}
+
+/// Ranking histórico acumulado: suma de puntos de todas las temporadas ya
+/// cerradas de cada usuaria, sin importar la división en la que jugara cada
+/// una — pestaña "Acumulado" del histórico de ligas.
+class LigaAcumulado {
+  const LigaAcumulado({required this.tabla});
+  final List<LigaFila> tabla;
+
+  factory LigaAcumulado.fromJson(Map<String, dynamic> json) => LigaAcumulado(
+    tabla: ((json['tabla'] as List?) ?? const [])
+        .map((e) => LigaFila.fromJson(Map<String, dynamic>.from(e as Map)))
+        .toList(),
   );
 }
 
