@@ -11,6 +11,7 @@ import '../theme/app_radius.dart';
 import '../theme/app_spacing.dart';
 import '../theme/app_text_styles.dart';
 import '../utils/wrapped_availability.dart';
+import '../widgets/dashboard/bingo_lector_card.dart';
 import '../widgets/dashboard/monthly_reading_shelf.dart';
 import 'book_of_year_page.dart';
 import 'personalidad_lectora_page.dart';
@@ -242,6 +243,29 @@ class _Content extends StatelessWidget {
               ),
             ),
           ],
+
+          // ── Bingo lector ─────────────────────────────────────────────────
+          SliverPadding(
+            padding: const EdgeInsets.fromLTRB(
+              AppSpacing.md,
+              AppSpacing.xl,
+              AppSpacing.md,
+              0,
+            ),
+            sliver: SliverToBoxAdapter(
+              child: Container(
+                padding: const EdgeInsets.all(AppSpacing.md),
+                decoration: BoxDecoration(
+                  color: AppColors.surface,
+                  borderRadius: BorderRadius.circular(AppRadius.lg),
+                  border: Border.all(color: AppColors.border),
+                ),
+                child: BingoLectorSection(
+                  future: Future.value(data.achievements),
+                ),
+              ),
+            ),
+          ),
 
           // ── Wrapped anual ─────────────────────────────────────────────────
           SliverPadding(

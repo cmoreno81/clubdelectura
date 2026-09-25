@@ -48,8 +48,6 @@ import 'sagas_page.dart';
 import '../widgets/common/onboarding_tutorial.dart';
 import '../widgets/common/screen_hint_banner.dart';
 import '../widgets/libros/libro_acciones_rapidas.dart';
-import 'mis_logros_page.dart';
-import '../models/achievements/achievement.dart';
 import '../services/usuario_service.dart';
 import 'package:club_lectura_app/widgets/common/club_shimmer.dart';
 import '../models/wishlist.dart';
@@ -87,8 +85,6 @@ class GeneralDashboardPage extends StatefulWidget {
 
 class _GeneralDashboardPageState extends State<GeneralDashboardPage> {
   late Future<GeneralDashboard> _future;
-  // Se arranca en paralelo con el dashboard para evitar el layout-shift de logros.
-  late Future<List<UserAchievement>> _achievementsFuture;
   late Future<List<UpcomingRelease>> _upcomingFuture;
   late Future<List<UpcomingRelease>> _newReleasesFuture;
   String? _openingClubId;
@@ -114,9 +110,6 @@ class _GeneralDashboardPageState extends State<GeneralDashboardPage> {
   void initState() {
     super.initState();
     _future = _loadDashboard();
-    // Los logros se piden en paralelo: llegan aproximadamente igual que el
-    // dashboard y no causan un salto de layout secundario.
-    _achievementsFuture = ApiService().getAchievements();
     _upcomingFuture = _loadUpcomingPreview();
     _newReleasesFuture = _loadNewReleasesPreview();
     _checkOnboarding();
@@ -252,7 +245,6 @@ class _GeneralDashboardPageState extends State<GeneralDashboardPage> {
   // que no debe avisarle con un snackbar.
   Future<void> _reload({bool silent = false}) async {
     final refresh = _loadDashboard();
-    final achievementsRefresh = ApiService().getAchievements();
     final upcomingRefresh = _loadUpcomingPreview();
     final newReleasesRefresh = _loadNewReleasesPreview();
     try {
@@ -260,7 +252,6 @@ class _GeneralDashboardPageState extends State<GeneralDashboardPage> {
       if (!mounted) return;
       setState(() {
         _future = Future.value(data);
-        _achievementsFuture = achievementsRefresh;
         _upcomingFuture = upcomingRefresh;
         _newReleasesFuture = newReleasesRefresh;
       });
@@ -859,10 +850,6 @@ class _GeneralDashboardPageState extends State<GeneralDashboardPage> {
                         style: AppTextStyles.caption.copyWith(
                           color: AppColors.textMuted,
                         ),
-                      ),
-                      const SizedBox(height: AppSpacing.lg),
-                      ClubCard(
-                        child: _BingoLectorSection(future: _achievementsFuture),
                       ),
                       const SizedBox(height: AppSpacing.md),
                       ClubCard(
@@ -2562,244 +2549,6 @@ class _DashboardError extends StatelessWidget {
             FilledButton(onPressed: onRetry, child: const Text('Reintentar')),
           ],
         ),
-      ),
-    );
-  }
-}
-
-/// Bingo lector: los mismos logros de siempre, pero como cartón de bingo en
-/// vez de lista — pensado para que apetezca volver a mirarlo. El orden es
-/// siempre el mismo (el que da el backend) para que cada casilla se quede en
-/// su sitio de una visita a otra, en vez de saltar al desbloquear cosas.
-class _BingoLectorSection extends StatelessWidget {
-  const _BingoLectorSection({required this.future});
-  final Future<List<UserAchievement>> future;
-
-  static const _casillas = 25;
-
-  @override
-  Widget build(BuildContext context) {
-    return FutureBuilder<List<UserAchievement>>(
-      future: future,
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return const _BingoSkeleton();
-        }
-        final achievements = snapshot.data ?? const [];
-        if (achievements.isEmpty) return const SizedBox.shrink();
-
-        final unlocked = achievements.where((a) => a.unlocked).length;
-        final total = achievements.length;
-        final pct = total > 0 ? unlocked / total : 0.0;
-        final casillas = achievements.take(_casillas).toList();
-
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                const Text('🎯', style: TextStyle(fontSize: 22)),
-                const SizedBox(width: AppSpacing.xs),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Bingo lector ${DateTime.now().year}',
-                        style: AppTextStyles.subtitle.copyWith(
-                          fontWeight: FontWeight.w800,
-                        ),
-                      ),
-                      Text(
-                        '$unlocked de $total casillas',
-                        style: AppTextStyles.caption.copyWith(
-                          color: AppColors.textMuted,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                TextButton(
-                  onPressed: () => Navigator.push<void>(
-                    context,
-                    AppPageRoute(builder: (_) => const MisLogrosPage()),
-                  ),
-                  child: const Text('Ver todas'),
-                ),
-              ],
-            ),
-            const SizedBox(height: AppSpacing.xxs),
-            ClipRRect(
-              borderRadius: BorderRadius.circular(4),
-              child: LinearProgressIndicator(
-                value: pct,
-                minHeight: 5,
-                backgroundColor: AppColors.primaryLight,
-                color: AppColors.gold,
-              ),
-            ),
-            const SizedBox(height: AppSpacing.md),
-            GridView.builder(
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              padding: EdgeInsets.zero,
-              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: 5,
-                crossAxisSpacing: 6,
-                mainAxisSpacing: 6,
-                childAspectRatio: 1,
-              ),
-              itemCount: casillas.length,
-              itemBuilder: (context, i) => _BingoCell(achievement: casillas[i]),
-            ),
-          ],
-        );
-      },
-    );
-  }
-}
-
-/// Placeholder con las mismas dimensiones que el cartón cargado, para no
-/// dar un salto de layout mientras el future de achievements está en vuelo.
-class _BingoSkeleton extends StatelessWidget {
-  const _BingoSkeleton();
-
-  static BorderRadius _r(double r) => BorderRadius.circular(r);
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          children: [
-            ClubShimmer(width: 24, height: 24, borderRadius: _r(4)),
-            const SizedBox(width: AppSpacing.xs),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  ClubShimmer(width: 140, height: 14, borderRadius: _r(4)),
-                  const SizedBox(height: 4),
-                  ClubShimmer(width: 100, height: 11, borderRadius: _r(4)),
-                ],
-              ),
-            ),
-            ClubShimmer(width: 60, height: 28, borderRadius: _r(8)),
-          ],
-        ),
-        const SizedBox(height: AppSpacing.xs),
-        ClubShimmer(width: double.infinity, height: 6, borderRadius: _r(3)),
-        const SizedBox(height: AppSpacing.md),
-        GridView.builder(
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
-          padding: EdgeInsets.zero,
-          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-            crossAxisCount: 5,
-            crossAxisSpacing: 6,
-            mainAxisSpacing: 6,
-            childAspectRatio: 1,
-          ),
-          itemCount: 25,
-          itemBuilder: (_, i) =>
-              ClubShimmer(width: double.infinity, height: double.infinity, borderRadius: _r(8)),
-        ),
-      ],
-    );
-  }
-}
-
-/// Una casilla del cartón: sellada (con su check dorado) si está
-/// desbloqueada, apagada con el progreso debajo si no.
-class _BingoCell extends StatelessWidget {
-  const _BingoCell({required this.achievement});
-  final UserAchievement achievement;
-
-  Color get _color => switch (achievement.rarity) {
-    'legendary' => AppColors.gold,               // dorado
-    'epic'      => AppColors.primary,            // ciruela
-    'rare'      => const Color(0xFF5A7A60),      // salvia tierra
-    _           => AppColors.textSecondary,      // marrón grisáceo — común
-  };
-
-  @override
-  Widget build(BuildContext context) {
-    final unlocked = achievement.unlocked;
-    final color = _color;
-    final progresoTexto = !unlocked && achievement.target > 1
-        ? '${achievement.progress}/${achievement.target}'
-        : null;
-    return Tooltip(
-      message: unlocked
-          ? '${achievement.title}\n${achievement.description}'
-          : '${achievement.title}\n${achievement.description}'
-                '${progresoTexto != null ? '\n$progresoTexto' : ''}',
-      child: Stack(
-        clipBehavior: Clip.none,
-        children: [
-          Container(
-            decoration: BoxDecoration(
-              color: unlocked
-                  ? color.withValues(alpha: .16)
-                  : AppColors.surfaceSoft,
-              borderRadius: BorderRadius.circular(AppRadius.sm),
-              border: Border.all(
-                color: unlocked ? color.withValues(alpha: .55) : AppColors.border,
-                width: unlocked ? 1.6 : 1,
-              ),
-            ),
-            alignment: Alignment.center,
-            child: Opacity(
-              opacity: unlocked ? 1 : .32,
-              child: Text(
-                achievement.icon,
-                style: const TextStyle(fontSize: 17),
-              ),
-            ),
-          ),
-          if (progresoTexto != null)
-            Positioned(
-              left: 0,
-              right: 0,
-              bottom: 2,
-              child: Text(
-                progresoTexto,
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontSize: 7,
-                  fontWeight: FontWeight.w800,
-                  color: AppColors.textMuted,
-                ),
-              ),
-            ),
-          if (unlocked)
-            Positioned(
-              right: -4,
-              top: -4,
-              child: Transform.rotate(
-                angle: -0.35,
-                child: Container(
-                  padding: const EdgeInsets.all(2),
-                  decoration: BoxDecoration(
-                    color: color,
-                    shape: BoxShape.circle,
-                    boxShadow: [
-                      BoxShadow(
-                        color: color.withValues(alpha: .5),
-                        blurRadius: 3,
-                      ),
-                    ],
-                  ),
-                  child: const Icon(
-                    Icons.check_rounded,
-                    size: 9,
-                    color: Colors.white,
-                  ),
-                ),
-              ),
-            ),
-        ],
       ),
     );
   }

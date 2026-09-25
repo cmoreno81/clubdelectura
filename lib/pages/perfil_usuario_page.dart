@@ -51,6 +51,7 @@ import 'liga_page.dart';
 import '../services/auth_service.dart';
 import '../services/auth_session_service.dart';
 import '../services/favoritos_service.dart';
+import '../widgets/dashboard/bingo_lector_card.dart';
 import '../widgets/dashboard/year_reading_shelf.dart';
 import '../models/general_dashboard.dart' show YearShelfBook;
 import 'personalidad_lectora_page.dart';
@@ -2376,6 +2377,10 @@ class _PerfilLogrosSectionState extends State<_PerfilLogrosSection> {
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            if (achievements.isNotEmpty) ...[
+              BingoLectorSection(future: Future.value(achievements)),
+              const SizedBox(height: AppSpacing.xl),
+            ],
             ClubSectionTitle(
               title: 'Logros de ${widget.usuario.split(' ').first}',
               subtitle:
