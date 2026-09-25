@@ -33,6 +33,34 @@ class _BingoLectorSectionState extends State<BingoLectorSection> {
     return BingoLector.fromJson(data);
   }
 
+  /// Cuenta filas, columnas y diagonales completas del cartón 5x5 — debe
+  /// coincidir con `contarLineasBingo` en el backend (bingo.service.ts).
+  int _lineasCompletadas(Set<String> marcadas) {
+    bool marcada(int i) => marcadas.contains(kBingoCasillas[i].key);
+    var lineas = 0;
+    for (var r = 0; r < 5; r++) {
+      if (List.generate(5, (c) => marcada(r * 5 + c)).every((v) => v)) lineas++;
+    }
+    for (var c = 0; c < 5; c++) {
+      if (List.generate(5, (r) => marcada(r * 5 + c)).every((v) => v)) lineas++;
+    }
+    if (List.generate(5, (i) => marcada(i * 5 + i)).every((v) => v)) lineas++;
+    if (List.generate(5, (i) => marcada(i * 5 + (4 - i))).every((v) => v)) lineas++;
+    return lineas;
+  }
+
+  void _celebrar(String mensaje) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(mensaje, textAlign: TextAlign.center),
+        backgroundColor: AppColors.gold,
+        behavior: SnackBarBehavior.floating,
+        duration: const Duration(seconds: 3),
+      ),
+    );
+  }
+
   Future<void> _tocarCasilla(BingoCasilla casilla, BingoLector actual) async {
     final marcada = actual.marcadas[casilla.key];
     final resultado = await showModalBottomSheet<_BingoDialogResultado>(
@@ -46,25 +74,35 @@ class _BingoLectorSectionState extends State<BingoLectorSection> {
     );
     if (resultado == null) return;
 
+    final nuevasMarcadas = {...actual.marcadas}
+      ..removeWhere((k, _) => k == casilla.key)
+      ..addEntries(
+        resultado.marcar
+            ? [
+                MapEntry(
+                  casilla.key,
+                  BingoMarca(squareKey: casilla.key, nota: resultado.nota),
+                ),
+              ]
+            : const [],
+      );
+
+    // Aviso festivo al completar una línea o el cartón entero — solo al
+    // marcar, nunca al desmarcar por error.
+    if (resultado.marcar) {
+      final total = kBingoCasillas.length;
+      if (nuevasMarcadas.length == total && actual.marcadas.length < total) {
+        _celebrar('🏆 ¡BINGO! Has completado el cartón entero');
+      } else if (_lineasCompletadas(nuevasMarcadas.keys.toSet()) >
+          _lineasCompletadas(actual.marcadas.keys.toSet())) {
+        _celebrar('🎯 ¡Línea completa en el bingo lector!');
+      }
+    }
+
     // Optimista: se ve al instante, y si falla se recarga desde el server.
     setState(() {
       _future = Future.value(
-        BingoLector(
-          ok: actual.ok,
-          year: actual.year,
-          marcadas: {...actual.marcadas}
-            ..removeWhere((k, _) => k == casilla.key)
-            ..addEntries(
-              resultado.marcar
-                  ? [
-                      MapEntry(
-                        casilla.key,
-                        BingoMarca(squareKey: casilla.key, nota: resultado.nota),
-                      ),
-                    ]
-                  : const [],
-            ),
-        ),
+        BingoLector(ok: actual.ok, year: actual.year, marcadas: nuevasMarcadas),
       );
     });
     try {

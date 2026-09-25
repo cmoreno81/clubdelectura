@@ -20,6 +20,7 @@ class AchievementService {
     'club': '💬 Club',
     'clubvision': '🗳️ Clubvisión',
     'constancia': '🔥 Constancia',
+    'bingo': '🎯 Bingo lector',
   };
 
   static const Map<String, String> rarityLabels = {
