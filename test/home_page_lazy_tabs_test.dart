@@ -13,14 +13,14 @@ void main() {
   );
 
   testWidgets('al abrir el club solo construye el dashboard', (tester) async {
-    final builds = List<int>.filled(5, 0);
+    final builds = List<int>.filled(6, 0);
 
     await tester.pumpWidget(
       MaterialApp(
         home: HomePage(
           club: club,
           pageBuilders: [
-            for (var index = 0; index < 5; index++)
+            for (var index = 0; index < 6; index++)
               () {
                 builds[index]++;
                 return Text('página $index');
@@ -30,21 +30,21 @@ void main() {
       ),
     );
 
-    expect(builds, [1, 0, 0, 0, 0]);
+    expect(builds, [1, 0, 0, 0, 0, 0]);
     expect(find.text('página 0'), findsOneWidget);
   });
 
   testWidgets('cada pestaña se inicializa una sola vez al visitarla', (
     tester,
   ) async {
-    final builds = List<int>.filled(5, 0);
+    final builds = List<int>.filled(6, 0);
 
     await tester.pumpWidget(
       MaterialApp(
         home: HomePage(
           club: club,
           pageBuilders: [
-            for (var index = 0; index < 5; index++)
+            for (var index = 0; index < 6; index++)
               () {
                 builds[index]++;
                 return Text('página $index');
@@ -54,7 +54,7 @@ void main() {
       ),
     );
 
-    for (final label in ['Libros', 'Sagas', 'Lecturas', 'Clubvisión']) {
+    for (final label in ['Libros', 'Sagas', 'Lecturas', 'Clubvisión', 'Estadísticas']) {
       await tester.tap(find.text(label));
       await tester.pump();
     }
@@ -64,12 +64,13 @@ void main() {
       'Sagas',
       'Lecturas',
       'Clubvisión',
+      'Estadísticas',
     ]) {
       await tester.tap(find.text(label));
       await tester.pump();
     }
 
-    expect(builds, [1, 1, 1, 1, 1]);
+    expect(builds, [1, 1, 1, 1, 1, 1]);
   });
 
   testWidgets('una pestaña visitada conserva su estado al quedar oculta', (
@@ -87,6 +88,7 @@ void main() {
             () => const Text('sagas'),
             () => const Text('lecturas'),
             () => const Text('clubvisión'),
+            () => const Text('estadísticas'),
           ],
         ),
       ),

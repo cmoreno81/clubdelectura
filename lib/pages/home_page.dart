@@ -7,6 +7,7 @@ import 'dashboard_page.dart';
 import 'lecturas_page.dart';
 import 'libros_page.dart';
 import 'mi_espacio_page.dart';
+import 'mi_estadisticas_page.dart';
 import 'sagas_page.dart';
 import '../models/club_membership.dart';
 import '../services/libros_data_cache.dart';
@@ -56,15 +57,13 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
     // del club anterior (en navegación push/pop se crea un nuevo HomePage).
     LibrosDataCache.instance.invalidate();
     if (_esPersonal) {
-      // Modo lector solitario: 4 tabs sin Lecturas ni Clubvisión
+      // Modo lector solitario: Mi espacio (base) + Libros + Sagas + Mis
+      // estadísticas. Ya no hay un "Inicio" propio: lo que hacía (leyendo
+      // ahora, racha, check-in) vive repartido entre estas dos últimas.
       _pageBuilders =
           widget.pageBuilders ??
           [
-            () => DashboardPage(
-              clubName: widget.club.nombre,
-              esPersonal: true,
-              controller: _dashboardController,
-            ),
+            () => const MiEspacioPage(),
             () => LibrosPage(
               controller: _librosController,
               onBackToClub: _volverAlClub,
@@ -72,11 +71,11 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
               clubId: widget.club.id,
             ),
             () => SagasPage(controller: _sagasController),
-            () => const MiEspacioPage(),
+            () => const MiEstadisticasPage(),
           ];
       assert(_pageBuilders.length == 4);
     } else {
-      // Modo club social: 5 tabs completos
+      // Modo club social: 6 tabs completos
       _pageBuilders =
           widget.pageBuilders ??
           [
@@ -93,8 +92,9 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
             () => SagasPage(controller: _sagasController),
             () => LecturasPage(onBackToClub: _volverAlClub, clubId: widget.club.id),
             () => ClubvisionMenuPage(onBackToClub: _volverAlClub),
+            () => const MiEstadisticasPage(),
           ];
-      assert(_pageBuilders.length == 5);
+      assert(_pageBuilders.length == 6);
     }
     _pages = List<Widget?>.filled(_pageBuilders.length, null);
     _pages[0] = _pageBuilders[0]();
@@ -203,15 +203,20 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
       ),
       label: 'Clubvisión',
     ),
+    const NavigationDestination(
+      icon: Icon(Icons.bar_chart_outlined),
+      selectedIcon: Icon(Icons.bar_chart_rounded),
+      label: 'Estadísticas',
+    ),
   ];
 
   String _badge(int value) => value < 10 ? '$value' : '9+';
 
   List<NavigationDestination> _personalDestinations() => const [
     NavigationDestination(
-      icon: Icon(Icons.home_outlined),
-      selectedIcon: Icon(Icons.home_rounded),
-      label: 'Inicio',
+      icon: Icon(Icons.emoji_events_outlined),
+      selectedIcon: Icon(Icons.emoji_events_rounded),
+      label: 'Mi espacio',
     ),
     NavigationDestination(
       icon: Icon(Icons.menu_book_outlined),
@@ -224,9 +229,9 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
       label: 'Sagas',
     ),
     NavigationDestination(
-      icon: Icon(Icons.emoji_events_outlined),
-      selectedIcon: Icon(Icons.emoji_events_rounded),
-      label: 'Mi espacio',
+      icon: Icon(Icons.bar_chart_outlined),
+      selectedIcon: Icon(Icons.bar_chart_rounded),
+      label: 'Estadísticas',
     ),
   ];
 
@@ -269,7 +274,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
   // para que no se vea como un botón suelto pegado al menú.
   //
   // En pantallas estrechas (compact=true) se queda solo con el icono: con
-  // 5 pestañas de club más este botón no cabe la etiqueta completa sin
+  // 6 pestañas de club más este botón no cabe la etiqueta completa sin
   // apretar demasiado el resto del menú.
   Widget _homeShortcutButton({bool compact = false}) {
     return Material(
@@ -328,7 +333,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
             height: 88,
             child: LayoutBuilder(
               builder: (context, constraints) {
-                // Con 5 pestañas de club + este botón, una pantalla estrecha
+                // Con 6 pestañas de club + este botón, una pantalla estrecha
                 // (iPhone mini/SE) no tiene sitio para la etiqueta completa.
                 final compact = constraints.maxWidth < 380;
                 return Row(
@@ -499,13 +504,18 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
       selectedIcon: const Icon(Icons.mic_rounded),
       label: const Text('Clubvisión'),
     ),
+    const NavigationRailDestination(
+      icon: Icon(Icons.bar_chart_outlined),
+      selectedIcon: Icon(Icons.bar_chart_rounded),
+      label: Text('Estadísticas'),
+    ),
   ];
 
   List<NavigationRailDestination> _railPersonalDestinations() => const [
     NavigationRailDestination(
-      icon: Icon(Icons.home_outlined),
-      selectedIcon: Icon(Icons.home_rounded),
-      label: Text('Inicio'),
+      icon: Icon(Icons.emoji_events_outlined),
+      selectedIcon: Icon(Icons.emoji_events_rounded),
+      label: Text('Mi espacio'),
     ),
     NavigationRailDestination(
       icon: Icon(Icons.menu_book_outlined),
@@ -518,9 +528,9 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
       label: Text('Sagas'),
     ),
     NavigationRailDestination(
-      icon: Icon(Icons.emoji_events_outlined),
-      selectedIcon: Icon(Icons.emoji_events_rounded),
-      label: Text('Mi espacio'),
+      icon: Icon(Icons.bar_chart_outlined),
+      selectedIcon: Icon(Icons.bar_chart_rounded),
+      label: Text('Estadísticas'),
     ),
   ];
 }

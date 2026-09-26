@@ -33,7 +33,6 @@ import '../widgets/common/club_card.dart';
 import '../widgets/dashboard/club_books_of_year_card.dart';
 import '../widgets/common/club_chip.dart';
 import '../widgets/common/club_empty_state.dart';
-import '../widgets/common/mapa_calor_widget.dart';
 import '../widgets/common/club_section_title.dart';
 import '../widgets/common/club_book_cover.dart';
 import '../widgets/common/optimized_network_image.dart';
@@ -50,8 +49,6 @@ import '../widgets/common/reaction_details_sheet.dart';
 import '../models/personalidad_miembro.dart';
 import 'personalidad_lectora_page.dart';
 import '../models/wishlist.dart';
-import '../models/general_dashboard.dart';
-import '../services/general_dashboard_service.dart';
 import '../services/wishlist_service.dart';
 import 'club_wishlist_page.dart';
 
@@ -94,7 +91,6 @@ class _DashboardPageState extends State<DashboardPage> {
   late Future<DashboardViewData> dashboardFuture;
   /// Datos ampliados del usuario (estantería anual, biblioteca personal, etc.).
   /// Solo se carga en modo personal.
-  late Future<GeneralDashboard?> _generalFuture;
   final Map<String, ValueNotifier<LecturaAhoraItem>> _reactionNotifiers = {};
   final Set<String> _reactingProgressIds = {};
 
@@ -113,15 +109,7 @@ class _DashboardPageState extends State<DashboardPage> {
     avatarUrlActual = sessionUser?.avatarUrl.trim() ?? '';
     widget.controller?._refresh = _recargar;
     dashboardFuture = _cargarDashboard();
-    if (widget.esPersonal) {
-      _generalFuture = GeneralDashboardService()
-          .load()
-          .then<GeneralDashboard?>((d) => d)
-          .catchError((_) => null);
-    } else {
-      _generalFuture = Future.value(null);
-      unawaited(NotificacionesService.instance.cargar());
-    }
+    unawaited(NotificacionesService.instance.cargar());
   }
 
   Future<void> _abrirNotificaciones() async {
@@ -234,12 +222,6 @@ class _DashboardPageState extends State<DashboardPage> {
   Future<void> _recargar() async {
     setState(() {
       dashboardFuture = _cargarDashboard();
-      if (widget.esPersonal) {
-        _generalFuture = GeneralDashboardService()
-            .load()
-            .then<GeneralDashboard?>((d) => d)
-            .catchError((_) => null);
-      }
       _favoritosKey++;
     });
 
@@ -397,18 +379,7 @@ class _DashboardPageState extends State<DashboardPage> {
               }
               return true;
             },
-            child: widget.esPersonal
-                ? FutureBuilder<GeneralDashboard?>(
-                    future: _generalFuture,
-                    builder: (context, genSnap) {
-                      return _personalDashboardScrollView(
-                        data: data,
-                        viewData: viewData,
-                        general: genSnap.data,
-                      );
-                    },
-                  )
-                : SingleChildScrollView(
+            child: SingleChildScrollView(
               physics: const AlwaysScrollableScrollPhysics(),
               padding: const EdgeInsets.fromLTRB(
                 AppSpacing.md,
@@ -480,9 +451,9 @@ class _DashboardPageState extends State<DashboardPage> {
                   const SizedBox(height: AppSpacing.sm),
 
                   // ── Logros / reto — adaptado según modo ──
-                  _LogrosClubCard(esPersonal: widget.esPersonal),
+                  LogrosClubCard(esPersonal: widget.esPersonal),
                   const SizedBox(height: AppSpacing.sm),
-                  _AchievementsClubCard(esPersonal: widget.esPersonal),
+                  AchievementsClubCard(esPersonal: widget.esPersonal),
 
                   if (!widget.esPersonal) ...[
                     const SizedBox(height: AppSpacing.md),
@@ -586,181 +557,6 @@ class _DashboardPageState extends State<DashboardPage> {
             ),
           );
         },
-      ),
-    );
-  }
-
-  // ── Dashboard personal ────────────────────────────────────────────────────
-
-  Widget _personalDashboardScrollView({
-    required Dashboard data,
-    required DashboardViewData viewData,
-    GeneralDashboard? general,
-  }) {
-    final year = DateTime.now().year;
-    final yearBooks = general?.yearShelf ?? const [];
-    final personalLib = general?.personalLibrary ?? const [];
-    final currentBooks = data.leyendoAhora;
-    final highPriority = personalLib
-        .where((b) => b.isHighPriority && b.status == 'PENDIENTE')
-        .take(5)
-        .toList();
-
-    // Género favorito: el más frecuente en la biblioteca personal
-    final genreCounts = <String, int>{};
-    for (final b in personalLib) {
-      if (b.genre.isNotEmpty && b.genre != 'Sin género') {
-        genreCounts[b.genre] = (genreCounts[b.genre] ?? 0) + 1;
-      }
-    }
-    final favoriteGenre = genreCounts.entries.isEmpty
-        ? null
-        : genreCounts.entries.reduce((a, b) => a.value >= b.value ? a : b).key;
-
-    return SingleChildScrollView(
-      physics: const AlwaysScrollableScrollPhysics(),
-      padding: const EdgeInsets.fromLTRB(
-        AppSpacing.md,
-        AppSpacing.sm,
-        AppSpacing.md,
-        110,
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          // ── 1. Leyendo ahora ──────────────────────────────────────────────
-          if (currentBooks.isNotEmpty) ...[
-            ClubSectionTitle(
-              title: 'Leyendo ahora',
-              subtitle: 'Tu lectura activa',
-              icon: Icons.menu_book_rounded,
-              padding: EdgeInsets.zero,
-            ),
-            const SizedBox(height: AppSpacing.sm),
-            ...currentBooks.map(
-              (u) => _lectoraLeyendoCard(
-                nombre: u.usuario,
-                lecturas: u.lecturas,
-                total: u.total,
-                avatarUrl: u.avatarUrl,
-              ),
-            ),
-            const SizedBox(height: AppSpacing.lg),
-          ],
-
-          // Racha + check-in + mapa de calor, justo tras "Leyendo ahora": es
-          // el primer incentivo que ve la lectora al entrar en su espacio,
-          // en vez de quedar escondido varias secciones más abajo.
-          RachaLectoraCard(
-            key: ValueKey('reading-streak-$_favoritosKey'),
-            loadHistory: widget.loadCheckinHistory,
-            navegable: false,
-          ),
-          const SizedBox(height: AppSpacing.md),
-          CheckinSection(key: ValueKey('checkin-$_favoritosKey')),
-          const SizedBox(height: AppSpacing.md),
-          ClubCard(
-            elevated: false,
-            child: MapaCalorWidget(
-              onChanged: () => setState(() => _favoritosKey++),
-            ),
-          ),
-          const SizedBox(height: AppSpacing.lg),
-
-          // ── 2. Mi año en libros ───────────────────────────────────────────
-          _PersonalYearShelfCard(
-            year: year,
-            books: yearBooks,
-            favoriteGenre: favoriteGenre,
-            totalLibrary: general?.summary.enEstanteria ?? personalLib.length,
-            onTapBook: (book) => openBookDetail(
-              context,
-              title: book.title,
-              bookId: book.bookId,
-              coverUrl: book.coverUrl,
-            ),
-            onVerTodos: () async {
-              final nombre = usuarioActual?.trim() ?? '';
-              final userId = AuthSessionService.instance.user?.id.trim() ?? '';
-              if (nombre.isEmpty) return;
-              await Navigator.push<void>(
-                context,
-                AppPageRoute(
-                  builder: (_) => PerfilUsuarioPage(
-                    usuario: nombre,
-                    profileUserId: userId.isEmpty ? null : userId,
-                    initialTab: 'HISTORIAL',
-                  ),
-                ),
-              );
-              if (mounted) await _recargar();
-            },
-          ),
-
-          // ── 3. Sagas en curso ─────────────────────────────────────────────
-          if ((general?.openSeries ?? []).isNotEmpty) ...[
-            const SizedBox(height: AppSpacing.lg),
-            ClubSectionTitle(
-              title: 'Sagas en curso',
-              subtitle: 'Tu progreso en cada serie',
-              icon: Icons.auto_stories_rounded,
-              padding: EdgeInsets.zero,
-            ),
-            const SizedBox(height: AppSpacing.sm),
-            _PersonalOpenSeriesShelf(
-              series: general!.openSeries,
-              onBookTap: (saga) {
-                if (saga.next == null) return;
-                openBookDetail(
-                  context,
-                  title: saga.next!.title,
-                  bookId: saga.next!.id,
-                  coverUrl: saga.next!.coverUrl,
-                );
-              },
-            ),
-          ],
-
-          const SizedBox(height: AppSpacing.md),
-
-          // ── 4. Reto lector + racha ────────────────────────────────────────
-          _LogrosClubCard(esPersonal: true),
-          const SizedBox(height: AppSpacing.sm),
-          _AchievementsClubCard(esPersonal: true),
-          const SizedBox(height: AppSpacing.sm),
-
-          // ── 5. Stats del mes (solo cuentas personales, justo tras Mis logros) ──
-          _estadisticasMes(
-            actividad: data.resumen.actividadMes,
-            valoracion: data.resumen.valoracionMedia,
-            esPersonal: true,
-          ),
-          const SizedBox(height: AppSpacing.sm),
-
-          // ── 6. Próximas lecturas (alta prioridad) ─────────────────────────
-          if (highPriority.isNotEmpty) ...[
-            const SizedBox(height: AppSpacing.lg),
-            ClubSectionTitle(
-              title: 'Próximas lecturas',
-              subtitle: 'Las que tienes marcadas como prioritarias',
-              icon: Icons.bookmark_rounded,
-              padding: EdgeInsets.zero,
-            ),
-            const SizedBox(height: AppSpacing.sm),
-            _PersonalPriorityShelf(books: highPriority),
-          ],
-
-          // ── Si no tiene nada leyendo: estado vacío ────────────────────────
-          if (currentBooks.isEmpty) ...[
-            const SizedBox(height: AppSpacing.lg),
-            ClubEmptyState(
-              icon: Icons.menu_book_outlined,
-              title: 'Aún no tienes lecturas activas',
-              message: 'Ve a Libros y empieza una nueva lectura.',
-              padding: const EdgeInsets.symmetric(vertical: AppSpacing.xl),
-            ),
-          ],
-        ],
       ),
     );
   }
@@ -1899,15 +1695,15 @@ class _RingPainter extends CustomPainter {
 // ─────────────────────────────────────────────
 // Card: Reto lector
 // ─────────────────────────────────────────────
-class _LogrosClubCard extends StatefulWidget {
-  const _LogrosClubCard({this.esPersonal = false});
+class LogrosClubCard extends StatefulWidget {
+  const LogrosClubCard({super.key, this.esPersonal = false});
   final bool esPersonal;
 
   @override
-  State<_LogrosClubCard> createState() => _LogrosClubCardState();
+  State<LogrosClubCard> createState() => LogrosClubCardState();
 }
 
-class _LogrosClubCardState extends State<_LogrosClubCard> {
+class LogrosClubCardState extends State<LogrosClubCard> {
   late final Future<Map<String, dynamic>?> _future;
 
   @override
@@ -2082,15 +1878,15 @@ class _LogrosClubCardState extends State<_LogrosClubCard> {
 // ─────────────────────────────────────────────
 // Card: Mis logros
 // ─────────────────────────────────────────────
-class _AchievementsClubCard extends StatefulWidget {
-  const _AchievementsClubCard({this.esPersonal = false});
+class AchievementsClubCard extends StatefulWidget {
+  const AchievementsClubCard({super.key, this.esPersonal = false});
   final bool esPersonal;
 
   @override
-  State<_AchievementsClubCard> createState() => _AchievementsClubCardState();
+  State<AchievementsClubCard> createState() => AchievementsClubCardState();
 }
 
-class _AchievementsClubCardState extends State<_AchievementsClubCard> {
+class AchievementsClubCardState extends State<AchievementsClubCard> {
   late final Future<Map<String, dynamic>?> _future;
 
   @override
@@ -3710,339 +3506,6 @@ class _MemberNames extends StatelessWidget {
         ),
         maxLines: 1,
         overflow: TextOverflow.ellipsis,
-      ),
-    );
-  }
-}
-
-// ═══════════════════════════════════════════════════════════════════════════
-// Widgets exclusivos del dashboard personal
-// ═══════════════════════════════════════════════════════════════════════════
-
-/// Card "Mi año en libros": estantería de portadas + total + género favorito.
-class _PersonalYearShelfCard extends StatelessWidget {
-  const _PersonalYearShelfCard({
-    required this.year,
-    required this.books,
-    required this.favoriteGenre,
-    required this.totalLibrary,
-    this.onTapBook,
-    this.onVerTodos,
-  });
-
-  final int year;
-  final List<YearShelfBook> books;
-  final String? favoriteGenre;
-  final int totalLibrary;
-  final ValueChanged<YearShelfBook>? onTapBook;
-  final VoidCallback? onVerTodos;
-
-  @override
-  Widget build(BuildContext context) {
-    final count = books.length;
-    final covers = books
-        .where((b) => b.coverUrl.isNotEmpty)
-        .take(12)
-        .toList();
-
-    return ClubCard(
-      padding: const EdgeInsets.all(AppSpacing.md),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Cabecera
-          Row(
-            children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Mi año en libros',
-                      style: AppTextStyles.subtitle.copyWith(
-                        fontWeight: FontWeight.w800,
-                        fontSize: 16,
-                      ),
-                    ),
-                    Text(
-                      '$year · $count leído${count == 1 ? '' : 's'}',
-                      style: AppTextStyles.caption.copyWith(
-                        color: AppColors.textSecondary,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              if (onVerTodos != null && count > 0)
-                TextButton(
-                  onPressed: onVerTodos,
-                  style: TextButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: AppSpacing.xs,
-                    ),
-                    minimumSize: Size.zero,
-                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                  ),
-                  child: const Text('Ver todos'),
-                ),
-              // Contador grande
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: AppSpacing.md,
-                  vertical: AppSpacing.xs,
-                ),
-                decoration: BoxDecoration(
-                  color: AppColors.primary.withValues(alpha: 0.12),
-                  borderRadius: BorderRadius.circular(AppRadius.md),
-                ),
-                child: Text(
-                  '$count',
-                  style: AppTextStyles.subtitle.copyWith(
-                    color: AppColors.primary,
-                    fontWeight: FontWeight.w900,
-                    fontSize: 22,
-                  ),
-                ),
-              ),
-            ],
-          ),
-
-          if (covers.isNotEmpty) ...[
-            const SizedBox(height: AppSpacing.md),
-            // Estantería horizontal de portadas
-            SizedBox(
-              height: 100,
-              child: ListView.separated(
-                scrollDirection: Axis.horizontal,
-                itemCount: covers.length,
-                separatorBuilder: (_, __) =>
-                    const SizedBox(width: AppSpacing.xs),
-                itemBuilder: (context, index) {
-                  final book = covers[index];
-                  final cover = ClipRRect(
-                    borderRadius: BorderRadius.circular(AppRadius.sm),
-                    child: ClubBookCover(
-                      imageUrl: book.coverUrl,
-                      title: book.title,
-                      width: 65,
-                      height: 100,
-                      showShadow: false,
-                    ),
-                  );
-                  if (onTapBook == null) return cover;
-                  return GestureDetector(
-                    onTap: () => onTapBook!(book),
-                    child: cover,
-                  );
-                },
-              ),
-            ),
-          ] else ...[
-            const SizedBox(height: AppSpacing.md),
-            Text(
-              count == 0
-                  ? 'Aún no has terminado ningún libro este año. ¡A por ello!'
-                  : 'Termina tu primer libro para ver tu estantería.',
-              style: AppTextStyles.caption.copyWith(
-                color: AppColors.textSecondary,
-              ),
-            ),
-          ],
-
-          if (favoriteGenre != null || totalLibrary > 0) ...[
-            const SizedBox(height: AppSpacing.md),
-            const Divider(height: 1),
-            const SizedBox(height: AppSpacing.sm),
-            Row(
-              children: [
-                if (favoriteGenre != null) ...[
-                  const Icon(
-                    Icons.favorite_rounded,
-                    size: 14,
-                    color: AppColors.primary,
-                  ),
-                  const SizedBox(width: 4),
-                  Expanded(
-                    child: Text(
-                      'Género favorito: $favoriteGenre',
-                      style: AppTextStyles.caption.copyWith(
-                        color: AppColors.textSecondary,
-                      ),
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ),
-                ],
-                if (totalLibrary > 0) ...[
-                  const SizedBox(width: AppSpacing.sm),
-                  const Icon(
-                    Icons.library_books_outlined,
-                    size: 14,
-                    color: AppColors.textSecondary,
-                  ),
-                  const SizedBox(width: 4),
-                  Text(
-                    '$totalLibrary en mi estantería',
-                    style: AppTextStyles.caption.copyWith(
-                      color: AppColors.textSecondary,
-                    ),
-                  ),
-                ],
-              ],
-            ),
-          ],
-        ],
-      ),
-    );
-  }
-}
-
-/// Shelf horizontal de sagas en curso con progreso visual.
-class _PersonalOpenSeriesShelf extends StatelessWidget {
-  const _PersonalOpenSeriesShelf({
-    required this.series,
-    required this.onBookTap,
-  });
-
-  final List<GeneralOpenSeries> series;
-  final void Function(GeneralOpenSeries) onBookTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return SizedBox(
-      height: 192,
-      child: ListView.separated(
-        scrollDirection: Axis.horizontal,
-        itemCount: series.length,
-        separatorBuilder: (_, __) => const SizedBox(width: AppSpacing.sm),
-        itemBuilder: (context, index) {
-          final saga = series[index];
-          final remaining = saga.total > 0 ? saga.total - saga.read : 0;
-          return GestureDetector(
-            onTap: saga.next != null ? () => onBookTap(saga) : null,
-            child: SizedBox(
-            width: 130,
-            child: ClubCard(
-              padding: const EdgeInsets.all(AppSpacing.sm),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Portada
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(AppRadius.sm),
-                    child: ClubBookCover(
-                      imageUrl: saga.next?.coverUrl.isNotEmpty == true
-                          ? saga.next!.coverUrl
-                          : saga.coverUrl,
-                      title: saga.name,
-                      width: double.infinity,
-                      height: 90,
-                      showShadow: false,
-                      fit: BoxFit.cover,
-                    ),
-                  ),
-                  const SizedBox(height: AppSpacing.xs),
-                  // Nombre de la saga
-                  Text(
-                    saga.name,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: AppTextStyles.caption.copyWith(
-                      fontWeight: FontWeight.w700,
-                      fontSize: 12,
-                    ),
-                  ),
-                  const SizedBox(height: 2),
-                  // Progreso: X de Y leídos
-                  Text(
-                    saga.total > 0
-                        ? '${saga.read} de ${saga.total} leído${saga.read == 1 ? '' : 's'}'
-                        : '${saga.read} leído${saga.read == 1 ? '' : 's'}',
-                    style: AppTextStyles.caption.copyWith(
-                      color: AppColors.textSecondary,
-                      fontSize: 11,
-                    ),
-                  ),
-                  const SizedBox(height: AppSpacing.xs),
-                  // Barra de progreso
-                  if (saga.total > 0) ...[
-                    ClipRRect(
-                      borderRadius: BorderRadius.circular(AppRadius.sm),
-                      child: LinearProgressIndicator(
-                        value: saga.progress.clamp(0.0, 1.0),
-                        minHeight: 4,
-                        backgroundColor: AppColors.primary.withValues(alpha: 0.12),
-                        valueColor: AlwaysStoppedAnimation(AppColors.primary),
-                      ),
-                    ),
-                    const SizedBox(height: 2),
-                    // Siguiente / faltan
-                    if (remaining > 0)
-                      Text(
-                        saga.next != null
-                            ? 'Sig: ${saga.next!.title}'
-                            : 'Faltan $remaining',
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: AppTextStyles.caption.copyWith(
-                          color: AppColors.primary,
-                          fontSize: 10,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                  ],
-                ],
-              ),
-            ),
-            ),
-          );
-        },
-      ),
-    );
-  }
-}
-
-/// Shelf horizontal de libros pendientes de alta prioridad.
-class _PersonalPriorityShelf extends StatelessWidget {
-  const _PersonalPriorityShelf({required this.books});
-
-  final List<PersonalLibraryBook> books;
-
-  @override
-  Widget build(BuildContext context) {
-    return SizedBox(
-      height: 140,
-      child: ListView.separated(
-        scrollDirection: Axis.horizontal,
-        itemCount: books.length,
-        separatorBuilder: (_, __) => const SizedBox(width: AppSpacing.sm),
-        itemBuilder: (context, index) {
-          final book = books[index];
-          return SizedBox(
-            width: 82,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(AppRadius.sm),
-                  child: ClubBookCover(
-                    imageUrl: book.coverUrl,
-                    title: book.title,
-                    width: 82,
-                    height: 110,
-                    showShadow: false,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  book.title,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: AppTextStyles.caption.copyWith(fontSize: 11),
-                ),
-              ],
-            ),
-          );
-        },
       ),
     );
   }

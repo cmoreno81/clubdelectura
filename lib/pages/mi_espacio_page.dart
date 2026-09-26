@@ -11,15 +11,18 @@ import '../theme/app_radius.dart';
 import '../theme/app_spacing.dart';
 import '../theme/app_text_styles.dart';
 import '../utils/wrapped_availability.dart';
+import '../widgets/common/club_book_cover.dart';
 import '../widgets/dashboard/bingo_lector_card.dart';
-import '../widgets/dashboard/monthly_reading_shelf.dart';
 import 'book_of_year_page.dart';
+import 'perfil_usuario_page.dart' show CheckinSection;
 import 'personalidad_lectora_page.dart';
 import 'share_reader_card_page.dart';
 import 'wrapped_page.dart';
 
-/// Pantalla de logros y estadísticas personales para el modo lector solitario.
-/// Diseñada para motivar al lector con datos propios y hitos alcanzados.
+/// "Mi espacio": el rincón de la cuenta personal — qué haces hoy (leyendo
+/// ahora, racha y check-in, sagas en curso) y cómo celebras tu año (bingo,
+/// quiz, Wrapped, libro del año). Las estadísticas y gráficas en profundidad
+/// viven en la pestaña hermana "Mis estadísticas" (`mi_estadisticas_page.dart`).
 class MiEspacioPage extends StatefulWidget {
   const MiEspacioPage({super.key});
 
@@ -81,12 +84,6 @@ class _MiEspacioPageState extends State<MiEspacioPage>
           return _Content(
             data: snapshot.data!,
             streakPulse: _streakPulse,
-            onOpenBook: (book) => openBookDetail(
-              context,
-              title: book.title,
-              bookId: book.bookId,
-              coverUrl: book.coverUrl,
-            ),
             onVerWrapped: () => Navigator.push<void>(
               context,
               AppPageRoute(
@@ -153,7 +150,6 @@ class _Content extends StatelessWidget {
     required this.onVerLibroDelAno,
     required this.onOpenQuiz,
     required this.onShareCard,
-    required this.onOpenBook,
   });
 
   final _PageData data;
@@ -162,7 +158,6 @@ class _Content extends StatelessWidget {
   final VoidCallback onVerLibroDelAno;
   final VoidCallback onOpenQuiz;
   final VoidCallback onShareCard;
-  final ValueChanged<MonthlyFinishedBook> onOpenBook;
 
   @override
   Widget build(BuildContext context) {
@@ -170,7 +165,11 @@ class _Content extends StatelessWidget {
     final achievements = data.achievements;
     final unlockedCount = achievements.where((a) => a.unlocked).length;
     final total = achievements.length;
-    final calendar = data.dashboard.calendar;
+    final currentBooks = data.dashboard.currentBooks;
+    final openSeries = data.dashboard.openSeries;
+    final proximaLectura = data.dashboard.personalLibrary.isNotEmpty
+        ? data.dashboard.personalLibrary.first
+        : null;
 
     return RefreshIndicator(
       onRefresh: () async {},
@@ -199,56 +198,122 @@ class _Content extends StatelessWidget {
             ),
           ),
 
-          // ── Estadísticas ─────────────────────────────────────────────────
-          SliverPadding(
-            padding: const EdgeInsets.fromLTRB(
-              AppSpacing.md,
-              AppSpacing.md,
-              AppSpacing.md,
-              0,
-            ),
-            sliver: SliverToBoxAdapter(child: _StatsGrid(summary: summary)),
-          ),
-
-          // ── Quiz de personalidad ──────────────────────────────────────────
-          SliverPadding(
-            padding: const EdgeInsets.fromLTRB(
-              AppSpacing.md,
-              AppSpacing.lg,
-              AppSpacing.md,
-              0,
-            ),
-            sliver: SliverToBoxAdapter(
-              child: _QuizCta(onTap: onOpenQuiz),
-            ),
-          ),
-
-          // ── Meses lectores (mes actual) ───────────────────────────────────
-          if (calendar.finishedBooks.isNotEmpty) ...[
+          // ── Leyendo ahora ──────────────────────────────────────────────────
+          if (currentBooks.isNotEmpty) ...[
             SliverPadding(
               padding: const EdgeInsets.fromLTRB(
                 AppSpacing.md,
-                AppSpacing.xl,
+                AppSpacing.md,
                 AppSpacing.md,
                 0,
               ),
               sliver: SliverToBoxAdapter(
-                child: MonthlyReadingShelf(
-                  key: ValueKey('monthly-${calendar.year}-${calendar.month}'),
-                  year: calendar.year,
-                  month: calendar.month,
-                  books: calendar.finishedBooks,
-                  onBookTap: onOpenBook,
+                child: _SectionLabel('Hoy'),
+              ),
+            ),
+            SliverPadding(
+              padding: const EdgeInsets.fromLTRB(
+                AppSpacing.md,
+                AppSpacing.xs,
+                AppSpacing.md,
+                0,
+              ),
+              sliver: SliverToBoxAdapter(
+                child: Column(
+                  children: [
+                    for (final book in currentBooks)
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: AppSpacing.sm),
+                        child: _LeyendoAhoraCard(
+                          book: book,
+                          onTap: () => openBookDetail(
+                            context,
+                            title: book.title,
+                            bookId: book.id,
+                            coverUrl: book.coverUrl,
+                          ),
+                        ),
+                      ),
+                  ],
                 ),
               ),
             ),
           ],
 
-          // ── Bingo lector ─────────────────────────────────────────────────
+          // ── Racha + check-in (fusionados) ───────────────────────────────
+          SliverPadding(
+            padding: EdgeInsets.fromLTRB(
+              AppSpacing.md,
+              currentBooks.isEmpty ? AppSpacing.md : AppSpacing.sm,
+              AppSpacing.md,
+              0,
+            ),
+            sliver: const SliverToBoxAdapter(child: CheckinSection()),
+          ),
+
+          // ── Sagas en curso / próxima lectura ────────────────────────────
+          if (openSeries.isNotEmpty || proximaLectura != null)
+            SliverPadding(
+              padding: const EdgeInsets.fromLTRB(
+                AppSpacing.md,
+                AppSpacing.sm,
+                AppSpacing.md,
+                0,
+              ),
+              sliver: SliverToBoxAdapter(
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    if (openSeries.isNotEmpty)
+                      Expanded(
+                        child: _MiniInfoCard(
+                          eyebrow: 'Sagas en curso',
+                          title: openSeries.first.name,
+                          subtitle:
+                              'Libro ${openSeries.first.read} de ${openSeries.first.total}',
+                          coverUrl: openSeries.first.coverUrl,
+                        ),
+                      ),
+                    if (openSeries.isNotEmpty && proximaLectura != null)
+                      const SizedBox(width: AppSpacing.sm),
+                    if (proximaLectura != null)
+                      Expanded(
+                        child: _MiniInfoCard(
+                          eyebrow: 'Próxima lectura',
+                          title: proximaLectura.title,
+                          subtitle: proximaLectura.isHighPriority
+                              ? 'Prioridad alta'
+                              : proximaLectura.genre,
+                          coverUrl: proximaLectura.coverUrl,
+                          onTap: () => openBookDetail(
+                            context,
+                            title: proximaLectura.title,
+                            bookId: proximaLectura.id,
+                            coverUrl: proximaLectura.coverUrl,
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+            ),
+
+          // ── Celebra tu año ───────────────────────────────────────────────
           SliverPadding(
             padding: const EdgeInsets.fromLTRB(
               AppSpacing.md,
               AppSpacing.xl,
+              AppSpacing.md,
+              0,
+            ),
+            sliver: SliverToBoxAdapter(child: _SectionLabel('Celebra tu año')),
+          ),
+
+          // ── Bingo lector ─────────────────────────────────────────────────
+          SliverPadding(
+            padding: const EdgeInsets.fromLTRB(
+              AppSpacing.md,
+              AppSpacing.sm,
               AppSpacing.md,
               0,
             ),
@@ -265,11 +330,24 @@ class _Content extends StatelessWidget {
             ),
           ),
 
+          // ── Quiz de personalidad ──────────────────────────────────────────
+          SliverPadding(
+            padding: const EdgeInsets.fromLTRB(
+              AppSpacing.md,
+              AppSpacing.md,
+              AppSpacing.md,
+              0,
+            ),
+            sliver: SliverToBoxAdapter(
+              child: _QuizCta(onTap: onOpenQuiz),
+            ),
+          ),
+
           // ── Wrapped anual ─────────────────────────────────────────────────
           SliverPadding(
             padding: const EdgeInsets.fromLTRB(
               AppSpacing.md,
-              AppSpacing.xl,
+              AppSpacing.md,
               AppSpacing.md,
               0,
             ),
@@ -564,116 +642,6 @@ class _HeroBanner extends StatelessWidget {
   }
 }
 
-// ────────────────────────────────────────────────────────────────────────────
-// _StatsGrid
-// ────────────────────────────────────────────────────────────────────────────
-
-class _StatsGrid extends StatelessWidget {
-  const _StatsGrid({required this.summary});
-  final GeneralSummary summary;
-
-  @override
-  Widget build(BuildContext context) {
-    return GridView.count(
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      crossAxisCount: 2,
-      crossAxisSpacing: AppSpacing.sm,
-      mainAxisSpacing: AppSpacing.sm,
-      childAspectRatio: 2,
-      children: [
-        _StatCard(
-          value: '${summary.reading}',
-          label: 'Leyendo ahora',
-          icon: Icons.menu_book_rounded,
-          color: AppColors.info,
-        ),
-        _StatCard(
-          value: '${summary.finished}',
-          label: 'Terminados',
-          icon: Icons.check_circle_rounded,
-          color: AppColors.success,
-        ),
-        _StatCard(
-          value: '${summary.finishedThisMonth}',
-          label: 'Este mes',
-          icon: Icons.bolt_rounded,
-          color: AppColors.warning,
-        ),
-        _StatCard(
-          value: '${summary.pagesRead}',
-          label: 'Páginas leídas',
-          icon: Icons.bookmark_rounded,
-          color: AppColors.primary,
-        ),
-      ],
-    );
-  }
-}
-
-class _StatCard extends StatelessWidget {
-  const _StatCard({
-    required this.value,
-    required this.label,
-    required this.icon,
-    required this.color,
-  });
-
-  final String value;
-  final String label;
-  final IconData icon;
-  final Color color;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(
-        horizontal: AppSpacing.md,
-        vertical: AppSpacing.sm,
-      ),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: .07),
-        borderRadius: BorderRadius.circular(AppRadius.lg),
-        border: Border.all(color: color.withValues(alpha: .18)),
-      ),
-      child: Row(
-        children: [
-          CircleAvatar(
-            radius: 20,
-            backgroundColor: color.withValues(alpha: .14),
-            child: Icon(icon, color: color, size: 20),
-          ),
-          const SizedBox(width: AppSpacing.sm),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Text(
-                  value,
-                  style: const TextStyle(
-                    fontSize: 22,
-                    fontWeight: FontWeight.w900,
-                    height: 1,
-                  ),
-                ),
-                Text(
-                  label,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    fontSize: 11,
-                    color: AppColors.textSecondary,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
 
 // ────────────────────────────────────────────────────────────────────────────
 // _MotivationalCta
@@ -931,6 +899,171 @@ class _ShareCardCta extends StatelessWidget {
 // ────────────────────────────────────────────────────────────────────────────
 // _ErrorView
 // ────────────────────────────────────────────────────────────────────────────
+
+// ────────────────────────────────────────────────────────────────────────────
+// _SectionLabel — etiqueta pequeña tipo "eyebrow" para separar bloques
+// ────────────────────────────────────────────────────────────────────────────
+
+class _SectionLabel extends StatelessWidget {
+  const _SectionLabel(this.text);
+  final String text;
+
+  @override
+  Widget build(BuildContext context) {
+    return Text(
+      text.toUpperCase(),
+      style: AppTextStyles.caption.copyWith(
+        color: AppColors.textMuted,
+        fontWeight: FontWeight.w800,
+        letterSpacing: 1.2,
+      ),
+    );
+  }
+}
+
+// ────────────────────────────────────────────────────────────────────────────
+// _LeyendoAhoraCard
+// ────────────────────────────────────────────────────────────────────────────
+
+class _LeyendoAhoraCard extends StatelessWidget {
+  const _LeyendoAhoraCard({required this.book, required this.onTap});
+  final GeneralBook book;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      borderRadius: BorderRadius.circular(AppRadius.lg),
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.all(AppSpacing.sm),
+        decoration: BoxDecoration(
+          color: AppColors.surface,
+          borderRadius: BorderRadius.circular(AppRadius.lg),
+          border: Border.all(color: AppColors.border),
+        ),
+        child: Row(
+          children: [
+            ClubBookCover(
+              title: book.title,
+              imageUrl: book.coverUrl,
+              width: 44,
+              height: 64,
+            ),
+            const SizedBox(width: AppSpacing.md),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    book.title,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: AppTextStyles.body.copyWith(
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  Text(
+                    '${book.genre} · Leyendo ahora',
+                    style: AppTextStyles.caption.copyWith(
+                      color: AppColors.textMuted,
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(4),
+                    child: LinearProgressIndicator(
+                      value: (book.progress.clamp(0, 100)) / 100,
+                      minHeight: 5,
+                      backgroundColor: AppColors.primaryLight,
+                      color: AppColors.primary,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ────────────────────────────────────────────────────────────────────────────
+// _MiniInfoCard — usada para "Sagas en curso" / "Próxima lectura"
+// ────────────────────────────────────────────────────────────────────────────
+
+class _MiniInfoCard extends StatelessWidget {
+  const _MiniInfoCard({
+    required this.eyebrow,
+    required this.title,
+    required this.subtitle,
+    this.coverUrl,
+    this.onTap,
+  });
+
+  final String eyebrow;
+  final String title;
+  final String subtitle;
+  final String? coverUrl;
+  final VoidCallback? onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      borderRadius: BorderRadius.circular(AppRadius.lg),
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.all(AppSpacing.sm),
+        decoration: BoxDecoration(
+          color: AppColors.surface,
+          borderRadius: BorderRadius.circular(AppRadius.lg),
+          border: Border.all(color: AppColors.border),
+        ),
+        child: Row(
+          children: [
+            if (coverUrl != null && coverUrl!.trim().isNotEmpty) ...[
+              ClubBookCover(title: title, imageUrl: coverUrl, width: 36, height: 52),
+              const SizedBox(width: AppSpacing.sm),
+            ],
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    eyebrow.toUpperCase(),
+                    style: AppTextStyles.caption.copyWith(
+                      color: AppColors.textMuted,
+                      fontWeight: FontWeight.w800,
+                      fontSize: 10,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    title,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: AppTextStyles.body.copyWith(
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  Text(
+                    subtitle,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: AppTextStyles.caption.copyWith(
+                      color: AppColors.textMuted,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
 
 class _ErrorView extends StatelessWidget {
   const _ErrorView({required this.onRetry});

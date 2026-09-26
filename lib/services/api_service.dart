@@ -2202,6 +2202,17 @@ class ApiService {
     return _decodeJson(response) as Map<String, dynamic>;
   }
 
+  /// Estadísticas personales para "Mis estadísticas": ritmo de lectura,
+  /// géneros del año en curso y los superlativos (libro más largo, lectura
+  /// más rápida).
+  Future<Map<String, dynamic>> getEstadisticasPersonales() async {
+    final response = await _client.get(
+      Uri.parse('$baseUrl?action=estadisticasPersonales'),
+    );
+    if (response.statusCode != 200) throw ApiException.fromResponse(response);
+    return _decodeJson(response) as Map<String, dynamic>;
+  }
+
   // ── Ligas de ClubReads ─────────────────────────────────────────────────────
 
   /// Estado de la liga: si participo, tabla de la temporada, mi puesto e
