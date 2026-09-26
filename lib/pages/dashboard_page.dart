@@ -420,6 +420,31 @@ class _DashboardPageState extends State<DashboardPage> {
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   if (!widget.esPersonal) ...[
+                    // ── Leyendo ahora — lo más vivo del club, arriba del todo ──
+                    ClubSectionTitle(
+                      title: 'Leyendo ahora',
+                      subtitle: 'Qué tienen entre manos los miembros',
+                      icon: Icons.menu_book_rounded,
+                      padding: EdgeInsets.zero,
+                    ),
+                    const SizedBox(height: AppSpacing.sm),
+                    if (data.leyendoAhora.isEmpty)
+                      ClubEmptyState(
+                        icon: Icons.menu_book_outlined,
+                        title: 'El club está entre lecturas',
+                        message: 'Cuando alguien empiece un libro, aparecerá aquí.',
+                        padding: const EdgeInsets.symmetric(vertical: AppSpacing.xl),
+                      )
+                    else
+                      ...data.leyendoAhora.map(
+                        (usuario) => _lectoraLeyendoCard(
+                          nombre: usuario.usuario,
+                          lecturas: usuario.lecturas,
+                          total: usuario.total,
+                          avatarUrl: usuario.avatarUrl,
+                        ),
+                      ),
+                    const SizedBox(height: AppSpacing.lg),
                     _podioLectoras(
                       lectoras: viewData.topLectoras ?? const [],
                       usuarioMes: data.resumen.usuarioMes,
@@ -518,32 +543,6 @@ class _DashboardPageState extends State<DashboardPage> {
                       loadHistory: widget.loadCheckinHistory,
                       onTap: () => _abrirMiPerfil(scrollToSeguimiento: true),
                     ),
-
-                    // ── Leyendo ahora — justo después del wishlist ────────────
-                    const SizedBox(height: AppSpacing.lg),
-                    ClubSectionTitle(
-                      title: 'Leyendo ahora',
-                      subtitle: 'Qué tienen entre manos los miembros',
-                      icon: Icons.menu_book_rounded,
-                      padding: EdgeInsets.zero,
-                    ),
-                    const SizedBox(height: AppSpacing.sm),
-                    if (data.leyendoAhora.isEmpty)
-                      ClubEmptyState(
-                        icon: Icons.menu_book_outlined,
-                        title: 'El club está entre lecturas',
-                        message: 'Cuando alguien empiece un libro, aparecerá aquí.',
-                        padding: const EdgeInsets.symmetric(vertical: AppSpacing.xl),
-                      )
-                    else
-                      ...data.leyendoAhora.map(
-                        (usuario) => _lectoraLeyendoCard(
-                          nombre: usuario.usuario,
-                          lecturas: usuario.lecturas,
-                          total: usuario.total,
-                          avatarUrl: usuario.avatarUrl,
-                        ),
-                      ),
 
                     if (data.rankingAfinidad.isNotEmpty) ...[
                       const SizedBox(height: AppSpacing.md),

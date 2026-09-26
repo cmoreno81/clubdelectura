@@ -839,20 +839,105 @@ class _GeneralDashboardPageState extends State<GeneralDashboardPage> {
                       _hero(data),
                       const SizedBox(height: AppSpacing.sm),
                       _metrics(data),
-                      const SizedBox(height: AppSpacing.md),
-                      // Check-in bien arriba, visible sin scroll: es el
-                      // primer incentivo del día y no todo el mundo tiene
-                      // un espacio lector personal desde el que llegar a él.
-                      const CheckinSection(),
-                      const SizedBox(height: AppSpacing.xs),
-                      Text(
-                        '🎯 Bonus en Ligas: haz check-in 5 días esta semana y '
-                        'suma +30 puntos extra.',
-                        style: AppTextStyles.caption.copyWith(
-                          color: AppColors.textMuted,
+                      if (data.calendar.finishedBooks.isNotEmpty) ...[
+                        const SizedBox(height: AppSpacing.xl),
+                        MonthlyReadingShelf(
+                          key: ValueKey(
+                            'monthly-${data.calendar.year}-${data.calendar.month}',
+                          ),
+                          year: data.calendar.year,
+                          month: data.calendar.month,
+                          books: data.calendar.finishedBooks,
+                          scrollController: _scrollController,
+                          onBookTap: (book) => _openBook(
+                            title: book.title,
+                            bookId: book.bookId,
+                            coverUrl: book.coverUrl,
+                          ),
+                        ),
+                      ],
+                      const SizedBox(height: AppSpacing.xl),
+                      _sectionTitle(
+                        'Tus clubes',
+                        data.clubs.isEmpty
+                            ? 'Tu próxima historia puede empezar aquí'
+                            : 'Entra en uno o cambia de comunidad',
+                        Icons.groups_2_outlined,
+                        action: TextButton(
+                          onPressed: _manageClubs,
+                          child: const Text('Gestionar'),
                         ),
                       ),
-                      const SizedBox(height: AppSpacing.md),
+                      const SizedBox(height: AppSpacing.sm),
+                      if (data.clubs.isEmpty)
+                        _emptyClubs()
+                      else if (data.clubs.length <= 2)
+                        ...data.clubs.map(_clubCard)
+                      else
+                        _clubListCollapsible(data.clubs),
+                      if (data.currentBooks.isNotEmpty) ...[
+                        const SizedBox(height: AppSpacing.xl),
+                        _sectionTitle(
+                          'Leyendo ahora',
+                          'Tus historias, estés en el club que estés',
+                          Icons.auto_stories_outlined,
+                        ),
+                        const SizedBox(height: AppSpacing.sm),
+                        _currentBooks(data.currentBooks),
+                      ],
+                      if (data.openSeries.isNotEmpty) ...[
+                        const SizedBox(height: AppSpacing.xl),
+                        _sectionTitle(
+                          'Continúa tus sagas',
+                          'Universos que ya has empezado',
+                          Icons.view_week_outlined,
+                          action: TextButton(
+                            onPressed: _openMySeries,
+                            child: const Text('Ver todas'),
+                          ),
+                        ),
+                        const SizedBox(height: AppSpacing.sm),
+                        _openSeries(data.openSeries),
+                      ],
+                      if (data.personalLibrary.isNotEmpty) ...[
+                        const SizedBox(height: AppSpacing.xl),
+                        _sectionTitle(
+                          'Tu próxima lectura',
+                          'Tu biblioteca, con las prioridades altas primero',
+                          Icons.bookmarks_outlined,
+                        ),
+                        const SizedBox(height: AppSpacing.sm),
+                        _personalLibrary(data.personalLibrary, data.userName),
+                        const SizedBox(height: AppSpacing.md),
+                        TbrRouletteCard(
+                          books: data.personalLibrary,
+                          onOpenBook: (book) =>
+                              _openPersonalBook(book, data.userName),
+                        ),
+                        // El bingo lector vive en Mi espacio para quien
+                        // tiene espacio personal; para cuentas solo-club
+                        // (sin esa pestaña) este es su único hueco.
+                        if (!data.clubs.any((c) => c.esPersonal)) ...[
+                          const SizedBox(height: AppSpacing.xl),
+                          ClubCard(child: const BingoLectorSection()),
+                        ],
+                      ],
+                      // El check-in diario vive en "Mis estadísticas" para
+                      // quien tiene espacio personal; para cuentas solo-club
+                      // (sin esa pestaña) este es su único sitio para marcarlo.
+                      if (!data.clubs.any((c) => c.esPersonal)) ...[
+                        const SizedBox(height: AppSpacing.xl),
+                        const CheckinSection(),
+                        const SizedBox(height: AppSpacing.xs),
+                        Text(
+                          '🎯 Bonus en Ligas: haz check-in 5 días esta semana y '
+                          'suma +30 puntos extra.',
+                          style: AppTextStyles.caption.copyWith(
+                            color: AppColors.textMuted,
+                          ),
+                        ),
+                      ],
+                      const SizedBox(height: AppSpacing.xl),
                       ClubCard(
                         onTap: _exploreBooks,
                         padding: EdgeInsets.zero,
@@ -941,26 +1026,6 @@ class _GeneralDashboardPageState extends State<GeneralDashboardPage> {
                         _latestAdditions(data.latestAdditions),
                       ],
                       const SizedBox(height: AppSpacing.xl),
-                      _sectionTitle(
-                        'Tus clubes',
-                        data.clubs.isEmpty
-                            ? 'Tu próxima historia puede empezar aquí'
-                            : 'Entra en uno o cambia de comunidad',
-                        Icons.groups_2_outlined,
-                        action: TextButton(
-                          onPressed: _manageClubs,
-                          child: const Text('Gestionar'),
-                        ),
-                      ),
-                      const SizedBox(height: AppSpacing.sm),
-                      if (data.clubs.isEmpty)
-                        _emptyClubs()
-                      else if (data.clubs.length <= 2)
-                        ...data.clubs.map(_clubCard)
-                      else
-                        _clubListCollapsible(data.clubs),
-
-                      const SizedBox(height: AppSpacing.xl),
                       _ReleasesPreview(
                         future: _newReleasesFuture,
                         mode: ReleaseCatalogMode.newReleases,
@@ -972,71 +1037,6 @@ class _GeneralDashboardPageState extends State<GeneralDashboardPage> {
                       const SizedBox(height: AppSpacing.xl),
                       _WishlistPreviewSection(userName: data.userName),
 
-                      if (data.calendar.finishedBooks.isNotEmpty) ...[
-                        const SizedBox(height: AppSpacing.xl),
-                        MonthlyReadingShelf(
-                          key: ValueKey(
-                            'monthly-${data.calendar.year}-${data.calendar.month}',
-                          ),
-                          year: data.calendar.year,
-                          month: data.calendar.month,
-                          books: data.calendar.finishedBooks,
-                          scrollController: _scrollController,
-                          onBookTap: (book) => _openBook(
-                            title: book.title,
-                            bookId: book.bookId,
-                            coverUrl: book.coverUrl,
-                          ),
-                        ),
-                      ],
-                      if (data.currentBooks.isNotEmpty) ...[
-                        const SizedBox(height: AppSpacing.xl),
-                        _sectionTitle(
-                          'Leyendo ahora',
-                          'Tus historias, estés en el club que estés',
-                          Icons.auto_stories_outlined,
-                        ),
-                        const SizedBox(height: AppSpacing.sm),
-                        _currentBooks(data.currentBooks),
-                      ],
-                      if (data.openSeries.isNotEmpty) ...[
-                        const SizedBox(height: AppSpacing.xl),
-                        _sectionTitle(
-                          'Continúa tus sagas',
-                          'Universos que ya has empezado',
-                          Icons.view_week_outlined,
-                          action: TextButton(
-                            onPressed: _openMySeries,
-                            child: const Text('Ver todas'),
-                          ),
-                        ),
-                        const SizedBox(height: AppSpacing.sm),
-                        _openSeries(data.openSeries),
-                      ],
-
-                      if (data.personalLibrary.isNotEmpty) ...[
-                        const SizedBox(height: AppSpacing.xl),
-                        _sectionTitle(
-                          'Tu próxima lectura',
-                          'Tu biblioteca, con las prioridades altas primero',
-                          Icons.bookmarks_outlined,
-                        ),
-                        const SizedBox(height: AppSpacing.sm),
-                        _personalLibrary(data.personalLibrary, data.userName),
-                        const SizedBox(height: AppSpacing.md),
-                        TbrRouletteCard(
-                          books: data.personalLibrary,
-                          onOpenBook: (book) =>
-                              _openPersonalBook(book, data.userName),
-                        ),
-                        // El bingo lector vive en Mi espacio para quien
-                        // tiene espacio personal; para cuentas solo-club
-                        // (sin esa pestaña) este es su único hueco.
-                        if (!data.clubs.any((c) => c.esPersonal)) ...[
-                          const SizedBox(height: AppSpacing.xl),
-                          ClubCard(child: const BingoLectorSection()),
-                        ],
-                      ],
                       const SizedBox(height: AppSpacing.xl),
                       _sectionTitle(
                         'Tu mes lector',
