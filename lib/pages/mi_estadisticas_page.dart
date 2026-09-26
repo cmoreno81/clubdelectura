@@ -57,10 +57,16 @@ class _MiEstadisticasPageState extends State<MiEstadisticasPage> {
             return const Center(child: CircularProgressIndicator());
           }
           if (snapshot.hasError || snapshot.data == null) {
-            return _ErrorView(onRetry: () => setState(() => _future = _load()));
+            return _ErrorView(
+              onRetry: () => setState(() {
+                _future = _load();
+              }),
+            );
           }
           return RefreshIndicator(
-            onRefresh: () async => setState(() => _future = _load()),
+            onRefresh: () async => setState(() {
+              _future = _load();
+            }),
             child: _Content(data: snapshot.data!),
           );
         },
@@ -84,6 +90,9 @@ class _Content extends StatelessWidget {
     final summary = data.dashboard.summary;
     final ritmo = data.estadisticas.ritmo;
     final generos = data.estadisticas.generos;
+    final formatos = data.estadisticas.formatos;
+    final valoraciones = data.estadisticas.valoraciones;
+    final comparativaAnual = data.estadisticas.comparativaAnual;
     final libroMasLargo = data.estadisticas.libroMasLargo;
     final lecturaMasRapida = data.estadisticas.lecturaMasRapida;
 
@@ -95,12 +104,15 @@ class _Content extends StatelessWidget {
         AppSpacing.xxxl,
       ),
       children: [
-        // ── Mapa de calor ────────────────────────────────────────────────
-        const ClubCard(child: MapaCalorWidget()),
+        const _EstadisticasHeroBanner(),
         const SizedBox(height: AppSpacing.lg),
 
         // ── Cuadrícula de métricas ───────────────────────────────────────
         _StatsGrid(summary: summary),
+        const SizedBox(height: AppSpacing.lg),
+
+        // ── Mapa de calor ────────────────────────────────────────────────
+        const ClubCard(child: MapaCalorWidget()),
         const SizedBox(height: AppSpacing.lg),
 
         // ── Ritmo de lectura ─────────────────────────────────────────────
@@ -113,6 +125,24 @@ class _Content extends StatelessWidget {
           const SizedBox(height: AppSpacing.md),
         ],
 
+        // ── Comparativa año a año ─────────────────────────────────────────
+        if (comparativaAnual != null) ...[
+          _ComparativaAnualCard(comparativa: comparativaAnual),
+          const SizedBox(height: AppSpacing.md),
+        ],
+
+        // ── Formato de lectura ────────────────────────────────────────────
+        if (formatos.isNotEmpty) ...[
+          _FormatosCard(formatos: formatos),
+          const SizedBox(height: AppSpacing.md),
+        ],
+
+        // ── Distribución de valoraciones ──────────────────────────────────
+        if (valoraciones.any((v) => v.cantidad > 0)) ...[
+          _ValoracionesCard(valoraciones: valoraciones),
+          const SizedBox(height: AppSpacing.md),
+        ],
+
         // ── Reto lector + logros ─────────────────────────────────────────
         const LogrosClubCard(esPersonal: true),
         const SizedBox(height: AppSpacing.sm),
@@ -121,34 +151,137 @@ class _Content extends StatelessWidget {
 
         // ── Superlativos del año ─────────────────────────────────────────
         if (libroMasLargo != null || lecturaMasRapida != null)
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              if (libroMasLargo != null)
-                Expanded(
-                  child: _SuperlativoCard(
-                    eyebrow: 'Libro más largo',
-                    titulo: libroMasLargo.titulo,
-                    detalle: libroMasLargo.paginas != null
-                        ? '${libroMasLargo.paginas} páginas'
-                        : null,
+          IntrinsicHeight(
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                if (libroMasLargo != null)
+                  Expanded(
+                    child: _SuperlativoCard(
+                      eyebrow: 'Libro más largo',
+                      titulo: libroMasLargo.titulo,
+                      icon: Icons.menu_book_rounded,
+                      colors: const [Color(0xFF1F4D5C), Color(0xFF3E7C8C)],
+                      detalle: libroMasLargo.paginas != null
+                          ? '${libroMasLargo.paginas} páginas'
+                          : null,
+                    ),
                   ),
-                ),
-              if (libroMasLargo != null && lecturaMasRapida != null)
-                const SizedBox(width: AppSpacing.sm),
-              if (lecturaMasRapida != null)
-                Expanded(
-                  child: _SuperlativoCard(
-                    eyebrow: 'Lectura más rápida',
-                    titulo: lecturaMasRapida.titulo,
-                    detalle: lecturaMasRapida.dias == 0
-                        ? 'Terminado en 1 día'
-                        : 'Terminado en ${lecturaMasRapida.dias} días',
+                if (libroMasLargo != null && lecturaMasRapida != null)
+                  const SizedBox(width: AppSpacing.sm),
+                if (lecturaMasRapida != null)
+                  Expanded(
+                    child: _SuperlativoCard(
+                      eyebrow: 'Lectura más rápida',
+                      titulo: lecturaMasRapida.titulo,
+                      icon: Icons.bolt_rounded,
+                      colors: const [Color(0xFF2F5C3D), Color(0xFF4E8A63)],
+                      detalle: lecturaMasRapida.dias == 0
+                          ? 'Terminado en 1 día'
+                          : 'Terminado en ${lecturaMasRapida.dias} días',
+                    ),
                   ),
-                ),
-            ],
+              ],
+            ),
           ),
       ],
+    );
+  }
+}
+
+// ────────────────────────────────────────────────────────────────────────────
+// _EstadisticasHeroBanner
+// ────────────────────────────────────────────────────────────────────────────
+
+class _EstadisticasHeroBanner extends StatelessWidget {
+  const _EstadisticasHeroBanner();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(AppSpacing.lg),
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            AppColors.primaryDark,
+            Color(0xFF7B3F8F),
+            AppColors.inkCoral,
+          ],
+          stops: [0, .55, 1],
+        ),
+        borderRadius: BorderRadius.circular(AppRadius.lg),
+      ),
+      child: Stack(
+        clipBehavior: Clip.none,
+        children: [
+          Positioned(
+            right: -20,
+            top: -20,
+            child: Opacity(
+              opacity: .10,
+              child: Icon(
+                Icons.query_stats_rounded,
+                size: 130,
+                color: Colors.white,
+              ),
+            ),
+          ),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 6,
+                ),
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: .16),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: const Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.auto_graph_rounded, color: Colors.white, size: 15),
+                    SizedBox(width: 6),
+                    Text(
+                      'TU AÑO EN DATOS',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w800,
+                        fontSize: 11,
+                        letterSpacing: .6,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: AppSpacing.sm),
+              const Text(
+                'Así ha sido tu año lector',
+                style: TextStyle(
+                  fontSize: 22,
+                  fontWeight: FontWeight.w900,
+                  color: Colors.white,
+                  height: 1.1,
+                ),
+              ),
+              const SizedBox(height: 6),
+              Text(
+                'Constancia, ritmo, géneros favoritos y los libros que más '
+                'te han marcado este año.',
+                style: TextStyle(
+                  color: Colors.white.withValues(alpha: .80),
+                  fontSize: 13.5,
+                  height: 1.3,
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
     );
   }
 }
@@ -411,6 +544,262 @@ class _GenerosCard extends StatelessWidget {
 }
 
 // ────────────────────────────────────────────────────────────────────────────
+// _ComparativaAnualCard
+// ────────────────────────────────────────────────────────────────────────────
+
+class _ComparativaAnualCard extends StatelessWidget {
+  const _ComparativaAnualCard({required this.comparativa});
+  final ComparativaAnual comparativa;
+
+  @override
+  Widget build(BuildContext context) {
+    final actual = comparativa.actual;
+    final anterior = comparativa.anterior;
+    final librosDelta = actual.libros - anterior.libros;
+    final paginasDelta = actual.paginas - anterior.paginas;
+
+    return ClubCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            '${actual.anio} vs. ${anterior.anio}',
+            style: AppTextStyles.subtitle.copyWith(fontWeight: FontWeight.w800),
+          ),
+          const SizedBox(height: AppSpacing.md),
+          Row(
+            children: [
+              Expanded(
+                child: _ComparativaColumna(
+                  eyebrow: 'Libros',
+                  actual: actual.libros,
+                  anterior: anterior.libros,
+                  delta: librosDelta,
+                ),
+              ),
+              const SizedBox(width: AppSpacing.md),
+              Expanded(
+                child: _ComparativaColumna(
+                  eyebrow: 'Páginas',
+                  actual: actual.paginas,
+                  anterior: anterior.paginas,
+                  delta: paginasDelta,
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ComparativaColumna extends StatelessWidget {
+  const _ComparativaColumna({
+    required this.eyebrow,
+    required this.actual,
+    required this.anterior,
+    required this.delta,
+  });
+
+  final String eyebrow;
+  final int actual;
+  final int anterior;
+  final int delta;
+
+  @override
+  Widget build(BuildContext context) {
+    final subiendo = delta > 0;
+    final igual = delta == 0;
+    final color = igual
+        ? AppColors.textMuted
+        : (subiendo ? AppColors.success : AppColors.danger);
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          eyebrow.toUpperCase(),
+          style: AppTextStyles.caption.copyWith(
+            color: AppColors.textMuted,
+            fontWeight: FontWeight.w800,
+            fontSize: 10,
+          ),
+        ),
+        const SizedBox(height: 4),
+        Text(
+          '$actual',
+          style: AppTextStyles.title.copyWith(fontWeight: FontWeight.w900),
+        ),
+        const SizedBox(height: 2),
+        Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (!igual)
+              Icon(
+                subiendo ? Icons.arrow_upward_rounded : Icons.arrow_downward_rounded,
+                size: 14,
+                color: color,
+              ),
+            Text(
+              igual
+                  ? 'Igual que en $anterior'
+                  : '${delta.abs()} vs. $anterior',
+              style: AppTextStyles.caption.copyWith(
+                color: color,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+}
+
+// ────────────────────────────────────────────────────────────────────────────
+// _FormatosCard
+// ────────────────────────────────────────────────────────────────────────────
+
+class _FormatosCard extends StatelessWidget {
+  const _FormatosCard({required this.formatos});
+  final List<FormatoLectura> formatos;
+
+  static const _iconos = {
+    'Físico': Icons.menu_book_rounded,
+    'Digital': Icons.tablet_mac_rounded,
+    'Audiolibro': Icons.headphones_rounded,
+  };
+
+  @override
+  Widget build(BuildContext context) {
+    final total = formatos.fold<int>(0, (sum, f) => sum + f.cantidad);
+
+    return ClubCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Cómo lees',
+            style: AppTextStyles.subtitle.copyWith(fontWeight: FontWeight.w800),
+          ),
+          const SizedBox(height: AppSpacing.md),
+          for (final formato in formatos)
+            Padding(
+              padding: const EdgeInsets.only(bottom: AppSpacing.sm),
+              child: Row(
+                children: [
+                  Icon(
+                    _iconos[formato.formato] ?? Icons.book_rounded,
+                    size: 18,
+                    color: AppColors.primary,
+                  ),
+                  const SizedBox(width: AppSpacing.sm),
+                  SizedBox(
+                    width: 80,
+                    child: Text(formato.formato, style: AppTextStyles.body),
+                  ),
+                  const SizedBox(width: AppSpacing.sm),
+                  Expanded(
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(4),
+                      child: LinearProgressIndicator(
+                        value: total > 0 ? formato.cantidad / total : 0,
+                        minHeight: 8,
+                        backgroundColor: AppColors.background,
+                        color: AppColors.primary,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: AppSpacing.sm),
+                  SizedBox(
+                    width: 24,
+                    child: Text(
+                      '${formato.cantidad}',
+                      textAlign: TextAlign.right,
+                      style: AppTextStyles.caption.copyWith(
+                        color: AppColors.textMuted,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+// ────────────────────────────────────────────────────────────────────────────
+// _ValoracionesCard
+// ────────────────────────────────────────────────────────────────────────────
+
+class _ValoracionesCard extends StatelessWidget {
+  const _ValoracionesCard({required this.valoraciones});
+  final List<ValoracionLectura> valoraciones;
+
+  @override
+  Widget build(BuildContext context) {
+    final maxCantidad = valoraciones.fold<int>(
+      1,
+      (max, v) => v.cantidad > max ? v.cantidad : max,
+    );
+
+    return ClubCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Tus valoraciones',
+            style: AppTextStyles.subtitle.copyWith(fontWeight: FontWeight.w800),
+          ),
+          const SizedBox(height: AppSpacing.md),
+          for (final valoracion in valoraciones)
+            Padding(
+              padding: const EdgeInsets.only(bottom: AppSpacing.sm),
+              child: Row(
+                children: [
+                  SizedBox(
+                    width: 40,
+                    child: Text(
+                      '${valoracion.estrellas} ★',
+                      style: AppTextStyles.body,
+                    ),
+                  ),
+                  const SizedBox(width: AppSpacing.sm),
+                  Expanded(
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(4),
+                      child: LinearProgressIndicator(
+                        value: valoracion.cantidad / maxCantidad,
+                        minHeight: 8,
+                        backgroundColor: AppColors.background,
+                        color: AppColors.gold,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: AppSpacing.sm),
+                  SizedBox(
+                    width: 24,
+                    child: Text(
+                      '${valoracion.cantidad}',
+                      textAlign: TextAlign.right,
+                      style: AppTextStyles.caption.copyWith(
+                        color: AppColors.textMuted,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+// ────────────────────────────────────────────────────────────────────────────
 // _SuperlativoCard
 // ────────────────────────────────────────────────────────────────────────────
 
@@ -418,31 +807,43 @@ class _SuperlativoCard extends StatelessWidget {
   const _SuperlativoCard({
     required this.eyebrow,
     required this.titulo,
+    required this.icon,
+    required this.colors,
     this.detalle,
   });
 
   final String eyebrow;
   final String titulo;
   final String? detalle;
+  final IconData icon;
+  final List<Color> colors;
 
   @override
   Widget build(BuildContext context) {
     return Container(
+      width: double.infinity,
       padding: const EdgeInsets.all(AppSpacing.md),
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: colors,
+        ),
         borderRadius: BorderRadius.circular(AppRadius.lg),
-        border: Border.all(color: AppColors.border),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
         children: [
+          Icon(icon, color: Colors.white, size: 22),
+          const SizedBox(height: AppSpacing.sm),
           Text(
             eyebrow.toUpperCase(),
-            style: AppTextStyles.caption.copyWith(
-              color: AppColors.textMuted,
+            style: const TextStyle(
+              color: Colors.white70,
               fontWeight: FontWeight.w800,
               fontSize: 10,
+              letterSpacing: .3,
             ),
           ),
           const SizedBox(height: 6),
@@ -450,13 +851,17 @@ class _SuperlativoCard extends StatelessWidget {
             titulo,
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
-            style: AppTextStyles.body.copyWith(fontWeight: FontWeight.w700),
+            style: const TextStyle(
+              color: Colors.white,
+              fontWeight: FontWeight.w800,
+              fontSize: 15,
+            ),
           ),
           if (detalle != null) ...[
             const SizedBox(height: 2),
             Text(
               detalle!,
-              style: AppTextStyles.caption.copyWith(color: AppColors.textMuted),
+              style: const TextStyle(color: Colors.white70, fontSize: 12),
             ),
           ],
         ],

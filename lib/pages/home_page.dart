@@ -206,7 +206,11 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
     const NavigationDestination(
       icon: Icon(Icons.bar_chart_outlined),
       selectedIcon: Icon(Icons.bar_chart_rounded),
-      label: 'Estadísticas',
+      // Con 6 pestañas el nombre completo ("Estadísticas") se corta a dos
+      // líneas al seleccionarla (el texto en negrita ya no cabe en la
+      // columna). "Datos" cabe siempre; la página en sí sigue titulada
+      // "Mis estadísticas".
+      label: 'Datos',
     ),
   ];
 
@@ -333,13 +337,18 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
             height: 88,
             child: LayoutBuilder(
               builder: (context, constraints) {
-                // Con 6 pestañas de club + este botón, una pantalla estrecha
-                // (iPhone mini/SE) no tiene sitio para la etiqueta completa.
-                final compact = constraints.maxWidth < 380;
+                // Con 6 pestañas de club + este botón, casi ninguna pantalla
+                // tiene sitio para la etiqueta completa en las 6 pestañas: el
+                // botón de inicio va siempre compacto (solo icono) en modo
+                // club, y el umbral para ocultar las etiquetas de las
+                // pestañas es más alto que en modo personal (4 pestañas).
+                final compact = _esPersonal
+                    ? constraints.maxWidth < 380
+                    : constraints.maxWidth < 460;
                 return Row(
                   children: [
                     const SizedBox(width: 8),
-                    _homeShortcutButton(compact: compact),
+                    _homeShortcutButton(compact: compact || !_esPersonal),
                     const VerticalDivider(
                       width: 1,
                       thickness: 1,

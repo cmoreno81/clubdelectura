@@ -679,59 +679,111 @@ class _Cell extends StatelessWidget {
 // ─────────────────────────────────────────────────────────────────────────────
 
 class _Leyenda extends StatelessWidget {
+  // Mismos 4 tramos que se ofrecen al marcar un día (ver `_rangos` en
+  // MapaCalorWidget) — el color de cada celda refleja cuál se eligió ese día.
+  static const _rangosPaginas = [
+    'Hasta 50',
+    '50 – 75',
+    '75 – 100',
+    'Más de 100',
+  ];
+
   @override
   Widget build(BuildContext context) {
-    return Wrap(
-      crossAxisAlignment: WrapCrossAlignment.center,
-      spacing: AppSpacing.xs,
-      runSpacing: AppSpacing.xs,
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          'Sin actividad',
-          style: AppTextStyles.caption.copyWith(color: AppColors.textMuted),
-        ),
         Wrap(
-          spacing: 3,
-          children: List.generate(
-            4,
-            (i) => _Cell(
-              level: i + 1,
-              isFuture: false,
-              cellW: 11,
-              cellH: 11,
-              date: DateTime.now(),
-            ),
-          ),
-        ),
-        Text(
-          'Muy activa',
-          style: AppTextStyles.caption.copyWith(color: AppColors.textMuted),
-        ),
-        // Agrupados en una sola fila para que el Wrap no los separe en
-        // líneas distintas cuando falta espacio. El texto va en un
-        // Flexible para que, con poco ancho o letra ampliada, se envuelva
-        // dentro de su propia fila en vez de desbordarla.
-        Row(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.center,
+          crossAxisAlignment: WrapCrossAlignment.center,
+          spacing: AppSpacing.xs,
+          runSpacing: AppSpacing.xs,
           children: [
-            _Cell(
-              level: 1,
-              isFuture: false,
-              finished: true,
-              cellW: 11,
-              cellH: 11,
-              date: DateTime.now(),
+            Text(
+              'Sin actividad',
+              style: AppTextStyles.caption.copyWith(
+                color: AppColors.textMuted,
+              ),
             ),
-            const SizedBox(width: 4),
-            Flexible(
-              child: Text(
-                'Libro terminado',
-                style: AppTextStyles.caption.copyWith(
-                  color: AppColors.textMuted,
+            Wrap(
+              spacing: 3,
+              children: List.generate(
+                4,
+                (i) => _Cell(
+                  level: i + 1,
+                  isFuture: false,
+                  cellW: 11,
+                  cellH: 11,
+                  date: DateTime.now(),
                 ),
               ),
             ),
+            Text(
+              'Muy activa',
+              style: AppTextStyles.caption.copyWith(
+                color: AppColors.textMuted,
+              ),
+            ),
+            // Agrupados en una sola fila para que el Wrap no los separe en
+            // líneas distintas cuando falta espacio. El texto va en un
+            // Flexible para que, con poco ancho o letra ampliada, se envuelva
+            // dentro de su propia fila en vez de desbordarla.
+            Row(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                _Cell(
+                  level: 1,
+                  isFuture: false,
+                  finished: true,
+                  cellW: 11,
+                  cellH: 11,
+                  date: DateTime.now(),
+                ),
+                const SizedBox(width: 4),
+                Flexible(
+                  child: Text(
+                    'Libro terminado',
+                    style: AppTextStyles.caption.copyWith(
+                      color: AppColors.textMuted,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+        const SizedBox(height: AppSpacing.xs),
+        // El color exacto de cada día depende de las páginas leídas: este
+        // desglose aclara a qué tramo corresponde cada intensidad del morado.
+        Wrap(
+          crossAxisAlignment: WrapCrossAlignment.center,
+          spacing: AppSpacing.sm,
+          runSpacing: 4,
+          children: [
+            for (var i = 0; i < _rangosPaginas.length; i++)
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  _Cell(
+                    level: i + 1,
+                    isFuture: false,
+                    cellW: 10,
+                    cellH: 10,
+                    date: DateTime.now(),
+                  ),
+                  const SizedBox(width: 4),
+                  Flexible(
+                    child: Text(
+                      '${_rangosPaginas[i]} pág.',
+                      overflow: TextOverflow.ellipsis,
+                      style: AppTextStyles.caption.copyWith(
+                        color: AppColors.textMuted,
+                        fontSize: 10.5,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
           ],
         ),
       ],

@@ -67,16 +67,78 @@ class LecturaMasRapida {
   }
 }
 
+class FormatoLectura {
+  const FormatoLectura({required this.formato, required this.cantidad});
+  final String formato;
+  final int cantidad;
+
+  factory FormatoLectura.fromJson(Map<String, dynamic> json) => FormatoLectura(
+    formato: json['formato']?.toString() ?? '',
+    cantidad: (json['cantidad'] as num?)?.toInt() ?? 0,
+  );
+}
+
+class ValoracionLectura {
+  const ValoracionLectura({required this.estrellas, required this.cantidad});
+  final int estrellas;
+  final int cantidad;
+
+  factory ValoracionLectura.fromJson(Map<String, dynamic> json) =>
+      ValoracionLectura(
+        estrellas: (json['estrellas'] as num?)?.toInt() ?? 0,
+        cantidad: (json['cantidad'] as num?)?.toInt() ?? 0,
+      );
+}
+
+class ResumenAnual {
+  const ResumenAnual({
+    required this.anio,
+    required this.libros,
+    required this.paginas,
+  });
+  final int anio;
+  final int libros;
+  final int paginas;
+
+  factory ResumenAnual.fromJson(Map<String, dynamic> json) => ResumenAnual(
+    anio: (json['anio'] as num?)?.toInt() ?? 0,
+    libros: (json['libros'] as num?)?.toInt() ?? 0,
+    paginas: (json['paginas'] as num?)?.toInt() ?? 0,
+  );
+}
+
+class ComparativaAnual {
+  const ComparativaAnual({required this.actual, required this.anterior});
+  final ResumenAnual actual;
+  final ResumenAnual anterior;
+
+  factory ComparativaAnual.fromJson(Map<String, dynamic> json) =>
+      ComparativaAnual(
+        actual: ResumenAnual.fromJson(
+          Map<String, dynamic>.from(json['actual'] as Map? ?? const {}),
+        ),
+        anterior: ResumenAnual.fromJson(
+          Map<String, dynamic>.from(json['anterior'] as Map? ?? const {}),
+        ),
+      );
+}
+
 class EstadisticasPersonales {
   const EstadisticasPersonales({
     required this.ritmo,
     required this.generos,
+    this.formatos = const [],
+    this.valoraciones = const [],
+    this.comparativaAnual,
     this.libroMasLargo,
     this.lecturaMasRapida,
   });
 
   final RitmoLectura ritmo;
   final List<GeneroLectura> generos;
+  final List<FormatoLectura> formatos;
+  final List<ValoracionLectura> valoraciones;
+  final ComparativaAnual? comparativaAnual;
   final LibroMasLargo? libroMasLargo;
   final LecturaMasRapida? lecturaMasRapida;
 
@@ -88,6 +150,17 @@ class EstadisticasPersonales {
         generos: ((json['generos'] as List?) ?? const [])
             .map((e) => GeneroLectura.fromJson(Map<String, dynamic>.from(e as Map)))
             .toList(),
+        formatos: ((json['formatos'] as List?) ?? const [])
+            .map((e) => FormatoLectura.fromJson(Map<String, dynamic>.from(e as Map)))
+            .toList(),
+        valoraciones: ((json['valoraciones'] as List?) ?? const [])
+            .map((e) => ValoracionLectura.fromJson(Map<String, dynamic>.from(e as Map)))
+            .toList(),
+        comparativaAnual: json['comparativaAnual'] is Map
+            ? ComparativaAnual.fromJson(
+                Map<String, dynamic>.from(json['comparativaAnual'] as Map),
+              )
+            : null,
         libroMasLargo: LibroMasLargo.fromJson(
           (json['libroMasLargo'] as Map?)?.cast<String, dynamic>(),
         ),

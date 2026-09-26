@@ -94,6 +94,11 @@ class _DashboardPageState extends State<DashboardPage> {
   final Map<String, ValueNotifier<LecturaAhoraItem>> _reactionNotifiers = {};
   final Set<String> _reactingProgressIds = {};
 
+  /// Nombres de lectoras con más de una lectura activa cuyas lecturas
+  /// adicionales (todas menos la más avanzada) se han desplegado a
+  /// tarjeta completa, con comentario y reacciones.
+  final Set<String> _lecturasExpandidas = {};
+
   String? usuarioActual;
   String avatarUrlActual = '';
   bool _headerLoading = true;
@@ -391,7 +396,26 @@ class _DashboardPageState extends State<DashboardPage> {
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   if (!widget.esPersonal) ...[
-                    // ── Leyendo ahora — lo más vivo del club, arriba del todo ──
+                    _podioLectoras(
+                      lectoras: viewData.topLectoras ?? const [],
+                      usuarioMes: data.resumen.usuarioMes,
+                      librosUsuarioMes: data.resumen.librosUsuarioMes,
+                    ),
+                    const SizedBox(height: AppSpacing.lg),
+                    // SIN_DATOS solo se oculta si además no hay una lectura
+                    // activa de respaldo (una lectura FREE en curso sin
+                    // Clubvisión este mes) — si la hay, sí queremos ver la
+                    // tarjeta, aunque el estado en sí sea SIN_DATOS.
+                    if (data.clubvision.estado.toUpperCase() != 'SIN_DATOS' ||
+                        data.lecturaActual.ok) ...[
+                      ClubvisionCard(
+                        dashboard: data,
+                        estadoClub: estadoClub,
+                        haVotado: viewData.haVotado,
+                        onActualizar: _recargar,
+                      ),
+                      const SizedBox(height: AppSpacing.lg),
+                    ],
                     ClubSectionTitle(
                       title: 'Leyendo ahora',
                       subtitle: 'Qué tienen entre manos los miembros',
@@ -414,25 +438,6 @@ class _DashboardPageState extends State<DashboardPage> {
                           total: usuario.total,
                           avatarUrl: usuario.avatarUrl,
                         ),
-                      ),
-                    const SizedBox(height: AppSpacing.lg),
-                    _podioLectoras(
-                      lectoras: viewData.topLectoras ?? const [],
-                      usuarioMes: data.resumen.usuarioMes,
-                      librosUsuarioMes: data.resumen.librosUsuarioMes,
-                    ),
-                    const SizedBox(height: AppSpacing.lg),
-                    // SIN_DATOS solo se oculta si además no hay una lectura
-                    // activa de respaldo (una lectura FREE en curso sin
-                    // Clubvisión este mes) — si la hay, sí queremos ver la
-                    // tarjeta, aunque el estado en sí sea SIN_DATOS.
-                    if (data.clubvision.estado.toUpperCase() != 'SIN_DATOS' ||
-                        data.lecturaActual.ok)
-                      ClubvisionCard(
-                        dashboard: data,
-                        estadoClub: estadoClub,
-                        haVotado: viewData.haVotado,
-                        onActualizar: _recargar,
                       ),
                     const SizedBox(height: AppSpacing.lg),
                   ],
@@ -799,37 +804,91 @@ class _DashboardPageState extends State<DashboardPage> {
               ),
             ),
             const SizedBox(height: AppSpacing.md),
-            for (var index = 0; index < lecturas.length; index++) ...[
-              ValueListenableBuilder<LecturaAhoraItem>(
-                valueListenable: _reactionNotifier(lecturas[index]),
-                builder: (context, lectura, _) => _LecturaProgresoCard(
-                  key: ValueKey('progress-${lectura.libraryId}'),
-                  lectura: lectura,
-                  editable:
-                      usuarioActual?.trim().toLowerCase() ==
-                      nombre.trim().toLowerCase(),
-                  onEditar: () => _editarProgreso(nombre, lectura),
-                  onBookTap: () => openBookDetail(
-                    context,
-                    title: lectura.titulo,
-                    bookId: lectura.bookId,
-                    coverUrl: lectura.coverUrl,
-                  ),
-                  onReact: () => _reaccionarProgreso(lectura),
-                  onReactionDetails: () => ReactionDetailsSheet.show(
-                    context,
-                    targetType: 'PROGRESS',
-                    targetId: lectura.libraryId,
-                  ),
-                ),
-              ),
-              if (index < lecturas.length - 1)
-                const SizedBox(height: AppSpacing.sm),
-            ],
+            ..._lecturasDeLectora(nombre: nombre, lecturas: lecturas),
           ],
         ),
       ),
     );
+  }
+
+  Widget _lecturaCompleta(String nombre, LecturaAhoraItem lectura) {
+    return ValueListenableBuilder<LecturaAhoraItem>(
+      valueListenable: _reactionNotifier(lectura),
+      builder: (context, lectura, _) => _LecturaProgresoCard(
+        key: ValueKey('progress-${lectura.libraryId}'),
+        lectura: lectura,
+        editable:
+            usuarioActual?.trim().toLowerCase() == nombre.trim().toLowerCase(),
+        onEditar: () => _editarProgreso(nombre, lectura),
+        onBookTap: () => openBookDetail(
+          context,
+          title: lectura.titulo,
+          bookId: lectura.bookId,
+          coverUrl: lectura.coverUrl,
+        ),
+        onReact: () => _reaccionarProgreso(lectura),
+        onReactionDetails: () => ReactionDetailsSheet.show(
+          context,
+          targetType: 'PROGRESS',
+          targetId: lectura.libraryId,
+        ),
+      ),
+    );
+  }
+
+  // Con una sola lectura activa se ve la tarjeta completa (comentario y
+  // reacciones incluidos). Con varias, para que un club grande con lectoras
+  // muy activas no obligue a hacer scroll interminable, solo se ve la más
+  // avanzada; el resto queda oculto del todo detrás de un "Ver N lecturas
+  // más" — nada se pierde, solo se pliega hasta que se pide verlo — y al
+  // desplegarlas se muestran como tarjetas completas, con su comentario y su
+  // opción de reaccionar, igual que la principal.
+  List<Widget> _lecturasDeLectora({
+    required String nombre,
+    required List<LecturaAhoraItem> lecturas,
+  }) {
+    if (lecturas.length <= 1) {
+      return [for (final lectura in lecturas) _lecturaCompleta(nombre, lectura)];
+    }
+
+    final ordenadas = [...lecturas]
+      ..sort((a, b) => b.progreso.compareTo(a.progreso));
+    final principal = ordenadas.first;
+    final resto = ordenadas.skip(1).toList(growable: false);
+    final expandido = _lecturasExpandidas.contains(nombre);
+
+    return [
+      _lecturaCompleta(nombre, principal),
+      if (expandido) ...[
+        const SizedBox(height: AppSpacing.xs),
+        for (final lectura in resto) ...[
+          _lecturaCompleta(nombre, lectura),
+          const SizedBox(height: AppSpacing.xs),
+        ],
+      ],
+      Center(
+        child: TextButton.icon(
+          onPressed: () => setState(() {
+            if (expandido) {
+              _lecturasExpandidas.remove(nombre);
+            } else {
+              _lecturasExpandidas.add(nombre);
+            }
+          }),
+          icon: Icon(
+            expandido
+                ? Icons.expand_less_rounded
+                : Icons.expand_more_rounded,
+            size: 18,
+          ),
+          label: Text(
+            expandido
+                ? 'Ocultar'
+                : 'Ver ${resto.length} ${resto.length == 1 ? 'lectura más' : 'lecturas más'}',
+          ),
+        ),
+      ),
+    ];
   }
 
   final Set<String> _savingProgressIds = <String>{};
