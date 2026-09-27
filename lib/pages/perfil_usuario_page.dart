@@ -3075,6 +3075,7 @@ class FavoritosShelf extends StatelessWidget {
     }
 
     return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         for (final entry in slots.asMap().entries) ...[
           if (entry.key > 0) const SizedBox(width: 8),
