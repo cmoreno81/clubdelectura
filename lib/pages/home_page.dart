@@ -16,6 +16,7 @@ import '../theme/app_colors.dart';
 import '../theme/app_spacing.dart';
 import '../theme/app_text_styles.dart';
 import '../utils/app_breakpoints.dart';
+import '../widgets/common/floating_nav_bar.dart';
 
 typedef HomePageBuilder = Widget Function();
 
@@ -318,73 +319,62 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
 
   Widget _buildMobile(BuildContext context) {
     return Scaffold(
-      extendBody: false,
+      extendBody: true,
       body: _pageStack(),
-      bottomNavigationBar: Container(
-        decoration: const BoxDecoration(
-          border: Border(
-            top: BorderSide(color: Color(0xFFCFB8E0), width: 1.0),
-          ),
-        ),
-        child: SafeArea(
-          top: false,
-          // Alto fijo (algo mayor que el de NavigationBar, 80) para que el
-          // separador vertical tenga una altura acotada en la que dibujarse
-          // (sin esto el Row queda con altura indefinida y el layout se
-          // rompe) y para que el contenido quede centrado con un pelín de
-          // aire arriba y abajo en vez de pegado al borde superior.
-          child: SizedBox(
-            height: 88,
-            child: LayoutBuilder(
-              builder: (context, constraints) {
-                // Con 6 pestañas de club + este botón, casi ninguna pantalla
-                // tiene sitio para la etiqueta completa en las 6 pestañas: el
-                // botón de inicio va siempre compacto (solo icono) en modo
-                // club, y el umbral para ocultar las etiquetas de las
-                // pestañas es más alto que en modo personal (4 pestañas).
-                final compact = _esPersonal
-                    ? constraints.maxWidth < 380
-                    : constraints.maxWidth < 460;
-                return Row(
-                  children: [
-                    const SizedBox(width: 8),
-                    _homeShortcutButton(compact: compact || !_esPersonal),
-                    const VerticalDivider(
-                      width: 1,
-                      thickness: 1,
-                      color: Color(0xFFE3D5EF),
-                    ),
-                    Expanded(
-                      child: _esPersonal
-                          ? NavigationBar(
-                              selectedIndex: currentIndex,
-                              onDestinationSelected: _selectTab,
-                              labelBehavior: compact
-                                  ? NavigationDestinationLabelBehavior
-                                        .onlyShowSelected
-                                  : NavigationDestinationLabelBehavior
-                                        .alwaysShow,
-                              destinations: _personalDestinations(),
-                            )
-                          : ListenableBuilder(
-                              listenable: _notifications,
-                              builder: (context, _) => NavigationBar(
-                                selectedIndex: currentIndex,
-                                onDestinationSelected: _selectTab,
-                                labelBehavior: compact
-                                    ? NavigationDestinationLabelBehavior
-                                          .onlyShowSelected
-                                    : NavigationDestinationLabelBehavior
-                                          .alwaysShow,
-                                destinations: _socialDestinations(),
-                              ),
-                            ),
-                    ),
-                  ],
-                );
-              },
-            ),
-          ),
+      bottomNavigationBar: FloatingNavBar(
+        height: 72,
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            // Con 6 pestañas de club + este botón, casi ninguna pantalla
+            // tiene sitio para la etiqueta completa en las 6 pestañas: el
+            // botón de inicio va siempre compacto (solo icono) en modo
+            // club, y el umbral para ocultar las etiquetas de las
+            // pestañas es más alto que en modo personal (4 pestañas).
+            final compact = _esPersonal
+                ? constraints.maxWidth < 380
+                : constraints.maxWidth < 460;
+            return Row(
+              children: [
+                const SizedBox(width: 4),
+                // Siempre compacto (solo icono): la píldora flotante es más
+                // baja que la barra anterior y no le cabe el icono + label
+                // "ClubReads" en dos líneas.
+                _homeShortcutButton(compact: true),
+                Container(
+                  width: 1,
+                  height: 26,
+                  margin: const EdgeInsets.symmetric(horizontal: 2),
+                  color: AppColors.border,
+                ),
+                Expanded(
+                  child: _esPersonal
+                      ? NavigationBar(
+                          selectedIndex: currentIndex,
+                          onDestinationSelected: _selectTab,
+                          labelBehavior: compact
+                              ? NavigationDestinationLabelBehavior
+                                    .onlyShowSelected
+                              : NavigationDestinationLabelBehavior
+                                    .alwaysShow,
+                          destinations: _personalDestinations(),
+                        )
+                      : ListenableBuilder(
+                          listenable: _notifications,
+                          builder: (context, _) => NavigationBar(
+                            selectedIndex: currentIndex,
+                            onDestinationSelected: _selectTab,
+                            labelBehavior: compact
+                                ? NavigationDestinationLabelBehavior
+                                      .onlyShowSelected
+                                : NavigationDestinationLabelBehavior
+                                      .alwaysShow,
+                            destinations: _socialDestinations(),
+                          ),
+                        ),
+                ),
+              ],
+            );
+          },
         ),
       ),
     );

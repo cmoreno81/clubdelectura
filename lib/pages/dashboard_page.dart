@@ -30,6 +30,7 @@ import '../theme/app_text_styles.dart';
 import '../widgets/club/clubvision_card.dart';
 import '../widgets/common/club_avatar.dart';
 import '../widgets/common/club_card.dart';
+import '../widgets/common/floating_nav_bar.dart' show kFloatingNavClearance;
 import '../widgets/dashboard/club_books_of_year_card.dart';
 import '../widgets/common/club_chip.dart';
 import '../widgets/common/club_empty_state.dart';
@@ -390,7 +391,7 @@ class _DashboardPageState extends State<DashboardPage> {
                 AppSpacing.md,
                 AppSpacing.sm,
                 AppSpacing.md,
-                110,
+                kFloatingNavClearance,
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,

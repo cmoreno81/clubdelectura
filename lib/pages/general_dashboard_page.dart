@@ -28,6 +28,7 @@ import '../utils/idioma_utils.dart';
 import '../widgets/common/club_avatar.dart';
 import '../widgets/common/club_book_cover.dart';
 import '../widgets/common/club_card.dart';
+import '../widgets/common/floating_nav_bar.dart';
 import '../widgets/common/calendar_edit_fechas_sheet.dart';
 import '../widgets/common/reading_cover_calendar.dart';
 import '../widgets/common/optimized_network_image.dart';
@@ -633,18 +634,10 @@ class _GeneralDashboardPageState extends State<GeneralDashboardPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.transparent,
-      bottomNavigationBar: Container(
-        decoration: const BoxDecoration(
-          border: Border(top: BorderSide(color: Color(0xFFCFB8E0), width: 1.0)),
-        ),
+      extendBody: true,
+      bottomNavigationBar: FloatingNavBar(
+        height: 72,
         child: NavigationBar(
-          // Un poco más alto que el valor por defecto (80) para que el
-          // contenido no quede pegado al borde superior de la barra. El
-          // padding del área segura (home indicator en iOS, gesture bar en
-          // Android) se añade automáticamente POR ENCIMA de esta altura al
-          // estar en Scaffold.bottomNavigationBar, así que esto no puede
-          // recortarse en Android: solo da más aire a los iconos.
-          height: 88,
           selectedIndex: _navIndex,
           onDestinationSelected: _selectNavIndex,
           destinations: [
@@ -653,7 +646,7 @@ class _GeneralDashboardPageState extends State<GeneralDashboardPage> {
               selectedIcon: Icon(Icons.home_rounded),
               label: 'Inicio',
             ),
-            NavigationDestination(
+            const NavigationDestination(
               icon: Icon(Icons.travel_explore_outlined),
               selectedIcon: Icon(Icons.travel_explore_rounded),
               label: 'Catálogo',
@@ -664,8 +657,8 @@ class _GeneralDashboardPageState extends State<GeneralDashboardPage> {
               label: 'Ligas',
             ),
             NavigationDestination(
-              icon: Icon(Icons.groups_outlined),
-              selectedIcon: Icon(Icons.groups_rounded),
+              icon: const Icon(Icons.groups_outlined),
+              selectedIcon: const Icon(Icons.groups_rounded),
               label: _hasClub ? 'Mi club' : 'Mi espacio',
             ),
             const NavigationDestination(
@@ -832,7 +825,7 @@ class _GeneralDashboardPageState extends State<GeneralDashboardPage> {
                     AppSpacing.md,
                     AppSpacing.sm,
                     AppSpacing.md,
-                    AppSpacing.xxxl,
+                    kFloatingNavClearance,
                   ),
                   sliver: SliverList.list(
                     children: [
@@ -875,15 +868,6 @@ class _GeneralDashboardPageState extends State<GeneralDashboardPage> {
                         ...data.clubs.map(_clubCard)
                       else
                         _clubListCollapsible(data.clubs),
-                      // El check-in diario vive en "Mis estadísticas" para
-                      // quien tiene espacio personal; para cuentas solo-club
-                      // (sin esa pestaña) este es su único sitio para
-                      // marcarlo — va antes de "Leyendo ahora" para que sea
-                      // lo primero accesible al entrar.
-                      if (!data.clubs.any((c) => c.esPersonal)) ...[
-                        const SizedBox(height: AppSpacing.xl),
-                        const CheckinSection(),
-                      ],
                       if (data.currentBooks.isNotEmpty) ...[
                         const SizedBox(height: AppSpacing.xl),
                         _sectionTitle(
@@ -894,6 +878,12 @@ class _GeneralDashboardPageState extends State<GeneralDashboardPage> {
                         const SizedBox(height: AppSpacing.sm),
                         _currentBooks(data.currentBooks),
                       ],
+                      // Acceso rápido al check-in diario para cualquier
+                      // cuenta — quien tiene espacio personal también lo ve
+                      // en Mi espacio/Mis estadísticas, pero este es el
+                      // único sitio para cuentas solo-club.
+                      const SizedBox(height: AppSpacing.xl),
+                      const CheckinSection(),
                       if (data.openSeries.isNotEmpty) ...[
                         const SizedBox(height: AppSpacing.xl),
                         _sectionTitle(

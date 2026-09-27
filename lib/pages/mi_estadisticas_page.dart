@@ -9,6 +9,7 @@ import '../theme/app_radius.dart';
 import '../theme/app_spacing.dart';
 import '../theme/app_text_styles.dart';
 import '../widgets/common/club_card.dart';
+import '../widgets/common/floating_nav_bar.dart' show kFloatingNavClearance;
 import '../widgets/common/mapa_calor_widget.dart';
 import 'dashboard_page.dart' show AchievementsClubCard, LogrosClubCard;
 
@@ -101,7 +102,7 @@ class _Content extends StatelessWidget {
         AppSpacing.md,
         AppSpacing.md,
         AppSpacing.md,
-        AppSpacing.xxxl,
+        kFloatingNavClearance,
       ),
       children: [
         const _EstadisticasHeroBanner(),

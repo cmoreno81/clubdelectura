@@ -15,6 +15,7 @@ import '../theme/app_text_styles.dart';
 import '../utils/wrapped_availability.dart';
 import '../widgets/common/club_book_cover.dart';
 import '../widgets/common/editar_progreso_dialog.dart';
+import '../widgets/common/floating_nav_bar.dart' show kFloatingNavClearance;
 import '../widgets/dashboard/bingo_lector_card.dart';
 import 'book_of_year_page.dart';
 import 'perfil_usuario_page.dart' show CheckinSection, PerfilUsuarioPage;
@@ -567,7 +568,7 @@ class _Content extends StatelessWidget {
               AppSpacing.md,
               AppSpacing.xl,
               AppSpacing.md,
-              AppSpacing.xxxl,
+              kFloatingNavClearance,
             ),
             sliver: SliverToBoxAdapter(
               child: _MotivationalCta(
