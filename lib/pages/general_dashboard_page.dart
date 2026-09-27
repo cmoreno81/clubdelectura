@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:math' as math;
 
 import 'package:club_lectura_app/models/dashboard.dart';
@@ -315,17 +316,68 @@ class _GeneralDashboardPageState extends State<GeneralDashboardPage> {
   // filtrada en "De ClubReads", que es la vista completa (búsqueda, filtros,
   // añadir libro). La tarjeta "Explorar la biblioteca" del dashboard sigue
   // abriendo _exploreBooks (buscador simple) tal cual estaba.
-  Future<void> _exploreCatalogFromNav() async {
-    await Navigator.push<void>(
-      context,
-      AppPageRoute(
-        builder: (_) => const LibrosPage(
-          esPersonal: true,
-          initialFiltroOrigen: 'CLUBREADS',
-        ),
+  //
+  // [reemplazarActual]: usa pushReplacement en vez de push — para cuando ya
+  // estamos en otro "atajo" del menú global (p. ej. Ligas) y solo queremos
+  // cambiar de pantalla, sin apilar ambas.
+  Future<void> _exploreCatalogFromNav({bool reemplazarActual = false}) async {
+    final route = AppPageRoute<void>(
+      builder: (_) => LibrosPage(
+        esPersonal: true,
+        initialFiltroOrigen: 'CLUBREADS',
+        globalNav: _globalNavFor(1),
       ),
     );
+    if (reemplazarActual) {
+      await Navigator.pushReplacement<void, void>(context, route);
+    } else {
+      await Navigator.push<void>(context, route);
+    }
     if (mounted) await _reload();
+  }
+
+  // Pestaña "Ligas" del menú inferior — mismo criterio que
+  // [_exploreCatalogFromNav].
+  Future<void> _openLigasFromNav({bool reemplazarActual = false}) async {
+    final route = AppPageRoute<void>(
+      builder: (_) => LigaPage(globalNav: _globalNavFor(2)),
+    );
+    if (reemplazarActual) {
+      await Navigator.pushReplacement<void, void>(context, route);
+    } else {
+      await Navigator.push<void>(context, route);
+    }
+    if (mounted) await _reload();
+  }
+
+  // Menú global (Inicio/Catálogo/Ligas/Mi club|espacio/Ajustes) tal y como lo
+  // lleva puesta una pantalla "atajo" (Catálogo, Ligas) abierta desde aquí:
+  // "Inicio" vuelve a este dashboard con un pop, el resto reemplaza la
+  // pantalla actual por la siguiente sin apilarlas.
+  GlobalNavConfig _globalNavFor(int selectedIndex) {
+    return GlobalNavConfig(
+      selectedIndex: selectedIndex,
+      hasClub: _hasClub,
+      onSelectHome: () => Navigator.pop(context),
+      onSelectCatalogo: () {
+        if (selectedIndex != 1) {
+          unawaited(_exploreCatalogFromNav(reemplazarActual: true));
+        }
+      },
+      onSelectLigas: () {
+        if (selectedIndex != 2) {
+          unawaited(_openLigasFromNav(reemplazarActual: true));
+        }
+      },
+      onSelectClub: () {
+        Navigator.pop(context);
+        unawaited(_goToActiveClub());
+      },
+      onSelectAjustes: () {
+        Navigator.pop(context);
+        unawaited(_openMyProfileFromNav());
+      },
+    );
   }
 
   // ── Menú inferior (bosquejo) ───────────────────────────────────────────
@@ -359,10 +411,7 @@ class _GeneralDashboardPageState extends State<GeneralDashboardPage> {
         case 1:
           await _exploreCatalogFromNav();
         case 2:
-          await Navigator.push<void>(
-            context,
-            AppPageRoute(builder: (_) => const LigaPage()),
-          );
+          await _openLigasFromNav();
         case 3:
           await _goToActiveClub();
         case 4:
@@ -635,40 +684,15 @@ class _GeneralDashboardPageState extends State<GeneralDashboardPage> {
     return Scaffold(
       backgroundColor: Colors.transparent,
       extendBody: true,
-      bottomNavigationBar: FloatingNavBar(
-        height: 72,
-        child: NavigationBar(
-          selectedIndex: _navIndex,
-          onDestinationSelected: _selectNavIndex,
-          destinations: [
-            const NavigationDestination(
-              icon: Icon(Icons.home_outlined),
-              selectedIcon: Icon(Icons.home_rounded),
-              label: 'Inicio',
-            ),
-            const NavigationDestination(
-              icon: Icon(Icons.travel_explore_outlined),
-              selectedIcon: Icon(Icons.travel_explore_rounded),
-              label: 'Catálogo',
-            ),
-            const NavigationDestination(
-              icon: Icon(Icons.emoji_events_outlined),
-              selectedIcon: Icon(Icons.emoji_events_rounded),
-              label: 'Ligas',
-            ),
-            NavigationDestination(
-              icon: const Icon(Icons.groups_outlined),
-              selectedIcon: const Icon(Icons.groups_rounded),
-              label: _hasClub ? 'Mi club' : 'Mi espacio',
-            ),
-            const NavigationDestination(
-              icon: Icon(Icons.settings_outlined),
-              selectedIcon: Icon(Icons.settings_rounded),
-              label: 'Ajustes',
-            ),
-          ],
-        ),
-      ),
+      bottomNavigationBar: GlobalNavConfig(
+        selectedIndex: _navIndex,
+        hasClub: _hasClub,
+        onSelectHome: () => _selectNavIndex(0),
+        onSelectCatalogo: () => _selectNavIndex(1),
+        onSelectLigas: () => _selectNavIndex(2),
+        onSelectClub: () => _selectNavIndex(3),
+        onSelectAjustes: () => _selectNavIndex(4),
+      ).buildFloatingNavBar(),
       body: FutureBuilder<GeneralDashboard>(
         future: _future,
         builder: (context, snapshot) {
