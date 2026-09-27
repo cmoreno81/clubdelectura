@@ -173,6 +173,69 @@ class LigaMedallero {
   }
 }
 
+/// Una fila de la Sala de Trofeos: el palmarés resumido de una participante,
+/// para la vitrina global (`ligaSalaTrofeos`). El desglose completo se pide
+/// aparte con [LigaMedallero] al entrar en su perfil.
+class LigaTrofeosFila {
+  final int puesto;
+  final String userId;
+  final String nombre;
+  final String? avatarUrl;
+  final int total;
+  final Map<LigaMedallaTier, int> resumen;
+
+  const LigaTrofeosFila({
+    required this.puesto,
+    required this.userId,
+    required this.nombre,
+    required this.avatarUrl,
+    required this.total,
+    required this.resumen,
+  });
+
+  factory LigaTrofeosFila.fromJson(Map<String, dynamic> json) {
+    final resumenJson =
+        (json['resumen'] as Map?)?.cast<String, dynamic>() ?? const {};
+    final resumen = <LigaMedallaTier, int>{};
+    for (final entry in resumenJson.entries) {
+      final tier = LigaMedallaTier.fromJson(entry.key);
+      if (tier != null) resumen[tier] = (entry.value as num?)?.toInt() ?? 0;
+    }
+    return LigaTrofeosFila(
+      puesto: (json['puesto'] as num?)?.toInt() ?? 0,
+      userId: json['userId']?.toString() ?? '',
+      nombre: json['nombre']?.toString() ?? '',
+      avatarUrl: (json['avatarUrl']?.toString().trim().isEmpty ?? true)
+          ? null
+          : json['avatarUrl'].toString(),
+      total: (json['total'] as num?)?.toInt() ?? 0,
+      resumen: resumen,
+    );
+  }
+}
+
+/// Sala de Trofeos completa: ranking global ordenado por palmarés.
+class LigaSalaTrofeos {
+  final int totalParticipantes;
+  final List<LigaTrofeosFila> tabla;
+
+  const LigaSalaTrofeos({
+    required this.totalParticipantes,
+    required this.tabla,
+  });
+
+  static LigaSalaTrofeos? fromJson(Map<String, dynamic> json) {
+    if (json['ok'] != true) return null;
+    final tabla = ((json['tabla'] as List?) ?? const [])
+        .map((e) => LigaTrofeosFila.fromJson(Map<String, dynamic>.from(e as Map)))
+        .toList();
+    return LigaSalaTrofeos(
+      totalParticipantes: (json['totalParticipantes'] as num?)?.toInt() ?? 0,
+      tabla: tabla,
+    );
+  }
+}
+
 class LigaTemporada {
   final int numero;
   final DateTime terminaEn;

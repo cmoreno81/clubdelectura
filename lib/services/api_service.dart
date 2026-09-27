@@ -2270,6 +2270,18 @@ class ApiService {
     return _decodeJson(response) as Map<String, dynamic>;
   }
 
+  /// Sala de Trofeos: ranking global de toda la comunidad por medallas de
+  /// Liga acumuladas, para curiosear el palmarés de cualquier participante.
+  Future<Map<String, dynamic>> getLigaSalaTrofeos() async {
+    final response = await _client.get(
+      Uri.parse(
+        baseUrl,
+      ).replace(queryParameters: {'action': 'ligaSalaTrofeos'}),
+    );
+    if (response.statusCode != 200) throw ApiException.fromResponse(response);
+    return _decodeJson(response) as Map<String, dynamic>;
+  }
+
   /// Histórico de temporadas ya cerradas en las que participé, más reciente
   /// primero. Lista vacía si nunca se ha cerrado ninguna temporada aún.
   Future<Map<String, dynamic>> getLigaHistorial() async {
