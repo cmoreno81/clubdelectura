@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 
 import '../models/achievements/achievement.dart';
@@ -7,6 +9,7 @@ import '../models/general_dashboard.dart';
 import '../navigation/app_page_route.dart';
 import '../navigation/book_detail_navigation.dart';
 import '../services/api_service.dart';
+import '../services/favoritos_service.dart';
 import '../services/general_dashboard_service.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_radius.dart';
@@ -52,6 +55,7 @@ class _MiEspacioPageState extends State<MiEspacioPage>
   void initState() {
     super.initState();
     _future = _load();
+    unawaited(FavoritosService.instance.cargar());
     _streakCtrl = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 1400),
