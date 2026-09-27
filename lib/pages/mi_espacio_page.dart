@@ -17,8 +17,13 @@ import '../widgets/common/club_book_cover.dart';
 import '../widgets/common/editar_progreso_dialog.dart';
 import '../widgets/common/floating_nav_bar.dart' show kFloatingNavClearance;
 import '../widgets/dashboard/bingo_lector_card.dart';
-import 'book_of_year_page.dart';
-import 'perfil_usuario_page.dart' show CheckinSection, PerfilUsuarioPage;
+import '../widgets/profile/book_of_year_preview.dart';
+import 'perfil_usuario_page.dart'
+    show
+        CheckinSection,
+        FavoritosShelf,
+        LibroSeleccionable,
+        PerfilUsuarioPage;
 import '../widgets/common/club_avatar.dart';
 import 'personalidad_lectora_page.dart';
 import 'share_reader_card_page.dart';
@@ -226,22 +231,6 @@ class _MiEspacioPageState extends State<MiEspacioPage>
                     WrappedPage(anio: WrappedAvailability().wrappedYear),
               ),
             ),
-            onVerLibroDelAno: () => Navigator.push<void>(
-              context,
-              AppPageRoute(builder: (_) => const BookOfYearPage()),
-            ),
-            onVerFavoritos: () => Navigator.push<void>(
-              context,
-              AppPageRoute(
-                builder: (_) => PerfilUsuarioPage(
-                  usuario: snapshot.data!.dashboard.userName,
-                  profileUserId: snapshot.data!.dashboard.userId.isEmpty
-                      ? null
-                      : snapshot.data!.dashboard.userId,
-                  initialTab: 'FAVORITOS',
-                ),
-              ),
-            ),
             onOpenQuiz: () => Navigator.push<void>(
               context,
               AppPageRoute(
@@ -290,6 +279,35 @@ class _PageData {
   final String? generoFavorito;
 }
 
+/// Todos los libros de la cuenta (leyendo, terminados este año, biblioteca
+/// pendiente) que se pueden elegir como favorito, para el selector de
+/// "Libros favoritos" — deduplicados por bookId.
+List<LibroSeleccionable> _librosSeleccionables(GeneralDashboard dashboard) {
+  final porId = <String, LibroSeleccionable>{};
+  for (final book in dashboard.currentBooks) {
+    porId[book.id] = LibroSeleccionable(
+      bookId: book.id,
+      title: book.title,
+      coverUrl: book.coverUrl,
+    );
+  }
+  for (final book in dashboard.yearShelf) {
+    porId[book.bookId] = LibroSeleccionable(
+      bookId: book.bookId,
+      title: book.title,
+      coverUrl: book.coverUrl,
+    );
+  }
+  for (final book in dashboard.personalLibrary) {
+    porId[book.id] = LibroSeleccionable(
+      bookId: book.id,
+      title: book.title,
+      coverUrl: book.coverUrl,
+    );
+  }
+  return porId.values.toList(growable: false);
+}
+
 // ────────────────────────────────────────────────────────────────────────────
 // _Content — toda la UI una vez cargado
 // ────────────────────────────────────────────────────────────────────────────
@@ -300,8 +318,6 @@ class _Content extends StatelessWidget {
     required this.streakPulse,
     required this.onEditarProgreso,
     required this.onVerWrapped,
-    required this.onVerLibroDelAno,
-    required this.onVerFavoritos,
     required this.onOpenQuiz,
     required this.onShareCard,
   });
@@ -310,8 +326,6 @@ class _Content extends StatelessWidget {
   final Animation<double> streakPulse;
   final ValueChanged<GeneralBook> onEditarProgreso;
   final VoidCallback onVerWrapped;
-  final VoidCallback onVerFavoritos;
-  final VoidCallback onVerLibroDelAno;
   final VoidCallback onOpenQuiz;
   final VoidCallback onShareCard;
 
@@ -497,42 +511,68 @@ class _Content extends StatelessWidget {
             ),
           ),
 
+          // ── Libros favoritos — sección propia, no una tarjeta de enlace ────
+          SliverPadding(
+            padding: const EdgeInsets.fromLTRB(
+              AppSpacing.md,
+              AppSpacing.lg,
+              AppSpacing.md,
+              0,
+            ),
+            sliver: SliverToBoxAdapter(child: _SectionLabel('Libros favoritos')),
+          ),
+          SliverPadding(
+            padding: const EdgeInsets.fromLTRB(
+              AppSpacing.md,
+              AppSpacing.sm,
+              AppSpacing.md,
+              0,
+            ),
+            sliver: SliverToBoxAdapter(
+              child: FavoritosShelf(
+                favoritos: const [],
+                esMiPerfil: true,
+                onOpen: (libro) => openBookDetail(
+                  context,
+                  title: libro.title,
+                  bookId: libro.bookId,
+                  coverUrl: libro.coverUrl ?? '',
+                  genre: libro.genreName,
+                ),
+                todosLosLibros: _librosSeleccionables(data.dashboard),
+              ),
+            ),
+          ),
+
+          // ── Mi libro del año — sección propia (incluye su propio título) ──
+          SliverPadding(
+            padding: const EdgeInsets.fromLTRB(
+              AppSpacing.md,
+              0,
+              AppSpacing.md,
+              0,
+            ),
+            sliver: SliverToBoxAdapter(
+              child: BookOfYearPreview(
+                profile: data.dashboard.userName,
+                profileUserId: data.dashboard.userId.isEmpty
+                    ? null
+                    : data.dashboard.userId,
+                editable: true,
+              ),
+            ),
+          ),
+
           // ── Quiz de personalidad ──────────────────────────────────────────
           SliverPadding(
             padding: const EdgeInsets.fromLTRB(
               AppSpacing.md,
-              AppSpacing.md,
+              AppSpacing.xl,
               AppSpacing.md,
               0,
             ),
             sliver: SliverToBoxAdapter(
               child: _QuizCta(onTap: onOpenQuiz),
-            ),
-          ),
-
-          // ── Libros favoritos ───────────────────────────────────────────────
-          SliverPadding(
-            padding: const EdgeInsets.fromLTRB(
-              AppSpacing.md,
-              AppSpacing.md,
-              AppSpacing.md,
-              0,
-            ),
-            sliver: SliverToBoxAdapter(
-              child: _FavoritosCta(onTap: onVerFavoritos),
-            ),
-          ),
-
-          // ── Libro del año (cuadro personal) ───────────────────────────────
-          SliverPadding(
-            padding: const EdgeInsets.fromLTRB(
-              AppSpacing.md,
-              AppSpacing.md,
-              AppSpacing.md,
-              0,
-            ),
-            sliver: SliverToBoxAdapter(
-              child: _LibroDelAnoCta(onTap: onVerLibroDelAno),
             ),
           ),
 
@@ -872,142 +912,6 @@ class _MotivationalCta extends StatelessWidget {
             ),
           ),
         ],
-      ),
-    );
-  }
-}
-
-// ────────────────────────────────────────────────────────────────────────────
-// _FavoritosCta
-// ────────────────────────────────────────────────────────────────────────────
-
-class _FavoritosCta extends StatelessWidget {
-  const _FavoritosCta({required this.onTap});
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.all(AppSpacing.lg),
-        decoration: BoxDecoration(
-          gradient: const LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [Color(0xFF7A2840), Color(0xFFB04A64)],
-          ),
-          borderRadius: BorderRadius.circular(AppRadius.lg),
-          boxShadow: [
-            BoxShadow(
-              color: const Color(0xFFB04A64).withValues(alpha: .35),
-              blurRadius: 14,
-              offset: const Offset(0, 5),
-            ),
-          ],
-        ),
-        child: Row(
-          children: [
-            const Icon(Icons.favorite_rounded, color: Colors.white, size: 28),
-            const SizedBox(width: AppSpacing.md),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text(
-                    'Libros favoritos',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 16,
-                      fontWeight: FontWeight.w900,
-                    ),
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    'Tus 5 libros favoritos de siempre',
-                    style: TextStyle(
-                      color: Colors.white.withValues(alpha: .80),
-                      fontSize: 13,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            Icon(
-              Icons.arrow_forward_ios_rounded,
-              color: Colors.white.withValues(alpha: .70),
-              size: 18,
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-// ────────────────────────────────────────────────────────────────────────────
-// _ShareCardCta
-// ────────────────────────────────────────────────────────────────────────────
-
-class _LibroDelAnoCta extends StatelessWidget {
-  const _LibroDelAnoCta({required this.onTap});
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.all(AppSpacing.lg),
-        decoration: BoxDecoration(
-          gradient: const LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [Color(0xFF7A4B12), Color(0xFFB07B2A), Color(0xFFD9A441)],
-          ),
-          borderRadius: BorderRadius.circular(AppRadius.lg),
-          boxShadow: [
-            BoxShadow(
-              color: const Color(0xFFB07B2A).withValues(alpha: .35),
-              blurRadius: 14,
-              offset: const Offset(0, 5),
-            ),
-          ],
-        ),
-        child: Row(
-          children: [
-            const Text('🏆', style: TextStyle(fontSize: 32)),
-            const SizedBox(width: AppSpacing.md),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text(
-                    'Mi libro del año',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 16,
-                      fontWeight: FontWeight.w900,
-                    ),
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    'Elige tu favorito de cada mes y descubre tu ganador en un cuadro eliminatorio',
-                    style: TextStyle(
-                      color: Colors.white.withValues(alpha: .80),
-                      fontSize: 13,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            Icon(
-              Icons.arrow_forward_ios_rounded,
-              color: Colors.white.withValues(alpha: .70),
-              size: 18,
-            ),
-          ],
-        ),
       ),
     );
   }

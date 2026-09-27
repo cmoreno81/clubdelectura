@@ -716,27 +716,27 @@ class _PerfilUsuarioPageState extends State<PerfilUsuarioPage> {
         ),
         const SizedBox(height: AppSpacing.sm),
         if (esMiPerfil)
-          _FavoritosShelf(
+          FavoritosShelf(
             favoritos: perfil.favoritos,
             esMiPerfil: true,
             onOpen: _abrirFavorito,
             todosLosLibros: [
               ...perfil.leyendo.map(
-                (book) => _LibroSeleccionable(
+                (book) => LibroSeleccionable(
                   bookId: book.bookId,
                   title: book.libro,
                   coverUrl: book.coverUrl,
                 ),
               ),
               ...perfil.terminados.map(
-                (book) => _LibroSeleccionable(
+                (book) => LibroSeleccionable(
                   bookId: book.bookId,
                   title: book.libro,
                   coverUrl: book.coverUrl,
                 ),
               ),
               ...perfil.pendientes.map(
-                (book) => _LibroSeleccionable(
+                (book) => LibroSeleccionable(
                   bookId: book.bookId,
                   title: book.libro,
                   coverUrl: book.coverUrl,
@@ -766,7 +766,7 @@ class _PerfilUsuarioPageState extends State<PerfilUsuarioPage> {
                   },
                 );
               }
-              return _FavoritosShelf(
+              return FavoritosShelf(
                 favoritos: snapshot.data ?? const [],
                 esMiPerfil: false,
                 onOpen: _abrirFavorito,
@@ -2905,8 +2905,8 @@ class _WrappedPerfilCta extends StatelessWidget {
 // ─────────────────────────────────────────────────────────────────────────────
 
 // Modelo ligero para la selección de favoritos
-class _LibroSeleccionable {
-  const _LibroSeleccionable({
+class LibroSeleccionable {
+  const LibroSeleccionable({
     required this.bookId,
     required this.title,
     required this.coverUrl,
@@ -2916,8 +2916,9 @@ class _LibroSeleccionable {
   final String coverUrl;
 }
 
-class _FavoritosShelf extends StatelessWidget {
-  const _FavoritosShelf({
+class FavoritosShelf extends StatelessWidget {
+  const FavoritosShelf({
+    super.key,
     required this.favoritos,
     required this.esMiPerfil,
     required this.onOpen,
@@ -2927,7 +2928,7 @@ class _FavoritosShelf extends StatelessWidget {
   final List<LibroFavorito> favoritos;
   final bool esMiPerfil;
   final ValueChanged<LibroFavorito> onOpen;
-  final List<_LibroSeleccionable> todosLosLibros;
+  final List<LibroSeleccionable> todosLosLibros;
 
   static const int _maxSlots = 5;
 
@@ -3254,7 +3255,7 @@ class _SeleccionFavoritoSheet extends StatefulWidget {
     required this.todosLosLibros,
     this.favoritoActual,
   });
-  final List<_LibroSeleccionable> todosLosLibros;
+  final List<LibroSeleccionable> todosLosLibros;
   final LibroFavorito? favoritoActual;
 
   @override
@@ -3266,7 +3267,7 @@ class _SeleccionFavoritoSheetState extends State<_SeleccionFavoritoSheet> {
   String _query = '';
   bool _toggling = false;
 
-  List<_LibroSeleccionable> get _disponibles {
+  List<LibroSeleccionable> get _disponibles {
     // Deduplicar por bookId y excluir ya favoritos
     final vistos = <String>{};
     return widget.todosLosLibros.where((l) {
@@ -3276,7 +3277,7 @@ class _SeleccionFavoritoSheetState extends State<_SeleccionFavoritoSheet> {
     }).toList();
   }
 
-  List<_LibroSeleccionable> get _filtrados {
+  List<LibroSeleccionable> get _filtrados {
     if (_query.isEmpty) return _disponibles;
     final q = _query.toLowerCase();
     return _disponibles
@@ -3284,7 +3285,7 @@ class _SeleccionFavoritoSheetState extends State<_SeleccionFavoritoSheet> {
         .toList();
   }
 
-  Future<void> _elegir(_LibroSeleccionable libro) async {
+  Future<void> _elegir(LibroSeleccionable libro) async {
     if (_toggling) return;
     setState(() => _toggling = true);
     final actual = widget.favoritoActual;
