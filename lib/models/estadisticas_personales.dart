@@ -7,6 +7,7 @@ class RitmoLectura {
     required this.paginasPorDiaMes,
     required this.variacionPct,
     required this.serie,
+    this.semanaInicio = const [],
   });
 
   final double paginasPorDiaMes;
@@ -14,12 +15,18 @@ class RitmoLectura {
   final int? variacionPct;
   /// 12 cubos semanales de páginas leídas, para el sparkline.
   final List<int> serie;
+  /// Fecha (lunes) de inicio de cada cubo de [serie] — mismo índice, mismo
+  /// orden — para poder decir a qué semana corresponde cada barra.
+  final List<DateTime> semanaInicio;
 
   factory RitmoLectura.fromJson(Map<String, dynamic> json) => RitmoLectura(
     paginasPorDiaMes: (json['paginasPorDiaMes'] as num?)?.toDouble() ?? 0,
     variacionPct: (json['variacionPct'] as num?)?.toInt(),
     serie: ((json['serie'] as List?) ?? const [])
         .map((e) => (e as num).toInt())
+        .toList(),
+    semanaInicio: ((json['semanaInicio'] as List?) ?? const [])
+        .map((e) => DateTime.parse(e as String))
         .toList(),
   );
 }

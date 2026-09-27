@@ -409,6 +409,23 @@ class _RitmoLecturaCard extends StatefulWidget {
   State<_RitmoLecturaCard> createState() => _RitmoLecturaCardState();
 }
 
+const _mesesCortos = [
+  'ene',
+  'feb',
+  'mar',
+  'abr',
+  'may',
+  'jun',
+  'jul',
+  'ago',
+  'sep',
+  'oct',
+  'nov',
+  'dic',
+];
+
+String _diaMesCorto(DateTime d) => '${d.day} ${_mesesCortos[d.month - 1]}';
+
 class _RitmoLecturaCardState extends State<_RitmoLecturaCard> {
   int? _seleccionada;
 
@@ -420,6 +437,7 @@ class _RitmoLecturaCardState extends State<_RitmoLecturaCard> {
         : ritmo.serie.reduce((a, b) => a > b ? a : b).clamp(1, 1 << 30);
     final variacion = ritmo.variacionPct;
     final seleccionada = _seleccionada;
+    final tieneFechas = ritmo.semanaInicio.length == ritmo.serie.length;
 
     return ClubCard(
       child: Column(
@@ -444,6 +462,12 @@ class _RitmoLecturaCardState extends State<_RitmoLecturaCard> {
                 ),
             ],
           ),
+          if (tieneFechas)
+            Text(
+              'Últimas 12 semanas · del ${_diaMesCorto(ritmo.semanaInicio.first)} '
+              'al ${_diaMesCorto(ritmo.semanaInicio.last.add(const Duration(days: 6)))}',
+              style: AppTextStyles.caption.copyWith(color: AppColors.textMuted),
+            ),
           const SizedBox(height: AppSpacing.md),
           if (ritmo.serie.isNotEmpty) ...[
             SizedBox(
@@ -457,7 +481,10 @@ class _RitmoLecturaCardState extends State<_RitmoLecturaCard> {
                             (seleccionada + 0.5) / ritmo.serie.length,
                         alignment: Alignment.centerRight,
                         child: Text(
-                          '${ritmo.serie[seleccionada]} pág. esa semana',
+                          tieneFechas
+                              ? '${ritmo.serie[seleccionada]} pág. · semana del '
+                                    '${_diaMesCorto(ritmo.semanaInicio[seleccionada])}'
+                              : '${ritmo.serie[seleccionada]} pág. esa semana',
                           textAlign: TextAlign.right,
                           style: AppTextStyles.caption.copyWith(
                             fontWeight: FontWeight.w800,
@@ -504,6 +531,32 @@ class _RitmoLecturaCardState extends State<_RitmoLecturaCard> {
                 ],
               ),
             ),
+            if (tieneFechas) ...[
+              const SizedBox(height: 3),
+              Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      _diaMesCorto(ritmo.semanaInicio.first),
+                      style: AppTextStyles.caption.copyWith(
+                        color: AppColors.textMuted,
+                        fontSize: 10,
+                      ),
+                    ),
+                  ),
+                  Expanded(
+                    child: Text(
+                      _diaMesCorto(ritmo.semanaInicio.last),
+                      textAlign: TextAlign.right,
+                      style: AppTextStyles.caption.copyWith(
+                        color: AppColors.textMuted,
+                        fontSize: 10,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
           ],
           const SizedBox(height: AppSpacing.sm),
           Text(
