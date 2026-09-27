@@ -474,23 +474,16 @@ class _RitmoLecturaCardState extends State<_RitmoLecturaCard> {
               height: 18,
               child: seleccionada == null
                   ? null
-                  : Align(
-                      alignment: Alignment.centerLeft,
-                      child: FractionallySizedBox(
-                        widthFactor:
-                            (seleccionada + 0.5) / ritmo.serie.length,
-                        alignment: Alignment.centerRight,
-                        child: Text(
-                          tieneFechas
-                              ? '${ritmo.serie[seleccionada]} pág. · semana del '
-                                    '${_diaMesCorto(ritmo.semanaInicio[seleccionada])}'
-                              : '${ritmo.serie[seleccionada]} pág. esa semana',
-                          textAlign: TextAlign.right,
-                          style: AppTextStyles.caption.copyWith(
-                            fontWeight: FontWeight.w800,
-                            color: AppColors.primary,
-                          ),
-                        ),
+                  : Text(
+                      tieneFechas
+                          ? '${ritmo.serie[seleccionada]} pág. · semana del '
+                                '${_diaMesCorto(ritmo.semanaInicio[seleccionada])}'
+                          : '${ritmo.serie[seleccionada]} pág. esa semana',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: AppTextStyles.caption.copyWith(
+                        fontWeight: FontWeight.w800,
+                        color: AppColors.primary,
                       ),
                     ),
             ),
