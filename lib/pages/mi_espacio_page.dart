@@ -14,6 +14,7 @@ import '../theme/app_spacing.dart';
 import '../theme/app_text_styles.dart';
 import '../utils/wrapped_availability.dart';
 import '../widgets/common/club_book_cover.dart';
+import '../widgets/common/club_section_title.dart';
 import '../widgets/common/editar_progreso_dialog.dart';
 import '../widgets/common/floating_nav_bar.dart' show kFloatingNavClearance;
 import '../widgets/dashboard/bingo_lector_card.dart';
@@ -512,6 +513,8 @@ class _Content extends StatelessWidget {
           ),
 
           // ── Libros favoritos — sección propia, no una tarjeta de enlace ────
+          // Mismo formato de título que "Mi libro del año" (ClubSectionTitle
+          // con icono), para que las dos secciones se vean homogéneas.
           SliverPadding(
             padding: const EdgeInsets.fromLTRB(
               AppSpacing.md,
@@ -519,7 +522,14 @@ class _Content extends StatelessWidget {
               AppSpacing.md,
               0,
             ),
-            sliver: SliverToBoxAdapter(child: _SectionLabel('Libros favoritos')),
+            sliver: SliverToBoxAdapter(
+              child: ClubSectionTitle(
+                title: 'Libros favoritos',
+                subtitle: 'Tus 5 favoritos de siempre',
+                icon: Icons.favorite_rounded,
+                padding: EdgeInsets.zero,
+              ),
+            ),
           ),
           SliverPadding(
             padding: const EdgeInsets.fromLTRB(
