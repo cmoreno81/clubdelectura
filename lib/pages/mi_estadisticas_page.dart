@@ -297,37 +297,54 @@ class _StatsGrid extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GridView.count(
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      crossAxisCount: 2,
-      crossAxisSpacing: AppSpacing.sm,
-      mainAxisSpacing: AppSpacing.sm,
-      childAspectRatio: 2,
+    // Column+Row en vez de GridView.count(shrinkWrap: true): ese shrinkWrap
+    // reservaba una caja mucho más alta de lo que pintaba (dejaba un hueco
+    // vacío grande debajo de las tarjetas), un problema conocido de
+    // GridView con shrinkWrap dentro de un ListView.
+    return Column(
       children: [
-        _StatCard(
-          value: '${summary.reading}',
-          label: 'Leyendo ahora',
-          icon: Icons.menu_book_rounded,
-          color: AppColors.info,
+        Row(
+          children: [
+            Expanded(
+              child: _StatCard(
+                value: '${summary.reading}',
+                label: 'Leyendo ahora',
+                icon: Icons.menu_book_rounded,
+                color: AppColors.info,
+              ),
+            ),
+            const SizedBox(width: AppSpacing.sm),
+            Expanded(
+              child: _StatCard(
+                value: '${summary.finished}',
+                label: 'Terminados',
+                icon: Icons.check_circle_rounded,
+                color: AppColors.success,
+              ),
+            ),
+          ],
         ),
-        _StatCard(
-          value: '${summary.finished}',
-          label: 'Terminados',
-          icon: Icons.check_circle_rounded,
-          color: AppColors.success,
-        ),
-        _StatCard(
-          value: '${summary.finishedThisMonth}',
-          label: 'Este mes',
-          icon: Icons.bolt_rounded,
-          color: AppColors.warning,
-        ),
-        _StatCard(
-          value: '${summary.pagesRead}',
-          label: 'Páginas leídas',
-          icon: Icons.bookmark_rounded,
-          color: AppColors.primary,
+        const SizedBox(height: AppSpacing.sm),
+        Row(
+          children: [
+            Expanded(
+              child: _StatCard(
+                value: '${summary.finishedThisMonth}',
+                label: 'Este mes',
+                icon: Icons.bolt_rounded,
+                color: AppColors.warning,
+              ),
+            ),
+            const SizedBox(width: AppSpacing.sm),
+            Expanded(
+              child: _StatCard(
+                value: '${summary.pagesRead}',
+                label: 'Páginas leídas',
+                icon: Icons.bookmark_rounded,
+                color: AppColors.primary,
+              ),
+            ),
+          ],
         ),
       ],
     );
