@@ -11,6 +11,7 @@ import '../theme/app_spacing.dart';
 import '../theme/app_text_styles.dart';
 import '../navigation/app_page_route.dart';
 import '../widgets/common/club_avatar.dart';
+import '../widgets/common/floating_nav_bar.dart';
 import '../widgets/error_view.dart';
 import '../widgets/ligas/indicador_tendencia.dart';
 import 'liga_clubes_page.dart';
@@ -21,7 +22,12 @@ import 'liga_trofeos_page.dart';
 
 /// Ligas de ClubReads — ranking individual por temporadas quincenales.
 class LigaPage extends StatefulWidget {
-  const LigaPage({super.key});
+  const LigaPage({super.key, this.globalNav});
+
+  /// Solo cuando se abre como "atajo" desde el dashboard global: le pone el
+  /// mismo menú flotante (Inicio/Catálogo/Ligas/...) para no perderlo al
+  /// entrar. Se abre desde muchos otros sitios sin esto — ahí no cambia nada.
+  final GlobalNavConfig? globalNav;
 
   @override
   State<LigaPage> createState() => _LigaPageState();
@@ -133,6 +139,7 @@ class _LigaPageState extends State<LigaPage> {
           ),
         ],
       ),
+      bottomNavigationBar: widget.globalNav?.buildFloatingNavBar(),
       body: FutureBuilder<LigaEstado>(
         future: _future,
         builder: (context, snapshot) {

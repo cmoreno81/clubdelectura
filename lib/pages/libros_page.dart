@@ -11,6 +11,7 @@ import 'package:club_lectura_app/widgets/common/club_card.dart';
 import 'package:club_lectura_app/widgets/common/club_chip.dart';
 import 'package:club_lectura_app/widgets/common/club_empty_state.dart';
 import 'package:club_lectura_app/widgets/common/club_shimmer.dart';
+import 'package:club_lectura_app/widgets/common/floating_nav_bar.dart';
 import 'package:club_lectura_app/widgets/error_view.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -70,6 +71,7 @@ class LibrosPage extends StatefulWidget {
     this.esPersonal = false,
     this.clubId,
     this.initialFiltroOrigen = 'DEL_CLUB',
+    this.globalNav,
   });
 
   final VoidCallback? onBackToClub;
@@ -86,6 +88,11 @@ class LibrosPage extends StatefulWidget {
   /// catálogo general (p. ej. desde "Explorar" en el menú inferior, fuera
   /// de un club concreto).
   final String initialFiltroOrigen;
+
+  /// Solo cuando se abre como "atajo" (Catálogo) desde el dashboard global:
+  /// le pone el mismo menú flotante para no perderlo al entrar. Se abre
+  /// desde muchos otros sitios (pestaña del club, etc.) sin esto.
+  final GlobalNavConfig? globalNav;
 
   @override
   State<LibrosPage> createState() => _LibrosPageState();
@@ -280,6 +287,7 @@ class _LibrosPageState extends State<LibrosPage> with WidgetsBindingObserver {
     });
 
     return Scaffold(
+      bottomNavigationBar: widget.globalNav?.buildFloatingNavBar(),
       appBar: AppBar(
         toolbarHeight: 64,
         automaticallyImplyLeading: widget.onBackToClub == null,
