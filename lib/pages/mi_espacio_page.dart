@@ -492,52 +492,13 @@ class _Content extends StatelessWidget {
             ),
           ],
 
-          // ── Celebra tu año ───────────────────────────────────────────────
-          SliverPadding(
-            padding: const EdgeInsets.fromLTRB(
-              AppSpacing.md,
-              AppSpacing.xl,
-              AppSpacing.md,
-              0,
-            ),
-            sliver: SliverToBoxAdapter(
-              child: ClubSectionTitle(
-                title: 'Celebra tu año',
-                subtitle: 'Bingo, quiz y sorpresas de tu año lector',
-                icon: Icons.celebration_rounded,
-                padding: EdgeInsets.zero,
-              ),
-            ),
-          ),
-
-          // ── Bingo lector ─────────────────────────────────────────────────
-          SliverPadding(
-            padding: const EdgeInsets.fromLTRB(
-              AppSpacing.md,
-              AppSpacing.sm,
-              AppSpacing.md,
-              0,
-            ),
-            sliver: SliverToBoxAdapter(
-              child: Container(
-                padding: const EdgeInsets.all(AppSpacing.md),
-                decoration: BoxDecoration(
-                  color: AppColors.surface,
-                  borderRadius: BorderRadius.circular(AppRadius.lg),
-                  border: Border.all(color: AppColors.border),
-                ),
-                child: const BingoLectorSection(),
-              ),
-            ),
-          ),
-
           // ── Libros favoritos — sección propia, no una tarjeta de enlace ────
           // Mismo formato de título que "Mi libro del año" (ClubSectionTitle
           // con icono), para que las dos secciones se vean homogéneas.
           SliverPadding(
             padding: const EdgeInsets.fromLTRB(
               AppSpacing.md,
-              AppSpacing.lg,
+              AppSpacing.xl,
               AppSpacing.md,
               0,
             ),
@@ -588,6 +549,45 @@ class _Content extends StatelessWidget {
                     ? null
                     : data.dashboard.userId,
                 editable: true,
+              ),
+            ),
+          ),
+
+          // ── Celebra tu año ───────────────────────────────────────────────
+          SliverPadding(
+            padding: const EdgeInsets.fromLTRB(
+              AppSpacing.md,
+              AppSpacing.lg,
+              AppSpacing.md,
+              0,
+            ),
+            sliver: SliverToBoxAdapter(
+              child: ClubSectionTitle(
+                title: 'Celebra tu año',
+                subtitle: 'Bingo, quiz y sorpresas de tu año lector',
+                icon: Icons.celebration_rounded,
+                padding: EdgeInsets.zero,
+              ),
+            ),
+          ),
+
+          // ── Bingo lector ─────────────────────────────────────────────────
+          SliverPadding(
+            padding: const EdgeInsets.fromLTRB(
+              AppSpacing.md,
+              AppSpacing.sm,
+              AppSpacing.md,
+              0,
+            ),
+            sliver: SliverToBoxAdapter(
+              child: Container(
+                padding: const EdgeInsets.all(AppSpacing.md),
+                decoration: BoxDecoration(
+                  color: AppColors.surface,
+                  borderRadius: BorderRadius.circular(AppRadius.lg),
+                  border: Border.all(color: AppColors.border),
+                ),
+                child: const BingoLectorSection(),
               ),
             ),
           ),

@@ -3075,28 +3075,27 @@ class FavoritosShelf extends StatelessWidget {
     }
 
     return Row(
-      children: slots.asMap().entries.map((entry) {
-        final libro = entry.value;
-        return Expanded(
-          child: Padding(
-            padding: EdgeInsets.only(right: entry.key < _maxSlots - 1 ? 8 : 0),
+      children: [
+        for (final entry in slots.asMap().entries) ...[
+          if (entry.key > 0) const SizedBox(width: 8),
+          Expanded(
             child: _FavoritoSlot(
-              key: ValueKey('favorito_${libro?.id ?? entry.key}'),
-              libro: libro,
+              key: ValueKey('favorito_${entry.value?.id ?? entry.key}'),
+              libro: entry.value,
               esMiPerfil: esMiPerfil,
               cargando: esMiPerfil && FavoritosService.instance.operando,
-              onTap: libro == null
+              onTap: entry.value == null
                   ? null
                   : esMiPerfil
-                  ? () => _mostrarAcciones(context, libro)
-                  : () => onOpen(libro),
-              onAnadir: esMiPerfil && libro == null
+                  ? () => _mostrarAcciones(context, entry.value!)
+                  : () => onOpen(entry.value!),
+              onAnadir: esMiPerfil && entry.value == null
                   ? () => _mostrarSelector(context)
                   : null,
             ),
           ),
-        );
-      }).toList(),
+        ],
+      ],
     );
   }
 }
