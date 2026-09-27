@@ -17,6 +17,7 @@ import 'liga_clubes_page.dart';
 import 'liga_division_page.dart';
 import 'liga_historial_page.dart';
 import 'liga_temporada_page.dart';
+import 'liga_trofeos_page.dart';
 
 /// Ligas de ClubReads — ranking individual por temporadas quincenales.
 class LigaPage extends StatefulWidget {
@@ -840,8 +841,11 @@ class _VistaParticipando extends StatelessWidget {
           _Historico(historico: estado.historico, divisionActual: t.division),
           const SizedBox(height: AppSpacing.sm),
           _AccesosHistorial(temporadaActual: t.numero),
-          const SizedBox(height: AppSpacing.lg),
+          const SizedBox(height: AppSpacing.sm),
         ],
+
+        const _BotonSalaTrofeos(),
+        const SizedBox(height: AppSpacing.lg),
 
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -1474,6 +1478,70 @@ class _AccesosHistorial extends StatelessWidget {
           ),
         ),
       ],
+    );
+  }
+}
+
+/// Acceso destacado a la Sala de Trofeos — el medallero de toda la
+/// comunidad. Con gradiente propio (a diferencia de los botones de
+/// histórico, más discretos) para que llame la atención como una vitrina.
+class _BotonSalaTrofeos extends StatelessWidget {
+  const _BotonSalaTrofeos();
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(AppRadius.lg),
+        onTap: () => Navigator.push(
+          context,
+          AppPageRoute(builder: (_) => const LigaTrofeosPage()),
+        ),
+        child: Container(
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppSpacing.md,
+            vertical: AppSpacing.md,
+          ),
+          decoration: BoxDecoration(
+            gradient: const LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [Color(0xFF4A2E7A), Color(0xFF7C5CBF), Color(0xFFD9A441)],
+            ),
+            borderRadius: BorderRadius.circular(AppRadius.lg),
+          ),
+          child: Row(
+            children: [
+              const Text('🏆', style: TextStyle(fontSize: 24)),
+              const SizedBox(width: AppSpacing.sm),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'Sala de Trofeos',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 15,
+                        fontWeight: FontWeight.w900,
+                      ),
+                    ),
+                    Text(
+                      'Descubre el palmarés de toda la comunidad',
+                      style: TextStyle(
+                        color: Colors.white.withValues(alpha: .85),
+                        fontSize: 12,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const Icon(Icons.chevron_right_rounded, color: Colors.white),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }
