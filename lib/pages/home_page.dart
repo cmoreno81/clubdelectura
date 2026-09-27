@@ -348,27 +348,12 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
                 ),
                 Expanded(
                   child: _esPersonal
-                      ? NavigationBar(
-                          selectedIndex: currentIndex,
-                          onDestinationSelected: _selectTab,
-                          labelBehavior: compact
-                              ? NavigationDestinationLabelBehavior
-                                    .onlyShowSelected
-                              : NavigationDestinationLabelBehavior
-                                    .alwaysShow,
-                          destinations: _personalDestinations(),
-                        )
+                      ? _floatingNavRow(_personalDestinations(), compact)
                       : ListenableBuilder(
                           listenable: _notifications,
-                          builder: (context, _) => NavigationBar(
-                            selectedIndex: currentIndex,
-                            onDestinationSelected: _selectTab,
-                            labelBehavior: compact
-                                ? NavigationDestinationLabelBehavior
-                                      .onlyShowSelected
-                                : NavigationDestinationLabelBehavior
-                                      .alwaysShow,
-                            destinations: _socialDestinations(),
+                          builder: (context, _) => _floatingNavRow(
+                            _socialDestinations(),
+                            compact,
                           ),
                         ),
                 ),
@@ -376,6 +361,35 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
             );
           },
         ),
+      ),
+    );
+  }
+
+  /// Fila de pestañas del menú flotante — un [NavigationBar] normal solo
+  /// resalta el icono al seleccionar, no la etiqueta de debajo (su
+  /// "indicador" tiene un tamaño fijo que no crece con el contenido). Con
+  /// pestañas propias replicamos su misma paleta ([NavigationBarThemeData],
+  /// para respetar la atmósfera activa) pero la burbuja cubre icono +
+  /// etiqueta juntos, con márgenes propios para no tocar el borde
+  /// redondeado de la píldora flotante.
+  Widget _floatingNavRow(
+    List<NavigationDestination> destinations,
+    bool compact,
+  ) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 2),
+      child: Row(
+        children: [
+          for (var i = 0; i < destinations.length; i++)
+            Expanded(
+              child: _FloatingNavItem(
+                destination: destinations[i],
+                selected: currentIndex == i,
+                showLabel: !compact || currentIndex == i,
+                onTap: () => _selectTab(i),
+              ),
+            ),
+        ],
       ),
     );
   }
@@ -532,4 +546,86 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
       label: Text('Estadísticas'),
     ),
   ];
+}
+
+/// Una pestaña del menú flotante inferior. A diferencia del indicador de
+/// [NavigationBar] (tamaño fijo, solo rodea el icono), esta burbuja crece
+/// para cubrir icono + etiqueta cuando está seleccionada.
+class _FloatingNavItem extends StatelessWidget {
+  const _FloatingNavItem({
+    required this.destination,
+    required this.selected,
+    required this.showLabel,
+    required this.onTap,
+  });
+
+  final NavigationDestination destination;
+  final bool selected;
+  final bool showLabel;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final navTheme = Theme.of(context).navigationBarTheme;
+    final states = <WidgetState>{if (selected) WidgetState.selected};
+    final indicatorColor =
+        navTheme.indicatorColor ??
+        Theme.of(context).colorScheme.secondaryContainer;
+    final indicatorShape = navTheme.indicatorShape ?? const StadiumBorder();
+    final iconTheme =
+        navTheme.iconTheme?.resolve(states) ??
+        IconThemeData(color: AppColors.textMuted, size: 24);
+    final labelStyle = navTheme.labelTextStyle?.resolve(states);
+
+    return Semantics(
+      selected: selected,
+      button: true,
+      label: destination.label,
+      child: Padding(
+        // Margen propio, FUERA del InkWell/burbuja: así el ripple y el
+        // resaltado quedan exactamente del tamaño de la píldora, sin
+        // invadir este hueco de seguridad hasta el borde redondeado del
+        // menú flotante.
+        padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 3),
+        child: Material(
+          color: Colors.transparent,
+          child: InkWell(
+            onTap: onTap,
+            customBorder: indicatorShape,
+            child: Container(
+              padding: const EdgeInsets.symmetric(
+                horizontal: 6,
+                vertical: 6,
+              ),
+              decoration: ShapeDecoration(
+                color: selected ? indicatorColor : Colors.transparent,
+                shape: indicatorShape,
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  IconTheme(
+                    data: iconTheme,
+                    child: selected
+                        ? (destination.selectedIcon ?? destination.icon)
+                        : destination.icon,
+                  ),
+                  if (showLabel) ...[
+                    const SizedBox(height: 2),
+                    Text(
+                      destination.label,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: labelStyle,
+                    ),
+                  ],
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
 }
