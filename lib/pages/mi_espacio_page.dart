@@ -370,7 +370,12 @@ class _Content extends StatelessWidget {
                 0,
               ),
               sliver: SliverToBoxAdapter(
-                child: _SectionLabel('Hoy'),
+                child: ClubSectionTitle(
+                  title: 'Hoy',
+                  subtitle: 'Lo que tienes entre manos ahora mismo',
+                  icon: Icons.today_rounded,
+                  padding: EdgeInsets.zero,
+                ),
               ),
             ),
             SliverPadding(
@@ -442,7 +447,14 @@ class _Content extends StatelessWidget {
                 AppSpacing.md,
                 0,
               ),
-              sliver: SliverToBoxAdapter(child: _SectionLabel('Sagas en curso')),
+              sliver: SliverToBoxAdapter(
+                child: ClubSectionTitle(
+                  title: 'Sagas en curso',
+                  subtitle: 'Universos que ya has empezado',
+                  icon: Icons.view_week_rounded,
+                  padding: EdgeInsets.zero,
+                ),
+              ),
             ),
             SliverPadding(
               padding: const EdgeInsets.fromLTRB(
@@ -488,7 +500,14 @@ class _Content extends StatelessWidget {
               AppSpacing.md,
               0,
             ),
-            sliver: SliverToBoxAdapter(child: _SectionLabel('Celebra tu año')),
+            sliver: SliverToBoxAdapter(
+              child: ClubSectionTitle(
+                title: 'Celebra tu año',
+                subtitle: 'Bingo, quiz y sorpresas de tu año lector',
+                icon: Icons.celebration_rounded,
+                padding: EdgeInsets.zero,
+              ),
+            ),
           ),
 
           // ── Bingo lector ─────────────────────────────────────────────────
@@ -1057,27 +1076,6 @@ class _ShareCardCta extends StatelessWidget {
 // ────────────────────────────────────────────────────────────────────────────
 // _ErrorView
 // ────────────────────────────────────────────────────────────────────────────
-
-// ────────────────────────────────────────────────────────────────────────────
-// _SectionLabel — etiqueta pequeña tipo "eyebrow" para separar bloques
-// ────────────────────────────────────────────────────────────────────────────
-
-class _SectionLabel extends StatelessWidget {
-  const _SectionLabel(this.text);
-  final String text;
-
-  @override
-  Widget build(BuildContext context) {
-    return Text(
-      text.toUpperCase(),
-      style: AppTextStyles.caption.copyWith(
-        color: AppColors.textMuted,
-        fontWeight: FontWeight.w800,
-        letterSpacing: 1.2,
-      ),
-    );
-  }
-}
 
 // ────────────────────────────────────────────────────────────────────────────
 // _LeyendoAhoraCard
