@@ -9,6 +9,7 @@ import '../theme/app_spacing.dart';
 import '../theme/app_text_styles.dart';
 import '../widgets/common/club_avatar.dart';
 import '../widgets/error_view.dart';
+import '../widgets/ligas/indicador_tendencia.dart';
 import 'liga_temporada_page.dart';
 
 /// Histórico de las Ligas de ClubReads, en dos pestañas: "Por temporadas"
@@ -257,6 +258,7 @@ class _FilaAcumulado extends StatelessWidget {
               ),
             ),
           ),
+          SizedBox(width: 22, child: IndicadorTendencia(fila: fila)),
           ClubAvatar(nombre: fila.nombre, imageUrl: fila.avatarUrl, size: 34),
           const SizedBox(width: AppSpacing.sm),
           Expanded(

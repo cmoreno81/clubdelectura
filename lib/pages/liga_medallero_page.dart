@@ -214,7 +214,7 @@ class _MedallaTile extends StatelessWidget {
                 Text(
                   medalla.streak != null
                       ? 'Racha de ${medalla.streak} temporadas seguidas'
-                      : 'Temporada ${medalla.seasonNumber} · '
+                      : 'Temporada ${medalla.seasonNumber + 1} · '
                             '${medalla.division.icono} ${medalla.division.etiqueta}'
                             '${medalla.rank != null ? ' · #${medalla.rank}' : ''}',
                   style: AppTextStyles.caption.copyWith(
