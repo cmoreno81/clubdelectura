@@ -401,16 +401,25 @@ class _StatCard extends StatelessWidget {
 // _RitmoLecturaCard
 // ────────────────────────────────────────────────────────────────────────────
 
-class _RitmoLecturaCard extends StatelessWidget {
+class _RitmoLecturaCard extends StatefulWidget {
   const _RitmoLecturaCard({required this.ritmo});
   final RitmoLectura ritmo;
 
   @override
+  State<_RitmoLecturaCard> createState() => _RitmoLecturaCardState();
+}
+
+class _RitmoLecturaCardState extends State<_RitmoLecturaCard> {
+  int? _seleccionada;
+
+  @override
   Widget build(BuildContext context) {
+    final ritmo = widget.ritmo;
     final maxVal = ritmo.serie.isEmpty
         ? 1
         : ritmo.serie.reduce((a, b) => a > b ? a : b).clamp(1, 1 << 30);
     final variacion = ritmo.variacionPct;
+    final seleccionada = _seleccionada;
 
     return ClubCard(
       child: Column(
@@ -436,7 +445,29 @@ class _RitmoLecturaCard extends StatelessWidget {
             ],
           ),
           const SizedBox(height: AppSpacing.md),
-          if (ritmo.serie.isNotEmpty)
+          if (ritmo.serie.isNotEmpty) ...[
+            SizedBox(
+              height: 18,
+              child: seleccionada == null
+                  ? null
+                  : Align(
+                      alignment: Alignment.centerLeft,
+                      child: FractionallySizedBox(
+                        widthFactor:
+                            (seleccionada + 0.5) / ritmo.serie.length,
+                        alignment: Alignment.centerRight,
+                        child: Text(
+                          '${ritmo.serie[seleccionada]} pág. esa semana',
+                          textAlign: TextAlign.right,
+                          style: AppTextStyles.caption.copyWith(
+                            fontWeight: FontWeight.w800,
+                            color: AppColors.primary,
+                          ),
+                        ),
+                      ),
+                    ),
+            ),
+            const SizedBox(height: 2),
             SizedBox(
               height: 44,
               child: Row(
@@ -444,18 +475,26 @@ class _RitmoLecturaCard extends StatelessWidget {
                 children: [
                   for (var i = 0; i < ritmo.serie.length; i++)
                     Expanded(
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 2),
-                        child: FractionallySizedBox(
-                          heightFactor: ritmo.serie[i] / maxVal,
-                          alignment: Alignment.bottomCenter,
-                          child: Container(
-                            decoration: BoxDecoration(
-                              color: i == ritmo.serie.length - 1
-                                  ? AppColors.primary
-                                  : AppColors.primaryLight,
-                              borderRadius: const BorderRadius.vertical(
-                                top: Radius.circular(3),
+                      child: GestureDetector(
+                        behavior: HitTestBehavior.opaque,
+                        onTap: () => setState(
+                          () => _seleccionada = seleccionada == i ? null : i,
+                        ),
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 2),
+                          child: FractionallySizedBox(
+                            heightFactor: ritmo.serie[i] / maxVal,
+                            alignment: Alignment.bottomCenter,
+                            child: Container(
+                              decoration: BoxDecoration(
+                                color: i == seleccionada
+                                    ? AppColors.inkCoral
+                                    : i == ritmo.serie.length - 1
+                                    ? AppColors.primary
+                                    : AppColors.primaryLight,
+                                borderRadius: const BorderRadius.vertical(
+                                  top: Radius.circular(3),
+                                ),
                               ),
                             ),
                           ),
@@ -465,6 +504,7 @@ class _RitmoLecturaCard extends StatelessWidget {
                 ],
               ),
             ),
+          ],
           const SizedBox(height: AppSpacing.sm),
           Text(
             'Media de ${ritmo.paginasPorDiaMes.toStringAsFixed(0)} páginas al día este mes',

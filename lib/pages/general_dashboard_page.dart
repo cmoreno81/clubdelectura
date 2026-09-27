@@ -875,6 +875,15 @@ class _GeneralDashboardPageState extends State<GeneralDashboardPage> {
                         ...data.clubs.map(_clubCard)
                       else
                         _clubListCollapsible(data.clubs),
+                      // El check-in diario vive en "Mis estadísticas" para
+                      // quien tiene espacio personal; para cuentas solo-club
+                      // (sin esa pestaña) este es su único sitio para
+                      // marcarlo — va antes de "Leyendo ahora" para que sea
+                      // lo primero accesible al entrar.
+                      if (!data.clubs.any((c) => c.esPersonal)) ...[
+                        const SizedBox(height: AppSpacing.xl),
+                        const CheckinSection(),
+                      ],
                       if (data.currentBooks.isNotEmpty) ...[
                         const SizedBox(height: AppSpacing.xl),
                         _sectionTitle(
@@ -921,21 +930,6 @@ class _GeneralDashboardPageState extends State<GeneralDashboardPage> {
                           const SizedBox(height: AppSpacing.xl),
                           ClubCard(child: const BingoLectorSection()),
                         ],
-                      ],
-                      // El check-in diario vive en "Mis estadísticas" para
-                      // quien tiene espacio personal; para cuentas solo-club
-                      // (sin esa pestaña) este es su único sitio para marcarlo.
-                      if (!data.clubs.any((c) => c.esPersonal)) ...[
-                        const SizedBox(height: AppSpacing.xl),
-                        const CheckinSection(),
-                        const SizedBox(height: AppSpacing.xs),
-                        Text(
-                          '🎯 Bonus en Ligas: haz check-in 5 días esta semana y '
-                          'suma +30 puntos extra.',
-                          style: AppTextStyles.caption.copyWith(
-                            color: AppColors.textMuted,
-                          ),
-                        ),
                       ],
                       const SizedBox(height: AppSpacing.xl),
                       ClubCard(

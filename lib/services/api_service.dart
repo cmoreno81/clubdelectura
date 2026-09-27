@@ -2224,6 +2224,14 @@ class ApiService {
     return _decodeJson(response) as Map<String, dynamic>;
   }
 
+  Future<Map<String, dynamic>> getRetoSemanalResumen() async {
+    final response = await _client.get(
+      Uri.parse('$baseUrl?action=retoSemanalResumen'),
+    );
+    if (response.statusCode != 200) throw ApiException.fromResponse(response);
+    return _decodeJson(response) as Map<String, dynamic>;
+  }
+
   /// Opt-in: empieza a participar en las Ligas. Devuelve el estado de la liga.
   Future<Map<String, dynamic>> unirseLiga() async {
     final response = await _postJson('unirseLiga');

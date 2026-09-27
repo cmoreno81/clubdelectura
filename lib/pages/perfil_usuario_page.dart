@@ -2652,6 +2652,12 @@ class CheckinSectionState extends State<CheckinSection> {
   int _streak = 0;
   bool _loaded = false;
 
+  // Reto semanal de Ligas ("llevas X/5 esta semana") — solo se muestra a
+  // quien participa en Ligas; el resto ve el check-in normal, sin más.
+  bool _participaEnLigas = false;
+  int _retoObjetivo = 5;
+  int _retoProgreso = 0;
+
   @override
   void initState() {
     super.initState();
@@ -2660,11 +2666,25 @@ class CheckinSectionState extends State<CheckinSection> {
 
   Future<void> _cargar() async {
     try {
-      final data = await ApiService().getHistorialCheckin(dias: 7);
+      final results = await Future.wait([
+        ApiService().getHistorialCheckin(dias: 7),
+        ApiService().getRetoSemanalResumen().catchError(
+          (_) => <String, dynamic>{'participando': false},
+        ),
+      ]);
+      final data = results[0];
+      final reto = results[1];
       if (mounted) {
         setState(() {
           _checkedToday = data['checkedToday'] as bool? ?? false;
           _streak = (data['streak'] as num?)?.toInt() ?? 0;
+          _participaEnLigas = reto['participando'] as bool? ?? false;
+          if (_participaEnLigas) {
+            final retoSemanal =
+                reto['retoSemanal'] as Map<String, dynamic>? ?? const {};
+            _retoObjetivo = (retoSemanal['objetivo'] as num?)?.toInt() ?? 5;
+            _retoProgreso = (retoSemanal['progreso'] as num?)?.toInt() ?? 0;
+          }
           _loaded = true;
         });
       }
@@ -2681,13 +2701,79 @@ class CheckinSectionState extends State<CheckinSection> {
         child: Center(child: CircularProgressIndicator()),
       );
     }
-    return CheckinButton(
-      checkedToday: _checkedToday,
-      streak: _streak,
-      onCheckinDone: (newStreak) => setState(() {
-        _checkedToday = true;
-        _streak = newStreak;
-      }),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        if (_participaEnLigas) ...[
+          _RetoSemanalBar(objetivo: _retoObjetivo, progreso: _retoProgreso),
+          const SizedBox(height: AppSpacing.sm),
+        ],
+        CheckinButton(
+          checkedToday: _checkedToday,
+          streak: _streak,
+          onCheckinDone: (newStreak) => setState(() {
+            _checkedToday = true;
+            _streak = newStreak;
+            if (_participaEnLigas && _retoProgreso < _retoObjetivo) {
+              _retoProgreso += 1;
+            }
+          }),
+        ),
+      ],
+    );
+  }
+}
+
+class _RetoSemanalBar extends StatelessWidget {
+  const _RetoSemanalBar({required this.objetivo, required this.progreso});
+  final int objetivo;
+  final int progreso;
+
+  @override
+  Widget build(BuildContext context) {
+    final completado = progreso >= objetivo;
+    return Container(
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.md,
+        vertical: AppSpacing.sm,
+      ),
+      decoration: BoxDecoration(
+        color: AppColors.warning.withValues(alpha: .10),
+        borderRadius: BorderRadius.circular(AppRadius.lg),
+        border: Border.all(color: AppColors.warning.withValues(alpha: .30)),
+      ),
+      child: Row(
+        children: [
+          Text(completado ? '🏆' : '🎯', style: const TextStyle(fontSize: 18)),
+          const SizedBox(width: AppSpacing.sm),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  completado
+                      ? '¡Reto semanal de Ligas completado!'
+                      : 'Esta semana llevas $progreso/$objetivo días',
+                  style: AppTextStyles.caption.copyWith(
+                    fontWeight: FontWeight.w800,
+                    color: AppColors.textPrimary,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(3),
+                  child: LinearProgressIndicator(
+                    value: progreso / objetivo,
+                    minHeight: 5,
+                    backgroundColor: AppColors.warning.withValues(alpha: .15),
+                    color: AppColors.warning,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
