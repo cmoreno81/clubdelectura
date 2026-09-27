@@ -9,13 +9,12 @@ import '../theme/app_spacing.dart';
 import '../theme/app_text_styles.dart';
 import '../widgets/common/club_avatar.dart';
 import '../widgets/error_view.dart';
-import 'perfil_usuario_page.dart';
+import 'liga_medallero_page.dart';
 
 /// Sala de Trofeos: ranking global de toda la comunidad por medallas de Liga
-/// acumuladas (podios de temporada, ascensos, Diamante, constancia). Pensada
-/// como una vitrina vistosa — el podio arriba, el resto en una lista — desde
-/// la que se entra al perfil de cualquiera para curiosear su medallero
-/// completo.
+/// acumuladas (podios de temporada, ascensos, Diamante, constancia). Un
+/// listado simple, ordenado por palmarés — al tocar cualquiera se entra en
+/// su medallero de Liga, sin mezclarlo con los logros generales.
 class LigaTrofeosPage extends StatefulWidget {
   const LigaTrofeosPage({super.key});
 
@@ -39,14 +38,14 @@ class _LigaTrofeosPageState extends State<LigaTrofeosPage> {
 
   void _recargar() => setState(() => _future = _cargar());
 
-  void _abrirPerfil(LigaTrofeosFila fila) {
+  void _abrirMedallero(LigaTrofeosFila fila) {
     Navigator.push(
       context,
       AppPageRoute(
-        builder: (_) => PerfilUsuarioPage(
-          usuario: fila.nombre,
-          profileUserId: fila.userId,
-          initialTab: 'LOGROS',
+        builder: (_) => LigaMedalleroPage(
+          userId: fila.userId,
+          nombre: fila.nombre,
+          avatarUrl: fila.avatarUrl,
         ),
       ),
     );
@@ -90,9 +89,6 @@ class _LigaTrofeosPageState extends State<LigaTrofeosPage> {
             );
           }
 
-          final podio = tabla.take(3).toList();
-          final resto = tabla.skip(3).toList();
-
           return RefreshIndicator(
             onRefresh: () async => _recargar(),
             child: ListView(
@@ -105,22 +101,8 @@ class _LigaTrofeosPageState extends State<LigaTrofeosPage> {
               children: [
                 _CabeceraSala(totalParticipantes: sala?.totalParticipantes ?? tabla.length),
                 const SizedBox(height: AppSpacing.lg),
-                if (podio.isNotEmpty) ...[
-                  _Podio(filas: podio, onTap: _abrirPerfil),
-                  const SizedBox(height: AppSpacing.lg),
-                ],
-                if (resto.isNotEmpty) ...[
-                  Text(
-                    'Clasificación general',
-                    style: AppTextStyles.caption.copyWith(
-                      fontWeight: FontWeight.w800,
-                      color: AppColors.textSecondary,
-                    ),
-                  ),
-                  const SizedBox(height: AppSpacing.sm),
-                  for (final fila in resto)
-                    _FilaTrofeos(fila: fila, onTap: () => _abrirPerfil(fila)),
-                ],
+                for (final fila in tabla)
+                  _FilaTrofeos(fila: fila, onTap: () => _abrirMedallero(fila)),
               ],
             ),
           );
@@ -178,132 +160,17 @@ class _CabeceraSala extends StatelessWidget {
   }
 }
 
-/// Podio con los 3 palmareses más vistosos — el 1º más alto y en el centro,
-/// como un pódium físico.
-class _Podio extends StatelessWidget {
-  const _Podio({required this.filas, required this.onTap});
-  final List<LigaTrofeosFila> filas;
-  final void Function(LigaTrofeosFila) onTap;
-
-  LigaTrofeosFila? _en(int puesto) =>
-      filas.where((f) => f.puesto == puesto).firstOrNull;
-
-  @override
-  Widget build(BuildContext context) {
-    final primero = _en(1);
-    final segundo = _en(2);
-    final tercero = _en(3);
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.end,
-      children: [
-        if (segundo != null)
-          Expanded(
-            child: _PodioColumna(
-              fila: segundo,
-              alto: 96,
-              color: const Color(0xFF9AA4B2),
-              medalla: '🥈',
-              onTap: () => onTap(segundo),
-            ),
-          ),
-        const SizedBox(width: AppSpacing.sm),
-        if (primero != null)
-          Expanded(
-            child: _PodioColumna(
-              fila: primero,
-              alto: 124,
-              color: const Color(0xFFD5A94E),
-              medalla: '🥇',
-              onTap: () => onTap(primero),
-              destacado: true,
-            ),
-          ),
-        const SizedBox(width: AppSpacing.sm),
-        if (tercero != null)
-          Expanded(
-            child: _PodioColumna(
-              fila: tercero,
-              alto: 80,
-              color: const Color(0xFFA9714B),
-              medalla: '🥉',
-              onTap: () => onTap(tercero),
-            ),
-          ),
-      ],
-    );
-  }
-}
-
-class _PodioColumna extends StatelessWidget {
-  const _PodioColumna({
-    required this.fila,
-    required this.alto,
-    required this.color,
-    required this.medalla,
-    required this.onTap,
-    this.destacado = false,
-  });
-
-  final LigaTrofeosFila fila;
-  final double alto;
-  final Color color;
-  final String medalla;
-  final VoidCallback onTap;
-  final bool destacado;
-
-  @override
-  Widget build(BuildContext context) {
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        borderRadius: BorderRadius.circular(AppRadius.lg),
-        onTap: onTap,
-        child: Column(
-          children: [
-            Text(medalla, style: const TextStyle(fontSize: 26)),
-            const SizedBox(height: 4),
-            ClubAvatar(
-              nombre: fila.nombre,
-              imageUrl: fila.avatarUrl,
-              size: destacado ? 56 : 46,
-            ),
-            const SizedBox(height: 6),
-            Text(
-              fila.nombre,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              textAlign: TextAlign.center,
-              style: AppTextStyles.bodySecondary.copyWith(
-                fontWeight: FontWeight.w800,
-              ),
-            ),
-            Text(
-              fila.total == 1 ? '1 trofeo' : '${fila.total} trofeos',
-              style: AppTextStyles.caption.copyWith(color: AppColors.textMuted),
-            ),
-            const SizedBox(height: AppSpacing.xs),
-            Container(
-              height: alto,
-              width: double.infinity,
-              decoration: BoxDecoration(
-                color: color.withValues(alpha: .18),
-                border: Border.all(color: color.withValues(alpha: .45)),
-                borderRadius: const BorderRadius.vertical(
-                  top: Radius.circular(AppRadius.md),
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
 class _FilaTrofeos extends StatelessWidget {
   const _FilaTrofeos({required this.fila, required this.onTap});
   final LigaTrofeosFila fila;
   final VoidCallback onTap;
+
+  String get _medalla => switch (fila.puesto) {
+    1 => '🥇',
+    2 => '🥈',
+    3 => '🥉',
+    _ => '',
+  };
 
   @override
   Widget build(BuildContext context) {
@@ -322,16 +189,22 @@ class _FilaTrofeos extends StatelessWidget {
             vertical: AppSpacing.sm,
           ),
           decoration: BoxDecoration(
-            color: AppColors.surface,
+            color: fila.puesto <= 3
+                ? const Color(0xFFD9A441).withValues(alpha: .08)
+                : AppColors.surface,
             borderRadius: BorderRadius.circular(AppRadius.md),
-            border: Border.all(color: AppColors.border),
+            border: Border.all(
+              color: fila.puesto <= 3
+                  ? const Color(0xFFD9A441).withValues(alpha: .35)
+                  : AppColors.border,
+            ),
           ),
           child: Row(
             children: [
               SizedBox(
                 width: 30,
                 child: Text(
-                  '${fila.puesto}',
+                  _medalla.isNotEmpty ? _medalla : '${fila.puesto}',
                   style: AppTextStyles.body.copyWith(
                     fontWeight: FontWeight.w800,
                     color: AppColors.textSecondary,
