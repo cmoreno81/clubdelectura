@@ -831,10 +831,10 @@ class _VistaParticipando extends StatelessWidget {
           ),
         ),
         const SizedBox(height: AppSpacing.sm),
-        _EscaleraDivisiones(actual: t.division),
+        _LeyendaLigaPlegable(actual: t.division),
         const SizedBox(height: AppSpacing.lg),
 
-        _LeyendaLigaPlegable(actual: t.division),
+        _EscaleraDivisiones(actual: t.division),
         const SizedBox(height: AppSpacing.lg),
 
         if (estado.historico.temporadasJugadas > 0) ...[
