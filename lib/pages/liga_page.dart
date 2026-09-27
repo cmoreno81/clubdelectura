@@ -1457,6 +1457,7 @@ class _AccesosHistorial extends StatelessWidget {
           child: _BotonHistorial(
             icon: Icons.emoji_events_outlined,
             label: 'Temporada anterior',
+            color: AppColors.warning,
             onTap: () => Navigator.push(
               context,
               AppPageRoute(
@@ -1471,6 +1472,7 @@ class _AccesosHistorial extends StatelessWidget {
           child: _BotonHistorial(
             icon: Icons.history_rounded,
             label: 'Ver histórico',
+            color: AppColors.info,
             onTap: () => Navigator.push(
               context,
               AppPageRoute(builder: (_) => const LigaHistorialPage()),
@@ -1550,33 +1552,54 @@ class _BotonHistorial extends StatelessWidget {
   const _BotonHistorial({
     required this.icon,
     required this.label,
+    required this.color,
     required this.onTap,
   });
 
   final IconData icon;
   final String label;
+  final Color color;
   final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
-    return OutlinedButton(
-      onPressed: onTap,
-      style: OutlinedButton.styleFrom(alignment: Alignment.center),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, size: 18),
-          const SizedBox(width: AppSpacing.xs),
-          Flexible(
-            child: Text(
-              label,
-              textAlign: TextAlign.center,
-              overflow: TextOverflow.ellipsis,
-              maxLines: 2,
-            ),
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(AppRadius.lg),
+        onTap: onTap,
+        child: Container(
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppSpacing.sm,
+            vertical: AppSpacing.md,
           ),
-        ],
+          decoration: BoxDecoration(
+            color: color.withValues(alpha: .08),
+            borderRadius: BorderRadius.circular(AppRadius.lg),
+            border: Border.all(color: color.withValues(alpha: .28)),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              CircleAvatar(
+                radius: 18,
+                backgroundColor: color.withValues(alpha: .16),
+                child: Icon(icon, color: color, size: 18),
+              ),
+              const SizedBox(height: AppSpacing.xs),
+              Text(
+                label,
+                textAlign: TextAlign.center,
+                overflow: TextOverflow.ellipsis,
+                maxLines: 2,
+                style: AppTextStyles.caption.copyWith(
+                  fontWeight: FontWeight.w800,
+                  color: AppColors.textSecondary,
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
