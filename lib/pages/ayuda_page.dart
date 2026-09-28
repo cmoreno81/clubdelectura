@@ -681,9 +681,9 @@ const List<_HelpSection> _secciones = [
       _HelpItem(
         pregunta: '¿Cómo me uno o me salgo?',
         respuesta:
-            'Desde el dashboard global (tarjeta "🏆 Ligas de ClubReads") o desde '
-            'Perfil → Más → "Ligas de ClubReads". Pulsa "Unirme a la liga" para '
-            'empezar a puntuar.\n\n'
+            'Desde la pestaña "Ligas" del menú inferior (en el dashboard '
+            'global) o desde la tarjeta "🏆 Ligas de ClubReads" del propio '
+            'dashboard. Pulsa "Unirme a la liga" para empezar a puntuar.\n\n'
             'Para salir, entra en la pantalla de la liga y usa el menú "⋮" → '
             '"Dejar de participar". Dejarás de puntuar y de aparecer en la tabla, '
             'pero tu histórico (temporadas jugadas, mejor puesto, podios) se '
@@ -766,14 +766,15 @@ const List<_HelpSection> _secciones = [
             'divisiones" muestra el top 3 de cada división esa temporada — como '
             'ver quién ganó en 1ª, 2ª y 3ª de una liga de fútbol.\n'
             '🕓 "Ver histórico" — con dos pestañas:\n'
+            '• "Acumulado" (la primera): un ranking global con la suma de '
+            'puntos de TODAS las lectoras a lo largo de todas las '
+            'temporadas, no solo la tuya. Incluye la temporada en curso y '
+            'sube en vivo según se anotan puntos, no solo con temporadas ya '
+            'cerradas — para ver quién ha sido más constante en el tiempo, '
+            'no solo quien va mejor esta quincena. Cada fila lleva su '
+            'flechita ▲▼ de tendencia, igual que la clasificación normal.\n'
             '• "Por temporadas": todas las que has jugado, más reciente '
-            'primero, con tu división, puesto y medallas de cada una.\n'
-            '• "Acumulado": un ranking global con la suma de puntos de TODAS '
-            'las lectoras a lo largo de todas las temporadas, no solo la '
-            'tuya. Incluye la temporada en curso y sube en vivo según se '
-            'anotan puntos, no solo con temporadas ya cerradas — para ver '
-            'quién ha sido más constante en el tiempo, no solo quien va '
-            'mejor esta quincena.\n\n'
+            'primero, con tu división, puesto y medallas de cada una.\n\n'
             'Estos dos accesos solo aparecen una vez que has jugado al menos una '
             'temporada completa.',
       ),
@@ -781,20 +782,60 @@ const List<_HelpSection> _secciones = [
         pregunta: '¿Qué son las medallas de temporada?',
         respuesta:
             'Un medallero que vas acumulando temporada tras temporada, como en '
-            'un videojuego:\n\n'
+            'un videojuego — de más fáciles a más difíciles:\n\n'
+            '🚀 Ascenso — subir de división al cerrar la temporada.\n'
             '🏆 Oro / 🎖️ Plata / 🏅 Bronce — quedar 1ª, 2ª o 3ª de tu división al '
             'cerrar una temporada. Se pueden ganar varias veces, una por cada '
-            'temporada que lo consigas.\n'
-            '🚀 Ascenso — subir de división al cerrar la temporada.\n'
-            '💎 Diamante — llegar a la división más alta por primera vez. Esta '
-            'solo se gana una vez.\n'
+            'temporada que lo consigas, y pesan más cuanto más alta sea tu '
+            'división.\n'
+            '📈 Remontada — subir 5 puestos o más en tu división en un solo '
+            'ciclo de recálculo (a media temporada, no solo al cerrarla).\n'
+            '🔥 Racha perfecta — hacer check-in los 14 días de una temporada, '
+            'sin fallar ninguno.\n'
             '⭐ Constancia — jugar temporadas seguidas sin parar, en las rachas '
-            '3, 5, 10, 20 y 30.\n\n'
+            '3, 5, 10, 20 y 30.\n'
+            '📖 Libro del Año — completar tu Libro del Año personal (elegir un '
+            'ganador final) ese año.\n'
+            '🧭 Polifacética — haber jugado alguna vez en las 5 divisiones. '
+            'Esta solo se gana una vez.\n'
+            '💎 Diamante — llegar a la división más alta por primera vez. Esta '
+            'también se gana una sola vez.\n'
+            '🏵️ Bicampeona de Diamante / 🎩 Hattrick de Diamante — ganar el '
+            'oro de Diamante 2 o 3 veces (no hace falta que sea seguido). Al '
+            'ser la división techo, no hay ascenso que te saque de ahí — son '
+            'los dos trofeos más difíciles de todos.\n\n'
             'La medalla más reciente se ve junto a tu nombre en la '
-            'clasificación, y el medallero completo en tu perfil, dentro de '
-            '"Logros". También hay una leyenda plegable en la propia pantalla '
-            'de Ligas ("Medallero: cómo se ganan las medallas") con el detalle '
-            'de cada una.',
+            'clasificación, y tu medallero completo en tu perfil, dentro de '
+            '"Logros". Para curiosear el de cualquier otra participante sin '
+            'entrar en su perfil, usa la "Sala de Trofeos" (ver siguiente '
+            'pregunta). También hay una leyenda plegable en la propia '
+            'pantalla de Ligas ("Cómo funciona la liga" → pestaña "Medallas") '
+            'con el detalle de cada una.',
+      ),
+      _HelpItem(
+        pregunta: '¿Qué es la Sala de Trofeos?',
+        respuesta:
+            'Un listado con el palmarés de medallas de Liga de toda la '
+            'comunidad, ordenado por quien tiene más trofeos (y más '
+            'difíciles). Se abre con el botón "🏆 Sala de Trofeos" de la '
+            'pantalla de Ligas, debajo de "Temporada anterior" / "Ver '
+            'histórico".\n\n'
+            'Tocando cualquier fila entras directamente en el medallero de '
+            'Liga de esa persona — solo sus trofeos de Liga, sin mezclarlos '
+            'con sus logros generales. Arriba del todo tiene además una '
+            'leyenda plegable con todos los trofeos que se pueden ganar.',
+      ),
+      _HelpItem(
+        pregunta: '¿Qué es el Libro de Oro?',
+        respuesta:
+            'Un premio anual único, aparte de las medallas de temporada: '
+            'quien sea 1ª del ranking Acumulado (ver pregunta anterior) el '
+            '31 de diciembre se lo lleva. Solo hay una ganadora por año.\n\n'
+            'En cuanto se otorga, aparece en una vitrina propia arriba del '
+            'todo de la Sala de Trofeos, con el nombre de la ganadora — '
+            'visible para toda la comunidad sin tener que entrar en su '
+            'perfil. Mientras tanto, la pestaña "Acumulado" del histórico '
+            'lleva un aviso recordando el premio.',
       ),
       _HelpItem(
         pregunta: '¿Qué es el reto semanal?',
