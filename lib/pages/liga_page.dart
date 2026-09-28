@@ -14,6 +14,7 @@ import '../widgets/common/club_avatar.dart';
 import '../widgets/common/floating_nav_bar.dart';
 import '../widgets/error_view.dart';
 import '../widgets/ligas/indicador_tendencia.dart';
+import '../widgets/ligas/leyenda_trofeos.dart';
 import 'liga_clubes_page.dart';
 import 'liga_division_page.dart';
 import 'liga_historial_page.dart';
@@ -566,55 +567,15 @@ class _LeyendaLigaPlegableState extends State<_LeyendaLigaPlegable> {
                 _LeyendaTab.medallas => Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    for (final tier in LigaMedallaTier.values)
-                      Padding(
-                        padding: const EdgeInsets.symmetric(vertical: 6),
-                        child: Row(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Container(
-                              width: 30,
-                              height: 30,
-                              alignment: Alignment.center,
-                              decoration: BoxDecoration(
-                                color: tier.color.withValues(alpha: .18),
-                                shape: BoxShape.circle,
-                              ),
-                              child: Text(
-                                tier.icono,
-                                style: const TextStyle(fontSize: 15),
-                              ),
-                            ),
-                            const SizedBox(width: AppSpacing.sm),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    tier.etiqueta,
-                                    style: AppTextStyles.bodySecondary.copyWith(
-                                      fontWeight: FontWeight.w700,
-                                    ),
-                                  ),
-                                  Text(
-                                    tier.descripcion,
-                                    style: AppTextStyles.caption.copyWith(
-                                      color: AppColors.textMuted,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
+                    const LeyendaTrofeosContenido(),
                     const SizedBox(height: AppSpacing.sm),
                     Text(
                       'Las medallas se van acumulando temporada tras '
                       'temporada — se puede ganar la misma varias veces '
-                      '(salvo la de Diamante, que solo se gana una vez). '
-                      'Se ven en tu perfil, y la más reciente junto a tu '
-                      'nombre en la clasificación.',
+                      '(salvo Diamante y Polifacética, que solo se ganan '
+                      'una vez). Se ven en tu perfil, y la más reciente '
+                      'junto a tu nombre en la clasificación. El Libro de '
+                      'Oro es aparte: se ve en la Sala de Trofeos.',
                       style: AppTextStyles.caption.copyWith(
                         color: AppColors.textMuted,
                       ),
