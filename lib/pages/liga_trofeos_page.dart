@@ -15,6 +15,10 @@ import 'liga_medallero_page.dart';
 /// acumuladas (podios de temporada, ascensos, Diamante, constancia). Un
 /// listado simple, ordenado por palmarés — al tocar cualquiera se entra en
 /// su medallero de Liga, sin mezclarlo con los logros generales.
+///
+/// Cuando ya se ha otorgado el "Libro de Oro" (1ª del Acumulado a 31 de
+/// diciembre), su vitrina aparece destacada arriba del todo: es un premio
+/// único, así que se ve sin tener que entrar en el perfil de nadie.
 class LigaTrofeosPage extends StatefulWidget {
   const LigaTrofeosPage({super.key});
 
@@ -23,7 +27,7 @@ class LigaTrofeosPage extends StatefulWidget {
 }
 
 class _LigaTrofeosPageState extends State<LigaTrofeosPage> {
-  late Future<LigaSalaTrofeos?> _future;
+  late Future<_TrofeosData> _future;
 
   @override
   void initState() {
@@ -31,21 +35,31 @@ class _LigaTrofeosPageState extends State<LigaTrofeosPage> {
     _future = _cargar();
   }
 
-  Future<LigaSalaTrofeos?> _cargar() async {
-    final data = await ApiService().getLigaSalaTrofeos();
-    return LigaSalaTrofeos.fromJson(data);
+  Future<_TrofeosData> _cargar() async {
+    final results = await Future.wait([
+      ApiService().getLigaSalaTrofeos(),
+      ApiService().getLigaLibroDeOro(),
+    ]);
+    return _TrofeosData(
+      sala: LigaSalaTrofeos.fromJson(results[0]),
+      libroDeOro: LigaLibroDeOro.fromJson(results[1]),
+    );
   }
 
   void _recargar() => setState(() => _future = _cargar());
 
-  void _abrirMedallero(LigaTrofeosFila fila) {
+  void _abrirMedallero({
+    required String userId,
+    required String nombre,
+    String? avatarUrl,
+  }) {
     Navigator.push(
       context,
       AppPageRoute(
         builder: (_) => LigaMedalleroPage(
-          userId: fila.userId,
-          nombre: fila.nombre,
-          avatarUrl: fila.avatarUrl,
+          userId: userId,
+          nombre: nombre,
+          avatarUrl: avatarUrl,
         ),
       ),
     );
@@ -55,7 +69,7 @@ class _LigaTrofeosPageState extends State<LigaTrofeosPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text('Sala de Trofeos')),
-      body: FutureBuilder<LigaSalaTrofeos?>(
+      body: FutureBuilder<_TrofeosData>(
         future: _future,
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
@@ -64,9 +78,11 @@ class _LigaTrofeosPageState extends State<LigaTrofeosPage> {
           if (snapshot.hasError) {
             return ErrorView(onRetry: _recargar);
           }
-          final sala = snapshot.data;
-          final tabla = sala?.tabla ?? const <LigaTrofeosFila>[];
-          if (tabla.isEmpty) {
+          final data = snapshot.data;
+          final tabla = data?.sala?.tabla ?? const <LigaTrofeosFila>[];
+          final libroDeOro = data?.libroDeOro;
+
+          if (tabla.isEmpty && libroDeOro == null) {
             return RefreshIndicator(
               onRefresh: () async => _recargar(),
               child: ListView(
@@ -99,14 +115,216 @@ class _LigaTrofeosPageState extends State<LigaTrofeosPage> {
                 AppSpacing.md + MediaQuery.of(context).padding.bottom,
               ),
               children: [
-                _CabeceraSala(totalParticipantes: sala?.totalParticipantes ?? tabla.length),
+                if (libroDeOro != null) ...[
+                  _VitrinaLibroDeOro(
+                    premio: libroDeOro,
+                    onTap: () => _abrirMedallero(
+                      userId: libroDeOro.userId,
+                      nombre: libroDeOro.nombre,
+                      avatarUrl: libroDeOro.avatarUrl,
+                    ),
+                  ),
+                  const SizedBox(height: AppSpacing.lg),
+                ],
+                _CabeceraSala(
+                  totalParticipantes: data?.sala?.totalParticipantes ?? tabla.length,
+                ),
                 const SizedBox(height: AppSpacing.lg),
                 for (final fila in tabla)
-                  _FilaTrofeos(fila: fila, onTap: () => _abrirMedallero(fila)),
+                  _FilaTrofeos(
+                    fila: fila,
+                    onTap: () => _abrirMedallero(
+                      userId: fila.userId,
+                      nombre: fila.nombre,
+                      avatarUrl: fila.avatarUrl,
+                    ),
+                  ),
               ],
             ),
           );
         },
+      ),
+    );
+  }
+}
+
+class _TrofeosData {
+  const _TrofeosData({required this.sala, required this.libroDeOro});
+  final LigaSalaTrofeos? sala;
+  final LigaLibroDeOro? libroDeOro;
+}
+
+/// Vitrina del Libro de Oro — un premio único y permanente, con la misma
+/// presencia de un trofeo físico grabado: nunca se entra en un perfil para
+/// verlo, está aquí arriba a la vista de todo el mundo.
+class _VitrinaLibroDeOro extends StatelessWidget {
+  const _VitrinaLibroDeOro({required this.premio, required this.onTap});
+  final LigaLibroDeOro premio;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(26),
+        onTap: onTap,
+        child: Container(
+          width: double.infinity,
+          padding: const EdgeInsets.fromLTRB(20, 30, 20, 24),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(26),
+            gradient: const RadialGradient(
+              center: Alignment(0, -0.7),
+              radius: 1.3,
+              colors: [Color(0xFF3A2A5C), Color(0xFF221733), Color(0xFF170F22)],
+              stops: [0, 0.55, 1],
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: const Color(0xFF140A23).withValues(alpha: .35),
+                blurRadius: 24,
+                offset: const Offset(0, 12),
+              ),
+            ],
+          ),
+          child: Column(
+            children: [
+              // Cinta "PREMIO ANUAL · año"
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(AppRadius.pill),
+                  gradient: const LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    colors: [Color(0xFFF3D48A), Color(0xFFC9962F)],
+                  ),
+                ),
+                child: Text(
+                  '✦  PREMIO ANUAL · ${premio.year}  ✦',
+                  style: const TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: 1.6,
+                    color: Color(0xFF3A2405),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 14),
+              // Trofeo
+              ShaderMask(
+                shaderCallback: (bounds) => const LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [Color(0xFFFCE7A8), Color(0xFFE7B84D), Color(0xFFA9721E)],
+                ).createShader(bounds),
+                child: const Icon(
+                  Icons.emoji_events_rounded,
+                  size: 84,
+                  color: Colors.white,
+                ),
+              ),
+              const SizedBox(height: 4),
+              const Text(
+                'Libro de Oro',
+                style: TextStyle(
+                  color: Color(0xFFF6E9C9),
+                  fontSize: 22,
+                  fontWeight: FontWeight.w900,
+                ),
+              ),
+              Text(
+                '1ª del Acumulado a 31 de diciembre',
+                style: TextStyle(
+                  color: const Color(0xFFF6E9C9).withValues(alpha: .7),
+                  fontSize: 12,
+                ),
+              ),
+              const SizedBox(height: 18),
+              // Placa grabada con el nombre
+              Container(
+                width: double.infinity,
+                margin: const EdgeInsets.symmetric(horizontal: 4),
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(14),
+                  gradient: const LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    colors: [Color(0xFFE7C877), Color(0xFFB4872C)],
+                  ),
+                  boxShadow: const [
+                    BoxShadow(
+                      color: Color(0x4D000000),
+                      blurRadius: 14,
+                      offset: Offset(0, 6),
+                    ),
+                  ],
+                ),
+                child: Column(
+                  children: [
+                    Text(
+                      'GANADORA',
+                      style: TextStyle(
+                        fontSize: 10,
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: 2,
+                        color: const Color(0xFF4A3308).withValues(alpha: .75),
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        ClubAvatar(
+                          nombre: premio.nombre,
+                          imageUrl: premio.avatarUrl,
+                          size: 22,
+                        ),
+                        const SizedBox(width: 8),
+                        Flexible(
+                          child: Text(
+                            premio.nombre,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            textAlign: TextAlign.center,
+                            style: const TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.w900,
+                              letterSpacing: .5,
+                              color: Color(0xFF2E1F05),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      '${premio.puntos} pts acumulados',
+                      style: TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w700,
+                        color: const Color(0xFF4A3308).withValues(alpha: .8),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 12),
+              Text(
+                'Único e irrepetible — queda grabado para siempre',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 11,
+                  fontStyle: FontStyle.italic,
+                  color: const Color(0xFFF6E9C9).withValues(alpha: .55),
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
