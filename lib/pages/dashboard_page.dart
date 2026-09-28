@@ -39,6 +39,8 @@ import '../widgets/common/club_book_cover.dart';
 import '../widgets/common/optimized_network_image.dart';
 import '../widgets/error_view.dart';
 import '../widgets/info_card.dart';
+import '../widgets/ligas/liga_dashboard_cta.dart';
+import 'liga_page.dart';
 import 'mood_club_page.dart';
 import 'perfil_usuario_page.dart';
 import '../models/perfil_usuario.dart';
@@ -63,7 +65,6 @@ class DashboardPage extends StatefulWidget {
     this.loadData,
     this.initialUser,
     this.profilePageBuilder,
-    this.loadCheckinHistory,
   });
 
   final String clubName;
@@ -76,7 +77,6 @@ class DashboardPage extends StatefulWidget {
   final Future<DashboardViewData> Function()? loadData;
   final AuthUser? initialUser;
   final Widget Function(String userName)? profilePageBuilder;
-  final Future<Map<String, dynamic>> Function()? loadCheckinHistory;
 
   @override
   State<DashboardPage> createState() => _DashboardPageState();
@@ -515,10 +515,11 @@ class _DashboardPageState extends State<DashboardPage> {
                     const SizedBox(height: AppSpacing.md),
                     const _ClubWishlistCard(),
                     const SizedBox(height: AppSpacing.md),
-                    RachaLectoraCard(
-                      key: ValueKey('reading-streak-club-$_favoritosKey'),
-                      loadHistory: widget.loadCheckinHistory,
-                      onTap: () => _abrirMiPerfil(scrollToSeguimiento: true),
+                    LigaDashboardCta(
+                      onTap: () => Navigator.push<void>(
+                        context,
+                        AppPageRoute(builder: (_) => const LigaPage()),
+                      ),
                     ),
 
                     if (data.rankingAfinidad.isNotEmpty) ...[

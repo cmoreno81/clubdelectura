@@ -21,7 +21,9 @@ import '../widgets/common/club_section_title.dart';
 import '../widgets/common/editar_progreso_dialog.dart';
 import '../widgets/common/floating_nav_bar.dart' show kFloatingNavClearance;
 import '../widgets/dashboard/bingo_lector_card.dart';
+import '../widgets/ligas/liga_dashboard_cta.dart';
 import '../widgets/profile/book_of_year_preview.dart';
+import 'liga_page.dart';
 import 'perfil_usuario_page.dart'
     show
         CheckinSection,
@@ -568,7 +570,7 @@ class _Content extends StatelessWidget {
             sliver: SliverToBoxAdapter(
               child: ClubSectionTitle(
                 title: 'Celebra tu año',
-                subtitle: 'Bingo, quiz y sorpresas de tu año lector',
+                subtitle: 'Bingo, Ligas, quiz y sorpresas de tu año lector',
                 icon: Icons.celebration_rounded,
                 padding: EdgeInsets.zero,
               ),
@@ -592,6 +594,24 @@ class _Content extends StatelessWidget {
                   border: Border.all(color: AppColors.border),
                 ),
                 child: const BingoLectorSection(),
+              ),
+            ),
+          ),
+
+          // ── Ligas de ClubReads ──────────────────────────────────────────
+          SliverPadding(
+            padding: const EdgeInsets.fromLTRB(
+              AppSpacing.md,
+              AppSpacing.md,
+              AppSpacing.md,
+              0,
+            ),
+            sliver: SliverToBoxAdapter(
+              child: LigaDashboardCta(
+                onTap: () => Navigator.push<void>(
+                  context,
+                  AppPageRoute(builder: (_) => const LigaPage()),
+                ),
               ),
             ),
           ),
