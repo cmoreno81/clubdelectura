@@ -236,6 +236,39 @@ class LigaSalaTrofeos {
   }
 }
 
+/// Premio anual "Libro de Oro": 1ª del ranking Acumulado a 31 de diciembre.
+/// Único por año — `null` mientras ninguno se ha otorgado todavía.
+class LigaLibroDeOro {
+  final int year;
+  final String userId;
+  final String nombre;
+  final String? avatarUrl;
+  final int puntos;
+
+  const LigaLibroDeOro({
+    required this.year,
+    required this.userId,
+    required this.nombre,
+    required this.avatarUrl,
+    required this.puntos,
+  });
+
+  static LigaLibroDeOro? fromJson(Map<String, dynamic> json) {
+    if (json['ok'] != true) return null;
+    final premio = json['premio'] as Map?;
+    if (premio == null) return null;
+    return LigaLibroDeOro(
+      year: (premio['year'] as num?)?.toInt() ?? 0,
+      userId: premio['userId']?.toString() ?? '',
+      nombre: premio['nombre']?.toString() ?? '',
+      avatarUrl: (premio['avatarUrl']?.toString().trim().isEmpty ?? true)
+          ? null
+          : premio['avatarUrl'].toString(),
+      puntos: (premio['puntos'] as num?)?.toInt() ?? 0,
+    );
+  }
+}
+
 class LigaTemporada {
   final int numero;
   final DateTime terminaEn;

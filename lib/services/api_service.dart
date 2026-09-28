@@ -2282,6 +2282,18 @@ class ApiService {
     return _decodeJson(response) as Map<String, dynamic>;
   }
 
+  /// Premio "Libro de Oro" más reciente (1ª del Acumulado a 31 de
+  /// diciembre), o null si ninguno se ha otorgado todavía.
+  Future<Map<String, dynamic>> getLigaLibroDeOro() async {
+    final response = await _client.get(
+      Uri.parse(
+        baseUrl,
+      ).replace(queryParameters: {'action': 'ligaLibroDeOro'}),
+    );
+    if (response.statusCode != 200) throw ApiException.fromResponse(response);
+    return _decodeJson(response) as Map<String, dynamic>;
+  }
+
   /// Histórico de temporadas ya cerradas en las que participé, más reciente
   /// primero. Lista vacía si nunca se ha cerrado ninguna temporada aún.
   Future<Map<String, dynamic>> getLigaHistorial() async {
