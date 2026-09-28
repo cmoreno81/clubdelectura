@@ -69,7 +69,13 @@ enum LigaMedallaTier {
   podioBronce('🏅', Color(0xFFA9714B)),
   ascenso('🚀', Color(0xFF5FA8B8)),
   diamante('💎', Color(0xFF7C5CBF)),
-  constancia('⭐', Color(0xFFD97757));
+  constancia('⭐', Color(0xFFD97757)),
+  rachaPerfecta('🔥', Color(0xFFE0622F)),
+  polifacetica('🧭', Color(0xFF4A9B8E)),
+  bicampeona('🏵️', Color(0xFFC98A2C)),
+  hattrick('🎩', Color(0xFF3A3A5C)),
+  remontada('📈', Color(0xFF3FA65C)),
+  libroDelAnio('📖', Color(0xFFB07B2A));
 
   const LigaMedallaTier(this.icono, this.color);
   final String icono;
@@ -82,6 +88,12 @@ enum LigaMedallaTier {
     LigaMedallaTier.ascenso => 'Ascenso de división',
     LigaMedallaTier.diamante => 'Alcanzó Diamante',
     LigaMedallaTier.constancia => 'Constancia',
+    LigaMedallaTier.rachaPerfecta => 'Racha perfecta',
+    LigaMedallaTier.polifacetica => 'Polifacética',
+    LigaMedallaTier.bicampeona => 'Bicampeona',
+    LigaMedallaTier.hattrick => 'Hattrick',
+    LigaMedallaTier.remontada => 'Remontada',
+    LigaMedallaTier.libroDelAnio => 'Libro del Año',
   };
 
   /// Cómo se consigue, para la leyenda.
@@ -93,6 +105,18 @@ enum LigaMedallaTier {
     LigaMedallaTier.diamante => 'Llegar a la división Diamante por primera vez.',
     LigaMedallaTier.constancia =>
       'Jugar temporadas seguidas sin parar (3, 5, 10, 20, 30...).',
+    LigaMedallaTier.rachaPerfecta =>
+      'Hacer check-in los 14 días de una temporada, sin fallar ninguno.',
+    LigaMedallaTier.polifacetica =>
+      'Haber jugado alguna vez en las 5 divisiones.',
+    LigaMedallaTier.bicampeona =>
+      'Ganar el oro de tu división dos temporadas seguidas.',
+    LigaMedallaTier.hattrick =>
+      'Ganar el oro de la misma división por 3ª vez.',
+    LigaMedallaTier.remontada =>
+      'Subir 5 puestos o más en tu división en un solo ciclo.',
+    LigaMedallaTier.libroDelAnio =>
+      'Completar tu Libro del Año eligiendo un ganador final.',
   };
 
   /// Título de una medalla concreta, con la división a la que se refiere —
@@ -105,7 +129,9 @@ enum LigaMedallaTier {
     LigaMedallaTier.podioBronce => '3ª de división ${division.etiqueta}',
     LigaMedallaTier.ascenso =>
       'Ascenso a división ${(division.siguiente ?? division).etiqueta}',
-    LigaMedallaTier.diamante || LigaMedallaTier.constancia => etiqueta,
+    LigaMedallaTier.bicampeona || LigaMedallaTier.hattrick =>
+      '$etiqueta en división ${division.etiqueta}',
+    _ => etiqueta,
   };
 
   static LigaMedallaTier? fromJson(String? value) => switch (value) {
@@ -115,6 +141,12 @@ enum LigaMedallaTier {
     'ASCENSO' => LigaMedallaTier.ascenso,
     'DIAMANTE' => LigaMedallaTier.diamante,
     'CONSTANCIA' => LigaMedallaTier.constancia,
+    'RACHA_PERFECTA' => LigaMedallaTier.rachaPerfecta,
+    'POLIFACETICA' => LigaMedallaTier.polifacetica,
+    'BICAMPEONA' => LigaMedallaTier.bicampeona,
+    'HATTRICK' => LigaMedallaTier.hattrick,
+    'REMONTADA' => LigaMedallaTier.remontada,
+    'LIBRO_DEL_ANIO' => LigaMedallaTier.libroDelAnio,
     _ => null,
   };
 }
