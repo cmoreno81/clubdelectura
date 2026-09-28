@@ -129,6 +129,8 @@ class _LigaTrofeosPageState extends State<LigaTrofeosPage> {
                 _CabeceraSala(
                   totalParticipantes: data?.sala?.totalParticipantes ?? tabla.length,
                 ),
+                const SizedBox(height: AppSpacing.sm),
+                const _LeyendaTrofeos(),
                 const SizedBox(height: AppSpacing.lg),
                 for (final fila in tabla)
                   _FilaTrofeos(
@@ -471,6 +473,170 @@ class _FilaTrofeos extends StatelessWidget {
             ],
           ),
         ),
+      ),
+    );
+  }
+}
+
+/// Leyenda plegable con todos los trofeos que se pueden conseguir: el Libro
+/// de Oro (único, se explica aparte) más las medallas de Liga normales, con
+/// icono y cómo se consiguen — para entender de un vistazo lo que se ve en
+/// esta lista antes de entrar en el medallero de cada una.
+class _LeyendaTrofeos extends StatefulWidget {
+  const _LeyendaTrofeos();
+
+  @override
+  State<_LeyendaTrofeos> createState() => _LeyendaTrofeosState();
+}
+
+class _LeyendaTrofeosState extends State<_LeyendaTrofeos> {
+  bool _abierta = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(AppRadius.lg),
+        border: Border.all(color: AppColors.border),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          InkWell(
+            borderRadius: BorderRadius.circular(AppRadius.lg),
+            onTap: () => setState(() => _abierta = !_abierta),
+            child: Padding(
+              padding: const EdgeInsets.all(AppSpacing.md),
+              child: Row(
+                children: [
+                  const Icon(
+                    Icons.info_outline_rounded,
+                    size: 18,
+                    color: AppColors.primary,
+                  ),
+                  const SizedBox(width: AppSpacing.sm),
+                  Expanded(
+                    child: Text(
+                      'Qué trofeos se pueden ganar',
+                      style: AppTextStyles.body.copyWith(
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ),
+                  AnimatedRotation(
+                    turns: _abierta ? 0.5 : 0,
+                    duration: const Duration(milliseconds: 200),
+                    child: const Icon(
+                      Icons.keyboard_arrow_down_rounded,
+                      color: AppColors.textMuted,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          if (_abierta)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(
+                AppSpacing.md,
+                0,
+                AppSpacing.md,
+                AppSpacing.md,
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _FilaLeyenda(
+                    icono: const Text('🏆', style: TextStyle(fontSize: 15)),
+                    color: const Color(0xFFD9A441),
+                    titulo: 'Libro de Oro',
+                    descripcion:
+                        'Premio anual único: ser 1ª del ranking Acumulado '
+                        'el 31 de diciembre.',
+                  ),
+                  for (final tier in LigaMedallaTier.values)
+                    _FilaLeyenda(
+                      icono: Text(
+                        tier.icono,
+                        style: const TextStyle(fontSize: 15),
+                      ),
+                      color: tier.color,
+                      titulo: tier == LigaMedallaTier.podioOro
+                          ? '1ª / 2ª / 3ª de tu división'
+                          : tier.etiqueta,
+                      descripcion: tier == LigaMedallaTier.podioOro
+                          ? 'Podio de tu división al cerrar una temporada — '
+                                'pesa más cuanto más alta sea la división.'
+                          : tier.descripcion,
+                      // Plata y Bronce ya quedan explicadas junto al Oro.
+                      omitir:
+                          tier == LigaMedallaTier.podioPlata ||
+                          tier == LigaMedallaTier.podioBronce,
+                    ),
+                ],
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+class _FilaLeyenda extends StatelessWidget {
+  const _FilaLeyenda({
+    required this.icono,
+    required this.color,
+    required this.titulo,
+    required this.descripcion,
+    this.omitir = false,
+  });
+
+  final Widget icono;
+  final Color color;
+  final String titulo;
+  final String descripcion;
+  final bool omitir;
+
+  @override
+  Widget build(BuildContext context) {
+    if (omitir) return const SizedBox.shrink();
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 6),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            width: 28,
+            height: 28,
+            alignment: Alignment.center,
+            decoration: BoxDecoration(
+              color: color.withValues(alpha: .18),
+              shape: BoxShape.circle,
+            ),
+            child: icono,
+          ),
+          const SizedBox(width: AppSpacing.sm),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  titulo,
+                  style: AppTextStyles.bodySecondary.copyWith(
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                Text(
+                  descripcion,
+                  style: AppTextStyles.caption.copyWith(
+                    color: AppColors.textMuted,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }
