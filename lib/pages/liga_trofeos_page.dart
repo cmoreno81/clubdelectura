@@ -9,6 +9,7 @@ import '../theme/app_spacing.dart';
 import '../theme/app_text_styles.dart';
 import '../widgets/common/club_avatar.dart';
 import '../widgets/error_view.dart';
+import '../widgets/ligas/leyenda_trofeos.dart';
 import 'liga_medallero_page.dart';
 
 /// Sala de Trofeos: ranking global de toda la comunidad por medallas de Liga
@@ -537,112 +538,15 @@ class _LeyendaTrofeosState extends State<_LeyendaTrofeos> {
             ),
           ),
           if (_abierta)
-            Padding(
-              padding: const EdgeInsets.fromLTRB(
+            const Padding(
+              padding: EdgeInsets.fromLTRB(
                 AppSpacing.md,
                 0,
                 AppSpacing.md,
                 AppSpacing.md,
               ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  _FilaLeyenda(
-                    icono: const Text('🏆', style: TextStyle(fontSize: 15)),
-                    color: const Color(0xFFD9A441),
-                    titulo: 'Libro de Oro',
-                    descripcion:
-                        'Premio anual único: ser 1ª del ranking Acumulado '
-                        'el 31 de diciembre.',
-                  ),
-                  // De más fácil a más difícil de conseguir — Plata y
-                  // Bronce se explican junto al Oro, así que no llevan fila
-                  // propia.
-                  for (final tier in const [
-                    LigaMedallaTier.ascenso,
-                    LigaMedallaTier.podioOro,
-                    LigaMedallaTier.remontada,
-                    LigaMedallaTier.rachaPerfecta,
-                    LigaMedallaTier.constancia,
-                    LigaMedallaTier.libroDelAnio,
-                    LigaMedallaTier.polifacetica,
-                    LigaMedallaTier.diamante,
-                    LigaMedallaTier.bicampeona,
-                    LigaMedallaTier.hattrick,
-                  ])
-                    _FilaLeyenda(
-                      icono: Text(
-                        tier.icono,
-                        style: const TextStyle(fontSize: 15),
-                      ),
-                      color: tier.color,
-                      titulo: tier == LigaMedallaTier.podioOro
-                          ? '1ª / 2ª / 3ª de tu división'
-                          : tier.etiqueta,
-                      descripcion: tier == LigaMedallaTier.podioOro
-                          ? 'Podio de tu división al cerrar una temporada — '
-                                'pesa más cuanto más alta sea la división.'
-                          : tier.descripcion,
-                    ),
-                ],
-              ),
+              child: LeyendaTrofeosContenido(),
             ),
-        ],
-      ),
-    );
-  }
-}
-
-class _FilaLeyenda extends StatelessWidget {
-  const _FilaLeyenda({
-    required this.icono,
-    required this.color,
-    required this.titulo,
-    required this.descripcion,
-  });
-
-  final Widget icono;
-  final Color color;
-  final String titulo;
-  final String descripcion;
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 6),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-            width: 28,
-            height: 28,
-            alignment: Alignment.center,
-            decoration: BoxDecoration(
-              color: color.withValues(alpha: .18),
-              shape: BoxShape.circle,
-            ),
-            child: icono,
-          ),
-          const SizedBox(width: AppSpacing.sm),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  titulo,
-                  style: AppTextStyles.bodySecondary.copyWith(
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-                Text(
-                  descripcion,
-                  style: AppTextStyles.caption.copyWith(
-                    color: AppColors.textMuted,
-                  ),
-                ),
-              ],
-            ),
-          ),
         ],
       ),
     );
