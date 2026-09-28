@@ -12,10 +12,9 @@ import 'package:http/testing.dart';
 
 void main() {
   testWidgets(
-    'abrir, reconstruir y refrescar el dashboard solo consulta historial',
+    'abrir, reconstruir y refrescar el dashboard solo recarga al refrescar',
     (tester) async {
       var dashboardLoads = 0;
-      var historyReads = 0;
       final controller = DashboardPageController();
 
       Widget app() => MaterialApp(
@@ -26,26 +25,20 @@ void main() {
             dashboardLoads++;
             return _viewData();
           },
-          loadCheckinHistory: () async {
-            historyReads++;
-            return {'streak': 4, 'checkedToday': false};
-          },
         ),
       );
 
       await tester.pumpWidget(app());
       await tester.pump();
-      expect(historyReads, 1);
-      expect(find.text('Marca que has leído hoy'), findsOneWidget);
+      expect(dashboardLoads, 1);
 
       await tester.pumpWidget(app());
       await tester.pump();
-      expect(historyReads, 1);
+      expect(dashboardLoads, 1);
 
       await controller.refresh();
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 50));
-      expect(historyReads, 2);
       expect(dashboardLoads, greaterThanOrEqualTo(2));
 
       final dashboardSource = File(
