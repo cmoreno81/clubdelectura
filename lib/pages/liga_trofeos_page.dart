@@ -555,7 +555,21 @@ class _LeyendaTrofeosState extends State<_LeyendaTrofeos> {
                         'Premio anual único: ser 1ª del ranking Acumulado '
                         'el 31 de diciembre.',
                   ),
-                  for (final tier in LigaMedallaTier.values)
+                  // De más fácil a más difícil de conseguir — Plata y
+                  // Bronce se explican junto al Oro, así que no llevan fila
+                  // propia.
+                  for (final tier in const [
+                    LigaMedallaTier.ascenso,
+                    LigaMedallaTier.podioOro,
+                    LigaMedallaTier.remontada,
+                    LigaMedallaTier.rachaPerfecta,
+                    LigaMedallaTier.constancia,
+                    LigaMedallaTier.libroDelAnio,
+                    LigaMedallaTier.polifacetica,
+                    LigaMedallaTier.diamante,
+                    LigaMedallaTier.bicampeona,
+                    LigaMedallaTier.hattrick,
+                  ])
                     _FilaLeyenda(
                       icono: Text(
                         tier.icono,
@@ -569,10 +583,6 @@ class _LeyendaTrofeosState extends State<_LeyendaTrofeos> {
                           ? 'Podio de tu división al cerrar una temporada — '
                                 'pesa más cuanto más alta sea la división.'
                           : tier.descripcion,
-                      // Plata y Bronce ya quedan explicadas junto al Oro.
-                      omitir:
-                          tier == LigaMedallaTier.podioPlata ||
-                          tier == LigaMedallaTier.podioBronce,
                     ),
                 ],
               ),
@@ -589,18 +599,15 @@ class _FilaLeyenda extends StatelessWidget {
     required this.color,
     required this.titulo,
     required this.descripcion,
-    this.omitir = false,
   });
 
   final Widget icono;
   final Color color;
   final String titulo;
   final String descripcion;
-  final bool omitir;
 
   @override
   Widget build(BuildContext context) {
-    if (omitir) return const SizedBox.shrink();
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 6),
       child: Row(
