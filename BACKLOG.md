@@ -12,20 +12,19 @@
 ## 🚀 Próximas funcionalidades
 
 - Añadir un libro directamente desde otro usuario ("Me interesa este libro").
-- Notificaciones de apertura y cierre de Clubvisión.
+- Notificaciones push (dispositivo) de apertura y cierre de Clubvisión.
 - Buscador avanzado por género.
-- Estadísticas personales de lectura.
-- Mejoras visuales en Dashboard.
+- Estadísticas avanzadas de lectura (más allá de "Mis estadísticas").
+- Animaciones en la Gala de Clubvisión.
 
 ---
 
 ## 💡 Ideas
 
-- Perfil de cada lectora.
-- Logros e insignias.
 - Recomendaciones automáticas.
-- Filtros avanzados.
-- Compartir libros favoritos.
+- Filtros avanzados en el catálogo.
+- Compartir libros favoritos fuera de la app.
+- Caché en Dashboard/Libros/Ranking y pull to refresh.
 
 ---
 
