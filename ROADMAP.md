@@ -44,20 +44,38 @@ Si una funcionalidad no aporta a ninguno de ellos, probablemente no sea priorita
 - [ ] Caché Ranking
 - [ ] Pull to Refresh
 
+**Estado:** Pendiente.
+
 ---
 
 # Sprint 3 - Calidad de vida
 
 - [ ] Borrar libros
 - [ ] Adaptación tablets
-- [ ] Icono definitivo
-- [ ] Nombre definitivo
+- [X] Icono definitivo
+- [X] Nombre definitivo (ClubReads)
+
+**Estado:** En curso.
+
+---
+
+# Sprint 4 - Ligas de ClubReads y multi-club ✅
+- [X] Ligas entre clubes: temporadas, divisiones, ascensos/descensos
+- [X] Medallero personal y Sala de Trofeos (con Libro de Oro)
+- [X] Clubes públicos, invitaciones y transferencia de propiedad
+- [X] Bingo lector
+- [X] Mi espacio / Mis estadísticas separados
+- [X] Menú flotante unificado y persistente
+- [X] Reportar/bloquear contenido y eliminar cuenta (requisitos App Store)
+
+**Estado:** Completada.
 
 ---
 
 # Ideas futuras 💡
 
-- [ ] Notificaciones Clubvisión
-- [ ] Logros
+- [X] Notificaciones Clubvisión (aviso de pocas candidatas, recordatorio de voto)
+- [X] Logros (Bingo lector, medallas de Liga)
 - [ ] Estadísticas avanzadas
 - [ ] Animaciones en la Gala
+- [ ] Notificaciones push de apertura/cierre de Clubvisión desde el dispositivo
