@@ -43,14 +43,14 @@ class _LigaHistorialPageState extends State<LigaHistorialPage>
         bottom: TabBar(
           controller: _tabController,
           tabs: const [
-            Tab(text: 'Por temporadas'),
             Tab(text: 'Acumulado'),
+            Tab(text: 'Por temporadas'),
           ],
         ),
       ),
       body: TabBarView(
         controller: _tabController,
-        children: const [_TemporadasTab(), _AcumuladoTab()],
+        children: const [_AcumuladoTab(), _TemporadasTab()],
       ),
     );
   }
@@ -185,6 +185,7 @@ class _AcumuladoTabState extends State<_AcumuladoTab> {
             child: ListView(
               padding: const EdgeInsets.all(AppSpacing.lg),
               children: [
+                const _PremioAnualBanner(),
                 const SizedBox(height: AppSpacing.xl),
                 const Center(child: Text('🏆', style: TextStyle(fontSize: 48))),
                 const SizedBox(height: AppSpacing.md),
@@ -207,8 +208,16 @@ class _AcumuladoTabState extends State<_AcumuladoTab> {
               AppSpacing.md,
               AppSpacing.md + MediaQuery.of(context).padding.bottom,
             ),
-            itemCount: tabla.length,
-            itemBuilder: (context, index) => _FilaAcumulado(fila: tabla[index]),
+            itemCount: tabla.length + 1,
+            itemBuilder: (context, index) {
+              if (index == 0) {
+                return const Padding(
+                  padding: EdgeInsets.only(bottom: AppSpacing.md),
+                  child: _PremioAnualBanner(),
+                );
+              }
+              return _FilaAcumulado(fila: tabla[index - 1]);
+            },
           ),
         );
       },
@@ -295,6 +304,59 @@ class _FilaAcumulado extends StatelessWidget {
           Text(
             ' pts',
             style: AppTextStyles.caption.copyWith(color: AppColors.textMuted),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Aviso motivador sobre el premio de fin de año: quien sea 1ª del
+/// Acumulado el 31 de diciembre se lleva el Libro de Oro.
+class _PremioAnualBanner extends StatelessWidget {
+  const _PremioAnualBanner();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.md,
+        vertical: AppSpacing.sm,
+      ),
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [Color(0xFF7A4B12), Color(0xFFB07B2A), Color(0xFFD9A441)],
+        ),
+        borderRadius: BorderRadius.circular(AppRadius.lg),
+      ),
+      child: Row(
+        children: [
+          const Text('📖', style: TextStyle(fontSize: 24)),
+          const SizedBox(width: AppSpacing.sm),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'Premio Libro de Oro',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 14,
+                    fontWeight: FontWeight.w900,
+                  ),
+                ),
+                Text(
+                  'Quien esté 1ª aquí el 31 de diciembre se lo lleva. '
+                  '¡A por ello!',
+                  style: TextStyle(
+                    color: Colors.white.withValues(alpha: .9),
+                    fontSize: 12,
+                  ),
+                ),
+              ],
+            ),
           ),
         ],
       ),
