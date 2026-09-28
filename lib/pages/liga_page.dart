@@ -1208,12 +1208,6 @@ class _FilaLiga extends StatelessWidget {
                   color: AppColors.textMuted,
                 ),
               ),
-              const SizedBox(width: 2),
-              const Icon(
-                Icons.chevron_right_rounded,
-                size: 18,
-                color: AppColors.textMuted,
-              ),
             ],
           ),
         ),
