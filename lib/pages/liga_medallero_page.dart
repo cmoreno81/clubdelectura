@@ -206,7 +206,7 @@ class _MedallaTile extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  medalla.tier.etiqueta,
+                  medalla.tier.tituloEnDivision(medalla.division),
                   style: AppTextStyles.body.copyWith(
                     fontWeight: FontWeight.w700,
                   ),

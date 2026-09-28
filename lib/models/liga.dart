@@ -48,6 +48,17 @@ enum LigaDivision {
     LigaDivision.platino => 'PLATINO',
     LigaDivision.diamante => 'DIAMANTE',
   };
+
+  /// La división justo por encima en la escalera — null desde Diamante, que
+  /// no tiene ascenso posible. Para saber a qué división se asciende: una
+  /// medalla ASCENSO guarda la división de esa temporada (la de origen), no
+  /// la de destino.
+  LigaDivision? get siguiente {
+    final i = LigaDivision.values.indexOf(this);
+    return i + 1 < LigaDivision.values.length
+        ? LigaDivision.values[i + 1]
+        : null;
+  }
 }
 
 /// Medallas de temporada — trofeos acumulables tipo videojuego, ganados al
@@ -65,9 +76,9 @@ enum LigaMedallaTier {
   final Color color;
 
   String get etiqueta => switch (this) {
-    LigaMedallaTier.podioOro => 'Oro de temporada',
-    LigaMedallaTier.podioPlata => 'Plata de temporada',
-    LigaMedallaTier.podioBronce => 'Bronce de temporada',
+    LigaMedallaTier.podioOro => '1ª de tu división',
+    LigaMedallaTier.podioPlata => '2ª de tu división',
+    LigaMedallaTier.podioBronce => '3ª de tu división',
     LigaMedallaTier.ascenso => 'Ascenso de división',
     LigaMedallaTier.diamante => 'Alcanzó Diamante',
     LigaMedallaTier.constancia => 'Constancia',
@@ -82,6 +93,19 @@ enum LigaMedallaTier {
     LigaMedallaTier.diamante => 'Llegar a la división Diamante por primera vez.',
     LigaMedallaTier.constancia =>
       'Jugar temporadas seguidas sin parar (3, 5, 10, 20, 30...).',
+  };
+
+  /// Título de una medalla concreta, con la división a la que se refiere —
+  /// "1ª de división Bronce" pesa distinto que "1ª de división Diamante", y
+  /// para un ascenso deja claro a qué división se sube (nunca la que
+  /// guarda la propia medalla, que es la de origen: ver [LigaDivision.siguiente]).
+  String tituloEnDivision(LigaDivision division) => switch (this) {
+    LigaMedallaTier.podioOro => '1ª de división ${division.etiqueta}',
+    LigaMedallaTier.podioPlata => '2ª de división ${division.etiqueta}',
+    LigaMedallaTier.podioBronce => '3ª de división ${division.etiqueta}',
+    LigaMedallaTier.ascenso =>
+      'Ascenso a división ${(division.siguiente ?? division).etiqueta}',
+    LigaMedallaTier.diamante || LigaMedallaTier.constancia => etiqueta,
   };
 
   static LigaMedallaTier? fromJson(String? value) => switch (value) {
