@@ -90,8 +90,8 @@ enum LigaMedallaTier {
     LigaMedallaTier.constancia => 'Constancia',
     LigaMedallaTier.rachaPerfecta => 'Racha perfecta',
     LigaMedallaTier.polifacetica => 'Polifacética',
-    LigaMedallaTier.bicampeona => 'Bicampeona',
-    LigaMedallaTier.hattrick => 'Hattrick',
+    LigaMedallaTier.bicampeona => 'Bicampeona de Diamante',
+    LigaMedallaTier.hattrick => 'Hattrick de Diamante',
     LigaMedallaTier.remontada => 'Remontada',
     LigaMedallaTier.libroDelAnio => 'Libro del Año',
   };
@@ -110,9 +110,12 @@ enum LigaMedallaTier {
     LigaMedallaTier.polifacetica =>
       'Haber jugado alguna vez en las 5 divisiones.',
     LigaMedallaTier.bicampeona =>
-      'Ganar el oro de tu división dos temporadas seguidas.',
+      'Ganar el oro de Diamante dos temporadas seguidas — la división '
+          'techo no tiene ascenso, así que es la única donde se puede '
+          'repetir.',
     LigaMedallaTier.hattrick =>
-      'Ganar el oro de la misma división por 3ª vez.',
+      'Ganar el oro de Diamante por 3ª vez (no hace falta que sea '
+          'seguida). El trofeo más difícil de todos.',
     LigaMedallaTier.remontada =>
       'Subir 5 puestos o más en tu división en un solo ciclo.',
     LigaMedallaTier.libroDelAnio =>
@@ -129,8 +132,7 @@ enum LigaMedallaTier {
     LigaMedallaTier.podioBronce => '3ª de división ${division.etiqueta}',
     LigaMedallaTier.ascenso =>
       'Ascenso a división ${(division.siguiente ?? division).etiqueta}',
-    LigaMedallaTier.bicampeona || LigaMedallaTier.hattrick =>
-      '$etiqueta en división ${division.etiqueta}',
+    // Bicampeona y Hattrick ya llevan "de Diamante" en su propia etiqueta.
     _ => etiqueta,
   };
 
