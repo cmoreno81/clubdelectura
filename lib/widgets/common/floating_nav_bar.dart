@@ -171,11 +171,20 @@ class _FloatingNavItem extends StatelessWidget {
                   ),
                   if (showLabel) ...[
                     const SizedBox(height: 2),
-                    Text(
-                      destination.label,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: labelStyle,
+                    // FittedBox en vez de maxLines+ellipsis: con 6 pestañas
+                    // ("Clubvisión", "Lecturas"...) el hueco es demasiado
+                    // estrecho para el texto completo a tamaño normal — mejor
+                    // encogerlo entero que cortarlo con "...".
+                    SizedBox(
+                      width: double.infinity,
+                      child: FittedBox(
+                        fit: BoxFit.scaleDown,
+                        child: Text(
+                          destination.label,
+                          maxLines: 1,
+                          style: labelStyle,
+                        ),
+                      ),
                     ),
                   ],
                 ],
