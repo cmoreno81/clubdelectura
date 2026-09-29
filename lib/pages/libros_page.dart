@@ -287,6 +287,8 @@ class _LibrosPageState extends State<LibrosPage> with WidgetsBindingObserver {
     });
 
     return Scaffold(
+      backgroundColor: widget.globalNav != null ? Colors.transparent : null,
+      extendBody: widget.globalNav != null,
       bottomNavigationBar: widget.globalNav?.buildFloatingNavBar(),
       appBar: AppBar(
         toolbarHeight: 64,

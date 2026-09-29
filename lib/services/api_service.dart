@@ -464,6 +464,24 @@ class ApiService {
     }
   }
 
+  Future<void> abandonarSaga({required String sagaId}) async {
+    final response = await _client.post(
+      Uri.parse('$baseUrl?action=abandonarSaga'),
+      headers: const {'Content-Type': 'application/json'},
+      body: jsonEncode({'sagaId': sagaId}),
+    );
+    if (response.statusCode != 200) throw ApiException.fromResponse(response);
+    final decoded = _decodeJson(response);
+    if (decoded is! Map<String, dynamic> || decoded['ok'] != true) {
+      throw ApiException(
+        statusCode: response.statusCode,
+        message: decoded is Map<String, dynamic>
+            ? decoded['mensaje']?.toString() ?? 'No se pudo abandonar la saga.'
+            : 'No se pudo abandonar la saga.',
+      );
+    }
+  }
+
   Future<List<SagaOculta>> getSagasOcultas() async {
     final response = await _client.get(
       Uri.parse(baseUrl).replace(queryParameters: {'action': 'sagasOcultas'}),

@@ -108,6 +108,8 @@ class _LigaPageState extends State<LigaPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: widget.globalNav != null ? Colors.transparent : null,
+      extendBody: widget.globalNav != null,
       appBar: AppBar(
         title: const Text('Ligas de ClubReads'),
         actions: [

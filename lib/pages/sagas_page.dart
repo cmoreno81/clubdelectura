@@ -599,6 +599,38 @@ class _SagasPageState extends State<SagasPage> {
     );
   }
 
+  Future<void> _abandonSeries(PerfilSaga saga) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('¿Abandonar esta saga?'),
+        content: Text(
+          '${saga.nombre} pasará a la sección "Abandonadas".\n\n'
+          'Tus libros, lecturas, fechas, valoraciones y reseñas no se '
+          'eliminarán de la biblioteca.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancelar'),
+          ),
+          FilledButton.icon(
+            style: FilledButton.styleFrom(backgroundColor: AppColors.danger),
+            onPressed: () => Navigator.pop(context, true),
+            icon: const Icon(Icons.heart_broken_outlined),
+            label: const Text('Abandonar saga'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !mounted) return;
+
+    await _guardarYRecargar(
+      () => ApiService().abandonarSaga(sagaId: saga.id),
+      mensajeExito: '${saga.nombre} se ha marcado como abandonada.',
+    );
+  }
+
   Future<void> _onAddToLibrary(
     PerfilSaga saga,
     PerfilSagaVolumen volumen,
@@ -1083,6 +1115,9 @@ class _SagasPageState extends State<SagasPage> {
                 onAddToLibrary: (volumen) =>
                     _onAddToLibrary(saga, volumen), // ← nuevo
                 onEditSeries: () => _editSeries(saga),
+                onAbandonSeries: saga.abandonada || saga.completada
+                    ? null
+                    : () => _abandonSeries(saga),
                 onHideSeries: () => _hideSeries(saga),
                 onRemoveSeries: () => _removeSeries(saga),
                 onReorderVolumes: (newOrder) => _reorderVolumes(saga, newOrder),

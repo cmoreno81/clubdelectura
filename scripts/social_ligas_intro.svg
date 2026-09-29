@@ -1,0 +1,42 @@
+<svg width="1080" height="1080" viewBox="0 0 1080 1080" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <radialGradient id="bg" cx="50%" cy="42%" r="85%">
+      <stop offset="0%" stop-color="#815396"/>
+      <stop offset="55%" stop-color="#7C4F93"/>
+      <stop offset="82%" stop-color="#663F7D"/>
+      <stop offset="100%" stop-color="#4E3164"/>
+    </radialGradient>
+  </defs>
+
+  <rect width="1080" height="1080" fill="url(#bg)"/>
+
+  <!-- MUY PRONTO -->
+  <text x="540" y="142" text-anchor="middle" font-family="Georgia, 'Times New Roman', serif"
+        font-size="26" font-weight="700" letter-spacing="6" fill="#D4AC66">MUY PRONTO</text>
+
+  <!-- coins, centered over the middle bar (canvas center) -->
+  <circle cx="527" cy="332" r="25.5" fill="#E8C288"/>
+  <circle cx="552" cy="332" r="25.5" fill="#D3AA8F"/>
+
+  <!-- bars, centered on the canvas (x=540) -->
+  <rect x="424" y="438" width="52" height="122" rx="16" fill="#D9C8DC"/>
+  <rect x="512" y="380" width="56" height="180" rx="16" fill="#F2E8D6"/>
+  <rect x="600" y="438" width="56" height="122" rx="16" fill="#D9C8DC"/>
+
+  <!-- trophy ribbon accent (small star) -->
+  <circle cx="540" cy="336" r="10" fill="#F2E8D6" opacity="0.0"/>
+
+  <!-- headline -->
+  <text x="540" y="700" text-anchor="middle" font-family="Georgia, 'Times New Roman', serif"
+        font-size="58" font-weight="700" fill="#F3ECD9">Leer también puede</text>
+  <text x="540" y="770" text-anchor="middle" font-family="Georgia, 'Times New Roman', serif"
+        font-size="58" font-weight="700" fill="#F3ECD9">ser un juego</text>
+
+  <!-- logo -->
+  <text x="540" y="930" text-anchor="middle" font-family="Georgia, 'Times New Roman', serif"
+        font-size="64" font-weight="800" fill="#FFFFFF">Club<tspan font-style="italic" fill="#D9AA55">Reads</tspan></text>
+
+  <!-- tagline -->
+  <text x="540" y="980" text-anchor="middle" font-family="Georgia, 'Times New Roman', serif"
+        font-size="24" font-weight="700" letter-spacing="3" fill="#FFFFFF">LIGAS DE CLUBREADS</text>
+</svg>

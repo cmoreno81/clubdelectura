@@ -22,6 +22,7 @@ class PerfilSagaCard extends StatefulWidget {
     this.onHideSeries,
     this.onReorderVolumes,
     this.onRemoveSeries,
+    this.onAbandonSeries,
   });
 
   final PerfilSaga saga;
@@ -36,6 +37,7 @@ class PerfilSagaCard extends StatefulWidget {
   final VoidCallback? onEditSeries;
   final VoidCallback? onHideSeries;
   final VoidCallback? onRemoveSeries;
+  final VoidCallback? onAbandonSeries;
 
   /// Llamado con la nueva lista ordenada de volúmenes (solo los que tienen bookId)
   final Future<void> Function(List<PerfilSagaVolumen> newOrder)?
@@ -92,6 +94,8 @@ class _PerfilSagaCardState extends State<PerfilSagaCard> {
   Widget build(BuildContext context) {
     final accent = saga.completada
         ? const Color(0xFFD39B24)
+        : saga.abandonada
+        ? AppColors.danger
         : saga.alDia
         ? AppColors.success
         : saga.pendiente
@@ -99,6 +103,8 @@ class _PerfilSagaCardState extends State<PerfilSagaCard> {
         : AppColors.primary;
     final estado = saga.completada
         ? 'Completada'
+        : saga.abandonada
+        ? 'Abandonada'
         : saga.alDia
         ? 'Al día'
         : saga.pendiente
@@ -191,6 +197,17 @@ class _PerfilSagaCardState extends State<PerfilSagaCard> {
                           visualDensity: VisualDensity.compact,
                           onPressed: widget.onEditSeries,
                           icon: const Icon(Icons.edit_outlined, size: 19),
+                        ),
+                      if (widget.onAbandonSeries != null)
+                        IconButton(
+                          tooltip: 'Abandonar saga',
+                          visualDensity: VisualDensity.compact,
+                          onPressed: widget.onAbandonSeries,
+                          icon: const Icon(
+                            Icons.heart_broken_outlined,
+                            size: 20,
+                            color: AppColors.danger,
+                          ),
                         ),
                       if (widget.onHideSeries != null)
                         IconButton(
