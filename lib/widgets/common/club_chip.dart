@@ -9,20 +9,31 @@ enum ClubChipVariant { neutral, primary, success, warning, danger, info }
 
 class ClubChip extends StatelessWidget {
   final String label;
+
+  /// Segmento opcional en negrita antes de [label] (p. ej. un contador:
+  /// value: '9', label: 'lectores interesados').
+  final String? value;
   final IconData? icon;
   final bool selected;
   final VoidCallback? onTap;
   final ClubChipVariant variant;
   final EdgeInsetsGeometry? padding;
 
+  /// Si se indica, trunca [label] a ese número de líneas en vez de dejarlo
+  /// envolver libremente (útil en espacios estrechos, p. ej. una columna
+  /// de carrusel).
+  final int? maxLines;
+
   const ClubChip({
     super.key,
     required this.label,
+    this.value,
     this.icon,
     this.selected = false,
     this.onTap,
     this.variant = ClubChipVariant.neutral,
     this.padding,
+    this.maxLines,
   });
 
   @override
@@ -57,10 +68,22 @@ class ClubChip extends StatelessWidget {
             ),
             const SizedBox(width: AppSpacing.xs),
           ],
+          if (value != null) ...[
+            Text(
+              value!,
+              style: AppTextStyles.caption.copyWith(
+                color: selected ? colors.foregroundSelected : colors.foreground,
+                fontWeight: FontWeight.w800,
+              ),
+            ),
+            const SizedBox(width: AppSpacing.xxs),
+          ],
           Flexible(
             child: Text(
               label,
-              softWrap: true,
+              softWrap: maxLines == null,
+              maxLines: maxLines,
+              overflow: maxLines != null ? TextOverflow.ellipsis : null,
               style: AppTextStyles.caption.copyWith(
                 color: selected ? colors.foregroundSelected : colors.foreground,
                 fontWeight: selected ? FontWeight.w700 : FontWeight.w600,

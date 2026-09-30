@@ -6,6 +6,7 @@ import '../../theme/app_colors.dart';
 import '../../theme/app_radius.dart';
 import '../../theme/app_spacing.dart';
 import '../../theme/app_text_styles.dart';
+import '../common/club_chip.dart';
 
 class AchievementsSection extends StatelessWidget {
   const AchievementsSection({super.key, required this.achievements});
@@ -120,22 +121,14 @@ class _CategorySection extends StatelessWidget {
               ),
             ),
             const SizedBox(width: AppSpacing.xs),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-              decoration: BoxDecoration(
-                color: unlockedCount > 0
-                    ? AppColors.primary.withValues(alpha: .12)
-                    : AppColors.surfaceSoft,
-                borderRadius: BorderRadius.circular(AppRadius.pill),
-              ),
-              child: Text(
-                '$unlockedCount/${achievements.length}',
-                style: AppTextStyles.caption.copyWith(
-                  fontWeight: FontWeight.w800,
-                  color: unlockedCount > 0
-                      ? AppColors.primary
-                      : AppColors.textMuted,
-                ),
+            ClubChip(
+              label: '$unlockedCount/${achievements.length}',
+              variant: unlockedCount > 0
+                  ? ClubChipVariant.primary
+                  : ClubChipVariant.neutral,
+              padding: const EdgeInsets.symmetric(
+                horizontal: 8,
+                vertical: 2,
               ),
             ),
           ],

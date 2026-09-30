@@ -4,8 +4,26 @@ import '../../theme/app_colors.dart';
 import '../../theme/app_radius.dart';
 import '../../theme/app_spacing.dart';
 import '../../theme/app_text_styles.dart';
+import '../common/club_chip.dart';
 
 enum ClubMetricVariant { primary, info, success, warning, danger, neutral }
+
+ClubChipVariant _chipVariantFor(ClubMetricVariant variant) {
+  switch (variant) {
+    case ClubMetricVariant.primary:
+      return ClubChipVariant.primary;
+    case ClubMetricVariant.info:
+      return ClubChipVariant.info;
+    case ClubMetricVariant.success:
+      return ClubChipVariant.success;
+    case ClubMetricVariant.warning:
+      return ClubChipVariant.warning;
+    case ClubMetricVariant.danger:
+      return ClubChipVariant.danger;
+    case ClubMetricVariant.neutral:
+      return ClubChipVariant.neutral;
+  }
+}
 
 class ClubMetric extends StatelessWidget {
   final IconData icon;
@@ -27,23 +45,34 @@ class ClubMetric extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // El modo compacto es, visualmente, un ClubChip con un valor destacado:
+    // delegamos en él para que ambos compartan colores, tipografía y radio
+    // en vez de mantener dos paletas "iguales pero no tanto".
+    if (compact) {
+      return ClubChip(
+        icon: icon,
+        value: value,
+        label: label,
+        variant: _chipVariantFor(variant),
+        onTap: onTap,
+      );
+    }
+
     final colors = _resolveColors();
 
     final content = AnimatedContainer(
       duration: const Duration(milliseconds: 180),
       curve: Curves.easeOutCubic,
-      padding: EdgeInsets.symmetric(
-        horizontal: compact ? AppSpacing.sm : AppSpacing.md,
-        vertical: compact ? AppSpacing.xs : AppSpacing.sm,
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.md,
+        vertical: AppSpacing.sm,
       ),
       decoration: BoxDecoration(
         color: colors.background,
-        borderRadius: BorderRadius.circular(
-          compact ? AppRadius.pill : AppRadius.lg,
-        ),
+        borderRadius: BorderRadius.circular(AppRadius.lg),
         border: Border.all(color: colors.border),
       ),
-      child: compact ? _compactContent(colors) : _regularContent(colors),
+      child: _regularContent(colors),
     );
 
     if (onTap == null) {
@@ -53,37 +82,10 @@ class ClubMetric extends StatelessWidget {
     return Material(
       color: Colors.transparent,
       child: InkWell(
-        borderRadius: BorderRadius.circular(
-          compact ? AppRadius.pill : AppRadius.lg,
-        ),
+        borderRadius: BorderRadius.circular(AppRadius.lg),
         onTap: onTap,
         child: content,
       ),
-    );
-  }
-
-  Widget _compactContent(_ClubMetricColors colors) {
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Icon(icon, size: 18, color: colors.foreground),
-        const SizedBox(width: AppSpacing.xs),
-        Text(
-          value,
-          style: AppTextStyles.caption.copyWith(
-            color: colors.foreground,
-            fontWeight: FontWeight.w800,
-          ),
-        ),
-        const SizedBox(width: AppSpacing.xxs),
-        Text(
-          label,
-          style: AppTextStyles.caption.copyWith(
-            color: colors.foreground,
-            fontWeight: FontWeight.w600,
-          ),
-        ),
-      ],
     );
   }
 
