@@ -86,6 +86,13 @@ class _DetalleLibroPageState extends State<DetalleLibroPage> {
   List<PerfilSagaVolumen> _volumenesSaga = const [];
   final Set<String> _anadiendoVolumenSaga = {};
 
+  // Estadísticas de toda la comunidad (ClubReads), independientes del club
+  // desde el que se haya abierto esta ficha. Se cargan aparte porque, salvo
+  // en widget.globalStats, `libro.registros`/`libro.finalizados` solo traen
+  // los datos del club/cuenta desde donde se navegó.
+  List<Libro>? _registrosGlobales;
+  List<LibroFinalizado>? _finalizadosGlobales;
+
   @override
   void initState() {
     super.initState();
@@ -97,6 +104,9 @@ class _DetalleLibroPageState extends State<DetalleLibroPage> {
     _cargarUsuarioActual();
     unawaited(FavoritosService.instance.cargar());
     if (libro.bookId.isNotEmpty) unawaited(_cargarVolumenesSaga());
+    if (!widget.globalStats && libro.bookId.isNotEmpty) {
+      unawaited(_cargarEstadisticasComunidad());
+    }
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
@@ -112,6 +122,37 @@ class _DetalleLibroPageState extends State<DetalleLibroPage> {
     final volumenes = await ApiService().getVolumenesSaga(libro.bookId);
     if (!mounted) return;
     setState(() => _volumenesSaga = volumenes);
+  }
+
+  /// Carga las estadísticas de toda la comunidad (todos los clubes y cuentas
+  /// personales) para esta ficha, al margen del club desde el que se abrió.
+  /// Silenciosa ante fallos: si no hay datos, la sección simplemente no se
+  /// muestra en vez de romper la ficha.
+  Future<void> _cargarEstadisticasComunidad() async {
+    try {
+      final data = await ApiService().getLibroPorId(
+        libro.bookId,
+        global: true,
+      );
+      if (!mounted || data['ok'] != true) return;
+
+      final registrosGlobales = (data['libros'] as List? ?? [])
+          .map((e) => Libro.fromJson(Map<String, dynamic>.from(e as Map)))
+          .toList();
+      final finalizadosGlobales = (data['finalizados'] as List? ?? [])
+          .map(
+            (e) => LibroFinalizado.fromJson(Map<String, dynamic>.from(e as Map)),
+          )
+          .toList();
+
+      if (!mounted) return;
+      setState(() {
+        _registrosGlobales = registrosGlobales;
+        _finalizadosGlobales = finalizadosGlobales;
+      });
+    } catch (_) {
+      // Sin estadísticas de la comunidad: la ficha sigue funcionando igual.
+    }
   }
 
   Future<void> _cargarUsuarioActual() async {
@@ -1365,6 +1406,28 @@ class _DetalleLibroPageState extends State<DetalleLibroPage> {
                   valoraciones: libro.finalizados,
                   mediaValoracion: libro.mediaValoracion,
                   mediaPicante: libro.mediaPicante,
+                ),
+              ],
+
+              // Estadísticas de toda la comunidad ClubReads (todos los
+              // clubes y cuentas personales), además de las del club desde
+              // el que se abrió esta ficha — ver _cargarEstadisticasComunidad.
+              if (!widget.globalStats &&
+                  _finalizadosGlobales != null &&
+                  _registrosGlobales != null &&
+                  (_finalizadosGlobales!.isNotEmpty ||
+                      _registrosGlobales!.isNotEmpty)) ...[
+                const SizedBox(height: AppSpacing.lg),
+                _EstadisticasGlobalesSection(
+                  libro: LibroAgrupado(
+                    libro: libro.libro,
+                    genero: libro.genero,
+                    registros: _registrosGlobales!,
+                    finalizados: _finalizadosGlobales!,
+                    yaLoTengo: libro.yaLoTengo,
+                    coverUrl: libro.coverUrl,
+                    bookId: libro.bookId,
+                  ),
                 ),
               ],
 
