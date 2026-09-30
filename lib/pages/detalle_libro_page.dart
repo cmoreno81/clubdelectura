@@ -93,6 +93,11 @@ class _DetalleLibroPageState extends State<DetalleLibroPage> {
   List<Libro>? _registrosGlobales;
   List<LibroFinalizado>? _finalizadosGlobales;
 
+  bool get _hayEstadisticasComunidad =>
+      _registrosGlobales != null &&
+      _finalizadosGlobales != null &&
+      (_registrosGlobales!.isNotEmpty || _finalizadosGlobales!.isNotEmpty);
+
   @override
   void initState() {
     super.initState();
@@ -1398,37 +1403,35 @@ class _DetalleLibroPageState extends State<DetalleLibroPage> {
               ),
 
               // En vista global las valoraciones ya están integradas en
-              // _EstadisticasGlobalesSection; solo mostramos aquí en modo club.
-              if (!widget.globalStats && libro.finalizados.isNotEmpty) ...[
-                const SizedBox(height: AppSpacing.lg),
-
-                LibroValoracionesSection(
-                  valoraciones: libro.finalizados,
-                  mediaValoracion: libro.mediaValoracion,
-                  mediaPicante: libro.mediaPicante,
-                ),
-              ],
-
-              // Estadísticas de toda la comunidad ClubReads (todos los
-              // clubes y cuentas personales), además de las del club desde
-              // el que se abrió esta ficha — ver _cargarEstadisticasComunidad.
-              if (!widget.globalStats &&
-                  _finalizadosGlobales != null &&
-                  _registrosGlobales != null &&
-                  (_finalizadosGlobales!.isNotEmpty ||
-                      _registrosGlobales!.isNotEmpty)) ...[
-                const SizedBox(height: AppSpacing.lg),
-                _EstadisticasGlobalesSection(
-                  libro: LibroAgrupado(
-                    libro: libro.libro,
-                    genero: libro.genero,
-                    registros: _registrosGlobales!,
-                    finalizados: _finalizadosGlobales!,
-                    yaLoTengo: libro.yaLoTengo,
-                    coverUrl: libro.coverUrl,
-                    bookId: libro.bookId,
+              // _EstadisticasGlobalesSection; en modo club mostramos esa
+              // misma sección (con los datos de toda la comunidad, ver
+              // _cargarEstadisticasComunidad) en cuanto está disponible, ya
+              // que incluye las del club — así no se duplica la info entre
+              // "Valoraciones" y "Estadísticas". Mientras carga, o si no hay
+              // datos de la comunidad, mostramos "Valoraciones" con lo que
+              // ya tenemos del club para no dejar la ficha vacía.
+              if (!widget.globalStats) ...[
+                if (_hayEstadisticasComunidad) ...[
+                  const SizedBox(height: AppSpacing.lg),
+                  _EstadisticasGlobalesSection(
+                    libro: LibroAgrupado(
+                      libro: libro.libro,
+                      genero: libro.genero,
+                      registros: _registrosGlobales!,
+                      finalizados: _finalizadosGlobales!,
+                      yaLoTengo: libro.yaLoTengo,
+                      coverUrl: libro.coverUrl,
+                      bookId: libro.bookId,
+                    ),
                   ),
-                ),
+                ] else if (libro.finalizados.isNotEmpty) ...[
+                  const SizedBox(height: AppSpacing.lg),
+                  LibroValoracionesSection(
+                    valoraciones: libro.finalizados,
+                    mediaValoracion: libro.mediaValoracion,
+                    mediaPicante: libro.mediaPicante,
+                  ),
+                ],
               ],
 
               const SizedBox(height: 80),
