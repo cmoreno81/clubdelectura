@@ -1398,6 +1398,11 @@ String _labelVolumenSaga(String estado) {
       return 'Leído fuera de la app';
     case 'OMITIDO':
       return 'Omitido';
+    case 'PENDIENTE':
+      // "En mi estantería" (la etiqueta compartida de ReadingStatusCopy) no
+      // cabe en la columna estrecha de este carrusel sin truncarse a medio
+      // palabra; aquí, y solo aquí, usamos la versión corta.
+      return 'Pendiente';
     default:
       return ReadingStatusCopy.label(estado);
   }
