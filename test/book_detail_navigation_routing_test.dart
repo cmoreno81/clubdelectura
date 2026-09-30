@@ -376,7 +376,8 @@ void main() {
     );
 
     testWidgets(
-      'tap simple + globalStats + usuario no tiene libro → CatalogBookDetailPage',
+      'tap simple + globalStats + usuario no tiene libro pero otras sí → '
+      'DetalleLibroPage con las estadísticas de la comunidad',
       (tester) async {
         final pushed = await _pumpAndNavigate(
           tester,
@@ -387,6 +388,26 @@ void main() {
             forceFullDetail: false,
             globalStats: true,
             fetchForTesting: _fetchOtrosUsuarios,
+            usuarioActualForTesting: 'cristina',
+          ),
+        );
+        expect(pushed, DetalleLibroPage);
+      },
+    );
+
+    testWidgets(
+      'tap simple + globalStats + nadie en ClubReads tiene el libro → '
+      'CatalogBookDetailPage',
+      (tester) async {
+        final pushed = await _pumpAndNavigate(
+          tester,
+          (ctx) => openCatalogBookDetail(
+            ctx,
+            title: 'El príncipe cruel',
+            bookId: 'book-test',
+            forceFullDetail: false,
+            globalStats: true,
+            fetchForTesting: _fetchNull,
             usuarioActualForTesting: 'cristina',
           ),
         );

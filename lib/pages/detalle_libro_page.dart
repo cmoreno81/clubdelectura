@@ -24,6 +24,7 @@ import '../theme/app_spacing.dart';
 import '../theme/app_text_styles.dart';
 import '../utils/conversacion_libro_utils.dart';
 import '../utils/reading_status_copy.dart';
+import '../widgets/common/club_avatar.dart';
 import '../widgets/common/club_book_cover.dart';
 import '../widgets/common/club_card.dart';
 import '../widgets/common/club_chip.dart';
@@ -1663,7 +1664,15 @@ class _EstadisticasGlobalesSection extends StatelessWidget {
           // ── Gráfica de distribución de puntuaciones ──────────────────────
           if (hayPuntuaciones) ...[
             const SizedBox(height: AppSpacing.lg),
-            _RatingBarChart(counts: counts, maxCount: maxCount),
+            _RatingBarChart(
+              counts: counts,
+              maxCount: maxCount,
+              onTapStars: (stars) => _mostrarValoracionesPorEstrellas(
+                context,
+                stars: stars,
+                finalizados: libro.finalizados,
+              ),
+            ),
           ],
 
           // ── Nivel picante ─────────────────────────────────────────────────
@@ -1682,6 +1691,170 @@ class _EstadisticasGlobalesSection extends StatelessWidget {
           if (hayResenas) ...[
             const SizedBox(height: AppSpacing.lg),
             _ResenasSection(total: totalLeidos, conResena: conResena),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+/// Abre la lista de valoraciones de ClubReads con la puntuación [stars]
+/// pulsada en la gráfica de distribución. Igual que el resto de la vista
+/// global, cada valoración llega ya anonimizada desde el backend salvo que
+/// [LibroFinalizado.mismoClub] sea true (comparte algún club con quien mira).
+void _mostrarValoracionesPorEstrellas(
+  BuildContext context, {
+  required int stars,
+  required List<LibroFinalizado> finalizados,
+}) {
+  final filtradas = finalizados.where((f) {
+    final val = _EstadisticasGlobalesSection._parseRating(f.valoracion);
+    return val > 0 && val.round().clamp(1, 5) == stars;
+  }).toList();
+
+  if (filtradas.isEmpty) return;
+
+  showModalBottomSheet<void>(
+    context: context,
+    isScrollControlled: true,
+    backgroundColor: Colors.transparent,
+    builder: (_) => _ValoracionesPorEstrellaSheet(
+      stars: stars,
+      valoraciones: filtradas,
+    ),
+  );
+}
+
+class _ValoracionesPorEstrellaSheet extends StatelessWidget {
+  const _ValoracionesPorEstrellaSheet({
+    required this.stars,
+    required this.valoraciones,
+  });
+
+  final int stars;
+  final List<LibroFinalizado> valoraciones;
+
+  @override
+  Widget build(BuildContext context) {
+    return DraggableScrollableSheet(
+      initialChildSize: 0.6,
+      minChildSize: 0.35,
+      maxChildSize: 0.92,
+      expand: false,
+      builder: (context, scrollController) {
+        return Container(
+          decoration: const BoxDecoration(
+            color: AppColors.surface,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+          ),
+          child: Column(
+            children: [
+              const SizedBox(height: AppSpacing.sm),
+              Container(
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: AppColors.border,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+              const SizedBox(height: AppSpacing.md),
+              Row(
+                children: [
+                  const SizedBox(width: AppSpacing.lg),
+                  Row(
+                    children: List.generate(
+                      stars,
+                      (_) => const Icon(
+                        Icons.star_rounded,
+                        color: AppColors.gold,
+                        size: 20,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: AppSpacing.sm),
+                  Expanded(
+                    child: Text(
+                      valoraciones.length == 1
+                          ? '1 lectora'
+                          : '${valoraciones.length} lectoras',
+                      style: AppTextStyles.subtitle.copyWith(
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: AppSpacing.lg),
+                ],
+              ),
+              const SizedBox(height: AppSpacing.md),
+              const Divider(height: 1),
+              Expanded(
+                child: ListView.separated(
+                  controller: scrollController,
+                  padding: const EdgeInsets.all(AppSpacing.lg),
+                  itemCount: valoraciones.length,
+                  separatorBuilder: (_, __) =>
+                      const SizedBox(height: AppSpacing.md),
+                  itemBuilder: (context, index) =>
+                      _ValoracionAnonimaCard(valoracion: valoraciones[index]),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+}
+
+class _ValoracionAnonimaCard extends StatelessWidget {
+  const _ValoracionAnonimaCard({required this.valoracion});
+
+  final LibroFinalizado valoracion;
+
+  @override
+  Widget build(BuildContext context) {
+    final nombre = valoracion.mismoClub
+        ? valoracion.usuario
+        : 'Lectora de otro club';
+    final resena = valoracion.resena.trim();
+
+    return Container(
+      padding: const EdgeInsets.all(AppSpacing.md),
+      decoration: BoxDecoration(
+        color: AppColors.surfaceSoft,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppColors.border),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              ClubAvatar(
+                nombre: nombre,
+                imageUrl: valoracion.mismoClub ? valoracion.avatarUrl : '',
+                size: 40,
+              ),
+              const SizedBox(width: AppSpacing.sm),
+              Expanded(
+                child: Text(
+                  nombre,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: AppTextStyles.body.copyWith(
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          if (resena.isNotEmpty) ...[
+            const SizedBox(height: AppSpacing.sm),
+            Text(
+              resena,
+              style: AppTextStyles.bodySecondary.copyWith(height: 1.35),
+            ),
           ],
         ],
       ),
@@ -1987,10 +2160,12 @@ class _RatingBarChart extends StatelessWidget {
   const _RatingBarChart({
     required this.counts,
     required this.maxCount,
+    this.onTapStars,
   });
 
   final Map<int, int> counts;
   final int maxCount;
+  final ValueChanged<int>? onTapStars;
 
   @override
   Widget build(BuildContext context) {
@@ -2018,6 +2193,9 @@ class _RatingBarChart extends StatelessWidget {
               stars: stars,
               count: counts[stars] ?? 0,
               maxCount: maxCount,
+              onTap: onTapStars == null || (counts[stars] ?? 0) == 0
+                  ? null
+                  : () => onTapStars!(stars),
             ),
             if (stars > 1) const SizedBox(height: AppSpacing.sm),
           ],
@@ -2032,16 +2210,18 @@ class _BarRow extends StatelessWidget {
     required this.stars,
     required this.count,
     required this.maxCount,
+    this.onTap,
   });
 
   final int stars;
   final int count;
   final int maxCount;
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
     final ratio = maxCount > 0 ? count / maxCount : 0.0;
-    return Row(
+    final row = Row(
       children: [
         // Etiqueta de estrellas
         SizedBox(
@@ -2105,6 +2285,17 @@ class _BarRow extends StatelessWidget {
           ),
         ),
       ],
+    );
+
+    if (onTap == null) return row;
+
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(9),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 2),
+        child: row,
+      ),
     );
   }
 }
