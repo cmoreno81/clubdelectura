@@ -1422,23 +1422,17 @@ class _DetalleLibroPageState extends State<DetalleLibroPage> {
               // los de toda la comunidad — así la ficha nunca se queda sin
               // nada que mostrar mientras esa petición está en curso o si
               // falla (p.ej. sin conexión).
+              // TEMPORAL: placeholder en vez de _EstadisticasGlobalesSection
+              // para descartar si el crash de semantics viene de dentro de
+              // esa sección o es algo ajeno a ella.
               if (!widget.globalStats &&
                   (libro.registros.isNotEmpty ||
                       libro.finalizados.isNotEmpty ||
                       _hayEstadisticasComunidad)) ...[
                 const SizedBox(height: AppSpacing.lg),
-                _EstadisticasGlobalesSection(
-                  libro: _hayEstadisticasComunidad
-                      ? LibroAgrupado(
-                          libro: libro.libro,
-                          genero: libro.genero,
-                          registros: _registrosGlobales!,
-                          finalizados: _finalizadosGlobales!,
-                          yaLoTengo: libro.yaLoTengo,
-                          coverUrl: libro.coverUrl,
-                          bookId: libro.bookId,
-                        )
-                      : libro,
+                const Padding(
+                  padding: EdgeInsets.all(AppSpacing.md),
+                  child: Text('ESTADISTICAS PLACEHOLDER (prueba de descarte)'),
                 ),
               ],
 
