@@ -251,9 +251,9 @@ class _ResumenAnonimos extends StatelessWidget {
       ...conteos.keys.where((estado) => !_ordenEstados.contains(estado)),
     ];
 
-    // Sin frase introductoria: repetía lo que ya dice la cabecera de la
-    // sección ("Lectores interesados" + el contador de miembros), así que
-    // aquí solo van los chips por estado.
+    // Sin la frase larga de antes ("También lo tienen X personas..."),
+    // que repetía la cabecera de la sección — pero sí una etiqueta corta,
+    // para que no parezca que estos chips son gente de tu propio club.
     return Container(
       padding: const EdgeInsets.all(AppSpacing.md),
       decoration: BoxDecoration(
@@ -261,17 +261,41 @@ class _ResumenAnonimos extends StatelessWidget {
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: AppColors.divider),
       ),
-      child: Wrap(
-        spacing: AppSpacing.sm,
-        runSpacing: AppSpacing.sm,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          for (final estado in estados)
-            ClubChip(
-              icon: _LectoraCard._iconoEstado(estado),
-              value: '${conteos[estado]}',
-              label: _LectoraCard._labelEstado(estado),
-              variant: _LectoraCard._varianteEstado(estado),
-            ),
+          Row(
+            children: [
+              const Icon(
+                Icons.groups_2_outlined,
+                size: 14,
+                color: AppColors.textMuted,
+              ),
+              const SizedBox(width: AppSpacing.xxs),
+              Text(
+                'De otros clubes',
+                style: AppTextStyles.caption.copyWith(
+                  fontWeight: FontWeight.w700,
+                  color: AppColors.textMuted,
+                  letterSpacing: .3,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: AppSpacing.sm),
+          Wrap(
+            spacing: AppSpacing.sm,
+            runSpacing: AppSpacing.sm,
+            children: [
+              for (final estado in estados)
+                ClubChip(
+                  icon: _LectoraCard._iconoEstado(estado),
+                  value: '${conteos[estado]}',
+                  label: _LectoraCard._labelEstado(estado),
+                  variant: _LectoraCard._varianteEstado(estado),
+                ),
+            ],
+          ),
         ],
       ),
     );
