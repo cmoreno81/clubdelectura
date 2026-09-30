@@ -1243,22 +1243,18 @@ class _DetalleLibroPageState extends State<DetalleLibroPage> {
             ],
           ],
         ),
-        floatingActionButton: IgnorePointer(
-          ignoring: !_mostrarVolverArriba,
-          child: AnimatedScale(
-            duration: const Duration(milliseconds: 200),
-            scale: _mostrarVolverArriba ? 1 : 0,
-            child: AnimatedOpacity(
-              duration: const Duration(milliseconds: 200),
-              opacity: _mostrarVolverArriba ? 1 : 0,
-              child: FloatingActionButton.small(
+        // El Scaffold ya anima la entrada/salida del FAB por su cuenta
+        // (floatingActionButtonAnimator) cuando cambia entre null y un
+        // widget; el envoltorio manual anterior (IgnorePointer +
+        // AnimatedScale + AnimatedOpacity, recalculado en cada scroll)
+        // provocaba errores de semantics en Flutter.
+        floatingActionButton: _mostrarVolverArriba
+            ? FloatingActionButton.small(
                 tooltip: 'Volver arriba',
                 onPressed: _volverArriba,
                 child: const Icon(Icons.keyboard_arrow_up_rounded),
-              ),
-            ),
-          ),
-        ),
+              )
+            : null,
         body: SafeArea(
           child: ListView(
             controller: _scrollController,
