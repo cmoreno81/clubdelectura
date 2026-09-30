@@ -1822,7 +1822,7 @@ class ApiService {
     return data is Map<String, dynamic> && data['ok'] == true;
   }
 
-  /// Devuelve la visibilidad actual del perfil: 'CLUB' o 'PRIVADO'.
+  /// Devuelve la visibilidad actual del perfil: 'CLUB', 'PRIVADO' o 'PUBLICO'.
   Future<String> getPrivacidadPerfil() async {
     final response = await _client.get(
       Uri.parse('$baseUrl?action=privacidadPerfil'),
