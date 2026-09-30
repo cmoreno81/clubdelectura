@@ -20,6 +20,7 @@ import '../services/kit_lectura_service.dart';
 import '../services/usuario_service.dart';
 import '../services/library_refresh_notifier.dart';
 import '../theme/app_colors.dart';
+import '../theme/app_radius.dart';
 import '../theme/app_spacing.dart';
 import '../theme/app_text_styles.dart';
 import '../utils/conversacion_libro_utils.dart';
@@ -1401,6 +1402,74 @@ String _labelVolumenSaga(String estado) {
   }
 }
 
+IconData _iconVolumenSaga(String estado) {
+  switch (estado) {
+    case 'LEIDO_EXTERNO':
+      return Icons.history_edu_rounded;
+    case 'OMITIDO':
+      return Icons.block_rounded;
+    default:
+      return ReadingStatusCopy.icon(estado);
+  }
+}
+
+Color _colorVolumenSaga(String estado) {
+  switch (estado) {
+    case 'LEIDO':
+    case 'FINALIZADO':
+    case 'LEIDO_EXTERNO':
+      return AppColors.primary;
+    case 'LEYENDO':
+    case 'RELECTURA':
+      return AppColors.info;
+    case 'PAUSADO':
+      return AppColors.warning;
+    case 'ABANDONADO':
+      return AppColors.danger;
+    case 'OMITIDO':
+      return AppColors.textMuted;
+    default:
+      return AppColors.warning;
+  }
+}
+
+class _EstadoVolumenSagaPill extends StatelessWidget {
+  const _EstadoVolumenSagaPill({required this.estado});
+
+  final String estado;
+
+  @override
+  Widget build(BuildContext context) {
+    final color = _colorVolumenSaga(estado);
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: .15),
+        borderRadius: BorderRadius.circular(AppRadius.pill),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(_iconVolumenSaga(estado), size: 11, color: color),
+          const SizedBox(width: 3),
+          Flexible(
+            child: Text(
+              _labelVolumenSaga(estado),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                fontSize: 10,
+                fontWeight: FontWeight.w800,
+                color: color,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 class _OtrosVolumenesSagaSection extends StatelessWidget {
   const _OtrosVolumenesSagaSection({
     required this.volumenes,
@@ -1453,23 +1522,17 @@ class _OtrosVolumenesSagaSection extends StatelessWidget {
                     const SizedBox(height: AppSpacing.xs),
                     Text(
                       volumen.titulo,
-                      maxLines: 1,
+                      maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                       style: AppTextStyles.caption.copyWith(
-                        fontWeight: FontWeight.w700,
+                        fontWeight: FontWeight.w800,
+                        color: AppColors.textPrimary,
+                        height: 1.2,
                       ),
                     ),
                     const SizedBox(height: AppSpacing.xs),
                     if (yaLoTiene)
-                      Text(
-                        _labelVolumenSaga(volumen.estado),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: AppTextStyles.caption.copyWith(
-                          color: AppColors.textMuted,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      )
+                      _EstadoVolumenSagaPill(estado: volumen.estado)
                     else
                       SizedBox(
                         width: double.infinity,
