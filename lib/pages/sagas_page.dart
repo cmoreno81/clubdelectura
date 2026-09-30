@@ -1130,6 +1130,9 @@ class _SagasPageState extends State<SagasPage> {
                 onAbandonSeries: saga.abandonada || saga.completada
                     ? null
                     : () => _abandonSeries(saga),
+                onRecoverSeries: saga.abandonada
+                    ? () => _recoverSeries(saga)
+                    : null,
                 onHideSeries: () => _hideSeries(saga),
                 onRemoveSeries: () => _removeSeries(saga),
                 onReorderVolumes: (newOrder) => _reorderVolumes(saga, newOrder),
