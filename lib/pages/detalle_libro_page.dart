@@ -40,7 +40,6 @@ import '../widgets/libros/libro_header.dart';
 import '../widgets/libros/libro_interesadas_section.dart';
 import '../widgets/libros/mi_ficha_lectura_card.dart';
 import '../widgets/libros/libro_section.dart';
-import '../widgets/libros/libro_valoraciones_section.dart';
 import 'kit_export_page.dart';
 import 'kit_lectura_page.dart';
 import 'nuevo_libro_page.dart';
@@ -1441,36 +1440,34 @@ class _DetalleLibroPageState extends State<DetalleLibroPage> {
                 permiteAbrirConversacion: miEstado == 'LEYENDO',
               ),
 
-              // En vista global las valoraciones ya están integradas en
-              // _EstadisticasGlobalesSection; en modo club mostramos esa
-              // misma sección (con los datos de toda la comunidad, ver
-              // _cargarEstadisticasComunidad) en cuanto está disponible, ya
-              // que incluye las del club — así no se duplica la info entre
-              // "Valoraciones" y "Estadísticas". Mientras carga, o si no hay
-              // datos de la comunidad, mostramos "Valoraciones" con lo que
-              // ya tenemos del club para no dejar la ficha vacía.
-              if (!widget.globalStats) ...[
-                if (_hayEstadisticasComunidad) ...[
-                  const SizedBox(height: AppSpacing.lg),
-                  _EstadisticasGlobalesSection(
-                    libro: LibroAgrupado(
-                      libro: libro.libro,
-                      genero: libro.genero,
-                      registros: _registrosGlobales!,
-                      finalizados: _finalizadosGlobales!,
-                      yaLoTengo: libro.yaLoTengo,
-                      coverUrl: libro.coverUrl,
-                      bookId: libro.bookId,
-                    ),
-                  ),
-                ] else if (libro.finalizados.isNotEmpty) ...[
-                  const SizedBox(height: AppSpacing.lg),
-                  LibroValoracionesSection(
-                    valoraciones: libro.finalizados,
-                    mediaValoracion: libro.mediaValoracion,
-                    mediaPicante: libro.mediaPicante,
-                  ),
-                ],
+              // En vista global las estadísticas ya están integradas más
+              // arriba; en modo club mostramos aquí la misma sección de
+              // estadísticas (media, distribución, picante, formato...),
+              // que sustituye a "Valoraciones" porque la incluye. Se ve
+              // desde el primer instante con los datos que ya tenemos del
+              // club (síncronos, sin esperar red) y, en cuanto termina de
+              // cargar _cargarEstadisticasComunidad, se actualiza sola con
+              // los de toda la comunidad — así la ficha nunca se queda sin
+              // nada que mostrar mientras esa petición está en curso o si
+              // falla (p.ej. sin conexión).
+              if (!widget.globalStats &&
+                  (libro.registros.isNotEmpty ||
+                      libro.finalizados.isNotEmpty ||
+                      _hayEstadisticasComunidad)) ...[
+                const SizedBox(height: AppSpacing.lg),
+                _EstadisticasGlobalesSection(
+                  libro: _hayEstadisticasComunidad
+                      ? LibroAgrupado(
+                          libro: libro.libro,
+                          genero: libro.genero,
+                          registros: _registrosGlobales!,
+                          finalizados: _finalizadosGlobales!,
+                          yaLoTengo: libro.yaLoTengo,
+                          coverUrl: libro.coverUrl,
+                          bookId: libro.bookId,
+                        )
+                      : libro,
+                ),
               ],
 
               const SizedBox(height: 80),
