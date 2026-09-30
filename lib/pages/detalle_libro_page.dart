@@ -29,6 +29,7 @@ import '../widgets/common/club_book_cover.dart';
 import '../widgets/common/club_card.dart';
 import '../widgets/common/libro_finalizado_celebration.dart';
 import '../widgets/common/screen_hint_banner.dart';
+import '../widgets/ui/club_section_title.dart';
 import '../widgets/libros/add_book_sheet.dart';
 import '../widgets/libros/apply_initial_status.dart';
 import '../widgets/libros/conversaciones_libro_card.dart';
@@ -1488,11 +1489,13 @@ class _OtrosVolumenesSagaSection extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          'Otros libros de la saga',
-          style: AppTextStyles.subtitle.copyWith(fontWeight: FontWeight.w800),
+        const ClubSectionTitle(
+          icon: Icons.collections_bookmark_rounded,
+          color: AppColors.primary,
+          title: 'Otros libros de la saga',
+          subtitle: 'Guarda el resto de tomos sin salir de la ficha',
         ),
-        const SizedBox(height: AppSpacing.sm),
+        const SizedBox(height: AppSpacing.md),
         SizedBox(
           height: 260,
           child: ListView.separated(
