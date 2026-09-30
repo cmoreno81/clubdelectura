@@ -1842,8 +1842,8 @@ class _ValoracionesPorEstrellaSheet extends StatelessWidget {
                   Expanded(
                     child: Text(
                       valoraciones.length == 1
-                          ? '1 lectora'
-                          : '${valoraciones.length} lectoras',
+                          ? '1 lector'
+                          : '${valoraciones.length} lectores',
                       style: AppTextStyles.subtitle.copyWith(
                         fontWeight: FontWeight.w800,
                       ),
@@ -1873,16 +1873,25 @@ class _ValoracionesPorEstrellaSheet extends StatelessWidget {
   }
 }
 
-class _ValoracionAnonimaCard extends StatelessWidget {
+class _ValoracionAnonimaCard extends StatefulWidget {
   const _ValoracionAnonimaCard({required this.valoracion});
 
   final LibroFinalizado valoracion;
 
   @override
+  State<_ValoracionAnonimaCard> createState() =>
+      _ValoracionAnonimaCardState();
+}
+
+class _ValoracionAnonimaCardState extends State<_ValoracionAnonimaCard> {
+  bool _resenaVisible = false;
+
+  @override
   Widget build(BuildContext context) {
+    final valoracion = widget.valoracion;
     final nombre = valoracion.mismoClub
         ? valoracion.usuario
-        : 'Lectora de otro club';
+        : 'Lector de otro club';
     final resena = valoracion.resena.trim();
 
     return Container(
@@ -1900,7 +1909,8 @@ class _ValoracionAnonimaCard extends StatelessWidget {
               ClubAvatar(
                 // Para anónimas, nombre vacío + neutralWhenUnnamed fuerza el
                 // icono de persona genérico en vez de sacar iniciales de
-                // "Lectora de otro club" (que parecían las de alguien real).
+                // "Lector de otro club" (que parecían las de alguien real).
+                // Con perfil público o mismo club, se ve la foto real.
                 nombre: valoracion.mismoClub ? nombre : '',
                 imageUrl: valoracion.mismoClub ? valoracion.avatarUrl : '',
                 neutralWhenUnnamed: true,
@@ -1921,9 +1931,52 @@ class _ValoracionAnonimaCard extends StatelessWidget {
           ),
           if (resena.isNotEmpty) ...[
             const SizedBox(height: AppSpacing.sm),
-            Text(
-              resena,
-              style: AppTextStyles.bodySecondary.copyWith(height: 1.35),
+            AnimatedSwitcher(
+              duration: const Duration(milliseconds: 250),
+              child: _resenaVisible
+                  ? Text(
+                      key: const ValueKey('resena-visible'),
+                      resena,
+                      style: AppTextStyles.bodySecondary.copyWith(
+                        height: 1.35,
+                        fontStyle: FontStyle.italic,
+                      ),
+                    )
+                  : InkWell(
+                      key: const ValueKey('resena-oculta'),
+                      onTap: () => setState(() => _resenaVisible = true),
+                      borderRadius: BorderRadius.circular(12),
+                      child: Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: AppSpacing.sm,
+                          vertical: AppSpacing.sm,
+                        ),
+                        decoration: BoxDecoration(
+                          color: AppColors.midnight,
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: const Row(
+                          children: [
+                            Icon(
+                              Icons.visibility_off_outlined,
+                              color: Colors.white,
+                              size: 18,
+                            ),
+                            SizedBox(width: AppSpacing.sm),
+                            Expanded(
+                              child: Text(
+                                'Reflexión oculta · toca para revelar posibles spoilers',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 13,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
             ),
           ],
         ],
@@ -2022,13 +2075,17 @@ class _FormatoSection extends StatelessWidget {
           ),
           const SizedBox(height: AppSpacing.md),
           Row(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: _formatos
                 .where((f) => (formatCounts[f.key] ?? 0) > 0)
                 .map((f) {
               final count = formatCounts[f.key]!;
               final pct = total > 0 ? (count / total * 100).round() : 0;
+              // Anchos iguales para cada pastilla: con flex proporcional al
+              // recuento, un formato minoritario (p.ej. 1 audiolibro frente
+              // a 5 físicos) se quedaba con una columna tan estrecha que su
+              // etiqueta ("Audiolibro") se partía letra a letra.
               return Expanded(
-                flex: count,
                 child: Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 4),
                   child: _FormatoPill(
@@ -2083,10 +2140,16 @@ class _FormatoPill extends StatelessWidget {
           ),
           Text(
             label,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            textAlign: TextAlign.center,
             style: AppTextStyles.caption.copyWith(color: AppColors.textMuted),
           ),
           Text(
             count == 1 ? '1 lector' : '$count lectores',
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            textAlign: TextAlign.center,
             style: AppTextStyles.caption.copyWith(
               color: AppColors.textMuted,
               fontSize: 10,
@@ -2257,6 +2320,16 @@ class _RatingBarChart extends StatelessWidget {
               letterSpacing: .3,
             ),
           ),
+          if (onTapStars != null) ...[
+            const SizedBox(height: 2),
+            Text(
+              'Toca una puntuación para ver esas reseñas',
+              style: AppTextStyles.caption.copyWith(
+                color: AppColors.textMuted,
+                fontSize: 11,
+              ),
+            ),
+          ],
           const SizedBox(height: AppSpacing.md),
           for (int stars = 5; stars >= 1; stars--) ...[
             _BarRow(
