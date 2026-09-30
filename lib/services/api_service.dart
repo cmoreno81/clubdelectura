@@ -482,6 +482,27 @@ class ApiService {
     }
   }
 
+  Future<void> recuperarSaga({
+    required String sagaId,
+    List<String> bookIds = const [],
+  }) async {
+    final response = await _client.post(
+      Uri.parse('$baseUrl?action=recuperarSaga'),
+      headers: const {'Content-Type': 'application/json'},
+      body: jsonEncode({'sagaId': sagaId, 'bookIds': bookIds}),
+    );
+    if (response.statusCode != 200) throw ApiException.fromResponse(response);
+    final decoded = _decodeJson(response);
+    if (decoded is! Map<String, dynamic> || decoded['ok'] != true) {
+      throw ApiException(
+        statusCode: response.statusCode,
+        message: decoded is Map<String, dynamic>
+            ? decoded['mensaje']?.toString() ?? 'No se pudo recuperar la saga.'
+            : 'No se pudo recuperar la saga.',
+      );
+    }
+  }
+
   Future<List<SagaOculta>> getSagasOcultas() async {
     final response = await _client.get(
       Uri.parse(baseUrl).replace(queryParameters: {'action': 'sagasOcultas'}),

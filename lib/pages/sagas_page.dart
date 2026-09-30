@@ -631,6 +631,18 @@ class _SagasPageState extends State<SagasPage> {
     );
   }
 
+  Future<void> _recoverSeries(PerfilSaga saga) async {
+    final bookIds = saga.volumenes
+        .map((v) => v.bookId)
+        .where((id) => id.isNotEmpty)
+        .toList(growable: false);
+
+    await _guardarYRecargar(
+      () => ApiService().recuperarSaga(sagaId: saga.id, bookIds: bookIds),
+      mensajeExito: '${saga.nombre} se ha recuperado.',
+    );
+  }
+
   Future<void> _onAddToLibrary(
     PerfilSaga saga,
     PerfilSagaVolumen volumen,

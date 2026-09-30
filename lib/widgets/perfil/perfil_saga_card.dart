@@ -23,6 +23,7 @@ class PerfilSagaCard extends StatefulWidget {
     this.onReorderVolumes,
     this.onRemoveSeries,
     this.onAbandonSeries,
+    this.onRecoverSeries,
   });
 
   final PerfilSaga saga;
@@ -38,6 +39,7 @@ class PerfilSagaCard extends StatefulWidget {
   final VoidCallback? onHideSeries;
   final VoidCallback? onRemoveSeries;
   final VoidCallback? onAbandonSeries;
+  final VoidCallback? onRecoverSeries;
 
   /// Llamado con la nueva lista ordenada de volúmenes (solo los que tienen bookId)
   final Future<void> Function(List<PerfilSagaVolumen> newOrder)?
@@ -197,6 +199,17 @@ class _PerfilSagaCardState extends State<PerfilSagaCard> {
                           visualDensity: VisualDensity.compact,
                           onPressed: widget.onEditSeries,
                           icon: const Icon(Icons.edit_outlined, size: 19),
+                        ),
+                      if (widget.onRecoverSeries != null)
+                        IconButton(
+                          tooltip: 'Recuperar saga',
+                          visualDensity: VisualDensity.compact,
+                          onPressed: widget.onRecoverSeries,
+                          icon: const Icon(
+                            Icons.restore_rounded,
+                            size: 20,
+                            color: AppColors.success,
+                          ),
                         ),
                       if (widget.onAbandonSeries != null)
                         IconButton(
