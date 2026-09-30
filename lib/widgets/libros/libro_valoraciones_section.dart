@@ -26,6 +26,13 @@ class LibroValoracionesSection extends StatelessWidget {
       return const SizedBox.shrink();
     }
 
+    // Solo se muestra con nombre, foto y reseña quien comparte club contigo:
+    // el resto llega ya anonimizada como "Lectora de otro club" — apilar una
+    // tarjeta completa (con su caja de "reseña oculta" y todo) por cada una
+    // resultaba repetitivo, así que se resumen juntas en una sola tarjeta.
+    final visibles = valoraciones.where((v) => v.mismoClub).toList();
+    final anonimas = valoraciones.where((v) => !v.mismoClub).toList();
+
     return LibroSection(
       icon: Icons.star_outline_rounded,
       color: AppColors.gold,
@@ -54,11 +61,66 @@ class LibroValoracionesSection extends StatelessWidget {
 
           const SizedBox(height: AppSpacing.lg),
 
-          for (var index = 0; index < valoraciones.length; index++) ...[
-            _ValoracionCard(valoracion: valoraciones[index]),
-
-            if (index < valoraciones.length - 1)
+          for (var index = 0; index < visibles.length; index++) ...[
+            _ValoracionCard(valoracion: visibles[index]),
+            if (index < visibles.length - 1 || anonimas.isNotEmpty)
               const SizedBox(height: AppSpacing.md),
+          ],
+
+          if (anonimas.isNotEmpty)
+            _ResumenValoracionesAnonimas(valoraciones: anonimas),
+        ],
+      ),
+    );
+  }
+}
+
+/// Resumen compacto de las valoraciones de otros clubes: una sola tarjeta
+/// con la media y el número de personas, en vez de una tarjeta completa
+/// (avatar, estrellas, caja de "reseña oculta") por cada una anonimizada.
+class _ResumenValoracionesAnonimas extends StatelessWidget {
+  final List<LibroFinalizado> valoraciones;
+
+  const _ResumenValoracionesAnonimas({required this.valoraciones});
+
+  @override
+  Widget build(BuildContext context) {
+    final puntuaciones = valoraciones
+        .map((v) => _ValoracionCardState._numeroEstrellas(v.valoracion))
+        .where((v) => v > 0)
+        .toList();
+    final media = puntuaciones.isEmpty
+        ? 0.0
+        : puntuaciones.reduce((a, b) => a + b) / puntuaciones.length;
+
+    return Container(
+      padding: const EdgeInsets.all(AppSpacing.md),
+      decoration: BoxDecoration(
+        color: AppColors.surfaceSoft,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppColors.divider),
+      ),
+      child: Row(
+        children: [
+          const Icon(
+            Icons.groups_2_outlined,
+            size: 18,
+            color: AppColors.textMuted,
+          ),
+          const SizedBox(width: AppSpacing.sm),
+          Expanded(
+            child: Text(
+              valoraciones.length == 1
+                  ? '1 valoración más, de otro club'
+                  : '${valoraciones.length} valoraciones más, de otros clubes',
+              style: AppTextStyles.bodySecondary.copyWith(
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+          if (media > 0) ...[
+            const SizedBox(width: AppSpacing.sm),
+            _EstrellasCompactas(valoracion: media),
           ],
         ],
       ),

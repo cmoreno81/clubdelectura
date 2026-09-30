@@ -164,6 +164,14 @@ class LibroInteresadasSection extends StatelessWidget {
       return const SizedBox.shrink();
     }
 
+    // Solo mostramos como tarjeta propia a quien comparte club contigo (o
+    // eres tú misma): son las únicas con nombre y foto reales. El resto
+    // llega ya anonimizado desde el backend ("Lectora de otro club") — en
+    // vez de apilar una tarjeta completa por cada una, se resumen juntas
+    // más abajo.
+    final visibles = registros.where((r) => r.mismoClub).toList();
+    final anonimos = registros.where((r) => !r.mismoClub).toList();
+
     // "Tú" siempre primero: es la única tarjeta editable de esta sección
     // (prioridad/formato/estado, y ahora también valoración/picante/idioma
     // en MiFichaLecturaCard cuando ya la terminaste), así que tiene sentido
@@ -171,12 +179,12 @@ class LibroInteresadasSection extends StatelessWidget {
     // estable: no reordena al resto entre sí.
     final actualNormalizado = usuarioActual?.trim().toLowerCase();
     final registrosOrdenados = actualNormalizado == null
-        ? registros
+        ? visibles
         : [
-            ...registros.where(
+            ...visibles.where(
               (r) => r.usuario.trim().toLowerCase() == actualNormalizado,
             ),
-            ...registros.where(
+            ...visibles.where(
               (r) => r.usuario.trim().toLowerCase() != actualNormalizado,
             ),
           ];
@@ -188,27 +196,106 @@ class LibroInteresadasSection extends StatelessWidget {
       subtitle:
           '${registros.length} miembros tienen este libro en su biblioteca',
       child: Column(
-        children: registrosOrdenados.map((registro) {
-          final usuarioNormalizado = registro.usuario.trim().toLowerCase();
-          final esUsuarioActual =
-              usuarioActual != null &&
-              usuarioNormalizado == usuarioActual!.trim().toLowerCase();
-
-          return Padding(
-            padding: const EdgeInsets.only(bottom: AppSpacing.md),
-            child: _LectoraCard(
-              registro: registro,
-              esUsuarioActual: esUsuarioActual,
-              tieneFinalizaciones: usuariosConFinalizacion.contains(
-                usuarioNormalizado,
+        children: [
+          for (final registro in registrosOrdenados)
+            Padding(
+              padding: const EdgeInsets.only(bottom: AppSpacing.md),
+              child: _LectoraCard(
+                registro: registro,
+                esUsuarioActual:
+                    usuarioActual != null &&
+                    registro.usuario.trim().toLowerCase() ==
+                        usuarioActual!.trim().toLowerCase(),
+                tieneFinalizaciones: usuariosConFinalizacion.contains(
+                  registro.usuario.trim().toLowerCase(),
+                ),
+                onCambiarEstado: onCambiarEstado,
+                onQuitarPendientes: onQuitarPendientes,
+                onActualizarPreferencias: onActualizarPreferencias,
+                onPedirValoracion: onPedirValoracion,
               ),
-              onCambiarEstado: onCambiarEstado,
-              onQuitarPendientes: onQuitarPendientes,
-              onActualizarPreferencias: onActualizarPreferencias,
-              onPedirValoracion: onPedirValoracion,
             ),
-          );
-        }).toList(),
+          if (anonimos.isNotEmpty) _ResumenAnonimos(registros: anonimos),
+        ],
+      ),
+    );
+  }
+}
+
+/// Resumen compacto de las lectoras de otros clubes: un contador por estado
+/// en vez de una tarjeta completa (con avatar y hueco de acciones vacío)
+/// por cada una — no aportan nada interactivo, así que no necesitan el
+/// mismo espacio que las tarjetas de tu propio club.
+class _ResumenAnonimos extends StatelessWidget {
+  final List<Libro> registros;
+
+  const _ResumenAnonimos({required this.registros});
+
+  static const _ordenEstados = [
+    'LEYENDO',
+    'PENDIENTE',
+    'PAUSADO',
+    'RELECTURA',
+    'FINALIZADO',
+    'ABANDONADO',
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    final conteos = <String, int>{};
+    for (final registro in registros) {
+      conteos[registro.estado] = (conteos[registro.estado] ?? 0) + 1;
+    }
+    final estados = [
+      ..._ordenEstados.where(conteos.containsKey),
+      ...conteos.keys.where((estado) => !_ordenEstados.contains(estado)),
+    ];
+
+    return Container(
+      padding: const EdgeInsets.all(AppSpacing.md),
+      decoration: BoxDecoration(
+        color: AppColors.surfaceSoft,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppColors.divider),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Icon(
+                Icons.groups_2_outlined,
+                size: 18,
+                color: AppColors.textMuted,
+              ),
+              const SizedBox(width: AppSpacing.xs),
+              Expanded(
+                child: Text(
+                  registros.length == 1
+                      ? 'También lo tiene 1 persona en otro club'
+                      : 'También lo tienen ${registros.length} personas en otros clubes',
+                  style: AppTextStyles.bodySecondary.copyWith(
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: AppSpacing.sm),
+          Wrap(
+            spacing: AppSpacing.sm,
+            runSpacing: AppSpacing.sm,
+            children: [
+              for (final estado in estados)
+                ClubChip(
+                  icon: _LectoraCard._iconoEstado(estado),
+                  value: '${conteos[estado]}',
+                  label: _LectoraCard._labelEstado(estado),
+                  variant: _LectoraCard._varianteEstado(estado),
+                ),
+            ],
+          ),
+        ],
       ),
     );
   }
