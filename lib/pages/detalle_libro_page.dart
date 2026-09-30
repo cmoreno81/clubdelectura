@@ -2372,6 +2372,12 @@ class _BarRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final ratio = maxCount > 0 ? count / maxCount : 0.0;
+    // Barra simplificada (sin LayoutBuilder/Stack/AnimatedContainer ni
+    // InkWell): esa combinación, recién insertada de golpe en el árbol al
+    // llegar los datos de la comunidad, disparaba un assert de semantics
+    // de Flutter ('!semantics.parentDataDirty') que bloqueaba el scroll de
+    // toda la ficha. GestureDetector + FractionallySizedBox evitan el
+    // problema manteniendo el mismo aspecto visual, sin animación.
     final row = Row(
       children: [
         // Etiqueta de estrellas
@@ -2394,32 +2400,24 @@ class _BarRow extends StatelessWidget {
         const SizedBox(width: AppSpacing.sm),
         // Barra
         Expanded(
-          child: LayoutBuilder(
-            builder: (context, constraints) {
-              return Stack(
-                children: [
-                  // Fondo
-                  Container(
-                    height: 18,
-                    decoration: BoxDecoration(
-                      color: AppColors.border.withValues(alpha: .5),
-                      borderRadius: BorderRadius.circular(9),
-                    ),
-                  ),
-                  // Relleno
-                  AnimatedContainer(
-                    duration: const Duration(milliseconds: 400),
-                    curve: Curves.easeOut,
-                    height: 18,
-                    width: constraints.maxWidth * ratio,
-                    decoration: BoxDecoration(
-                      color: AppColors.gold.withValues(alpha: .75),
-                      borderRadius: BorderRadius.circular(9),
-                    ),
-                  ),
-                ],
-              );
-            },
+          child: Container(
+            height: 18,
+            alignment: Alignment.centerLeft,
+            decoration: BoxDecoration(
+              color: AppColors.border.withValues(alpha: .5),
+              borderRadius: BorderRadius.circular(9),
+            ),
+            child: FractionallySizedBox(
+              alignment: Alignment.centerLeft,
+              widthFactor: ratio.clamp(0, 1),
+              child: Container(
+                height: 18,
+                decoration: BoxDecoration(
+                  color: AppColors.gold.withValues(alpha: .75),
+                  borderRadius: BorderRadius.circular(9),
+                ),
+              ),
+            ),
           ),
         ),
         const SizedBox(width: AppSpacing.sm),
@@ -2440,9 +2438,9 @@ class _BarRow extends StatelessWidget {
 
     if (onTap == null) return row;
 
-    return InkWell(
+    return GestureDetector(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(9),
+      behavior: HitTestBehavior.opaque,
       child: Padding(
         padding: const EdgeInsets.symmetric(vertical: 2),
         child: row,
