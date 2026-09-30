@@ -86,6 +86,27 @@ class _DetalleLibroPageState extends State<DetalleLibroPage> {
   List<PerfilSagaVolumen> _volumenesSaga = const [];
   final Set<String> _anadiendoVolumenSaga = {};
 
+  // Botón "volver arriba": la ficha puede hacerse larga (estadísticas,
+  // valoraciones, sagas...), así que a partir de cierto scroll ofrecemos
+  // una forma rápida de subir sin tener que arrastrar varias veces.
+  final ScrollController _scrollController = ScrollController();
+  bool _mostrarVolverArriba = false;
+
+  void _onScroll() {
+    final mostrar = _scrollController.offset > 400;
+    if (mostrar != _mostrarVolverArriba) {
+      setState(() => _mostrarVolverArriba = mostrar);
+    }
+  }
+
+  void _volverArriba() {
+    _scrollController.animateTo(
+      0,
+      duration: const Duration(milliseconds: 400),
+      curve: Curves.easeOutCubic,
+    );
+  }
+
   // Estadísticas de toda la comunidad (ClubReads), independientes del club
   // desde el que se haya abierto esta ficha. Se cargan aparte porque, salvo
   // en widget.globalStats, `libro.registros`/`libro.finalizados` solo traen
@@ -105,6 +126,7 @@ class _DetalleLibroPageState extends State<DetalleLibroPage> {
     libro = widget.libro;
 
     registros = List<Libro>.from(libro.registros);
+    _scrollController.addListener(_onScroll);
 
     _cargarUsuarioActual();
     unawaited(FavoritosService.instance.cargar());
@@ -1211,8 +1233,25 @@ class _DetalleLibroPageState extends State<DetalleLibroPage> {
             ],
           ],
         ),
+        floatingActionButton: IgnorePointer(
+          ignoring: !_mostrarVolverArriba,
+          child: AnimatedScale(
+            duration: const Duration(milliseconds: 200),
+            scale: _mostrarVolverArriba ? 1 : 0,
+            child: AnimatedOpacity(
+              duration: const Duration(milliseconds: 200),
+              opacity: _mostrarVolverArriba ? 1 : 0,
+              child: FloatingActionButton.small(
+                tooltip: 'Volver arriba',
+                onPressed: _volverArriba,
+                child: const Icon(Icons.keyboard_arrow_up_rounded),
+              ),
+            ),
+          ),
+        ),
         body: SafeArea(
           child: ListView(
+            controller: _scrollController,
             padding: EdgeInsets.fromLTRB(
               16,
               16,
@@ -1444,6 +1483,8 @@ class _DetalleLibroPageState extends State<DetalleLibroPage> {
 
   @override
   void dispose() {
+    _scrollController.removeListener(_onScroll);
+    _scrollController.dispose();
     _cerrarAtmosferaDelLibro();
     super.dispose();
   }
