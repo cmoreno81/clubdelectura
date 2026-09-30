@@ -5,6 +5,8 @@ class ConversacionLibro {
   final int comentarios;
   final int likes;
   final String? ultimaActividad;
+  final String clubId;
+  final String clubNombre;
 
   const ConversacionLibro({
     required this.libro,
@@ -13,6 +15,8 @@ class ConversacionLibro {
     required this.comentarios,
     required this.likes,
     required this.ultimaActividad,
+    required this.clubId,
+    required this.clubNombre,
   });
 
   factory ConversacionLibro.fromJson(Map<String, dynamic> json) {
@@ -23,6 +27,8 @@ class ConversacionLibro {
       comentarios: json["comentarios"] ?? 0,
       likes: json["likes"] ?? 0,
       ultimaActividad: json['ultimaActividad']?.toString(),
+      clubId: json['clubId']?.toString() ?? '',
+      clubNombre: json['clubNombre']?.toString() ?? '',
     );
   }
 }

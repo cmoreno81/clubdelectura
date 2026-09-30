@@ -3,7 +3,10 @@ import 'package:flutter/material.dart';
 import '../../navigation/app_page_route.dart';
 import '../../models/conversacion_libro.dart';
 import '../../pages/lectura_page.dart';
+import '../../services/api_exception.dart';
 import '../../services/api_service.dart';
+import '../../services/club_context_controller.dart';
+import '../../services/club_service.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_radius.dart';
 import '../../theme/app_spacing.dart';
@@ -43,6 +46,7 @@ class _ConversacionesLibroCardState extends State<ConversacionesLibroCard> {
   bool _hasMore = true;
   bool _loadingMore = false;
   bool _abriendoConversacion = false;
+  bool _entrando = false;
   late Future<void> _initialLoad;
 
   @override
@@ -68,6 +72,41 @@ class _ConversacionesLibroCardState extends State<ConversacionesLibroCard> {
     }
   }
 
+  /// Cada conversación puede vivir en un club distinto del que tienes
+  /// activo ahora mismo (por eso se lista aquí en primer lugar: para verla
+  /// aunque no sea tu club activo). Antes de entrar, cambiamos el club
+  /// activo al suyo para que la lectura, los capítulos y los comentarios
+  /// se carguen correctamente.
+  Future<void> _entrarEnConversacion(ConversacionLibro conversacion) async {
+    if (_entrando) return;
+    setState(() => _entrando = true);
+    try {
+      if (conversacion.clubId.isNotEmpty) {
+        try {
+          await ClubService().selectClub(conversacion.clubId);
+          ClubContextController.instance.refresh();
+        } on ApiException catch (error) {
+          if (mounted) {
+            ScaffoldMessenger.of(
+              context,
+            ).showSnackBar(SnackBar(content: Text(error.message)));
+          }
+          return;
+        }
+      }
+      if (!mounted) return;
+      await Navigator.push(
+        context,
+        AppPageRoute(
+          builder: (_) =>
+              LecturaPage(libro: widget.libro, coverUrl: widget.coverUrl),
+        ),
+      );
+    } finally {
+      if (mounted) setState(() => _entrando = false);
+    }
+  }
+
   Future<void> _loadMore() async {
     if (_loadingMore || !_hasMore) return;
     _loadingMore = true;
@@ -78,12 +117,20 @@ class _ConversacionesLibroCardState extends State<ConversacionesLibroCard> {
       );
       if (!mounted) return;
       setState(() {
+        // El identificador de club entra en la clave: la misma usuaria puede
+        // tener el mismo libro en lectura activa a la vez en dos clubes
+        // distintos, y sin el clubId una de las dos conversaciones se
+        // descartaría aquí como si fuera un duplicado.
         final known = _conversaciones
-            .map((item) => '${item.libro}|${item.tipo}|${item.estado}')
+            .map(
+              (item) => '${item.clubId}|${item.libro}|${item.tipo}|${item.estado}',
+            )
             .toSet();
         _conversaciones.addAll(
           page.items.where(
-            (item) => known.add('${item.libro}|${item.tipo}|${item.estado}'),
+            (item) => known.add(
+              '${item.clubId}|${item.libro}|${item.tipo}|${item.estado}',
+            ),
           ),
         );
         _cursor = page.nextCursor;
@@ -206,17 +253,8 @@ class _ConversacionesLibroCardState extends State<ConversacionesLibroCard> {
               for (var index = 0; index < conversaciones.length; index++) ...[
                 _ConversacionCard(
                   conversacion: conversaciones[index],
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      AppPageRoute(
-                        builder: (_) => LecturaPage(
-                          libro: widget.libro,
-                          coverUrl: widget.coverUrl,
-                        ),
-                      ),
-                    );
-                  },
+                  entrando: _entrando,
+                  onTap: () => _entrarEnConversacion(conversaciones[index]),
                 ),
 
                 if (index < conversaciones.length - 1)
@@ -254,8 +292,13 @@ class _ConversacionesLibroCardState extends State<ConversacionesLibroCard> {
 class _ConversacionCard extends StatelessWidget {
   final ConversacionLibro conversacion;
   final VoidCallback onTap;
+  final bool entrando;
 
-  const _ConversacionCard({required this.conversacion, required this.onTap});
+  const _ConversacionCard({
+    required this.conversacion,
+    required this.onTap,
+    this.entrando = false,
+  });
 
   bool get esOficial {
     return conversacion.tipo.trim().toUpperCase() == 'OFICIAL';
@@ -276,7 +319,7 @@ class _ConversacionCard extends StatelessWidget {
           ? AppColors.surfaceSoft
           : const Color(0xFFF3F7FD),
       borderColor: colorPrincipal.withValues(alpha: 0.20),
-      onTap: onTap,
+      onTap: entrando ? null : onTap,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -334,19 +377,29 @@ class _ConversacionCard extends StatelessWidget {
 
           const SizedBox(height: AppSpacing.md),
 
-          Align(
-            alignment: Alignment.centerLeft,
-            child: ClubChip(
-              label: estaActiva
-                  ? 'Conversación activa'
-                  : 'Conversación cerrada',
-              icon: estaActiva
-                  ? Icons.radio_button_checked_rounded
-                  : Icons.lock_outline_rounded,
-              variant: estaActiva
-                  ? ClubChipVariant.success
-                  : ClubChipVariant.neutral,
-            ),
+          Wrap(
+            spacing: AppSpacing.sm,
+            runSpacing: AppSpacing.sm,
+            children: [
+              ClubChip(
+                label: estaActiva
+                    ? 'Conversación activa'
+                    : 'Conversación cerrada',
+                icon: estaActiva
+                    ? Icons.radio_button_checked_rounded
+                    : Icons.lock_outline_rounded,
+                variant: estaActiva
+                    ? ClubChipVariant.success
+                    : ClubChipVariant.neutral,
+              ),
+              if (conversacion.clubNombre.isNotEmpty)
+                ClubChip(
+                  label: conversacion.clubNombre,
+                  icon: Icons.groups_2_outlined,
+                  variant: ClubChipVariant.neutral,
+                  maxLines: 1,
+                ),
+            ],
           ),
 
           const SizedBox(height: AppSpacing.md),
@@ -438,7 +491,15 @@ class _ConversacionCard extends StatelessWidget {
 
               const SizedBox(width: AppSpacing.xs),
 
-              Icon(Icons.chevron_right_rounded, color: colorPrincipal),
+              entrando
+                  ? SizedBox.square(
+                      dimension: 18,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: colorPrincipal,
+                      ),
+                    )
+                  : Icon(Icons.chevron_right_rounded, color: colorPrincipal),
             ],
           ),
         ],
