@@ -121,6 +121,7 @@ class Libro {
     String? pauseReason,
     String? avatarUrl,
     int? paginas,
+    bool? mismoClub,
   }) {
     return Libro(
       bookId: bookId ?? this.bookId,
@@ -137,6 +138,7 @@ class Libro {
       valoracion: valoracion ?? this.valoracion,
       yaLoTengo: yaLoTengo ?? this.yaLoTengo,
       isImported: isImported ?? this.isImported,
+      mismoClub: mismoClub ?? this.mismoClub,
       goodreads: goodreads ?? this.goodreads,
       coverUrl: coverUrl ?? this.coverUrl,
       fechaAlta: fechaAlta ?? this.fechaAlta,
