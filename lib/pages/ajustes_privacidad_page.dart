@@ -239,6 +239,18 @@ class _AjustesBodyState extends State<_AjustesBody> {
                 selected: _visibilidad == 'PRIVADO',
                 onTap: () => _cambiarVisibilidad('PRIVADO'),
               ),
+              const Divider(height: 1),
+              _VisibilidadOption(
+                titulo: 'Toda la comunidad',
+                subtitulo:
+                    'Tu nombre, tu foto y tus reseñas se ven en la Vista '
+                    'ClubReads (estadísticas y valoraciones de toda la '
+                    'comunidad), aunque no compartas club con quien mira. '
+                    'Tu perfil completo sigue viéndolo solo tu club',
+                icon: Icons.public_outlined,
+                selected: _visibilidad == 'PUBLICO',
+                onTap: () => _cambiarVisibilidad('PUBLICO'),
+              ),
             ],
           ),
         ),
