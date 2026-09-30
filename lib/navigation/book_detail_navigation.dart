@@ -391,10 +391,14 @@ Future<bool> openCatalogBookDetail(
         return true;
       }
 
-      // En modo globalStats con tap simple → CatalogBookDetailPage si el usuario
-      // no tiene el libro; DetalleLibroPage si ya lo tiene.
+      // En modo globalStats con tap simple → CatalogBookDetailPage solo si
+      // nadie en ClubReads tiene aún este libro (no hay nada que mostrar).
+      // Si otras lectoras sí lo tienen (aunque la usuaria actual no), abrimos
+      // igualmente la ficha completa: así puede ver la valoración media, el
+      // total de lectoras y la distribución de estrellas de toda la
+      // comunidad antes de decidir si lo añade.
       if (globalStats && !forceFullDetail) {
-        if (misRegistros.isEmpty && misFinalizados.isEmpty) {
+        if (registros.isEmpty && finalizados.isEmpty) {
           var changed = false;
           await Navigator.push<void>(
             context,
@@ -410,7 +414,8 @@ Future<bool> openCatalogBookDetail(
           );
           return changed;
         }
-        // Usuario tiene el libro → ficha completa con stats globales
+        // Hay datos de la comunidad (aunque la usuaria no lo tenga aún) →
+        // ficha completa con stats globales
         await Navigator.push<void>(
           context,
           BookDetailPageRoute(
@@ -510,8 +515,14 @@ Future<bool> openCatalogBookDetail(
               .toList()
           : finalizados;
 
-      // Si el usuario no tiene el libro en su biblioteca
-      if (misRegistros.isEmpty && misFinalizados.isEmpty) {
+      // Si el usuario no tiene el libro en su biblioteca. En modo
+      // globalStats, mostramos igualmente la ficha con estadísticas de la
+      // comunidad cuando otras lectoras sí lo tienen (ver comentario
+      // equivalente más arriba, en la ruta con bookId).
+      final sinDatos = globalStats
+          ? registros.isEmpty && finalizados.isEmpty
+          : misRegistros.isEmpty && misFinalizados.isEmpty;
+      if (sinDatos) {
         if (forceFullDetail) {
           await Navigator.push<void>(
             context,
@@ -549,7 +560,8 @@ Future<bool> openCatalogBookDetail(
         }
       }
 
-      // El usuario ya tiene el libro → ficha completa con stats adecuados
+      // Hay datos que mostrar (el usuario tiene el libro, o en modo
+      // globalStats otras lectoras lo tienen) → ficha completa
       await Navigator.push<void>(
         context,
         BookDetailPageRoute(
