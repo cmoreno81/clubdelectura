@@ -1898,8 +1898,12 @@ class _ValoracionAnonimaCard extends StatelessWidget {
           Row(
             children: [
               ClubAvatar(
-                nombre: nombre,
+                // Para anónimas, nombre vacío + neutralWhenUnnamed fuerza el
+                // icono de persona genérico en vez de sacar iniciales de
+                // "Lectora de otro club" (que parecían las de alguien real).
+                nombre: valoracion.mismoClub ? nombre : '',
                 imageUrl: valoracion.mismoClub ? valoracion.avatarUrl : '',
+                neutralWhenUnnamed: true,
                 size: 40,
               ),
               const SizedBox(width: AppSpacing.sm),
