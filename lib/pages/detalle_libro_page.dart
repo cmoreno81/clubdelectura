@@ -97,6 +97,28 @@ class _DetalleLibroPageState extends State<DetalleLibroPage> {
       _finalizadosGlobales != null &&
       (_registrosGlobales!.isNotEmpty || _finalizadosGlobales!.isNotEmpty);
 
+  /// `registros` (del club) más, si ya han cargado, quienes de otros
+  /// clubes también tienen el libro activo — forzadas a mismoClub=false
+  /// aunque el backend las marque como visibles por tener el perfil
+  /// público (aquí "mismo club" decide si la tarjeta es interactiva, no
+  /// solo si se revela el nombre): sin eso, alguien con perfil público de
+  /// otro club se colaría con una tarjeta editable en un club al que no
+  /// pertenece. LibroInteresadasSection ya sabe agrupar estas entradas en
+  /// el resumen por estados en vez de tarjetas individuales.
+  List<Libro> get _registrosParaLectoresInteresados {
+    if (!_hayEstadisticasComunidad) return registros;
+    final misClub = registros
+        .map((r) => r.usuario.trim().toLowerCase())
+        .where((u) => u.isNotEmpty)
+        .toSet();
+    final deOtrosClubes = _registrosGlobales!
+        .where(
+          (r) => !misClub.contains(r.usuario.trim().toLowerCase()),
+        )
+        .map((r) => r.mismoClub ? r.copyWith(mismoClub: false) : r);
+    return [...registros, ...deOtrosClubes];
+  }
+
   @override
   void initState() {
     super.initState();
@@ -1362,11 +1384,13 @@ class _DetalleLibroPageState extends State<DetalleLibroPage> {
                     onCambiado: _recargarDesdeServidor,
                   ),
                 ],
-                if (registros.isNotEmpty) ...[
+                if (_registrosParaLectoresInteresados.isNotEmpty) ...[
                   // Vista de club: tarjetas de cada lector con controles
+                  // (+ resumen de otros clubes, ver
+                  // _registrosParaLectoresInteresados)
                   const SizedBox(height: AppSpacing.lg),
                   LibroInteresadasSection(
-                    registros: registros,
+                    registros: _registrosParaLectoresInteresados,
                     usuariosConFinalizacion: libro.finalizados
                         .map(
                           (finalizado) =>
