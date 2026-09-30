@@ -1422,17 +1422,23 @@ class _DetalleLibroPageState extends State<DetalleLibroPage> {
               // los de toda la comunidad — así la ficha nunca se queda sin
               // nada que mostrar mientras esa petición está en curso o si
               // falla (p.ej. sin conexión).
-              // TEMPORAL: placeholder en vez de _EstadisticasGlobalesSection
-              // para descartar si el crash de semantics viene de dentro de
-              // esa sección o es algo ajeno a ella.
               if (!widget.globalStats &&
                   (libro.registros.isNotEmpty ||
                       libro.finalizados.isNotEmpty ||
                       _hayEstadisticasComunidad)) ...[
                 const SizedBox(height: AppSpacing.lg),
-                const Padding(
-                  padding: EdgeInsets.all(AppSpacing.md),
-                  child: Text('ESTADISTICAS PLACEHOLDER (prueba de descarte)'),
+                _EstadisticasGlobalesSection(
+                  libro: _hayEstadisticasComunidad
+                      ? LibroAgrupado(
+                          libro: libro.libro,
+                          genero: libro.genero,
+                          registros: _registrosGlobales!,
+                          finalizados: _finalizadosGlobales!,
+                          yaLoTengo: libro.yaLoTengo,
+                          coverUrl: libro.coverUrl,
+                          bookId: libro.bookId,
+                        )
+                      : libro,
                 ),
               ],
 
@@ -2077,7 +2083,11 @@ class _FormatoSection extends StatelessWidget {
           ),
           const SizedBox(height: AppSpacing.md),
           Row(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
+            // Sin crossAxisAlignment.stretch: esta Row está dentro de un
+            // Column sin altura acotada (le llega altura infinita desde
+            // arriba), y pedirle que estire sus hijos a esa altura
+            // provocaba un error de layout en cada frame durante el scroll.
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: _formatos
                 .where((f) => (formatCounts[f.key] ?? 0) > 0)
                 .map((f) {
