@@ -133,20 +133,10 @@ class _DetalleLibroPageState extends State<DetalleLibroPage> {
   /// Silenciosa ante fallos: si no hay datos, la sección simplemente no se
   /// muestra en vez de romper la ficha.
   Future<void> _cargarEstadisticasComunidad() async {
-    debugPrint(
-      '[EstadisticasComunidad] pidiendo bookId=${libro.bookId} '
-      '(titulo="${libro.libro}")',
-    );
     try {
       final data = await ApiService().getLibroPorId(
         libro.bookId,
         global: true,
-      );
-      debugPrint(
-        '[EstadisticasComunidad] respuesta ok=${data['ok']} '
-        'libros=${(data['libros'] as List?)?.length} '
-        'finalizados=${(data['finalizados'] as List?)?.length} '
-        'mensaje=${data['mensaje']}',
       );
       if (!mounted || data['ok'] != true) return;
 
@@ -164,9 +154,8 @@ class _DetalleLibroPageState extends State<DetalleLibroPage> {
         _registrosGlobales = registrosGlobales;
         _finalizadosGlobales = finalizadosGlobales;
       });
-    } catch (e, st) {
+    } catch (_) {
       // Sin estadísticas de la comunidad: la ficha sigue funcionando igual.
-      debugPrint('[EstadisticasComunidad] error: $e\n$st');
     }
   }
 
