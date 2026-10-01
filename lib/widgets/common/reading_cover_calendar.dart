@@ -166,11 +166,25 @@ class _ReadingDayCell extends StatelessWidget {
   // recurrir al contador "+N" — con más se aprietan demasiado para leerse.
   static const _maxAbanico = 3;
 
+  /// El libro que se termina ESE día va primero (delante, con su
+  /// valoración bien visible); el que se está empezando va detrás, porque
+  /// su portada se verá de sobra en los días siguientes que le dedique
+  /// solo a él.
+  List<MonthlyReadingSpan> get _ordenados {
+    final terminados = <MonthlyReadingSpan>[];
+    final enCurso = <MonthlyReadingSpan>[];
+    for (final reading in readings) {
+      (_ratingFor(reading) != null ? terminados : enCurso).add(reading);
+    }
+    return [...terminados, ...enCurso];
+  }
+
   @override
   Widget build(BuildContext context) {
+    final ordenados = _ordenados;
     final showFan = highResolution && readings.length > 1;
     final fanShown = showFan
-        ? readings.take(_maxAbanico).toList()
+        ? ordenados.take(_maxAbanico).toList()
         : const <MonthlyReadingSpan>[];
     final restantes = readings.length -
         (showFan ? fanShown.length : (readings.length > 1 ? 1 : readings.length));
@@ -193,13 +207,14 @@ class _ReadingDayCell extends StatelessWidget {
             _abanico(fanShown)
           else
             // Vista en la app: una sola portada representativa a tamaño
-            // completo; tocar el día abre la lista de todos esos libros en
-            // vez de intentar tocar una porción diminuta de cada portada.
+            // completo (el libro que se termina ese día, si lo hay); tocar
+            // el día abre la lista de todos esos libros en vez de intentar
+            // tocar una porción diminuta de cada portada.
             GestureDetector(
               onTap: onBookTap == null
                   ? null
                   : () => _mostrarLibrosDelDia(context),
-              child: _portada(readings.first),
+              child: _portada(ordenados.first),
             ),
 
           // Número del día (círculo superior izquierdo)
