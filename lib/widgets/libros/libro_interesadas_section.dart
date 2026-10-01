@@ -2,8 +2,6 @@ import 'package:flutter/material.dart';
 
 import '../../models/libro.dart';
 import '../../models/libro_finalizado.dart';
-import '../../navigation/app_page_route.dart';
-import '../../pages/perfil_usuario_page.dart';
 import '../../services/api_service.dart';
 import '../../services/library_refresh_notifier.dart';
 import '../../services/usuario_service.dart';
@@ -201,20 +199,12 @@ class LibroInteresadasSection extends StatelessWidget {
               .toList();
 
     // Dentro de las ya visibles, separamos quien de verdad comparte club
-    // contigo (puede abrir su perfil) de quien se ve solo porque tiene el
-    // perfil en público desde otro club (en su lugar, se le puede ver la
-    // reseña de este libro si la escribió).
+    // contigo (su burbuja solo indica en qué club la conoces, por
+    // tooltip) de quien se ve solo porque tiene el perfil en público desde
+    // otro club (ahí sí se puede ver la reseña de este libro si la
+    // escribió, ya que no hay un club en común que mostrar).
     final enTusClubes = otrosVisibles.where((r) => r.enMiClub).toList();
     final enOtrosClubes = otrosVisibles.where((r) => !r.enMiClub).toList();
-
-    void abrirPerfil(Libro registro) {
-      Navigator.push(
-        context,
-        AppPageRoute(
-          builder: (_) => PerfilUsuarioPage(usuario: registro.usuario),
-        ),
-      );
-    }
 
     void verResenaPublica(Libro registro) {
       final nombreNormalizado = registro.usuario.trim().toLowerCase();
@@ -269,7 +259,6 @@ class LibroInteresadasSection extends StatelessWidget {
               // Título solo si hace falta distinguir del otro grupo.
               titulo: enOtrosClubes.isNotEmpty ? 'En tus clubes' : null,
               registros: enTusClubes,
-              onTapLector: abrirPerfil,
             ),
             if (enOtrosClubes.isNotEmpty || anonimos.isNotEmpty)
               const SizedBox(height: AppSpacing.sm),
@@ -299,12 +288,14 @@ class LibroInteresadasSection extends StatelessWidget {
 class _LectoresPorEstado extends StatelessWidget {
   final String? titulo;
   final List<Libro> registros;
-  final ValueChanged<Libro> onTapLector;
+  // null cuando la burbuja no es tocable (p. ej. "En tus clubes": el
+  // tooltip ya dice en qué club la conoces, no hace falta abrir nada más).
+  final ValueChanged<Libro>? onTapLector;
 
   const _LectoresPorEstado({
     this.titulo,
     required this.registros,
-    required this.onTapLector,
+    this.onTapLector,
   });
 
   @override
@@ -350,12 +341,12 @@ class _LectoresPorEstado extends StatelessWidget {
 class _GrupoLectoresEstado extends StatelessWidget {
   final String estado;
   final List<Libro> registros;
-  final ValueChanged<Libro> onTapLector;
+  final ValueChanged<Libro>? onTapLector;
 
   const _GrupoLectoresEstado({
     required this.estado,
     required this.registros,
-    required this.onTapLector,
+    this.onTapLector,
   });
 
   @override
@@ -394,12 +385,16 @@ class _GrupoLectoresEstado extends StatelessWidget {
             children: [
               for (final registro in registros)
                 Tooltip(
-                  message: registro.usuario,
+                  message: registro.clubCompartido.trim().isEmpty
+                      ? registro.usuario
+                      : '${registro.usuario} · ${registro.clubCompartido}',
                   child: ClubAvatar(
                     nombre: registro.usuario,
                     imageUrl: registro.avatarUrl,
                     size: 40,
-                    onTap: () => onTapLector(registro),
+                    onTap: onTapLector == null
+                        ? null
+                        : () => onTapLector!(registro),
                   ),
                 ),
             ],

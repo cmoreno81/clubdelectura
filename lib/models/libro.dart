@@ -27,6 +27,9 @@ class Libro {
   /// "En otros clubes" dentro de quienes ya son visibles ([mismoClub]), y
   /// para decidir si se puede abrir su perfil.
   final bool enMiClub;
+  /// Nombre del club que compartes con esta lectora (vacío si no comparte
+  /// ninguno contigo). Se muestra en el tooltip de su burbuja de avatar.
+  final String clubCompartido;
   final String goodreads;
   final String coverUrl;
   final DateTime? fechaAlta;
@@ -54,6 +57,7 @@ class Libro {
     this.isImported = false,
     this.mismoClub = true,
     this.enMiClub = true,
+    this.clubCompartido = '',
     required this.goodreads,
     required this.coverUrl,
     required this.fechaAlta,
@@ -83,6 +87,7 @@ class Libro {
       isImported: json['isImported'] as bool? ?? false,
       mismoClub: json['mismoClub'] as bool? ?? true,
       enMiClub: json['enMiClub'] as bool? ?? true,
+      clubCompartido: json['clubCompartido']?.toString() ?? '',
       goodreads:
           json['goodreads']?.toString() ??
           json['goodreadsUrl']?.toString() ??
@@ -130,6 +135,7 @@ class Libro {
     int? paginas,
     bool? mismoClub,
     bool? enMiClub,
+    String? clubCompartido,
   }) {
     return Libro(
       bookId: bookId ?? this.bookId,
@@ -148,6 +154,7 @@ class Libro {
       isImported: isImported ?? this.isImported,
       mismoClub: mismoClub ?? this.mismoClub,
       enMiClub: enMiClub ?? this.enMiClub,
+      clubCompartido: clubCompartido ?? this.clubCompartido,
       goodreads: goodreads ?? this.goodreads,
       coverUrl: coverUrl ?? this.coverUrl,
       fechaAlta: fechaAlta ?? this.fechaAlta,

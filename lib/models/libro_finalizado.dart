@@ -26,6 +26,11 @@ class LibroFinalizado {
   final bool isImported;
   /// true si esta lectora comparte club con quien consulta (ver [Libro]).
   final bool mismoClub;
+  /// true si de verdad comparte club (no solo perfil público); ver
+  /// [Libro.enMiClub].
+  final bool enMiClub;
+  /// Nombre del club compartido; ver [Libro.clubCompartido].
+  final String clubCompartido;
 
   const LibroFinalizado({
     required this.bookId,
@@ -50,6 +55,8 @@ class LibroFinalizado {
     this.yaLoTengo = false,
     this.isImported = false,
     this.mismoClub = true,
+    this.enMiClub = true,
+    this.clubCompartido = '',
   });
 
   factory LibroFinalizado.fromJson(Map<String, dynamic> json) {
@@ -85,6 +92,8 @@ class LibroFinalizado {
       yaLoTengo: json['yaLoTengo'] as bool? ?? false,
       isImported: json['isImported'] as bool? ?? false,
       mismoClub: json['mismoClub'] as bool? ?? true,
+      enMiClub: json['enMiClub'] as bool? ?? true,
+      clubCompartido: json['clubCompartido']?.toString() ?? '',
     );
   }
 }

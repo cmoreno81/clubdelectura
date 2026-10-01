@@ -1756,6 +1756,8 @@ class _LibrosPageState extends State<LibrosPage> with WidgetsBindingObserver {
       avatarUrl: finalizado.avatarUrl,
       paginas: finalizado.paginas,
       mismoClub: finalizado.mismoClub,
+      enMiClub: finalizado.enMiClub,
+      clubCompartido: finalizado.clubCompartido,
     );
   }
 
