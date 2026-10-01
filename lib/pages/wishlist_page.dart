@@ -1728,6 +1728,51 @@ class _WishlistAddSheetState extends State<WishlistAddSheet> {
     if (result != null) setState(() => _plannedMonth = result);
   }
 
+  /// Normaliza un título para comparar sin acentos, mayúsculas ni puntuación.
+  String _normalizarTitulo(String value) {
+    var result = value.toLowerCase().trim();
+    const acentos = {
+      'á': 'a', 'à': 'a', 'ä': 'a', 'â': 'a',
+      'é': 'e', 'è': 'e', 'ë': 'e', 'ê': 'e',
+      'í': 'i', 'ì': 'i', 'ï': 'i', 'î': 'i',
+      'ó': 'o', 'ò': 'o', 'ö': 'o', 'ô': 'o',
+      'ú': 'u', 'ù': 'u', 'ü': 'u', 'û': 'u',
+    };
+    acentos.forEach((con, sin) => result = result.replaceAll(con, sin));
+    result = result
+        .replaceAll(RegExp(r'[^a-z0-9 ]'), ' ')
+        .replaceAll(RegExp(r'\s+'), ' ')
+        .trim();
+    return result;
+  }
+
+  /// Si se ha escrito el libro a mano (sin pasar por el buscador de arriba),
+  /// comprueba si ya existe tal cual en ClubReads y, si lo encuentra, usa su
+  /// portada y lo enlaza — así no hace falta buscar a propósito para que
+  /// salga la portada. Esta pantalla no permite editar después, así que es
+  /// la única oportunidad de rellenarla bien.
+  Future<void> _autocompletarDesdeClubReads(String title) async {
+    if (_bookId != null) return;
+    try {
+      final resultados = await _service.searchBooks(title);
+      final tituloBuscado = _normalizarTitulo(title);
+      for (final r in resultados) {
+        if (r.bookId == null) continue;
+        if (_normalizarTitulo(r.title) != tituloBuscado) continue;
+        _bookId = r.bookId;
+        _coverUrl ??= r.coverUrl;
+        _isbn ??= r.isbn;
+        if (_authorCtrl.text.trim().isEmpty && r.author != null) {
+          _authorCtrl.text = r.author!;
+        }
+        return;
+      }
+    } catch (_) {
+      // Silencioso a propósito: si falla la búsqueda, se guarda igual con
+      // los datos que ya haya escrito la usuaria.
+    }
+  }
+
   Future<void> _save() async {
     final title = _titleCtrl.text.trim();
     if (title.isEmpty) {
@@ -1738,6 +1783,7 @@ class _WishlistAddSheetState extends State<WishlistAddSheet> {
     }
     setState(() => _saving = true);
     try {
+      if (!_isEdit) await _autocompletarDesdeClubReads(title);
       final price = double.tryParse(_priceCtrl.text.replaceAll(',', '.'));
       if (_isEdit) {
         await _service.updateItem(
