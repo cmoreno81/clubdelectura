@@ -34,6 +34,10 @@ class CapituloTile extends StatelessWidget {
     this.onRename,
   });
 
+  static const _tituloReflexionFinal = '💭 Reflexión final';
+
+  bool get _esReflexion => capitulo.nombre.trim() == _tituloReflexionFinal;
+
   @override
   Widget build(BuildContext context) {
     final tieneActividad = capitulo.ultimaActividad?.trim().isNotEmpty == true;
@@ -60,6 +64,7 @@ class CapituloTile extends StatelessWidget {
           children: [
             _CabeceraCapitulo(
               capitulo: capitulo,
+              esReflexion: _esReflexion,
               plegado: plegado,
               tieneNovedades: tieneNovedades,
               colorPrincipal: colorPrincipal,
@@ -84,6 +89,7 @@ class CapituloTile extends StatelessWidget {
 
 class _CabeceraCapitulo extends StatelessWidget {
   final CapituloLectura capitulo;
+  final bool esReflexion;
   final bool plegado;
   final bool tieneNovedades;
   final Color colorPrincipal;
@@ -92,6 +98,7 @@ class _CabeceraCapitulo extends StatelessWidget {
 
   const _CabeceraCapitulo({
     required this.capitulo,
+    required this.esReflexion,
     required this.plegado,
     required this.tieneNovedades,
     required this.colorPrincipal,
@@ -112,7 +119,11 @@ class _CabeceraCapitulo extends StatelessWidget {
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            _ChapterIcon(tieneNovedades: tieneNovedades, color: colorPrincipal),
+            _ChapterIcon(
+              tieneNovedades: tieneNovedades,
+              esReflexion: esReflexion,
+              color: colorPrincipal,
+            ),
 
             const SizedBox(width: AppSpacing.md),
 
@@ -121,7 +132,7 @@ class _CabeceraCapitulo extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    capitulo.nombre,
+                    esReflexion ? '🗣️ Debate final' : capitulo.nombre,
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                     style: AppTextStyles.subtitle.copyWith(
@@ -350,9 +361,14 @@ class _ContenidoCapitulo extends StatelessWidget {
 
 class _ChapterIcon extends StatelessWidget {
   final bool tieneNovedades;
+  final bool esReflexion;
   final Color color;
 
-  const _ChapterIcon({required this.tieneNovedades, required this.color});
+  const _ChapterIcon({
+    required this.tieneNovedades,
+    required this.esReflexion,
+    required this.color,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -369,7 +385,9 @@ class _ChapterIcon extends StatelessWidget {
             borderRadius: BorderRadius.circular(AppRadius.lg),
           ),
           child: Icon(
-            tieneNovedades
+            esReflexion
+                ? Icons.forum_rounded
+                : tieneNovedades
                 ? Icons.mark_chat_unread_outlined
                 : Icons.forum_outlined,
             color: tieneNovedades ? color : AppColors.primary,

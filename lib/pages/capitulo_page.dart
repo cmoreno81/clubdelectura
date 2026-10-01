@@ -761,7 +761,7 @@ class _CapituloPageState extends State<CapituloPage> {
 // Lista de comentarios con divisor "Nuevos"
 // ---------------------------------------------------------------------------
 
-class _ComentariosList extends StatelessWidget {
+class _ComentariosList extends StatefulWidget {
   const _ComentariosList({
     required this.comentarios,
     required this.usuarioActual,
@@ -781,31 +781,50 @@ class _ComentariosList extends StatelessWidget {
   final void Function(String id) onDeleted;
 
   @override
+  State<_ComentariosList> createState() => _ComentariosListState();
+}
+
+class _ComentariosListState extends State<_ComentariosList> {
+  // Un único aviso para todo el debate, no uno por comentario — así, en
+  // cuanto se revela, el debate se lee de corrido como un chat normal (con
+  // respuestas y reacciones) en vez de tener que destapar mensaje a mensaje.
+  bool _debateRevelado = false;
+
+  @override
   Widget build(BuildContext context) {
+    if (widget.esReflexion &&
+        !_debateRevelado &&
+        widget.comentarios.isNotEmpty) {
+      return SliverPadding(
+        padding: const EdgeInsets.fromLTRB(16, 8, 16, 20),
+        sliver: SliverToBoxAdapter(
+          child: _DebateProtegido(
+            onTap: () => setState(() => _debateRevelado = true),
+          ),
+        ),
+      );
+    }
+
     // Construimos la lista de items intercalando el divisor antes del primer
     // comentario marcado como nuevo.
     final items = <Widget>[];
     bool divisorInsertado = false;
 
-    for (final comentario in comentarios) {
+    for (final comentario in widget.comentarios) {
       if (!divisorInsertado && comentario.esNuevo) {
         divisorInsertado = true;
-        items.add(_NuevosDivisor(key: newsDividerKey));
+        items.add(_NuevosDivisor(key: widget.newsDividerKey));
       }
 
-      final card = ComentarioCard(
-        key: ValueKey(comentario.id),
-        comentario: comentario,
-        usuarioActual: usuarioActual,
-        onActualizar: onRecargar,
-        onEdited: (text) => onEdited(comentario.id, text),
-        onDeleted: () => onDeleted(comentario.id),
-      );
-
       items.add(
-        esReflexion
-            ? _ReflexionProtegida(key: ValueKey('p_${comentario.id}'), child: card)
-            : card,
+        ComentarioCard(
+          key: ValueKey(comentario.id),
+          comentario: comentario,
+          usuarioActual: widget.usuarioActual,
+          onActualizar: widget.onRecargar,
+          onEdited: (text) => widget.onEdited(comentario.id, text),
+          onDeleted: () => widget.onDeleted(comentario.id),
+        ),
       );
     }
 
@@ -876,57 +895,46 @@ class _NuevosDivisor extends StatelessWidget {
 
 // ---------------------------------------------------------------------------
 
-class _ReflexionProtegida extends StatefulWidget {
-  final Widget child;
+class _DebateProtegido extends StatelessWidget {
+  final VoidCallback onTap;
 
-  const _ReflexionProtegida({super.key, required this.child});
-
-  @override
-  State<_ReflexionProtegida> createState() => _ReflexionProtegidaState();
-}
-
-class _ReflexionProtegidaState extends State<_ReflexionProtegida> {
-  bool visible = false;
+  const _DebateProtegido({required this.onTap});
 
   @override
   Widget build(BuildContext context) {
-    if (visible) return widget.child;
-
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      child: ClubCard(
-        elevated: false,
-        padding: EdgeInsets.zero,
-        backgroundColor: AppColors.midnight,
-        borderColor: AppColors.midnight,
-        onTap: () => setState(() => visible = true),
-        child: const Padding(
-          padding: EdgeInsets.symmetric(horizontal: 24, vertical: 28),
-          child: Column(
-            children: [
-              Icon(
-                Icons.visibility_off_outlined,
+    return ClubCard(
+      elevated: false,
+      padding: EdgeInsets.zero,
+      backgroundColor: AppColors.midnight,
+      borderColor: AppColors.midnight,
+      onTap: onTap,
+      child: const Padding(
+        padding: EdgeInsets.symmetric(horizontal: 24, vertical: 28),
+        child: Column(
+          children: [
+            Icon(
+              Icons.visibility_off_outlined,
+              color: Colors.white,
+              size: 32,
+            ),
+            SizedBox(height: 12),
+            Text(
+              'Debate oculto',
+              textAlign: TextAlign.center,
+              style: TextStyle(
                 color: Colors.white,
-                size: 32,
+                fontSize: 17,
+                fontWeight: FontWeight.w800,
               ),
-              SizedBox(height: 12),
-              Text(
-                'Reflexión oculta',
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 17,
-                  fontWeight: FontWeight.w800,
-                ),
-              ),
-              SizedBox(height: 6),
-              Text(
-                'Puede revelar el final del libro. Toca para leerla.',
-                textAlign: TextAlign.center,
-                style: TextStyle(color: Color(0xFFD9D4E5), height: 1.4),
-              ),
-            ],
-          ),
+            ),
+            SizedBox(height: 6),
+            Text(
+              'Puede revelar el final del libro. Toca para leer el debate '
+              'completo.',
+              textAlign: TextAlign.center,
+              style: TextStyle(color: Color(0xFFD9D4E5), height: 1.4),
+            ),
+          ],
         ),
       ),
     );

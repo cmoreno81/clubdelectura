@@ -667,7 +667,8 @@ class _ConversacionDestacadaState extends State<_ConversacionDestacada> {
           ),
           const SizedBox(height: AppSpacing.sm),
           Text(
-            '${conversacion.usuario} · ${conversacion.libro} · ${conversacion.capitulo}',
+            '${conversacion.usuario} · ${conversacion.libro} · '
+            '${conversacion.capitulo == '💭 Reflexión final' ? '🗣️ Debate final' : conversacion.capitulo}',
             style: AppTextStyles.caption,
           ),
           const SizedBox(height: AppSpacing.sm),
