@@ -193,7 +193,7 @@ class _GeneralDashboardPageState extends State<GeneralDashboardPage> {
         progreso: resultado.progreso,
         comentario: resultado.comentario,
         paginaActual: resultado.paginaActual,
-        paginasTotales: book.pages,
+        paginasTotales: resultado.paginasTotales,
       );
       if (!mounted) return;
       if (!guardado.ok) {
