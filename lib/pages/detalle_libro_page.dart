@@ -1137,29 +1137,48 @@ class _DetalleLibroPageState extends State<DetalleLibroPage> {
     final referencia = registros.isNotEmpty ? registros.first : null;
 
     // Calculamos el estado personal del usuario buscando primero en registros
-    // (PENDIENTE/LEYENDO/PAUSADO…) y luego en finalizados, filtrando siempre
-    // por el usuario actual: `registros` puede traer datos de TODOS los
-    // miembros del club (p. ej. al abrir la ficha desde el Ranking vía
-    // openBookDetail, que no filtra por usuario), así que asumir que
-    // `registros.first` es "mi" registro daba un estado ajeno como propio
-    // — o, peor, ocultaba la tarjeta de "añadir a mi biblioteca" cuando la
-    // usuaria en realidad no tenía el libro.
+    // (PENDIENTE/LEYENDO/PAUSADO…) y luego en finalizados: `registros` puede
+    // traer datos de TODOS los miembros del club (p. ej. al abrir la ficha
+    // desde el Ranking vía openBookDetail, que no filtra por usuario), así
+    // que asumir que `registros.first` es "mi" registro daba un estado ajeno
+    // como propio — o, peor, ocultaba la tarjeta de "añadir a mi biblioteca"
+    // cuando la usuaria en realidad no tenía el libro.
+    //
+    // Preferimos `yaLoTengo` (comparación por id de usuario, calculada en el
+    // servidor) sobre comparar nombres como texto: ese nombre puede venir
+    // ligeramente distinto entre lo que el backend tiene guardado y lo que
+    // el cliente cacheó localmente (espacios, mayúsculas, un cambio de
+    // nombre reciente…), y entonces el Kit de lectura y "Lectores
+    // interesados" desaparecían pese a que el libro sí era tuyo — mientras
+    // que MiFichaLecturaCard, que sí usa yaLoTengo, lo seguía mostrando bien.
     final String? miEstado;
-    if (usuarioActual != null) {
-      final normalizado = usuarioActual!.trim().toLowerCase();
-      final enRegistros = registros
-          .where((r) => r.usuario.trim().toLowerCase() == normalizado)
-          .firstOrNull;
-      if (enRegistros != null) {
-        miEstado = enRegistros.estado;
-      } else {
-        final enFinalizados = libro.finalizados
-            .where((f) => f.usuario.trim().toLowerCase() == normalizado)
-            .firstOrNull;
-        miEstado = enFinalizados != null ? 'FINALIZADO' : null;
-      }
+    final enRegistrosPorId = registros.where((r) => r.yaLoTengo).firstOrNull;
+    if (enRegistrosPorId != null) {
+      miEstado = enRegistrosPorId.estado;
     } else {
-      miEstado = !widget.globalStats ? referencia?.estado : null;
+      final enFinalizadosPorId = libro.finalizados
+          .where((f) => f.yaLoTengo)
+          .firstOrNull;
+      if (enFinalizadosPorId != null) {
+        miEstado = 'FINALIZADO';
+      } else if (usuarioActual != null) {
+        // Red de seguridad por nombre, por si yaLoTengo no viniera
+        // informado en algún camino antiguo.
+        final normalizado = usuarioActual!.trim().toLowerCase();
+        final enRegistros = registros
+            .where((r) => r.usuario.trim().toLowerCase() == normalizado)
+            .firstOrNull;
+        if (enRegistros != null) {
+          miEstado = enRegistros.estado;
+        } else {
+          final enFinalizados = libro.finalizados
+              .where((f) => f.usuario.trim().toLowerCase() == normalizado)
+              .firstOrNull;
+          miEstado = enFinalizados != null ? 'FINALIZADO' : null;
+        }
+      } else {
+        miEstado = !widget.globalStats ? referencia?.estado : null;
+      }
     }
 
     return PopScope(
