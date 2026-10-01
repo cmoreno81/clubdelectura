@@ -172,22 +172,28 @@ class LibroInteresadasSection extends StatelessWidget {
     final visibles = registros.where((r) => r.mismoClub).toList();
     final anonimos = registros.where((r) => !r.mismoClub).toList();
 
-    // "Tú" siempre primero: es la única tarjeta editable de esta sección
-    // (prioridad/formato/estado, y ahora también valoración/picante/idioma
-    // en MiFichaLecturaCard cuando ya la terminaste), así que tiene sentido
-    // que no haya que buscarla entre el resto de lectoras. Partición
-    // estable: no reordena al resto entre sí.
+    // "Tú" sigue siendo la única tarjeta completa y editable de esta
+    // sección (prioridad/formato/estado, y valoración/picante/idioma en
+    // MiFichaLecturaCard cuando ya la terminaste). El resto de lectoras de
+    // tu club, en cambio, no tienen nada que editar aquí — con un club
+    // grande, una tarjeta completa (avatar + nombre + chip) por cada una
+    // alargaba muchísimo la ficha, así que se agrupan por estado igual que
+    // ya hacíamos con las de otros clubes.
     final actualNormalizado = usuarioActual?.trim().toLowerCase();
-    final registrosOrdenados = actualNormalizado == null
+    final misRegistros = actualNormalizado == null
+        ? const <Libro>[]
+        : visibles
+              .where(
+                (r) => r.usuario.trim().toLowerCase() == actualNormalizado,
+              )
+              .toList();
+    final otrosVisibles = actualNormalizado == null
         ? visibles
-        : [
-            ...visibles.where(
-              (r) => r.usuario.trim().toLowerCase() == actualNormalizado,
-            ),
-            ...visibles.where(
-              (r) => r.usuario.trim().toLowerCase() != actualNormalizado,
-            ),
-          ];
+        : visibles
+              .where(
+                (r) => r.usuario.trim().toLowerCase() != actualNormalizado,
+              )
+              .toList();
 
     return LibroSection(
       icon: Icons.people_outline_rounded,
@@ -197,15 +203,12 @@ class LibroInteresadasSection extends StatelessWidget {
           '${registros.length} miembros tienen este libro en su biblioteca',
       child: Column(
         children: [
-          for (final registro in registrosOrdenados)
+          for (final registro in misRegistros)
             Padding(
               padding: const EdgeInsets.only(bottom: AppSpacing.md),
               child: _LectoraCard(
                 registro: registro,
-                esUsuarioActual:
-                    usuarioActual != null &&
-                    registro.usuario.trim().toLowerCase() ==
-                        usuarioActual!.trim().toLowerCase(),
+                esUsuarioActual: true,
                 tieneFinalizaciones: usuariosConFinalizacion.contains(
                   registro.usuario.trim().toLowerCase(),
                 ),
@@ -215,7 +218,116 @@ class LibroInteresadasSection extends StatelessWidget {
                 onPedirValoracion: onPedirValoracion,
               ),
             ),
+          if (otrosVisibles.isNotEmpty) ...[
+            _LectoresPorEstado(registros: otrosVisibles),
+            if (anonimos.isNotEmpty) const SizedBox(height: AppSpacing.sm),
+          ],
           if (anonimos.isNotEmpty) _ResumenAnonimos(registros: anonimos),
+        ],
+      ),
+    );
+  }
+}
+
+/// Lectoras de tu propio club (menos tú misma, que ya tiene su tarjeta
+/// editable arriba) agrupadas por estado — un grupo por "Leyendo",
+/// "Pendiente", etc. con el nombre y avatar de cada una, en vez de una
+/// tarjeta completa por persona que no aportaba nada interactivo.
+class _LectoresPorEstado extends StatelessWidget {
+  final List<Libro> registros;
+
+  const _LectoresPorEstado({required this.registros});
+
+  @override
+  Widget build(BuildContext context) {
+    final porEstado = <String, List<Libro>>{};
+    for (final registro in registros) {
+      porEstado.putIfAbsent(registro.estado, () => []).add(registro);
+    }
+    final estados = [
+      ..._ResumenAnonimos._ordenEstados.where(porEstado.containsKey),
+      ...porEstado.keys.where(
+        (estado) => !_ResumenAnonimos._ordenEstados.contains(estado),
+      ),
+    ];
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        for (var i = 0; i < estados.length; i++) ...[
+          _GrupoLectoresEstado(
+            estado: estados[i],
+            registros: porEstado[estados[i]]!,
+          ),
+          if (i < estados.length - 1) const SizedBox(height: AppSpacing.sm),
+        ],
+      ],
+    );
+  }
+}
+
+class _GrupoLectoresEstado extends StatelessWidget {
+  final String estado;
+  final List<Libro> registros;
+
+  const _GrupoLectoresEstado({required this.estado, required this.registros});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(AppSpacing.md),
+      decoration: BoxDecoration(
+        color: AppColors.surfaceSoft,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppColors.divider),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              ClubChip(
+                label: _LectoraCard._labelEstado(estado),
+                icon: _LectoraCard._iconoEstado(estado),
+                variant: _LectoraCard._varianteEstado(estado),
+              ),
+              const Spacer(),
+              Text(
+                '${registros.length}',
+                style: AppTextStyles.caption.copyWith(
+                  fontWeight: FontWeight.w700,
+                  color: AppColors.textMuted,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: AppSpacing.sm),
+          for (var i = 0; i < registros.length; i++)
+            Padding(
+              padding: EdgeInsets.only(
+                bottom: i < registros.length - 1 ? AppSpacing.sm : 0,
+              ),
+              child: Row(
+                children: [
+                  ClubAvatar(
+                    nombre: registros[i].usuario,
+                    imageUrl: registros[i].avatarUrl,
+                    size: 30,
+                  ),
+                  const SizedBox(width: AppSpacing.sm),
+                  Expanded(
+                    child: Text(
+                      registros[i].usuario,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: AppTextStyles.body.copyWith(
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
         ],
       ),
     );
