@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 
 import '../../models/libro.dart';
+import '../../models/libro_finalizado.dart';
+import '../../navigation/app_page_route.dart';
+import '../../pages/perfil_usuario_page.dart';
 import '../../services/api_service.dart';
 import '../../services/library_refresh_notifier.dart';
 import '../../services/usuario_service.dart';
@@ -128,6 +131,7 @@ class _OptionSelector<T> extends StatelessWidget {
 
 class LibroInteresadasSection extends StatelessWidget {
   final List<Libro> registros;
+  final List<LibroFinalizado> finalizados;
   final Set<String> usuariosConFinalizacion;
   final String? usuarioActual;
   final Future<void> Function(
@@ -150,6 +154,7 @@ class LibroInteresadasSection extends StatelessWidget {
   const LibroInteresadasSection({
     super.key,
     required this.registros,
+    this.finalizados = const [],
     required this.usuariosConFinalizacion,
     required this.usuarioActual,
     required this.onCambiarEstado,
@@ -195,6 +200,47 @@ class LibroInteresadasSection extends StatelessWidget {
               )
               .toList();
 
+    // Dentro de las ya visibles, separamos quien de verdad comparte club
+    // contigo (puede abrir su perfil) de quien se ve solo porque tiene el
+    // perfil en público desde otro club (en su lugar, se le puede ver la
+    // reseña de este libro si la escribió).
+    final enTusClubes = otrosVisibles.where((r) => r.enMiClub).toList();
+    final enOtrosClubes = otrosVisibles.where((r) => !r.enMiClub).toList();
+
+    void abrirPerfil(Libro registro) {
+      Navigator.push(
+        context,
+        AppPageRoute(
+          builder: (_) => PerfilUsuarioPage(usuario: registro.usuario),
+        ),
+      );
+    }
+
+    void verResenaPublica(Libro registro) {
+      final nombreNormalizado = registro.usuario.trim().toLowerCase();
+      LibroFinalizado? resena;
+      for (final f in finalizados) {
+        if (f.usuario.trim().toLowerCase() == nombreNormalizado) {
+          resena = f;
+          break;
+        }
+      }
+      if (resena == null || resena.resena.trim().isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Esta lectora todavía no tiene reseña de este libro.'),
+          ),
+        );
+        return;
+      }
+      showModalBottomSheet<void>(
+        context: context,
+        isScrollControlled: true,
+        backgroundColor: Colors.transparent,
+        builder: (_) => _ResenaLectoraSheet(finalizado: resena!),
+      );
+    }
+
     return LibroSection(
       icon: Icons.people_outline_rounded,
       color: AppColors.info,
@@ -218,8 +264,22 @@ class LibroInteresadasSection extends StatelessWidget {
                 onPedirValoracion: onPedirValoracion,
               ),
             ),
-          if (otrosVisibles.isNotEmpty) ...[
-            _LectoresPorEstado(registros: otrosVisibles),
+          if (enTusClubes.isNotEmpty) ...[
+            _LectoresPorEstado(
+              // Título solo si hace falta distinguir del otro grupo.
+              titulo: enOtrosClubes.isNotEmpty ? 'En tus clubes' : null,
+              registros: enTusClubes,
+              onTapLector: abrirPerfil,
+            ),
+            if (enOtrosClubes.isNotEmpty || anonimos.isNotEmpty)
+              const SizedBox(height: AppSpacing.sm),
+          ],
+          if (enOtrosClubes.isNotEmpty) ...[
+            _LectoresPorEstado(
+              titulo: 'En otros clubes',
+              registros: enOtrosClubes,
+              onTapLector: verResenaPublica,
+            ),
             if (anonimos.isNotEmpty) const SizedBox(height: AppSpacing.sm),
           ],
           if (anonimos.isNotEmpty) _ResumenAnonimos(registros: anonimos),
@@ -229,14 +289,23 @@ class LibroInteresadasSection extends StatelessWidget {
   }
 }
 
-/// Lectoras de tu propio club (menos tú misma, que ya tiene su tarjeta
-/// editable arriba) agrupadas por estado — un grupo por "Leyendo",
-/// "Pendiente", etc. con el nombre y avatar de cada una, en vez de una
-/// tarjeta completa por persona que no aportaba nada interactivo.
+/// Lectoras agrupadas por estado — "Leyendo", "Pendiente", etc. — con solo
+/// la burbuja de avatar de cada una (varias caben por fila) en vez de una
+/// tarjeta completa por persona que no aportaba nada interactivo. Tocar una
+/// burbuja dispara [onTapLector] (abrir perfil o ver su reseña, según el
+/// grupo). [titulo] solo se muestra cuando hace falta distinguir este
+/// bloque de otro grupo hermano (p. ej. "En tus clubes" vs "En otros
+/// clubes"); si es null, los grupos de estado van directos.
 class _LectoresPorEstado extends StatelessWidget {
+  final String? titulo;
   final List<Libro> registros;
+  final ValueChanged<Libro> onTapLector;
 
-  const _LectoresPorEstado({required this.registros});
+  const _LectoresPorEstado({
+    this.titulo,
+    required this.registros,
+    required this.onTapLector,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -254,10 +323,22 @@ class _LectoresPorEstado extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        if (titulo != null) ...[
+          Text(
+            titulo!,
+            style: AppTextStyles.caption.copyWith(
+              fontWeight: FontWeight.w800,
+              color: AppColors.textMuted,
+              letterSpacing: .3,
+            ),
+          ),
+          const SizedBox(height: AppSpacing.sm),
+        ],
         for (var i = 0; i < estados.length; i++) ...[
           _GrupoLectoresEstado(
             estado: estados[i],
             registros: porEstado[estados[i]]!,
+            onTapLector: onTapLector,
           ),
           if (i < estados.length - 1) const SizedBox(height: AppSpacing.sm),
         ],
@@ -269,8 +350,13 @@ class _LectoresPorEstado extends StatelessWidget {
 class _GrupoLectoresEstado extends StatelessWidget {
   final String estado;
   final List<Libro> registros;
+  final ValueChanged<Libro> onTapLector;
 
-  const _GrupoLectoresEstado({required this.estado, required this.registros});
+  const _GrupoLectoresEstado({
+    required this.estado,
+    required this.registros,
+    required this.onTapLector,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -302,34 +388,112 @@ class _GrupoLectoresEstado extends StatelessWidget {
             ],
           ),
           const SizedBox(height: AppSpacing.sm),
-          for (var i = 0; i < registros.length; i++)
-            Padding(
-              padding: EdgeInsets.only(
-                bottom: i < registros.length - 1 ? AppSpacing.sm : 0,
+          Wrap(
+            spacing: AppSpacing.sm,
+            runSpacing: AppSpacing.sm,
+            children: [
+              for (final registro in registros)
+                Tooltip(
+                  message: registro.usuario,
+                  child: ClubAvatar(
+                    nombre: registro.usuario,
+                    imageUrl: registro.avatarUrl,
+                    size: 40,
+                    onTap: () => onTapLector(registro),
+                  ),
+                ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Reseña de una lectora con perfil público de otro club — se muestra al
+/// tocar su burbuja en el grupo "En otros clubes". A diferencia de
+/// [_ValoracionAnonimaCard] (anónima por estrellas), aquí el nombre ya es
+/// público, así que se enseña directamente.
+class _ResenaLectoraSheet extends StatelessWidget {
+  const _ResenaLectoraSheet({required this.finalizado});
+
+  final LibroFinalizado finalizado;
+
+  @override
+  Widget build(BuildContext context) {
+    return DraggableScrollableSheet(
+      initialChildSize: 0.45,
+      minChildSize: 0.3,
+      maxChildSize: 0.85,
+      expand: false,
+      builder: (context, scrollController) {
+        return Container(
+          decoration: const BoxDecoration(
+            color: AppColors.surface,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+          ),
+          child: ListView(
+            controller: scrollController,
+            padding: const EdgeInsets.all(AppSpacing.lg),
+            children: [
+              Center(
+                child: Container(
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: AppColors.border,
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
               ),
-              child: Row(
+              const SizedBox(height: AppSpacing.lg),
+              Row(
                 children: [
                   ClubAvatar(
-                    nombre: registros[i].usuario,
-                    imageUrl: registros[i].avatarUrl,
-                    size: 30,
+                    nombre: finalizado.usuario,
+                    imageUrl: finalizado.avatarUrl,
+                    size: 44,
                   ),
-                  const SizedBox(width: AppSpacing.sm),
+                  const SizedBox(width: AppSpacing.md),
                   Expanded(
-                    child: Text(
-                      registros[i].usuario,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: AppTextStyles.body.copyWith(
-                        fontWeight: FontWeight.w600,
-                      ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          finalizado.usuario,
+                          style: AppTextStyles.subtitle.copyWith(
+                            fontWeight: FontWeight.w800,
+                          ),
+                        ),
+                        if (finalizado.valoracion.trim().isNotEmpty)
+                          Row(
+                            children: [
+                              const Icon(
+                                Icons.star_rounded,
+                                size: 16,
+                                color: AppColors.gold,
+                              ),
+                              const SizedBox(width: 2),
+                              Text(
+                                finalizado.valoracion,
+                                style: AppTextStyles.bodySecondary,
+                              ),
+                            ],
+                          ),
+                      ],
                     ),
                   ),
                 ],
               ),
-            ),
-        ],
-      ),
+              const SizedBox(height: AppSpacing.lg),
+              Text(
+                finalizado.resena.trim(),
+                style: AppTextStyles.body,
+              ),
+            ],
+          ),
+        );
+      },
     );
   }
 }

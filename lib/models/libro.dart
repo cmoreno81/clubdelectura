@@ -22,6 +22,11 @@ class Libro {
   /// club concreto todo el mundo mostrado ya es del mismo club, así que por
   /// defecto es `true` para no ocultar nombres donde no hace falta.
   final bool mismoClub;
+  /// true si esta lectora comparte club de verdad contigo (no solo porque
+  /// tiene el perfil público). Se usa para separar "En tus clubes" de
+  /// "En otros clubes" dentro de quienes ya son visibles ([mismoClub]), y
+  /// para decidir si se puede abrir su perfil.
+  final bool enMiClub;
   final String goodreads;
   final String coverUrl;
   final DateTime? fechaAlta;
@@ -48,6 +53,7 @@ class Libro {
     required this.yaLoTengo,
     this.isImported = false,
     this.mismoClub = true,
+    this.enMiClub = true,
     required this.goodreads,
     required this.coverUrl,
     required this.fechaAlta,
@@ -76,6 +82,7 @@ class Libro {
       yaLoTengo: json['yaLoTengo'] as bool? ?? false,
       isImported: json['isImported'] as bool? ?? false,
       mismoClub: json['mismoClub'] as bool? ?? true,
+      enMiClub: json['enMiClub'] as bool? ?? true,
       goodreads:
           json['goodreads']?.toString() ??
           json['goodreadsUrl']?.toString() ??
@@ -122,6 +129,7 @@ class Libro {
     String? avatarUrl,
     int? paginas,
     bool? mismoClub,
+    bool? enMiClub,
   }) {
     return Libro(
       bookId: bookId ?? this.bookId,
@@ -139,6 +147,7 @@ class Libro {
       yaLoTengo: yaLoTengo ?? this.yaLoTengo,
       isImported: isImported ?? this.isImported,
       mismoClub: mismoClub ?? this.mismoClub,
+      enMiClub: enMiClub ?? this.enMiClub,
       goodreads: goodreads ?? this.goodreads,
       coverUrl: coverUrl ?? this.coverUrl,
       fechaAlta: fechaAlta ?? this.fechaAlta,

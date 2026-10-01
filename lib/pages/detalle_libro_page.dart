@@ -1391,6 +1391,7 @@ class _DetalleLibroPageState extends State<DetalleLibroPage> {
                   const SizedBox(height: AppSpacing.lg),
                   LibroInteresadasSection(
                     registros: _registrosParaLectoresInteresados,
+                    finalizados: libro.finalizados,
                     usuariosConFinalizacion: libro.finalizados
                         .map(
                           (finalizado) =>
