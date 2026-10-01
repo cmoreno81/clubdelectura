@@ -277,15 +277,17 @@ class _ReadingDayCell extends StatelessWidget {
     return LayoutBuilder(
       builder: (context, constraints) {
         final n = shown.length;
-        final step = constraints.maxWidth * 0.16;
+        // Más separación que antes (0.16 → 0.26) para que la de detrás se
+        // reconozca de verdad, no solo un borde asomando.
+        final step = constraints.maxWidth * 0.26;
         // Todas las portadas comparten el mismo tamaño reducido — si la de
-        // delante ocupara la celda entera (como antes), taparía del todo a
-        // las de detrás y el abanico no se vería (bug real).
+        // delante ocupara la celda entera, taparía del todo a las de detrás.
         final coverW = constraints.maxWidth - (n - 1) * step;
         final coverH = constraints.maxHeight - (n - 1) * step * .6;
         return Stack(
           fit: StackFit.expand,
           children: [
+            // 1) Las portadas, de atrás hacia delante.
             for (var i = n - 1; i >= 0; i--)
               Positioned(
                 left: i * step,
@@ -295,12 +297,33 @@ class _ReadingDayCell extends StatelessWidget {
                 child: Container(
                   decoration: BoxDecoration(
                     border: i > 0
-                        ? Border.all(color: Colors.white, width: 1.2)
+                        ? Border.all(color: Colors.white, width: 1.4)
                         : null,
                   ),
-                  child: _portada(shown[i]),
+                  child: _CalendarCover(
+                    reading: shown[i],
+                    highResolution: highResolution,
+                  ),
                 ),
               ),
+            // 2) Las insignias de valoración, siempre ENCIMA de todas las
+            // portadas — así la del libro de atrás nunca queda tapada por
+            // la de delante, pase lo que pase con el orden de pintado.
+            for (var i = 0; i < n; i++)
+              if (_ratingFor(shown[i]) != null)
+                Positioned(
+                  left: i * step,
+                  top: i * step * .6,
+                  width: coverW,
+                  height: coverH,
+                  child: Align(
+                    alignment: Alignment.bottomRight,
+                    child: Padding(
+                      padding: const EdgeInsets.all(2),
+                      child: _FinishBadge(rating: _ratingFor(shown[i])!),
+                    ),
+                  ),
+                ),
           ],
         );
       },
