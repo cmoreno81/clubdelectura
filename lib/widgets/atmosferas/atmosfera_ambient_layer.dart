@@ -290,30 +290,31 @@ class _AtmosferaPainter extends CustomPainter {
       case AtmosferaLectura.oscura:
         _pintarBruma(canvas, size);
         _pintarLluvia(canvas, size);
+        _pintarBrasas(canvas, size);
 
       case AtmosferaLectura.gotica:
         _pintarBruma(canvas, size);
-        _pintarArcos(canvas, size);
+        _pintarCenizaAscendente(canvas, size);
 
       case AtmosferaLectura.misteriosa:
         _pintarBruma(canvas, size);
-        _pintarConstelacion(canvas, size);
+        _pintarLuciernagas(canvas, size);
 
       case AtmosferaLectura.futurista:
-        _pintarLineas(canvas, size);
-        _pintarConstelacion(canvas, size);
+        _pintarParticulasNeon(canvas, size);
+        _pintarDestelloDiagonal(canvas, size);
 
       case AtmosferaLectura.epica:
         _pintarChispas(canvas, size);
         _pintarRayosCalidos(canvas, size);
 
       case AtmosferaLectura.acogedora:
+        _pintarVaporTaza(canvas, size);
         _pintarPolvoCalido(canvas, size);
-        _pintarRayosCalidos(canvas, size);
 
       case AtmosferaLectura.historica:
+        _pintarPapelesFlotantes(canvas, size);
         _pintarPolvoCalido(canvas, size);
-        _pintarLineasManuscrito(canvas, size);
 
       case AtmosferaLectura.neutra:
         break;
@@ -445,33 +446,211 @@ class _AtmosferaPainter extends CustomPainter {
     }
   }
 
-  void _pintarLineas(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..color = color.withValues(alpha: 0.24)
-      ..strokeWidth = 1.2;
-
-    for (var i = 0; i < 28; i++) {
-      final x = _fraccion(i * 91.31) * size.width;
-      final fase = (progreso * (0.5 + (i % 4) * 0.08) + i * 0.09) % 1;
-      final y = fase * size.height;
-
-      canvas.drawLine(
-        Offset(x, y),
-        Offset(x + 15 + (i % 4) * 8, y - 28),
-        paint,
-      );
-    }
-  }
-
   void _pintarChispas(Canvas canvas, Size size) {
     for (var i = 0; i < 32; i++) {
       final fase = (progreso * (0.35 + (i % 5) * 0.06) + i * 0.12) % 1;
       final x = _fraccion(i * 45.73) * size.width;
       final y = size.height + 20 - fase * (size.height + 40);
+      final intensidad = 0.10 + fase * 0.24;
 
-      final paint = Paint()
-        ..color = color.withValues(alpha: 0.10 + fase * 0.24);
-      canvas.drawCircle(Offset(x, y), 1.5 + (i % 3), paint);
+      // Estela ascendente: da sensación de chispa viva, no solo un punto.
+      canvas.drawLine(
+        Offset(x, y),
+        Offset(x, y + 15),
+        Paint()
+          ..color = color.withValues(alpha: intensidad * 0.5)
+          ..strokeWidth = 1,
+      );
+
+      canvas.drawCircle(
+        Offset(x, y),
+        1.5 + (i % 3),
+        Paint()..color = color.withValues(alpha: intensidad),
+      );
+    }
+  }
+
+  /// Brasas que ascienden parpadeando desde la oscuridad — el empujón extra
+  /// para Oscura, que antes solo tenía niebla y lluvia estática.
+  void _pintarBrasas(Canvas canvas, Size size) {
+    for (var i = 0; i < 20; i++) {
+      final velocidad = 0.28 + (i % 5) * 0.08;
+      final fase = (progreso * velocidad + i * 0.137) % 1;
+      final xBase = _fraccion(i * 63.11) * size.width;
+      final x = xBase + math.sin(progreso * math.pi * 2 + i * 1.3) * 16;
+      final y = size.height + 16 - fase * (size.height + 50);
+      final parpadeo = (math.sin(progreso * math.pi * 6 + i) + 1) / 2;
+
+      canvas.drawCircle(
+        Offset(x, y),
+        1.1 + parpadeo * 1.7,
+        Paint()..color = color.withValues(alpha: 0.10 + parpadeo * 0.26),
+      );
+    }
+  }
+
+  /// Ceniza de vela que flota y se desvanece — sustituye los arcos fijos de
+  /// Gótica por algo que de verdad se mueve por la escena.
+  void _pintarCenizaAscendente(Canvas canvas, Size size) {
+    for (var i = 0; i < 26; i++) {
+      final velocidad = 0.16 + (i % 4) * 0.05;
+      final fase = (progreso * velocidad + i * 0.091) % 1;
+      final xBase = _fraccion(i * 58.3) * size.width;
+      final deriva = math.sin(progreso * math.pi * 1.2 + i) * 26;
+      final x = xBase + deriva;
+      final y = size.height + 15 - fase * (size.height + 40);
+      final parpadeo = (math.sin(progreso * math.pi * 4 + i * 1.1) + 1) / 2;
+
+      canvas.drawCircle(
+        Offset(x, y),
+        0.9 + parpadeo * 1.5,
+        Paint()..color = color.withValues(alpha: 0.06 + parpadeo * 0.17),
+      );
+    }
+  }
+
+  /// Luciérnagas que serpentean en la niebla — reemplaza la constelación fija
+  /// de Misteriosa, que no aportaba sensación de movimiento.
+  void _pintarLuciernagas(Canvas canvas, Size size) {
+    for (var i = 0; i < 14; i++) {
+      final cx = _fraccion(i * 83.7) * size.width;
+      final cy = _fraccion(i * 51.3) * size.height;
+      final radioX = 24.0 + (i % 3) * 14;
+      final radioY = 16.0 + (i % 4) * 10;
+      final angulo = progreso * math.pi * 2 * (0.4 + (i % 3) * 0.15) + i;
+      final x = cx + math.cos(angulo) * radioX;
+      final y = cy + math.sin(angulo * 1.3) * radioY;
+      final pulso = (math.sin(progreso * math.pi * 4 + i * 0.9) + 1) / 2;
+
+      canvas.drawCircle(
+        Offset(x, y),
+        5 + pulso * 3,
+        Paint()
+          ..color = color.withValues(alpha: 0.05 + pulso * 0.10)
+          ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 6),
+      );
+      canvas.drawCircle(
+        Offset(x, y),
+        1.2 + pulso * 1.1,
+        Paint()..color = color.withValues(alpha: 0.18 + pulso * 0.3),
+      );
+    }
+  }
+
+  /// Partículas neón que ascienden con brillo — sustituye las líneas y
+  /// puntos estáticos de Futurista por algo con sensación de ingravidez.
+  void _pintarParticulasNeon(Canvas canvas, Size size) {
+    for (var i = 0; i < 28; i++) {
+      final velocidad = 0.22 + (i % 5) * 0.07;
+      final fase = (progreso * velocidad + i * 0.081) % 1;
+      final xBase = _fraccion(i * 69.5) * size.width;
+      final x = xBase + math.sin(progreso * math.pi * 2 + i * 0.7) * 14;
+      final y = size.height + 20 - fase * (size.height + 60);
+      final pulso = (math.sin(progreso * math.pi * 6 + i) + 1) / 2;
+
+      canvas.drawCircle(
+        Offset(x, y),
+        3 + pulso * 2.4,
+        Paint()
+          ..color = color.withValues(alpha: 0.08 + pulso * 0.14)
+          ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 5),
+      );
+      canvas.drawCircle(
+        Offset(x, y),
+        1 + pulso * 0.8,
+        Paint()..color = color.withValues(alpha: 0.3 + pulso * 0.4),
+      );
+    }
+  }
+
+  /// Un par de destellos cruzan la pantalla en diagonal de vez en cuando,
+  /// como un rastro de datos o una estrella fugaz digital.
+  void _pintarDestelloDiagonal(Canvas canvas, Size size) {
+    for (var i = 0; i < 2; i++) {
+      final t = (progreso + i * 0.5) % 1.0;
+      if (t > 0.4) continue;
+      final avance = t / 0.4;
+
+      final startX = -size.width * 0.15 + i * size.width * 0.3;
+      final startY = size.height * (0.08 + i * 0.18);
+      final endX = startX + size.width * 0.95;
+      final endY = startY + size.height * 0.5;
+
+      final headX = startX + (endX - startX) * avance;
+      final headY = startY + (endY - startY) * avance;
+      final tailFrac = math.max(0.0, avance - 0.16);
+      final tailX = startX + (endX - startX) * tailFrac;
+      final tailY = startY + (endY - startY) * tailFrac;
+      final opacidad = (1 - avance) * 0.45;
+
+      canvas.drawLine(
+        Offset(tailX, tailY),
+        Offset(headX, headY),
+        Paint()
+          ..color = color.withValues(alpha: opacidad)
+          ..strokeWidth = 1.4
+          ..strokeCap = StrokeCap.round,
+      );
+      canvas.drawCircle(
+        Offset(headX, headY),
+        2.2,
+        Paint()..color = color.withValues(alpha: (opacidad + 0.25).clamp(0, 1)),
+      );
+    }
+  }
+
+  /// Volutas de vapor subiendo en zigzag, como de una taza caliente —
+  /// sustituye el polvo flotante como protagonista de Acogedora.
+  void _pintarVaporTaza(Canvas canvas, Size size) {
+    for (var i = 0; i < 5; i++) {
+      final xBase = size.width * (0.22 + i * 0.16);
+      final velocidad = 0.3 + (i % 3) * 0.05;
+      final fase = (progreso * velocidad + i * 0.17) % 1;
+      final alturaRecorrido = size.height * 0.62;
+      final yInicio = size.height * 0.92;
+      final y = yInicio - fase * alturaRecorrido;
+      final desvanecimiento = (1 - fase).clamp(0.0, 1.0);
+
+      final path = Path()..moveTo(xBase, y);
+      for (var paso = 1; paso <= 5; paso++) {
+        final progresoPaso = paso / 5;
+        final yPaso = y - progresoPaso * 46;
+        final xPaso =
+            xBase +
+            math.sin((progreso * math.pi * 2.8) + i + progresoPaso * 3) * 9;
+        path.lineTo(xPaso, yPaso);
+      }
+
+      canvas.drawPath(
+        path,
+        Paint()
+          ..color = color.withValues(alpha: 0.16 * desvanecimiento)
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 2.2
+          ..strokeCap = StrokeCap.round,
+      );
+    }
+  }
+
+  /// Trocitos de papel que caen girando en diagonal — sustituye las líneas
+  /// de manuscrito fijas de Histórica por algo con sensación de caída real.
+  void _pintarPapelesFlotantes(Canvas canvas, Size size) {
+    for (var i = 0; i < 14; i++) {
+      final velocidad = 0.16 + (i % 4) * 0.04;
+      final fase = (progreso * velocidad + i * 0.141) % 1;
+      final xBase = _fraccion(i * 59.9) * size.width;
+      final deriva = math.sin(progreso * math.pi * 1.1 + i) * 34;
+      final x = xBase + deriva + fase * 40;
+      final y = -20 + fase * (size.height + 40);
+
+      canvas.save();
+      canvas.translate(x, y);
+      canvas.rotate(progreso * math.pi * 2 * (0.6 + (i % 3) * 0.2) + i);
+      canvas.drawRect(
+        Rect.fromCenter(center: Offset.zero, width: 9, height: 12),
+        Paint()..color = color.withValues(alpha: 0.14),
+      );
+      canvas.restore();
     }
   }
 
@@ -497,24 +676,6 @@ class _AtmosferaPainter extends CustomPainter {
       final fase = (progreso * (0.7 + (i % 4) * 0.09) + i * 0.08) % 1;
       final y = fase * size.height;
       canvas.drawLine(Offset(x, y), Offset(x - 7, y + 30), paint);
-    }
-  }
-
-  void _pintarArcos(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..color = color.withValues(alpha: 0.22)
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 1.3;
-    for (var i = 0; i < 4; i++) {
-      final width = size.width * (0.24 + i * 0.08);
-      final center = Offset(size.width * (0.15 + i * 0.25), size.height * 0.28);
-      canvas.drawArc(
-        Rect.fromCenter(center: center, width: width, height: width * 1.8),
-        math.pi,
-        math.pi,
-        false,
-        paint,
-      );
     }
   }
 
@@ -551,21 +712,6 @@ class _AtmosferaPainter extends CustomPainter {
         ..lineTo(size.width * (0.52 + i * 0.18), size.height)
         ..lineTo(size.width * (0.34 + i * 0.18), size.height)
         ..close();
-      canvas.drawPath(path, paint);
-    }
-  }
-
-  void _pintarLineasManuscrito(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..color = color.withValues(alpha: 0.16)
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 1;
-    for (var row = 0; row < 12; row++) {
-      final y = size.height * (0.08 + row * 0.075);
-      final path = Path()..moveTo(size.width * 0.08, y);
-      for (double x = size.width * 0.08; x < size.width * 0.92; x += 12) {
-        path.lineTo(x, y + math.sin(x / 24 + row + progreso * 2) * 2);
-      }
       canvas.drawPath(path, paint);
     }
   }
