@@ -427,7 +427,7 @@ class _CapituloPageState extends State<CapituloPage> {
                   shape: BoxShape.circle,
                 ),
                 child: const Icon(
-                  Icons.psychology_alt_outlined,
+                  Icons.forum_outlined,
                   color: AppColors.primary,
                   size: 24,
                 ),
@@ -674,7 +674,9 @@ class _CapituloPageState extends State<CapituloPage> {
     return Scaffold(
       resizeToAvoidBottomInset: true,
 
-      appBar: AppBar(title: Text(widget.capitulo)),
+      appBar: AppBar(
+        title: Text(esReflexion ? '🗣️ Debate final' : widget.capitulo),
+      ),
 
       body: SafeArea(
         top: false,

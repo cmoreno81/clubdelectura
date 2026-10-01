@@ -42,6 +42,7 @@ import '../widgets/common/club_rating_stars.dart';
 import 'acerca_de_page.dart';
 import 'ajustes_privacidad_page.dart';
 import 'ayuda_page.dart';
+import 'change_name_page.dart';
 import 'change_password_page.dart';
 import 'delete_account_page.dart';
 import 'usuarias_bloqueadas_page.dart';
@@ -1176,6 +1177,16 @@ class _PerfilUsuarioPageState extends State<PerfilUsuarioPage> {
             child: Column(
               children: [
                 ListTile(
+                  leading: const Icon(Icons.badge_outlined),
+                  title: const Text('Cambiar nombre'),
+                  trailing: const Icon(Icons.chevron_right_rounded),
+                  onTap: () => Navigator.push<void>(
+                    context,
+                    AppPageRoute(builder: (_) => const ChangeNamePage()),
+                  ),
+                ),
+                const Divider(height: 1),
+                ListTile(
                   leading: const Icon(Icons.lock_outline_rounded),
                   title: const Text('Cambiar contraseña'),
                   trailing: const Icon(Icons.chevron_right_rounded),
@@ -1355,8 +1366,13 @@ class _PerfilUsuarioPageState extends State<PerfilUsuarioPage> {
   }
 
   Future<void> _cerrarSesion() async {
+    // Sin navegación manual: MyApp ya escucha AuthSessionService y
+    // cambia la pantalla raíz sola en cuanto la sesión se cierra (igual
+    // que el logout del dashboard global, que sí funciona bien). El
+    // Navigator.popUntil que había aquí antes competía con ese cambio
+    // reactivo y dejaba la app clavada en la pantalla de solo-login en
+    // vez de la de bienvenida con registro (bug real reportado).
     await AuthService().logout();
-    if (mounted) Navigator.popUntil(context, (route) => route.isFirst);
   }
 
   Future<void> _exportarBiblioteca() async {

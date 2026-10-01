@@ -161,6 +161,7 @@ class _LigaPageState extends State<LigaPage> {
                     estado: estado,
                     procesando: _procesando,
                     onUnirme: _unirme,
+                    clearanceFloatingNav: widget.globalNav != null,
                   ),
           );
         },
@@ -178,16 +179,27 @@ class _VistaInvitacion extends StatelessWidget {
     required this.estado,
     required this.procesando,
     required this.onUnirme,
+    required this.clearanceFloatingNav,
   });
 
   final LigaEstado estado;
   final bool procesando;
   final VoidCallback onUnirme;
 
+  /// Si la pantalla lleva el menú flotante de navegación (al entrar desde
+  /// Global), hay que dejarle hueco abajo o el botón "Unirme a la liga"
+  /// queda tapado detrás — mismo ajuste que ya se hizo en otras pantallas.
+  final bool clearanceFloatingNav;
+
   @override
   Widget build(BuildContext context) {
     return ListView(
-      padding: const EdgeInsets.all(AppSpacing.lg),
+      padding: EdgeInsets.fromLTRB(
+        AppSpacing.lg,
+        AppSpacing.lg,
+        AppSpacing.lg,
+        clearanceFloatingNav ? kFloatingNavClearance : AppSpacing.lg,
+      ),
       children: [
         const SizedBox(height: AppSpacing.lg),
         const Center(child: Text('🏆', style: TextStyle(fontSize: 56))),

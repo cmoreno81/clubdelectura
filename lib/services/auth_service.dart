@@ -98,6 +98,16 @@ class AuthService {
     _ensureSuccess(response);
   }
 
+  Future<void> cambiarNombre({required String nombre}) async {
+    final response = await _authenticatedClient.post(
+      _uri('cambiarNombre'),
+      headers: const {'Content-Type': 'application/json'},
+      body: jsonEncode({'nombre': nombre}),
+    );
+    _ensureSuccess(response);
+    await _session.updateUserName(nombre.trim());
+  }
+
   Future<void> logout() async {
     try {
       await _authenticatedClient.post(

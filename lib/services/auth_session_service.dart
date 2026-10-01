@@ -87,6 +87,27 @@ class AuthSessionService extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// Actualiza el nombre cacheado en la sesión tras cambiarlo desde Ajustes,
+  /// sin reautenticar — si no, el nombre nuevo no se vería en la app hasta
+  /// la próxima vez que se iniciara sesión.
+  Future<void> updateUserName(String nombre) async {
+    final current = _session;
+    if (current == null) return;
+    final updated = AuthSession(
+      accessToken: current.accessToken,
+      refreshToken: current.refreshToken,
+      user: AuthUser(
+        id: current.user.id,
+        nombre: nombre,
+        email: current.user.email,
+        avatarUrl: current.user.avatarUrl,
+      ),
+    );
+    await _storage.write(updated);
+    _session = updated;
+    notifyListeners();
+  }
+
   Future<void> replaceTokens({
     required String accessToken,
     required String refreshToken,

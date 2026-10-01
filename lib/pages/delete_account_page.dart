@@ -54,9 +54,12 @@ class _DeleteAccountPageState extends State<DeleteAccountPage> {
 
     setState(() => _busy = true);
     try {
+      // Sin navegación manual: MyApp ya escucha AuthSessionService y
+      // cambia la pantalla raíz sola en cuanto la sesión se cierra. Este
+      // popUntil competía con ese cambio reactivo y dejaba la app clavada
+      // en la pantalla de solo-login en vez de la de bienvenida con
+      // registro (mismo bug que el de "Cerrar sesión" en Perfil).
       await AuthService().eliminarCuenta(password: _password.text);
-      if (!mounted) return;
-      Navigator.popUntil(context, (route) => route.isFirst);
     } on ApiException catch (error) {
       if (mounted) {
         ScaffoldMessenger.of(
