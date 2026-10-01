@@ -236,13 +236,18 @@ class _ClubvisionVotacionPageState extends State<ClubvisionVotacionPage> {
             );
           }
 
-          // La papeleta se adapta al número real de candidatas: se rankean
-          // todas si hay 5 o menos, o solo las 5 primeras (por orden de
-          // llegada, igual que el backend) si hay más.
-          final candidatos = clubvision.candidatas.length > 5
-              ? clubvision.candidatas.sublist(0, 5)
-              : clubvision.candidatas;
-          final tamanoPapeleta = candidatos.length;
+          // Se muestran TODAS las candidatas (ordenadas por interés, para
+          // destacar con medalla las más populares), y la usuaria elige y
+          // ordena las 5 que quiera entre todas ellas — nunca solo las
+          // primeras que se añadieron. Antes se recortaba la lista a las 5
+          // primeras por orden de llegada antes de mostrarla: en clubes con
+          // muchas candidatas (28, 12...) eso dejaba el resto invisible e
+          // inelegible para siempre (bug real en producción).
+          final candidatos = [...clubvision.candidatas]
+            ..sort((a, b) => b.interesadas.compareTo(a.interesadas));
+          final tamanoPapeleta = candidatos.length > 5
+              ? 5
+              : candidatos.length;
 
           final votos = _votos(clubvision);
 
