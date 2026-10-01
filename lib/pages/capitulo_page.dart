@@ -8,6 +8,7 @@ import 'package:club_lectura_app/services/cursor_pagination_controller.dart';
 import 'package:club_lectura_app/services/chapter_initialization.dart';
 import 'package:club_lectura_app/services/conversation_scroll_policy.dart';
 import 'package:club_lectura_app/services/comment_publication.dart';
+import 'package:club_lectura_app/services/debate_revelado_service.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../theme/app_colors.dart';
@@ -629,6 +630,7 @@ class _CapituloPageState extends State<CapituloPage> {
           )
         else
           _ComentariosList(
+            libro: widget.libro,
             comentarios: data.comentarios,
             usuarioActual: usuario ?? '',
             esReflexion: esReflexion,
@@ -763,6 +765,7 @@ class _CapituloPageState extends State<CapituloPage> {
 
 class _ComentariosList extends StatefulWidget {
   const _ComentariosList({
+    required this.libro,
     required this.comentarios,
     required this.usuarioActual,
     required this.esReflexion,
@@ -772,6 +775,7 @@ class _ComentariosList extends StatefulWidget {
     required this.onDeleted,
   });
 
+  final String libro;
   final List<ComentarioLectura> comentarios;
   final String usuarioActual;
   final bool esReflexion;
@@ -788,7 +792,26 @@ class _ComentariosListState extends State<_ComentariosList> {
   // Un único aviso para todo el debate, no uno por comentario — así, en
   // cuanto se revela, el debate se lee de corrido como un chat normal (con
   // respuestas y reacciones) en vez de tener que destapar mensaje a mensaje.
+  // Una vez revelado se recuerda (por libro y usuaria): se entiende que esa
+  // persona ya terminó el libro y quiere seguir la conversación, así que no
+  // se le vuelve a tapar en sucesivas visitas.
   bool _debateRevelado = false;
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.esReflexion) _cargarRevelado();
+  }
+
+  Future<void> _cargarRevelado() async {
+    final revelado = await DebateReveladoService.estaRevelado(widget.libro);
+    if (mounted && revelado) setState(() => _debateRevelado = true);
+  }
+
+  void _revelarDebate() {
+    setState(() => _debateRevelado = true);
+    DebateReveladoService.marcarRevelado(widget.libro);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -798,9 +821,7 @@ class _ComentariosListState extends State<_ComentariosList> {
       return SliverPadding(
         padding: const EdgeInsets.fromLTRB(16, 8, 16, 20),
         sliver: SliverToBoxAdapter(
-          child: _DebateProtegido(
-            onTap: () => setState(() => _debateRevelado = true),
-          ),
+          child: _DebateProtegido(onTap: _revelarDebate),
         ),
       );
     }
