@@ -210,6 +210,9 @@ const List<_HelpSection> _secciones = [
             'deseos" en "Mi universo lector" y pulsa "Ver lista completa". Desde ahí '
             'puedes ver los detalles de cada libro, eliminarlo de la lista o añadirlo '
             'directamente a tu biblioteca.\n\n'
+            '✍️ También puedes añadir un libro escribiendo el título a mano, sin usar '
+            'el buscador. En ese caso, la app intenta enlazarlo automáticamente con el '
+            'catálogo de ClubReads para traerte la portada sin que tengas que buscarla.\n\n'
             '💶 La tarjeta también muestra el precio total estimado de los libros de '
             'tu lista, para que te hagas una idea del gasto si los comprases todos.',
       ),
@@ -550,10 +553,20 @@ const List<_HelpSection> _secciones = [
       _HelpItem(
         pregunta: '¿Qué significa que una saga esté "abandonada"?',
         respuesta:
-            'Si marcas algún libro de la saga como "No era para mí" (abandonado), '
-            'la saga completa pasa automáticamente al estado Abandonada. '
-            'En la pestaña "Sagas" aparece un filtro específico para verlas. '
-            'Siempre puedes retomarla cambiando el estado del libro.',
+            'Una saga pasa a Abandonada de dos formas: automáticamente, si '
+            'marcas alguno de sus libros como "No era para mí", o a mano, '
+            'pulsando el botón 💔 "Abandonar saga" que aparece en cada '
+            'tarjeta. En la pestaña "Sagas" aparece un filtro específico '
+            'para verlas.',
+      ),
+      _HelpItem(
+        pregunta: '¿Puedo recuperar una saga abandonada?',
+        respuesta:
+            'Sí. En el filtro "Abandonadas" de la pestaña "Sagas", cada '
+            'tarjeta tiene un botón "Recuperar" que devuelve la saga a su '
+            'estado real. Si la habías abandonado marcando alguno de sus '
+            'libros como "No era para mí", ese libro también vuelve a tu '
+            'biblioteca con su estado anterior.',
       ),
       _HelpItem(
         pregunta: '¿Puedo ocultar o eliminar una saga?',
@@ -593,12 +606,12 @@ const List<_HelpSection> _secciones = [
             '• Que al menos 2 miembros del club lo tengan en "En mi estantería"\n'
             '• Que el club no lo haya leído ya\n'
             '• Que no haya ganado una edición anterior de Clubvisión\n\n'
-            'Se necesitan al menos 5 libros candidatos para abrir la votación.',
+            'Se necesitan al menos 2 libros candidatos para abrir la votación.',
       ),
       _HelpItem(
-        pregunta: '¿Qué pasa si hay menos de 5 candidatos?',
+        pregunta: '¿Qué pasa si hay menos de 2 candidatos?',
         respuesta:
-            'Si Clubvisión se abre pero hay menos de 5 libros candidatos, '
+            'Si Clubvisión se abre pero hay menos de 2 libros candidatos, '
             'la votación no puede celebrarse. En su lugar aparece la opción de '
             '"Proponer lectura conjunta": cualquier miembro puede sugerir un libro '
             'directamente para que el club lo lea ese mes.\n\n'
@@ -633,11 +646,13 @@ const List<_HelpSection> _secciones = [
             'como en el menú de Clubvisión. La próxima edición arrancará el mes siguiente.',
       ),
       _HelpItem(
-        pregunta: '¿Cómo voto cuando hay 5 o más candidatos?',
+        pregunta: '¿Cómo voto cuando la votación está abierta?',
         respuesta:
-            'Cuando la votación está abierta, entra en Clubvisión '
-            'y ordena los libros candidatos según tus preferencias arrastrándolos. '
-            'Tu voto se guarda al confirmar. Solo puedes votar una vez por edición.',
+            'Entra en Clubvisión y verás TODAS las candidatas de la edición, '
+            'ordenadas por interés (cuántas miembros las tienen pendientes). '
+            'Elige y ordena hasta 5 de entre todas ellas según tus '
+            'preferencias. Tu voto se guarda al confirmar. Solo puedes '
+            'votar una vez por edición.',
       ),
       _HelpItem(
         pregunta: '¿Puedo ver cómo ha votado cada persona?',
@@ -987,6 +1002,19 @@ const List<_HelpSection> _secciones = [
             'respuesta para elegir tu reacción. También puedes cambiarla '
             'o quitarla pulsando de nuevo. Pulsa el resumen de reacciones para '
             'ver quién ha reaccionado con cada emoji.',
+      ),
+      _HelpItem(
+        pregunta: '¿Qué es el "🗣️ Debate final"?',
+        respuesta:
+            'Es el último capítulo de la lectura, pensado para comentar el '
+            'libro entero sin cortarse. A diferencia de los demás capítulos, '
+            'lleva un único aviso de spoiler para todo el hilo: al pulsar '
+            '"Revelar" se descubren de golpe todos los comentarios, como un '
+            'chat normal, y la app recuerda que ya lo revelaste — no te lo '
+            'volverá a preguntar en próximas visitas.\n\n'
+            'El primer comentario que se escribe ahí dispara una '
+            'notificación especial de "Debate abierto" para avisar al resto '
+            'del club.',
       ),
       _HelpItem(
         pregunta: '¿Qué son las citas?',
@@ -1457,7 +1485,11 @@ const List<_HelpSection> _secciones = [
             '• Cuando alguien termina o empieza un libro\n'
             '• Cuando alguien desbloquea un logro\n'
             '• Novedades del Libro del año del club\n'
-            '• Cuando alguien comenta en una lectura en la que participas\n\n'
+            '• Cuando alguien comenta en un capítulo de una lectura en la que '
+            'participas de verdad — el mensaje incluye qué capítulo es, y '
+            'solo avisa a quien participa en esa lectura, no a todo el club\n'
+            '• "Debate abierto" cuando alguien escribe el primer comentario '
+            'en el 🗣️ Debate final de una lectura\n\n'
             'Puedes desactivar cualquiera de estos avisos por separado en '
             'Perfil → "Más" → "Privacidad y notificaciones". Se aplica solo a '
             'ti; el resto del club sigue recibiendo las suyas con normalidad.',
@@ -1473,6 +1505,13 @@ const List<_HelpSection> _secciones = [
             'ni siquiera tu club puede abrir tu ficha de perfil; tú sigues '
             'viendo todo con normalidad y puedes volver a "Miembros de mi '
             'club" cuando quieras.',
+      ),
+      _HelpItem(
+        pregunta: '¿Cómo cambio mi nombre de usuaria o mi contraseña?',
+        respuesta:
+            'Ve a Perfil → "Más" → Ajustes y encontrarás "Cambiar nombre" '
+            'y "Cambiar contraseña". El nombre de usuaria debe ser único: '
+            'si ya lo usa otra persona, la app te avisará para que elijas otro.',
       ),
       _HelpItem(
         pregunta: '¿Qué es "Seguimiento de lectura" en el perfil?',
