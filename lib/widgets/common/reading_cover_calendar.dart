@@ -370,7 +370,7 @@ class _ReadingDayCell extends StatelessWidget {
                 ),
               ),
             ),
-            for (final reading in readings)
+            for (final reading in _ordenados)
               ListTile(
                 leading: ClipRRect(
                   borderRadius: BorderRadius.circular(6),
@@ -388,6 +388,9 @@ class _ReadingDayCell extends StatelessWidget {
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                 ),
+                trailing: _ratingFor(reading) != null
+                    ? _FinishBadge(rating: _ratingFor(reading)!)
+                    : null,
                 onTap: () {
                   Navigator.pop(sheetContext);
                   onBookTap!(reading);
@@ -411,7 +414,12 @@ class _FinishBadge extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final hasRating = rating > 0;
-    return Container(
+    // FittedBox para que, en los abanicos de 3 portadas, donde cada una
+    // queda muy estrecha, la insignia se encoja en vez de desbordar
+    // (antes Flutter pintaba el aviso de "overflow" encima de la portada).
+    return FittedBox(
+      fit: BoxFit.scaleDown,
+      child: Container(
       padding: const EdgeInsets.symmetric(horizontal: 3, vertical: 2),
       decoration: BoxDecoration(
         color: Colors.black.withValues(alpha: .70),
@@ -441,6 +449,7 @@ class _FinishBadge extends StatelessWidget {
             ),
           ],
         ],
+      ),
       ),
     );
   }

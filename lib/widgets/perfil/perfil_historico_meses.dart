@@ -49,6 +49,8 @@ class PerfilHistoricoMeses extends StatefulWidget {
 class _PerfilHistoricoMesesState extends State<PerfilHistoricoMeses> {
   // Mes expandido actualmente (índice en la lista, -1 = ninguno)
   int _expanded = -1;
+  // Año (distinto del actual) cuyo grupo está desplegado, null = ninguno
+  int? _anioExpandido;
 
   @override
   void initState() {
@@ -61,21 +63,166 @@ class _PerfilHistoricoMesesState extends State<PerfilHistoricoMeses> {
   Widget build(BuildContext context) {
     if (widget.meses.isEmpty) return const SizedBox.shrink();
 
+    final anioActual = DateTime.now().year;
+
+    // Agrupa los índices originales por año (conservando el orden de la
+    // lista, de más a menos reciente) para poder compactar los años
+    // pasados en un desplegable y no alargar la pantalla sin fin.
+    final indicesPorAnio = <int, List<int>>{};
+    for (var i = 0; i < widget.meses.length; i++) {
+      indicesPorAnio.putIfAbsent(widget.meses[i].anio, () => []).add(i);
+    }
+    final anios = indicesPorAnio.keys.toList()..sort((a, b) => b.compareTo(a));
+
+    Widget mesCard(int i) => _MesCard(
+      mes: widget.meses[i],
+      index: i,
+      expanded: _expanded == i,
+      onToggle: () => setState(() => _expanded = _expanded == i ? -1 : i),
+      onBookTap: widget.onBookTap,
+      userName: widget.userName,
+    );
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        for (var i = 0; i < widget.meses.length; i++) ...[
-          _MesCard(
-            mes: widget.meses[i],
-            index: i,
-            expanded: _expanded == i,
-            onToggle: () => setState(() => _expanded = _expanded == i ? -1 : i),
-            onBookTap: widget.onBookTap,
-            userName: widget.userName,
-          ),
-          const SizedBox(height: AppSpacing.sm),
+        for (final anio in anios) ...[
+          if (anio == anioActual)
+            for (final i in indicesPorAnio[anio]!) ...[
+              mesCard(i),
+              const SizedBox(height: AppSpacing.sm),
+            ]
+          else ...[
+            _AnioGroupCard(
+              anio: anio,
+              totalLibros: indicesPorAnio[anio]!.fold<int>(
+                0,
+                (total, i) => total + widget.meses[i].lecturas.length,
+              ),
+              expanded: _anioExpandido == anio,
+              onToggle: () => setState(
+                () => _anioExpandido = _anioExpandido == anio ? null : anio,
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  for (final i in indicesPorAnio[anio]!) ...[
+                    mesCard(i),
+                    const SizedBox(height: AppSpacing.sm),
+                  ],
+                ],
+              ),
+            ),
+            const SizedBox(height: AppSpacing.sm),
+          ],
         ],
       ],
+    );
+  }
+}
+
+/// Grupo colapsable con todos los meses de un año que no es el actual —
+/// evita que "Mis meses lectores" se convierta en una lista interminable
+/// para quien lleva ya varios años usando la app.
+class _AnioGroupCard extends StatelessWidget {
+  const _AnioGroupCard({
+    required this.anio,
+    required this.totalLibros,
+    required this.expanded,
+    required this.onToggle,
+    required this.child,
+  });
+
+  final int anio;
+  final int totalLibros;
+  final bool expanded;
+  final VoidCallback onToggle;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 220),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppColors.border),
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: Column(
+        children: [
+          InkWell(
+            onTap: onToggle,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(
+                horizontal: AppSpacing.md,
+                vertical: 14,
+              ),
+              child: Row(
+                children: [
+                  Container(
+                    width: 40,
+                    height: 40,
+                    decoration: BoxDecoration(
+                      color: AppColors.primaryLight,
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: const Icon(
+                      Icons.calendar_today_rounded,
+                      color: AppColors.primary,
+                      size: 18,
+                    ),
+                  ),
+                  const SizedBox(width: AppSpacing.md),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          '$anio',
+                          style: AppTextStyles.subtitle.copyWith(
+                            fontWeight: FontWeight.w800,
+                          ),
+                        ),
+                        Text(
+                          '$totalLibros ${totalLibros == 1 ? 'libro leído' : 'libros leídos'}',
+                          style: AppTextStyles.caption.copyWith(
+                            color: AppColors.textSecondary,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  AnimatedRotation(
+                    turns: expanded ? 0.5 : 0,
+                    duration: const Duration(milliseconds: 200),
+                    child: const Icon(
+                      Icons.keyboard_arrow_down_rounded,
+                      color: AppColors.textMuted,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          AnimatedCrossFade(
+            duration: const Duration(milliseconds: 250),
+            crossFadeState: expanded
+                ? CrossFadeState.showFirst
+                : CrossFadeState.showSecond,
+            firstChild: Padding(
+              padding: const EdgeInsets.fromLTRB(
+                AppSpacing.md,
+                0,
+                AppSpacing.md,
+                AppSpacing.md,
+              ),
+              child: child,
+            ),
+            secondChild: const SizedBox.shrink(),
+          ),
+        ],
+      ),
     );
   }
 }
