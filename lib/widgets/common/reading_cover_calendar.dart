@@ -162,8 +162,19 @@ class _ReadingDayCell extends StatelessWidget {
   double? _ratingFor(MonthlyReadingSpan reading) =>
       ratingsByBookAndDay[ReadingCoverCalendar._finishKey(reading.bookId, date)];
 
+  // Cuántas portadas se abanican en la tarjeta para compartir antes de
+  // recurrir al contador "+N" — con más se aprietan demasiado para leerse.
+  static const _maxAbanico = 3;
+
   @override
   Widget build(BuildContext context) {
+    final showFan = highResolution && readings.length > 1;
+    final fanShown = showFan
+        ? readings.take(_maxAbanico).toList()
+        : const <MonthlyReadingSpan>[];
+    final restantes = readings.length -
+        (showFan ? fanShown.length : (readings.length > 1 ? 1 : readings.length));
+
     return Semantics(
       label: readings.isEmpty
           ? 'Día $day, sin lectura registrada'
@@ -173,33 +184,22 @@ class _ReadingDayCell extends StatelessWidget {
         children: [
           if (readings.isEmpty)
             const ColoredBox(color: Color(0xFFFFFCF7))
+          else if (readings.length == 1)
+            _portada(readings.first)
+          else if (showFan)
+            // Tarjeta para compartir: portadas abanicadas en diagonal, sin
+            // interacción (es una imagen estática) — se ven casi enteras en
+            // vez de aplastadas una junto a otra.
+            _abanico(fanShown)
           else
-            Row(
-              children: [
-                for (final reading in readings.take(2))
-                  Expanded(
-                    child: GestureDetector(
-                      onTap: onBookTap == null
-                          ? null
-                          : () => onBookTap!(reading),
-                      child: Stack(
-                        fit: StackFit.expand,
-                        children: [
-                          _CalendarCover(
-                            reading: reading,
-                            highResolution: highResolution,
-                          ),
-                          if (_ratingFor(reading) != null)
-                            Positioned(
-                              right: 2,
-                              bottom: 2,
-                              child: _FinishBadge(rating: _ratingFor(reading)!),
-                            ),
-                        ],
-                      ),
-                    ),
-                  ),
-              ],
+            // Vista en la app: una sola portada representativa a tamaño
+            // completo; tocar el día abre la lista de todos esos libros en
+            // vez de intentar tocar una porción diminuta de cada portada.
+            GestureDetector(
+              onTap: onBookTap == null
+                  ? null
+                  : () => _mostrarLibrosDelDia(context),
+              child: _portada(readings.first),
             ),
 
           // Número del día (círculo superior izquierdo)
@@ -229,8 +229,8 @@ class _ReadingDayCell extends StatelessWidget {
             ),
           ),
 
-          // Contador si hay más de 2 libros simultáneos
-          if (readings.length > 2)
+          // Contador de libros que no caben a la vista
+          if (restantes > 0)
             Positioned(
               right: 2,
               bottom: 2,
@@ -241,7 +241,7 @@ class _ReadingDayCell extends StatelessWidget {
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Text(
-                  '+${readings.length - 2}',
+                  '+$restantes',
                   style: const TextStyle(
                     color: Colors.white,
                     fontSize: 8,
@@ -252,6 +252,112 @@ class _ReadingDayCell extends StatelessWidget {
             ),
 
         ],
+      ),
+    );
+  }
+
+  Widget _portada(MonthlyReadingSpan reading) {
+    return Stack(
+      fit: StackFit.expand,
+      children: [
+        _CalendarCover(reading: reading, highResolution: highResolution),
+        if (_ratingFor(reading) != null)
+          Positioned(
+            right: 2,
+            bottom: 2,
+            child: _FinishBadge(rating: _ratingFor(reading)!),
+          ),
+      ],
+    );
+  }
+
+  /// Portadas superpuestas en diagonal, la primera delante — pensado para
+  /// una imagen estática (tarjeta para compartir), no para tocarla.
+  Widget _abanico(List<MonthlyReadingSpan> shown) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final n = shown.length;
+        final step = constraints.maxWidth * 0.16;
+        // Todas las portadas comparten el mismo tamaño reducido — si la de
+        // delante ocupara la celda entera (como antes), taparía del todo a
+        // las de detrás y el abanico no se vería (bug real).
+        final coverW = constraints.maxWidth - (n - 1) * step;
+        final coverH = constraints.maxHeight - (n - 1) * step * .6;
+        return Stack(
+          fit: StackFit.expand,
+          children: [
+            for (var i = n - 1; i >= 0; i--)
+              Positioned(
+                left: i * step,
+                top: i * step * .6,
+                width: coverW,
+                height: coverH,
+                child: Container(
+                  decoration: BoxDecoration(
+                    border: i > 0
+                        ? Border.all(color: Colors.white, width: 1.2)
+                        : null,
+                  ),
+                  child: _portada(shown[i]),
+                ),
+              ),
+          ],
+        );
+      },
+    );
+  }
+
+  Future<void> _mostrarLibrosDelDia(BuildContext context) async {
+    if (readings.length == 1) {
+      onBookTap!(readings.first);
+      return;
+    }
+    await showModalBottomSheet<void>(
+      context: context,
+      showDragHandle: true,
+      builder: (sheetContext) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
+              child: Align(
+                alignment: Alignment.centerLeft,
+                child: Text(
+                  'Día $day',
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+              ),
+            ),
+            for (final reading in readings)
+              ListTile(
+                leading: ClipRRect(
+                  borderRadius: BorderRadius.circular(6),
+                  child: SizedBox(
+                    width: 36,
+                    height: 52,
+                    child: _CalendarCover(
+                      reading: reading,
+                      highResolution: false,
+                    ),
+                  ),
+                ),
+                title: Text(
+                  reading.title,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                onTap: () {
+                  Navigator.pop(sheetContext);
+                  onBookTap!(reading);
+                },
+              ),
+            const SizedBox(height: 8),
+          ],
+        ),
       ),
     );
   }
