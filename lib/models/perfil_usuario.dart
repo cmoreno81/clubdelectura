@@ -424,6 +424,7 @@ class PerfilMesLectura {
     required this.fechaInicio,
     required this.fechaFin,
     this.valoracion,
+    this.enCurso = false,
   });
 
   final String id;
@@ -433,6 +434,10 @@ class PerfilMesLectura {
   final String fechaInicio;
   final String fechaFin;
   final double? valoracion;
+  /// true si es una lectura todavía sin terminar (se incluye hasta hoy,
+  /// sin valoración) — para no pintarla como si tuviera trofeo de libro
+  /// terminado en el calendario.
+  final bool enCurso;
 
   factory PerfilMesLectura.fromJson(Map<String, dynamic> json) =>
       PerfilMesLectura(
@@ -445,5 +450,6 @@ class PerfilMesLectura {
         valoracion: json['valoracion'] != null
             ? (json['valoracion'] as num).toDouble()
             : null,
+        enCurso: json['enCurso'] as bool? ?? false,
       );
 }

@@ -389,7 +389,12 @@ class _MesCard extends StatelessWidget {
         )
         .toList(growable: false);
 
+    // Las lecturas en curso (sin terminar todavía) solo aportan la
+    // portada del día — sin esto, el último día visible se pintaría con
+    // el trofeo de "libro terminado" que usamos para una valoración 0,
+    // cuando en realidad el libro ni siquiera se ha acabado.
     final finishedBooks = mes.lecturas
+        .where((l) => !l.enCurso)
         .map(
           (l) => MonthlyFinishedBook(
             id: l.id,
