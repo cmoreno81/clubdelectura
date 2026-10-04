@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 
 import '../models/catalog_book.dart';
 import '../models/wishlist.dart';
+import '../navigation/app_page_route.dart';
 import '../services/api_exception.dart';
 import '../services/api_service.dart';
 import '../services/library_refresh_notifier.dart';
@@ -19,6 +20,8 @@ import '../widgets/common/club_shimmer.dart';
 import '../widgets/common/optimized_network_image.dart';
 import '../widgets/error_view.dart';
 import '../widgets/libros/add_book_sheet.dart';
+import '../widgets/libros/botones_compra.dart';
+import 'comprar_libros_page.dart';
 
 // ─── Helpers de formato (sin dependencia intl) ────────────────────────────────
 
@@ -81,11 +84,36 @@ class _WishlistPageState extends State<WishlistPage> {
   Timer? _purchaseNoticeTimer;
   _WishlistTab _tab = _WishlistTab.all;
 
+  // Enlaces de compra por id de libro: solo los libros que Casa del Libro
+  // tiene localizados llevan botón de compra.
+  final Map<String, EnlaceCompra> _enlaces = {};
+
   @override
   void initState() {
     super.initState();
     _service = widget.service ?? WishlistService();
     _future = _service.getWishlist();
+    _future.then(_cargarEnlaces).catchError((_) {});
+  }
+
+  Future<void> _cargarEnlaces(WishlistData data) async {
+    final ids = [
+      for (final i in data.items)
+        if ((i.bookId ?? '').isNotEmpty) i.bookId!,
+    ];
+    if (ids.isEmpty) return;
+    try {
+      final enlaces = await ApiService().getEnlacesCompraLote(ids);
+      if (!mounted) return;
+      setState(() => _enlaces.addAll(enlaces));
+    } catch (_) {
+      // Sin enlaces simplemente no se ofrece comprar.
+    }
+  }
+
+  EnlaceCompra? _enlaceDe(WishlistItem item) {
+    final e = _enlaces[item.bookId];
+    return e != null && e.exacto ? e : null;
   }
 
   @override
@@ -130,7 +158,7 @@ class _WishlistPageState extends State<WishlistPage> {
       _future = f;
     });
     try {
-      await f;
+      _cargarEnlaces(await f);
     } catch (_) {
       // FutureBuilder muestra el error sin dejar una excepción sin controlar.
     }
@@ -423,6 +451,30 @@ class _WishlistPageState extends State<WishlistPage> {
                   ),
                 ),
 
+                // ── Acceso a "Tu próxima compra" ───────────────────────────
+                if (data.items.any((i) => _enlaceDe(i) != null))
+                  SliverToBoxAdapter(
+                    child: Padding(
+                      padding: const EdgeInsets.fromLTRB(
+                        AppSpacing.md,
+                        AppSpacing.sm,
+                        AppSpacing.md,
+                        0,
+                      ),
+                      child: _AccesoCompra(
+                        disponibles: data.items
+                            .where((i) => _enlaceDe(i) != null)
+                            .length,
+                        onTap: () => Navigator.push<void>(
+                          context,
+                          AppPageRoute(
+                            builder: (_) => const ComprarLibrosPage(),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+
                 // ── Tabs ───────────────────────────────────────────────────
                 SliverPersistentHeader(
                   pinned: true,
@@ -529,6 +581,7 @@ class _WishlistPageState extends State<WishlistPage> {
                         onMarkPurchased: () => _markPurchased(visibleItems[i]),
                         child: _WishlistTile(
                           item: visibleItems[i],
+                          enlace: _enlaceDe(visibleItems[i]),
                           onEdit: () => _openEdit(visibleItems[i]),
                           onDelete: () => _confirmDelete(visibleItems[i]),
                         ),
@@ -1053,9 +1106,11 @@ class _WishlistTile extends StatelessWidget {
     required this.item,
     required this.onEdit,
     required this.onDelete,
+    this.enlace,
   });
 
   final WishlistItem item;
+  final EnlaceCompra? enlace;
   final VoidCallback onEdit;
   final VoidCallback onDelete;
 
@@ -1082,6 +1137,7 @@ class _WishlistTile extends StatelessWidget {
       onTap: onEdit,
       padding: const EdgeInsets.all(AppSpacing.sm),
       child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // ── Portada ─────────────────────────────────────────────────────
           _Cover(coverUrl: item.coverUrl, title: item.title),
@@ -1146,6 +1202,20 @@ class _WishlistTile extends StatelessWidget {
                     overflow: TextOverflow.ellipsis,
                   ),
                 ],
+                if (enlace != null) ...[
+                  const SizedBox(height: AppSpacing.sm),
+                  const _EtiquetaPublicidad(),
+                  const SizedBox(height: 6),
+                  BotonesCompra(
+                    enlace: enlace!,
+                    reserva: isUpcoming,
+                    formatoPrincipal: switch (item.format) {
+                      WishlistFormat.physical => 'papel',
+                      WishlistFormat.digital => 'ebook',
+                      WishlistFormat.audiobook => 'audio',
+                    },
+                  ),
+                ],
               ],
             ),
           ),
@@ -1176,6 +1246,107 @@ class _WishlistTile extends StatelessWidget {
       return _fmtDateShort(d);
     }
     return _fmtMonthYear(d);
+  }
+}
+
+/// "Publicidad · Enlace de afiliado": va antes de los botones de compra.
+class _EtiquetaPublicidad extends StatelessWidget {
+  const _EtiquetaPublicidad();
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+          decoration: BoxDecoration(
+            color: const Color(0xFFDDEEDF),
+            borderRadius: BorderRadius.circular(6),
+          ),
+          child: const Text(
+            'Publicidad',
+            style: TextStyle(
+              fontSize: 10,
+              fontWeight: FontWeight.w800,
+              color: Color(0xFF3F7A4D),
+            ),
+          ),
+        ),
+        const SizedBox(width: 6),
+        const Expanded(
+          child: Text(
+            'Enlace de afiliado',
+            style: TextStyle(fontSize: 11, color: AppColors.textSecondary),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+/// Franja verde bajo el presupuesto: lleva a "Tu próxima compra".
+class _AccesoCompra extends StatelessWidget {
+  const _AccesoCompra({required this.disponibles, required this.onTap});
+
+  final int disponibles;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(
+          horizontal: AppSpacing.md,
+          vertical: AppSpacing.sm,
+        ),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(AppRadius.lg),
+          gradient: const LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [Color(0xFF4C9560), Color(0xFF2B5C3A)],
+          ),
+        ),
+        child: Row(
+          children: [
+            const Icon(Icons.shopping_bag_outlined, color: Colors.white),
+            const SizedBox(width: AppSpacing.sm),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    disponibles == 1
+                        ? '1 de tus deseos está en Casa del Libro'
+                        : '$disponibles de tus deseos están en Casa del Libro',
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.w800,
+                      fontSize: 14,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    'PUBLICIDAD · Ver en Tu próxima compra',
+                    style: TextStyle(
+                      color: Colors.white.withValues(alpha: .85),
+                      fontSize: 11,
+                      letterSpacing: .3,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const Icon(
+              Icons.arrow_forward_rounded,
+              color: Colors.white,
+              size: 18,
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }
 

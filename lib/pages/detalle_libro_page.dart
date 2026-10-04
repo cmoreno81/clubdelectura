@@ -37,6 +37,7 @@ import '../widgets/libros/conversaciones_libro_card.dart';
 import '../widgets/libros/finalizar_libro_dialog.dart';
 import '../widgets/libros/kit_lectura_card.dart';
 import '../widgets/libros/libro_header.dart';
+import '../widgets/libros/comprar_libro_card.dart';
 import '../widgets/libros/libro_interesadas_section.dart';
 import '../widgets/libros/mi_ficha_lectura_card.dart';
 import '../widgets/libros/libro_section.dart';
@@ -1268,6 +1269,11 @@ class _DetalleLibroPageState extends State<DetalleLibroPage> {
                 globalStats: widget.globalStats,
                 miEstado: miEstado,
               ),
+
+              if (libro.bookId.isNotEmpty) ...[
+                const SizedBox(height: AppSpacing.md),
+                ComprarLibroCard(bookId: libro.bookId),
+              ],
 
               // Banner de sugerencia: anima a completar la ficha del libro
               // Aparece cuando el libro tiene bookId (se puede editar) y le falta portada o género

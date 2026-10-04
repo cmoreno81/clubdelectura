@@ -9,6 +9,7 @@ import '../theme/app_colors.dart';
 import '../theme/app_spacing.dart';
 import '../widgets/common/club_book_cover.dart';
 import '../widgets/libros/add_book_sheet.dart';
+import '../widgets/libros/botones_compra.dart';
 
 enum _ReleaseRange { week, month, soon }
 
@@ -35,7 +36,35 @@ class _UpcomingReleasesPageState extends State<UpcomingReleasesPage> {
   String? _selectedCliche;
   String? _selectedGenre;
 
-  Future<List<UpcomingRelease>> _load() {
+  final Map<String, EnlaceCompra> _enlaces = {};
+
+  // Cambios hechos en esta pantalla: se aplican a la tarjeta sin recargar toda
+  // la lista (recargar volvía a mostrar el indicador de carga y la lista
+  // "parpadeaba" al tocar el corazón).
+  final Map<String, ({bool enDeseos, String? itemId})> _deseos = {};
+  final Set<String> _enBiblioteca = {};
+
+  Future<List<UpcomingRelease>> _load() async {
+    final libros = await _loadLibros();
+    _cargarEnlaces(libros);
+    return libros;
+  }
+
+  // Los enlaces de compra llegan después de pintar la lista: los botones
+  // "Comprar" aparecen solo en los libros localizados en la tienda.
+  Future<void> _cargarEnlaces(List<UpcomingRelease> libros) async {
+    try {
+      final enlaces = await ApiService().getEnlacesCompraLote(
+        libros.map((l) => l.id).toList(),
+      );
+      if (!mounted) return;
+      setState(() => _enlaces.addAll(enlaces));
+    } catch (_) {
+      // Sin enlaces simplemente no se ofrece comprar.
+    }
+  }
+
+  Future<List<UpcomingRelease>> _loadLibros() {
     if (widget.mode == ReleaseCatalogMode.newReleases) {
       return _service.loadNew();
     }
@@ -70,10 +99,15 @@ class _UpcomingReleasesPageState extends State<UpcomingReleasesPage> {
       _busy.add(book.id);
     });
     try {
-      if (book.isInWishlist && book.wishlistItemId != null) {
-        await _wishlist.deleteItem(book.wishlistItemId!);
+      final enDeseos = _deseos[book.id]?.enDeseos ?? book.isInWishlist;
+      final itemId = _deseos[book.id]?.itemId ?? book.wishlistItemId;
+      if (enDeseos && itemId != null) {
+        await _wishlist.deleteItem(itemId);
+        if (mounted) {
+          setState(() => _deseos[book.id] = (enDeseos: false, itemId: null));
+        }
       } else {
-        await _wishlist.addItem(
+        final item = await _wishlist.addItem(
           bookId: book.id,
           title: book.title,
           author: book.author,
@@ -81,12 +115,9 @@ class _UpcomingReleasesPageState extends State<UpcomingReleasesPage> {
           isbn: book.isbn,
           releaseDate: book.publicationDate,
         );
-      }
-      if (mounted) {
-        final refreshed = _load();
-        setState(() {
-          _future = refreshed;
-        });
+        if (mounted) {
+          setState(() => _deseos[book.id] = (enDeseos: true, itemId: item.id));
+        }
       }
     } catch (error) {
       if (mounted) {
@@ -104,7 +135,11 @@ class _UpcomingReleasesPageState extends State<UpcomingReleasesPage> {
   }
 
   Future<void> _addToLibrary(UpcomingRelease book) async {
-    if (book.isInLibrary || _busy.contains(book.id)) return;
+    if (book.isInLibrary ||
+        _enBiblioteca.contains(book.id) ||
+        _busy.contains(book.id)) {
+      return;
+    }
     final preferences = await showAddBookSheet(
       context,
       title: book.title,
@@ -136,10 +171,7 @@ class _UpcomingReleasesPageState extends State<UpcomingReleasesPage> {
         idioma: preferences.idioma,
       );
       if (mounted) {
-        final refreshed = _load();
-        setState(() {
-          _future = refreshed;
-        });
+        setState(() => _enBiblioteca.add(book.id));
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('${book.title} está en tu biblioteca')),
         );
@@ -346,6 +378,35 @@ class _UpcomingReleasesPageState extends State<UpcomingReleasesPage> {
               height: 1.35,
             ),
           ),
+          const SizedBox(height: AppSpacing.xs),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Padding(
+                padding: const EdgeInsets.only(top: 2),
+                child: Icon(
+                  Icons.favorite_border_rounded,
+                  size: 15,
+                  color: Colors.white.withValues(alpha: .9),
+                ),
+              ),
+              const SizedBox(width: 6),
+              Expanded(
+                child: Text(
+                  upcoming
+                      ? 'Toca el corazón para guardarlo en tu lista de deseos, '
+                            'o resérvalo directamente en Casa del Libro.'
+                      : 'Toca el corazón para guardarlo en tu lista de deseos, '
+                            'o cómpralo directamente en Casa del Libro.',
+                  style: TextStyle(
+                    color: Colors.white.withValues(alpha: .84),
+                    fontSize: 12.5,
+                    height: 1.35,
+                  ),
+                ),
+              ),
+            ],
+          ),
           if (upcoming) ...[
             const SizedBox(height: AppSpacing.md),
             SegmentedButton<_ReleaseRange>(
@@ -533,7 +594,8 @@ class _UpcomingReleasesPageState extends State<UpcomingReleasesPage> {
                       top: -6,
                       right: -6,
                       child: _WishlistBadge(
-                        inWishlist: book.isInWishlist,
+                        inWishlist:
+                            _deseos[book.id]?.enDeseos ?? book.isInWishlist,
                         busy: busy,
                         onTap: () => _toggleWishlist(book),
                       ),
@@ -542,7 +604,10 @@ class _UpcomingReleasesPageState extends State<UpcomingReleasesPage> {
                 ),
                 const SizedBox(height: AppSpacing.xs),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 3,
+                  ),
                   decoration: BoxDecoration(
                     color: upcoming
                         ? AppColors.primaryLight
@@ -597,8 +662,10 @@ class _UpcomingReleasesPageState extends State<UpcomingReleasesPage> {
                       fontSize: 13,
                     ),
                   ),
-                  if ([book.genre, book.publisher]
-                      .any((v) => v?.isNotEmpty == true))
+                  if ([
+                    book.genre,
+                    book.publisher,
+                  ].any((v) => v?.isNotEmpty == true))
                     Text(
                       [
                         book.genre,
@@ -617,10 +684,7 @@ class _UpcomingReleasesPageState extends State<UpcomingReleasesPage> {
                       children: book.cliches
                           .map(
                             (c) => Chip(
-                              avatar: const Icon(
-                                Icons.auto_awesome,
-                                size: 13,
-                              ),
+                              avatar: const Icon(Icons.auto_awesome, size: 13),
                               label: Text(
                                 c,
                                 style: const TextStyle(fontSize: 11),
@@ -637,7 +701,7 @@ class _UpcomingReleasesPageState extends State<UpcomingReleasesPage> {
                   const SizedBox(height: AppSpacing.sm),
 
                   // ── Botón biblioteca ──────────────────────────────────
-                  book.isInLibrary
+                  (book.isInLibrary || _enBiblioteca.contains(book.id))
                       ? Row(
                           children: [
                             const Icon(
@@ -671,6 +735,48 @@ class _UpcomingReleasesPageState extends State<UpcomingReleasesPage> {
                             ),
                           ),
                         ),
+                  if (_enlaces[book.id]?.exacto == true) ...[
+                    const SizedBox(height: AppSpacing.sm),
+                    // Publicidad: va antes del botón (código de conducta de
+                    // publicidad: la mención debe verse antes que el contenido).
+                    Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 6,
+                            vertical: 2,
+                          ),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFDDEEDF),
+                            borderRadius: BorderRadius.circular(6),
+                          ),
+                          child: const Text(
+                            'Publicidad',
+                            style: TextStyle(
+                              fontSize: 10,
+                              fontWeight: FontWeight.w800,
+                              color: Color(0xFF3F7A4D),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 6),
+                        const Expanded(
+                          child: Text(
+                            'Enlace de afiliado',
+                            style: TextStyle(
+                              fontSize: 11,
+                              color: AppColors.textSecondary,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: AppSpacing.xs),
+                    BotonesCompra(
+                      enlace: _enlaces[book.id]!,
+                      reserva: book.publicationDate.isAfter(DateTime.now()),
+                    ),
+                  ],
                 ],
               ),
             ),
@@ -751,34 +857,39 @@ class _WishlistBadge extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: busy ? null : onTap,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        width: 32,
-        height: 32,
-        decoration: BoxDecoration(
-          color: inWishlist ? AppColors.primary : AppColors.surface,
-          shape: BoxShape.circle,
-          border: Border.all(
-            color: inWishlist
-                ? AppColors.primary
-                : AppColors.border,
-            width: 1.5,
-          ),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: .15),
-              blurRadius: 6,
-              offset: const Offset(0, 2),
+    return Tooltip(
+      message: inWishlist
+          ? 'Quitar de tu lista de deseos'
+          : 'Guardar en tu lista de deseos',
+      child: GestureDetector(
+        onTap: busy ? null : onTap,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          width: 32,
+          height: 32,
+          decoration: BoxDecoration(
+            color: inWishlist ? AppColors.primary : AppColors.surface,
+            shape: BoxShape.circle,
+            border: Border.all(
+              color: inWishlist ? AppColors.primary : AppColors.border,
+              width: 1.5,
             ),
-          ],
-        ),
-        child: Center(
-          child: Icon(
-            inWishlist ? Icons.shopping_cart : Icons.shopping_cart_outlined,
-            size: 16,
-            color: inWishlist ? Colors.white : AppColors.textSecondary,
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: .15),
+                blurRadius: 6,
+                offset: const Offset(0, 2),
+              ),
+            ],
+          ),
+          child: Center(
+            child: Icon(
+              inWishlist
+                  ? Icons.favorite_rounded
+                  : Icons.favorite_border_rounded,
+              size: 16,
+              color: inWishlist ? Colors.white : AppColors.textSecondary,
+            ),
           ),
         ),
       ),

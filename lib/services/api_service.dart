@@ -1199,6 +1199,53 @@ class ApiService {
     return data;
   }
 
+  /// Enlace de afiliado (Casa del Libro) para comprar [bookId]. Se pide al
+  /// backend en vez de montarlo aquí para poder ajustar el programa, el
+  /// destino o el aviso legal sin tener que sacar una versión nueva.
+  Future<EnlaceCompra?> getEnlaceCompra(String bookId) async {
+    final response = await _client.get(
+      Uri.parse(baseUrl).replace(
+        queryParameters: {'action': 'enlaceCompra', 'bookId': bookId},
+      ),
+    );
+    if (response.statusCode != 200) return null;
+    final data = _decodeJson(response);
+    if (data is! Map<String, dynamic> || data['ok'] != true) return null;
+    return EnlaceCompra.fromJson(data);
+  }
+
+  /// Enlaces de varios libros de una vez, por id de libro. Los libros que la
+  /// tienda no devuelve no aparecen en el mapa.
+  Future<Map<String, EnlaceCompra>> getEnlacesCompraLote(
+    List<String> bookIds,
+  ) async {
+    final enlaces = <String, EnlaceCompra>{};
+    final ids = bookIds.where((id) => id.isNotEmpty).toSet().toList();
+    for (var i = 0; i < ids.length; i += 60) {
+      final trozo = ids.skip(i).take(60).join(',');
+      final response = await _client.get(
+        Uri.parse(baseUrl).replace(
+          queryParameters: {'action': 'enlaceCompraLote', 'bookIds': trozo},
+        ),
+      );
+      if (response.statusCode != 200) continue;
+      final data = _decodeJson(response);
+      if (data is! Map<String, dynamic> || data['ok'] != true) continue;
+      final mapa = data['enlaces'];
+      if (mapa is! Map) continue;
+      final aviso = data['aviso']?.toString() ?? '';
+      mapa.forEach((id, valor) {
+        if (valor is! Map) return;
+        final enlace = EnlaceCompra.fromJson({
+          ...Map<String, dynamic>.from(valor),
+          'aviso': aviso,
+        });
+        if (enlace != null) enlaces[id.toString()] = enlace;
+      });
+    }
+    return enlaces;
+  }
+
   /// Resto de libros de la saga a la que pertenece [bookId] (ya existentes en
   /// el catálogo, con el estado de la usuaria actual para cada uno). Devuelve
   /// una lista vacía si el libro no pertenece a ninguna saga o es su único
@@ -2757,4 +2804,74 @@ class ApiService {
     final lista = data['bloqueadas'] as List? ?? const [];
     return lista.cast<Map<String, dynamic>>();
   }
+}
+
+/// Enlace de afiliado a la tienda para un libro: [url] es el del formato
+/// principal ([formato]: el de la usuaria o papel) y [formatos] lista los
+/// formatos que existen en la tienda, cada uno con su propia ficha.
+class EnlaceCompra {
+  const EnlaceCompra({
+    required this.url,
+    required this.tienda,
+    required this.aviso,
+    required this.formato,
+    required this.formatos,
+    this.exacto = true,
+    this.yaEmpezado = false,
+  });
+
+  final String url;
+  final String tienda;
+  final String aviso;
+  final String formato;
+  final List<EnlaceCompraFormato> formatos;
+
+  /// false cuando el libro no está localizado en la tienda y [url] es solo
+  /// una búsqueda por título y autora.
+  final bool exacto;
+
+  /// La lectora ya ha empezado o terminado este libro.
+  final bool yaEmpezado;
+
+  static EnlaceCompra? fromJson(Map<String, dynamic> data) {
+    final url = data['url']?.toString() ?? '';
+    if (url.isEmpty) return null;
+    final formatos = <EnlaceCompraFormato>[];
+    final lista = data['formatos'];
+    if (lista is List) {
+      for (final f in lista) {
+        if (f is! Map) continue;
+        final u = f['url']?.toString() ?? '';
+        if (u.isEmpty) continue;
+        formatos.add(
+          EnlaceCompraFormato(
+            formato: f['formato']?.toString() ?? '',
+            etiqueta: f['etiqueta']?.toString() ?? '',
+            url: u,
+          ),
+        );
+      }
+    }
+    return EnlaceCompra(
+      url: url,
+      tienda: data['tienda']?.toString() ?? 'Casa del Libro',
+      aviso: data['aviso']?.toString() ?? '',
+      formato: data['formato']?.toString() ?? 'papel',
+      formatos: formatos,
+      exacto: data['exacto'] != false,
+      yaEmpezado: data['yaEmpezado'] == true,
+    );
+  }
+}
+
+class EnlaceCompraFormato {
+  const EnlaceCompraFormato({
+    required this.formato,
+    required this.etiqueta,
+    required this.url,
+  });
+
+  final String formato;
+  final String etiqueta;
+  final String url;
 }

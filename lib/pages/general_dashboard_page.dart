@@ -51,6 +51,7 @@ import 'sagas_page.dart';
 import '../widgets/common/onboarding_tutorial.dart';
 import '../widgets/common/screen_hint_banner.dart';
 import '../widgets/libros/libro_acciones_rapidas.dart';
+import 'comprar_libros_page.dart';
 import '../services/usuario_service.dart';
 import 'package:club_lectura_app/widgets/common/club_shimmer.dart';
 import '../models/wishlist.dart';
@@ -1043,6 +1044,8 @@ class _GeneralDashboardPageState extends State<GeneralDashboardPage> {
                         future: _upcomingFuture,
                       ),
                       const SizedBox(height: AppSpacing.xl),
+                      const _ComprarAhoraCard(),
+                      const SizedBox(height: AppSpacing.md),
                       _WishlistPreviewSection(userName: data.userName),
 
                       const SizedBox(height: AppSpacing.xl),
@@ -2799,6 +2802,180 @@ class _WishlistPreviewSectionState extends State<_WishlistPreviewSection>
 
         return WishlistSummaryCard(data: data, onTap: _openWishlist);
       },
+    );
+  }
+}
+
+/// Acceso rápido a "Tu próxima compra": portadas de la lista de deseos sobre
+/// un degradado cálido y la etiqueta de publicidad (enlaces de afiliado).
+class _ComprarAhoraCard extends StatefulWidget {
+  const _ComprarAhoraCard();
+
+  @override
+  State<_ComprarAhoraCard> createState() => _ComprarAhoraCardState();
+}
+
+class _ComprarAhoraCardState extends State<_ComprarAhoraCard>
+    with AutomaticKeepAliveClientMixin {
+  List<String> _portadas = const [];
+
+  @override
+  bool get wantKeepAlive => true;
+
+  @override
+  void initState() {
+    super.initState();
+    WishlistService().getWishlist().then((data) {
+      if (!mounted) return;
+      final portadas = data.items
+          .where((i) => i.purchasedAt == null && (i.coverUrl ?? '').isNotEmpty)
+          .map((i) => i.coverUrl!)
+          .take(3)
+          .toList();
+      setState(() => _portadas = portadas);
+    }).catchError((_) {});
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    super.build(context);
+    return Semantics(
+      button: true,
+      label: 'Compra ahora tus libros más deseados. Publicidad.',
+      child: GestureDetector(
+        onTap: () => Navigator.push<void>(
+          context,
+          AppPageRoute(builder: (_) => const ComprarLibrosPage()),
+        ),
+        child: Container(
+          clipBehavior: Clip.antiAlias,
+          padding: const EdgeInsets.fromLTRB(
+            AppSpacing.md,
+            AppSpacing.md,
+            AppSpacing.sm,
+            AppSpacing.md,
+          ),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(AppRadius.xl),
+            gradient: const LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [Color(0xFFE2735F), Color(0xFFA8423F)],
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: const Color(0xFFC75D4D).withValues(alpha: .35),
+                blurRadius: 14,
+                offset: const Offset(0, 6),
+              ),
+            ],
+          ),
+          child: Row(
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 3,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: .22),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: const Text(
+                        'PUBLICIDAD',
+                        style: TextStyle(
+                          fontSize: 9,
+                          letterSpacing: 1,
+                          fontWeight: FontWeight.w800,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: AppSpacing.sm),
+                    Text(
+                      'Compra ahora tus libros más deseados',
+                      style: AppTextStyles.title.copyWith(
+                        color: Colors.white,
+                        fontSize: 20,
+                        height: 1.15,
+                      ),
+                    ),
+                    const SizedBox(height: AppSpacing.xs),
+                    Text(
+                      'Casa del Libro · papel, ebook y audiolibro',
+                      style: AppTextStyles.caption.copyWith(
+                        color: Colors.white.withValues(alpha: .88),
+                      ),
+                    ),
+                    const SizedBox(height: AppSpacing.sm),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 7,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(AppRadius.pill),
+                      ),
+                      child: const Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            'Ver mis libros',
+                            style: TextStyle(
+                              fontWeight: FontWeight.w800,
+                              fontSize: 13,
+                              color: Color(0xFFA8423F),
+                            ),
+                          ),
+                          SizedBox(width: 4),
+                          Icon(
+                            Icons.arrow_forward_rounded,
+                            size: 16,
+                            color: Color(0xFFA8423F),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: AppSpacing.sm),
+              SizedBox(
+                width: 104,
+                height: 120,
+                child: _portadas.isEmpty
+                    ? const Center(
+                        child: Text('🛍️', style: TextStyle(fontSize: 56)),
+                      )
+                    : Stack(
+                        clipBehavior: Clip.none,
+                        children: [
+                          for (var i = _portadas.length - 1; i >= 0; i--)
+                            Positioned(
+                              left: i * 20.0,
+                              top: 14.0 - i * 5,
+                              child: Transform.rotate(
+                                angle: (i - 1) * 0.12,
+                                child: ClubBookCover(
+                                  title: '',
+                                  imageUrl: _portadas[i],
+                                  width: 60,
+                                  height: 90,
+                                ),
+                              ),
+                            ),
+                        ],
+                      ),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }

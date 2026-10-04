@@ -9,6 +9,7 @@ import '../models/notificacion.dart';
 import '../navigation/app_page_route.dart';
 import '../services/notificaciones_service.dart';
 import '../navigation/book_detail_navigation.dart';
+import '../widgets/libros/comprar_lectura_club_card.dart';
 import '../widgets/common/notificaciones_sheet.dart';
 import 'afinidad_detalle_page.dart';
 import 'club_challenge_page.dart';
@@ -414,6 +415,15 @@ class _DashboardPageState extends State<DashboardPage> {
                         estadoClub: estadoClub,
                         haVotado: viewData.haVotado,
                         onActualizar: _recargar,
+                      ),
+                      const SizedBox(height: AppSpacing.lg),
+                    ],
+                    if (data.lecturaActual.ok &&
+                        data.lecturaActual.bookId.isNotEmpty) ...[
+                      ComprarLecturaClubCard(
+                        bookId: data.lecturaActual.bookId,
+                        titulo: data.lecturaActual.titulo,
+                        coverUrl: data.lecturaActual.coverUrl,
                       ),
                       const SizedBox(height: AppSpacing.lg),
                     ],
