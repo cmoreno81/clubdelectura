@@ -37,7 +37,7 @@ class PoliticaPrivacidadPage extends StatelessWidget {
         ),
         children: [
           Text(
-            'Última actualización: 18 de julio de 2026',
+            'Última actualización: 5 de octubre de 2026',
             style: AppTextStyles.caption,
           ),
           const SizedBox(height: AppSpacing.lg),
@@ -49,12 +49,17 @@ class PoliticaPrivacidadPage extends StatelessWidget {
           const _Apartado(
             titulo: 'Datos que utiliza ClubReads',
             texto:
-                'La aplicación guarda los datos necesarios para identificar tu perfil y prestar sus funciones: nombre, correo, avatar, biblioteca, fechas y progreso de lectura, valoraciones, reseñas, comentarios, reacciones y votos de Clubvisión.',
+                'La aplicación guarda los datos necesarios para identificar tu perfil y prestar sus funciones: nombre, correo, avatar, biblioteca, fechas y progreso de lectura, valoraciones, reseñas, comentarios, reacciones, votos de Clubvisión, lista de deseos y compras que marques como hechas.',
           ),
           const _Apartado(
             titulo: 'Para qué se utilizan',
             texto:
                 'Estos datos se utilizan exclusivamente para que el club pueda organizar y compartir su actividad de lectura. ClubReads no vende tus datos ni los utiliza con fines publicitarios.',
+          ),
+          const _Apartado(
+            titulo: 'Enlaces de compra y afiliados',
+            texto:
+                'Algunos botones de compra llevan a Casa del Libro mediante enlaces de afiliado de la red Awin, y se identifican siempre como "Publicidad". Si compras, ClubReads puede recibir una comisión sin coste extra para ti. Al pulsarlos se abre tu navegador y, desde ahí, la tienda y la red de afiliación pueden usar cookies y tratar datos según sus propias políticas de privacidad. ClubReads no les envía tu nombre, tu correo ni datos de tu perfil, y no recibe información de tus compras en la tienda: solo guarda lo que tú marcas como comprado en tu lista de deseos.',
           ),
           const _Apartado(
             titulo: 'Almacenamiento y servicios',

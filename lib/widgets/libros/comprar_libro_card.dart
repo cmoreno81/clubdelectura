@@ -11,9 +11,19 @@ import '../ui/club_section_card.dart';
 /// conducta de publicidad exige identificarlo como publicidad y de forma
 /// visible, por eso la etiqueta "Publicidad" va siempre en la propia tarjeta.
 class ComprarLibroCard extends StatefulWidget {
-  const ComprarLibroCard({super.key, required this.bookId});
+  const ComprarLibroCard({
+    super.key,
+    required this.bookId,
+    this.espacioAntes = 0,
+    this.espacioDespues = 0,
+  });
 
   final String bookId;
+
+  /// Separación sobre y bajo la tarjeta. Se aplica solo cuando la tarjeta se
+  /// ve: si el libro no está en la tienda, no deja huecos vacíos.
+  final double espacioAntes;
+  final double espacioDespues;
 
   @override
   State<ComprarLibroCard> createState() => _ComprarLibroCardState();
@@ -59,7 +69,8 @@ class _ComprarLibroCardState extends State<ComprarLibroCard> {
       final destino = url ?? (_enlace ?? await _cargar())?.url;
       if (!mounted) return;
       final uri = destino == null ? null : Uri.tryParse(destino);
-      final abierto = uri != null &&
+      final abierto =
+          uri != null &&
           await launchUrl(uri, mode: LaunchMode.externalApplication);
       if (!abierto && mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -73,99 +84,110 @@ class _ComprarLibroCardState extends State<ComprarLibroCard> {
 
   @override
   Widget build(BuildContext context) {
-    if (widget.bookId.isEmpty) return const SizedBox.shrink();
-    return ClubSectionCard(
-      onTap: _abrir,
-      backgroundColor: const Color(0xFFF1F7F2),
-      borderColor: const Color(0xFFCFE3D3),
-      padding: const EdgeInsets.all(AppSpacing.md),
-      child: Row(
-        children: [
-          Container(
-            width: 48,
-            height: 48,
-            decoration: BoxDecoration(
-              color: const Color(0xFFDDEEDF),
-              borderRadius: BorderRadius.circular(16),
+    // Solo se ofrece comprar si la tienda tiene el libro localizado: sin ficha
+    // exacta (p. ej. un autopublicado) no se muestra nada, ni mientras carga.
+    final enlace = _enlace;
+    if (widget.bookId.isEmpty || enlace == null || !enlace.exacto) {
+      return const SizedBox.shrink();
+    }
+    return Padding(
+      padding: EdgeInsets.only(
+        top: widget.espacioAntes,
+        bottom: widget.espacioDespues,
+      ),
+      child: ClubSectionCard(
+        onTap: _abrir,
+        backgroundColor: const Color(0xFFF1F7F2),
+        borderColor: const Color(0xFFCFE3D3),
+        padding: const EdgeInsets.all(AppSpacing.md),
+        child: Row(
+          children: [
+            Container(
+              width: 48,
+              height: 48,
+              decoration: BoxDecoration(
+                color: const Color(0xFFDDEEDF),
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: _abriendo
+                  ? const Padding(
+                      padding: EdgeInsets.all(14),
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : const Icon(
+                      Icons.shopping_bag_outlined,
+                      color: Color(0xFF3F7A4D),
+                    ),
             ),
-            child: _abriendo
-                ? const Padding(
-                    padding: EdgeInsets.all(14),
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  )
-                : const Icon(
-                    Icons.shopping_bag_outlined,
-                    color: Color(0xFF3F7A4D),
-                  ),
-          ),
-          const SizedBox(width: AppSpacing.md),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Flexible(
-                      child: Text(
-                        'Comprar en Casa del Libro',
-                        style: AppTextStyles.subtitle.copyWith(
-                          color: AppColors.textPrimary,
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: AppSpacing.xs),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 6,
-                        vertical: 2,
-                      ),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFDDEEDF),
-                        borderRadius: BorderRadius.circular(6),
-                      ),
-                      child: const Text(
-                        'Publicidad',
-                        style: TextStyle(
-                          fontSize: 10,
-                          fontWeight: FontWeight.w800,
-                          color: Color(0xFF3F7A4D),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: AppSpacing.xs),
-                Text(
-                  'Enlace de afiliado: ClubReads puede recibir una comisión, '
-                  'sin coste extra para ti.',
-                  style: AppTextStyles.bodySecondary,
-                ),
-                if ((_enlace?.formatos.length ?? 0) > 1) ...[
-                  const SizedBox(height: AppSpacing.sm),
-                  Wrap(
-                    spacing: AppSpacing.xs,
-                    runSpacing: AppSpacing.xs,
+            const SizedBox(width: AppSpacing.md),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
                     children: [
-                      for (final f in _enlace!.formatos)
-                        ActionChip(
-                          label: Text(f.etiqueta),
-                          visualDensity: VisualDensity.compact,
-                          backgroundColor: f.formato == _enlace!.formato
-                              ? const Color(0xFFDDEEDF)
-                              : Colors.white,
-                          side: const BorderSide(color: Color(0xFFCFE3D3)),
-                          onPressed: () => _abrir(f.url),
+                      Flexible(
+                        child: Text(
+                          'Comprar en Casa del Libro',
+                          style: AppTextStyles.subtitle.copyWith(
+                            color: AppColors.textPrimary,
+                            fontWeight: FontWeight.w700,
+                          ),
                         ),
+                      ),
+                      const SizedBox(width: AppSpacing.xs),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 6,
+                          vertical: 2,
+                        ),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFDDEEDF),
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                        child: const Text(
+                          'Publicidad',
+                          style: TextStyle(
+                            fontSize: 10,
+                            fontWeight: FontWeight.w800,
+                            color: Color(0xFF3F7A4D),
+                          ),
+                        ),
+                      ),
                     ],
                   ),
+                  const SizedBox(height: AppSpacing.xs),
+                  Text(
+                    'Enlace de afiliado: ClubReads puede recibir una comisión, '
+                    'sin coste extra para ti.',
+                    style: AppTextStyles.bodySecondary,
+                  ),
+                  if ((_enlace?.formatos.length ?? 0) > 1) ...[
+                    const SizedBox(height: AppSpacing.sm),
+                    Wrap(
+                      spacing: AppSpacing.xs,
+                      runSpacing: AppSpacing.xs,
+                      children: [
+                        for (final f in _enlace!.formatos)
+                          ActionChip(
+                            label: Text(f.etiqueta),
+                            visualDensity: VisualDensity.compact,
+                            backgroundColor: f.formato == _enlace!.formato
+                                ? const Color(0xFFDDEEDF)
+                                : Colors.white,
+                            side: const BorderSide(color: Color(0xFFCFE3D3)),
+                            onPressed: () => _abrir(f.url),
+                          ),
+                      ],
+                    ),
+                  ],
                 ],
-              ],
+              ),
             ),
-          ),
-          const SizedBox(width: AppSpacing.sm),
-          const Icon(Icons.chevron_right_rounded, color: Color(0xFF3F7A4D)),
-        ],
+            const SizedBox(width: AppSpacing.sm),
+            const Icon(Icons.chevron_right_rounded, color: Color(0xFF3F7A4D)),
+          ],
+        ),
       ),
     );
   }

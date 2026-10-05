@@ -546,10 +546,11 @@ class _CatalogBookDetailPageState extends State<CatalogBookDetailPage> {
             const SizedBox(height: AppSpacing.md),
           ],
 
-          if (widget.bookId.isNotEmpty) ...[
-            ComprarLibroCard(bookId: widget.bookId),
-            const SizedBox(height: AppSpacing.md),
-          ],
+          if (widget.bookId.isNotEmpty)
+            ComprarLibroCard(
+              bookId: widget.bookId,
+              espacioDespues: AppSpacing.md,
+            ),
 
           // ── Info de que el libro existe en ClubReads ──
           if (!_loading && !_added)

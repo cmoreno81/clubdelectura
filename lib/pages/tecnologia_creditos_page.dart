@@ -92,6 +92,10 @@ class TecnologiaCreditosPage extends StatelessWidget {
                 'Almacenamiento y tratamiento de imágenes',
               ),
               _Tecnologia(
+                'Awin',
+                'Red de afiliación de los enlaces de compra a Casa del Libro',
+              ),
+              _Tecnologia(
                 'Git y GitHub',
                 'Control de versiones y conexión de despliegues',
               ),

@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../models/libro.dart';
 import '../models/upcoming_release.dart';
 import '../models/wishlist.dart';
+import '../services/api_exception.dart';
 import '../services/api_service.dart';
 import '../services/upcoming_releases_service.dart';
 import '../services/wishlist_service.dart';
@@ -12,6 +13,7 @@ import '../theme/app_spacing.dart';
 import '../theme/app_text_styles.dart';
 import '../widgets/common/club_book_cover.dart';
 import '../widgets/libros/botones_compra.dart';
+import '../widgets/libros/pregunta_compra.dart';
 
 /// Libro de una de las listas de compra, con lo mínimo para pintar la fila.
 class _LibroCompra {
@@ -54,13 +56,92 @@ class ComprarLibrosPage extends StatefulWidget {
   State<ComprarLibrosPage> createState() => _ComprarLibrosPageState();
 }
 
-class _ComprarLibrosPageState extends State<ComprarLibrosPage> {
+class _ComprarLibrosPageState extends State<ComprarLibrosPage>
+    with WidgetsBindingObserver {
   late Future<_ListasCompra> _future;
+
+  // Deseos sin comprar, por id de libro: la pregunta "¿Has comprado…?" solo
+  // se hace si el libro está en la lista de deseos (ahí consta la compra).
+  Map<String, WishlistItem> _deseosPorLibro = {};
+
+  // Último botón de compra que abrió la tienda; al volver a la app se
+  // pregunta si se compró. Todo local, no se envía nada a la tienda.
+  ({WishlistItem item, EnlaceCompraFormato formato})? _compraPendiente;
 
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _future = _cargar();
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  void _alAbrirTienda(_LibroCompra libro, EnlaceCompraFormato formato) {
+    final deseo = _deseosPorLibro[libro.bookId];
+    _compraPendiente = deseo == null ? null : (item: deseo, formato: formato);
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) _preguntarCompra();
+  }
+
+  Future<void> _preguntarCompra() async {
+    final pendiente = _compraPendiente;
+    if (pendiente == null || !mounted) return;
+    if (ModalRoute.of(context)?.isCurrent != true) return;
+    _compraPendiente = null;
+    final item = pendiente.item;
+
+    final comprado = await preguntarSiLoHasComprado(
+      context,
+      titulo: item.title,
+      formato: pendiente.formato.etiqueta,
+    );
+    if (!comprado || !mounted) return;
+
+    final service = WishlistService();
+    final formato = switch (pendiente.formato.formato) {
+      'ebook' => WishlistFormat.digital,
+      'audio' => WishlistFormat.audiobook,
+      _ => WishlistFormat.physical,
+    };
+    try {
+      // Se guarda el formato que se abrió, por si era distinto al del deseo.
+      if (formato != item.format) {
+        await service.updateItem(item.id, format: formato);
+      }
+      await service.markPurchased(item.id);
+    } on ApiException catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(e.message)));
+      return;
+    }
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('✅ "${item.title}" marcado como comprado'),
+        action: SnackBarAction(
+          label: 'Deshacer',
+          onPressed: () async {
+            await service.unmarkPurchased(item.id);
+            // Si al marcarlo se cambió el formato, también se devuelve.
+            if (formato != item.format) {
+              await service.updateItem(item.id, format: item.format);
+            }
+            _recargar();
+          },
+        ),
+      ),
+    );
+    _recargar();
   }
 
   Future<_ListasCompra> _cargar() async {
@@ -83,6 +164,10 @@ class _ComprarLibrosPageState extends State<ComprarLibrosPage> {
     final lanzamientos = resultados[2] as List<UpcomingRelease>;
 
     final sinComprar = wishlist.items.where((i) => i.purchasedAt == null);
+    _deseosPorLibro = {
+      for (final i in sinComprar)
+        if ((i.bookId ?? '').isNotEmpty) i.bookId!: i,
+    };
     final deseados = <_LibroCompra>[
       for (final i in sinComprar)
         if ((i.bookId ?? '').isNotEmpty)
@@ -185,28 +270,42 @@ class _ComprarLibrosPageState extends State<ComprarLibrosPage> {
                   labelColor: AppColors.primary,
                   indicatorColor: AppColors.primary,
                   unselectedLabelColor: AppColors.textSecondary,
+                  labelPadding: const EdgeInsets.symmetric(horizontal: 4),
+                  // En móviles estrechos (iPhone de 6,1") el texto con el
+                  // contador no cabía y se cortaba: se reduce para que quepa.
                   tabs: [
-                    Tab(text: 'Deseados (${d.deseados.length})'),
-                    Tab(text: 'Pendientes (${d.pendientes.length})'),
-                    Tab(text: 'Próximos (${d.proximos.length})'),
+                    for (final etiqueta in [
+                      'Deseados (${d.deseados.length})',
+                      'Pendientes (${d.pendientes.length})',
+                      'Próximos (${d.proximos.length})',
+                    ])
+                      Tab(
+                        child: FittedBox(
+                          fit: BoxFit.scaleDown,
+                          child: Text(etiqueta, maxLines: 1),
+                        ),
+                      ),
                   ],
                 ),
                 Expanded(
                   child: TabBarView(
                     children: [
                       _Lista(
+                        onAbierto: _alAbrirTienda,
                         libros: d.deseados,
                         enlaces: d.enlaces,
                         vacio:
                             'Ninguno de tus deseos está a la venta en Casa del Libro ahora mismo.',
                       ),
                       _Lista(
+                        onAbierto: _alAbrirTienda,
                         libros: d.pendientes,
                         enlaces: d.enlaces,
                         vacio:
                             'Ninguno de tus pendientes está a la venta en Casa del Libro.',
                       ),
                       _Lista(
+                        onAbierto: _alAbrirTienda,
                         libros: d.proximos,
                         enlaces: d.enlaces,
                         vacio:
@@ -310,11 +409,13 @@ class _Lista extends StatelessWidget {
     required this.libros,
     required this.enlaces,
     required this.vacio,
+    this.onAbierto,
   });
 
   final List<_LibroCompra> libros;
   final Map<String, EnlaceCompra> enlaces;
   final String vacio;
+  final void Function(_LibroCompra, EnlaceCompraFormato)? onAbierto;
 
   @override
   Widget build(BuildContext context) {
@@ -336,17 +437,26 @@ class _Lista extends StatelessWidget {
       separatorBuilder: (_, _) => const SizedBox(height: AppSpacing.sm),
       itemBuilder: (context, i) {
         final libro = libros[i];
-        return _FilaCompra(libro: libro, enlace: enlaces[libro.bookId]);
+        return _FilaCompra(
+          libro: libro,
+          enlace: enlaces[libro.bookId],
+          onAbierto: onAbierto == null ? null : (f) => onAbierto!(libro, f),
+        );
       },
     );
   }
 }
 
 class _FilaCompra extends StatelessWidget {
-  const _FilaCompra({required this.libro, required this.enlace});
+  const _FilaCompra({
+    required this.libro,
+    required this.enlace,
+    this.onAbierto,
+  });
 
   final _LibroCompra libro;
   final EnlaceCompra? enlace;
+  final ValueChanged<EnlaceCompraFormato>? onAbierto;
 
   @override
   Widget build(BuildContext context) {
@@ -395,7 +505,7 @@ class _FilaCompra extends StatelessWidget {
                     ),
                   ),
                 const SizedBox(height: AppSpacing.sm),
-                if (e != null) BotonesCompra(enlace: e),
+                if (e != null) BotonesCompra(enlace: e, onAbierto: onAbierto),
               ],
             ),
           ),

@@ -21,6 +21,7 @@ import '../widgets/common/optimized_network_image.dart';
 import '../widgets/error_view.dart';
 import '../widgets/libros/add_book_sheet.dart';
 import '../widgets/libros/botones_compra.dart';
+import '../widgets/libros/pregunta_compra.dart';
 import 'comprar_libros_page.dart';
 
 // ─── Helpers de formato (sin dependencia intl) ────────────────────────────────
@@ -77,7 +78,8 @@ class WishlistPage extends StatefulWidget {
   State<WishlistPage> createState() => _WishlistPageState();
 }
 
-class _WishlistPageState extends State<WishlistPage> {
+class _WishlistPageState extends State<WishlistPage>
+    with WidgetsBindingObserver {
   late final WishlistService _service;
   late Future<WishlistData> _future;
   ScaffoldFeatureController<SnackBar, SnackBarClosedReason>? _purchaseNotice;
@@ -88,9 +90,14 @@ class _WishlistPageState extends State<WishlistPage> {
   // tiene localizados llevan botón de compra.
   final Map<String, EnlaceCompra> _enlaces = {};
 
+  // Último botón de compra que abrió la tienda: al volver a la app se
+  // pregunta si se compró. Todo local, no se envía nada a la tienda.
+  ({WishlistItem item, EnlaceCompraFormato formato})? _compraPendiente;
+
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _service = widget.service ?? WishlistService();
     _future = _service.getWishlist();
     _future.then(_cargarEnlaces).catchError((_) {});
@@ -117,13 +124,57 @@ class _WishlistPageState extends State<WishlistPage> {
   }
 
   @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) _preguntarCompra();
+  }
+
+  Future<void> _preguntarCompra() async {
+    final pendiente = _compraPendiente;
+    if (pendiente == null || !mounted) return;
+    // Solo si esta pantalla es la que está a la vista.
+    if (ModalRoute.of(context)?.isCurrent != true) return;
+    _compraPendiente = null;
+    final item = pendiente.item;
+
+    final comprado = await preguntarSiLoHasComprado(
+      context,
+      titulo: item.title,
+      formato: pendiente.formato.etiqueta,
+    );
+    if (!comprado || !mounted) return;
+
+    // Se guarda el formato que se abrió, por si era distinto al del deseo.
+    final formato = switch (pendiente.formato.formato) {
+      'ebook' => WishlistFormat.digital,
+      'audio' => WishlistFormat.audiobook,
+      _ => WishlistFormat.physical,
+    };
+    var comprobado = item;
+    if (formato != item.format) {
+      try {
+        comprobado = await _service.updateItem(item.id, format: formato);
+      } on ApiException {
+        // Si no se puede cambiar el formato, se marca igualmente como comprado.
+      }
+    }
+    await _markPurchased(
+      comprobado,
+      formatoOriginal: comprobado.format != item.format ? item.format : null,
+    );
+  }
+
+  @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _purchaseNoticeTimer?.cancel();
     _purchaseNotice?.close();
     super.dispose();
   }
 
-  void _showPurchasedNotice(WishlistItem item) {
+  void _showPurchasedNotice(
+    WishlistItem item, {
+    WishlistFormat? formatoOriginal,
+  }) {
     _purchaseNoticeTimer?.cancel();
     _purchaseNotice?.close();
 
@@ -137,6 +188,10 @@ class _WishlistPageState extends State<WishlistPage> {
           onPressed: () async {
             _purchaseNoticeTimer?.cancel();
             await _service.unmarkPurchased(item.id);
+            // Si al marcarlo se cambió el formato, también se devuelve.
+            if (formatoOriginal != null) {
+              await _service.updateItem(item.id, format: formatoOriginal);
+            }
             await _reload();
           },
         ),
@@ -188,12 +243,15 @@ class _WishlistPageState extends State<WishlistPage> {
     await _reload();
   }
 
-  Future<void> _markPurchased(WishlistItem item) async {
+  Future<void> _markPurchased(
+    WishlistItem item, {
+    WishlistFormat? formatoOriginal,
+  }) async {
     try {
       await _service.markPurchased(item.id);
       await _reload();
       if (!mounted) return;
-      _showPurchasedNotice(item);
+      _showPurchasedNotice(item, formatoOriginal: formatoOriginal);
       if (!item.isInLibrary) {
         await _offerAddToLibrary(item);
       }
@@ -582,6 +640,10 @@ class _WishlistPageState extends State<WishlistPage> {
                         child: _WishlistTile(
                           item: visibleItems[i],
                           enlace: _enlaceDe(visibleItems[i]),
+                          onComprar: (f) => _compraPendiente = (
+                            item: visibleItems[i],
+                            formato: f,
+                          ),
                           onEdit: () => _openEdit(visibleItems[i]),
                           onDelete: () => _confirmDelete(visibleItems[i]),
                         ),
@@ -886,8 +948,9 @@ class _TabsDelegate extends SliverPersistentHeaderDelegate {
                     style: TextStyle(
                       fontSize: 12,
                       fontWeight: FontWeight.w600,
-                      color:
-                          selected ? AppColors.primary : AppColors.textSecondary,
+                      color: selected
+                          ? AppColors.primary
+                          : AppColors.textSecondary,
                     ),
                   ),
                 ),
@@ -1107,10 +1170,12 @@ class _WishlistTile extends StatelessWidget {
     required this.onEdit,
     required this.onDelete,
     this.enlace,
+    this.onComprar,
   });
 
   final WishlistItem item;
   final EnlaceCompra? enlace;
+  final ValueChanged<EnlaceCompraFormato>? onComprar;
   final VoidCallback onEdit;
   final VoidCallback onDelete;
 
@@ -1209,6 +1274,7 @@ class _WishlistTile extends StatelessWidget {
                   BotonesCompra(
                     enlace: enlace!,
                     reserva: isUpcoming,
+                    onAbierto: onComprar,
                     formatoPrincipal: switch (item.format) {
                       WishlistFormat.physical => 'papel',
                       WishlistFormat.digital => 'ebook',
@@ -1767,6 +1833,7 @@ class WishlistPrefill {
   final String? author;
   final String? coverUrl;
   final String? isbn;
+
   /// bookId del catálogo, si se conoce. Permite que el backend identifique
   /// el libro y evite duplicados aunque el título tenga ligeras variantes.
   final String? bookId;
@@ -1795,6 +1862,12 @@ class _WishlistAddSheetState extends State<WishlistAddSheet> {
   String? _searchError;
   DateTime? _plannedMonth;
   Timer? _searchDebounce;
+
+  // Sugerencias del catálogo mientras se escribe el título: si el libro ya
+  // existe en ClubReads, se ofrece para ligarlo en vez de avisar de que falta.
+  Timer? _titleDebounce;
+  List<WishlistBookSearchResult> _titleSuggestions = [];
+  String _titleSearched = '';
 
   bool get _isEdit => widget.editItem != null;
 
@@ -1833,6 +1906,7 @@ class _WishlistAddSheetState extends State<WishlistAddSheet> {
     _noteCtrl.dispose();
     _searchCtrl.dispose();
     _searchDebounce?.cancel();
+    _titleDebounce?.cancel();
     super.dispose();
   }
 
@@ -1873,8 +1947,43 @@ class _WishlistAddSheetState extends State<WishlistAddSheet> {
     });
   }
 
-  void _selectCatalogBook(WishlistBookSearchResult book) {
+  void _onTitleChanged(String value) {
+    _titleDebounce?.cancel();
+    final query = value.trim();
     setState(() {
+      _titleSuggestions = [];
+      _titleSearched = '';
+    });
+    if (_bookId != null || query.length < 3) return;
+    _titleDebounce = Timer(const Duration(milliseconds: 500), () async {
+      try {
+        final results = await _service.searchBooks(query);
+        if (!mounted || _titleCtrl.text.trim() != query || _bookId != null) {
+          return;
+        }
+        final key = _normalizarTitulo(query);
+        final coincidencias = results
+            .where(
+              (r) =>
+                  r.bookId != null && _normalizarTitulo(r.title).contains(key),
+            )
+            .take(3)
+            .toList();
+        setState(() {
+          _titleSuggestions = coincidencias;
+          _titleSearched = query;
+        });
+      } catch (_) {
+        // Sin conexión con el catálogo no se afirma nada sobre el libro.
+      }
+    });
+  }
+
+  void _selectCatalogBook(WishlistBookSearchResult book) {
+    _titleDebounce?.cancel();
+    setState(() {
+      _titleSuggestions = [];
+      _titleSearched = '';
       _titleCtrl.text = book.title;
       _authorCtrl.text = book.author ?? _authorCtrl.text;
       _coverUrl = book.coverUrl;
@@ -1903,11 +2012,26 @@ class _WishlistAddSheetState extends State<WishlistAddSheet> {
   String _normalizarTitulo(String value) {
     var result = value.toLowerCase().trim();
     const acentos = {
-      'á': 'a', 'à': 'a', 'ä': 'a', 'â': 'a',
-      'é': 'e', 'è': 'e', 'ë': 'e', 'ê': 'e',
-      'í': 'i', 'ì': 'i', 'ï': 'i', 'î': 'i',
-      'ó': 'o', 'ò': 'o', 'ö': 'o', 'ô': 'o',
-      'ú': 'u', 'ù': 'u', 'ü': 'u', 'û': 'u',
+      'á': 'a',
+      'à': 'a',
+      'ä': 'a',
+      'â': 'a',
+      'é': 'e',
+      'è': 'e',
+      'ë': 'e',
+      'ê': 'e',
+      'í': 'i',
+      'ì': 'i',
+      'ï': 'i',
+      'î': 'i',
+      'ó': 'o',
+      'ò': 'o',
+      'ö': 'o',
+      'ô': 'o',
+      'ú': 'u',
+      'ù': 'u',
+      'ü': 'u',
+      'û': 'u',
     };
     acentos.forEach((con, sin) => result = result.replaceAll(con, sin));
     result = result
@@ -2250,7 +2374,110 @@ class _WishlistAddSheetState extends State<WishlistAddSheet> {
                             ),
                           ),
                           textCapitalization: TextCapitalization.sentences,
+                          onChanged: _onTitleChanged,
                         ),
+                        // Sin libro del catálogo no hay portada automática ni
+                        // botones de compra: se avisa para que lo busque arriba.
+                        // Si el libro ya está en ClubReads, se ofrece ligarlo.
+                        if (_bookId == null &&
+                            _titleSuggestions.isNotEmpty) ...[
+                          const SizedBox(height: AppSpacing.xs),
+                          Text(
+                            '¿Es alguno de estos? Elígelo para enlazarlo:',
+                            style: AppTextStyles.caption.copyWith(
+                              color: AppColors.textSecondary,
+                            ),
+                          ),
+                          const SizedBox(height: AppSpacing.xs),
+                          Container(
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(AppRadius.md),
+                              border: Border.all(color: AppColors.paperLine),
+                            ),
+                            child: Column(
+                              children: [
+                                for (final r in _titleSuggestions)
+                                  ListTile(
+                                    dense: true,
+                                    contentPadding: const EdgeInsets.symmetric(
+                                      horizontal: 10,
+                                      vertical: 2,
+                                    ),
+                                    leading: r.coverUrl != null
+                                        ? ClipRRect(
+                                            borderRadius: BorderRadius.circular(
+                                              4,
+                                            ),
+                                            child: OptimizedNetworkImage(
+                                              url: r.coverUrl!,
+                                              width: 32,
+                                              height: 46,
+                                              fit: BoxFit.cover,
+                                            ),
+                                          )
+                                        : const Icon(Icons.book_rounded),
+                                    title: Text(
+                                      r.title,
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: const TextStyle(
+                                        fontSize: 13,
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                                    subtitle: r.author == null
+                                        ? null
+                                        : Text(
+                                            r.author!,
+                                            maxLines: 1,
+                                            style: const TextStyle(
+                                              fontSize: 11,
+                                            ),
+                                          ),
+                                    trailing: const Icon(
+                                      Icons.add_link_rounded,
+                                      size: 18,
+                                      color: AppColors.primary,
+                                    ),
+                                    onTap: () => _selectCatalogBook(r),
+                                  ),
+                              ],
+                            ),
+                          ),
+                        ],
+                        // Solo si la búsqueda ya terminó y no encontró nada.
+                        if (_bookId == null &&
+                            _titleSuggestions.isEmpty &&
+                            _titleSearched.isNotEmpty &&
+                            _titleSearched == _titleCtrl.text.trim()) ...[
+                          const SizedBox(height: AppSpacing.xs),
+                          Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Padding(
+                                padding: EdgeInsets.only(top: 1),
+                                child: Icon(
+                                  Icons.info_outline_rounded,
+                                  size: 14,
+                                  color: AppColors.textSecondary,
+                                ),
+                              ),
+                              const SizedBox(width: 6),
+                              Expanded(
+                                child: Text(
+                                  'Este libro no está enlazado al catálogo de ClubReads. '
+                                  'Si no lo encontramos al guardar, se guarda igual, '
+                                  'pero sin portada automática ni botones de compra.'
+                                  '${_isEdit ? '' : ' Prueba a buscarlo arriba.'}',
+                                  style: AppTextStyles.caption.copyWith(
+                                    color: AppColors.textSecondary,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
                         const SizedBox(height: AppSpacing.sm),
 
                         // ── Autor ──────────────────────────────────────────────

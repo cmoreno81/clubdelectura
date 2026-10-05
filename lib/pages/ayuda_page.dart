@@ -202,22 +202,32 @@ const List<_HelpSection> _secciones = [
         respuesta:
             '"Tu lista de deseos" te permite guardar libros de "Novedades disponibles" '
             'o "Próximos lanzamientos" que te interesan antes de decidirte a añadirlos '
-            'a tu biblioteca.\n\n'
-            '🛒 Para añadir un libro pulsa el icono de carrito en la esquina superior '
-            'de cualquier portada en esas secciones. Un badge lila confirma que el libro '
-            'ya está en tu lista. Pulsa de nuevo para quitarlo.\n\n'
+            'a tu biblioteca o comprarlos.\n\n'
+            '♡ Para añadir un libro pulsa el corazón en la esquina superior de '
+            'cualquier portada en esas secciones. Cuando el libro ya está en tu '
+            'lista, el corazón se rellena de lila. Pulsa de nuevo para quitarlo.\n\n'
             '📋 Para ver tu lista completa, accede a la tarjeta morada "Tu lista de '
-            'deseos" en "Mi universo lector" y pulsa "Ver lista completa". Desde ahí '
-            'puedes ver los detalles de cada libro, eliminarlo de la lista o añadirlo '
-            'directamente a tu biblioteca.\n\n'
+            'deseos" en "Mi universo lector" y pulsa "Ver lista completa". Se abre '
+            '"Mis adquisiciones", con el presupuesto, los libros ya disponibles y los '
+            'próximos, un plan por meses y el historial de comprados. Desde ahí puedes '
+            'editar o eliminar cada libro.\n\n'
+            '🛍️ Si Casa del Libro tiene el libro, el deseo muestra botones para '
+            'comprarlo en papel, ebook o audiolibro. Lo explicamos en la sección '
+            '"Comprar libros".\n\n'
+            '✅ Cuando lo compres, desliza su tarjeta hacia la derecha para marcarlo '
+            'como "¡Comprado!". Pasa a "Ver comprados" y puedes deshacerlo. Si usas '
+            'los botones de compra de la propia lista, al volver a la app te '
+            'preguntamos si lo has comprado.\n\n'
             '✍️ También puedes añadir un libro escribiendo el título a mano, sin usar '
             'el buscador. En ese caso, la app intenta enlazarlo automáticamente con el '
-            'catálogo de ClubReads para traerte la portada sin que tengas que buscarla.\n\n'
+            'catálogo de ClubReads para traerte la portada sin que tengas que buscarla. '
+            'Si no encuentra el libro en el catálogo, no tendrá botones de compra.\n\n'
             '💶 La tarjeta también muestra el precio total estimado de los libros de '
             'tu lista, para que te hagas una idea del gasto si los comprases todos.',
       ),
       _HelpItem(
-        pregunta: '¿Puedo editar la portada, el género o el enlace a Goodreads de un libro?',
+        pregunta:
+            '¿Puedo editar la portada, el género o el enlace a Goodreads de un libro?',
         respuesta:
             'Sí. Abre el detalle del libro y pulsa el botón "Editar" (lápiz) '
             'que aparece en la cabecera. Desde ahí puedes cambiar la portada '
@@ -285,7 +295,8 @@ const List<_HelpSection> _secciones = [
             'personal sin introducir los datos manualmente.',
       ),
       _HelpItem(
-        pregunta: '¿Puedo cambiar el estado de un libro directamente desde el catálogo?',
+        pregunta:
+            '¿Puedo cambiar el estado de un libro directamente desde el catálogo?',
         respuesta:
             'Sí. En "Explorar libros" (el buscador del catálogo global) puedes hacer '
             'una pulsación larga sobre cualquier portada para ver las acciones rápidas: '
@@ -379,6 +390,22 @@ const List<_HelpSection> _secciones = [
             'a tu biblioteca.',
       ),
       _HelpItem(
+        pregunta: '¿Qué es "Lectores interesados" en la ficha de un libro?',
+        respuesta:
+            'Muestra quién tiene ese libro en su biblioteca, agrupado por estado: '
+            'Leyendo, Pendiente, Pausado, Finalizado… Cada persona aparece como una '
+            'burbuja con su foto.\n\n'
+            'Arriba ves tus propias cajitas, que puedes editar (estado, prioridad, '
+            'formato…).\n\n'
+            '👥 "En tus clubes": quienes comparten club contigo. Al pulsar su burbuja '
+            'ves su nombre y el club donde la conoces.\n\n'
+            '🌍 "En otros clubes": lectoras con el perfil público que no comparten club '
+            'contigo. Al pulsar su burbuja puedes leer su reseña de ese libro, si la '
+            'ha escrito.\n\n'
+            'Quien tiene el perfil privado solo cuenta en un resumen, sin nombre. '
+            'Puedes decidir quién ve tu perfil en Ajustes.',
+      ),
+      _HelpItem(
         pregunta:
             '¿Puedo ir al detalle de un libro que acabo de añadir desde el catálogo?',
         respuesta:
@@ -386,6 +413,88 @@ const List<_HelpSection> _secciones = [
             'aparece un botón "Ver en mi biblioteca" en la pantalla de confirmación. '
             'Púlsalo para ir directamente a la ficha del libro con todos sus datos: '
             'estado, valoración, fechas y más.',
+      ),
+    ],
+  ),
+  _HelpSection(
+    icono: '🛍️',
+    titulo: 'Comprar libros',
+    items: [
+      _HelpItem(
+        pregunta: '¿Puedo comprar los libros desde ClubReads?',
+        respuesta:
+            'Sí, en Casa del Libro. Cuando la tienda tiene el libro, verás el botón '
+            '"Comprar en Casa del Libro" (o "Reservar", si todavía no ha salido) en:\n\n'
+            '• La ficha del libro\n'
+            '• "Tu próxima compra"\n'
+            '• "Novedades disponibles" y "Próximos lanzamientos"\n'
+            '• Tu lista de deseos\n'
+            '• El dashboard del club, con el libro de la lectura actual\n\n'
+            'El botón abre la tienda en tu navegador y allí haces la compra. ClubReads '
+            'no gestiona pagos ni guarda datos de tu tarjeta.',
+      ),
+      _HelpItem(
+        pregunta: '¿Qué es "Tu próxima compra"?',
+        respuesta:
+            'Es una pantalla que reúne los libros que quieres comprar. Se abre desde '
+            'la tarjeta "Compra ahora tus libros más deseados" de "Mi universo lector" '
+            'y tiene tres pestañas:\n\n'
+            '• Deseados: tu lista de deseos\n'
+            '• Pendientes: los libros que tienes pendientes en tu biblioteca\n'
+            '• Próximos: los próximos lanzamientos, con su fecha de salida\n\n'
+            'Solo aparecen los libros que Casa del Libro tiene localizados, para que '
+            'todos lleven a una ficha real.',
+      ),
+      _HelpItem(
+        pregunta: '¿Qué formatos se ofrecen y en qué idioma?',
+        respuesta:
+            'Debajo de "Comprar en Casa del Libro" verás un botón por cada formato '
+            'disponible: Papel, Ebook y Audiolibro. El relleno es el formato que '
+            'usas tú (el de tu biblioteca o el de tu deseo) y, si no hay ninguno, el '
+            'papel. Cada botón lleva directo a la ficha de ese formato.\n\n'
+            'Siempre te mostramos la edición en español, salvo que tengas el libro en '
+            'otro idioma: en ese caso buscamos esa edición, y si la tienda no la tiene, '
+            'no mostramos botón.',
+      ),
+      _HelpItem(
+        pregunta: '¿Por qué un libro no tiene botón de compra?',
+        respuesta:
+            'Porque Casa del Libro no lo tiene o no hemos podido localizarlo con '
+            'seguridad: libros autopublicados, ediciones agotadas, títulos escritos de '
+            'otra manera o sin autora. En esos casos preferimos no mostrar nada antes '
+            'que llevarte a un libro equivocado.\n\n'
+            'Los enlaces se actualizan cada noche. Si añades un libro hoy, su botón '
+            'de compra aparecerá al día siguiente, y el ebook o el audiolibro pueden '
+            'tardar algún día más.',
+      ),
+      _HelpItem(
+        pregunta: '¿Qué significa "Publicidad" y "enlace de afiliado"?',
+        respuesta:
+            'Los botones de compra son enlaces de afiliado: si compras en la tienda a '
+            'través de ellos, ClubReads puede recibir una pequeña comisión, sin coste '
+            'extra para ti. Por eso siempre llevan la etiqueta "Publicidad".\n\n'
+            'No enviamos a la tienda tu nombre, tu correo ni ningún dato de tu perfil, '
+            'y no recibimos información de lo que compras: solo guardamos lo que tú '
+            'marques como comprado en tu lista de deseos.',
+      ),
+      _HelpItem(
+        pregunta: '¿Cómo marco un libro como comprado?',
+        respuesta:
+            'Al volver a la app después de abrir la tienda desde un libro de tu lista '
+            'de deseos, te preguntamos "¿Has comprado…?". Si respondes que sí, pasa a '
+            'tus comprados con la fecha de hoy y el formato que abriste, y puedes '
+            'deshacerlo desde el aviso. La pregunta solo se hace en tu dispositivo.\n\n'
+            'También puedes marcarlo tú: en "Mis adquisiciones", desliza la tarjeta '
+            'del libro hacia la derecha.\n\n'
+            'Si el libro no está en tu lista de deseos (por ejemplo, uno de tus '
+            'pendientes), no hay nada que marcar y no preguntamos.',
+      ),
+      _HelpItem(
+        pregunta: '¿Qué es "Consigue el libro del club"?',
+        respuesta:
+            'Una tarjeta del dashboard de cada club, justo bajo la lectura oficial, '
+            'con los botones para comprar el libro que está leyendo el club. Solo '
+            'aparece si la tienda lo tiene y tú todavía no lo has empezado.',
       ),
     ],
   ),
@@ -536,7 +645,8 @@ const List<_HelpSection> _secciones = [
             'automáticamente.',
       ),
       _HelpItem(
-        pregunta: '¿Puedo añadir otros tomos de la saga desde la ficha de un libro?',
+        pregunta:
+            '¿Puedo añadir otros tomos de la saga desde la ficha de un libro?',
         respuesta:
             'Sí. Si el libro pertenece a una saga con más volúmenes ya en el '
             'catálogo, su ficha muestra un panel "Otros libros de la saga" con el '
@@ -733,7 +843,8 @@ const List<_HelpSection> _secciones = [
             'siguiente empieza con +15 puntos por seguir jugando.',
       ),
       _HelpItem(
-        pregunta: '¿Qué pasa si revierto una lectura o quito una marca de racha?',
+        pregunta:
+            '¿Qué pasa si revierto una lectura o quito una marca de racha?',
         respuesta:
             'Los puntos que dependían de esa acción desaparecen en el siguiente '
             'recálculo (cada pocas horas). No se puede "farmear" terminando y '
@@ -771,7 +882,8 @@ const List<_HelpSection> _secciones = [
             'la pantalla te avisa de que solo estás mirando.',
       ),
       _HelpItem(
-        pregunta: '¿Puedo ver temporadas anteriores o el podio de otras divisiones?',
+        pregunta:
+            '¿Puedo ver temporadas anteriores o el podio de otras divisiones?',
         respuesta:
             'Sí. En la pantalla de Ligas, debajo del reto semanal, tienes dos '
             'accesos:\n\n'
@@ -1206,7 +1318,10 @@ const List<_HelpSection> _secciones = [
             '🔥 Mes intenso (Raro) — 5 libros en un mismo mes\n'
             '⚡ Maratoniana (Épico) — 10 libros en un mes\n'
             '🗓️ Gran año lector (Raro) — 50 libros en un año\n'
-            '🏅 Año legendario (Legendario) — 100 libros en un solo año',
+            '🏅 Año legendario (Legendario) — 100 libros en un solo año\n\n'
+            'Mes intenso y Maratoniana cuentan tu mejor mes del año: si alguna vez '
+            'llegas al objetivo en un mismo mes, el logro queda desbloqueado aunque '
+            'ese mes ya haya terminado.',
       ),
       _HelpItem(
         pregunta: '¿Qué es el Bingo lector?',
@@ -1370,6 +1485,7 @@ const List<_HelpSection> _secciones = [
             '• Novedades disponibles y próximos lanzamientos\n'
             '• El Bingo lector, justo debajo de la Ruleta del TBR — solo si no '
             'tienes espacio personal, porque ahí ya tiene su propio sitio\n'
+            '• La tarjeta "Compra ahora tus libros más deseados", que abre "Tu próxima compra"\n'
             '• La tarjeta "Tu lista de deseos" con el precio total y los libros guardados\n'
             '• Tus logros del año\n'
             '• Las tendencias de la comunidad (libros y autores)\n\n'
@@ -1386,9 +1502,10 @@ const List<_HelpSection> _secciones = [
             'de la selección curada de Casa del Libro para literatura juvenil y '
             'romántica, por lo que el filtro solo aparece con contenido en esas '
             'categorías.\n\n'
-            'Desde cualquier libro puedes añadirlo a "Tu lista de deseos" '
-            'con el icono del carrito, o ver su ficha completa en la tienda '
-            'pulsando "Ver en tienda".',
+            'Desde cualquier libro puedes guardarlo en "Tu lista de deseos" con el '
+            'corazón ♡ de la portada, o comprarlo con el botón "Comprar en Casa del '
+            'Libro" ("Reservar", si aún no ha salido) cuando la tienda lo tiene. '
+            'El botón va precedido de la etiqueta "Publicidad".',
       ),
       _HelpItem(
         pregunta: '¿Qué es la estantería del mes?',
@@ -1419,7 +1536,9 @@ const List<_HelpSection> _secciones = [
             'relecturas; en perfiles ajenos todo es de consulta.\n\n'
             '"Favoritos" reúne Libros favoritos, Mi libro del año y Wrapped.\n\n'
             '"Meses lectores" muestra un calendario por cada mes en el que has '
-            'leído algún libro, con las portadas colocadas en los días que las terminaste.\n\n'
+            'leído algún libro, con las portadas colocadas en los días que las terminaste. '
+            'Los libros que sigues leyendo también aparecen en el mes, sin marcarlos '
+            'como terminados.\n\n'
             '"Logros" muestra todas tus medallas agrupadas por categoría, '
             'con barra de progreso y estado de desbloqueo. "Más" contiene opciones '
             'secundarias como Sagas ocultas, importaciones, Ayuda y ajustes.',
@@ -1638,13 +1757,18 @@ class AyudaPage extends StatelessWidget {
                 final prefs = await SharedPreferences.getInstance();
                 await prefs.remove('onboarding_v1_done');
                 // Elimina todas las claves de banners de hint
-                final keys = prefs.getKeys().where((k) => k.startsWith('screen_hint_v1_')).toList();
+                final keys = prefs
+                    .getKeys()
+                    .where((k) => k.startsWith('screen_hint_v1_'))
+                    .toList();
                 for (final k in keys) {
                   await prefs.remove(k);
                 }
                 if (context.mounted) {
                   ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('[DEBUG] Tutorial y hints reseteados')),
+                    const SnackBar(
+                      content: Text('[DEBUG] Tutorial y hints reseteados'),
+                    ),
                   );
                 }
               },

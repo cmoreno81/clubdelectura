@@ -59,7 +59,8 @@ const List<_TutorialStep> _pasos = [
         'Dentro de un club también puedes usar el botón + de la pestaña “Libros”.',
     detalle:
         'En “Novedades” y “Próximos lanzamientos” del dashboard puedes guardar '
-        'libros en tu lista de deseos pulsando el icono de carrito 🛒 sobre la portada.',
+        'libros en tu lista de deseos pulsando el corazón ♡ sobre la portada, o '
+        'comprarlos en Casa del Libro con el botón verde de cada tarjeta.',
   ),
   _TutorialStep(
     emoji: '🖊️',

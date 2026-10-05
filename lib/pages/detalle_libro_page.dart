@@ -1270,10 +1270,11 @@ class _DetalleLibroPageState extends State<DetalleLibroPage> {
                 miEstado: miEstado,
               ),
 
-              if (libro.bookId.isNotEmpty) ...[
-                const SizedBox(height: AppSpacing.md),
-                ComprarLibroCard(bookId: libro.bookId),
-              ],
+              if (libro.bookId.isNotEmpty)
+                ComprarLibroCard(
+                  bookId: libro.bookId,
+                  espacioAntes: AppSpacing.md,
+                ),
 
               // Banner de sugerencia: anima a completar la ficha del libro
               // Aparece cuando el libro tiene bookId (se puede editar) y le falta portada o género
