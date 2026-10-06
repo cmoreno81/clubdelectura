@@ -2352,29 +2352,23 @@ class _PicanteSection extends StatelessWidget {
 
 // ─── Reseñas públicas ──────────────────────────────────────────────────────────
 
-/// Reseñas escritas visibles para quien mira, para leerlas de un vistazo sin
-/// tener que abrir cada puntuación. Muestra las primeras y deja desplegar el
-/// resto. Las marcadas con spoilers siguen ocultas hasta tocarlas.
-class _ResenasPublicasSection extends StatefulWidget {
+/// Vista previa de las reseñas más recientes visibles para quien mira, para
+/// leerlas de un vistazo. Muestra solo las últimas [_maximo]: para ver todas
+/// están las barras de puntuación de arriba (cada una abre sus reseñas), así
+/// que la ficha no se alarga aunque el libro tenga cientos. Las marcadas con
+/// spoilers siguen ocultas hasta tocarlas.
+class _ResenasPublicasSection extends StatelessWidget {
   const _ResenasPublicasSection({required this.resenas});
 
+  /// Ya ordenadas de más reciente a más antigua.
   final List<LibroFinalizado> resenas;
 
-  @override
-  State<_ResenasPublicasSection> createState() =>
-      _ResenasPublicasSectionState();
-}
-
-class _ResenasPublicasSectionState extends State<_ResenasPublicasSection> {
-  static const _inicial = 3;
-  bool _todas = false;
+  static const _maximo = 3;
 
   @override
   Widget build(BuildContext context) {
-    final total = widget.resenas.length;
-    final visibles = _todas || total <= _inicial
-        ? widget.resenas
-        : widget.resenas.take(_inicial).toList();
+    final total = resenas.length;
+    final visibles = resenas.take(_maximo).toList();
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -2385,7 +2379,7 @@ class _ResenasPublicasSectionState extends State<_ResenasPublicasSection> {
             const SizedBox(width: AppSpacing.sm),
             Expanded(
               child: Text(
-                'Reseñas',
+                total > _maximo ? 'Últimas reseñas' : 'Reseñas',
                 style: AppTextStyles.subtitle.copyWith(
                   fontWeight: FontWeight.w800,
                 ),
@@ -2405,18 +2399,15 @@ class _ResenasPublicasSectionState extends State<_ResenasPublicasSection> {
           _ResenaCard(resena: r),
           const SizedBox(height: AppSpacing.sm),
         ],
-        if (total > _inicial)
-          Align(
-            alignment: Alignment.centerLeft,
-            child: TextButton.icon(
-              onPressed: () => setState(() => _todas = !_todas),
-              icon: Icon(
-                _todas
-                    ? Icons.expand_less_rounded
-                    : Icons.expand_more_rounded,
-                size: 20,
+        if (total > _maximo)
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xs),
+            child: Text(
+              'Mostramos las $_maximo más recientes. Toca una puntuación de '
+              'arriba para leer todas las reseñas de esa nota.',
+              style: AppTextStyles.caption.copyWith(
+                color: AppColors.textSecondary,
               ),
-              label: Text(_todas ? 'Ver menos' : 'Ver las $total reseñas'),
             ),
           ),
       ],
