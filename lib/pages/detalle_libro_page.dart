@@ -2379,7 +2379,7 @@ class _ResenasPublicasSection extends StatelessWidget {
             const SizedBox(width: AppSpacing.sm),
             Expanded(
               child: Text(
-                total > _maximo ? 'Últimas reseñas' : 'Reseñas',
+                'Reseñas más recientes',
                 style: AppTextStyles.subtitle.copyWith(
                   fontWeight: FontWeight.w800,
                 ),
@@ -2399,17 +2399,16 @@ class _ResenasPublicasSection extends StatelessWidget {
           _ResenaCard(resena: r),
           const SizedBox(height: AppSpacing.sm),
         ],
-        if (total > _maximo)
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xs),
-            child: Text(
-              'Mostramos las $_maximo más recientes. Toca una puntuación de '
-              'arriba para leer todas las reseñas de esa nota.',
-              style: AppTextStyles.caption.copyWith(
-                color: AppColors.textSecondary,
-              ),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xs),
+          child: Text(
+            'Para ver todas las reseñas, toca una puntuación en el gráfico '
+            'de arriba.',
+            style: AppTextStyles.caption.copyWith(
+              color: AppColors.textSecondary,
             ),
           ),
+        ),
       ],
     );
   }
