@@ -903,6 +903,11 @@ class _DetalleLibroPageState extends State<DetalleLibroPage> {
         );
         registros = List<Libro>.from(libro.registros);
       });
+      // El bloque "Estadísticas" (media, estrellas, picante, formato…) usa los
+      // datos de toda la comunidad, que solo se cargaban al abrir la ficha:
+      // tras editar tu valoración, picante o formato la media no cambiaba
+      // hasta volver a entrar. Se recargan junto con los del club.
+      if (!widget.globalStats) unawaited(_cargarEstadisticasComunidad());
     } catch (_) {
       // Si falla, el snackbar de éxito del propio control ya informó del
       // cambio; la próxima entrada a la ficha traerá los datos frescos.
