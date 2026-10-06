@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../services/api_service.dart';
+import '../../theme/app_text_styles.dart';
 
 /// "Comprar en Casa del Libro" + un botón por cada formato disponible
 /// (Papel, Ebook, Audiolibro). Siempre se pinta igual, aunque solo haya un
@@ -106,7 +107,7 @@ class BotonesCompra extends StatelessWidget {
                 reserva
                     ? 'Reservar en Casa del Libro'
                     : 'Comprar en Casa del Libro',
-                style: const TextStyle(
+                style: AppTextStyles.subtitle.copyWith(
                   color: _verde,
                   fontWeight: FontWeight.w800,
                   fontSize: 13.5,

@@ -602,8 +602,11 @@ class _WishlistPageState extends State<WishlistPage>
                     sliver: SliverToBoxAdapter(
                       child: _PlanView(
                         items: data.items,
+                        purchased: data.purchased,
                         onEdit: _openEdit,
                         onDelete: _confirmDelete,
+                        onEditPurchaseDate: _editPurchaseDate,
+                        onUnmark: _unmarkPurchased,
                       ),
                     ),
                   ),
@@ -999,13 +1002,22 @@ class _TabsDelegate extends SliverPersistentHeaderDelegate {
 class _PlanView extends StatelessWidget {
   const _PlanView({
     required this.items,
+    required this.purchased,
     required this.onEdit,
     required this.onDelete,
+    required this.onEditPurchaseDate,
+    required this.onUnmark,
   });
 
   final List<WishlistItem> items;
+
+  /// Libros ya comprados: aparecen en el mes en que se compraron de verdad
+  /// (no en el que se había planificado), para que el mes refleje lo gastado.
+  final List<WishlistItem> purchased;
   final Future<void> Function(WishlistItem) onEdit;
   final Future<void> Function(WishlistItem) onDelete;
+  final Future<void> Function(WishlistItem) onEditPurchaseDate;
+  final Future<void> Function(WishlistItem) onUnmark;
 
   @override
   Widget build(BuildContext context) {
@@ -1014,14 +1026,30 @@ class _PlanView extends StatelessWidget {
     final planned = items.where((i) => i.plannedMonth != null).toList()
       ..sort((a, b) => a.plannedMonth!.compareTo(b.plannedMonth!));
 
-    // Agrupamos por mes/año
+    // Compras del mes en curso (o posteriores): el historial de meses
+    // anteriores se consulta en "Comprados" y no alarga el planificador.
+    final now = DateTime.now();
+    final inicioMes = DateTime(now.year, now.month);
+    final compras = purchased.where((i) => i.purchasedAt != null).where((i) {
+      final d = i.purchasedAt!.toLocal();
+      return !DateTime(d.year, d.month).isBefore(inicioMes);
+    }).toList()..sort((a, b) => b.purchasedAt!.compareTo(a.purchasedAt!));
+
+    // Agrupamos por mes/año: lo pendiente por su mes planificado y lo
+    // comprado por su mes de compra.
     final groups = <DateTime, List<WishlistItem>>{};
+    final boughtGroups = <DateTime, List<WishlistItem>>{};
     for (final item in planned) {
       final key = DateTime(item.plannedMonth!.year, item.plannedMonth!.month);
       groups.putIfAbsent(key, () => []).add(item);
     }
+    for (final item in compras) {
+      final d = item.purchasedAt!.toLocal();
+      boughtGroups.putIfAbsent(DateTime(d.year, d.month), () => []).add(item);
+    }
+    final months = {...groups.keys, ...boughtGroups.keys}.toList()..sort();
 
-    if (items.isEmpty) {
+    if (items.isEmpty && compras.isEmpty) {
       return Center(
         child: Text(
           'Añade libros para planificar tu gasto mes a mes.',
@@ -1035,22 +1063,34 @@ class _PlanView extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         // ── Meses planificados ─────────────────────────────────────────────
-        if (groups.isNotEmpty) ...[
-          for (final entry in groups.entries) ...[
-            _MonthHeader(month: entry.key, items: entry.value),
-            const SizedBox(height: AppSpacing.xs),
-            ...entry.value.map(
-              (item) => Padding(
-                padding: const EdgeInsets.only(bottom: AppSpacing.sm),
-                child: _WishlistTile(
-                  item: item,
-                  onEdit: () => onEdit(item),
-                  onDelete: () => onDelete(item),
-                ),
+        for (final month in months) ...[
+          _MonthHeader(
+            month: month,
+            items: [...?groups[month], ...?boughtGroups[month]],
+          ),
+          const SizedBox(height: AppSpacing.xs),
+          ...?groups[month]?.map(
+            (item) => Padding(
+              padding: const EdgeInsets.only(bottom: AppSpacing.sm),
+              child: _WishlistTile(
+                item: item,
+                onEdit: () => onEdit(item),
+                onDelete: () => onDelete(item),
               ),
             ),
-            const SizedBox(height: AppSpacing.sm),
-          ],
+          ),
+          ...?boughtGroups[month]?.map(
+            (item) => Padding(
+              padding: const EdgeInsets.only(bottom: AppSpacing.sm),
+              child: _PurchasedTile(
+                item: item,
+                onEditPurchaseDate: () => onEditPurchaseDate(item),
+                onUnmark: () => onUnmark(item),
+                onDelete: () => onDelete(item),
+              ),
+            ),
+          ),
+          const SizedBox(height: AppSpacing.sm),
         ],
 
         // ── Sin mes asignado ───────────────────────────────────────────────
@@ -1339,10 +1379,13 @@ class _EtiquetaPublicidad extends StatelessWidget {
           ),
         ),
         const SizedBox(width: 6),
-        const Expanded(
+        Expanded(
           child: Text(
             'Enlace de afiliado',
-            style: TextStyle(fontSize: 11, color: AppColors.textSecondary),
+            style: AppTextStyles.caption.copyWith(
+              fontSize: 11,
+              color: AppColors.textSecondary,
+            ),
           ),
         ),
       ],
@@ -1357,15 +1400,14 @@ class _AccesoCompra extends StatelessWidget {
   final int disponibles;
   final VoidCallback onTap;
 
+  /// Mismo diseño y tipografía que el aviso de "Tu próxima compra", para que
+  /// las dos tarjetas verdes se lean como una sola familia.
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        padding: const EdgeInsets.symmetric(
-          horizontal: AppSpacing.md,
-          vertical: AppSpacing.sm,
-        ),
+        padding: const EdgeInsets.all(AppSpacing.md),
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(AppRadius.lg),
           gradient: const LinearGradient(
@@ -1373,20 +1415,58 @@ class _AccesoCompra extends StatelessWidget {
             end: Alignment.bottomRight,
             colors: [Color(0xFF4C9560), Color(0xFF2B5C3A)],
           ),
+          boxShadow: [
+            BoxShadow(
+              color: const Color(0xFF2B5C3A).withValues(alpha: .28),
+              blurRadius: 12,
+              offset: const Offset(0, 5),
+            ),
+          ],
         ),
         child: Row(
           children: [
-            const Icon(Icons.shopping_bag_outlined, color: Colors.white),
-            const SizedBox(width: AppSpacing.sm),
+            Container(
+              width: 44,
+              height: 44,
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: .18),
+                borderRadius: BorderRadius.circular(14),
+              ),
+              child: const Icon(
+                Icons.shopping_bag_outlined,
+                color: Colors.white,
+              ),
+            ),
+            const SizedBox(width: AppSpacing.md),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 3,
+                    ),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: .22),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: const Text(
+                      'PUBLICIDAD',
+                      style: TextStyle(
+                        fontSize: 9,
+                        letterSpacing: 1,
+                        fontWeight: FontWeight.w800,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: AppSpacing.xs),
                   Text(
                     disponibles == 1
                         ? '1 de tus deseos está en Casa del Libro'
                         : '$disponibles de tus deseos están en Casa del Libro',
-                    style: const TextStyle(
+                    style: AppTextStyles.subtitle.copyWith(
                       color: Colors.white,
                       fontWeight: FontWeight.w800,
                       fontSize: 14,
@@ -1394,11 +1474,9 @@ class _AccesoCompra extends StatelessWidget {
                   ),
                   const SizedBox(height: 2),
                   Text(
-                    'PUBLICIDAD · Ver en Tu próxima compra',
-                    style: TextStyle(
-                      color: Colors.white.withValues(alpha: .85),
-                      fontSize: 11,
-                      letterSpacing: .3,
+                    'Ver en Tu próxima compra',
+                    style: AppTextStyles.caption.copyWith(
+                      color: Colors.white.withValues(alpha: .92),
                     ),
                   ),
                 ],

@@ -7,6 +7,7 @@ import '../services/upcoming_releases_service.dart';
 import '../services/wishlist_service.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_spacing.dart';
+import '../theme/app_text_styles.dart';
 import '../widgets/common/club_book_cover.dart';
 import '../widgets/libros/add_book_sheet.dart';
 import '../widgets/libros/botones_compra.dart';
@@ -760,10 +761,10 @@ class _UpcomingReleasesPageState extends State<UpcomingReleasesPage> {
                           ),
                         ),
                         const SizedBox(width: 6),
-                        const Expanded(
+                        Expanded(
                           child: Text(
                             'Enlace de afiliado',
-                            style: TextStyle(
+                            style: AppTextStyles.caption.copyWith(
                               fontSize: 11,
                               color: AppColors.textSecondary,
                             ),

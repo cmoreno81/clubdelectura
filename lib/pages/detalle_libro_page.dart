@@ -630,13 +630,30 @@ class _DetalleLibroPageState extends State<DetalleLibroPage> {
     String prioridad,
     String formato,
   ) async {
-    final ok = await ApiService().actualizarPreferenciasLibro(
-      libro: libro.libro,
-      prioridad: prioridad,
-      formato: formato,
-    );
-    if (!ok) throw Exception('No se han podido guardar tus preferencias');
+    // Si falla (sin conexión, servidor…) se avisa y el cambio no se aplica en
+    // pantalla: antes la excepción quedaba sin capturar, no se veía ningún
+    // mensaje y Crashlytics la contaba como una caída.
+    var ok = false;
+    try {
+      ok = await ApiService().actualizarPreferenciasLibro(
+        libro: libro.libro,
+        prioridad: prioridad,
+        formato: formato,
+      );
+    } catch (_) {
+      ok = false;
+    }
     if (!mounted) return;
+    if (!ok) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'No se han podido guardar tus preferencias. Inténtalo de nuevo.',
+          ),
+        ),
+      );
+      return;
+    }
     final index = registros.indexOf(libro);
     if (index < 0) return;
     setState(() {
