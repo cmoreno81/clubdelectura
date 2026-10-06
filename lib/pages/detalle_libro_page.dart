@@ -1893,11 +1893,13 @@ class _EstadisticasGlobalesSection extends StatelessWidget {
   }
 }
 
-/// Abre las reseñas de ClubReads con la puntuación [stars] pulsada en la
-/// gráfica de distribución. Solo se listan las reseñas públicas (de quien
-/// comparte club o tiene el perfil en público); el resto de valoraciones solo
-/// cuentan en la nota y el servidor ya no envía su texto. Si ninguna tiene
-/// reseña pública, la hoja lo dice en vez de enseñar tarjetas vacías.
+/// Abre quién ha dado la puntuación [stars] pulsada en la gráfica de
+/// distribución. Solo se muestra a quien es visible para quien mira (comparte
+/// club o tiene el perfil en público): quien escribió reseña, con su reseña;
+/// quien puntuó sin escribir, como un avatar (todos juntos, para que no
+/// ocupen una fila cada uno). El resto solo cuenta en la nota: el servidor ya
+/// no envía ni su nombre ni su texto. Si no es visible nadie, la hoja lo dice
+/// en vez de enseñar tarjetas vacías.
 void _mostrarValoracionesPorEstrellas(
   BuildContext context, {
   required int stars,
@@ -1910,17 +1912,20 @@ void _mostrarValoracionesPorEstrellas(
 
   if (conEsaNota.isEmpty) return;
 
-  final publicas = conEsaNota
-      .where((f) => f.mismoClub && f.resena.trim().isNotEmpty)
-      .toList()
-    ..sort((a, b) {
-      final fa = a.finishedAt;
-      final fb = b.finishedAt;
-      if (fa == null && fb == null) return 0;
-      if (fa == null) return 1;
-      if (fb == null) return -1;
-      return fb.compareTo(fa);
-    });
+  int masReciente(LibroFinalizado a, LibroFinalizado b) {
+    final fa = a.finishedAt;
+    final fb = b.finishedAt;
+    if (fa == null && fb == null) return 0;
+    if (fa == null) return 1;
+    if (fb == null) return -1;
+    return fb.compareTo(fa);
+  }
+
+  final visibles = conEsaNota.where((f) => f.mismoClub).toList();
+  final conResena = visibles.where((f) => f.resena.trim().isNotEmpty).toList()
+    ..sort(masReciente);
+  final sinResena = visibles.where((f) => f.resena.trim().isEmpty).toList()
+    ..sort(masReciente);
 
   showModalBottomSheet<void>(
     context: context,
@@ -1929,7 +1934,8 @@ void _mostrarValoracionesPorEstrellas(
     builder: (_) => _ValoracionesPorEstrellaSheet(
       stars: stars,
       totalConEsaNota: conEsaNota.length,
-      resenasPublicas: publicas,
+      conResena: conResena,
+      sinResena: sinResena,
     ),
   );
 }
@@ -1938,27 +1944,29 @@ class _ValoracionesPorEstrellaSheet extends StatelessWidget {
   const _ValoracionesPorEstrellaSheet({
     required this.stars,
     required this.totalConEsaNota,
-    required this.resenasPublicas,
+    required this.conResena,
+    required this.sinResena,
   });
 
   final int stars;
 
-  /// Cuántas personas dieron esta nota (con o sin reseña pública).
+  /// Cuántas personas dieron esta nota (visibles o no).
   final int totalConEsaNota;
-  final List<LibroFinalizado> resenasPublicas;
+  final List<LibroFinalizado> conResena;
+  final List<LibroFinalizado> sinResena;
 
   @override
   Widget build(BuildContext context) {
-    final hayResenas = resenasPublicas.isNotEmpty;
+    final hayVisibles = conResena.isNotEmpty || sinResena.isNotEmpty;
     final lectores = totalConEsaNota == 1
         ? '1 lector'
         : '$totalConEsaNota lectores';
-    final resenas = resenasPublicas.length == 1
+    final resenas = conResena.length == 1
         ? '1 reseña pública'
-        : '${resenasPublicas.length} reseñas públicas';
+        : '${conResena.length} reseñas públicas';
 
     return DraggableScrollableSheet(
-      initialChildSize: hayResenas ? 0.6 : 0.4,
+      initialChildSize: conResena.isNotEmpty ? 0.6 : 0.4,
       minChildSize: 0.3,
       maxChildSize: 0.92,
       expand: false,
@@ -2005,7 +2013,7 @@ class _ValoracionesPorEstrellaSheet extends StatelessWidget {
                               fontWeight: FontWeight.w800,
                             ),
                           ),
-                          if (hayResenas)
+                          if (conResena.isNotEmpty)
                             Text(resenas, style: AppTextStyles.caption),
                         ],
                       ),
@@ -2016,20 +2024,67 @@ class _ValoracionesPorEstrellaSheet extends StatelessWidget {
               const SizedBox(height: AppSpacing.md),
               const Divider(height: 1),
               Expanded(
-                child: hayResenas
-                    ? ListView.separated(
-                        controller: scrollController,
-                        padding: const EdgeInsets.all(AppSpacing.lg),
-                        itemCount: resenasPublicas.length,
-                        separatorBuilder: (_, _) =>
-                            const SizedBox(height: AppSpacing.md),
-                        itemBuilder: (context, index) =>
-                            _ResenaCard(resena: resenasPublicas[index]),
-                      )
-                    : _SinResenasPublicas(
+                child: !hayVisibles
+                    ? _SinResenasPublicas(
                         controller: scrollController,
                         total: totalConEsaNota,
                         stars: stars,
+                      )
+                    : ListView(
+                        controller: scrollController,
+                        padding: const EdgeInsets.all(AppSpacing.lg),
+                        children: [
+                          if (sinResena.isNotEmpty) ...[
+                            Text(
+                              conResena.isEmpty
+                                  ? 'Han dado esta nota, sin reseña escrita'
+                                  : 'Sin reseña escrita',
+                              style: AppTextStyles.caption.copyWith(
+                                fontWeight: FontWeight.w700,
+                                color: AppColors.textSecondary,
+                              ),
+                            ),
+                            const SizedBox(height: AppSpacing.sm),
+                            Wrap(
+                              spacing: AppSpacing.sm,
+                              runSpacing: AppSpacing.sm,
+                              children: [
+                                for (final f in sinResena)
+                                  Tooltip(
+                                    message: f.usuario,
+                                    triggerMode: TooltipTriggerMode.tap,
+                                    child: ClubAvatar(
+                                      nombre: f.usuario,
+                                      imageUrl: f.avatarUrl,
+                                      neutralWhenUnnamed: true,
+                                      size: 44,
+                                    ),
+                                  ),
+                              ],
+                            ),
+                            const SizedBox(height: AppSpacing.lg),
+                          ],
+                          if (conResena.isNotEmpty) ...[
+                            if (sinResena.isNotEmpty) ...[
+                              Text(
+                                'Reseñas',
+                                style: AppTextStyles.caption.copyWith(
+                                  fontWeight: FontWeight.w700,
+                                  color: AppColors.textSecondary,
+                                ),
+                              ),
+                              const SizedBox(height: AppSpacing.sm),
+                            ],
+                            for (final r in conResena) ...[
+                              _ResenaCard(resena: r),
+                              const SizedBox(height: AppSpacing.md),
+                            ],
+                          ] else
+                            Text(
+                              'Nadie ha escrito una reseña con esta nota.',
+                              style: AppTextStyles.bodySecondary,
+                            ),
+                        ],
                       ),
               ),
             ],

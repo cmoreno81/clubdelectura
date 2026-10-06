@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 
 import '../models/catalog_book.dart';
@@ -17,6 +18,15 @@ class WishlistService {
   final http.Client _client;
 
   static Uri _uri(String path) => Uri.parse('${AppConfig.baseUrl}$path');
+
+  /// Se incrementa cada vez que cambia la lista de deseos (añadir, editar,
+  /// borrar, comprar o deshacer). Las tarjetas del inicio lo escuchan para
+  /// recargarse: antes pedían sus datos una sola vez y, si la lista cambiaba
+  /// desde otra pantalla, seguían enseñando libros que ya no estaban.
+  static final ValueNotifier<int> cambios = ValueNotifier<int>(0);
+
+  /// Avisa de que la lista de deseos ha cambiado (o debe volver a leerse).
+  static void avisarCambio() => cambios.value++;
 
   // ── Wishlist personal ────────────────────────────────────────────────────────
 
@@ -68,7 +78,9 @@ class WishlistService {
     }
 
     final data = HttpResponseHandler.decodeObject(response);
-    return WishlistItem.fromJson(data['item'] as Map<String, dynamic>);
+    final item = WishlistItem.fromJson(data['item'] as Map<String, dynamic>);
+    avisarCambio();
+    return item;
   }
 
   Future<WishlistItem> updateItem(
@@ -120,7 +132,9 @@ class WishlistService {
     }
 
     final data = HttpResponseHandler.decodeObject(response);
-    return WishlistItem.fromJson(data['item'] as Map<String, dynamic>);
+    final item = WishlistItem.fromJson(data['item'] as Map<String, dynamic>);
+    avisarCambio();
+    return item;
   }
 
   Future<WishlistItem> markPurchased(String id, {DateTime? purchasedAt}) async {
@@ -140,7 +154,9 @@ class WishlistService {
       );
     }
     final data = HttpResponseHandler.decodeObject(response);
-    return WishlistItem.fromJson(data['item'] as Map<String, dynamic>);
+    final item = WishlistItem.fromJson(data['item'] as Map<String, dynamic>);
+    avisarCambio();
+    return item;
   }
 
   Future<WishlistItem> unmarkPurchased(String id) async {
@@ -153,7 +169,9 @@ class WishlistService {
       );
     }
     final data = HttpResponseHandler.decodeObject(response);
-    return WishlistItem.fromJson(data['item'] as Map<String, dynamic>);
+    final item = WishlistItem.fromJson(data['item'] as Map<String, dynamic>);
+    avisarCambio();
+    return item;
   }
 
   Future<void> deleteItem(String id) async {
@@ -166,6 +184,7 @@ class WishlistService {
       );
     }
     HttpResponseHandler.ensureSuccess(response);
+    avisarCambio();
   }
 
   // ── Wishlist del club ────────────────────────────────────────────────────────

@@ -262,6 +262,7 @@ class _GeneralDashboardPageState extends State<GeneralDashboardPage> {
         _upcomingFuture = upcomingRefresh;
         _newReleasesFuture = newReleasesRefresh;
       });
+      WishlistService.avisarCambio();
     } catch (error, stack) {
       debugPrint('[dashboard] _reload falló: $error\n$stack');
       if (silent || !mounted) return;
@@ -2707,6 +2708,20 @@ class _WishlistPreviewSectionState extends State<_WishlistPreviewSection>
   void initState() {
     super.initState();
     _future = WishlistService().getWishlist();
+    WishlistService.cambios.addListener(_recargar);
+  }
+
+  @override
+  void dispose() {
+    WishlistService.cambios.removeListener(_recargar);
+    super.dispose();
+  }
+
+  /// La lista de deseos ha cambiado (en esta u otra pantalla): se vuelve a
+  /// leer para no enseñar libros que ya no están.
+  void _recargar() {
+    if (!mounted) return;
+    setState(() => _future = WishlistService().getWishlist());
   }
 
   void _openWishlist() {
@@ -2829,6 +2844,17 @@ class _ComprarAhoraCardState extends State<_ComprarAhoraCard>
   @override
   void initState() {
     super.initState();
+    _cargar();
+    WishlistService.cambios.addListener(_cargar);
+  }
+
+  @override
+  void dispose() {
+    WishlistService.cambios.removeListener(_cargar);
+    super.dispose();
+  }
+
+  void _cargar() {
     WishlistService().getWishlist().then((data) {
       if (!mounted) return;
       final portadas = data.items
