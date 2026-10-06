@@ -407,9 +407,8 @@ class _GrupoLectoresEstado extends StatelessWidget {
 }
 
 /// Reseña de una lectora con perfil público de otro club — se muestra al
-/// tocar su burbuja en el grupo "En otros clubes". A diferencia de
-/// [_ValoracionAnonimaCard] (anónima por estrellas), aquí el nombre ya es
-/// público, así que se enseña directamente.
+/// tocar su burbuja en el grupo "En otros clubes". Su nombre ya es público,
+/// así que se enseña directamente.
 class _ResenaLectoraSheet extends StatelessWidget {
   const _ResenaLectoraSheet({required this.finalizado});
 

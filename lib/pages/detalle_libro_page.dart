@@ -1893,21 +1893,34 @@ class _EstadisticasGlobalesSection extends StatelessWidget {
   }
 }
 
-/// Abre la lista de valoraciones de ClubReads con la puntuación [stars]
-/// pulsada en la gráfica de distribución. Igual que el resto de la vista
-/// global, cada valoración llega ya anonimizada desde el backend salvo que
-/// [LibroFinalizado.mismoClub] sea true (comparte algún club con quien mira).
+/// Abre las reseñas de ClubReads con la puntuación [stars] pulsada en la
+/// gráfica de distribución. Solo se listan las reseñas públicas (de quien
+/// comparte club o tiene el perfil en público); el resto de valoraciones solo
+/// cuentan en la nota y el servidor ya no envía su texto. Si ninguna tiene
+/// reseña pública, la hoja lo dice en vez de enseñar tarjetas vacías.
 void _mostrarValoracionesPorEstrellas(
   BuildContext context, {
   required int stars,
   required List<LibroFinalizado> finalizados,
 }) {
-  final filtradas = finalizados.where((f) {
+  final conEsaNota = finalizados.where((f) {
     final val = _EstadisticasGlobalesSection._parseRating(f.valoracion);
     return val > 0 && val.round().clamp(1, 5) == stars;
   }).toList();
 
-  if (filtradas.isEmpty) return;
+  if (conEsaNota.isEmpty) return;
+
+  final publicas = conEsaNota
+      .where((f) => f.mismoClub && f.resena.trim().isNotEmpty)
+      .toList()
+    ..sort((a, b) {
+      final fa = a.finishedAt;
+      final fb = b.finishedAt;
+      if (fa == null && fb == null) return 0;
+      if (fa == null) return 1;
+      if (fb == null) return -1;
+      return fb.compareTo(fa);
+    });
 
   showModalBottomSheet<void>(
     context: context,
@@ -1915,7 +1928,8 @@ void _mostrarValoracionesPorEstrellas(
     backgroundColor: Colors.transparent,
     builder: (_) => _ValoracionesPorEstrellaSheet(
       stars: stars,
-      valoraciones: filtradas,
+      totalConEsaNota: conEsaNota.length,
+      resenasPublicas: publicas,
     ),
   );
 }
@@ -1923,17 +1937,29 @@ void _mostrarValoracionesPorEstrellas(
 class _ValoracionesPorEstrellaSheet extends StatelessWidget {
   const _ValoracionesPorEstrellaSheet({
     required this.stars,
-    required this.valoraciones,
+    required this.totalConEsaNota,
+    required this.resenasPublicas,
   });
 
   final int stars;
-  final List<LibroFinalizado> valoraciones;
+
+  /// Cuántas personas dieron esta nota (con o sin reseña pública).
+  final int totalConEsaNota;
+  final List<LibroFinalizado> resenasPublicas;
 
   @override
   Widget build(BuildContext context) {
+    final hayResenas = resenasPublicas.isNotEmpty;
+    final lectores = totalConEsaNota == 1
+        ? '1 lector'
+        : '$totalConEsaNota lectores';
+    final resenas = resenasPublicas.length == 1
+        ? '1 reseña pública'
+        : '${resenasPublicas.length} reseñas públicas';
+
     return DraggableScrollableSheet(
-      initialChildSize: 0.6,
-      minChildSize: 0.35,
+      initialChildSize: hayResenas ? 0.6 : 0.4,
+      minChildSize: 0.3,
       maxChildSize: 0.92,
       expand: false,
       builder: (context, scrollController) {
@@ -1954,45 +1980,57 @@ class _ValoracionesPorEstrellaSheet extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: AppSpacing.md),
-              Row(
-                children: [
-                  const SizedBox(width: AppSpacing.lg),
-                  Row(
-                    children: List.generate(
-                      stars,
-                      (_) => const Icon(
-                        Icons.star_rounded,
-                        color: AppColors.gold,
-                        size: 20,
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
+                child: Row(
+                  children: [
+                    Row(
+                      children: List.generate(
+                        stars,
+                        (_) => const Icon(
+                          Icons.star_rounded,
+                          color: AppColors.gold,
+                          size: 20,
+                        ),
                       ),
                     ),
-                  ),
-                  const SizedBox(width: AppSpacing.sm),
-                  Expanded(
-                    child: Text(
-                      valoraciones.length == 1
-                          ? '1 lector'
-                          : '${valoraciones.length} lectores',
-                      style: AppTextStyles.subtitle.copyWith(
-                        fontWeight: FontWeight.w800,
+                    const SizedBox(width: AppSpacing.sm),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            lectores,
+                            style: AppTextStyles.subtitle.copyWith(
+                              fontWeight: FontWeight.w800,
+                            ),
+                          ),
+                          if (hayResenas)
+                            Text(resenas, style: AppTextStyles.caption),
+                        ],
                       ),
                     ),
-                  ),
-                  const SizedBox(width: AppSpacing.lg),
-                ],
+                  ],
+                ),
               ),
               const SizedBox(height: AppSpacing.md),
               const Divider(height: 1),
               Expanded(
-                child: ListView.separated(
-                  controller: scrollController,
-                  padding: const EdgeInsets.all(AppSpacing.lg),
-                  itemCount: valoraciones.length,
-                  separatorBuilder: (_, __) =>
-                      const SizedBox(height: AppSpacing.md),
-                  itemBuilder: (context, index) =>
-                      _ValoracionAnonimaCard(valoracion: valoraciones[index]),
-                ),
+                child: hayResenas
+                    ? ListView.separated(
+                        controller: scrollController,
+                        padding: const EdgeInsets.all(AppSpacing.lg),
+                        itemCount: resenasPublicas.length,
+                        separatorBuilder: (_, _) =>
+                            const SizedBox(height: AppSpacing.md),
+                        itemBuilder: (context, index) =>
+                            _ResenaCard(resena: resenasPublicas[index]),
+                      )
+                    : _SinResenasPublicas(
+                        controller: scrollController,
+                        total: totalConEsaNota,
+                        stars: stars,
+                      ),
               ),
             ],
           ),
@@ -2002,112 +2040,57 @@ class _ValoracionesPorEstrellaSheet extends StatelessWidget {
   }
 }
 
-class _ValoracionAnonimaCard extends StatefulWidget {
-  const _ValoracionAnonimaCard({required this.valoracion});
+/// Mensaje de la hoja cuando nadie con esa nota tiene una reseña visible.
+class _SinResenasPublicas extends StatelessWidget {
+  const _SinResenasPublicas({
+    required this.controller,
+    required this.total,
+    required this.stars,
+  });
 
-  final LibroFinalizado valoracion;
-
-  @override
-  State<_ValoracionAnonimaCard> createState() =>
-      _ValoracionAnonimaCardState();
-}
-
-class _ValoracionAnonimaCardState extends State<_ValoracionAnonimaCard> {
-  bool _resenaVisible = false;
+  final ScrollController controller;
+  final int total;
+  final int stars;
 
   @override
   Widget build(BuildContext context) {
-    final valoracion = widget.valoracion;
-    final nombre = valoracion.mismoClub
-        ? valoracion.usuario
-        : 'Lector de otro club';
-    final resena = valoracion.resena.trim();
+    final detalle = total == 1
+        ? 'La persona que lo puntuó con $stars ${stars == 1 ? 'estrella' : 'estrellas'} '
+              'no ha publicado ninguna reseña que puedas ver.'
+        : 'Ninguna de las $total personas que lo puntuaron con $stars '
+              '${stars == 1 ? 'estrella' : 'estrellas'} ha publicado una reseña '
+              'que puedas ver.';
 
-    return Container(
-      padding: const EdgeInsets.all(AppSpacing.md),
-      decoration: BoxDecoration(
-        color: AppColors.surfaceSoft,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.border),
-      ),
+    return SingleChildScrollView(
+      controller: controller,
+      padding: const EdgeInsets.all(AppSpacing.xl),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Row(
-            children: [
-              ClubAvatar(
-                // Para anónimas, nombre vacío + neutralWhenUnnamed fuerza el
-                // icono de persona genérico en vez de sacar iniciales de
-                // "Lector de otro club" (que parecían las de alguien real).
-                // Con perfil público o mismo club, se ve la foto real.
-                nombre: valoracion.mismoClub ? nombre : '',
-                imageUrl: valoracion.mismoClub ? valoracion.avatarUrl : '',
-                neutralWhenUnnamed: true,
-                size: 40,
-              ),
-              const SizedBox(width: AppSpacing.sm),
-              Expanded(
-                child: Text(
-                  nombre,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: AppTextStyles.body.copyWith(
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-              ),
-            ],
+          const Icon(
+            Icons.chat_bubble_outline_rounded,
+            size: 40,
+            color: AppColors.textMuted,
           ),
-          if (resena.isNotEmpty) ...[
-            const SizedBox(height: AppSpacing.sm),
-            AnimatedSwitcher(
-              duration: const Duration(milliseconds: 250),
-              child: _resenaVisible
-                  ? Text(
-                      key: const ValueKey('resena-visible'),
-                      resena,
-                      style: AppTextStyles.bodySecondary.copyWith(
-                        height: 1.35,
-                        fontStyle: FontStyle.italic,
-                      ),
-                    )
-                  : InkWell(
-                      key: const ValueKey('resena-oculta'),
-                      onTap: () => setState(() => _resenaVisible = true),
-                      borderRadius: BorderRadius.circular(12),
-                      child: Container(
-                        width: double.infinity,
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: AppSpacing.sm,
-                          vertical: AppSpacing.sm,
-                        ),
-                        decoration: BoxDecoration(
-                          color: AppColors.midnight,
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: const Row(
-                          children: [
-                            Icon(
-                              Icons.visibility_off_outlined,
-                              color: Colors.white,
-                              size: 18,
-                            ),
-                            SizedBox(width: AppSpacing.sm),
-                            Expanded(
-                              child: Text(
-                                'Reflexión oculta · toca para revelar posibles spoilers',
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 13,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-            ),
-          ],
+          const SizedBox(height: AppSpacing.sm),
+          Text(
+            'Sin reseñas públicas',
+            textAlign: TextAlign.center,
+            style: AppTextStyles.subtitle.copyWith(fontWeight: FontWeight.w800),
+          ),
+          const SizedBox(height: AppSpacing.xs),
+          Text(
+            detalle,
+            textAlign: TextAlign.center,
+            style: AppTextStyles.bodySecondary,
+          ),
+          const SizedBox(height: AppSpacing.sm),
+          Text(
+            'Solo se muestran las reseñas de quien comparte club contigo o '
+            'tiene el perfil público.',
+            textAlign: TextAlign.center,
+            style: AppTextStyles.caption.copyWith(color: AppColors.textMuted),
+          ),
         ],
       ),
     );
