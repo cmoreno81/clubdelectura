@@ -181,9 +181,17 @@ class _ComprarLibrosPageState extends State<ComprarLibrosPage>
           ),
     ];
 
+    // getLibros() trae la biblioteca de todo el club (una fila por cada
+    // usuaria+libro), así que hay que quedarse solo con las propias
+    // (yaLoTengo) y, por si un mismo libro aparece más de una vez en la
+    // respuesta, no repetirlo en la lista.
+    final pendientesVistos = <String>{};
     final pendientes = <_LibroCompra>[
       for (final l in libros)
-        if (l.estado.toUpperCase() == 'PENDIENTE' && l.bookId.isNotEmpty)
+        if (l.yaLoTengo &&
+            l.estado.toUpperCase() == 'PENDIENTE' &&
+            l.bookId.isNotEmpty &&
+            pendientesVistos.add(l.bookId))
           _LibroCompra(
             bookId: l.bookId,
             titulo: l.libro,
