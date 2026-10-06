@@ -1,3 +1,4 @@
+import 'package:club_lectura_app/utils/formato_libro.dart';
 import 'package:flutter/material.dart';
 
 import '../../models/libro.dart';
@@ -754,9 +755,21 @@ class _LectoraCard extends StatelessWidget {
               color: AppColors.info,
               value: registro.formato.isEmpty ? '' : registro.formato,
               options: const [
-                (value: 'FISICO', label: 'Físico', emoji: '📖'),
-                (value: 'DIGITAL', label: 'Digital', emoji: '📱'),
-                (value: 'AUDIOLIBRO', label: 'Audio', emoji: '🎧'),
+                (
+                  value: 'FISICO',
+                  label: FormatoLibro.papel,
+                  emoji: FormatoLibro.emojiPapel,
+                ),
+                (
+                  value: 'DIGITAL',
+                  label: FormatoLibro.ebook,
+                  emoji: FormatoLibro.emojiEbook,
+                ),
+                (
+                  value: 'AUDIOLIBRO',
+                  label: FormatoLibro.audiolibro,
+                  emoji: FormatoLibro.emojiAudiolibro,
+                ),
               ],
               onChanged: (value) => onActualizarPreferencias(
                 registro,

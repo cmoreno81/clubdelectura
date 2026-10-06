@@ -1,3 +1,4 @@
+import 'package:club_lectura_app/utils/formato_libro.dart';
 import 'package:club_lectura_app/services/library_refresh_notifier.dart';
 import 'package:flutter/material.dart';
 import '../models/libro.dart';
@@ -670,9 +671,12 @@ class _NuevoLibroPageState extends State<NuevoLibroPage> {
                 spacing: AppSpacing.sm,
                 children: [
                   for (final opcion in const [
-                    ('FISICO', '📖 Físico'),
-                    ('DIGITAL', '📱 Digital'),
-                    ('AUDIOLIBRO', '🎧 Audiolibro'),
+                    ('FISICO', '${FormatoLibro.emojiPapel} ${FormatoLibro.papel}'),
+                    ('DIGITAL', '${FormatoLibro.emojiEbook} ${FormatoLibro.ebook}'),
+                    (
+                      'AUDIOLIBRO',
+                      '${FormatoLibro.emojiAudiolibro} ${FormatoLibro.audiolibro}',
+                    ),
                   ])
                     ChoiceChip(
                       label: Text(opcion.$2),

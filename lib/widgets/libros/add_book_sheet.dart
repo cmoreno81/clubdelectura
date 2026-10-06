@@ -1,3 +1,4 @@
+import 'package:club_lectura_app/utils/formato_libro.dart';
 import 'package:flutter/material.dart';
 
 import '../../theme/app_radius.dart';
@@ -239,9 +240,9 @@ class _AddBookSheetState extends State<AddBookSheet> {
                         children:
                             const {
                               '': 'Sin decidir',
-                              'FISICO': 'Físico',
-                              'DIGITAL': 'Digital',
-                              'AUDIOLIBRO': 'Audiolibro',
+                              'FISICO': FormatoLibro.papel,
+                              'DIGITAL': FormatoLibro.ebook,
+                              'AUDIOLIBRO': FormatoLibro.audiolibro,
                             }.entries.map((entry) {
                               return _choice(
                                 context,

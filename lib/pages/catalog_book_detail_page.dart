@@ -1,3 +1,4 @@
+import 'package:club_lectura_app/utils/formato_libro.dart';
 import 'package:club_lectura_app/services/library_refresh_notifier.dart';
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -819,9 +820,9 @@ class _AddToLibrarySheetState extends State<_AddToLibrarySheet> {
               children:
                   const {
                         '': 'Sin decidir',
-                        'FISICO': 'Físico',
-                        'DIGITAL': 'Digital',
-                        'AUDIOLIBRO': 'Audiolibro',
+                        'FISICO': FormatoLibro.papel,
+                        'DIGITAL': FormatoLibro.ebook,
+                        'AUDIOLIBRO': FormatoLibro.audiolibro,
                       }.entries
                       .map(
                         (e) => ChoiceChip(

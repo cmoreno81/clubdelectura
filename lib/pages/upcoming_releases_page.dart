@@ -1,3 +1,4 @@
+import 'package:club_lectura_app/widgets/ui/etiqueta_publicidad.dart';
 import 'package:flutter/material.dart';
 
 import '../models/catalog_book.dart';
@@ -7,7 +8,6 @@ import '../services/upcoming_releases_service.dart';
 import '../services/wishlist_service.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_spacing.dart';
-import '../theme/app_text_styles.dart';
 import '../widgets/common/club_book_cover.dart';
 import '../widgets/libros/add_book_sheet.dart';
 import '../widgets/libros/botones_compra.dart';
@@ -740,38 +740,7 @@ class _UpcomingReleasesPageState extends State<UpcomingReleasesPage> {
                     const SizedBox(height: AppSpacing.sm),
                     // Publicidad: va antes del botón (código de conducta de
                     // publicidad: la mención debe verse antes que el contenido).
-                    Row(
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 6,
-                            vertical: 2,
-                          ),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFFDDEEDF),
-                            borderRadius: BorderRadius.circular(6),
-                          ),
-                          child: const Text(
-                            'Publicidad',
-                            style: TextStyle(
-                              fontSize: 10,
-                              fontWeight: FontWeight.w800,
-                              color: Color(0xFF3F7A4D),
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 6),
-                        Expanded(
-                          child: Text(
-                            'Enlace de afiliado',
-                            style: AppTextStyles.caption.copyWith(
-                              fontSize: 11,
-                              color: AppColors.textSecondary,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
+                    const EtiquetaPublicidad(conTexto: true),
                     const SizedBox(height: AppSpacing.xs),
                     BotonesCompra(
                       enlace: _enlaces[book.id]!,

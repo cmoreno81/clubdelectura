@@ -1,3 +1,5 @@
+import 'package:club_lectura_app/theme/colores_compra.dart';
+import 'package:club_lectura_app/widgets/ui/etiqueta_publicidad.dart';
 import 'package:flutter/material.dart';
 
 import '../../services/api_service.dart';
@@ -69,9 +71,9 @@ class _ComprarLecturaClubCardState extends State<ComprarLecturaClubCard> {
     return Container(
       padding: const EdgeInsets.all(AppSpacing.md),
       decoration: BoxDecoration(
-        color: const Color(0xFFF1F7F2),
+        color: ColoresCompra.fondo,
         borderRadius: BorderRadius.circular(AppRadius.lg),
-        border: Border.all(color: const Color(0xFFCFE3D3)),
+        border: Border.all(color: ColoresCompra.borde),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -101,38 +103,7 @@ class _ComprarLecturaClubCardState extends State<ComprarLecturaClubCard> {
                   style: AppTextStyles.caption,
                 ),
                 const SizedBox(height: AppSpacing.sm),
-                Row(
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 6,
-                        vertical: 2,
-                      ),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFDDEEDF),
-                        borderRadius: BorderRadius.circular(6),
-                      ),
-                      child: const Text(
-                        'Publicidad',
-                        style: TextStyle(
-                          fontSize: 10,
-                          fontWeight: FontWeight.w800,
-                          color: Color(0xFF3F7A4D),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 6),
-                    const Expanded(
-                      child: Text(
-                        'Enlace de afiliado',
-                        style: TextStyle(
-                          fontSize: 11,
-                          color: AppColors.textSecondary,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
+                const EtiquetaPublicidad(conTexto: true),
                 const SizedBox(height: 6),
                 BotonesCompra(enlace: enlace),
               ],

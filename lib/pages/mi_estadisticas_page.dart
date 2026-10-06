@@ -1,3 +1,4 @@
+import 'package:club_lectura_app/utils/formato_libro.dart';
 import 'package:flutter/material.dart';
 
 import '../models/estadisticas_personales.dart';
@@ -769,12 +770,6 @@ class _FormatosCard extends StatelessWidget {
   const _FormatosCard({required this.formatos});
   final List<FormatoLectura> formatos;
 
-  static const _iconos = {
-    'Físico': Icons.menu_book_rounded,
-    'Digital': Icons.tablet_mac_rounded,
-    'Audiolibro': Icons.headphones_rounded,
-  };
-
   @override
   Widget build(BuildContext context) {
     final total = formatos.fold<int>(0, (sum, f) => sum + f.cantidad);
@@ -794,14 +789,17 @@ class _FormatosCard extends StatelessWidget {
               child: Row(
                 children: [
                   Icon(
-                    _iconos[formato.formato] ?? Icons.book_rounded,
+                    FormatoLibro.icono(formato.formato),
                     size: 18,
                     color: AppColors.primary,
                   ),
                   const SizedBox(width: AppSpacing.sm),
                   SizedBox(
                     width: 80,
-                    child: Text(formato.formato, style: AppTextStyles.body),
+                    child: Text(
+                      FormatoLibro.etiqueta(formato.formato),
+                      style: AppTextStyles.body,
+                    ),
                   ),
                   const SizedBox(width: AppSpacing.sm),
                   Expanded(

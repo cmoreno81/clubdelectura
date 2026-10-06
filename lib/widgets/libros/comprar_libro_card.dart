@@ -1,3 +1,5 @@
+import 'package:club_lectura_app/theme/colores_compra.dart';
+import 'package:club_lectura_app/widgets/ui/etiqueta_publicidad.dart';
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -97,8 +99,8 @@ class _ComprarLibroCardState extends State<ComprarLibroCard> {
       ),
       child: ClubSectionCard(
         onTap: _abrir,
-        backgroundColor: const Color(0xFFF1F7F2),
-        borderColor: const Color(0xFFCFE3D3),
+        backgroundColor: ColoresCompra.fondo,
+        borderColor: ColoresCompra.borde,
         padding: const EdgeInsets.all(AppSpacing.md),
         child: Row(
           children: [
@@ -106,7 +108,7 @@ class _ComprarLibroCardState extends State<ComprarLibroCard> {
               width: 48,
               height: 48,
               decoration: BoxDecoration(
-                color: const Color(0xFFDDEEDF),
+                color: ColoresCompra.verdeClaro,
                 borderRadius: BorderRadius.circular(16),
               ),
               child: _abriendo
@@ -116,7 +118,7 @@ class _ComprarLibroCardState extends State<ComprarLibroCard> {
                     )
                   : const Icon(
                       Icons.shopping_bag_outlined,
-                      color: Color(0xFF3F7A4D),
+                      color: ColoresCompra.verde,
                     ),
             ),
             const SizedBox(width: AppSpacing.md),
@@ -136,24 +138,7 @@ class _ComprarLibroCardState extends State<ComprarLibroCard> {
                         ),
                       ),
                       const SizedBox(width: AppSpacing.xs),
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 6,
-                          vertical: 2,
-                        ),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFDDEEDF),
-                          borderRadius: BorderRadius.circular(6),
-                        ),
-                        child: const Text(
-                          'Publicidad',
-                          style: TextStyle(
-                            fontSize: 10,
-                            fontWeight: FontWeight.w800,
-                            color: Color(0xFF3F7A4D),
-                          ),
-                        ),
-                      ),
+                      const EtiquetaPublicidad(),
                     ],
                   ),
                   const SizedBox(height: AppSpacing.xs),
@@ -173,9 +158,9 @@ class _ComprarLibroCardState extends State<ComprarLibroCard> {
                             label: Text(f.etiqueta),
                             visualDensity: VisualDensity.compact,
                             backgroundColor: f.formato == _enlace!.formato
-                                ? const Color(0xFFDDEEDF)
+                                ? ColoresCompra.verdeClaro
                                 : Colors.white,
-                            side: const BorderSide(color: Color(0xFFCFE3D3)),
+                            side: const BorderSide(color: ColoresCompra.borde),
                             onPressed: () => _abrir(f.url),
                           ),
                       ],
@@ -185,7 +170,7 @@ class _ComprarLibroCardState extends State<ComprarLibroCard> {
               ),
             ),
             const SizedBox(width: AppSpacing.sm),
-            const Icon(Icons.chevron_right_rounded, color: Color(0xFF3F7A4D)),
+            const Icon(Icons.chevron_right_rounded, color: ColoresCompra.verde),
           ],
         ),
       ),

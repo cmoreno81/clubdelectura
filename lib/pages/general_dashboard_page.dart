@@ -1,3 +1,4 @@
+import 'package:club_lectura_app/widgets/ui/etiqueta_publicidad.dart';
 import 'dart:async';
 import 'dart:math' as math;
 
@@ -52,6 +53,7 @@ import '../widgets/common/onboarding_tutorial.dart';
 import '../widgets/common/screen_hint_banner.dart';
 import '../widgets/libros/libro_acciones_rapidas.dart';
 import '../widgets/ui/boton_tarjeta.dart';
+import 'package:club_lectura_app/utils/formato_libro.dart';
 import 'comprar_libros_page.dart';
 import '../services/usuario_service.dart';
 import 'package:club_lectura_app/widgets/common/club_shimmer.dart';
@@ -2139,24 +2141,24 @@ class _GeneralDashboardPageState extends State<GeneralDashboardPage> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           _formatBar(
-            icon: '📖',
-            label: 'Físico',
+            icon: FormatoLibro.emojiPapel,
+            label: FormatoLibro.papel,
             value: formats.physical,
             total: formats.total,
             color: AppColors.primary,
           ),
           const SizedBox(height: AppSpacing.md),
           _formatBar(
-            icon: '📱',
-            label: 'Digital',
+            icon: FormatoLibro.emojiEbook,
+            label: FormatoLibro.ebook,
             value: formats.digital,
             total: formats.total,
             color: AppColors.info,
           ),
           const SizedBox(height: AppSpacing.md),
           _formatBar(
-            icon: '🎧',
-            label: 'Audiolibro',
+            icon: FormatoLibro.emojiAudiolibro,
+            label: FormatoLibro.audiolibro,
             value: formats.audiobook,
             total: formats.total,
             color: const Color(0xFFE36A8D),
@@ -2878,25 +2880,7 @@ class _ComprarAhoraCardState extends State<_ComprarAhoraCard>
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 8,
-                        vertical: 3,
-                      ),
-                      decoration: BoxDecoration(
-                        color: Colors.white.withValues(alpha: .22),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: const Text(
-                        'PUBLICIDAD',
-                        style: TextStyle(
-                          fontSize: 9,
-                          letterSpacing: 1,
-                          fontWeight: FontWeight.w800,
-                          color: Colors.white,
-                        ),
-                      ),
-                    ),
+                    const EtiquetaPublicidad(sobreFondoOscuro: true),
                     const SizedBox(height: AppSpacing.sm),
                     Text(
                       'Compra ahora tus libros más deseados',

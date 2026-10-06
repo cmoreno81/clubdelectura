@@ -1,3 +1,5 @@
+import 'package:club_lectura_app/theme/colores_compra.dart';
+import 'package:club_lectura_app/widgets/ui/etiqueta_publicidad.dart';
 import 'dart:async';
 
 import 'package:flutter/material.dart';
@@ -23,6 +25,7 @@ import '../widgets/libros/add_book_sheet.dart';
 import '../widgets/libros/botones_compra.dart';
 import '../widgets/libros/pregunta_compra.dart';
 import '../widgets/ui/boton_tarjeta.dart';
+import 'package:club_lectura_app/utils/formato_libro.dart';
 import 'comprar_libros_page.dart';
 
 // ─── Helpers de formato (sin dependencia intl) ────────────────────────────────
@@ -762,14 +765,16 @@ class _BudgetCard extends StatelessWidget {
             children: [
               if (summary.physicalCount > 0)
                 _pill(
-                  '📕 ${summary.physicalCount} físico${summary.physicalCount > 1 ? 's' : ''}',
+                  '${FormatoLibro.emojiPapel} ${FormatoLibro.conteo('papel', summary.physicalCount)}',
                 ),
               if (summary.digitalCount > 0)
                 _pill(
-                  '📱 ${summary.digitalCount} digital${summary.digitalCount > 1 ? 'es' : ''}',
+                  '${FormatoLibro.emojiEbook} ${FormatoLibro.conteo('ebook', summary.digitalCount)}',
                 ),
               if (summary.audiobookCount > 0)
-                _pill('🎧 ${summary.audiobookCount} audio'),
+                _pill(
+                  '${FormatoLibro.emojiAudiolibro} ${FormatoLibro.conteo('audio', summary.audiobookCount)}',
+                ),
               if (summary.upcomingCount > 0)
                 _pill(
                   '🗓 ${summary.upcomingCount} próximo${summary.upcomingCount > 1 ? 's' : ''}',
@@ -1310,7 +1315,7 @@ class _WishlistTile extends StatelessWidget {
                 ],
                 if (enlace != null) ...[
                   const SizedBox(height: AppSpacing.sm),
-                  const _EtiquetaPublicidad(),
+                  const EtiquetaPublicidad(conTexto: true),
                   const SizedBox(height: 6),
                   BotonesCompra(
                     enlace: enlace!,
@@ -1356,44 +1361,6 @@ class _WishlistTile extends StatelessWidget {
   }
 }
 
-/// "Publicidad · Enlace de afiliado": va antes de los botones de compra.
-class _EtiquetaPublicidad extends StatelessWidget {
-  const _EtiquetaPublicidad();
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      children: [
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-          decoration: BoxDecoration(
-            color: const Color(0xFFDDEEDF),
-            borderRadius: BorderRadius.circular(6),
-          ),
-          child: const Text(
-            'Publicidad',
-            style: TextStyle(
-              fontSize: 10,
-              fontWeight: FontWeight.w800,
-              color: Color(0xFF3F7A4D),
-            ),
-          ),
-        ),
-        const SizedBox(width: 6),
-        Expanded(
-          child: Text(
-            'Enlace de afiliado',
-            style: AppTextStyles.caption.copyWith(
-              fontSize: 11,
-              color: AppColors.textSecondary,
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-}
-
 /// Franja verde bajo el presupuesto: lleva a "Tu próxima compra".
 class _AccesoCompra extends StatelessWidget {
   const _AccesoCompra({required this.disponibles, required this.onTap});
@@ -1414,11 +1381,11 @@ class _AccesoCompra extends StatelessWidget {
           gradient: const LinearGradient(
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
-            colors: [Color(0xFF4C9560), Color(0xFF2B5C3A)],
+            colors: [ColoresCompra.degradadoClaro, ColoresCompra.degradadoOscuro],
           ),
           boxShadow: [
             BoxShadow(
-              color: const Color(0xFF2B5C3A).withValues(alpha: .28),
+              color: ColoresCompra.degradadoOscuro.withValues(alpha: .28),
               blurRadius: 12,
               offset: const Offset(0, 5),
             ),
@@ -1443,25 +1410,7 @@ class _AccesoCompra extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 8,
-                      vertical: 3,
-                    ),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: .22),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: const Text(
-                      'PUBLICIDAD',
-                      style: TextStyle(
-                        fontSize: 9,
-                        letterSpacing: 1,
-                        fontWeight: FontWeight.w800,
-                        color: Colors.white,
-                      ),
-                    ),
-                  ),
+                  const EtiquetaPublicidad(sobreFondoOscuro: true),
                   const SizedBox(height: AppSpacing.xs),
                   Text(
                     disponibles == 1

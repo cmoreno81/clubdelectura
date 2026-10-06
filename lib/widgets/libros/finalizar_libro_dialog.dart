@@ -1,3 +1,4 @@
+import 'package:club_lectura_app/utils/formato_libro.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../common/club_rating_selector.dart';
@@ -250,9 +251,12 @@ class _FinalizarLibroDialogState extends State<FinalizarLibroDialog> {
                     spacing: 8,
                     children: [
                       for (final opcion in const [
-                        ('FISICO', '📖 Físico'),
-                        ('DIGITAL', '📱 Digital'),
-                        ('AUDIOLIBRO', '🎧 Audiolibro'),
+                        ('FISICO', '${FormatoLibro.emojiPapel} ${FormatoLibro.papel}'),
+                        ('DIGITAL', '${FormatoLibro.emojiEbook} ${FormatoLibro.ebook}'),
+                        (
+                          'AUDIOLIBRO',
+                          '${FormatoLibro.emojiAudiolibro} ${FormatoLibro.audiolibro}',
+                        ),
                       ])
                         ChoiceChip(
                           label: Text(

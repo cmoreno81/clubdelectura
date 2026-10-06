@@ -1,3 +1,4 @@
+import 'package:club_lectura_app/utils/formato_libro.dart';
 import 'package:flutter/material.dart';
 
 import '../../models/catalog_book.dart';
@@ -218,9 +219,9 @@ class _SeriesVolumeDetailsDialogState extends State<SeriesVolumeDetailsDialog> {
             children: [
               for (final option in const [
                 ('', 'Sin indicar'),
-                ('FISICO', 'Físico'),
-                ('DIGITAL', 'Digital'),
-                ('AUDIOLIBRO', 'Audio'),
+                ('FISICO', FormatoLibro.papel),
+                ('DIGITAL', FormatoLibro.ebook),
+                ('AUDIOLIBRO', FormatoLibro.audiolibro),
               ])
                 _OptionChip(
                   label: option.$2,

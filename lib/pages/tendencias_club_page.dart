@@ -1,3 +1,4 @@
+import 'package:club_lectura_app/utils/formato_libro.dart';
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
@@ -921,18 +922,7 @@ class _LectoraTendenciaItem extends StatelessWidget {
   }
 }
 
-String _nombreFormato(String codigo) {
-  switch (codigo.toUpperCase()) {
-    case 'PHYSICAL':
-      return 'Físico';
-    case 'DIGITAL':
-      return 'Digital';
-    case 'AUDIOBOOK':
-      return 'Audiolibro';
-    default:
-      return codigo;
-  }
-}
+String _nombreFormato(String codigo) => FormatoLibro.etiqueta(codigo);
 
 // ── Comparativa: tu club frente a toda la comunidad ──────────────────────────
 

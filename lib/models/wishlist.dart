@@ -1,3 +1,5 @@
+import 'package:club_lectura_app/utils/formato_libro.dart';
+
 // ── Utilidades ────────────────────────────────────────────────────────────────
 
 /// Decodifica entidades HTML básicas que pueden llegar en títulos/autores
@@ -153,15 +155,15 @@ enum WishlistFormat {
   };
 
   String get label => switch (this) {
-    WishlistFormat.physical => 'Físico',
-    WishlistFormat.digital => 'Digital',
-    WishlistFormat.audiobook => 'Audio',
+    WishlistFormat.physical => FormatoLibro.papel,
+    WishlistFormat.digital => FormatoLibro.ebook,
+    WishlistFormat.audiobook => FormatoLibro.audiolibro,
   };
 
   String get emoji => switch (this) {
-    WishlistFormat.physical => '📕',
-    WishlistFormat.digital => '📱',
-    WishlistFormat.audiobook => '🎧',
+    WishlistFormat.physical => FormatoLibro.emojiPapel,
+    WishlistFormat.digital => FormatoLibro.emojiEbook,
+    WishlistFormat.audiobook => FormatoLibro.emojiAudiolibro,
   };
 }
 

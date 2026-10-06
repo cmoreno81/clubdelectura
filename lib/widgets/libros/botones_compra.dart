@@ -1,3 +1,4 @@
+import 'package:club_lectura_app/theme/colores_compra.dart';
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -30,8 +31,6 @@ class BotonesCompra extends StatelessWidget {
   /// elegido (la lista de deseos lo usa para preguntar al volver si se compró).
   final ValueChanged<EnlaceCompraFormato>? onAbierto;
 
-  static const _verde = Color(0xFF3F7A4D);
-
   Future<void> _abrir(BuildContext context, EnlaceCompraFormato f) async {
     final uri = Uri.tryParse(f.url);
     final abierto =
@@ -56,7 +55,7 @@ class BotonesCompra extends StatelessWidget {
         ? FilledButton(
             onPressed: () => _abrir(context, f),
             style: FilledButton.styleFrom(
-              backgroundColor: _verde,
+              backgroundColor: ColoresCompra.verde,
               visualDensity: VisualDensity.compact,
               minimumSize: const Size(0, 36),
               padding: padding,
@@ -67,9 +66,9 @@ class BotonesCompra extends StatelessWidget {
         : OutlinedButton(
             onPressed: () => _abrir(context, f),
             style: OutlinedButton.styleFrom(
-              foregroundColor: _verde,
-              side: const BorderSide(color: Color(0xFFCFE3D3)),
-              backgroundColor: const Color(0xFFF1F7F2),
+              foregroundColor: ColoresCompra.verde,
+              side: const BorderSide(color: ColoresCompra.borde),
+              backgroundColor: ColoresCompra.fondo,
               visualDensity: VisualDensity.compact,
               minimumSize: const Size(0, 36),
               padding: padding,
@@ -100,7 +99,7 @@ class BotonesCompra extends StatelessWidget {
         Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(Icons.shopping_bag_outlined, size: 16, color: _verde),
+            const Icon(Icons.shopping_bag_outlined, size: 16, color: ColoresCompra.verde),
             const SizedBox(width: 6),
             Flexible(
               child: Text(
@@ -108,7 +107,7 @@ class BotonesCompra extends StatelessWidget {
                     ? 'Reservar en Casa del Libro'
                     : 'Comprar en Casa del Libro',
                 style: AppTextStyles.subtitle.copyWith(
-                  color: _verde,
+                  color: ColoresCompra.verde,
                   fontWeight: FontWeight.w800,
                   fontSize: 13.5,
                 ),

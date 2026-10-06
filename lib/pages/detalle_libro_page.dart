@@ -38,6 +38,7 @@ import '../widgets/libros/finalizar_libro_dialog.dart';
 import '../widgets/libros/kit_lectura_card.dart';
 import '../widgets/libros/libro_header.dart';
 import '../widgets/libros/comprar_libro_card.dart';
+import 'package:club_lectura_app/utils/formato_libro.dart';
 import '../widgets/libros/libro_interesadas_section.dart';
 import '../widgets/libros/mi_ficha_lectura_card.dart';
 import '../widgets/libros/libro_section.dart';
@@ -2111,9 +2112,13 @@ class _FormatoSection extends StatelessWidget {
   final Map<String, int> formatCounts;
 
   static const _formatos = [
-    (key: 'FISICO',      emoji: '📖', label: 'Físico'),
-    (key: 'DIGITAL',     emoji: '📱', label: 'Digital'),
-    (key: 'AUDIOLIBRO',  emoji: '🎧', label: 'Audiolibro'),
+    (key: 'FISICO', emoji: FormatoLibro.emojiPapel, label: FormatoLibro.papel),
+    (key: 'DIGITAL', emoji: FormatoLibro.emojiEbook, label: FormatoLibro.ebook),
+    (
+      key: 'AUDIOLIBRO',
+      emoji: FormatoLibro.emojiAudiolibro,
+      label: FormatoLibro.audiolibro,
+    ),
   ];
 
   @override

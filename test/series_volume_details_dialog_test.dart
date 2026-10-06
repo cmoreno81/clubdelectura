@@ -72,7 +72,7 @@ void main() {
 
     expect(find.text('Volumen sin metadatos'), findsOneWidget);
     expect(find.text('Formato (opcional)'), findsOneWidget);
-    await tester.tap(find.text('Digital'));
+    await tester.tap(find.text('Ebook'));
     await tester.tap(find.text('Terminado'));
     await tester.pump();
     expect(find.text('Fecha de inicio (opcional)'), findsOneWidget);

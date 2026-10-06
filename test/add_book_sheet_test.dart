@@ -142,7 +142,7 @@ void main() {
         ),
       );
       await tester.pumpAndSettle();
-      expect(find.text('Físico'), findsOneWidget);
+      expect(find.text('Papel'), findsOneWidget);
       expect(find.text('Audiolibro'), findsOneWidget);
       expect(tester.takeException(), isNull);
 

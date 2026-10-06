@@ -1,3 +1,5 @@
+import 'package:club_lectura_app/theme/colores_compra.dart';
+import 'package:club_lectura_app/widgets/ui/etiqueta_publicidad.dart';
 import 'package:flutter/material.dart';
 
 import '../models/libro.dart';
@@ -341,11 +343,11 @@ class _AvisoPublicidad extends StatelessWidget {
         gradient: const LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [Color(0xFF4C9560), Color(0xFF2B5C3A)],
+          colors: [ColoresCompra.degradadoClaro, ColoresCompra.degradadoOscuro],
         ),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFF2B5C3A).withValues(alpha: .28),
+            color: ColoresCompra.degradadoOscuro.withValues(alpha: .28),
             blurRadius: 12,
             offset: const Offset(0, 5),
           ),
@@ -367,25 +369,7 @@ class _AvisoPublicidad extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 8,
-                    vertical: 3,
-                  ),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: .22),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: const Text(
-                    'PUBLICIDAD',
-                    style: TextStyle(
-                      fontSize: 9,
-                      letterSpacing: 1,
-                      fontWeight: FontWeight.w800,
-                      color: Colors.white,
-                    ),
-                  ),
-                ),
+                const EtiquetaPublicidad(sobreFondoOscuro: true),
                 const SizedBox(height: AppSpacing.xs),
                 Text(
                   'Enlaces de afiliado a Casa del Libro: ClubReads puede '
