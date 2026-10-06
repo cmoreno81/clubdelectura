@@ -2854,16 +2854,39 @@ class _ComprarAhoraCardState extends State<_ComprarAhoraCard>
     super.dispose();
   }
 
-  void _cargar() {
-    WishlistService().getWishlist().then((data) {
-      if (!mounted) return;
-      final portadas = data.items
-          .where((i) => i.purchasedAt == null && (i.coverUrl ?? '').isNotEmpty)
+  // Evita que una respuesta lenta pise a otra más reciente.
+  int _peticion = 0;
+
+  /// Portadas del collage: solo de deseos que se pueden comprar de verdad
+  /// (Casa del Libro tiene su ficha), porque son los que verás al pulsar
+  /// "Ver mis libros". Sin ninguno, se muestra la bolsa.
+  Future<void> _cargar() async {
+    final peticion = ++_peticion;
+    try {
+      final data = await WishlistService().getWishlist();
+      final candidatos = data.items
+          .where(
+            (i) =>
+                i.purchasedAt == null &&
+                (i.bookId ?? '').isNotEmpty &&
+                (i.coverUrl ?? '').isNotEmpty,
+          )
+          .toList();
+      final enlaces = candidatos.isEmpty
+          ? const <String, EnlaceCompra>{}
+          : await ApiService().getEnlacesCompraLote(
+              candidatos.map((i) => i.bookId!).toList(),
+            );
+      if (!mounted || peticion != _peticion) return;
+      final portadas = candidatos
+          .where((i) => enlaces[i.bookId]?.exacto == true)
           .map((i) => i.coverUrl!)
           .take(3)
           .toList();
       setState(() => _portadas = portadas);
-    }).catchError((_) {});
+    } catch (_) {
+      // Sin datos se deja el collage como estaba.
+    }
   }
 
   @override
