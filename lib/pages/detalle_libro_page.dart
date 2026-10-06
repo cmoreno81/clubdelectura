@@ -24,6 +24,7 @@ import '../theme/app_spacing.dart';
 import '../theme/app_text_styles.dart';
 import '../utils/conversacion_libro_utils.dart';
 import '../utils/reading_status_copy.dart';
+import '../widgets/common/ancla_de_scroll.dart';
 import '../widgets/common/club_avatar.dart';
 import '../widgets/common/club_book_cover.dart';
 import '../widgets/common/club_card.dart';
@@ -1271,237 +1272,284 @@ class _DetalleLibroPageState extends State<DetalleLibroPage> {
           ],
         ),
         body: SafeArea(
-          child: ListView(
+          // Scroll normal en vez de ListView: la ficha tiene pocas secciones
+          // de alturas muy distintas, y una ListView las estima mientras no
+          // están en pantalla; al subir, cada una que reaparecía medía distinto
+          // y la lista corregía la posición a saltos ("cuesta volver a subir").
+          // Con todo medido, el scroll es suave en los dos sentidos.
+          child: SingleChildScrollView(
             padding: EdgeInsets.fromLTRB(
               16,
               16,
               16,
               MediaQuery.of(context).padding.bottom + 32,
             ),
-            children: [
-              LibroHeader(
-                libro: libro,
-                referencia: referencia,
-                heroTag: widget.heroTag,
-                onAbrirGoodreads: _abrirGoodreads,
-                globalStats: widget.globalStats,
-                miEstado: miEstado,
-              ),
-
-              if (libro.bookId.isNotEmpty)
-                ComprarLibroCard(
-                  bookId: libro.bookId,
-                  espacioAntes: AppSpacing.md,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                LibroHeader(
+                  libro: libro,
+                  referencia: referencia,
+                  heroTag: widget.heroTag,
+                  onAbrirGoodreads: _abrirGoodreads,
+                  globalStats: widget.globalStats,
+                  miEstado: miEstado,
                 ),
 
-              // Banner de sugerencia: anima a completar la ficha del libro
-              // Aparece cuando el libro tiene bookId (se puede editar) y le falta portada o género
-              if (libro.bookId.isNotEmpty &&
-                  (libro.coverUrl.isEmpty ||
-                      libro.genero.isEmpty ||
-                      libro.genero.trim().toLowerCase() == 'sin género')) ...[
-                const SizedBox(height: AppSpacing.md),
-                ScreenHintBanner(
-                  featureKey: 'hint_editar_ficha_v1',
-                  titulo: '¿Le falta información a este libro?',
-                  tips: const [
-                    ScreenHintTip(
-                      '🖊️',
-                      'Pulsa "Editar" para añadir portada, género, enlace a Goodreads y más.',
+                // Aparece tarde (espera al servidor): el ancla evita que empuje
+                // lo que se está leyendo más abajo.
+                if (libro.bookId.isNotEmpty)
+                  AnclaDeScroll(
+                    child: ComprarLibroCard(
+                      bookId: libro.bookId,
+                      espacioAntes: AppSpacing.md,
                     ),
-                    ScreenHintTip(
-                      '📸',
-                      'Si importaste desde Goodreads u otra app, la info puede venir incompleta: ¡complétala tú!',
-                    ),
-                  ],
-                ),
-              ],
+                  ),
 
-              const SizedBox(height: AppSpacing.lg),
-
-              // Añadir a mi biblioteca: aparece cuando la usuaria actual no
-              // tiene aún este libro (ni en curso ni finalizado), típicamente
-              // al llegar desde el Ranking a un libro que solo otras
-              // compañeras del club han leído/valorado.
-              if (miEstado == null && libro.bookId.isNotEmpty) ...[
-                ClubCard(
-                  backgroundColor: AppColors.primary.withValues(alpha: 0.06),
-                  borderColor: AppColors.primary.withValues(alpha: 0.25),
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              '¿Tienes este libro?',
-                              style: AppTextStyles.subtitle.copyWith(
-                                fontWeight: FontWeight.w800,
-                              ),
-                            ),
-                            const SizedBox(height: AppSpacing.xxs),
-                            Text(
-                              'Añádelo a tu biblioteca y cuéntanos en qué punto vas.',
-                              style: AppTextStyles.bodySecondary,
-                            ),
-                          ],
-                        ),
+                // Banner de sugerencia: anima a completar la ficha del libro
+                // Aparece cuando el libro tiene bookId (se puede editar) y le falta portada o género
+                if (libro.bookId.isNotEmpty &&
+                    (libro.coverUrl.isEmpty ||
+                        libro.genero.isEmpty ||
+                        libro.genero.trim().toLowerCase() == 'sin género')) ...[
+                  const SizedBox(height: AppSpacing.md),
+                  ScreenHintBanner(
+                    featureKey: 'hint_editar_ficha_v1',
+                    titulo: '¿Le falta información a este libro?',
+                    tips: const [
+                      ScreenHintTip(
+                        '🖊️',
+                        'Pulsa "Editar" para añadir portada, género, enlace a Goodreads y más.',
                       ),
-                      const SizedBox(width: AppSpacing.sm),
-                      FilledButton.icon(
-                        onPressed: _anadiendo ? null : _anadirABiblioteca,
-                        icon: _anadiendo
-                            ? const SizedBox(
-                                width: 16,
-                                height: 16,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                ),
-                              )
-                            : const Icon(Icons.add_rounded, size: 18),
-                        label: const Text('Añadir'),
+                      ScreenHintTip(
+                        '📸',
+                        'Si importaste desde Goodreads u otra app, la info puede venir incompleta: ¡complétala tú!',
                       ),
                     ],
                   ),
-                ),
-                const SizedBox(height: AppSpacing.lg),
-              ],
-
-              // Otros libros de la saga: solo si hay más volúmenes conocidos
-              // en el catálogo además de este (si es el primero, no hay nada
-              // que sugerir todavía).
-              if (_volumenesSaga.isNotEmpty) ...[
-                _OtrosVolumenesSagaSection(
-                  volumenes: _volumenesSaga,
-                  anadiendo: _anadiendoVolumenSaga,
-                  onAnadir: _anadirVolumenSaga,
-                  onAbrir: (volumen) => openBookDetail(
-                    context,
-                    title: volumen.titulo,
-                    bookId: volumen.bookId,
-                    coverUrl: volumen.coverUrl,
-                  ),
-                ),
-                const SizedBox(height: AppSpacing.lg),
-              ],
-
-              // Kit de lectura: solo tiene sentido si la usuaria tiene el
-              // libro en su biblioteca. Antes se mostraba igualmente en modo
-              // club (!widget.globalStats) sin comprobar miEstado, lo cual
-              // era seguro mientras solo se llegaba aquí con el libro ya
-              // propio; desde que el Ranking abre esta ficha para libros que
-              // la usuaria no tiene (miEstado == null, globalStats == false),
-              // hace falta la misma condición en los dos modos.
-              if (miEstado != null) ...[
-                // Feature 2: banner de atmósfera activa cuando está configurada
-                if (_kitSeleccion.tieneAtmosfera) ...[
-                  _AtmosferaBanner(seleccion: _kitSeleccion),
-                  const SizedBox(height: AppSpacing.sm),
                 ],
-                KitLecturaCard(
-                  bookId: libro.bookId,
-                  onTap: () => _abrirKitLectura(
-                    finalizado: miEstado == 'FINALIZADO',
-                    valoracion: _parseStarsCount(referencia?.valoracion),
+
+                const SizedBox(height: AppSpacing.lg),
+
+                // Añadir a mi biblioteca: aparece cuando la usuaria actual no
+                // tiene aún este libro (ni en curso ni finalizado), típicamente
+                // al llegar desde el Ranking a un libro que solo otras
+                // compañeras del club han leído/valorado.
+                AnclaDeScroll(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      if (miEstado == null && libro.bookId.isNotEmpty) ...[
+                        ClubCard(
+                          backgroundColor: AppColors.primary.withValues(alpha: 0.06),
+                          borderColor: AppColors.primary.withValues(alpha: 0.25),
+                          child: Row(
+                            children: [
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      '¿Tienes este libro?',
+                                      style: AppTextStyles.subtitle.copyWith(
+                                        fontWeight: FontWeight.w800,
+                                      ),
+                                    ),
+                                    const SizedBox(height: AppSpacing.xxs),
+                                    Text(
+                                      'Añádelo a tu biblioteca y cuéntanos en qué punto vas.',
+                                      style: AppTextStyles.bodySecondary,
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              const SizedBox(width: AppSpacing.sm),
+                              FilledButton.icon(
+                                onPressed: _anadiendo ? null : _anadirABiblioteca,
+                                icon: _anadiendo
+                                    ? const SizedBox(
+                                        width: 16,
+                                        height: 16,
+                                        child: CircularProgressIndicator(
+                                          strokeWidth: 2,
+                                        ),
+                                      )
+                                    : const Icon(Icons.add_rounded, size: 18),
+                                label: const Text('Añadir'),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(height: AppSpacing.lg),
+                      ],
+                    ],
                   ),
                 ),
-              ],
 
-              // ── Sección de lectores / estadísticas ────────────────────────
-              if (widget.globalStats) ...[
-                // Vista global: estadísticas anónimas sin nombres ni fotos
-                const SizedBox(height: AppSpacing.lg),
-                _EstadisticasGlobalesSection(libro: libro),
-              ] else ...[
-                // Ya lo terminaste: "registros" (más abajo) solo cubre
-                // lecturas activas/pendientes, así que un libro finalizado
-                // necesita su propia tarjeta para poder editar
-                // valoración/picante/idioma sin pasar por "Otra vuelta" (que
-                // crearía una relectura). Va primero: es tu contenido
-                // editable, y ahora también lo es el de "Lectores
-                // interesados" (donde tu tarjeta ya se ordena la primera),
-                // así que todo lo tuyo se ve antes que el resto del club.
-                if (_miFinalizado != null) ...[
-                  const SizedBox(height: AppSpacing.lg),
-                  MiFichaLecturaCard(
-                    finalizado: _miFinalizado!,
-                    onCambiado: _recargarDesdeServidor,
+                // Otros libros de la saga: solo si hay más volúmenes conocidos
+                // en el catálogo además de este (si es el primero, no hay nada
+                // que sugerir todavía).
+                AnclaDeScroll(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      if (_volumenesSaga.isNotEmpty) ...[
+                        _OtrosVolumenesSagaSection(
+                          volumenes: _volumenesSaga,
+                          anadiendo: _anadiendoVolumenSaga,
+                          onAnadir: _anadirVolumenSaga,
+                          onAbrir: (volumen) => openBookDetail(
+                            context,
+                            title: volumen.titulo,
+                            bookId: volumen.bookId,
+                            coverUrl: volumen.coverUrl,
+                          ),
+                        ),
+                        const SizedBox(height: AppSpacing.lg),
+                      ],
+                    ],
                   ),
-                ],
-                if (_registrosParaLectoresInteresados.isNotEmpty) ...[
-                  // Vista de club: tarjetas de cada lector con controles
-                  // (+ resumen de otros clubes, ver
-                  // _registrosParaLectoresInteresados)
-                  const SizedBox(height: AppSpacing.lg),
-                  LibroInteresadasSection(
-                    registros: _registrosParaLectoresInteresados,
-                    finalizados: libro.finalizados,
-                    usuariosConFinalizacion: libro.finalizados
-                        .map(
-                          (finalizado) =>
-                              finalizado.usuario.trim().toLowerCase(),
-                        )
-                        .where((usuario) => usuario.isNotEmpty)
-                        .toSet(),
-                    usuarioActual: usuarioActual,
-                    onCambiarEstado: _cambiarEstado,
-                    onQuitarPendientes: _quitarPendientes,
-                    onActualizarPreferencias: _actualizarPreferencias,
-                    onPedirValoracion: (registro) {
-                      return FinalizarLibroDialog.show(
-                        context,
-                        fechaInicioActual: registro.startedAt,
-                        formatoActual: registro.formato,
-                      );
-                    },
-                  ),
-                ],
-              ],
+                ),
 
-              const SizedBox(height: AppSpacing.lg),
-
-              ConversacionesLibroCard(
-                libro: libro.libro,
-                coverUrl: libro.coverUrl,
-                // Solo tiene sentido ofrecer abrir una conversación desde
-                // cero cuando la usuaria está leyendo el libro ahora mismo;
-                // para el resto de estados (pendiente, pausado, terminado…)
-                // no hay nada que comentar todavía.
-                permiteAbrirConversacion: miEstado == 'LEYENDO',
-              ),
-
-              // En vista global las estadísticas ya están integradas más
-              // arriba; en modo club mostramos aquí la misma sección de
-              // estadísticas (media, distribución, picante, formato...),
-              // que sustituye a "Valoraciones" porque la incluye. Se ve
-              // desde el primer instante con los datos que ya tenemos del
-              // club (síncronos, sin esperar red) y, en cuanto termina de
-              // cargar _cargarEstadisticasComunidad, se actualiza sola con
-              // los de toda la comunidad — así la ficha nunca se queda sin
-              // nada que mostrar mientras esa petición está en curso o si
-              // falla (p.ej. sin conexión).
-              if (!widget.globalStats &&
-                  (libro.registros.isNotEmpty ||
-                      libro.finalizados.isNotEmpty ||
-                      _hayEstadisticasComunidad)) ...[
-                const SizedBox(height: AppSpacing.lg),
-                _EstadisticasGlobalesSection(
-                  libro: _hayEstadisticasComunidad
-                      ? LibroAgrupado(
-                          libro: libro.libro,
-                          genero: libro.genero,
-                          registros: _registrosGlobales!,
-                          finalizados: _finalizadosGlobales!,
-                          yaLoTengo: libro.yaLoTengo,
-                          coverUrl: libro.coverUrl,
+                // Kit de lectura: solo tiene sentido si la usuaria tiene el
+                // libro en su biblioteca. Antes se mostraba igualmente en modo
+                // club (!widget.globalStats) sin comprobar miEstado, lo cual
+                // era seguro mientras solo se llegaba aquí con el libro ya
+                // propio; desde que el Ranking abre esta ficha para libros que
+                // la usuaria no tiene (miEstado == null, globalStats == false),
+                // hace falta la misma condición en los dos modos.
+                AnclaDeScroll(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      if (miEstado != null) ...[
+                        // Feature 2: banner de atmósfera activa cuando está configurada
+                        if (_kitSeleccion.tieneAtmosfera) ...[
+                          _AtmosferaBanner(seleccion: _kitSeleccion),
+                          const SizedBox(height: AppSpacing.sm),
+                        ],
+                        KitLecturaCard(
                           bookId: libro.bookId,
-                        )
-                      : libro,
+                          onTap: () => _abrirKitLectura(
+                            finalizado: miEstado == 'FINALIZADO',
+                            valoracion: _parseStarsCount(referencia?.valoracion),
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
                 ),
-              ],
 
-              const SizedBox(height: 80),
-            ],
+                // ── Sección de lectores / estadísticas ────────────────────────
+                if (widget.globalStats) ...[
+                  // Vista global: estadísticas anónimas sin nombres ni fotos
+                  const SizedBox(height: AppSpacing.lg),
+                  _EstadisticasGlobalesSection(libro: libro),
+                ] else ...[
+                  // Ya lo terminaste: "registros" (más abajo) solo cubre
+                  // lecturas activas/pendientes, así que un libro finalizado
+                  // necesita su propia tarjeta para poder editar
+                  // valoración/picante/idioma sin pasar por "Otra vuelta" (que
+                  // crearía una relectura). Va primero: es tu contenido
+                  // editable, y ahora también lo es el de "Lectores
+                  // interesados" (donde tu tarjeta ya se ordena la primera),
+                  // así que todo lo tuyo se ve antes que el resto del club.
+                  AnclaDeScroll(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        if (_miFinalizado != null) ...[
+                          const SizedBox(height: AppSpacing.lg),
+                          MiFichaLecturaCard(
+                            finalizado: _miFinalizado!,
+                            onCambiado: _recargarDesdeServidor,
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
+                  AnclaDeScroll(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        if (_registrosParaLectoresInteresados.isNotEmpty) ...[
+                          // Vista de club: tarjetas de cada lector con controles
+                          // (+ resumen de otros clubes, ver
+                          // _registrosParaLectoresInteresados)
+                          const SizedBox(height: AppSpacing.lg),
+                          LibroInteresadasSection(
+                            registros: _registrosParaLectoresInteresados,
+                            finalizados: libro.finalizados,
+                            usuariosConFinalizacion: libro.finalizados
+                                .map(
+                                  (finalizado) =>
+                                      finalizado.usuario.trim().toLowerCase(),
+                                )
+                                .where((usuario) => usuario.isNotEmpty)
+                                .toSet(),
+                            usuarioActual: usuarioActual,
+                            onCambiarEstado: _cambiarEstado,
+                            onQuitarPendientes: _quitarPendientes,
+                            onActualizarPreferencias: _actualizarPreferencias,
+                            onPedirValoracion: (registro) {
+                              return FinalizarLibroDialog.show(
+                                context,
+                                fechaInicioActual: registro.startedAt,
+                                formatoActual: registro.formato,
+                              );
+                            },
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
+                ],
+
+                const SizedBox(height: AppSpacing.lg),
+
+                ConversacionesLibroCard(
+                  libro: libro.libro,
+                  coverUrl: libro.coverUrl,
+                  // Solo tiene sentido ofrecer abrir una conversación desde
+                  // cero cuando la usuaria está leyendo el libro ahora mismo;
+                  // para el resto de estados (pendiente, pausado, terminado…)
+                  // no hay nada que comentar todavía.
+                  permiteAbrirConversacion: miEstado == 'LEYENDO',
+                ),
+
+                // En vista global las estadísticas ya están integradas más
+                // arriba; en modo club mostramos aquí la misma sección de
+                // estadísticas (media, distribución, picante, formato...),
+                // que sustituye a "Valoraciones" porque la incluye. Se ve
+                // desde el primer instante con los datos que ya tenemos del
+                // club (síncronos, sin esperar red) y, en cuanto termina de
+                // cargar _cargarEstadisticasComunidad, se actualiza sola con
+                // los de toda la comunidad — así la ficha nunca se queda sin
+                // nada que mostrar mientras esa petición está en curso o si
+                // falla (p.ej. sin conexión).
+                if (!widget.globalStats &&
+                    (libro.registros.isNotEmpty ||
+                        libro.finalizados.isNotEmpty ||
+                        _hayEstadisticasComunidad)) ...[
+                  const SizedBox(height: AppSpacing.lg),
+                  _EstadisticasGlobalesSection(
+                    libro: _hayEstadisticasComunidad
+                        ? LibroAgrupado(
+                            libro: libro.libro,
+                            genero: libro.genero,
+                            registros: _registrosGlobales!,
+                            finalizados: _finalizadosGlobales!,
+                            yaLoTengo: libro.yaLoTengo,
+                            coverUrl: libro.coverUrl,
+                            bookId: libro.bookId,
+                          )
+                        : libro,
+                  ),
+                ],
+
+                const SizedBox(height: 80),
+              ],
+            ),
           ),
         ),
       ),
@@ -1747,11 +1795,21 @@ class _EstadisticasGlobalesSection extends StatelessWidget {
     }
     final hayFormatos = formatCounts.isNotEmpty;
 
-    // ── Reflexiones compartidas ──────────────────────────────────────────────
-    final conResena = libro.finalizados
-        .where((f) => f.resena.trim().isNotEmpty)
-        .length;
-    final hayResenas = totalLeidos > 0 && conResena > 0;
+    // ── Reseñas públicas ─────────────────────────────────────────────────────
+    // Solo las que se pueden ver: de quien comparte club o tiene el perfil
+    // en público (el servidor ya no envía el texto de las demás). Las más
+    // recientes primero.
+    final resenas = libro.finalizados
+        .where((f) => f.mismoClub && f.resena.trim().isNotEmpty)
+        .toList()
+      ..sort((a, b) {
+        final fa = a.finishedAt;
+        final fb = b.finishedAt;
+        if (fa == null && fb == null) return 0;
+        if (fa == null) return 1;
+        if (fb == null) return -1;
+        return fb.compareTo(fa);
+      });
 
     return LibroSection(
       icon: Icons.bar_chart_rounded,
@@ -1819,10 +1877,10 @@ class _EstadisticasGlobalesSection extends StatelessWidget {
             _FormatoSection(formatCounts: formatCounts),
           ],
 
-          // ── Reflexiones compartidas ───────────────────────────────────────
-          if (hayResenas) ...[
+          // ── Reseñas ───────────────────────────────────────────────────────
+          if (resenas.isNotEmpty) ...[
             const SizedBox(height: AppSpacing.lg),
-            _ResenasSection(total: totalLeidos, conResena: conResena),
+            _ResenasPublicasSection(resenas: resenas),
           ],
         ],
       ),
@@ -2292,18 +2350,123 @@ class _PicanteSection extends StatelessWidget {
   }
 }
 
-// ─── Reflexiones compartidas ───────────────────────────────────────────────────
+// ─── Reseñas públicas ──────────────────────────────────────────────────────────
 
-class _ResenasSection extends StatelessWidget {
-  const _ResenasSection({required this.total, required this.conResena});
+/// Reseñas escritas visibles para quien mira, para leerlas de un vistazo sin
+/// tener que abrir cada puntuación. Muestra las primeras y deja desplegar el
+/// resto. Las marcadas con spoilers siguen ocultas hasta tocarlas.
+class _ResenasPublicasSection extends StatefulWidget {
+  const _ResenasPublicasSection({required this.resenas});
 
-  final int total;
-  final int conResena;
+  final List<LibroFinalizado> resenas;
+
+  @override
+  State<_ResenasPublicasSection> createState() =>
+      _ResenasPublicasSectionState();
+}
+
+class _ResenasPublicasSectionState extends State<_ResenasPublicasSection> {
+  static const _inicial = 3;
+  bool _todas = false;
 
   @override
   Widget build(BuildContext context) {
-    final ratio = total > 0 ? conResena / total : 0.0;
-    final pct = (ratio * 100).round();
+    final total = widget.resenas.length;
+    final visibles = _todas || total <= _inicial
+        ? widget.resenas
+        : widget.resenas.take(_inicial).toList();
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Row(
+          children: [
+            const Text('💬', style: TextStyle(fontSize: 18)),
+            const SizedBox(width: AppSpacing.sm),
+            Expanded(
+              child: Text(
+                'Reseñas',
+                style: AppTextStyles.subtitle.copyWith(
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+            ),
+            Text(
+              '$total',
+              style: AppTextStyles.caption.copyWith(
+                fontWeight: FontWeight.w800,
+                color: AppColors.primary,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: AppSpacing.sm),
+        for (final r in visibles) ...[
+          _ResenaCard(resena: r),
+          const SizedBox(height: AppSpacing.sm),
+        ],
+        if (total > _inicial)
+          Align(
+            alignment: Alignment.centerLeft,
+            child: TextButton.icon(
+              onPressed: () => setState(() => _todas = !_todas),
+              icon: Icon(
+                _todas
+                    ? Icons.expand_less_rounded
+                    : Icons.expand_more_rounded,
+                size: 20,
+              ),
+              label: Text(_todas ? 'Ver menos' : 'Ver las $total reseñas'),
+            ),
+          ),
+      ],
+    );
+  }
+}
+
+class _ResenaCard extends StatefulWidget {
+  const _ResenaCard({required this.resena});
+
+  final LibroFinalizado resena;
+
+  @override
+  State<_ResenaCard> createState() => _ResenaCardState();
+}
+
+class _ResenaCardState extends State<_ResenaCard> {
+  static const _meses = [
+    'ene', 'feb', 'mar', 'abr', 'may', 'jun',
+    'jul', 'ago', 'sep', 'oct', 'nov', 'dic', //
+  ];
+
+  late bool _oculta = widget.resena.contieneSpoilers;
+  bool _expandida = false;
+
+  Widget _estrellas(double valor) {
+    final icons = <Widget>[];
+    for (var i = 1; i <= 5; i++) {
+      final IconData icono;
+      if (valor >= i) {
+        icono = Icons.star_rounded;
+      } else if (valor >= i - 0.5) {
+        icono = Icons.star_half_rounded;
+      } else {
+        icono = Icons.star_outline_rounded;
+      }
+      icons.add(Icon(icono, size: 15, color: AppColors.gold));
+    }
+    return Row(mainAxisSize: MainAxisSize.min, children: icons);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final r = widget.resena;
+    final valor = _EstadisticasGlobalesSection._parseRating(r.valoracion);
+    final fecha = r.finishedAt;
+    final cuando = fecha == null
+        ? null
+        : '${_meses[fecha.month - 1]} ${fecha.year}';
+    final texto = r.resena.trim();
 
     return Container(
       padding: const EdgeInsets.all(AppSpacing.md),
@@ -2317,45 +2480,75 @@ class _ResenasSection extends StatelessWidget {
         children: [
           Row(
             children: [
-              const Text('💬', style: TextStyle(fontSize: 18)),
+              ClubAvatar(
+                nombre: r.usuario,
+                imageUrl: r.avatarUrl,
+                neutralWhenUnnamed: true,
+                size: 36,
+              ),
               const SizedBox(width: AppSpacing.sm),
               Expanded(
-                child: Text(
-                  'Reflexiones compartidas',
-                  style: AppTextStyles.caption.copyWith(
-                    fontWeight: FontWeight.w700,
-                    color: AppColors.textSecondary,
-                    letterSpacing: .3,
-                  ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      r.usuario,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: AppTextStyles.body.copyWith(
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    if (valor > 0) _estrellas(valor),
+                  ],
                 ),
               ),
-              Text(
-                '$conResena de $total',
-                style: AppTextStyles.caption.copyWith(
-                  fontWeight: FontWeight.w800,
-                  color: AppColors.primary,
-                ),
-              ),
+              if (cuando != null)
+                Text(cuando, style: AppTextStyles.caption),
             ],
           ),
           const SizedBox(height: AppSpacing.sm),
-          // Barra de progreso
-          ClipRRect(
-            borderRadius: BorderRadius.circular(6),
-            child: LinearProgressIndicator(
-              value: ratio,
-              minHeight: 10,
-              backgroundColor: AppColors.border.withValues(alpha: .5),
-              valueColor: AlwaysStoppedAnimation<Color>(
-                AppColors.primary.withValues(alpha: .7),
+          if (_oculta)
+            InkWell(
+              onTap: () => setState(() => _oculta = false),
+              borderRadius: BorderRadius.circular(12),
+              child: Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(AppSpacing.sm),
+                decoration: BoxDecoration(
+                  color: AppColors.midnight,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: const Row(
+                  children: [
+                    Icon(
+                      Icons.visibility_off_outlined,
+                      color: Colors.white,
+                      size: 18,
+                    ),
+                    SizedBox(width: AppSpacing.sm),
+                    Expanded(
+                      child: Text(
+                        'Contiene spoilers · toca para leerla',
+                        style: TextStyle(color: Colors.white, fontSize: 13),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            )
+          else
+            GestureDetector(
+              onTap: () => setState(() => _expandida = !_expandida),
+              child: Text(
+                texto,
+                maxLines: _expandida ? null : 6,
+                overflow: _expandida
+                    ? TextOverflow.visible
+                    : TextOverflow.ellipsis,
+                style: AppTextStyles.bodySecondary.copyWith(height: 1.35),
               ),
             ),
-          ),
-          const SizedBox(height: AppSpacing.xs),
-          Text(
-            '$pct% de los lectores escribió su opinión',
-            style: AppTextStyles.caption.copyWith(color: AppColors.textMuted),
-          ),
         ],
       ),
     );

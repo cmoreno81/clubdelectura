@@ -32,6 +32,10 @@ class LibroFinalizado {
   /// Nombre del club compartido; ver [Libro.clubCompartido].
   final String clubCompartido;
 
+  /// La autora marcó su reseña como "con spoilers". Si el servidor no lo
+  /// indica se asume que sí (más seguro: la reseña queda oculta hasta tocarla).
+  final bool contieneSpoilers;
+
   const LibroFinalizado({
     required this.bookId,
     required this.usuario,
@@ -57,6 +61,7 @@ class LibroFinalizado {
     this.mismoClub = true,
     this.enMiClub = true,
     this.clubCompartido = '',
+    this.contieneSpoilers = true,
   });
 
   factory LibroFinalizado.fromJson(Map<String, dynamic> json) {
@@ -94,6 +99,7 @@ class LibroFinalizado {
       mismoClub: json['mismoClub'] as bool? ?? true,
       enMiClub: json['enMiClub'] as bool? ?? true,
       clubCompartido: json['clubCompartido']?.toString() ?? '',
+      contieneSpoilers: json['contieneSpoilers'] as bool? ?? true,
     );
   }
 }
