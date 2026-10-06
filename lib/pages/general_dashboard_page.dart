@@ -2778,7 +2778,7 @@ class _WishlistPreviewSectionState extends State<_WishlistPreviewSection>
                           'Tu lista de deseos',
                           style: AppTextStyles.title.copyWith(
                             color: Colors.white,
-                            fontSize: 20,
+                            fontSize: 19,
                             height: 1.15,
                           ),
                         ),
@@ -2902,7 +2902,7 @@ class _ComprarAhoraCardState extends State<_ComprarAhoraCard>
                       'Compra ahora tus libros más deseados',
                       style: AppTextStyles.title.copyWith(
                         color: Colors.white,
-                        fontSize: 20,
+                        fontSize: 19,
                         height: 1.15,
                       ),
                     ),

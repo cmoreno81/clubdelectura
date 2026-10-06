@@ -3090,13 +3090,20 @@ class WishlistSummaryCard extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(width: AppSpacing.sm),
+                // Una sola línea: si no cabe junto al precio, se reduce un poco
+                // en vez de partirse en dos y agrandar la tarjeta.
                 Flexible(
-                  child: Text(
-                    'Tu lista de deseos',
-                    style: AppTextStyles.title.copyWith(
-                      color: Colors.white,
-                      fontSize: 20,
-                      height: 1.15,
+                  child: FittedBox(
+                    fit: BoxFit.scaleDown,
+                    alignment: Alignment.centerLeft,
+                    child: Text(
+                      'Tu lista de deseos',
+                      maxLines: 1,
+                      style: AppTextStyles.title.copyWith(
+                        color: Colors.white,
+                        fontSize: 19,
+                        height: 1.15,
+                      ),
                     ),
                   ),
                 ),
