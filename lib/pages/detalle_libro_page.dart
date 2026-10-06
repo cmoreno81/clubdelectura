@@ -2379,7 +2379,7 @@ class _ResenasPublicasSection extends StatelessWidget {
             const SizedBox(width: AppSpacing.sm),
             Expanded(
               child: Text(
-                'Reseñas más recientes',
+                'Últimas reseñas',
                 style: AppTextStyles.subtitle.copyWith(
                   fontWeight: FontWeight.w800,
                 ),
