@@ -51,6 +51,7 @@ import 'sagas_page.dart';
 import '../widgets/common/onboarding_tutorial.dart';
 import '../widgets/common/screen_hint_banner.dart';
 import '../widgets/libros/libro_acciones_rapidas.dart';
+import '../widgets/ui/boton_tarjeta.dart';
 import 'comprar_libros_page.dart';
 import '../services/usuario_service.dart';
 import 'package:club_lectura_app/widgets/common/club_shimmer.dart';
@@ -2775,9 +2776,10 @@ class _WishlistPreviewSectionState extends State<_WishlistPreviewSection>
                       children: [
                         Text(
                           'Tu lista de deseos',
-                          style: AppTextStyles.subtitle.copyWith(
-                            fontWeight: FontWeight.w800,
+                          style: AppTextStyles.title.copyWith(
                             color: Colors.white,
+                            fontSize: 20,
+                            height: 1.15,
                           ),
                         ),
                         Text(
@@ -2912,34 +2914,9 @@ class _ComprarAhoraCardState extends State<_ComprarAhoraCard>
                       ),
                     ),
                     const SizedBox(height: AppSpacing.sm),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 7,
-                      ),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(AppRadius.pill),
-                      ),
-                      child: const Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Text(
-                            'Ver mis libros',
-                            style: TextStyle(
-                              fontWeight: FontWeight.w800,
-                              fontSize: 13,
-                              color: Color(0xFFA8423F),
-                            ),
-                          ),
-                          SizedBox(width: 4),
-                          Icon(
-                            Icons.arrow_forward_rounded,
-                            size: 16,
-                            color: Color(0xFFA8423F),
-                          ),
-                        ],
-                      ),
+                    const BotonTarjeta(
+                      etiqueta: 'Ver mis libros',
+                      color: Color(0xFFA8423F),
                     ),
                   ],
                 ),

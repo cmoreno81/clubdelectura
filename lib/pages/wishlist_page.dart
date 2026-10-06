@@ -22,6 +22,7 @@ import '../widgets/error_view.dart';
 import '../widgets/libros/add_book_sheet.dart';
 import '../widgets/libros/botones_compra.dart';
 import '../widgets/libros/pregunta_compra.dart';
+import '../widgets/ui/boton_tarjeta.dart';
 import 'comprar_libros_page.dart';
 
 // ─── Helpers de formato (sin dependencia intl) ────────────────────────────────
@@ -3089,11 +3090,14 @@ class WishlistSummaryCard extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(width: AppSpacing.sm),
-                Text(
-                  'Tu lista de deseos',
-                  style: AppTextStyles.subtitle.copyWith(
-                    fontWeight: FontWeight.w800,
-                    color: Colors.white,
+                Flexible(
+                  child: Text(
+                    'Tu lista de deseos',
+                    style: AppTextStyles.title.copyWith(
+                      color: Colors.white,
+                      fontSize: 20,
+                      height: 1.15,
+                    ),
                   ),
                 ),
                 const Spacer(),
@@ -3173,15 +3177,12 @@ class WishlistSummaryCard extends StatelessWidget {
               ),
             ],
 
-            const SizedBox(height: AppSpacing.xs),
-            Align(
-              alignment: Alignment.centerRight,
-              child: Text(
-                'Ver lista completa →',
-                style: AppTextStyles.caption.copyWith(
-                  color: Colors.white.withValues(alpha: .85),
-                  fontWeight: FontWeight.w700,
-                ),
+            const SizedBox(height: AppSpacing.sm),
+            const Align(
+              alignment: Alignment.centerLeft,
+              child: BotonTarjeta(
+                etiqueta: 'Ver lista completa',
+                color: Color(0xFF40254F),
               ),
             ),
           ],
