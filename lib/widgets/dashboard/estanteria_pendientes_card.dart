@@ -264,7 +264,7 @@ class _BalanceAnual extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Tu año $anio',
+            'TU AÑO $anio · LIBROS EN PAPEL',
             style: const TextStyle(
               color: AppColors.textSecondary,
               fontSize: 12,
@@ -274,14 +274,14 @@ class _BalanceAnual extends StatelessWidget {
           ),
           const SizedBox(height: 10),
           _Barra(
-            etiqueta: 'Pendientes leídos o empezados',
+            etiqueta: 'Pendientes en papel leídos o empezados',
             valor: datos.leidosAnio,
             maximo: maximo,
             color: AppColors.success,
           ),
           const SizedBox(height: 8),
           _Barra(
-            etiqueta: 'Pendientes nuevos',
+            etiqueta: 'Pendientes en papel nuevos',
             valor: datos.entraronAnio,
             maximo: maximo,
             color: AppColors.inkCoral,
