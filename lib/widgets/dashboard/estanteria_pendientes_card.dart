@@ -101,7 +101,7 @@ class _EstanteriaPendientesCardState extends State<EstanteriaPendientesCard> {
           const SizedBox(height: 14),
           _Contador(datos: d),
           const SizedBox(height: 16),
-          _BalanceAnual(datos: d),
+          BalanceAnualPila(datos: d),
           if (d.hayHistorial) ...[
             const SizedBox(height: 18),
             const Text(
@@ -227,8 +227,9 @@ class _Contador extends StatelessWidget {
 
 /// Balance del año: pendientes que has sacado de la pila (empezados o
 /// leídos) frente a los que han entrado nuevos.
-class _BalanceAnual extends StatelessWidget {
-  const _BalanceAnual({required this.datos});
+@visibleForTesting
+class BalanceAnualPila extends StatelessWidget {
+  const BalanceAnualPila({required this.datos});
 
   final EstanteriaPendientes datos;
 
@@ -236,6 +237,38 @@ class _BalanceAnual extends StatelessWidget {
   Widget build(BuildContext context) {
     final anio = datos.anio == 0 ? DateTime.now().year : datos.anio;
     final enCasa = datos.enEstanteria;
+    // Sin libros en casa ni pendientes sacados, las barras vacías no dicen
+    // nada: se explica para qué sirve en vez de enseñar ceros.
+    if (enCasa == 0 && datos.leidosAnio == 0) {
+      return Container(
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          color: const Color(0xFFF4E7D3).withValues(alpha: .55),
+          borderRadius: BorderRadius.circular(AppRadius.lg),
+        ),
+        child: Row(
+          children: [
+            const Icon(
+              Icons.check_circle_outline,
+              size: 20,
+              color: AppColors.primary,
+            ),
+            const SizedBox(width: 10),
+            const Expanded(
+              child: Text(
+                'Marca «Ya lo tengo» en tus pendientes y verás aquí cuántos '
+                'tienes en casa y cómo los vas leyendo.',
+                style: TextStyle(
+                  color: AppColors.textPrimary,
+                  fontSize: 13.5,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+          ],
+        ),
+      );
+    }
     final String mensaje;
     final Color color;
     if (datos.leidosAnio > 0) {
