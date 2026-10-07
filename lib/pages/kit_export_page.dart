@@ -604,37 +604,16 @@ class _StoryComposition extends StatelessWidget {
                 ),
               ),
 
-            // ── Branding top-left + dots top-right ─────────────────────
+            // ── Puntos de color arriba-derecha ─────────────────────────
+            // La marca ya no va arriba: Instagram pone ahí el nombre de
+            // quien publica y la tapaba (ver «Marca debajo de la portada»).
             Positioned(
               left: 18,
               right: 18,
               top: 18,
               child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                mainAxisAlignment: MainAxisAlignment.end,
                 children: [
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 10,
-                      vertical: 5,
-                    ),
-                    decoration: BoxDecoration(
-                      color: accentColor.withValues(alpha: 0.12),
-                      borderRadius: BorderRadius.circular(20),
-                      border: Border.all(
-                        color: accentColor.withValues(alpha: 0.30),
-                        width: 0.8,
-                      ),
-                    ),
-                    child: Text(
-                      'CLUBREADS',
-                      style: TextStyle(
-                        color: foreground,
-                        fontSize: 10,
-                        fontWeight: FontWeight.w900,
-                        letterSpacing: 1.2,
-                      ),
-                    ),
-                  ),
                   Row(
                     mainAxisSize: MainAxisSize.min,
                     children: tonos
@@ -663,6 +642,38 @@ class _StoryComposition extends StatelessWidget {
                         .toList(),
                   ),
                 ],
+              ),
+            ),
+
+            // ── Marca debajo de la portada ─────────────────────────────
+            // Fuera de las franjas que tapa la interfaz de Instagram (arriba
+            // el nombre, abajo el campo de comentario): entre la portada y
+            // las estrellas, alineada con el borde de la portada.
+            Positioned(
+              left: coverX + 4,
+              top: coverY + coverH + 12,
+              child: Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 5,
+                ),
+                decoration: BoxDecoration(
+                  color: accentColor.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(
+                    color: accentColor.withValues(alpha: 0.30),
+                    width: 0.8,
+                  ),
+                ),
+                child: Text(
+                  'CLUBREADS',
+                  style: TextStyle(
+                    color: foreground,
+                    fontSize: 10,
+                    fontWeight: FontWeight.w900,
+                    letterSpacing: 1.2,
+                  ),
+                ),
               ),
             ),
           ],
