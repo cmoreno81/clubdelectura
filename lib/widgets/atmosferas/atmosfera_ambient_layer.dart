@@ -330,6 +330,7 @@ class _AtmosferaPainter extends CustomPainter {
         _pintarLamparaCalida(canvas, size);
         _pintarLluviaSuave(canvas, size);
         _pintarGotasVentana(canvas, size);
+        _pintarLibrosYManta(canvas, size);
         _pintarVaporTaza(canvas, size);
 
       case AtmosferaLectura.historica:
@@ -498,35 +499,149 @@ class _AtmosferaPainter extends CustomPainter {
     }
   }
 
-  /// Volutas de vapor subiendo en zigzag, como de una taza caliente —
-  /// sustituye el polvo flotante como protagonista de Acogedora.
-  void _pintarVaporTaza(Canvas canvas, Size size) {
-    for (var i = 0; i < 5; i++) {
-      final xBase = size.width * (0.22 + i * 0.16);
-      final velocidad = 0.3 + (i % 3) * 0.05;
-      final fase = (progreso * velocidad + i * 0.17) % 1;
-      final alturaRecorrido = size.height * 0.62;
-      final yInicio = size.height * 0.92;
-      final y = yInicio - fase * alturaRecorrido;
-      final desvanecimiento = (1 - fase).clamp(0.0, 1.0);
+  /// Línea del suelo del rincón de lectura: libros y manta se apoyan aquí.
+  double _lineaManta(Size size) => size.height * 0.91;
 
-      final path = Path()..moveTo(xBase, y);
-      for (var paso = 1; paso <= 5; paso++) {
-        final progresoPaso = paso / 5;
-        final yPaso = y - progresoPaso * 46;
-        final xPaso =
-            xBase +
-            math.sin((progreso * math.pi * 2.8) + i + progresoPaso * 3) * 9;
-        path.lineTo(xPaso, yPaso);
+  /// Posición de la taza, apoyada sobre la manta.
+  Offset _posicionTaza(Size size) =>
+      Offset(size.width * 0.76, _lineaManta(size) - 4);
+
+  /// Rincón de lectura abajo: una hilera de libros en el estante, una manta
+  /// de cuadros por delante y una taza humeante encima.
+  void _pintarLibrosYManta(Canvas canvas, Size size) {
+    final suelo = _lineaManta(size);
+    final fase = progreso * math.pi * 2;
+
+    // Libros de pie, de distinto alto y grosor, alguno ladeado.
+    var x = -6.0;
+    var i = 0;
+    while (x < size.width + 20) {
+      final ancho = 14.0 + _fraccion(i * 13.37) * 14;
+      final alto = size.height * (0.075 + _fraccion(i * 7.91) * 0.085);
+      final inclinado = i % 7 == 3;
+      canvas.save();
+      if (inclinado) {
+        canvas.translate(x + ancho, suelo);
+        canvas.rotate(-0.16);
+        canvas.translate(-(x + ancho), -suelo);
       }
+      final lomo = Rect.fromLTWH(x, suelo - alto, ancho, alto + 2);
+      canvas.drawRRect(
+        RRect.fromRectAndRadius(lomo, const Radius.circular(2)),
+        Paint()..color = (i % 3 == 0 ? acento : color).withValues(alpha: 0.20),
+      );
+      final banda = Paint()
+        ..color = Colors.white.withValues(alpha: 0.30)
+        ..strokeWidth = 1.2;
+      canvas.drawLine(
+        Offset(x + 2, suelo - alto + 8),
+        Offset(x + ancho - 2, suelo - alto + 8),
+        banda,
+      );
+      canvas.drawLine(
+        Offset(x + 2, suelo - alto + 13),
+        Offset(x + ancho - 2, suelo - alto + 13),
+        banda,
+      );
+      canvas.restore();
+      x += ancho + 1.5;
+      i++;
+    }
 
+    // Manta: borde ondulado que se mece apenas, con trama de cuadros.
+    final manta = Path()..moveTo(-10, size.height + 10);
+    for (double px = -10; px <= size.width + 10; px += 6) {
+      final y =
+          suelo +
+          math.sin(px / 62 + fase) * 5 +
+          math.sin(px / 27 - fase * 2) * 2 +
+          (px > size.width * 0.55 ? -6 : 0);
+      manta.lineTo(px, y);
+    }
+    manta
+      ..lineTo(size.width + 10, size.height + 10)
+      ..close();
+    canvas.drawPath(manta, Paint()..color = acento.withValues(alpha: 0.30));
+    canvas.save();
+    canvas.clipPath(manta);
+    final trama = Paint()
+      ..color = Colors.white.withValues(alpha: 0.22)
+      ..strokeWidth = 3;
+    for (double px = 0; px < size.width; px += 26) {
+      canvas.drawLine(Offset(px, suelo - 12), Offset(px, size.height), trama);
+    }
+    for (double py = suelo; py < size.height; py += 26) {
+      canvas.drawLine(Offset(0, py), Offset(size.width, py), trama);
+    }
+    final fina = Paint()
+      ..color = color.withValues(alpha: 0.16)
+      ..strokeWidth = 1;
+    for (double px = 13; px < size.width; px += 26) {
+      canvas.drawLine(Offset(px, suelo - 12), Offset(px, size.height), fina);
+    }
+    canvas.restore();
+    canvas.drawPath(
+      manta,
+      Paint()
+        ..color = color.withValues(alpha: 0.30)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 1.4,
+    );
+
+    // Taza sobre la manta.
+    final taza = _posicionTaza(size);
+    final cuerpo = RRect.fromRectAndRadius(
+      Rect.fromLTWH(taza.dx - 17, taza.dy - 30, 34, 30),
+      const Radius.circular(6),
+    );
+    canvas.drawRRect(cuerpo, Paint()..color = color.withValues(alpha: 0.42));
+    canvas.drawArc(
+      Rect.fromCenter(
+        center: Offset(taza.dx + 20, taza.dy - 16),
+        width: 16,
+        height: 18,
+      ),
+      -math.pi / 2,
+      math.pi,
+      false,
+      Paint()
+        ..color = color.withValues(alpha: 0.42)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 3.2,
+    );
+    canvas.drawLine(
+      Offset(taza.dx - 12, taza.dy - 24),
+      Offset(taza.dx + 12, taza.dy - 24),
+      Paint()
+        ..color = Colors.white.withValues(alpha: 0.35)
+        ..strokeWidth = 1.5,
+    );
+  }
+
+  /// Vapor que sube de la taza en volutas que se difuminan.
+  void _pintarVaporTaza(Canvas canvas, Size size) {
+    final taza = _posicionTaza(size);
+    final fase = progreso * math.pi * 2;
+    for (var i = 0; i < 4; i++) {
+      final vida = _vida(i, 0.25);
+      final env = _envolvente(vida);
+      final inicio = Offset(taza.dx - 9 + i * 6.0, taza.dy - 34);
+      final path = Path()..moveTo(inicio.dx, inicio.dy);
+      for (var paso = 1; paso <= 9; paso++) {
+        path.lineTo(
+          inicio.dx +
+              math.sin(fase * 2 + paso * 0.7 + i * 1.3) * (4 + paso * 1.2),
+          inicio.dy - vida * 18 - paso * 9.0,
+        );
+      }
       canvas.drawPath(
         path,
         Paint()
-          ..color = color.withValues(alpha: 0.16 * desvanecimiento)
+          ..color = color.withValues(alpha: 0.30 * env)
           ..style = PaintingStyle.stroke
-          ..strokeWidth = 2.2
-          ..strokeCap = StrokeCap.round,
+          ..strokeWidth = 3.2
+          ..strokeCap = StrokeCap.round
+          ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 1.6),
       );
     }
   }
