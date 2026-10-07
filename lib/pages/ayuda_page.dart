@@ -446,6 +446,16 @@ const List<_HelpSection> _secciones = [
             'todos lleven a una ficha real.',
       ),
       _HelpItem(
+        pregunta: 'Ya tengo un libro pendiente, ¿cómo lo quito de las compras?',
+        respuesta:
+            'Pulsa "Ya lo tengo" en la tarjeta del libro, en la pestaña Pendientes de '
+            '"Tu próxima compra" o en su ficha. Se apagan sus botones de compra '
+            '(también en la tarjeta del inicio) y deja de aparecer en la lista.\n\n'
+            'Es solo para ti: el libro sigue pendiente en tu biblioteca y no cambia '
+            'tu estado de lectura, tus estadísticas ni nada del club. Si te '
+            'equivocas, pulsa "Deshacer" en el aviso o en la ficha.',
+      ),
+      _HelpItem(
         pregunta: '¿Qué formatos se ofrecen y en qué idioma?',
         respuesta:
             'Debajo de "Comprar en Casa del Libro" verás un botón por cada formato '
@@ -1616,14 +1626,17 @@ const List<_HelpSection> _secciones = [
       _HelpItem(
         pregunta: '¿Quién puede ver mi perfil y mis estadísticas?',
         respuesta:
-            'Por defecto, solo las personas de tu club actual pueden ver tu '
-            'perfil, tu biblioteca, tu historial y tus estadísticas — igual '
-            'que hasta ahora.\n\n'
-            'Si prefieres que nadie más las vea, ve a Perfil → "Más" → '
-            '"Privacidad y notificaciones" y elige "Solo yo". Con esa opción, '
-            'ni siquiera tu club puede abrir tu ficha de perfil; tú sigues '
-            'viendo todo con normalidad y puedes volver a "Miembros de mi '
-            'club" cuando quieras.',
+            'Por defecto tu perfil es de "Toda la comunidad": tu nombre, tu '
+            'foto y tus reseñas se ven en la Vista ClubReads y en las '
+            '"Últimas reseñas" de la ficha de cada libro, aunque no compartas '
+            'club con quien mira. Tu perfil completo, tu biblioteca y tu '
+            'historial los sigue viendo solo tu club.\n\n'
+            'Puedes cambiarlo en Perfil → "Más" → "Privacidad y '
+            'notificaciones":\n'
+            '• "Miembros de mi club": solo tu club ve tu nombre y tus reseñas.\n'
+            '• "Solo yo": ni siquiera tu club puede abrir tu ficha de perfil. '
+            'Tú sigues viendo todo con normalidad.\n\n'
+            'Puedes volver a cualquier opción cuando quieras.',
       ),
       _HelpItem(
         pregunta: '¿Cómo cambio mi nombre de usuaria o mi contraseña?',
