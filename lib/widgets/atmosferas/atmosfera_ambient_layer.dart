@@ -276,6 +276,7 @@ class _AtmosferaPainter extends CustomPainter {
     switch (atmosfera) {
       case AtmosferaLectura.romantica:
         _pintarAtardecerRosa(canvas, size);
+        _pintarJardinDeCorazones(canvas, size);
         _pintarPetalos(canvas, size);
         _pintarCorazones(canvas, size);
         _pintarDestellos(canvas, size);
@@ -283,6 +284,7 @@ class _AtmosferaPainter extends CustomPainter {
       case AtmosferaLectura.magica:
         _pintarCieloEstrellado(canvas, size);
         _pintarConstelacion(canvas, size);
+        _pintarCastilloMagico(canvas, size);
         _pintarOrbesMagicos(canvas, size);
         _pintarEstrellaFugaz(canvas, size);
 
@@ -304,6 +306,7 @@ class _AtmosferaPainter extends CustomPainter {
         _pintarLunaGrande(canvas, size);
         _pintarBruma(canvas, size, intensidad: 2.0);
         _pintarSombrasBordes(canvas, size);
+        _pintarArbolesSecos(canvas, size);
         _pintarCuervos(canvas, size);
 
       case AtmosferaLectura.gotica:
@@ -313,17 +316,20 @@ class _AtmosferaPainter extends CustomPainter {
 
       case AtmosferaLectura.misteriosa:
         _pintarBruma(canvas, size, intensidad: 2.2);
+        _pintarTejadosYFarola(canvas, size);
         _pintarFocoLinterna(canvas, size);
         _pintarLuciernagas(canvas, size);
 
       case AtmosferaLectura.futurista:
         _pintarNocheNeon(canvas, size);
+        _pintarSkylineNeon(canvas, size);
         _pintarEstelasNeon(canvas, size);
         _pintarPuntosNeon(canvas, size);
 
       case AtmosferaLectura.epica:
         _pintarResplandorFogata(canvas, size);
         _pintarEstandartes(canvas, size);
+        _pintarCampamento(canvas, size);
         _pintarChispas(canvas, size);
 
       case AtmosferaLectura.acogedora:
@@ -334,6 +340,7 @@ class _AtmosferaPainter extends CustomPainter {
         _pintarVaporTaza(canvas, size);
 
       case AtmosferaLectura.historica:
+        _pintarEscritorioAntiguo(canvas, size);
         _pintarCartasVolando(canvas, size);
 
       case AtmosferaLectura.neutra:
@@ -1416,6 +1423,541 @@ class _AtmosferaPainter extends CustomPainter {
         Offset(cabeza, y),
         2.6,
         Paint()..color = Colors.white.withValues(alpha: 0.95),
+      );
+    }
+  }
+
+  // ── Escenas de suelo ──────────────────────────────────────────────────
+
+  /// Altura (y) de la colina [capa] en la posición [x].
+  double _yColina(double x, int capa, Size size, double alturaBase) {
+    final base = size.height * (alturaBase + capa * 0.04);
+    return base +
+        math.sin(x / (90 + capa * 34) + capa * 1.7) * 13 +
+        math.sin(x / 37 + capa) * 4;
+  }
+
+  /// Tres capas de colinas que se oscurecen hacia delante.
+  void _pintarColinas(
+    Canvas canvas,
+    Size size, {
+    required Color tono,
+    double alturaBase = 0.88,
+    double alfaBase = 0.14,
+  }) {
+    for (var capa = 0; capa < 3; capa++) {
+      final path = Path()..moveTo(-10, size.height + 10);
+      for (double x = -10; x <= size.width + 10; x += 6) {
+        path.lineTo(x, _yColina(x, capa, size, alturaBase));
+      }
+      path
+        ..lineTo(size.width + 10, size.height + 10)
+        ..close();
+      canvas.drawPath(
+        path,
+        Paint()..color = tono.withValues(alpha: alfaBase + capa * 0.07),
+      );
+    }
+  }
+
+  /// Colinas rosadas con flores en forma de corazón que se mecen.
+  void _pintarJardinDeCorazones(Canvas canvas, Size size) {
+    _pintarColinas(canvas, size, tono: color, alturaBase: 0.89);
+    final fase = progreso * math.pi * 2;
+    for (var i = 0; i < 11; i++) {
+      final x = (i + 0.4 + _fraccion(i * 3.7) * 0.5) * size.width / 11;
+      final suelo = _yColina(x, 2, size, 0.89) + 4;
+      final alto = 28.0 + _fraccion(i * 9.1) * 22;
+      final balanceo = math.sin(fase + i * 0.9) * 4.5;
+      final tallo = Path()
+        ..moveTo(x, suelo)
+        ..quadraticBezierTo(
+          x + balanceo * 0.4,
+          suelo - alto * 0.5,
+          x + balanceo,
+          suelo - alto,
+        );
+      canvas.drawPath(
+        tallo,
+        Paint()
+          ..color = color.withValues(alpha: 0.38)
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 1.8
+          ..strokeCap = StrokeCap.round,
+      );
+      canvas.save();
+      canvas.translate(x + balanceo, suelo - alto - 4);
+      canvas.rotate(balanceo * 0.04);
+      canvas.drawPath(
+        _corazon(11 + (i % 3) * 2.5),
+        Paint()..color = (i.isEven ? acento : color).withValues(alpha: 0.62),
+      );
+      canvas.restore();
+    }
+  }
+
+  /// Colinas violeta y un castillo encantado con ventanas que titilan.
+  void _pintarCastilloMagico(Canvas canvas, Size size) {
+    _pintarColinas(canvas, size, tono: color, alturaBase: 0.89);
+    final fase = progreso * math.pi * 2;
+    final cx = size.width * 0.70;
+    final suelo = _yColina(cx, 1, size, 0.89) + 6;
+    final tinte = Paint()..color = color.withValues(alpha: 0.46);
+
+    void torre(double x, double ancho, double alto) {
+      canvas.drawRect(
+        Rect.fromLTWH(x - ancho / 2, suelo - alto, ancho, alto + 4),
+        tinte,
+      );
+      canvas.drawPath(
+        Path()
+          ..moveTo(x - ancho / 2 - 3, suelo - alto)
+          ..lineTo(x, suelo - alto - ancho * 1.25)
+          ..lineTo(x + ancho / 2 + 3, suelo - alto)
+          ..close(),
+        tinte,
+      );
+    }
+
+    canvas.drawRect(Rect.fromLTWH(cx - 30, suelo - 34, 60, 38), tinte);
+    torre(cx - 36, 16, 56);
+    torre(cx + 36, 16, 50);
+    torre(cx, 18, 70);
+    // Banderín en la torre alta.
+    canvas.drawLine(
+      Offset(cx, suelo - 70 - 18 * 1.25),
+      Offset(cx, suelo - 70 - 18 * 1.25 - 14),
+      Paint()
+        ..color = color.withValues(alpha: 0.5)
+        ..strokeWidth = 1.4,
+    );
+    canvas.drawPath(
+      Path()
+        ..moveTo(cx, suelo - 70 - 18 * 1.25 - 14)
+        ..lineTo(cx + 11 + math.sin(fase * 2) * 2, suelo - 70 - 18 * 1.25 - 11)
+        ..lineTo(cx, suelo - 70 - 18 * 1.25 - 8)
+        ..close(),
+      Paint()..color = acento.withValues(alpha: 0.7),
+    );
+    final ventanas = [
+      Offset(cx - 36, suelo - 38), Offset(cx + 36, suelo - 34),
+      Offset(cx, suelo - 50), Offset(cx - 14, suelo - 18),
+      Offset(cx + 14, suelo - 18), Offset(cx, suelo - 22), //
+    ];
+    for (var i = 0; i < ventanas.length; i++) {
+      final luz = (math.sin(fase * (1 + i % 2) + i * 1.9) + 1) / 2;
+      canvas.drawCircle(
+        ventanas[i],
+        6,
+        Paint()
+          ..color = const Color(0xFFFFD36B).withValues(alpha: 0.22 + luz * 0.25)
+          ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 4),
+      );
+      canvas.drawRect(
+        Rect.fromCenter(center: ventanas[i], width: 4, height: 6),
+        Paint()
+          ..color = const Color(0xFFFFE9A6).withValues(alpha: 0.65 + luz * 0.3),
+      );
+    }
+  }
+
+  /// Rama de un árbol seco: se bifurca en dos más cortas y delgadas.
+  void _dibujarRama(
+    Canvas canvas,
+    Offset inicio,
+    double angulo,
+    double largo,
+    int profundidad,
+    Paint paint,
+    double balanceo,
+  ) {
+    if (profundidad == 0 || largo < 3) return;
+    final fin = inicio + Offset(math.sin(angulo), -math.cos(angulo)) * largo;
+    canvas.drawLine(
+      inicio,
+      fin,
+      paint..strokeWidth = math.max(1.0, profundidad * 1.5),
+    );
+    _dibujarRama(
+      canvas,
+      fin,
+      angulo - 0.46 + balanceo,
+      largo * 0.74,
+      profundidad - 1,
+      paint,
+      balanceo,
+    );
+    _dibujarRama(
+      canvas,
+      fin,
+      angulo + 0.40 + balanceo,
+      largo * 0.70,
+      profundidad - 1,
+      paint,
+      balanceo,
+    );
+  }
+
+  /// Árboles secos en los bordes que se mecen apenas, entre la niebla.
+  void _pintarArbolesSecos(Canvas canvas, Size size) {
+    final fase = progreso * math.pi * 2;
+    final paint = Paint()
+      ..color = const Color(0xFF120C20).withValues(alpha: 0.72)
+      ..strokeCap = StrokeCap.round;
+    const arboles = [(0.06, 0.20, 1.0), (0.93, 0.24, -1.0), (0.50, 0.10, 1.0)];
+    for (var i = 0; i < arboles.length; i++) {
+      final (x, alto, lado) = arboles[i];
+      final balanceo = math.sin(fase + i * 1.4) * 0.025;
+      _dibujarRama(
+        canvas,
+        Offset(size.width * x, size.height + 4),
+        lado * 0.10 + balanceo,
+        size.height * alto * 0.34,
+        6,
+        paint,
+        balanceo,
+      );
+    }
+    // Suelo oscuro y accidentado.
+    final suelo = Path()..moveTo(-10, size.height + 10);
+    for (double x = -10; x <= size.width + 10; x += 8) {
+      suelo.lineTo(x, size.height * 0.975 + math.sin(x / 40) * 4);
+    }
+    suelo
+      ..lineTo(size.width + 10, size.height + 10)
+      ..close();
+    canvas.drawPath(
+      suelo,
+      Paint()..color = const Color(0xFF120C20).withValues(alpha: 0.55),
+    );
+  }
+
+  /// Dos capas de tejados con chimeneas y una farola de gas encendida.
+  void _pintarTejadosYFarola(Canvas canvas, Size size) {
+    final fase = progreso * math.pi * 2;
+    for (var capa = 0; capa < 2; capa++) {
+      final paint = Paint()
+        ..color = const Color(0xFF23283A).withValues(alpha: 0.20 + capa * 0.22);
+      var x = -10.0 - capa * 20;
+      var i = 0;
+      while (x < size.width + 20) {
+        final ancho = 34.0 + _fraccion(i * 11.3 + capa) * 34;
+        final alto =
+            size.height * (0.05 + _fraccion(i * 5.9 + capa * 2) * 0.07) +
+            capa * 8;
+        final y = size.height - alto - (1 - capa) * 14;
+        canvas.drawRect(Rect.fromLTWH(x, y, ancho, alto + 20), paint);
+        if (i % 3 == 0) {
+          canvas.drawPath(
+            Path()
+              ..moveTo(x - 3, y)
+              ..lineTo(x + ancho / 2, y - 16)
+              ..lineTo(x + ancho + 3, y)
+              ..close(),
+            paint,
+          );
+        } else if (i % 3 == 1) {
+          canvas.drawRect(
+            Rect.fromLTWH(x + ancho * 0.65, y - 14, 7, 15),
+            paint,
+          );
+        }
+        x += ancho + 2;
+        i++;
+      }
+    }
+    // Farola de gas.
+    final fx = size.width * 0.16;
+    final base = size.height + 4;
+    final altoFarola = size.height * 0.20;
+    final luz = 0.6 + math.sin(fase * 3) * 0.15 + math.sin(fase * 7) * 0.08;
+    final tinta = Paint()
+      ..color = const Color(0xFF181B2B).withValues(alpha: 0.80)
+      ..strokeWidth = 3
+      ..strokeCap = StrokeCap.round;
+    canvas.drawLine(Offset(fx, base), Offset(fx, base - altoFarola), tinta);
+    canvas.drawCircle(
+      Offset(fx, base - altoFarola - 8),
+      70 + luz * 20,
+      Paint()
+        ..shader =
+            RadialGradient(
+              colors: [
+                const Color(0xFFFFC857).withValues(alpha: 0.46 * luz),
+                const Color(0xFFFFC857).withValues(alpha: 0),
+              ],
+            ).createShader(
+              Rect.fromCircle(
+                center: Offset(fx, base - altoFarola - 8),
+                radius: 90,
+              ),
+            ),
+    );
+    canvas.drawRRect(
+      RRect.fromRectAndRadius(
+        Rect.fromCenter(
+          center: Offset(fx, base - altoFarola - 8),
+          width: 12,
+          height: 17,
+        ),
+        const Radius.circular(3),
+      ),
+      Paint()..color = const Color(0xFFFFE08A).withValues(alpha: 0.9),
+    );
+    canvas.drawPath(
+      Path()
+        ..moveTo(fx - 9, base - altoFarola - 17)
+        ..lineTo(fx, base - altoFarola - 25)
+        ..lineTo(fx + 9, base - altoFarola - 17)
+        ..close(),
+      tinta,
+    );
+  }
+
+  /// Rascacielos con ventanas de neón que parpadean y antenas con luz roja.
+  void _pintarSkylineNeon(Canvas canvas, Size size) {
+    final fase = progreso * math.pi * 2;
+    for (var capa = 0; capa < 2; capa++) {
+      var x = -6.0 - capa * 16;
+      var i = 0;
+      while (x < size.width + 10) {
+        final ancho = 26.0 + _fraccion(i * 13.9 + capa) * 30;
+        final alto =
+            size.height * (0.07 + _fraccion(i * 7.3 + capa * 3) * 0.13) +
+            capa * 12;
+        final y = size.height - alto - (capa == 0 ? 18 : 0);
+        canvas.drawRect(
+          Rect.fromLTWH(x, y, ancho, alto + 20),
+          Paint()
+            ..color = const Color(
+              0xFF110A2B,
+            ).withValues(alpha: 0.50 + capa * 0.28),
+        );
+        if (capa == 1) {
+          for (var fila = 0; fila < alto ~/ 11; fila++) {
+            for (var col = 0; col < ancho ~/ 9; col++) {
+              final idx = i * 100 + fila * 10 + col;
+              final neon = _neones[idx % _neones.length];
+              final enciende = math.sin(fase * (1 + idx % 3) + idx * 2.3);
+              if (enciende < -0.2) continue;
+              canvas.drawRect(
+                Rect.fromLTWH(x + 4 + col * 9, y + 6 + fila * 11, 4, 5),
+                Paint()..color = neon.withValues(alpha: 0.55 + enciende * 0.35),
+              );
+            }
+          }
+          if (i % 4 == 1) {
+            final parpadeo = math.sin(fase * 4 + i) > 0 ? 0.95 : 0.2;
+            canvas.drawLine(
+              Offset(x + ancho / 2, y),
+              Offset(x + ancho / 2, y - 14),
+              Paint()
+                ..color = const Color(0xFF110A2B).withValues(alpha: 0.8)
+                ..strokeWidth = 1.5,
+            );
+            canvas.drawCircle(
+              Offset(x + ancho / 2, y - 15),
+              2.6,
+              Paint()
+                ..color = const Color(0xFFFF2B4D).withValues(alpha: parpadeo),
+            );
+          }
+        }
+        x += ancho + 2;
+        i++;
+      }
+    }
+  }
+
+  /// Escritorio de madera con tintero, pluma y un montón de cartas.
+  void _pintarEscritorioAntiguo(Canvas canvas, Size size) {
+    final fase = progreso * math.pi * 2;
+    final borde = size.height * 0.935;
+    final mesa = Rect.fromLTRB(0, borde, size.width, size.height);
+    canvas.drawRect(
+      mesa,
+      Paint()
+        ..shader = LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [
+            const Color(0xFF8A5A33).withValues(alpha: 0.55),
+            const Color(0xFF5E3A1F).withValues(alpha: 0.65),
+          ],
+        ).createShader(mesa),
+    );
+    final veta = Paint()
+      ..color = const Color(0xFF3A2212).withValues(alpha: 0.22)
+      ..strokeWidth = 1;
+    for (var i = 1; i < 4; i++) {
+      canvas.drawLine(
+        Offset(0, borde + i * (size.height - borde) / 4),
+        Offset(size.width, borde + i * (size.height - borde) / 4),
+        veta,
+      );
+    }
+    canvas.drawLine(
+      Offset(0, borde),
+      Offset(size.width, borde),
+      Paint()
+        ..color = const Color(0xFFC79A6B).withValues(alpha: 0.6)
+        ..strokeWidth = 2,
+    );
+
+    // Montón de cartas, ligeramente desordenadas.
+    final cx = size.width * 0.72;
+    for (var i = 0; i < 4; i++) {
+      canvas.save();
+      canvas.translate(cx + i * 2, borde - 3 - i * 4);
+      canvas.rotate((i - 1.5) * 0.05);
+      final hoja = Rect.fromCenter(center: Offset.zero, width: 46, height: 5);
+      canvas.drawRRect(
+        RRect.fromRectAndRadius(hoja, const Radius.circular(1.5)),
+        Paint()..color = const Color(0xFFF4E8D2).withValues(alpha: 0.88),
+      );
+      canvas.drawRRect(
+        RRect.fromRectAndRadius(hoja, const Radius.circular(1.5)),
+        Paint()
+          ..color = const Color(0xFF7A5A3A).withValues(alpha: 0.5)
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 0.8,
+      );
+      canvas.restore();
+    }
+    canvas.drawCircle(
+      Offset(cx + 12, borde - 20),
+      3,
+      Paint()..color = const Color(0xFFB5493B).withValues(alpha: 0.85),
+    );
+
+    // Tintero y pluma que se mece.
+    final tx = size.width * 0.26;
+    canvas.drawRRect(
+      RRect.fromRectAndRadius(
+        Rect.fromLTWH(tx - 12, borde - 20, 24, 20),
+        const Radius.circular(5),
+      ),
+      Paint()..color = const Color(0xFF1F1B2E).withValues(alpha: 0.85),
+    );
+    canvas.drawRect(
+      Rect.fromLTWH(tx - 6, borde - 25, 12, 6),
+      Paint()..color = const Color(0xFF1F1B2E).withValues(alpha: 0.85),
+    );
+    final b = math.sin(fase) * 0.04;
+    canvas.save();
+    canvas.translate(tx + 2, borde - 24);
+    canvas.rotate(0.55 + b);
+    final pluma = Path()
+      ..moveTo(0, 0)
+      ..quadraticBezierTo(14, -34, 6, -76)
+      ..quadraticBezierTo(24, -44, 0, 0);
+    canvas.drawPath(
+      pluma,
+      Paint()..color = const Color(0xFFF1E6CF).withValues(alpha: 0.92),
+    );
+    canvas.drawPath(
+      pluma,
+      Paint()
+        ..color = const Color(0xFF7A5A3A).withValues(alpha: 0.55)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 1,
+    );
+    canvas.drawLine(
+      Offset.zero,
+      const Offset(6, -76),
+      Paint()
+        ..color = const Color(0xFF7A5A3A).withValues(alpha: 0.7)
+        ..strokeWidth = 1.2,
+    );
+    canvas.restore();
+  }
+
+  /// Campamento de tiendas con una hoguera cuya llama parpadea.
+  void _pintarCampamento(Canvas canvas, Size size) {
+    final fase = progreso * math.pi * 2;
+    final suelo = size.height * 0.955;
+    final tienda = Paint()
+      ..color = const Color(0xFF3B2412).withValues(alpha: 0.52);
+    final entrada = Paint()
+      ..color = const Color(0xFF1A0F07).withValues(alpha: 0.6);
+    void tiendaEn(double x, double ancho, double alto) {
+      canvas.drawPath(
+        Path()
+          ..moveTo(x - ancho / 2, suelo)
+          ..lineTo(x, suelo - alto)
+          ..lineTo(x + ancho / 2, suelo)
+          ..close(),
+        tienda,
+      );
+      canvas.drawPath(
+        Path()
+          ..moveTo(x - ancho * 0.12, suelo)
+          ..lineTo(x, suelo - alto * 0.55)
+          ..lineTo(x + ancho * 0.12, suelo)
+          ..close(),
+        entrada,
+      );
+      canvas.drawLine(
+        Offset(x, suelo - alto),
+        Offset(x, suelo - alto - 12),
+        Paint()
+          ..color = const Color(0xFF3B2412).withValues(alpha: 0.7)
+          ..strokeWidth = 1.5,
+      );
+    }
+
+    tiendaEn(size.width * 0.14, 78, 54);
+    tiendaEn(size.width * 0.84, 90, 62);
+    tiendaEn(size.width * 0.96, 60, 40);
+    canvas.drawRect(
+      Rect.fromLTRB(0, suelo, size.width, size.height),
+      Paint()..color = const Color(0xFF2A1A0C).withValues(alpha: 0.5),
+    );
+
+    // Hoguera en el centro: troncos y tres llamas.
+    final fx = size.width * 0.5;
+    final troncos = Paint()
+      ..color = const Color(0xFF2A1A0C).withValues(alpha: 0.9)
+      ..strokeWidth = 4.5
+      ..strokeCap = StrokeCap.round;
+    canvas.drawLine(
+      Offset(fx - 15, suelo + 6),
+      Offset(fx + 13, suelo - 2),
+      troncos,
+    );
+    canvas.drawLine(
+      Offset(fx + 15, suelo + 6),
+      Offset(fx - 13, suelo - 2),
+      troncos,
+    );
+    for (var l = 0; l < 3; l++) {
+      final parpadeo = math.sin(fase * (3 + l) + l * 2) * 0.5 + 0.5;
+      final alto = 30.0 - l * 7 + parpadeo * 9;
+      final ancho = 13.0 - l * 3;
+      final dx = math.sin(fase * 2 + l) * 2.5;
+      canvas.drawPath(
+        Path()
+          ..moveTo(fx + dx, suelo - alto)
+          ..quadraticBezierTo(
+            fx + ancho + dx,
+            suelo - alto * 0.35,
+            fx + ancho * 0.4,
+            suelo,
+          )
+          ..quadraticBezierTo(fx, suelo + 3, fx - ancho * 0.4, suelo)
+          ..quadraticBezierTo(
+            fx - ancho + dx,
+            suelo - alto * 0.35,
+            fx + dx,
+            suelo - alto,
+          )
+          ..close(),
+        Paint()
+          ..color = [
+            const Color(0xFFE8531A),
+            const Color(0xFFFF9A1F),
+            const Color(0xFFFFE08A),
+          ][l].withValues(alpha: 0.9),
       );
     }
   }
