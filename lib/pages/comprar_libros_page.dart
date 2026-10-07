@@ -52,7 +52,10 @@ class _ListasCompra {
 /// próximos lanzamientos) con acceso directo a Casa del Libro. Enlaces de
 /// afiliado (Awin): la página se identifica siempre como publicidad.
 class ComprarLibrosPage extends StatefulWidget {
-  const ComprarLibrosPage({super.key});
+  const ComprarLibrosPage({super.key, this.pestanaInicial = 0});
+
+  /// 0 Deseados, 1 Pendientes, 2 Próximos.
+  final int pestanaInicial;
 
   @override
   State<ComprarLibrosPage> createState() => _ComprarLibrosPageState();
@@ -294,6 +297,7 @@ class _ComprarLibrosPageState extends State<ComprarLibrosPage>
   Widget build(BuildContext context) {
     return DefaultTabController(
       length: 3,
+      initialIndex: widget.pestanaInicial.clamp(0, 2),
       child: Scaffold(
         appBar: AppBar(title: const Text('Tu próxima compra')),
         body: FutureBuilder<_ListasCompra>(

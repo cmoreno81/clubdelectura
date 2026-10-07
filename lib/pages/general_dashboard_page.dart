@@ -35,6 +35,7 @@ import '../widgets/common/calendar_edit_fechas_sheet.dart';
 import '../widgets/common/reading_cover_calendar.dart';
 import '../widgets/common/optimized_network_image.dart';
 import '../widgets/dashboard/bingo_lector_card.dart';
+import '../widgets/dashboard/estanteria_pendientes_card.dart';
 import '../widgets/dashboard/monthly_reading_shelf.dart';
 import '../widgets/dashboard/tbr_roulette_card.dart';
 import 'clubs_page.dart';
@@ -878,6 +879,8 @@ class _GeneralDashboardPageState extends State<GeneralDashboardPage> {
                           ),
                         ),
                       ],
+                      const SizedBox(height: AppSpacing.xl),
+                      const EstanteriaPendientesCard(),
                       const SizedBox(height: AppSpacing.xl),
                       _sectionTitle(
                         'Tus clubes',

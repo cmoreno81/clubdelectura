@@ -1,0 +1,79 @@
+/// "Estantería de pendientes": de los libros pendientes de una lectora, los
+/// que ya tiene. Papel y sin formato cuentan como físico; ebook y audiolibro
+/// se suman aparte.
+class EstanteriaPendientes {
+  const EstanteriaPendientes({
+    required this.pendientes,
+    required this.tengo,
+    required this.enEstanteria,
+    required this.otrosFormatos,
+    required this.libros,
+    required this.serie,
+  });
+
+  /// Todos los pendientes de la biblioteca.
+  final int pendientes;
+
+  /// Pendientes que ya tiene (cualquier formato).
+  final int tengo;
+
+  /// De esos, los que están en papel o sin formato.
+  final int enEstanteria;
+  final int otrosFormatos;
+  final List<LibroEstanteria> libros;
+
+  /// Libros "ya los tengo y sin leer" al final de cada mes, del más antiguo
+  /// al actual.
+  final List<PuntoPila> serie;
+
+  /// Cuántos pendientes aún no tiene.
+  int get faltan => (pendientes - tengo).clamp(0, pendientes);
+
+  /// La línea solo tiene sentido cuando hay al menos dos meses con datos.
+  bool get hayHistorial => serie.where((p) => p.pila > 0).length >= 2;
+
+  static EstanteriaPendientes? fromJson(Map<String, dynamic> data) {
+    if (data['ok'] != true) return null;
+    int entero(Object? v) => v is num ? v.toInt() : 0;
+    return EstanteriaPendientes(
+      pendientes: entero(data['pendientes']),
+      tengo: entero(data['tengo']),
+      enEstanteria: entero(data['enEstanteria']),
+      otrosFormatos: entero(data['otrosFormatos']),
+      libros: [
+        for (final l in (data['libros'] as List? ?? const []))
+          if (l is Map)
+            LibroEstanteria(
+              bookId: l['bookId']?.toString() ?? '',
+              titulo: l['titulo']?.toString() ?? '',
+              portada: l['portada']?.toString() ?? '',
+            ),
+      ],
+      serie: [
+        for (final p in (data['serie'] as List? ?? const []))
+          if (p is Map)
+            PuntoPila(mes: p['mes']?.toString() ?? '', pila: entero(p['pila'])),
+      ],
+    );
+  }
+}
+
+class LibroEstanteria {
+  const LibroEstanteria({
+    required this.bookId,
+    required this.titulo,
+    required this.portada,
+  });
+
+  final String bookId;
+  final String titulo;
+  final String portada;
+}
+
+class PuntoPila {
+  const PuntoPila({required this.mes, required this.pila});
+
+  /// "2026-10".
+  final String mes;
+  final int pila;
+}

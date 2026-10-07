@@ -6,6 +6,7 @@ import 'package:club_lectura_app/models/notificacion.dart';
 import 'package:club_lectura_app/services/libros_data_cache.dart';
 import 'package:club_lectura_app/utils/app_config.dart';
 import 'package:http/http.dart' as http;
+import '../models/estanteria_pendientes.dart';
 import '../models/achievements/achievement.dart';
 import '../models/propuesta_lectura.dart';
 import '../models/dashboard.dart';
@@ -1212,6 +1213,25 @@ class ApiService {
     final data = _decodeJson(response);
     if (data is! Map<String, dynamic> || data['ok'] != true) return null;
     return EnlaceCompra.fromJson(data);
+  }
+
+  /// Estantería de pendientes de [usuario] (la propia si va vacío). Null si
+  /// no se puede ver (perfil privado) o falla la petición.
+  Future<EstanteriaPendientes?> getEstanteriaPendientes({
+    String usuario = '',
+  }) async {
+    final response = await _client.get(
+      Uri.parse(baseUrl).replace(
+        queryParameters: {
+          'action': 'estanteriaPendientes',
+          if (usuario.isNotEmpty) 'usuario': usuario,
+        },
+      ),
+    );
+    if (response.statusCode != 200) return null;
+    final data = _decodeJson(response);
+    if (data is! Map<String, dynamic>) return null;
+    return EstanteriaPendientes.fromJson(data);
   }
 
   /// Marca (o desmarca) "Ya lo tengo": solo apaga los botones de compra de

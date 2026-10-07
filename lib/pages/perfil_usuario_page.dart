@@ -20,6 +20,7 @@ import '../theme/app_spacing.dart';
 import '../theme/app_text_styles.dart';
 import '../utils/genero_utils.dart';
 import '../utils/wrapped_availability.dart';
+import '../widgets/dashboard/estanteria_pendientes_card.dart';
 import '../widgets/common/checkin_button.dart';
 import '../widgets/common/club_avatar.dart';
 import '../widgets/common/club_card.dart';
@@ -918,6 +919,15 @@ class _PerfilUsuarioPageState extends State<PerfilUsuarioPage> {
 
         // ── Su historia lectora DESPUÉS ──
         _resumenLectura(perfil),
+
+        // ── Su pila de pendientes (la propia está en el inicio) ──
+        if (!esMiPerfil) ...[
+          const SizedBox(height: AppSpacing.xl),
+          EstanteriaPendientesCard(
+            key: ValueKey('pila-${widget.usuario}'),
+            usuario: widget.usuario,
+          ),
+        ],
 
         // ── Seguimiento lector (solo propio perfil) ──────────────────────────
         if (esMiPerfil) ...[
