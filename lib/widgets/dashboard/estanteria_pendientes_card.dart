@@ -102,8 +102,6 @@ class _EstanteriaPendientesCardState extends State<EstanteriaPendientesCard> {
           _Contador(datos: d),
           const SizedBox(height: 16),
           _BalanceAnual(datos: d),
-          const SizedBox(height: 16),
-          _EnCasa(datos: d),
           if (d.hayHistorial) ...[
             const SizedBox(height: 18),
             const Text(
@@ -236,24 +234,28 @@ class _BalanceAnual extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final balance = datos.balanceAnio;
     final anio = datos.anio == 0 ? DateTime.now().year : datos.anio;
+    final enCasa = datos.enEstanteria;
     final String mensaje;
     final Color color;
-    if (datos.leidosAnio == 0 && datos.entraronAnio == 0) {
+    if (datos.leidosAnio > 0) {
+      mensaje =
+          'En $anio has sacado ${datos.leidosAnio} de la pila'
+          '${enCasa > 0 ? '; te quedan $enCasa en casa' : ''}';
+      color = AppColors.success;
+    } else if (enCasa > 0) {
+      mensaje = 'Te quedan $enCasa en casa por leer';
+      color = AppColors.textSecondary;
+    } else {
       mensaje = 'Aún no hay movimiento en la pila este año';
       color = AppColors.textSecondary;
-    } else if (balance > 0) {
-      mensaje = 'Vas ganando: la pila baja $balance en $anio';
-      color = AppColors.success;
-    } else if (balance < 0) {
-      mensaje = 'La pila ha crecido ${-balance} en $anio';
-      color = AppColors.inkCoral;
-    } else {
-      mensaje = 'En $anio entra lo mismo que sale';
-      color = AppColors.textSecondary;
     }
-    final maximo = math.max(1, math.max(datos.leidosAnio, datos.entraronAnio));
+    final maximo = math.max(1, math.max(datos.leidosAnio, enCasa));
+    const secundario = TextStyle(
+      color: AppColors.textSecondary,
+      fontSize: 12,
+      fontWeight: FontWeight.w600,
+    );
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
@@ -281,8 +283,8 @@ class _BalanceAnual extends StatelessWidget {
           ),
           const SizedBox(height: 8),
           _Barra(
-            etiqueta: 'Pendientes en papel nuevos',
-            valor: datos.entraronAnio,
+            etiqueta: 'En casa sin leer',
+            valor: enCasa,
             maximo: maximo,
             color: AppColors.inkCoral,
           ),
@@ -300,11 +302,22 @@ class _BalanceAnual extends StatelessWidget {
               padding: const EdgeInsets.only(top: 2),
               child: Text(
                 '${datos.leidosEnCasaAnio} de los leídos ya los tenías en casa',
-                style: const TextStyle(
-                  color: AppColors.textSecondary,
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
-                ),
+                style: secundario,
+              ),
+            ),
+          Padding(
+            padding: const EdgeInsets.only(top: 2),
+            child: Text(
+              'Pendientes en papel nuevos este año: ${datos.entraronAnio}',
+              style: secundario,
+            ),
+          ),
+          if (datos.otrosFormatos > 0)
+            Padding(
+              padding: const EdgeInsets.only(top: 2),
+              child: Text(
+                '+ ${datos.otrosFormatos} en casa en ebook o audiolibro',
+                style: secundario,
               ),
             ),
         ],
@@ -361,36 +374,6 @@ class _Barra extends StatelessWidget {
             minHeight: 8,
             backgroundColor: const Color(0xFFE3CFAE).withValues(alpha: .6),
             color: color,
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-/// Fila discreta con cuántos pendientes ya están en casa.
-class _EnCasa extends StatelessWidget {
-  const _EnCasa({required this.datos});
-
-  final EstanteriaPendientes datos;
-
-  @override
-  Widget build(BuildContext context) {
-    final extra = datos.otrosFormatos > 0
-        ? ' (${datos.otrosFormatos} en ebook o audiolibro)'
-        : '';
-    return Row(
-      children: [
-        const Icon(Icons.home_outlined, size: 16, color: AppColors.primary),
-        const SizedBox(width: 6),
-        Expanded(
-          child: Text(
-            'En casa sin leer: ${datos.tengo} de ${datos.pendientes}$extra',
-            style: const TextStyle(
-              color: AppColors.textSecondary,
-              fontSize: 12.5,
-              fontWeight: FontWeight.w700,
-            ),
           ),
         ),
       ],
