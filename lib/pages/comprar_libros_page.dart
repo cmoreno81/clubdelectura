@@ -130,6 +130,7 @@ class _ComprarLibrosPageState extends State<ComprarLibrosPage>
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text('✅ "${item.title}" marcado como comprado'),
+        persist: false,
         action: SnackBarAction(
           label: 'Deshacer',
           onPressed: () async {
@@ -273,6 +274,10 @@ class _ComprarLibrosPageState extends State<ComprarLibrosPage>
       ..showSnackBar(
         SnackBar(
           content: Text('"${libro.titulo}" marcado como que ya lo tienes'),
+          // Con acción, el aviso no se va solo si no se pide: se quedaba en
+          // pantalla al volver al inicio.
+          persist: false,
+          duration: const Duration(seconds: 5),
           action: SnackBarAction(
             label: 'Deshacer',
             onPressed: () async {
