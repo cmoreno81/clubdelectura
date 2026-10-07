@@ -30,6 +30,50 @@ class NuevoLibroPage extends StatefulWidget {
 }
 
 class _NuevoLibroPageState extends State<NuevoLibroPage> {
+  /// Idiomas a la vista en el alta: los más comunes y las lenguas cooficiales.
+  /// El resto de [idiomasSoportados] se elige en «Otro idioma».
+  static const _idiomasHabituales = [
+    'es', 'en', 'fr', 'de', 'it', 'pt', 'ca', 'eu', 'gl', //
+  ];
+
+  Future<void> _elegirOtroIdioma() async {
+    final elegido = await showModalBottomSheet<String>(
+      context: context,
+      showDragHandle: true,
+      useSafeArea: true,
+      isScrollControlled: true,
+      builder: (sheetContext) => FractionallySizedBox(
+        heightFactor: 0.72,
+        child: ListView(
+          padding: const EdgeInsets.fromLTRB(
+            AppSpacing.md,
+            0,
+            AppSpacing.md,
+            AppSpacing.lg,
+          ),
+          children: [
+            Text('Otro idioma', style: AppTextStyles.section),
+            const SizedBox(height: AppSpacing.sm),
+            for (final codigo in idiomasSoportados)
+              if (!_idiomasHabituales.contains(codigo))
+                ListTile(
+                  leading: Text(
+                    banderaIdioma(codigo),
+                    style: const TextStyle(fontSize: 22),
+                  ),
+                  title: Text(nombreIdioma(codigo)),
+                  trailing: codigo == idioma
+                      ? const Icon(Icons.check_rounded, color: AppColors.primary)
+                      : null,
+                  onTap: () => Navigator.pop(sheetContext, codigo),
+                ),
+          ],
+        ),
+      ),
+    );
+    if (elegido != null && mounted) setState(() => idioma = elegido);
+  }
+
   final libroController = TextEditingController();
   final autorController = TextEditingController();
   final sagaController = TextEditingController();
@@ -724,7 +768,14 @@ class _NuevoLibroPageState extends State<NuevoLibroPage> {
                     ),
                     onSelected: (_) => setState(() => idioma = ''),
                   ),
-                  for (final codigo in const ['es', 'en', 'fr', 'de', 'it', 'pt'])
+                  // Los más habituales a la vista; el resto, en «Otro idioma».
+                  // Si ya hay uno elegido que no está entre ellos, también se
+                  // muestra para poder verlo y quitarlo.
+                  for (final codigo in [
+                    ..._idiomasHabituales,
+                    if (idioma.isNotEmpty && !_idiomasHabituales.contains(idioma))
+                      idioma,
+                  ])
                     ChoiceChip(
                       label: Text('${banderaIdioma(codigo)} ${nombreIdioma(codigo)}'),
                       selected: idioma == codigo,
@@ -740,6 +791,11 @@ class _NuevoLibroPageState extends State<NuevoLibroPage> {
                       ),
                       onSelected: (_) => setState(() => idioma = codigo),
                     ),
+                  ActionChip(
+                    avatar: const Icon(Icons.public_rounded, size: 18),
+                    label: const Text('Otro idioma…'),
+                    onPressed: _elegirOtroIdioma,
+                  ),
                 ],
               ),
             ],
