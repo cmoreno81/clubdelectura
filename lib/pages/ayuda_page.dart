@@ -467,6 +467,9 @@ const List<_HelpSection> _secciones = [
             'ir quitando. Cuenta como papel el libro con formato papel o sin '
             'formato; los ebooks y audiolibros no entran. Debajo ves cuántos libros '
             'en papel has terminado este año y cuántos pendientes nuevos han entrado.\n\n'
+            'Para que estas cifras sean fiables, indica el formato de cada libro '
+            '(papel, ebook o audiolibro) al terminarlo o desde su ficha: lo que no '
+            'tiene formato se cuenta como papel.\n\n'
             'Debajo, "Ver lo que me falta por comprar" abre la lista de pendientes '
             'que aún no tienes. Las personas de tu club ven esta tarjeta en tu '
             'perfil, salvo que lo tengas en "Solo yo".',

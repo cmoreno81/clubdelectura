@@ -9,6 +9,7 @@ Map<String, dynamic> datos({List<int> pila = const [0, 0, 0]}) => {
   'otrosFormatos': 1,
   'anio': {'anio': 2026, 'leidos': 12, 'leidosEnCasa': 5, 'entraron': 9},
   'terminadosPapel': 21,
+  'terminadosSinFormato': 3,
   'serie': [
     for (var i = 0; i < pila.length; i++)
       {'mes': '2026-0${i + 1}', 'pila': pila[i]},
@@ -50,6 +51,7 @@ void main() {
     expect(e.entraronAnio, 9);
     expect(e.balanceAnio, 3);
     expect(e.terminadosPapelAnio, 21);
+    expect(e.terminadosSinFormatoAnio, 3);
     final crece = EstanteriaPendientes.fromJson({
       ...datos(),
       'anio': {'anio': 2026, 'leidos': 2, 'entraron': 9},

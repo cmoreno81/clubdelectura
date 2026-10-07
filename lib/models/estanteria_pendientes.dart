@@ -13,6 +13,7 @@ class EstanteriaPendientes {
     this.leidosEnCasaAnio = 0,
     this.entraronAnio = 0,
     this.terminadosPapelAnio = 0,
+    this.terminadosSinFormatoAnio = 0,
   });
 
   /// Balance del año en curso: pendientes que ha empezado o leído (de ellos,
@@ -25,6 +26,9 @@ class EstanteriaPendientes {
   /// Libros terminados este año en papel o sin formato, vinieran o no de la
   /// pila de pendientes.
   final int terminadosPapelAnio;
+
+  /// Lecturas terminadas este año sin formato apuntado (cuentan como papel).
+  final int terminadosSinFormatoAnio;
 
   /// Pendientes que han salido de la pila menos los que han entrado: negativo
   /// si la pila ha crecido.
@@ -66,6 +70,7 @@ class EstanteriaPendientes {
       leidosEnCasaAnio: entero((data['anio'] as Map?)?['leidosEnCasa']),
       entraronAnio: entero((data['anio'] as Map?)?['entraron']),
       terminadosPapelAnio: entero(data['terminadosPapel']),
+      terminadosSinFormatoAnio: entero(data['terminadosSinFormato']),
       serie: [
         for (final p in (data['serie'] as List? ?? const []))
           if (p is Map)

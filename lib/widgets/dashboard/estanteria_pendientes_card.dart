@@ -102,6 +102,8 @@ class _EstanteriaPendientesCardState extends State<EstanteriaPendientesCard> {
           _Contador(datos: d),
           const SizedBox(height: 16),
           BalanceAnualPila(datos: d),
+          const SizedBox(height: 10),
+          _NotaFormato(sinFormato: _propia ? d.terminadosSinFormatoAnio : 0),
           if (_propia && d.faltan > 0)
             Align(
               alignment: Alignment.centerLeft,
@@ -401,6 +403,50 @@ class _Barra extends StatelessWidget {
             minHeight: 8,
             backgroundColor: const Color(0xFFE3CFAE).withValues(alpha: .6),
             color: color,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+/// Aviso para todas: estos datos dependen del formato de cada libro.
+class _NotaFormato extends StatelessWidget {
+  const _NotaFormato({required this.sinFormato});
+
+  /// Lecturas de este año sin formato apuntado.
+  final int sinFormato;
+
+  @override
+  Widget build(BuildContext context) {
+    final extra = sinFormato > 0
+        ? ' Ahora mismo tienes $sinFormato '
+              '${sinFormato == 1 ? 'lectura' : 'lecturas'} de este año sin '
+              'formato, que se cuentan como papel.'
+        : '';
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Padding(
+          padding: EdgeInsets.only(top: 1),
+          child: Icon(
+            Icons.info_outline_rounded,
+            size: 15,
+            color: AppColors.textMuted,
+          ),
+        ),
+        const SizedBox(width: 6),
+        Expanded(
+          child: Text(
+            'Solo cuentan los libros en papel o sin formato. Indica el formato '
+            'de cada libro (papel, ebook o audiolibro) al terminarlo o desde su '
+            'ficha para que las cifras sean fiables.$extra',
+            style: const TextStyle(
+              color: AppColors.textMuted,
+              fontSize: 11.5,
+              height: 1.35,
+              fontWeight: FontWeight.w600,
+            ),
           ),
         ),
       ],
