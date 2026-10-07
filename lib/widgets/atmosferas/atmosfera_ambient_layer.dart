@@ -334,7 +334,9 @@ class _AtmosferaPainter extends CustomPainter {
       case AtmosferaLectura.epica:
         _pintarResplandorFogata(canvas, size);
         _pintarEstandartes(canvas, size);
-        _pintarCampamento(canvas, size);
+        _pintarDragon(canvas, size);
+        _pintarFortalezaEnRoca(canvas, size);
+        _pintarEjercito(canvas, size);
         _pintarChispas(canvas, size);
 
       case AtmosferaLectura.acogedora:
@@ -2118,94 +2120,255 @@ class _AtmosferaPainter extends CustomPainter {
     canvas.restore();
   }
 
-  /// Campamento de tiendas con una hoguera cuya llama parpadea.
-  void _pintarCampamento(Canvas canvas, Size size) {
+  /// Montañas lejanas, un acantilado y una fortaleza de torres y murallas con
+  /// las antorchas encendidas.
+  void _pintarFortalezaEnRoca(Canvas canvas, Size size) {
     final fase = progreso * math.pi * 2;
-    final suelo = size.height * 0.955;
-    final tienda = Paint()
-      ..color = const Color(0xFF3B2412).withValues(alpha: 0.52);
-    final entrada = Paint()
-      ..color = const Color(0xFF1A0F07).withValues(alpha: 0.6);
-    void tiendaEn(double x, double ancho, double alto) {
-      canvas.drawPath(
-        Path()
-          ..moveTo(x - ancho / 2, suelo)
-          ..lineTo(x, suelo - alto)
-          ..lineTo(x + ancho / 2, suelo)
-          ..close(),
-        tienda,
+    final w = size.width;
+    final h = size.height;
+
+    // Cordillera al fondo.
+    final cordillera = Path()..moveTo(-10, h * 0.80);
+    const picos = [0.10, 0.22, 0.34, 0.47, 0.58];
+    for (var i = 0; i < picos.length; i++) {
+      cordillera
+        ..lineTo(w * (picos[i] - 0.06), h * 0.80)
+        ..lineTo(w * picos[i], h * (0.70 + (i % 2) * 0.03))
+        ..lineTo(w * (picos[i] + 0.06), h * 0.80);
+    }
+    cordillera
+      ..lineTo(w + 10, h * 0.80)
+      ..lineTo(w + 10, h + 10)
+      ..lineTo(-10, h + 10)
+      ..close();
+    canvas.drawPath(
+      cordillera,
+      Paint()..color = const Color(0xFF3A2A22).withValues(alpha: 0.16),
+    );
+
+    // Acantilado.
+    final roca = Path()
+      ..moveTo(w * 0.38, h + 10)
+      ..lineTo(w * 0.46, h * 0.88)
+      ..lineTo(w * 0.57, h * 0.78)
+      ..lineTo(w * 0.60, h * 0.745)
+      ..lineTo(w * 0.97, h * 0.745)
+      ..lineTo(w * 1.02, h * 0.80)
+      ..lineTo(w + 10, h + 10)
+      ..close();
+    canvas.drawPath(
+      roca,
+      Paint()..color = const Color(0xFF2A1E18).withValues(alpha: 0.50),
+    );
+
+    // Murallas y torres.
+    final piedra = Paint()
+      ..color = const Color(0xFF1F1612).withValues(alpha: 0.62);
+    final base = h * 0.752;
+    final muralla = Rect.fromLTWH(w * 0.61, base - 22, w * 0.36, 24);
+    canvas.drawRect(muralla, piedra);
+    for (double x = muralla.left; x < muralla.right - 6; x += 11) {
+      canvas.drawRect(Rect.fromLTWH(x, base - 28, 6, 7), piedra);
+    }
+    // x (fracción), ancho, alto, cónica?
+    const torres = [
+      (0.635, 20.0, 50.0, true),
+      (0.74, 30.0, 88.0, false),
+      (0.85, 22.0, 58.0, true),
+      (0.935, 18.0, 42.0, false),
+    ];
+    for (var i = 0; i < torres.length; i++) {
+      final (fx, ancho, alto, conica) = torres[i];
+      final cx = w * fx;
+      canvas.drawRect(
+        Rect.fromLTWH(cx - ancho / 2, base - alto, ancho, alto + 2),
+        piedra,
       );
-      canvas.drawPath(
-        Path()
-          ..moveTo(x - ancho * 0.12, suelo)
-          ..lineTo(x, suelo - alto * 0.55)
-          ..lineTo(x + ancho * 0.12, suelo)
-          ..close(),
-        entrada,
+      if (conica) {
+        canvas.drawPath(
+          Path()
+            ..moveTo(cx - ancho / 2 - 3, base - alto)
+            ..lineTo(cx, base - alto - ancho * 1.35)
+            ..lineTo(cx + ancho / 2 + 3, base - alto)
+            ..close(),
+          piedra,
+        );
+      } else {
+        for (double x = cx - ancho / 2; x < cx + ancho / 2 - 3; x += 8) {
+          canvas.drawRect(Rect.fromLTWH(x, base - alto - 7, 5, 8), piedra);
+        }
+      }
+      // Ventana encendida y antorcha de cada torre.
+      final luz =
+          0.55 +
+          math.sin(fase * (3 + i) + i * 2) * 0.25 +
+          math.sin(fase * 7 + i) * 0.1;
+      final v = Offset(cx, base - alto * 0.58);
+      canvas.drawCircle(
+        v,
+        15,
+        Paint()
+          ..color = const Color(0xFFFF9A1F).withValues(alpha: 0.34 * luz)
+          ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 7),
+      );
+      canvas.drawRect(
+        Rect.fromCenter(center: v, width: 4.5, height: 8),
+        Paint()..color = const Color(0xFFFFD27A).withValues(alpha: 0.9),
+      );
+    }
+    // Antorchas en la muralla.
+    for (var t = 0; t < 5; t++) {
+      final x = w * (0.675 + t * 0.065) + (t >= 3 ? 12 : 0);
+      final luz = 0.5 + math.sin(fase * (4 + t) + t) * 0.3;
+      canvas.drawCircle(
+        Offset(x, base - 30),
+        10,
+        Paint()
+          ..color = const Color(0xFFFF8A1F).withValues(alpha: 0.38 * luz)
+          ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 5),
+      );
+      canvas.drawCircle(
+        Offset(x, base - 30),
+        2.4,
+        Paint()..color = const Color(0xFFFFE08A).withValues(alpha: 0.95),
+      );
+    }
+  }
+
+  /// Ejército en primer plano: hileras de lanzas y estandartes ondeando.
+  void _pintarEjercito(Canvas canvas, Size size) {
+    final fase = progreso * math.pi * 2;
+    final suelo = size.height * 0.972;
+    final sombra = Paint()
+      ..color = const Color(0xFF140D0A).withValues(alpha: 0.72);
+    // Suelo ondulado.
+    final tierra = Path()..moveTo(-10, size.height + 10);
+    for (double x = -10; x <= size.width + 10; x += 8) {
+      tierra.lineTo(x, suelo + math.sin(x / 55) * 3);
+    }
+    tierra
+      ..lineTo(size.width + 10, size.height + 10)
+      ..close();
+    canvas.drawPath(tierra, sombra);
+
+    const soldados = 44;
+    for (var i = 0; i < soldados; i++) {
+      final x =
+          (i + 0.5 + (_fraccion(i * 7.7) - 0.5) * 0.7) * size.width / soldados;
+      final y = suelo + math.sin(x / 55) * 3;
+      final alto = 15.0 + _fraccion(i * 3.9) * 9;
+      final inclina = math.sin(fase + i * 0.4) * 0.8;
+      // Cuerpo y yelmo.
+      canvas.drawRRect(
+        RRect.fromRectAndRadius(
+          Rect.fromLTWH(x - 3.5, y - alto, 7, alto + 3),
+          const Radius.circular(2),
+        ),
+        sombra,
+      );
+      canvas.drawCircle(Offset(x, y - alto - 3), 3.4, sombra);
+      // Lanza con punta.
+      final punta = Offset(
+        x + 5 + inclina,
+        y - alto - 26 - _fraccion(i * 5.3) * 8,
       );
       canvas.drawLine(
-        Offset(x, suelo - alto),
-        Offset(x, suelo - alto - 12),
-        Paint()
-          ..color = const Color(0xFF3B2412).withValues(alpha: 0.7)
-          ..strokeWidth = 1.5,
+        Offset(x + 4, y - alto + 4),
+        punta,
+        sombra..strokeWidth = 1.4,
       );
-    }
-
-    tiendaEn(size.width * 0.14, 78, 54);
-    tiendaEn(size.width * 0.84, 90, 62);
-    tiendaEn(size.width * 0.96, 60, 40);
-    canvas.drawRect(
-      Rect.fromLTRB(0, suelo, size.width, size.height),
-      Paint()..color = const Color(0xFF2A1A0C).withValues(alpha: 0.5),
-    );
-
-    // Hoguera en el centro: troncos y tres llamas.
-    final fx = size.width * 0.5;
-    final troncos = Paint()
-      ..color = const Color(0xFF2A1A0C).withValues(alpha: 0.9)
-      ..strokeWidth = 4.5
-      ..strokeCap = StrokeCap.round;
-    canvas.drawLine(
-      Offset(fx - 15, suelo + 6),
-      Offset(fx + 13, suelo - 2),
-      troncos,
-    );
-    canvas.drawLine(
-      Offset(fx + 15, suelo + 6),
-      Offset(fx - 13, suelo - 2),
-      troncos,
-    );
-    for (var l = 0; l < 3; l++) {
-      final parpadeo = math.sin(fase * (3 + l) + l * 2) * 0.5 + 0.5;
-      final alto = 30.0 - l * 7 + parpadeo * 9;
-      final ancho = 13.0 - l * 3;
-      final dx = math.sin(fase * 2 + l) * 2.5;
       canvas.drawPath(
         Path()
-          ..moveTo(fx + dx, suelo - alto)
-          ..quadraticBezierTo(
-            fx + ancho + dx,
-            suelo - alto * 0.35,
-            fx + ancho * 0.4,
-            suelo,
-          )
-          ..quadraticBezierTo(fx, suelo + 3, fx - ancho * 0.4, suelo)
-          ..quadraticBezierTo(
-            fx - ancho + dx,
-            suelo - alto * 0.35,
-            fx + dx,
-            suelo - alto,
-          )
+          ..moveTo(punta.dx, punta.dy - 6)
+          ..lineTo(punta.dx - 2.4, punta.dy)
+          ..lineTo(punta.dx + 2.4, punta.dy)
           ..close(),
-        Paint()
-          ..color = [
-            const Color(0xFFE8531A),
-            const Color(0xFFFF9A1F),
-            const Color(0xFFFFE08A),
-          ][l].withValues(alpha: 0.9),
+        sombra,
       );
+      // Un estandarte cada ocho soldados.
+      if (i % 8 == 4) {
+        final cima = Offset(x - 5, y - alto - 58);
+        canvas.drawLine(
+          Offset(x - 5, y - alto + 2),
+          cima,
+          sombra..strokeWidth = 1.8,
+        );
+        final bandera = Path()..moveTo(cima.dx, cima.dy + 2);
+        for (var k = 0; k <= 8; k++) {
+          bandera.lineTo(
+            cima.dx + k * 3.4,
+            cima.dy + 2 + math.sin(fase * 2 - k * 0.7 + i) * 2.2 * (k / 8),
+          );
+        }
+        for (var k = 8; k >= 0; k--) {
+          bandera.lineTo(
+            cima.dx + k * 3.4,
+            cima.dy + 20 + math.sin(fase * 2 - k * 0.7 + i) * 2.2 * (k / 8),
+          );
+        }
+        bandera.close();
+        canvas.drawPath(
+          bandera,
+          Paint()..color = acento.withValues(alpha: 0.78),
+        );
+      }
     }
+  }
+
+  /// Un dragón que cruza el cielo con las alas desplegadas.
+  void _pintarDragon(Canvas canvas, Size size) {
+    final fase = progreso * math.pi * 2;
+    final t = progreso;
+    final u = size.width * 0.20;
+    final x = -2.3 * u + t * (size.width + 4.6 * u);
+    final y = size.height * 0.20 + math.sin(t * math.pi * 4) * 14;
+    final aleteo = 0.30 + 0.70 * (math.sin(fase * 6) + 1) / 2;
+
+    Path ala(double lado) {
+      final f = aleteo * lado;
+      return Path()
+        ..moveTo(0.15 * u, -0.05 * u)
+        ..quadraticBezierTo(-0.15 * u, -1.05 * u * f, -0.95 * u, -0.80 * u * f)
+        ..quadraticBezierTo(-0.62 * u, -0.48 * u * f, -0.80 * u, -0.22 * u * f)
+        ..quadraticBezierTo(-0.40 * u, -0.22 * u * f, -0.46 * u, -0.02 * u * f)
+        ..quadraticBezierTo(-0.18 * u, 0.0, -0.05 * u, 0.04 * u)
+        ..close();
+    }
+
+    canvas.save();
+    canvas.translate(x, y);
+    final cuerpo = Paint()
+      ..color = const Color(0xFF1B1210).withValues(alpha: 0.78);
+    canvas.drawPath(
+      ala(1),
+      Paint()..color = const Color(0xFF1B1210).withValues(alpha: 0.45),
+    );
+    canvas.drawPath(
+      Path()
+        ..moveTo(-1.55 * u, 0.30 * u)
+        ..quadraticBezierTo(-0.85 * u, 0.42 * u, -0.40 * u, 0.06 * u)
+        ..quadraticBezierTo(0.10 * u, -0.16 * u, 0.50 * u, -0.10 * u)
+        ..quadraticBezierTo(0.78 * u, -0.26 * u, 0.92 * u, -0.46 * u)
+        ..lineTo(1.20 * u, -0.52 * u)
+        ..lineTo(1.30 * u, -0.46 * u)
+        ..lineTo(1.00 * u, -0.34 * u)
+        ..quadraticBezierTo(0.70 * u, -0.04 * u, 0.40 * u, 0.12 * u)
+        ..quadraticBezierTo(-0.10 * u, 0.22 * u, -0.40 * u, 0.22 * u)
+        ..lineTo(-1.45 * u, 0.22 * u)
+        ..close(),
+      cuerpo,
+    );
+    // Cuernos.
+    canvas.drawPath(
+      Path()
+        ..moveTo(0.98 * u, -0.48 * u)
+        ..lineTo(0.84 * u, -0.66 * u)
+        ..lineTo(1.04 * u, -0.52 * u)
+        ..close(),
+      cuerpo,
+    );
+    canvas.drawPath(ala(-1), cuerpo);
+    canvas.restore();
   }
 
   // ── Acogedora ─────────────────────────────────────────────────────────
