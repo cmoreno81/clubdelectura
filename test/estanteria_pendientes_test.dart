@@ -7,6 +7,7 @@ Map<String, dynamic> datos({List<int> pila = const [0, 0, 0]}) => {
   'tengo': 4,
   'enEstanteria': 3,
   'otrosFormatos': 1,
+  'anio': {'anio': 2026, 'leidos': 12, 'leidosEnCasa': 5, 'entraron': 9},
   'serie': [
     for (var i = 0; i < pila.length; i++)
       {'mes': '2026-0${i + 1}', 'pila': pila[i]},
@@ -39,6 +40,19 @@ void main() {
     // Ahora hay 10 pendientes; a final del mes pasado había 14.
     final e = EstanteriaPendientes.fromJson(datos(pila: [20, 14, 10]))!;
     expect(e.cambioMes, -4);
+  });
+
+  test('el balance del año resta los nuevos a los leídos', () {
+    final e = EstanteriaPendientes.fromJson(datos())!;
+    expect(e.leidosAnio, 12);
+    expect(e.leidosEnCasaAnio, 5);
+    expect(e.entraronAnio, 9);
+    expect(e.balanceAnio, 3);
+    final crece = EstanteriaPendientes.fromJson({
+      ...datos(),
+      'anio': {'anio': 2026, 'leidos': 2, 'entraron': 9},
+    })!;
+    expect(crece.balanceAnio, -7);
   });
 
   test('sin permiso (perfil privado) no hay estantería', () {

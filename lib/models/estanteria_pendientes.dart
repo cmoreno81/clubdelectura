@@ -8,7 +8,22 @@ class EstanteriaPendientes {
     required this.enEstanteria,
     required this.otrosFormatos,
     required this.serie,
+    this.anio = 0,
+    this.leidosAnio = 0,
+    this.leidosEnCasaAnio = 0,
+    this.entraronAnio = 0,
   });
+
+  /// Balance del año en curso: pendientes que ha empezado o leído (de ellos,
+  /// los que ya tenía en casa) frente a los que han entrado nuevos.
+  final int anio;
+  final int leidosAnio;
+  final int leidosEnCasaAnio;
+  final int entraronAnio;
+
+  /// Pendientes que han salido de la pila menos los que han entrado: negativo
+  /// si la pila ha crecido.
+  int get balanceAnio => leidosAnio - entraronAnio;
 
   /// Todos los pendientes de la biblioteca.
   final int pendientes;
@@ -41,6 +56,10 @@ class EstanteriaPendientes {
       tengo: entero(data['tengo']),
       enEstanteria: entero(data['enEstanteria']),
       otrosFormatos: entero(data['otrosFormatos']),
+      anio: entero((data['anio'] as Map?)?['anio']),
+      leidosAnio: entero((data['anio'] as Map?)?['leidos']),
+      leidosEnCasaAnio: entero((data['anio'] as Map?)?['leidosEnCasa']),
+      entraronAnio: entero((data['anio'] as Map?)?['entraron']),
       serie: [
         for (final p in (data['serie'] as List? ?? const []))
           if (p is Map)

@@ -10,8 +10,8 @@ import '../../services/wishlist_service.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_radius.dart';
 
-/// "Tu pila de pendientes": un contador con lo que sube o baja cada mes, un
-/// gráfico con los que ya tienes y los que te faltan, y la línea de cómo
+/// "Tu pila de pendientes": un contador con lo que sube o baja cada mes, el
+/// balance del año (pendientes leídos frente a nuevos) y la línea de cómo
 /// evoluciona la pila. En el perfil de otra lectora del club ([usuario]) se
 /// ve igual pero sin el enlace a comprar.
 class EstanteriaPendientesCard extends StatefulWidget {
@@ -101,7 +101,9 @@ class _EstanteriaPendientesCardState extends State<EstanteriaPendientesCard> {
           const SizedBox(height: 14),
           _Contador(datos: d),
           const SizedBox(height: 16),
-          _Reparto(datos: d),
+          _BalanceAnual(datos: d),
+          const SizedBox(height: 16),
+          _EnCasa(datos: d),
           if (d.hayHistorial) ...[
             const SizedBox(height: 18),
             const Text(
@@ -225,108 +227,140 @@ class _Contador extends StatelessWidget {
   }
 }
 
-/// Anillo con los pendientes repartidos en: ya los tienes (papel o sin
-/// formato), en ebook o audiolibro, y los que aún te faltan.
-class _Reparto extends StatelessWidget {
-  const _Reparto({required this.datos});
+/// Balance del año: pendientes que has sacado de la pila (empezados o
+/// leídos) frente a los que han entrado nuevos.
+class _BalanceAnual extends StatelessWidget {
+  const _BalanceAnual({required this.datos});
 
   final EstanteriaPendientes datos;
 
-  static const _tienes = AppColors.primary;
-  static const _digital = AppColors.info;
-  static const _faltan = Color(0xFFE3CFAE);
+  @override
+  Widget build(BuildContext context) {
+    final balance = datos.balanceAnio;
+    final anio = datos.anio == 0 ? DateTime.now().year : datos.anio;
+    final String mensaje;
+    final Color color;
+    if (datos.leidosAnio == 0 && datos.entraronAnio == 0) {
+      mensaje = 'Aún no hay movimiento en la pila este año';
+      color = AppColors.textSecondary;
+    } else if (balance > 0) {
+      mensaje = 'Vas ganando: la pila baja $balance en $anio';
+      color = AppColors.success;
+    } else if (balance < 0) {
+      mensaje = 'La pila ha crecido ${-balance} en $anio';
+      color = AppColors.inkCoral;
+    } else {
+      mensaje = 'En $anio entra lo mismo que sale';
+      color = AppColors.textSecondary;
+    }
+    final maximo = math.max(1, math.max(datos.leidosAnio, datos.entraronAnio));
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF4E7D3).withValues(alpha: .55),
+        borderRadius: BorderRadius.circular(AppRadius.lg),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Tu año $anio',
+            style: const TextStyle(
+              color: AppColors.textSecondary,
+              fontSize: 12,
+              fontWeight: FontWeight.w800,
+              letterSpacing: .4,
+            ),
+          ),
+          const SizedBox(height: 10),
+          _Barra(
+            etiqueta: 'Pendientes leídos o empezados',
+            valor: datos.leidosAnio,
+            maximo: maximo,
+            color: AppColors.success,
+          ),
+          const SizedBox(height: 8),
+          _Barra(
+            etiqueta: 'Pendientes nuevos',
+            valor: datos.entraronAnio,
+            maximo: maximo,
+            color: AppColors.inkCoral,
+          ),
+          const SizedBox(height: 10),
+          Text(
+            mensaje,
+            style: TextStyle(
+              color: color,
+              fontSize: 14,
+              fontWeight: FontWeight.w900,
+            ),
+          ),
+          if (datos.leidosEnCasaAnio > 0)
+            Padding(
+              padding: const EdgeInsets.only(top: 2),
+              child: Text(
+                '${datos.leidosEnCasaAnio} de los leídos ya los tenías en casa',
+                style: const TextStyle(
+                  color: AppColors.textSecondary,
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+class _Barra extends StatelessWidget {
+  const _Barra({
+    required this.etiqueta,
+    required this.valor,
+    required this.maximo,
+    required this.color,
+  });
+
+  final String etiqueta;
+  final int valor;
+  final int maximo;
+  final Color color;
 
   @override
   Widget build(BuildContext context) {
-    final partes = [
-      (datos.enEstanteria, _tienes, 'Ya los tienes'),
-      (datos.otrosFormatos, _digital, 'En ebook o audiolibro'),
-      (datos.faltan, _faltan, 'Te faltan'),
-    ];
-    final porcentaje = datos.pendientes == 0
-        ? 0
-        : (datos.tengo * 100 / datos.pendientes).round();
-    return Row(
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        SizedBox(
-          width: 112,
-          height: 112,
-          child: Stack(
-            alignment: Alignment.center,
-            children: [
-              CustomPaint(
-                size: const Size.square(112),
-                painter: _PintorAnillo([
-                  for (final p in partes) (p.$1.toDouble(), p.$2),
-                ]),
+        Row(
+          children: [
+            Expanded(
+              child: Text(
+                etiqueta,
+                style: const TextStyle(
+                  color: AppColors.textPrimary,
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                ),
               ),
-              Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    '$porcentaje%',
-                    style: const TextStyle(
-                      color: AppColors.primaryDark,
-                      fontSize: 24,
-                      fontWeight: FontWeight.w900,
-                      height: 1,
-                    ),
-                  ),
-                  const Text(
-                    'en casa',
-                    style: TextStyle(
-                      color: AppColors.textSecondary,
-                      fontSize: 11,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                ],
+            ),
+            Text(
+              '$valor',
+              style: const TextStyle(
+                color: AppColors.textPrimary,
+                fontSize: 15,
+                fontWeight: FontWeight.w900,
               ),
-            ],
-          ),
+            ),
+          ],
         ),
-        const SizedBox(width: 18),
-        Expanded(
-          child: Column(
-            children: [
-              for (final p in partes)
-                if (p.$1 > 0 || p.$3 == 'Ya los tienes' || p.$3 == 'Te faltan')
-                  Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 4),
-                    child: Row(
-                      children: [
-                        Container(
-                          width: 10,
-                          height: 10,
-                          decoration: BoxDecoration(
-                            color: p.$2,
-                            shape: BoxShape.circle,
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: Text(
-                            p.$3,
-                            style: const TextStyle(
-                              color: AppColors.textPrimary,
-                              fontSize: 13,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                        ),
-                        Text(
-                          '${p.$1}',
-                          style: const TextStyle(
-                            color: AppColors.textPrimary,
-                            fontSize: 14,
-                            fontWeight: FontWeight.w900,
-                            fontFeatures: [FontFeature.tabularFigures()],
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-            ],
+        const SizedBox(height: 4),
+        ClipRRect(
+          borderRadius: BorderRadius.circular(5),
+          child: LinearProgressIndicator(
+            value: valor / maximo,
+            minHeight: 8,
+            backgroundColor: const Color(0xFFE3CFAE).withValues(alpha: .6),
+            color: color,
           ),
         ),
       ],
@@ -334,46 +368,34 @@ class _Reparto extends StatelessWidget {
   }
 }
 
-class _PintorAnillo extends CustomPainter {
-  _PintorAnillo(this.partes);
+/// Fila discreta con cuántos pendientes ya están en casa.
+class _EnCasa extends StatelessWidget {
+  const _EnCasa({required this.datos});
 
-  final List<(double, Color)> partes;
+  final EstanteriaPendientes datos;
 
   @override
-  void paint(Canvas canvas, Size size) {
-    final total = partes.fold<double>(0, (a, p) => a + p.$1);
-    const grosor = 16.0;
-    final rect = Rect.fromLTWH(
-      grosor / 2,
-      grosor / 2,
-      size.width - grosor,
-      size.height - grosor,
+  Widget build(BuildContext context) {
+    final extra = datos.otrosFormatos > 0
+        ? ' (${datos.otrosFormatos} en ebook o audiolibro)'
+        : '';
+    return Row(
+      children: [
+        const Icon(Icons.home_outlined, size: 16, color: AppColors.primary),
+        const SizedBox(width: 6),
+        Expanded(
+          child: Text(
+            'En casa sin leer: ${datos.tengo} de ${datos.pendientes}$extra',
+            style: const TextStyle(
+              color: AppColors.textSecondary,
+              fontSize: 12.5,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+        ),
+      ],
     );
-    final base = Paint()
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = grosor
-      ..strokeCap = StrokeCap.butt;
-    if (total <= 0) {
-      canvas.drawArc(
-        rect,
-        0,
-        math.pi * 2,
-        false,
-        base..color = const Color(0xFFE3CFAE),
-      );
-      return;
-    }
-    var inicio = -math.pi / 2;
-    for (final (valor, color) in partes) {
-      if (valor <= 0) continue;
-      final barrido = valor / total * math.pi * 2;
-      canvas.drawArc(rect, inicio, barrido, false, base..color = color);
-      inicio += barrido;
-    }
   }
-
-  @override
-  bool shouldRepaint(covariant _PintorAnillo old) => old.partes != partes;
 }
 
 /// Línea con los pendientes al final de cada mes (último punto = hoy).
