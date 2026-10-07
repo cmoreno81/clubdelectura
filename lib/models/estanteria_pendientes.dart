@@ -7,7 +7,6 @@ class EstanteriaPendientes {
     required this.tengo,
     required this.enEstanteria,
     required this.otrosFormatos,
-    required this.libros,
     required this.serie,
   });
 
@@ -20,10 +19,8 @@ class EstanteriaPendientes {
   /// De esos, los que están en papel o sin formato.
   final int enEstanteria;
   final int otrosFormatos;
-  final List<LibroEstanteria> libros;
 
-  /// Libros "ya los tengo y sin leer" al final de cada mes, del más antiguo
-  /// al actual.
+  /// Pendientes al final de cada mes, del más antiguo al actual.
   final List<PuntoPila> serie;
 
   /// Cuántos pendientes aún no tiene.
@@ -31,6 +28,10 @@ class EstanteriaPendientes {
 
   /// La línea solo tiene sentido cuando hay al menos dos meses con datos.
   bool get hayHistorial => serie.where((p) => p.pila > 0).length >= 2;
+
+  /// Cuántos pendientes más (+) o menos (−) hay que a final del mes pasado.
+  int get cambioMes =>
+      serie.length < 2 ? 0 : pendientes - serie[serie.length - 2].pila;
 
   static EstanteriaPendientes? fromJson(Map<String, dynamic> data) {
     if (data['ok'] != true) return null;
@@ -40,15 +41,6 @@ class EstanteriaPendientes {
       tengo: entero(data['tengo']),
       enEstanteria: entero(data['enEstanteria']),
       otrosFormatos: entero(data['otrosFormatos']),
-      libros: [
-        for (final l in (data['libros'] as List? ?? const []))
-          if (l is Map)
-            LibroEstanteria(
-              bookId: l['bookId']?.toString() ?? '',
-              titulo: l['titulo']?.toString() ?? '',
-              portada: l['portada']?.toString() ?? '',
-            ),
-      ],
       serie: [
         for (final p in (data['serie'] as List? ?? const []))
           if (p is Map)
@@ -56,18 +48,6 @@ class EstanteriaPendientes {
       ],
     );
   }
-}
-
-class LibroEstanteria {
-  const LibroEstanteria({
-    required this.bookId,
-    required this.titulo,
-    required this.portada,
-  });
-
-  final String bookId;
-  final String titulo;
-  final String portada;
 }
 
 class PuntoPila {

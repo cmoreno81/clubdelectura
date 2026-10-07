@@ -7,9 +7,6 @@ Map<String, dynamic> datos({List<int> pila = const [0, 0, 0]}) => {
   'tengo': 4,
   'enEstanteria': 3,
   'otrosFormatos': 1,
-  'libros': [
-    {'bookId': 'a', 'titulo': 'Uno', 'portada': 'u.jpg'},
-  ],
   'serie': [
     for (var i = 0; i < pila.length; i++)
       {'mes': '2026-0${i + 1}', 'pila': pila[i]},
@@ -24,7 +21,6 @@ void main() {
     expect(e.faltan, 6);
     expect(e.enEstanteria, 3);
     expect(e.otrosFormatos, 1);
-    expect(e.libros.single.titulo, 'Uno');
   });
 
   test('la línea de la pila solo aparece con al menos dos meses de datos', () {
@@ -37,6 +33,12 @@ void main() {
       EstanteriaPendientes.fromJson(datos(pila: [0, 2, 3]))!.hayHistorial,
       isTrue,
     );
+  });
+
+  test('el cambio del mes compara con el final del mes pasado', () {
+    // Ahora hay 10 pendientes; a final del mes pasado había 14.
+    final e = EstanteriaPendientes.fromJson(datos(pila: [20, 14, 10]))!;
+    expect(e.cambioMes, -4);
   });
 
   test('sin permiso (perfil privado) no hay estantería', () {

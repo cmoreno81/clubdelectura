@@ -458,15 +458,17 @@ const List<_HelpSection> _secciones = [
       _HelpItem(
         pregunta: '¿Qué es la "pila de pendientes" del inicio?',
         respuesta:
-            'Es una estantería debajo de "Estantería del mes" que cuenta cuántos de '
-            'tus libros pendientes ya tienes en casa (los que marcaste con "Ya lo '
-            'tengo"), con sus portadas y una barra de progreso.\n\n'
-            'Cuenta como libro en tu estantería el que está en papel o el que no '
-            'tiene formato; los ebooks y audiolibros se suman aparte. Con el tiempo '
-            'dibuja una línea con cómo baja tu pila de libros sin leer.\n\n'
+            'Es una tarjeta de estadísticas, debajo de "Estantería del mes", para ver '
+            'cómo baja tu pila de libros pendientes.\n\n'
+            '• El contador grande son tus pendientes, con cuántos más o menos tienes '
+            'que a final del mes pasado.\n'
+            '• El anillo reparte esos pendientes en los que ya tienes (los que '
+            'marcaste con "Ya lo tengo", en papel o sin formato), los que tienes en '
+            'ebook o audiolibro y los que aún te faltan.\n'
+            '• La línea muestra cómo ha evolucionado la pila en los últimos 12 meses.\n\n'
             'Debajo, "Ver lo que me falta por comprar" abre la lista de pendientes '
             'que aún no tienes. Las personas de tu club ven esta tarjeta en tu '
-            'perfil, salvo que tengas el perfil en "Solo yo".',
+            'perfil, salvo que lo tengas en "Solo yo".',
       ),
       _HelpItem(
         pregunta: '¿Qué formatos se ofrecen y en qué idioma?',

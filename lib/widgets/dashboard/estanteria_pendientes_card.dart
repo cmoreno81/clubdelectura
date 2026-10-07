@@ -1,19 +1,19 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 
 import '../../models/estanteria_pendientes.dart';
 import '../../navigation/app_page_route.dart';
-import '../../navigation/book_detail_navigation.dart';
 import '../../pages/comprar_libros_page.dart';
 import '../../services/api_service.dart';
 import '../../services/wishlist_service.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_radius.dart';
-import '../common/club_book_cover.dart';
 
-/// "Mi pila de pendientes": de los libros pendientes, cuántos ya están en la
-/// estantería de la lectora, con sus portadas sobre una balda y, cuando hay
-/// historial, cómo baja la pila mes a mes. En el perfil de otra lectora del
-/// club ([usuario]) se ve igual pero sin el enlace a comprar.
+/// "Tu pila de pendientes": un contador con lo que sube o baja cada mes, un
+/// gráfico con los que ya tienes y los que te faltan, y la línea de cómo
+/// evoluciona la pila. En el perfil de otra lectora del club ([usuario]) se
+/// ve igual pero sin el enlace a comprar.
 class EstanteriaPendientesCard extends StatefulWidget {
   const EstanteriaPendientesCard({super.key, this.usuario = ''});
 
@@ -70,98 +70,51 @@ class _EstanteriaPendientesCardState extends State<EstanteriaPendientesCard> {
     if (d == null || (d.pendientes == 0 && d.tengo == 0)) {
       return const SizedBox.shrink();
     }
-    final total = d.pendientes;
-    final progreso = total == 0 ? 0.0 : (d.tengo / total).clamp(0.0, 1.0);
     return Container(
+      padding: const EdgeInsets.fromLTRB(18, 16, 18, 8),
       decoration: BoxDecoration(
-        color: const Color(0xFFF4E7D3),
+        color: AppColors.surface,
         borderRadius: BorderRadius.circular(AppRadius.xl),
-        border: Border.all(color: const Color(0xFFD3B58E)),
-        boxShadow: [
-          BoxShadow(
-            color: const Color(0xFF65452F).withValues(alpha: .10),
-            blurRadius: 16,
-            offset: const Offset(0, 7),
-          ),
-        ],
+        border: Border.all(color: AppColors.border),
       ),
-      clipBehavior: Clip.antiAlias,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Padding(
-            padding: const EdgeInsets.fromLTRB(18, 15, 18, 10),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  children: [
-                    Text(
-                      '${d.tengo}',
-                      style: const TextStyle(
-                        color: AppColors.primaryDark,
-                        fontSize: 38,
-                        height: 1,
-                        fontWeight: FontWeight.w900,
-                      ),
-                    ),
-                    const SizedBox(width: 6),
-                    Padding(
-                      padding: const EdgeInsets.only(bottom: 4),
-                      child: Text(
-                        'de $total pendientes ya los tienes',
-                        style: const TextStyle(
-                          color: AppColors.textPrimary,
-                          fontSize: 15,
-                          fontWeight: FontWeight.w800,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 10),
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(6),
-                  child: LinearProgressIndicator(
-                    value: progreso,
-                    minHeight: 8,
-                    backgroundColor: const Color(0xFFE3CFAE),
-                    color: AppColors.primary,
-                  ),
-                ),
-                const SizedBox(height: 6),
-                Text(
-                  d.faltan == 0
-                      ? 'Todos tus pendientes ya están en casa'
-                      : 'Te faltan ${d.faltan} por conseguir',
-                  style: const TextStyle(
-                    color: AppColors.primaryDark,
-                    fontSize: 12,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          _Balda(libros: d.libros, vacia: d.tengo == 0, propia: _propia),
-          if (d.otrosFormatos > 0)
-            Padding(
-              padding: const EdgeInsets.fromLTRB(18, 10, 18, 0),
-              child: Text(
-                '+ ${d.otrosFormatos} en ebook o audiolibro',
+          Row(
+            children: [
+              const Icon(
+                Icons.stacked_bar_chart_rounded,
+                color: AppColors.primaryDark,
+                size: 20,
+              ),
+              const SizedBox(width: 8),
+              Text(
+                _propia ? 'Tu pila de pendientes' : 'Su pila de pendientes',
                 style: const TextStyle(
-                  color: AppColors.textSecondary,
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
+                  color: AppColors.textPrimary,
+                  fontSize: 17,
+                  fontWeight: FontWeight.w900,
                 ),
               ),
+            ],
+          ),
+          const SizedBox(height: 14),
+          _Contador(datos: d),
+          const SizedBox(height: 16),
+          _Reparto(datos: d),
+          if (d.hayHistorial) ...[
+            const SizedBox(height: 18),
+            const Text(
+              'Evolución de los últimos 12 meses',
+              style: TextStyle(
+                color: AppColors.textSecondary,
+                fontSize: 12,
+                fontWeight: FontWeight.w700,
+              ),
             ),
-          if (d.hayHistorial)
-            Padding(
-              padding: const EdgeInsets.fromLTRB(18, 12, 18, 0),
-              child: _LineaPila(serie: d.serie),
-            ),
+            const SizedBox(height: 6),
+            _LineaPila(serie: d.serie),
+          ],
           if (_propia && d.faltan > 0)
             Align(
               alignment: Alignment.centerLeft,
@@ -177,7 +130,7 @@ class _EstanteriaPendientesCardState extends State<EstanteriaPendientesCard> {
                 label: const Text('Ver lo que me falta por comprar'),
                 style: TextButton.styleFrom(
                   foregroundColor: AppColors.primaryDark,
-                  padding: const EdgeInsets.symmetric(horizontal: 18),
+                  padding: EdgeInsets.zero,
                   textStyle: const TextStyle(
                     fontSize: 13,
                     fontWeight: FontWeight.w700,
@@ -186,148 +139,293 @@ class _EstanteriaPendientesCardState extends State<EstanteriaPendientesCard> {
               ),
             )
           else
-            const SizedBox(height: 14),
+            const SizedBox(height: 10),
         ],
       ),
     );
   }
 }
 
-/// Una balda de madera con las portadas en fila (se desliza si hay muchas).
-class _Balda extends StatelessWidget {
-  const _Balda({
-    required this.libros,
-    required this.vacia,
-    required this.propia,
-  });
+/// Contador grande con la variación respecto a final del mes pasado.
+class _Contador extends StatelessWidget {
+  const _Contador({required this.datos});
 
-  final List<LibroEstanteria> libros;
-  final bool vacia;
-  final bool propia;
+  final EstanteriaPendientes datos;
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      height: 140,
-      decoration: const BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors: [Color(0xFFE8D4B7), Color(0xFFF8EEDD)],
+    final cambio = datos.cambioMes;
+    final baja = cambio < 0;
+    final color = cambio == 0
+        ? AppColors.textSecondary
+        : baja
+        ? AppColors.success
+        : AppColors.inkCoral;
+    final texto = cambio == 0
+        ? 'Igual que el mes pasado'
+        : '${cambio.abs()} ${baja ? 'menos' : 'más'} que a final del mes pasado';
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.end,
+      children: [
+        Text(
+          '${datos.pendientes}',
+          style: const TextStyle(
+            color: AppColors.primaryDark,
+            fontSize: 46,
+            height: 1,
+            fontWeight: FontWeight.w900,
+          ),
         ),
-      ),
-      child: Stack(
-        children: [
-          Positioned(
-            left: 0,
-            right: 0,
-            bottom: 10,
-            child: Container(
-              height: 15,
-              decoration: const BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  colors: [
-                    Color(0xFFB9834F),
-                    Color(0xFF8A5937),
-                    Color(0xFF68422E),
-                  ],
-                ),
-                boxShadow: [
-                  BoxShadow(
-                    color: Color(0x55351F14),
-                    blurRadius: 7,
-                    offset: Offset(0, 5),
+        const SizedBox(width: 10),
+        Expanded(
+          child: Padding(
+            padding: const EdgeInsets.only(bottom: 4),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'pendientes',
+                  style: TextStyle(
+                    color: AppColors.textPrimary,
+                    fontSize: 15,
+                    fontWeight: FontWeight.w800,
                   ),
-                ],
-              ),
+                ),
+                if (datos.serie.length >= 2)
+                  Row(
+                    children: [
+                      Icon(
+                        cambio == 0
+                            ? Icons.remove_rounded
+                            : baja
+                            ? Icons.arrow_downward_rounded
+                            : Icons.arrow_upward_rounded,
+                        size: 14,
+                        color: color,
+                      ),
+                      const SizedBox(width: 2),
+                      Flexible(
+                        child: Text(
+                          texto,
+                          style: TextStyle(
+                            color: color,
+                            fontSize: 12,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+              ],
             ),
           ),
-          if (libros.isEmpty)
-            Positioned.fill(
-              bottom: 24,
-              child: Center(
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 24),
-                  child: Text(
-                    vacia && propia
-                        ? 'Pulsa «Ya lo tengo» en un pendiente y su portada '
-                              'aparecerá aquí'
-                        : 'Aquí no hay libros en papel todavía',
-                    textAlign: TextAlign.center,
-                    style: const TextStyle(
-                      color: AppColors.textSecondary,
-                      fontSize: 13,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ),
-              ),
-            )
-          else
-            Positioned.fill(
-              bottom: 22,
-              child: ListView.separated(
-                scrollDirection: Axis.horizontal,
-                padding: const EdgeInsets.fromLTRB(16, 10, 16, 0),
-                itemCount: libros.length,
-                separatorBuilder: (_, _) => const SizedBox(width: 7),
-                itemBuilder: (context, i) {
-                  final libro = libros[i];
-                  return Align(
-                    alignment: Alignment.bottomCenter,
-                    child: ClubBookCover(
-                      title: libro.titulo,
-                      imageUrl: libro.portada,
-                      width: 62,
-                      height: 94,
-                      borderRadius: BorderRadius.circular(4),
-                      onTap: () => openBookDetail(
-                        context,
-                        title: libro.titulo,
-                        bookId: libro.bookId,
-                        coverUrl: libro.portada,
-                      ),
-                    ),
-                  );
-                },
-              ),
-            ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 }
 
-/// Línea fina con cómo evoluciona la pila de "ya lo tengo y sin leer".
+/// Anillo con los pendientes repartidos en: ya los tienes (papel o sin
+/// formato), en ebook o audiolibro, y los que aún te faltan.
+class _Reparto extends StatelessWidget {
+  const _Reparto({required this.datos});
+
+  final EstanteriaPendientes datos;
+
+  static const _tienes = AppColors.primary;
+  static const _digital = AppColors.info;
+  static const _faltan = Color(0xFFE3CFAE);
+
+  @override
+  Widget build(BuildContext context) {
+    final partes = [
+      (datos.enEstanteria, _tienes, 'Ya los tienes'),
+      (datos.otrosFormatos, _digital, 'En ebook o audiolibro'),
+      (datos.faltan, _faltan, 'Te faltan'),
+    ];
+    final porcentaje = datos.pendientes == 0
+        ? 0
+        : (datos.tengo * 100 / datos.pendientes).round();
+    return Row(
+      children: [
+        SizedBox(
+          width: 112,
+          height: 112,
+          child: Stack(
+            alignment: Alignment.center,
+            children: [
+              CustomPaint(
+                size: const Size.square(112),
+                painter: _PintorAnillo([
+                  for (final p in partes) (p.$1.toDouble(), p.$2),
+                ]),
+              ),
+              Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    '$porcentaje%',
+                    style: const TextStyle(
+                      color: AppColors.primaryDark,
+                      fontSize: 24,
+                      fontWeight: FontWeight.w900,
+                      height: 1,
+                    ),
+                  ),
+                  const Text(
+                    'en casa',
+                    style: TextStyle(
+                      color: AppColors.textSecondary,
+                      fontSize: 11,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(width: 18),
+        Expanded(
+          child: Column(
+            children: [
+              for (final p in partes)
+                if (p.$1 > 0 || p.$3 == 'Ya los tienes' || p.$3 == 'Te faltan')
+                  Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 4),
+                    child: Row(
+                      children: [
+                        Container(
+                          width: 10,
+                          height: 10,
+                          decoration: BoxDecoration(
+                            color: p.$2,
+                            shape: BoxShape.circle,
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            p.$3,
+                            style: const TextStyle(
+                              color: AppColors.textPrimary,
+                              fontSize: 13,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                        Text(
+                          '${p.$1}',
+                          style: const TextStyle(
+                            color: AppColors.textPrimary,
+                            fontSize: 14,
+                            fontWeight: FontWeight.w900,
+                            fontFeatures: [FontFeature.tabularFigures()],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _PintorAnillo extends CustomPainter {
+  _PintorAnillo(this.partes);
+
+  final List<(double, Color)> partes;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final total = partes.fold<double>(0, (a, p) => a + p.$1);
+    const grosor = 16.0;
+    final rect = Rect.fromLTWH(
+      grosor / 2,
+      grosor / 2,
+      size.width - grosor,
+      size.height - grosor,
+    );
+    final base = Paint()
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = grosor
+      ..strokeCap = StrokeCap.butt;
+    if (total <= 0) {
+      canvas.drawArc(
+        rect,
+        0,
+        math.pi * 2,
+        false,
+        base..color = const Color(0xFFE3CFAE),
+      );
+      return;
+    }
+    var inicio = -math.pi / 2;
+    for (final (valor, color) in partes) {
+      if (valor <= 0) continue;
+      final barrido = valor / total * math.pi * 2;
+      canvas.drawArc(rect, inicio, barrido, false, base..color = color);
+      inicio += barrido;
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant _PintorAnillo old) => old.partes != partes;
+}
+
+/// Línea con los pendientes al final de cada mes (último punto = hoy).
 class _LineaPila extends StatelessWidget {
   const _LineaPila({required this.serie});
 
   final List<PuntoPila> serie;
 
+  static const _meses = [
+    'E',
+    'F',
+    'M',
+    'A',
+    'M',
+    'J',
+    'J',
+    'A',
+    'S',
+    'O',
+    'N',
+    'D',
+  ];
+
   @override
   Widget build(BuildContext context) {
-    final actual = serie.last.pila;
-    final maximo = serie.map((p) => p.pila).reduce((a, b) => a > b ? a : b);
+    final valores = [for (final p in serie) p.pila];
+    String inicialMes(PuntoPila p) {
+      final m = int.tryParse(p.mes.length >= 7 ? p.mes.substring(5, 7) : '');
+      return m == null ? '' : _meses[(m - 1).clamp(0, 11)];
+    }
+
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          'Tu pila sin leer: $actual ahora, $maximo como máximo',
-          style: const TextStyle(
-            color: AppColors.textSecondary,
-            fontSize: 12,
-            fontWeight: FontWeight.w700,
-          ),
-        ),
-        const SizedBox(height: 6),
         SizedBox(
-          height: 46,
+          height: 90,
           width: double.infinity,
-          child: CustomPaint(
-            painter: _PintorLinea([for (final p in serie) p.pila]),
-          ),
+          child: CustomPaint(painter: _PintorLinea(valores)),
+        ),
+        const SizedBox(height: 4),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            for (final p in serie)
+              Text(
+                inicialMes(p),
+                style: const TextStyle(
+                  color: AppColors.textMuted,
+                  fontSize: 10,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+          ],
         ),
       ],
     );
@@ -342,12 +440,22 @@ class _PintorLinea extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     if (valores.length < 2) return;
-    final maximo = valores.reduce((a, b) => a > b ? a : b).clamp(1, 1 << 30);
+    final maximo = valores.reduce(math.max);
+    final minimo = valores.reduce(math.min);
+    final rango = math.max(1, maximo - minimo);
     final paso = size.width / (valores.length - 1);
     Offset punto(int i) => Offset(
       i * paso,
-      size.height - 4 - (valores[i] / maximo) * (size.height - 8),
+      size.height - 8 - ((valores[i] - minimo) / rango) * (size.height - 16),
     );
+    // Rejilla fina en el máximo, el mínimo y el punto medio.
+    final rejilla = Paint()
+      ..color = AppColors.divider
+      ..strokeWidth = 1;
+    for (final f in [0.0, .5, 1.0]) {
+      final y = 8 + f * (size.height - 16);
+      canvas.drawLine(Offset(0, y), Offset(size.width, y), rejilla);
+    }
     final linea = Path()..moveTo(punto(0).dx, punto(0).dy);
     for (var i = 1; i < valores.length; i++) {
       linea.lineTo(punto(i).dx, punto(i).dy);
@@ -365,14 +473,30 @@ class _PintorLinea extends CustomPainter {
       Paint()
         ..color = AppColors.primary
         ..style = PaintingStyle.stroke
-        ..strokeWidth = 2.2
+        ..strokeWidth = 2.4
         ..strokeJoin = StrokeJoin.round,
     );
-    canvas.drawCircle(
-      punto(valores.length - 1),
-      4,
-      Paint()..color = AppColors.inkCoral,
-    );
+    final fin = punto(valores.length - 1);
+    canvas.drawCircle(fin, 5, Paint()..color = AppColors.surface);
+    canvas.drawCircle(fin, 3.5, Paint()..color = AppColors.inkCoral);
+    // Etiquetas del máximo y del actual.
+    void etiqueta(String t, Offset o, {bool izquierda = false}) {
+      final tp = TextPainter(
+        text: TextSpan(
+          text: t,
+          style: const TextStyle(
+            color: AppColors.textSecondary,
+            fontSize: 10,
+            fontWeight: FontWeight.w800,
+          ),
+        ),
+        textDirection: TextDirection.ltr,
+      )..layout();
+      tp.paint(canvas, Offset(izquierda ? o.dx : o.dx - tp.width, o.dy));
+    }
+
+    etiqueta('$maximo', const Offset(2, -1), izquierda: true);
+    etiqueta('$minimo', Offset(2, size.height - 12), izquierda: true);
   }
 
   @override
