@@ -86,6 +86,15 @@ class _ComprarLibrosPageState extends State<ComprarLibrosPage>
     super.dispose();
   }
 
+  /// Formato que la lectora eligió en su deseo (papel, ebook o audiolibro).
+  String? _formatoDelDeseo(_LibroCompra libro) =>
+      switch (_deseosPorLibro[libro.bookId]?.format) {
+        WishlistFormat.physical => 'papel',
+        WishlistFormat.digital => 'ebook',
+        WishlistFormat.audiobook => 'audio',
+        _ => null,
+      };
+
   void _alAbrirTienda(_LibroCompra libro, EnlaceCompraFormato formato) {
     final deseo = _deseosPorLibro[libro.bookId];
     _compraPendiente = deseo == null ? null : (item: deseo, formato: formato);
@@ -358,6 +367,7 @@ class _ComprarLibrosPageState extends State<ComprarLibrosPage>
                         onAbierto: _alAbrirTienda,
                         libros: d.deseados,
                         enlaces: d.enlaces,
+                        formatoPrincipal: _formatoDelDeseo,
                         vacio:
                             'Ninguno de tus deseos está a la venta en Casa del Libro ahora mismo.',
                       ),
@@ -458,7 +468,12 @@ class _Lista extends StatelessWidget {
     required this.vacio,
     this.onAbierto,
     this.onYaLoTengo,
+    this.formatoPrincipal,
   });
+
+  /// Formato a resaltar en cada libro cuando la pantalla ya lo conoce (el que
+  /// la lectora eligió en su deseo); null = el que decida el servidor.
+  final String? Function(_LibroCompra)? formatoPrincipal;
 
   final List<_LibroCompra> libros;
   final Map<String, EnlaceCompra> enlaces;
@@ -491,6 +506,7 @@ class _Lista extends StatelessWidget {
           enlace: enlaces[libro.bookId],
           onAbierto: onAbierto == null ? null : (f) => onAbierto!(libro, f),
           onYaLoTengo: onYaLoTengo == null ? null : () => onYaLoTengo!(libro),
+          formatoPrincipal: formatoPrincipal?.call(libro),
         );
       },
     );
@@ -503,8 +519,10 @@ class _FilaCompra extends StatelessWidget {
     required this.enlace,
     this.onAbierto,
     this.onYaLoTengo,
+    this.formatoPrincipal,
   });
 
+  final String? formatoPrincipal;
   final _LibroCompra libro;
   final EnlaceCompra? enlace;
   final ValueChanged<EnlaceCompraFormato>? onAbierto;
@@ -557,7 +575,12 @@ class _FilaCompra extends StatelessWidget {
                     ),
                   ),
                 const SizedBox(height: AppSpacing.sm),
-                if (e != null) BotonesCompra(enlace: e, onAbierto: onAbierto),
+                if (e != null)
+                  BotonesCompra(
+                    enlace: e,
+                    onAbierto: onAbierto,
+                    formatoPrincipal: formatoPrincipal,
+                  ),
                 if (onYaLoTengo != null)
                   TextButton.icon(
                     onPressed: onYaLoTengo,
