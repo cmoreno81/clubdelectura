@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../services/api_service.dart';
+import '../../services/wishlist_service.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_spacing.dart';
 import '../../theme/app_text_styles.dart';
@@ -38,8 +39,17 @@ class _ComprarLibroCardState extends State<ComprarLibroCard> {
   @override
   void initState() {
     super.initState();
+    WishlistService.cambios.addListener(_alCambiar);
     _cargar();
   }
+
+  @override
+  void dispose() {
+    WishlistService.cambios.removeListener(_alCambiar);
+    super.dispose();
+  }
+
+  void _alCambiar() => _cargar();
 
   @override
   void didUpdateWidget(covariant ComprarLibroCard oldWidget) {
@@ -147,6 +157,7 @@ class _ComprarLibroCardState extends State<ComprarLibroCard> {
   Future<void> _marcarLoTengo(bool valor) async {
     final messenger = ScaffoldMessenger.of(context);
     final guardado = await ApiService().setLoTengo(widget.bookId, valor);
+    if (guardado) WishlistService.avisarCambio();
     if (!mounted) return;
     if (!guardado) {
       messenger.showSnackBar(

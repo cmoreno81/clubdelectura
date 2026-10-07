@@ -3,6 +3,7 @@ import 'package:club_lectura_app/widgets/ui/etiqueta_publicidad.dart';
 import 'package:flutter/material.dart';
 
 import '../../services/api_service.dart';
+import '../../services/wishlist_service.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_radius.dart';
 import '../../theme/app_spacing.dart';
@@ -36,7 +37,16 @@ class _ComprarLecturaClubCardState extends State<ComprarLecturaClubCard> {
   @override
   void initState() {
     super.initState();
+    // "Ya lo tengo" se marca en otras pantallas: al avisar el cambio se
+    // vuelve a pedir el enlace.
+    WishlistService.cambios.addListener(_cargar);
     _cargar();
+  }
+
+  @override
+  void dispose() {
+    WishlistService.cambios.removeListener(_cargar);
+    super.dispose();
   }
 
   @override

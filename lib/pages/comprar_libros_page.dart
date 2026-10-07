@@ -257,6 +257,7 @@ class _ComprarLibrosPageState extends State<ComprarLibrosPage>
     final messenger = ScaffoldMessenger.of(context);
     setState(() => _tengo.add(libro.bookId));
     final guardado = await ApiService().setLoTengo(libro.bookId, true);
+    if (guardado) WishlistService.avisarCambio();
     if (!mounted) return;
     if (!guardado) {
       setState(() => _tengo.remove(libro.bookId));
@@ -277,6 +278,7 @@ class _ComprarLibrosPageState extends State<ComprarLibrosPage>
             onPressed: () async {
               setState(() => _tengo.remove(libro.bookId));
               await ApiService().setLoTengo(libro.bookId, false);
+              WishlistService.avisarCambio();
             },
           ),
         ),
