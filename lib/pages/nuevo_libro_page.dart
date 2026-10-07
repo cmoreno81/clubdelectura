@@ -1,3 +1,4 @@
+import '../widgets/common/bandera_idioma.dart';
 import 'package:club_lectura_app/utils/formato_libro.dart';
 import 'package:club_lectura_app/services/library_refresh_notifier.dart';
 import 'package:flutter/material.dart';
@@ -57,10 +58,7 @@ class _NuevoLibroPageState extends State<NuevoLibroPage> {
             for (final codigo in idiomasSoportados)
               if (!_idiomasHabituales.contains(codigo))
                 ListTile(
-                  leading: Text(
-                    banderaIdioma(codigo),
-                    style: const TextStyle(fontSize: 22),
-                  ),
+                  leading: BanderaIdioma(codigo, tamano: 22),
                   title: Text(nombreIdioma(codigo)),
                   trailing: codigo == idioma
                       ? const Icon(Icons.check_rounded, color: AppColors.primary)
@@ -777,7 +775,14 @@ class _NuevoLibroPageState extends State<NuevoLibroPage> {
                       idioma,
                   ])
                     ChoiceChip(
-                      label: Text('${banderaIdioma(codigo)} ${nombreIdioma(codigo)}'),
+                      label: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          BanderaIdioma(codigo, tamano: 16),
+                          const SizedBox(width: 6),
+                          Text(nombreIdioma(codigo)),
+                        ],
+                      ),
                       selected: idioma == codigo,
                       selectedColor: AppColors.primary,
                       checkmarkColor: Colors.white,

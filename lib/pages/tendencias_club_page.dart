@@ -1,3 +1,4 @@
+import '../widgets/common/bandera_idioma.dart';
 import 'package:club_lectura_app/utils/formato_libro.dart';
 import 'dart:math' as math;
 
@@ -235,7 +236,7 @@ class _TendenciasClubPageState extends State<TendenciasClubPage> {
                       titulo: 'Idioma',
                       categoria: data.comparativa!.idiomas,
                       etiqueta: nombreIdioma,
-                      iconoItem: banderaIdioma,
+                      iconoItem: (codigo) => BanderaIdioma(codigo, tamano: 13),
                     ),
                   ],
 
@@ -1097,7 +1098,7 @@ class _ComparativaDonutsCard extends StatelessWidget {
   final String titulo;
   final ComparativaCategoria categoria;
   final String Function(String) etiqueta;
-  final String Function(String) iconoItem;
+  final Widget Function(String) iconoItem;
 
   @override
   Widget build(BuildContext context) {
@@ -1177,7 +1178,7 @@ class _ComparativaDonutsCard extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(width: AppSpacing.xs),
-                Text(iconoItem(categoria.items[i].nombre), style: const TextStyle(fontSize: 13)),
+                iconoItem(categoria.items[i].nombre),
                 const SizedBox(width: 4),
                 Expanded(
                   child: Text(

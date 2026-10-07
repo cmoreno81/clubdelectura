@@ -1,3 +1,4 @@
+import '../common/bandera_idioma.dart';
 import 'package:flutter/material.dart';
 
 import '../../models/libro_finalizado.dart';
@@ -158,10 +159,7 @@ class _MiFichaLecturaCardState extends State<MiFichaLecturaCard> {
                     children: [
                       for (final codigo in idiomasSoportados)
                         ListTile(
-                          leading: Text(
-                            banderaIdioma(codigo),
-                            style: const TextStyle(fontSize: 22),
-                          ),
+                          leading: BanderaIdioma(codigo, tamano: 22),
                           title: Text(nombreIdioma(codigo)),
                           trailing: codigo == widget.finalizado.idioma
                               ? const Icon(
@@ -504,10 +502,7 @@ class _MiFichaLecturaCardState extends State<MiFichaLecturaCard> {
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Text(
-                  banderaIdioma(widget.finalizado.idioma),
-                  style: const TextStyle(fontSize: 18),
-                ),
+                BanderaIdioma(widget.finalizado.idioma, tamano: 18),
                 const SizedBox(width: AppSpacing.xs),
                 Flexible(
                   child: Text(

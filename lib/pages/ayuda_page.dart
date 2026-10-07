@@ -314,8 +314,9 @@ const List<_HelpSection> _secciones = [
             'Compara con el idioma de la ficha del libro (el mismo que se ve y '
             'se corrige en su pastilla), así que si un libro no aparece con un '
             'idioma filtrado, prueba a quitar el filtro.\n\n'
-            'Los idiomas sin bandera propia (catalán, euskera, gallego…) muestran '
-            'un icono de globo 🌐 junto al nombre del idioma para distinguirlos.',
+            'El catalán, el euskera y el gallego llevan la bandera de su territorio '
+            '(senyera, ikurriña y bandera de Galicia). Un libro sin idioma '
+            'especificado muestra un globo 🌐.',
       ),
       _HelpItem(
         pregunta: '¿Puedo corregir el idioma o el género de un libro?',

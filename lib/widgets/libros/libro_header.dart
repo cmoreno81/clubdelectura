@@ -1,3 +1,4 @@
+import '../common/bandera_idioma.dart';
 import 'package:flutter/material.dart';
 
 import '../../models/libro.dart';
@@ -103,13 +104,21 @@ class LibroHeader extends StatelessWidget {
 
               if (libro.idioma.trim().isNotEmpty) ...[
                 const SizedBox(height: 2),
-                Text(
-                  '${banderaIdioma(libro.idioma)} ${nombreIdioma(libro.idioma)}',
-                  textAlign: TextAlign.center,
-                  style: AppTextStyles.bodySecondary.copyWith(
-                    color: AppColors.textSecondary,
-                    fontWeight: FontWeight.w600,
-                  ),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    BanderaIdioma(libro.idioma, tamano: 14),
+                    const SizedBox(width: 5),
+                    Text(
+                      nombreIdioma(libro.idioma),
+                      textAlign: TextAlign.center,
+                      style: AppTextStyles.bodySecondary.copyWith(
+                        color: AppColors.textSecondary,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
                 ),
               ],
 

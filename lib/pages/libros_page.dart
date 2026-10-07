@@ -1,3 +1,4 @@
+import '../widgets/common/bandera_idioma.dart';
 import 'dart:async';
 
 import 'package:club_lectura_app/services/libros_data_cache.dart';
@@ -984,10 +985,7 @@ class _LibrosPageState extends State<LibrosPage> with WidgetsBindingObserver {
         selected: seleccionada,
         selectedTileColor: color.withValues(alpha: 0.08),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        leading: Text(
-          banderaIdioma(codigo),
-          style: const TextStyle(fontSize: 22),
-        ),
+        leading: BanderaIdioma(codigo, tamano: 22),
         title: Text(
           nombreIdioma(codigo),
           style: AppTextStyles.body.copyWith(fontWeight: FontWeight.w700),
@@ -1409,20 +1407,7 @@ class _LibrosPageState extends State<LibrosPage> with WidgetsBindingObserver {
                               ? 'Idioma sin especificar'
                               : nombreIdioma(libro.idioma),
                           child: _pastillaEditable(
-                            leading: Text(
-                              libro.idioma.trim().isEmpty
-                                  ? '🌐'
-                                  : banderaIdioma(libro.idioma),
-                              style: const TextStyle(fontSize: 15),
-                            ),
-                            // Sin bandera propia (catalán, euskera, gallego…):
-                            // el globo genérico no distingue entre idiomas,
-                            // así que añadimos el nombre para diferenciarlos.
-                            label:
-                                libro.idioma.trim().isNotEmpty &&
-                                    banderaIdioma(libro.idioma) == '🌐'
-                                ? nombreIdioma(libro.idioma)
-                                : null,
+                            leading: BanderaIdioma(libro.idioma, tamano: 15),
                             onTap: () => _corregirIdiomaLibro(libro),
                           ),
                         ),

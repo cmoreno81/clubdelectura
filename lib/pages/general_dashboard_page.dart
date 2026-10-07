@@ -1,3 +1,4 @@
+import '../widgets/common/bandera_idioma.dart';
 import 'package:club_lectura_app/widgets/ui/etiqueta_publicidad.dart';
 import 'dart:async';
 import 'dart:math' as math;
@@ -2211,7 +2212,7 @@ class _GeneralDashboardPageState extends State<GeneralDashboardPage> {
                   if (i > 0) const SizedBox(height: AppSpacing.xs),
                   _languageLegendRow(
                     color: _languageColors[i % _languageColors.length],
-                    icon: banderaIdioma(principales[i].code),
+                    icon: BanderaIdioma(principales[i].code, tamano: 13),
                     label: nombreIdioma(principales[i].code),
                     value: principales[i].count,
                     total: stats.total,
@@ -2221,7 +2222,7 @@ class _GeneralDashboardPageState extends State<GeneralDashboardPage> {
                   const SizedBox(height: AppSpacing.xs),
                   _languageLegendRow(
                     color: _languageColors[principales.length % _languageColors.length],
-                    icon: '🌐',
+                    icon: const BanderaIdioma('', tamano: 13),
                     label: 'Otros idiomas',
                     value: restoTotal,
                     total: stats.total,
@@ -2237,7 +2238,7 @@ class _GeneralDashboardPageState extends State<GeneralDashboardPage> {
 
   Widget _languageLegendRow({
     required Color color,
-    required String icon,
+    required Widget icon,
     required String label,
     required int value,
     required int total,
@@ -2255,7 +2256,7 @@ class _GeneralDashboardPageState extends State<GeneralDashboardPage> {
           decoration: BoxDecoration(color: color, shape: BoxShape.circle),
         ),
         const SizedBox(width: AppSpacing.xs),
-        Text(icon, style: const TextStyle(fontSize: 13)),
+        icon,
         const SizedBox(width: 4),
         Expanded(
           child: Text(

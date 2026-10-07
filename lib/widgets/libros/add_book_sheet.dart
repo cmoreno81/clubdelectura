@@ -1,3 +1,4 @@
+import '../common/bandera_idioma.dart';
 import 'package:club_lectura_app/utils/formato_libro.dart';
 import 'package:flutter/material.dart';
 
@@ -66,7 +67,7 @@ class AddBookSheet extends StatefulWidget {
 
 // Idiomas más frecuentes para no saturar la hoja rápida con las ~20 opciones
 // que sí admite la corrección desde la tarjeta del libro.
-const _idiomasRapidos = ['es', 'en', 'fr', 'de', 'it', 'pt'];
+const _idiomasRapidos = ['es', 'en', 'fr', 'de', 'it', 'pt', 'ca', 'eu', 'gl'];
 
 class _AddBookSheetState extends State<AddBookSheet> {
   String _status = 'PENDIENTE';
@@ -272,8 +273,8 @@ class _AddBookSheetState extends State<AddBookSheet> {
                             _choice(
                               context,
                               key: ValueKey('add-book-idioma-$codigo'),
-                              label:
-                                  '${banderaIdioma(codigo)} ${nombreIdioma(codigo)}',
+                              label: nombreIdioma(codigo),
+                              bandera: BanderaIdioma(codigo, tamano: 16),
                               selected: _idioma == codigo,
                               onSelected: () =>
                                   setState(() => _idioma = codigo),
@@ -370,11 +371,17 @@ class _AddBookSheetState extends State<AddBookSheet> {
     required String label,
     required bool selected,
     required VoidCallback onSelected,
+    Widget? bandera,
   }) {
     final colors = Theme.of(context).colorScheme;
     return ChoiceChip(
       key: key,
-      label: Text(label),
+      label: bandera == null
+          ? Text(label)
+          : Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [bandera, const SizedBox(width: 6), Text(label)],
+            ),
       selected: selected,
       selectedColor: colors.primary,
       backgroundColor: colors.surfaceContainerHighest,
