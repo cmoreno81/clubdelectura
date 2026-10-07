@@ -310,8 +310,13 @@ class _AtmosferaPainter extends CustomPainter {
         _pintarCuervos(canvas, size);
 
       case AtmosferaLectura.gotica:
+        _pintarPapelDamasco(canvas, size);
         _pintarBruma(canvas, size, intensidad: 1.2);
+        _pintarCortinas(canvas, size);
+        _pintarTelarana(canvas, size);
+        _pintarCandelabroColgante(canvas, size);
         _pintarMurcielagos(canvas, size);
+        _pintarSueloAjedrezado(canvas, size);
         _pintarVelas(canvas, size);
 
       case AtmosferaLectura.misteriosa:
@@ -1188,12 +1193,253 @@ class _AtmosferaPainter extends CustomPainter {
 
   // ── Gótica ────────────────────────────────────────────────────────────
 
+  /// Papel pintado de damasco: rombos finos con un motivo en cada cruce.
+  void _pintarPapelDamasco(Canvas canvas, Size size) {
+    const paso = 54.0;
+    final linea = Paint()
+      ..color = color.withValues(alpha: 0.07)
+      ..strokeWidth = 1;
+    for (double d = -size.height; d < size.width + size.height; d += paso) {
+      canvas.drawLine(
+        Offset(d, 0),
+        Offset(d + size.height, size.height),
+        linea,
+      );
+      canvas.drawLine(
+        Offset(d, size.height),
+        Offset(d + size.height, 0),
+        linea,
+      );
+    }
+    final motivo = Paint()..color = color.withValues(alpha: 0.10);
+    for (double y = 0; y < size.height + paso; y += paso) {
+      for (
+        double x = (y / paso).floor().isEven ? 0 : paso / 2;
+        x < size.width + paso;
+        x += paso
+      ) {
+        canvas.drawCircle(Offset(x, y), 3.2, motivo);
+        canvas.drawCircle(Offset(x - 5.5, y), 1.8, motivo);
+        canvas.drawCircle(Offset(x + 5.5, y), 1.8, motivo);
+        canvas.drawCircle(Offset(x, y - 5.5), 1.8, motivo);
+        canvas.drawCircle(Offset(x, y + 5.5), 1.8, motivo);
+      }
+    }
+  }
+
+  /// Cortinas de terciopelo a los lados, con pliegues que se mecen apenas y
+  /// un alzapaño con borla.
+  void _pintarCortinas(Canvas canvas, Size size) {
+    final fase = progreso * math.pi * 2;
+    for (var lado = 0; lado < 2; lado++) {
+      final dir = lado == 0 ? 1.0 : -1.0;
+      final x0 = lado == 0 ? 0.0 : size.width;
+      final ancho = size.width * 0.15;
+      final largo = size.height * 0.958; // llegan hasta el suelo
+      final cortina = Path()..moveTo(x0, 0);
+      for (double y = 0; y <= largo; y += 10) {
+        // Se recoge hacia el alzapaño y se abre en el vuelo de abajo.
+        final recogida =
+            1 - 0.55 * math.exp(-math.pow((y - size.height * 0.40) / 60, 2));
+        cortina.lineTo(
+          x0 + dir * (ancho * recogida + math.sin(y / 34 + fase + lado) * 4),
+          y,
+        );
+      }
+      cortina
+        ..lineTo(x0 + dir * ancho * 1.25, largo + 8)
+        ..lineTo(x0, largo + 8)
+        ..close();
+      canvas.drawPath(cortina, Paint()..color = acento.withValues(alpha: 0.34));
+      canvas.save();
+      canvas.clipPath(cortina);
+      final pliegue = Paint()
+        ..color = const Color(0xFF1B0F22).withValues(alpha: 0.22)
+        ..strokeWidth = 5;
+      for (var f = 1; f <= 4; f++) {
+        final px = x0 + dir * ancho * (0.2 * f);
+        canvas.drawLine(
+          Offset(px + math.sin(fase + f) * 2, 0),
+          Offset(px + dir * 8 + math.sin(fase + f) * 3, largo + 8),
+          pliegue,
+        );
+      }
+      canvas.restore();
+      // Cenefa superior.
+      canvas.drawRect(
+        Rect.fromLTWH(
+          lado == 0 ? 0 : size.width - ancho * 1.3,
+          0,
+          ancho * 1.3,
+          18,
+        ),
+        Paint()..color = acento.withValues(alpha: 0.55),
+      );
+      // Alzapaño con borla.
+      final yBorla = size.height * 0.40;
+      final xBorla = x0 + dir * ancho * 0.45;
+      canvas.drawLine(
+        Offset(x0, yBorla - 6),
+        Offset(xBorla, yBorla),
+        Paint()
+          ..color = const Color(0xFFD9A441).withValues(alpha: 0.75)
+          ..strokeWidth = 3.4
+          ..strokeCap = StrokeCap.round,
+      );
+      canvas.drawCircle(
+        Offset(xBorla, yBorla + 8),
+        5,
+        Paint()..color = const Color(0xFFD9A441).withValues(alpha: 0.85),
+      );
+    }
+  }
+
+  /// Telaraña en la esquina de arriba a la izquierda.
+  void _pintarTelarana(Canvas canvas, Size size) {
+    final origen = Offset(size.width * 0.15, 0);
+    final hilo = Paint()
+      ..color = color.withValues(alpha: 0.36)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1;
+    const radios = 6;
+    const largo = 78.0;
+    for (var r = 0; r < radios; r++) {
+      final ang = math.pi * 0.08 + r * (math.pi * 0.44 / (radios - 1));
+      canvas.drawLine(
+        origen,
+        origen + Offset(math.cos(ang), math.sin(ang)) * largo,
+        hilo,
+      );
+    }
+    for (var anillo = 1; anillo <= 4; anillo++) {
+      final d = largo * anillo / 4.4;
+      final path = Path();
+      for (var r = 0; r < radios; r++) {
+        final ang = math.pi * 0.08 + r * (math.pi * 0.44 / (radios - 1));
+        final punto = origen + Offset(math.cos(ang), math.sin(ang)) * d;
+        if (r == 0) {
+          path.moveTo(punto.dx, punto.dy);
+        } else {
+          final ant =
+              math.pi * 0.08 + (r - 1) * (math.pi * 0.44 / (radios - 1));
+          final medio =
+              origen +
+              Offset(math.cos((ang + ant) / 2), math.sin((ang + ant) / 2)) *
+                  (d * 0.9);
+          path.quadraticBezierTo(medio.dx, medio.dy, punto.dx, punto.dy);
+        }
+      }
+      canvas.drawPath(path, hilo);
+    }
+  }
+
+  /// Candelabro de techo con seis velas que se balancea despacio.
+  void _pintarCandelabroColgante(Canvas canvas, Size size) {
+    final fase = progreso * math.pi * 2;
+    final angulo = math.sin(fase) * 0.035;
+    final cadena = size.height * 0.085;
+    canvas.save();
+    canvas.translate(size.width * 0.52, 0);
+    canvas.rotate(angulo);
+    final hierro = Paint()
+      ..color = const Color(0xFF2A1E33).withValues(alpha: 0.70)
+      ..strokeWidth = 2.2
+      ..strokeCap = StrokeCap.round;
+    canvas.drawLine(Offset.zero, Offset(0, cadena), hierro);
+    // Aro con las velas.
+    final aro = Rect.fromCenter(
+      center: Offset(0, cadena + 7),
+      width: 104,
+      height: 16,
+    );
+    canvas.drawOval(
+      aro,
+      Paint()
+        ..color = const Color(0xFF2A1E33).withValues(alpha: 0.62)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 3,
+    );
+    canvas.drawLine(Offset(0, cadena + 14), Offset(0, cadena + 30), hierro);
+    canvas.drawCircle(
+      Offset(0, cadena + 33),
+      3.6,
+      Paint()..color = const Color(0xFFD9A441).withValues(alpha: 0.8),
+    );
+    for (var v = 0; v < 6; v++) {
+      final x = -42 + v * 16.8;
+      final yAro =
+          cadena + 7 + math.sqrt(math.max(0, 1 - math.pow(x / 52, 2))) * 8;
+      final parpadeo =
+          0.55 +
+          math.sin(fase * (3 + v % 3) + v * 1.7) * 0.25 +
+          math.sin(fase * 7 + v) * 0.12;
+      canvas.drawCircle(
+        Offset(x, yAro - 20),
+        34 + parpadeo * 10,
+        Paint()
+          ..shader =
+              RadialGradient(
+                colors: [
+                  const Color(0xFFFFC857).withValues(alpha: 0.30 * parpadeo),
+                  const Color(0xFFFFC857).withValues(alpha: 0),
+                ],
+              ).createShader(
+                Rect.fromCircle(center: Offset(x, yAro - 20), radius: 44),
+              ),
+      );
+      canvas.drawRect(
+        Rect.fromLTWH(x - 2.6, yAro - 14, 5.2, 14),
+        Paint()..color = const Color(0xFFF1E6CF).withValues(alpha: 0.85),
+      );
+      canvas.drawPath(
+        Path()
+          ..moveTo(x, yAro - 25 - parpadeo * 3)
+          ..quadraticBezierTo(x + 3.6, yAro - 19, x, yAro - 14)
+          ..quadraticBezierTo(x - 3.6, yAro - 19, x, yAro - 25 - parpadeo * 3)
+          ..close(),
+        Paint()..color = const Color(0xFFFFC857).withValues(alpha: 0.95),
+      );
+    }
+    canvas.restore();
+  }
+
+  /// Suelo de baldosas en ajedrez donde se apoyan las velas.
+  void _pintarSueloAjedrezado(Canvas canvas, Size size) {
+    final borde = size.height * 0.958;
+    const baldosa = 30.0;
+    final filas = ((size.height - borde) / 14).ceil();
+    for (var fila = 0; fila < filas; fila++) {
+      for (var col = 0; col * baldosa < size.width + baldosa; col++) {
+        final oscura = (fila + col).isEven;
+        canvas.drawRect(
+          Rect.fromLTWH(
+            col * baldosa - (fila.isOdd ? baldosa / 2 : 0) * 0,
+            borde + fila * 14,
+            baldosa,
+            14.5,
+          ),
+          Paint()
+            ..color =
+                (oscura ? const Color(0xFF1E1426) : const Color(0xFFEFE6DA))
+                    .withValues(alpha: oscura ? 0.50 : 0.42),
+        );
+      }
+    }
+    canvas.drawLine(
+      Offset(0, borde),
+      Offset(size.width, borde),
+      Paint()
+        ..color = color.withValues(alpha: 0.35)
+        ..strokeWidth = 1.5,
+    );
+  }
+
   /// Tres velas cuya llama parpadea y de las que sube un hilo de humo.
   void _pintarVelas(Canvas canvas, Size size) {
     final fase = progreso * math.pi * 2;
     for (var v = 0; v < 3; v++) {
       final x = size.width * (0.20 + v * 0.30);
-      final yBase = size.height * 0.97;
+      final yBase = size.height * 0.958;
       final altura = 38.0 + (v % 2) * 14;
       final parpadeo =
           0.55 +
