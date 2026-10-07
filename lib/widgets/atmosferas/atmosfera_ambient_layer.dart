@@ -308,7 +308,6 @@ class _AtmosferaPainter extends CustomPainter {
 
       case AtmosferaLectura.gotica:
         _pintarBruma(canvas, size, intensidad: 1.2);
-        _pintarVentanasGoticas(canvas, size);
         _pintarMurcielagos(canvas, size);
         _pintarVelas(canvas, size);
 
@@ -318,9 +317,9 @@ class _AtmosferaPainter extends CustomPainter {
         _pintarLuciernagas(canvas, size);
 
       case AtmosferaLectura.futurista:
-        _pintarRejillaNeon(canvas, size);
-        _pintarParticulasNeon(canvas, size);
-        _pintarDestelloDiagonal(canvas, size);
+        _pintarNocheNeon(canvas, size);
+        _pintarEstelasNeon(canvas, size);
+        _pintarPuntosNeon(canvas, size);
 
       case AtmosferaLectura.epica:
         _pintarResplandorFogata(canvas, size);
@@ -495,68 +494,6 @@ class _AtmosferaPainter extends CustomPainter {
         Offset(x, y),
         1.2 + pulso * 1.1,
         Paint()..color = color.withValues(alpha: 0.18 + pulso * 0.3),
-      );
-    }
-  }
-
-  /// Partículas neón que ascienden con brillo — sustituye las líneas y
-  /// puntos estáticos de Futurista por algo con sensación de ingravidez.
-  void _pintarParticulasNeon(Canvas canvas, Size size) {
-    for (var i = 0; i < 28; i++) {
-      final velocidad = 0.22 + (i % 5) * 0.07;
-      final fase = (progreso * velocidad + i * 0.081) % 1;
-      final xBase = _fraccion(i * 69.5) * size.width;
-      final x = xBase + math.sin(progreso * math.pi * 2 + i * 0.7) * 14;
-      final y = size.height + 20 - fase * (size.height + 60);
-      final pulso = (math.sin(progreso * math.pi * 6 + i) + 1) / 2;
-
-      canvas.drawCircle(
-        Offset(x, y),
-        3 + pulso * 2.4,
-        Paint()
-          ..color = color.withValues(alpha: 0.08 + pulso * 0.14)
-          ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 5),
-      );
-      canvas.drawCircle(
-        Offset(x, y),
-        1 + pulso * 0.8,
-        Paint()..color = color.withValues(alpha: 0.3 + pulso * 0.4),
-      );
-    }
-  }
-
-  /// Un par de destellos cruzan la pantalla en diagonal de vez en cuando,
-  /// como un rastro de datos o una estrella fugaz digital.
-  void _pintarDestelloDiagonal(Canvas canvas, Size size) {
-    for (var i = 0; i < 2; i++) {
-      final t = (progreso + i * 0.5) % 1.0;
-      if (t > 0.4) continue;
-      final avance = t / 0.4;
-
-      final startX = -size.width * 0.15 + i * size.width * 0.3;
-      final startY = size.height * (0.08 + i * 0.18);
-      final endX = startX + size.width * 0.95;
-      final endY = startY + size.height * 0.5;
-
-      final headX = startX + (endX - startX) * avance;
-      final headY = startY + (endY - startY) * avance;
-      final tailFrac = math.max(0.0, avance - 0.16);
-      final tailX = startX + (endX - startX) * tailFrac;
-      final tailY = startY + (endY - startY) * tailFrac;
-      final opacidad = (1 - avance) * 0.45;
-
-      canvas.drawLine(
-        Offset(tailX, tailY),
-        Offset(headX, headY),
-        Paint()
-          ..color = color.withValues(alpha: opacidad)
-          ..strokeWidth = 1.4
-          ..strokeCap = StrokeCap.round,
-      );
-      canvas.drawCircle(
-        Offset(headX, headY),
-        2.2,
-        Paint()..color = color.withValues(alpha: (opacidad + 0.25).clamp(0, 1)),
       );
     }
   }
@@ -1129,50 +1066,6 @@ class _AtmosferaPainter extends CustomPainter {
 
   // ── Gótica ────────────────────────────────────────────────────────────
 
-  /// Dos ventanales góticos en arco apuntado, iluminados por velas.
-  void _pintarVentanasGoticas(Canvas canvas, Size size) {
-    final parpadeo =
-        0.5 +
-        math.sin(progreso * math.pi * 2 * 3) * 0.3 +
-        math.sin(progreso * math.pi * 2 * 5 + 1) * 0.2;
-    final ancho = size.width * 0.26;
-    for (var lado = 0; lado < 2; lado++) {
-      final x0 = lado == 0 ? size.width * 0.03 : size.width * 0.71;
-      final x1 = x0 + ancho;
-      final xm = (x0 + x1) / 2;
-      final yCima = size.height * 0.10;
-      final yArco = size.height * 0.24;
-      final yBase = size.height * 0.52;
-      final ventana = Path()
-        ..moveTo(x0, yBase)
-        ..lineTo(x0, yArco)
-        ..quadraticBezierTo(x0, yCima + (yArco - yCima) * 0.35, xm, yCima)
-        ..quadraticBezierTo(x1, yCima + (yArco - yCima) * 0.35, x1, yArco)
-        ..lineTo(x1, yBase)
-        ..close();
-      canvas.drawPath(
-        ventana,
-        Paint()..color = acento.withValues(alpha: 0.05 + parpadeo * 0.06),
-      );
-      final trazo = Paint()
-        ..color = color.withValues(alpha: 0.30)
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = 1.8;
-      canvas.drawPath(ventana, trazo);
-      canvas.drawLine(Offset(xm, yCima + 8), Offset(xm, yBase), trazo);
-      canvas.drawLine(
-        Offset(x0, yArco + (yBase - yArco) * 0.35),
-        Offset(x1, yArco + (yBase - yArco) * 0.35),
-        trazo,
-      );
-      canvas.drawLine(
-        Offset(x0, yArco + (yBase - yArco) * 0.70),
-        Offset(x1, yArco + (yBase - yArco) * 0.70),
-        trazo,
-      );
-    }
-  }
-
   /// Tres velas cuya llama parpadea y de las que sube un hilo de humo.
   void _pintarVelas(Canvas canvas, Size size) {
     final fase = progreso * math.pi * 2;
@@ -1319,59 +1212,95 @@ class _AtmosferaPainter extends CustomPainter {
 
   // ── Futurista ─────────────────────────────────────────────────────────
 
-  /// Rejilla de neón en perspectiva que avanza hacia ti, con un sol en el
-  /// horizonte.
-  void _pintarRejillaNeon(Canvas canvas, Size size) {
-    final horizonte = size.height * 0.62;
-    final centroX = size.width / 2;
-    // Sol de neón recortado por el horizonte.
-    canvas.save();
-    canvas.clipRect(Rect.fromLTRB(0, 0, size.width, horizonte));
-    final sol = Offset(centroX, horizonte);
-    final radio = size.width * 0.30;
-    canvas.drawCircle(
-      sol,
-      radio,
+  // ── Futurista ─────────────────────────────────────────────────────────
+
+  /// Colores de neón de verdad: cian, magenta, violeta, lima y naranja.
+  static const _neones = [
+    Color(0xFF00E5FF),
+    Color(0xFFFF2BD6),
+    Color(0xFF9D4DFF),
+    Color(0xFFB6FF00),
+    Color(0xFFFF7A1A),
+  ];
+
+  /// Velo de noche de ciudad para que el neón destaque sobre el fondo claro.
+  void _pintarNocheNeon(Canvas canvas, Size size) {
+    final rect = Offset.zero & size;
+    canvas.drawRect(
+      rect,
       Paint()
-        ..shader = LinearGradient(
+        ..shader = const LinearGradient(
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
-          colors: [
-            acento.withValues(alpha: 0.05),
-            acento.withValues(alpha: 0.42),
-          ],
-        ).createShader(Rect.fromCircle(center: sol, radius: radio)),
+          colors: [Color(0x59190B3D), Color(0x26FF2BD6), Color(0x4D0A2A5C)],
+        ).createShader(rect),
     );
-    canvas.restore();
-    canvas.drawLine(
-      Offset(0, horizonte),
-      Offset(size.width, horizonte),
-      Paint()
-        ..color = acento.withValues(alpha: 0.55)
-        ..strokeWidth = 1.6,
-    );
-    // Líneas que convergen en el punto de fuga.
-    final vertical = Paint()
-      ..color = color.withValues(alpha: 0.30)
-      ..strokeWidth = 1.2;
-    for (var i = -9; i <= 9; i++) {
-      canvas.drawLine(
-        Offset(centroX + i * size.width * 0.018, horizonte),
-        Offset(centroX + i * size.width * 0.17, size.height),
-        vertical,
+  }
+
+  /// Puntos de luz de neón con halo que suben meciéndose y se apagan.
+  void _pintarPuntosNeon(Canvas canvas, Size size) {
+    final fase = progreso * math.pi * 2;
+    for (var i = 0; i < 38; i++) {
+      final neon = _neones[i % _neones.length];
+      final vida = _vida(i, 0.0263);
+      final env = _envolvente(vida);
+      // 0,618…: reparte los puntos de forma pareja por todo el ancho.
+      final x =
+          _fraccion(i * 0.61803 + 0.17) * size.width +
+          math.sin(fase * (1 + i % 2) + i * 0.8) * 16;
+      final y =
+          size.height * (1.02 - vida * 0.55) -
+          _fraccion(i * 23.1) * size.height * 0.30;
+      final pulso = (math.sin(fase * 3 + i) + 1) / 2;
+      canvas.drawCircle(
+        Offset(x, y),
+        8 + pulso * 6 + (i % 3) * 2,
+        Paint()
+          ..color = neon.withValues(alpha: 0.55 * env)
+          ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 7),
+      );
+      canvas.drawCircle(
+        Offset(x, y),
+        2.2 + pulso * 1.2,
+        Paint()..color = Colors.white.withValues(alpha: 0.95 * env),
       );
     }
-    // Líneas horizontales que se acercan; espaciado en perspectiva.
-    const n = 7;
-    for (var k = 0; k < n; k++) {
-      final t = ((k + progreso) / n) % 1;
-      final y = horizonte + (size.height - horizonte) * t * t;
+  }
+
+  /// Estelas de luz que cruzan la pantalla, como láseres o coches lejanos.
+  void _pintarEstelasNeon(Canvas canvas, Size size) {
+    for (var i = 0; i < 6; i++) {
+      final neon = _neones[(i * 2) % _neones.length];
+      final t = ((progreso * (1 + i % 2) + i * 0.17) % 1);
+      final dir = i.isEven ? 1.0 : -1.0;
+      final largo = size.width * (0.30 + (i % 3) * 0.08);
+      final y = size.height * (0.12 + _fraccion(i * 37.7) * 0.76);
+      final cabeza = dir > 0
+          ? -largo + t * (size.width + largo * 2)
+          : size.width + largo - t * (size.width + largo * 2);
+      final cola = cabeza - dir * largo;
+      final rect = Rect.fromPoints(Offset(cola, y), Offset(cabeza, y));
+      final trazo = Paint()
+        ..shader = LinearGradient(
+          colors: [neon.withValues(alpha: 0), neon.withValues(alpha: 0.95)],
+          begin: dir > 0 ? Alignment.centerLeft : Alignment.centerRight,
+          end: dir > 0 ? Alignment.centerRight : Alignment.centerLeft,
+        ).createShader(rect.inflate(1))
+        ..strokeWidth = 2.4
+        ..strokeCap = StrokeCap.round;
       canvas.drawLine(
-        Offset(0, y),
-        Offset(size.width, y),
+        Offset(cola, y),
+        Offset(cabeza, y),
         Paint()
-          ..color = color.withValues(alpha: 0.10 + t * 0.30)
-          ..strokeWidth = 1.0 + t * 1.2,
+          ..shader = trazo.shader
+          ..strokeWidth = 7
+          ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 6),
+      );
+      canvas.drawLine(Offset(cola, y), Offset(cabeza, y), trazo);
+      canvas.drawCircle(
+        Offset(cabeza, y),
+        2.6,
+        Paint()..color = Colors.white.withValues(alpha: 0.95),
       );
     }
   }
