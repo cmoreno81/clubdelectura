@@ -313,8 +313,9 @@ class _AtmosferaPainter extends CustomPainter {
         _pintarPolvoCalido(canvas, size);
 
       case AtmosferaLectura.historica:
+        // Solo los papeles: el polvo cálido de puntos pasaba demasiado
+        // rápido y restaba calma a la atmósfera.
         _pintarPapelesFlotantes(canvas, size);
-        _pintarPolvoCalido(canvas, size);
 
       case AtmosferaLectura.neutra:
         break;
