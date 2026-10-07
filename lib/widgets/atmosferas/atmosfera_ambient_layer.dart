@@ -113,6 +113,7 @@ class _AtmosferaAmbientLayerState extends State<AtmosferaAmbientLayer>
                         progreso: _controller.value,
                         atmosfera: widget.atmosfera,
                         color: widget.color,
+                        acento: widget.accentColor,
                       ),
                     );
                   },
@@ -261,23 +262,29 @@ class _AtmosferaPainter extends CustomPainter {
   final double progreso;
   final AtmosferaLectura atmosfera;
   final Color color;
+  final Color acento;
 
   const _AtmosferaPainter({
     required this.progreso,
     required this.atmosfera,
     required this.color,
+    required this.acento,
   });
 
   @override
   void paint(Canvas canvas, Size size) {
     switch (atmosfera) {
       case AtmosferaLectura.romantica:
+        _pintarAtardecerRosa(canvas, size);
         _pintarPetalos(canvas, size);
+        _pintarCorazones(canvas, size);
         _pintarDestellos(canvas, size);
 
       case AtmosferaLectura.magica:
-        _pintarDestellos(canvas, size);
+        _pintarCieloEstrellado(canvas, size);
         _pintarConstelacion(canvas, size);
+        _pintarOrbesMagicos(canvas, size);
+        _pintarEstrellaFugaz(canvas, size);
 
       case AtmosferaLectura.marina:
         _pintarVientoMarino(canvas, size);
@@ -286,26 +293,32 @@ class _AtmosferaPainter extends CustomPainter {
         _pintarBrillosAgua(canvas, size);
 
       case AtmosferaLectura.bosque:
-        // Sin rayos de luz: las bandas diagonales parecían rayas heredadas de
-        // la atmósfera anterior (épica dibujaba las mismas).
+        _pintarMotasDeLuz(canvas, size);
+        _pintarPinos(canvas, size);
         _pintarHojas(canvas, size);
 
       case AtmosferaLectura.oscura:
-        // Noche en calma: niebla, luna y estrellas. Sin lluvia ni brasas, que
-        // no casaban con una lectura «silenciosa».
+        // Noche cerrada: sombras que se cierran por los bordes, niebla
+        // oscura, luna con halo, estrellas y cuervos.
         _pintarEstrellasTenues(canvas, size);
-        _pintarLunaTenue(canvas, size);
-        _pintarBruma(canvas, size);
+        _pintarLunaGrande(canvas, size);
+        _pintarBruma(canvas, size, intensidad: 2.0);
+        _pintarSombrasBordes(canvas, size);
+        _pintarCuervos(canvas, size);
 
       case AtmosferaLectura.gotica:
-        _pintarBruma(canvas, size);
-        _pintarCenizaAscendente(canvas, size);
+        _pintarBruma(canvas, size, intensidad: 1.2);
+        _pintarVentanasGoticas(canvas, size);
+        _pintarMurcielagos(canvas, size);
+        _pintarVelas(canvas, size);
 
       case AtmosferaLectura.misteriosa:
-        _pintarBruma(canvas, size);
+        _pintarBruma(canvas, size, intensidad: 2.2);
+        _pintarFocoLinterna(canvas, size);
         _pintarLuciernagas(canvas, size);
 
       case AtmosferaLectura.futurista:
+        _pintarRejillaNeon(canvas, size);
         _pintarParticulasNeon(canvas, size);
         _pintarDestelloDiagonal(canvas, size);
 
@@ -315,13 +328,13 @@ class _AtmosferaPainter extends CustomPainter {
         _pintarChispas(canvas, size);
 
       case AtmosferaLectura.acogedora:
+        _pintarLamparaCalida(canvas, size);
+        _pintarLluviaSuave(canvas, size);
+        _pintarGotasVentana(canvas, size);
         _pintarVaporTaza(canvas, size);
-        _pintarPolvoCalido(canvas, size);
 
       case AtmosferaLectura.historica:
-        // Solo los papeles: el polvo cálido de puntos pasaba demasiado
-        // rápido y restaba calma a la atmósfera.
-        _pintarPapelesFlotantes(canvas, size);
+        _pintarCartasVolando(canvas, size);
 
       case AtmosferaLectura.neutra:
         break;
@@ -405,7 +418,7 @@ class _AtmosferaPainter extends CustomPainter {
     }
   }
 
-  void _pintarBruma(Canvas canvas, Size size) {
+  void _pintarBruma(Canvas canvas, Size size, {double intensidad = 1.0}) {
     for (var i = 0; i < 7; i++) {
       final desplazamiento = ((progreso * (0.1 + i * 0.012)) + i * 0.19) % 1;
 
@@ -413,7 +426,9 @@ class _AtmosferaPainter extends CustomPainter {
       final y = size.height * (0.12 + i * 0.13);
 
       final paint = Paint()
-        ..color = color.withValues(alpha: 0.10 + (i % 3) * 0.025)
+        ..color = color.withValues(
+          alpha: ((0.10 + (i % 3) * 0.025) * intensidad).clamp(0.0, 1.0),
+        )
         ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 30);
 
       canvas.drawOval(
@@ -452,26 +467,6 @@ class _AtmosferaPainter extends CustomPainter {
         Offset(x, y),
         1.3 + (i % 3) * 0.6,
         Paint()..color = color.withValues(alpha: alfa),
-      );
-    }
-  }
-
-  /// Ceniza de vela que flota y se desvanece — sustituye los arcos fijos de
-  /// Gótica por algo que de verdad se mueve por la escena.
-  void _pintarCenizaAscendente(Canvas canvas, Size size) {
-    for (var i = 0; i < 26; i++) {
-      final velocidad = 0.16 + (i % 4) * 0.05;
-      final fase = (progreso * velocidad + i * 0.091) % 1;
-      final xBase = _fraccion(i * 58.3) * size.width;
-      final deriva = math.sin(progreso * math.pi * 1.2 + i) * 26;
-      final x = xBase + deriva;
-      final y = size.height + 15 - fase * (size.height + 40);
-      final parpadeo = (math.sin(progreso * math.pi * 4 + i * 1.1) + 1) / 2;
-
-      canvas.drawCircle(
-        Offset(x, y),
-        0.9 + parpadeo * 1.5,
-        Paint()..color = color.withValues(alpha: 0.06 + parpadeo * 0.17),
       );
     }
   }
@@ -599,60 +594,57 @@ class _AtmosferaPainter extends CustomPainter {
     }
   }
 
-  /// Trocitos de papel que caen girando en diagonal — sustituye las líneas
-  /// de manuscrito fijas de Histórica por algo con sensación de caída real.
-  void _pintarPapelesFlotantes(Canvas canvas, Size size) {
-    for (var i = 0; i < 14; i++) {
-      final velocidad = 0.16 + (i % 4) * 0.04;
-      final fase = (progreso * velocidad + i * 0.141) % 1;
-      final xBase = _fraccion(i * 59.9) * size.width;
-      final deriva = math.sin(progreso * math.pi * 1.1 + i) * 34;
-      final x = xBase + deriva + fase * 40;
-      final y = -20 + fase * (size.height + 40);
-
-      canvas.save();
-      canvas.translate(x, y);
-      canvas.rotate(progreso * math.pi * 2 * (0.6 + (i % 3) * 0.2) + i);
-      canvas.drawRect(
-        Rect.fromCenter(center: Offset.zero, width: 9, height: 12),
-        Paint()..color = color.withValues(alpha: 0.14),
-      );
-      canvas.restore();
-    }
-  }
-
-  void _pintarPolvoCalido(Canvas canvas, Size size) {
-    for (var i = 0; i < 36; i++) {
-      final x = _fraccion(i * 71.17) * size.width;
-      final y = _fraccion(i * 37.91 + progreso * 20) * size.height;
-
-      final pulso = (math.sin(progreso * math.pi * 2 + i * 0.6) + 1) / 2;
-
-      final paint = Paint()
-        ..color = color.withValues(alpha: 0.08 + pulso * 0.18);
-      canvas.drawCircle(Offset(x, y), 1.3 + pulso * 2.8, paint);
-    }
-  }
-
+  /// Dos constelaciones reconocibles (el Carro y Casiopea) cuyas estrellas
+  /// laten con un ritmo ligeramente distinto.
   void _pintarConstelacion(Canvas canvas, Size size) {
-    final points = <Offset>[];
-    for (var i = 0; i < 12; i++) {
-      points.add(
-        Offset(
-          _fraccion(i * 43.71) * size.width,
-          _fraccion(i * 77.13) * size.height,
-        ),
-      );
+    const carro = [
+      Offset(0.08, 0.09), Offset(0.20, 0.12), Offset(0.31, 0.16),
+      Offset(0.40, 0.23), Offset(0.38, 0.32), Offset(0.53, 0.30),
+      Offset(0.51, 0.20), //
+    ];
+    const casiopea = [
+      Offset(0.55, 0.64), Offset(0.64, 0.72), Offset(0.74, 0.64),
+      Offset(0.83, 0.74), Offset(0.93, 0.66), //
+    ];
+    void dibujar(List<Offset> puntos, List<List<int>> uniones, int semilla) {
+      final reales = [
+        for (final p in puntos) Offset(p.dx * size.width, p.dy * size.height),
+      ];
+      final linea = Paint()
+        ..color = color.withValues(alpha: 0.30)
+        ..strokeWidth = 1.2
+        ..strokeCap = StrokeCap.round;
+      for (final u in uniones) {
+        canvas.drawLine(reales[u[0]], reales[u[1]], linea);
+      }
+      for (var i = 0; i < reales.length; i++) {
+        final pulso =
+            (math.sin(
+                  progreso * math.pi * 2 * (1 + (i + semilla) % 2) + i * 1.7,
+                ) +
+                1) /
+            2;
+        canvas.drawCircle(
+          reales[i],
+          9 + pulso * 4,
+          Paint()
+            ..color = acento.withValues(alpha: 0.18 + pulso * 0.14)
+            ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 5),
+        );
+        canvas.drawCircle(
+          reales[i],
+          2.4 + pulso * 1.2,
+          Paint()..color = color.withValues(alpha: 0.62 + pulso * 0.3),
+        );
+      }
     }
-    final pulse = 0.15 + (math.sin(progreso * math.pi * 2) + 1) * 0.06;
-    final line = Paint()
-      ..color = color.withValues(alpha: pulse)
-      ..strokeWidth = 0.9;
-    final dot = Paint()..color = color.withValues(alpha: pulse + 0.06);
-    for (var i = 0; i < points.length; i++) {
-      canvas.drawCircle(points[i], 1.8 + (i % 3), dot);
-      if (i > 0 && i % 3 != 0) canvas.drawLine(points[i - 1], points[i], line);
-    }
+
+    dibujar(carro, const [
+      [0, 1], [1, 2], [2, 3], [3, 4], [4, 5], [5, 6], [6, 3], //
+    ], 0);
+    dibujar(casiopea, const [
+      [0, 1], [1, 2], [2, 3], [3, 4], //
+    ], 1);
   }
 
   // ── Marina ────────────────────────────────────────────────────────────
@@ -769,39 +761,84 @@ class _AtmosferaPainter extends CustomPainter {
 
   // ── Oscura ────────────────────────────────────────────────────────────
 
-  /// Luna con un halo que respira muy despacio, arriba a la derecha.
-  void _pintarLunaTenue(Canvas canvas, Size size) {
-    final centro = Offset(size.width * 0.80, size.height * 0.13);
+  /// Luna grande con un halo que respira muy despacio, arriba a la derecha.
+  void _pintarLunaGrande(Canvas canvas, Size size) {
+    final centro = Offset(size.width * 0.78, size.height * 0.13);
     final respiro = (math.sin(progreso * math.pi * 2) + 1) / 2;
+    final halo = size.width * 0.50;
     canvas.drawCircle(
       centro,
-      120,
+      halo,
       Paint()
         ..shader = RadialGradient(
           colors: [
-            color.withValues(alpha: 0.20 + respiro * 0.08),
-            color.withValues(alpha: 0),
+            const Color(0xFFFFF4C9).withValues(alpha: 0.42 + respiro * 0.12),
+            const Color(0xFFFFF4C9).withValues(alpha: 0),
           ],
-        ).createShader(Rect.fromCircle(center: centro, radius: 120)),
+        ).createShader(Rect.fromCircle(center: centro, radius: halo)),
     );
     canvas.drawCircle(
       centro,
-      24,
-      Paint()..color = color.withValues(alpha: 0.30 + respiro * 0.06),
+      34,
+      Paint()..color = const Color(0xFFFFF8E0).withValues(alpha: 0.95),
+    );
+    for (final c in const [Offset(-9, -6), Offset(8, 7), Offset(-2, 12)]) {
+      canvas.drawCircle(
+        centro + c,
+        6,
+        Paint()..color = color.withValues(alpha: 0.13),
+      );
+    }
+  }
+
+  /// Estrellas que titilan en la parte alta, más vivas hacia los bordes.
+  void _pintarEstrellasTenues(Canvas canvas, Size size) {
+    for (var i = 0; i < 22; i++) {
+      final x = _fraccion(i * 71.37) * size.width;
+      final y = _fraccion(i * 29.11) * size.height * 0.5;
+      final titileo =
+          (math.sin(progreso * math.pi * 2 * (1 + i % 2) + i) + 1) / 2;
+      canvas.drawCircle(
+        Offset(x, y),
+        1.1 + titileo * 1.2,
+        Paint()..color = Colors.white.withValues(alpha: 0.25 + titileo * 0.55),
+      );
+    }
+  }
+
+  /// Las sombras se cierran desde los bordes y laten muy despacio.
+  void _pintarSombrasBordes(Canvas canvas, Size size) {
+    final latido = (math.sin(progreso * math.pi * 2) + 1) / 2;
+    final rect = Offset.zero & size;
+    canvas.drawRect(
+      rect,
+      Paint()
+        ..shader = RadialGradient(
+          center: const Alignment(0.15, -0.25),
+          radius: 1.05,
+          colors: [
+            Colors.transparent,
+            const Color(0xFF120D26).withValues(alpha: 0.38 + latido * 0.10),
+          ],
+          stops: const [0.38, 1.0],
+        ).createShader(rect),
     );
   }
 
-  /// Pocas estrellas que titilan en la parte alta.
-  void _pintarEstrellasTenues(Canvas canvas, Size size) {
-    for (var i = 0; i < 16; i++) {
-      final x = _fraccion(i * 71.37) * size.width;
-      final y = _fraccion(i * 29.11) * size.height * 0.45;
-      final titileo = (math.sin(progreso * math.pi * 2 * (1 + i % 2) + i) + 1) / 2;
-      canvas.drawCircle(
-        Offset(x, y),
-        0.9 + titileo * 1.0,
-        Paint()..color = color.withValues(alpha: 0.10 + titileo * 0.30),
-      );
+  /// Dos cuervos que cruzan despacio por delante de la luna.
+  void _pintarCuervos(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = const Color(0xFF140E22).withValues(alpha: 0.70)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 2.8
+      ..strokeCap = StrokeCap.round;
+    for (var c = 0; c < 2; c++) {
+      final t = (progreso + c * 0.5) % 1;
+      final x = size.width * 1.1 - t * (size.width * 1.25);
+      final y =
+          size.height * (0.16 + c * 0.13) + math.sin(t * math.pi * 4) * 10;
+      final ala = 11 + math.sin(t * math.pi * 14) * 3.2;
+      _dibujarAve(canvas, x, y, ala, paint);
     }
   }
 
@@ -880,6 +917,587 @@ class _AtmosferaPainter extends CustomPainter {
     }
   }
 
+  // ── Utilidades ────────────────────────────────────────────────────────
+
+  /// Ciclo de vida de una partícula: 0 → 1 cada 10 s, desfasado por [paso].
+  double _vida(int i, double paso) => (progreso + i * paso) % 1;
+
+  /// Aparición y desvanecimiento suaves (0 en los extremos del ciclo), para
+  /// que el bucle de 10 s no deje saltos.
+  double _envolvente(double vida) => math.sin(vida * math.pi);
+
+  /// Ave de perfil (gaviota, cuervo): dos curvas que forman las alas.
+  void _dibujarAve(Canvas canvas, double x, double y, double ala, Paint paint) {
+    final path = Path()
+      ..moveTo(x - ala * 2, y + ala * 0.3)
+      ..quadraticBezierTo(x - ala, y - ala * 0.9, x, y)
+      ..quadraticBezierTo(x + ala, y - ala * 0.9, x + ala * 2, y + ala * 0.3);
+    canvas.drawPath(path, paint);
+  }
+
+  Path _corazon(double s) {
+    return Path()
+      ..moveTo(0, s * 0.35)
+      ..cubicTo(-s * 0.95, -s * 0.15, -s * 0.45, -s * 0.85, 0, -s * 0.3)
+      ..cubicTo(s * 0.45, -s * 0.85, s * 0.95, -s * 0.15, 0, s * 0.35)
+      ..close();
+  }
+
+  // ── Romántica ─────────────────────────────────────────────────────────
+
+  /// Luz rosada de atardecer que respira desde abajo.
+  void _pintarAtardecerRosa(Canvas canvas, Size size) {
+    final latido = (math.sin(progreso * math.pi * 2) + 1) / 2;
+    final centro = Offset(size.width * 0.5, size.height * 1.05);
+    final radio = size.height * 0.62;
+    canvas.drawCircle(
+      centro,
+      radio,
+      Paint()
+        ..shader = RadialGradient(
+          colors: [
+            const Color(0xFFFF8FA3).withValues(alpha: 0.26 + latido * 0.08),
+            const Color(0xFFFF8FA3).withValues(alpha: 0),
+          ],
+        ).createShader(Rect.fromCircle(center: centro, radius: radio)),
+    );
+  }
+
+  /// Corazoncitos que suben meciéndose y se desvanecen.
+  void _pintarCorazones(Canvas canvas, Size size) {
+    for (var i = 0; i < 11; i++) {
+      final vida = _vida(i, 0.0909);
+      final env = _envolvente(vida);
+      final x =
+          _fraccion(i * 47.31) * size.width +
+          math.sin(progreso * math.pi * 2 + i * 1.9) * 16;
+      final y = size.height * (0.98 - vida * 0.50) - _fraccion(i * 13.7) * 90;
+      final tam = 9.0 + (i % 4) * 3;
+      canvas.save();
+      canvas.translate(x, y);
+      canvas.rotate(math.sin(progreso * math.pi * 2 + i) * 0.35);
+      canvas.drawPath(
+        _corazon(tam),
+        Paint()..color = color.withValues(alpha: 0.34 * env),
+      );
+      canvas.restore();
+    }
+  }
+
+  // ── Mágica ────────────────────────────────────────────────────────────
+
+  /// Cielo de estrellas de cuatro puntas que titilan con distinto ritmo.
+  void _pintarCieloEstrellado(Canvas canvas, Size size) {
+    for (var i = 0; i < 30; i++) {
+      final x = _fraccion(i * 91.13) * size.width;
+      final y = _fraccion(i * 47.71) * size.height;
+      final titileo =
+          (math.sin(progreso * math.pi * 2 * (1 + i % 3) + i * 1.3) + 1) / 2;
+      final r = 2.0 + titileo * 3.4 + (i % 4 == 0 ? 2 : 0);
+      final paint = Paint()
+        ..color = (i % 3 == 0 ? acento : color).withValues(
+          alpha: 0.12 + titileo * 0.50,
+        )
+        ..strokeWidth = 1.3
+        ..strokeCap = StrokeCap.round;
+      canvas.drawLine(Offset(x - r, y), Offset(x + r, y), paint);
+      canvas.drawLine(Offset(x, y - r), Offset(x, y + r), paint);
+      canvas.drawCircle(
+        Offset(x, y),
+        r * 0.35,
+        Paint()..color = paint.color.withValues(alpha: paint.color.a * 0.9),
+      );
+    }
+  }
+
+  /// Orbes de luz que suben flotando, con halo, como hechizos sueltos.
+  void _pintarOrbesMagicos(Canvas canvas, Size size) {
+    for (var i = 0; i < 9; i++) {
+      final vida = _vida(i, 0.111);
+      final env = _envolvente(vida);
+      final x =
+          _fraccion(i * 53.9) * size.width +
+          math.sin(progreso * math.pi * 2 * (1 + i % 2) + i) * 20;
+      final y = size.height * (1.0 - vida * 0.75);
+      canvas.drawCircle(
+        Offset(x, y),
+        12 + (i % 3) * 3,
+        Paint()
+          ..color = acento.withValues(alpha: 0.30 * env)
+          ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 9),
+      );
+      canvas.drawCircle(
+        Offset(x, y),
+        2.6,
+        Paint()..color = Colors.white.withValues(alpha: 0.75 * env),
+      );
+    }
+  }
+
+  /// Estrella fugaz que cruza el cielo una vez por ciclo.
+  void _pintarEstrellaFugaz(Canvas canvas, Size size) {
+    final t = (progreso + 0.25) % 1;
+    if (t > 0.30) return;
+    final avance = t / 0.30;
+    final inicio = Offset(size.width * 1.05, size.height * 0.06);
+    final fin = Offset(size.width * 0.20, size.height * 0.42);
+    final cabeza = Offset.lerp(inicio, fin, avance)!;
+    final cola = Offset.lerp(inicio, fin, math.max(0, avance - 0.22))!;
+    final alfa = math.sin(avance * math.pi);
+    canvas.drawLine(
+      cola,
+      cabeza,
+      Paint()
+        ..shader = LinearGradient(
+          colors: [
+            const Color(0xFFFFD36B).withValues(alpha: 0),
+            const Color(0xFFFFD36B).withValues(alpha: 0.85 * alfa),
+          ],
+        ).createShader(Rect.fromPoints(cola, cabeza))
+        ..strokeWidth = 2.4
+        ..strokeCap = StrokeCap.round,
+    );
+    canvas.drawCircle(
+      cabeza,
+      3.4,
+      Paint()..color = Colors.white.withValues(alpha: 0.9 * alfa),
+    );
+  }
+
+  // ── Bosque ────────────────────────────────────────────────────────────
+
+  /// Tres capas de pinos que se mecen con el viento, cada vez más cerca.
+  void _pintarPinos(Canvas canvas, Size size) {
+    final fase = progreso * math.pi * 2;
+    for (var capa = 0; capa < 3; capa++) {
+      final separacion = 46.0 + capa * 14;
+      final base = size.height + 4;
+      final paint = Paint()
+        ..color = color.withValues(alpha: 0.12 + capa * 0.08);
+      for (var i = -1; i * separacion < size.width + separacion; i++) {
+        final x = i * separacion + (capa.isEven ? 0 : separacion * 0.5);
+        final altura =
+            size.height *
+            (0.15 + capa * 0.045) *
+            (0.78 + _fraccion(i * 7.31 + capa * 3.1) * 0.45);
+        final ancho = altura * 0.46;
+        final balanceo = math.sin(fase + i * 0.7 + capa) * (2.0 + capa);
+        for (var piso = 0; piso < 3; piso++) {
+          final yArriba = base - altura + piso * altura * 0.26;
+          final yAbajo = yArriba + altura * 0.42;
+          final mitad = ancho * (0.42 + piso * 0.30) / 2 * 1.4;
+          canvas.drawPath(
+            Path()
+              ..moveTo(x + balanceo * (1 - piso * 0.3), yArriba)
+              ..lineTo(x - mitad, yAbajo)
+              ..lineTo(x + mitad, yAbajo)
+              ..close(),
+            paint,
+          );
+        }
+        canvas.drawRect(
+          Rect.fromLTWH(x - 2.5, base - altura * 0.16, 5, altura * 0.16 + 4),
+          paint,
+        );
+      }
+    }
+  }
+
+  /// Motas de luz dorada que se cuelan entre las ramas y suben despacio.
+  void _pintarMotasDeLuz(Canvas canvas, Size size) {
+    for (var i = 0; i < 16; i++) {
+      final vida = _vida(i, 0.0625);
+      final env = _envolvente(vida);
+      final x =
+          _fraccion(i * 61.7) * size.width +
+          math.sin(progreso * math.pi * 2 + i * 1.1) * 12;
+      final y = size.height * (0.78 - vida * 0.42) + _fraccion(i * 9.3) * 70;
+      canvas.drawCircle(
+        Offset(x, y),
+        6 + (i % 3) * 2,
+        Paint()
+          ..color = const Color(0xFFFFE08A).withValues(alpha: 0.38 * env)
+          ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 6),
+      );
+      canvas.drawCircle(
+        Offset(x, y),
+        1.6,
+        Paint()..color = const Color(0xFFFFF1BF).withValues(alpha: 0.8 * env),
+      );
+    }
+  }
+
+  // ── Gótica ────────────────────────────────────────────────────────────
+
+  /// Dos ventanales góticos en arco apuntado, iluminados por velas.
+  void _pintarVentanasGoticas(Canvas canvas, Size size) {
+    final parpadeo =
+        0.5 +
+        math.sin(progreso * math.pi * 2 * 3) * 0.3 +
+        math.sin(progreso * math.pi * 2 * 5 + 1) * 0.2;
+    final ancho = size.width * 0.26;
+    for (var lado = 0; lado < 2; lado++) {
+      final x0 = lado == 0 ? size.width * 0.03 : size.width * 0.71;
+      final x1 = x0 + ancho;
+      final xm = (x0 + x1) / 2;
+      final yCima = size.height * 0.10;
+      final yArco = size.height * 0.24;
+      final yBase = size.height * 0.52;
+      final ventana = Path()
+        ..moveTo(x0, yBase)
+        ..lineTo(x0, yArco)
+        ..quadraticBezierTo(x0, yCima + (yArco - yCima) * 0.35, xm, yCima)
+        ..quadraticBezierTo(x1, yCima + (yArco - yCima) * 0.35, x1, yArco)
+        ..lineTo(x1, yBase)
+        ..close();
+      canvas.drawPath(
+        ventana,
+        Paint()..color = acento.withValues(alpha: 0.05 + parpadeo * 0.06),
+      );
+      final trazo = Paint()
+        ..color = color.withValues(alpha: 0.30)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 1.8;
+      canvas.drawPath(ventana, trazo);
+      canvas.drawLine(Offset(xm, yCima + 8), Offset(xm, yBase), trazo);
+      canvas.drawLine(
+        Offset(x0, yArco + (yBase - yArco) * 0.35),
+        Offset(x1, yArco + (yBase - yArco) * 0.35),
+        trazo,
+      );
+      canvas.drawLine(
+        Offset(x0, yArco + (yBase - yArco) * 0.70),
+        Offset(x1, yArco + (yBase - yArco) * 0.70),
+        trazo,
+      );
+    }
+  }
+
+  /// Tres velas cuya llama parpadea y de las que sube un hilo de humo.
+  void _pintarVelas(Canvas canvas, Size size) {
+    final fase = progreso * math.pi * 2;
+    for (var v = 0; v < 3; v++) {
+      final x = size.width * (0.20 + v * 0.30);
+      final yBase = size.height * 0.97;
+      final altura = 38.0 + (v % 2) * 14;
+      final parpadeo =
+          0.55 +
+          math.sin(fase * (3 + v) + v * 2) * 0.25 +
+          math.sin(fase * 7 + v) * 0.15;
+
+      // Resplandor de la llama sobre el entorno.
+      final yLlama = yBase - altura - 12;
+      canvas.drawCircle(
+        Offset(x, yLlama),
+        60 + parpadeo * 24,
+        Paint()
+          ..shader =
+              RadialGradient(
+                colors: [
+                  const Color(0xFFFFB84D).withValues(alpha: 0.30 * parpadeo),
+                  const Color(0xFFFFB84D).withValues(alpha: 0),
+                ],
+              ).createShader(
+                Rect.fromCircle(center: Offset(x, yLlama), radius: 84),
+              ),
+      );
+      // Cuerpo de la vela.
+      canvas.drawRRect(
+        RRect.fromRectAndRadius(
+          Rect.fromLTWH(x - 6, yBase - altura, 12, altura),
+          const Radius.circular(2),
+        ),
+        Paint()..color = color.withValues(alpha: 0.30),
+      );
+      // Llama.
+      final llama = Path()
+        ..moveTo(x, yLlama - 9 - parpadeo * 4)
+        ..quadraticBezierTo(x + 6, yLlama - 1, x, yLlama + 5)
+        ..quadraticBezierTo(x - 6, yLlama - 1, x, yLlama - 9 - parpadeo * 4)
+        ..close();
+      canvas.drawPath(
+        llama,
+        Paint()..color = const Color(0xFFFFC857).withValues(alpha: 0.85),
+      );
+      // Humo.
+      final humo = Path()..moveTo(x, yLlama - 12);
+      for (var k = 1; k <= 8; k++) {
+        humo.lineTo(
+          x + math.sin(fase * 2 + k * 0.8 + v) * (3 + k * 1.4),
+          yLlama - 12 - k * 11.0,
+        );
+      }
+      canvas.drawPath(
+        humo,
+        Paint()
+          ..color = color.withValues(alpha: 0.13)
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 2.2
+          ..strokeCap = StrokeCap.round,
+      );
+    }
+  }
+
+  /// Dos murciélagos que cruzan la noche batiendo las alas.
+  void _pintarMurcielagos(Canvas canvas, Size size) {
+    for (var b = 0; b < 2; b++) {
+      final t = (progreso + b * 0.5) % 1;
+      final x = size.width * 1.1 - t * (size.width * 1.2);
+      final y =
+          size.height * (0.22 + b * 0.18) + math.sin(t * math.pi * 6) * 12;
+      final aleteo = math.sin(t * math.pi * 40);
+      final ala = 11.0;
+      final cuerpo = Paint()
+        ..color = const Color(0xFF2A1E33).withValues(alpha: 0.55);
+      final alas = Path()
+        ..moveTo(x, y)
+        ..quadraticBezierTo(
+          x - ala,
+          y - ala * (0.8 + aleteo * 0.5),
+          x - ala * 2.0,
+          y - ala * (0.2 + aleteo * 0.6),
+        )
+        ..quadraticBezierTo(
+          x - ala * 1.4,
+          y + ala * 0.3,
+          x - ala * 1.0,
+          y + ala * 0.1,
+        )
+        ..quadraticBezierTo(x - ala * 0.5, y + ala * 0.5, x, y + ala * 0.35)
+        ..quadraticBezierTo(
+          x + ala * 0.5,
+          y + ala * 0.5,
+          x + ala * 1.0,
+          y + ala * 0.1,
+        )
+        ..quadraticBezierTo(
+          x + ala * 1.4,
+          y + ala * 0.3,
+          x + ala * 2.0,
+          y - ala * (0.2 + aleteo * 0.6),
+        )
+        ..quadraticBezierTo(x + ala, y - ala * (0.8 + aleteo * 0.5), x, y)
+        ..close();
+      canvas.drawPath(alas, cuerpo);
+    }
+  }
+
+  // ── Misteriosa ────────────────────────────────────────────────────────
+
+  /// Haz de linterna que barre la niebla de un lado a otro.
+  void _pintarFocoLinterna(Canvas canvas, Size size) {
+    final origen = Offset(size.width * 0.14, size.height * 1.04);
+    final angulo =
+        -math.pi / 2 + 0.30 + math.sin(progreso * math.pi * 2) * 0.42;
+    final largo = size.height * 1.05;
+    final abertura = 0.17;
+    final p1 =
+        origen +
+        Offset(math.cos(angulo - abertura), math.sin(angulo - abertura)) *
+            largo;
+    final p2 =
+        origen +
+        Offset(math.cos(angulo + abertura), math.sin(angulo + abertura)) *
+            largo;
+    final centro = origen + Offset(math.cos(angulo), math.sin(angulo)) * largo;
+    canvas.drawPath(
+      Path()
+        ..moveTo(origen.dx, origen.dy)
+        ..lineTo(p1.dx, p1.dy)
+        ..lineTo(p2.dx, p2.dy)
+        ..close(),
+      Paint()
+        ..shader = LinearGradient(
+          colors: [
+            const Color(0xFFFFE6A8).withValues(alpha: 0.80),
+            const Color(0xFFFFE6A8).withValues(alpha: 0),
+          ],
+        ).createShader(Rect.fromPoints(origen, centro))
+        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 12),
+    );
+  }
+
+  // ── Futurista ─────────────────────────────────────────────────────────
+
+  /// Rejilla de neón en perspectiva que avanza hacia ti, con un sol en el
+  /// horizonte.
+  void _pintarRejillaNeon(Canvas canvas, Size size) {
+    final horizonte = size.height * 0.62;
+    final centroX = size.width / 2;
+    // Sol de neón recortado por el horizonte.
+    canvas.save();
+    canvas.clipRect(Rect.fromLTRB(0, 0, size.width, horizonte));
+    final sol = Offset(centroX, horizonte);
+    final radio = size.width * 0.30;
+    canvas.drawCircle(
+      sol,
+      radio,
+      Paint()
+        ..shader = LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [
+            acento.withValues(alpha: 0.05),
+            acento.withValues(alpha: 0.42),
+          ],
+        ).createShader(Rect.fromCircle(center: sol, radius: radio)),
+    );
+    canvas.restore();
+    canvas.drawLine(
+      Offset(0, horizonte),
+      Offset(size.width, horizonte),
+      Paint()
+        ..color = acento.withValues(alpha: 0.55)
+        ..strokeWidth = 1.6,
+    );
+    // Líneas que convergen en el punto de fuga.
+    final vertical = Paint()
+      ..color = color.withValues(alpha: 0.30)
+      ..strokeWidth = 1.2;
+    for (var i = -9; i <= 9; i++) {
+      canvas.drawLine(
+        Offset(centroX + i * size.width * 0.018, horizonte),
+        Offset(centroX + i * size.width * 0.17, size.height),
+        vertical,
+      );
+    }
+    // Líneas horizontales que se acercan; espaciado en perspectiva.
+    const n = 7;
+    for (var k = 0; k < n; k++) {
+      final t = ((k + progreso) / n) % 1;
+      final y = horizonte + (size.height - horizonte) * t * t;
+      canvas.drawLine(
+        Offset(0, y),
+        Offset(size.width, y),
+        Paint()
+          ..color = color.withValues(alpha: 0.10 + t * 0.30)
+          ..strokeWidth = 1.0 + t * 1.2,
+      );
+    }
+  }
+
+  // ── Acogedora ─────────────────────────────────────────────────────────
+
+  /// Luz cálida de lámpara que parpadea apenas, arriba a la izquierda.
+  void _pintarLamparaCalida(Canvas canvas, Size size) {
+    final fase = progreso * math.pi * 2;
+    final parpadeo = 0.5 + math.sin(fase * 2) * 0.2 + math.sin(fase * 5) * 0.1;
+    final centro = Offset(size.width * 0.08, size.height * 0.03);
+    final radio = size.height * 0.55;
+    canvas.drawCircle(
+      centro,
+      radio,
+      Paint()
+        ..shader = RadialGradient(
+          colors: [
+            const Color(0xFFFFC27A).withValues(alpha: 0.26 + parpadeo * 0.10),
+            const Color(0xFFFFC27A).withValues(alpha: 0),
+          ],
+        ).createShader(Rect.fromCircle(center: centro, radius: radio)),
+    );
+  }
+
+  /// Lluvia fina que cae en diagonal al otro lado de la ventana.
+  void _pintarLluviaSuave(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = color.withValues(alpha: 0.30)
+      ..strokeWidth = 1.3
+      ..strokeCap = StrokeCap.round;
+    for (var i = 0; i < 46; i++) {
+      final x = _fraccion(i * 57.19) * (size.width + 40);
+      final fase = (progreso * (2 + i % 2) + i * 0.0743) % 1;
+      final y = -30 + fase * (size.height + 60);
+      canvas.drawLine(Offset(x, y), Offset(x - 5, y + 24), paint);
+    }
+  }
+
+  /// Gotas que resbalan despacio por el cristal.
+  void _pintarGotasVentana(Canvas canvas, Size size) {
+    for (var i = 0; i < 8; i++) {
+      final x = _fraccion(i * 83.3) * size.width;
+      final vida = _vida(i, 0.125);
+      final env = _envolvente(vida);
+      final y = size.height * (0.05 + vida * 0.55 + _fraccion(i * 5.3) * 0.3);
+      canvas.drawLine(
+        Offset(x, y - 26),
+        Offset(x, y),
+        Paint()
+          ..color = color.withValues(alpha: 0.14 * env)
+          ..strokeWidth = 2
+          ..strokeCap = StrokeCap.round,
+      );
+      canvas.drawCircle(
+        Offset(x, y),
+        3.2,
+        Paint()..color = color.withValues(alpha: 0.30 * env),
+      );
+    }
+  }
+
+  // ── Histórica ─────────────────────────────────────────────────────────
+
+  /// Cartas y sobres que flotan, giran y se vuelven de canto como papel.
+  void _pintarCartasVolando(Canvas canvas, Size size) {
+    final fase = progreso * math.pi * 2;
+    for (var i = 0; i < 12; i++) {
+      final vida = _vida(i, 0.0833);
+      final env = _envolvente(vida);
+      final x =
+          _fraccion(i * 59.9) * size.width + math.sin(fase + i * 1.4) * 26;
+      final y =
+          size.height * (-0.05 + _fraccion(i * 17.3) * 0.65 + vida * 0.45);
+      final sobre = i % 3 == 0;
+      final ancho = sobre ? 30.0 : 22.0;
+      final alto = sobre ? 20.0 : 29.0;
+
+      canvas.save();
+      canvas.translate(x, y);
+      canvas.rotate(math.sin(fase + i * 0.9) * 0.55);
+      // Al girar sobre sí misma se ve de frente o de canto.
+      canvas.scale(0.35 + 0.65 * math.cos(fase * (1 + i % 2) + i).abs(), 1);
+
+      final rect = Rect.fromCenter(
+        center: Offset.zero,
+        width: ancho,
+        height: alto,
+      );
+      final papel = RRect.fromRectAndRadius(rect, const Radius.circular(2));
+      canvas.drawRRect(
+        papel,
+        Paint()..color = const Color(0xFFF4E8D2).withValues(alpha: 0.78 * env),
+      );
+      final trazo = Paint()
+        ..color = color.withValues(alpha: 0.50 * env)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 1.1;
+      canvas.drawRRect(papel, trazo);
+      if (sobre) {
+        canvas.drawPath(
+          Path()
+            ..moveTo(rect.left, rect.top)
+            ..lineTo(0, rect.center.dy + 1)
+            ..lineTo(rect.right, rect.top),
+          trazo,
+        );
+        canvas.drawCircle(
+          Offset(0, rect.center.dy + 1),
+          2.6,
+          Paint()
+            ..color = const Color(0xFFB5493B).withValues(alpha: 0.75 * env),
+        );
+      } else {
+        for (var l = 0; l < 4; l++) {
+          final yl = rect.top + 6 + l * 5.0;
+          canvas.drawLine(
+            Offset(rect.left + 4, yl),
+            Offset(rect.right - 4 - (l == 3 ? 7 : 0), yl),
+            trazo..strokeWidth = 0.9,
+          );
+        }
+      }
+      canvas.restore();
+    }
+  }
 
   double _fraccion(double valor) {
     return valor - valor.floorToDouble();
@@ -889,6 +1507,7 @@ class _AtmosferaPainter extends CustomPainter {
   bool shouldRepaint(covariant _AtmosferaPainter oldDelegate) {
     return oldDelegate.progreso != progreso ||
         oldDelegate.atmosfera != atmosfera ||
-        oldDelegate.color != color;
+        oldDelegate.color != color ||
+        oldDelegate.acento != acento;
   }
 }
