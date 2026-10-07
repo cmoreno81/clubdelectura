@@ -284,8 +284,9 @@ class _AtmosferaPainter extends CustomPainter {
         _pintarDestellos(canvas, size);
 
       case AtmosferaLectura.bosque:
+        // Sin rayos de luz: las bandas diagonales parecían rayas heredadas de
+        // la atmósfera anterior (épica dibujaba las mismas).
         _pintarHojas(canvas, size);
-        _pintarRayosCalidos(canvas, size);
 
       case AtmosferaLectura.oscura:
         _pintarBruma(canvas, size);
@@ -306,7 +307,6 @@ class _AtmosferaPainter extends CustomPainter {
 
       case AtmosferaLectura.epica:
         _pintarChispas(canvas, size);
-        _pintarRayosCalidos(canvas, size);
 
       case AtmosferaLectura.acogedora:
         _pintarVaporTaza(canvas, size);
@@ -448,8 +448,9 @@ class _AtmosferaPainter extends CustomPainter {
   }
 
   void _pintarChispas(Canvas canvas, Size size) {
-    for (var i = 0; i < 32; i++) {
-      final fase = (progreso * (0.35 + (i % 5) * 0.06) + i * 0.12) % 1;
+    // Pocas chispas y lentas: antes subían tan deprisa que cansaban.
+    for (var i = 0; i < 20; i++) {
+      final fase = (progreso * (0.10 + (i % 5) * 0.02) + i * 0.19) % 1;
       final x = _fraccion(i * 45.73) * size.width;
       final y = size.height + 20 - fase * (size.height + 40);
       final intensidad = 0.10 + fase * 0.24;
@@ -698,22 +699,6 @@ class _AtmosferaPainter extends CustomPainter {
     for (var i = 0; i < points.length; i++) {
       canvas.drawCircle(points[i], 1.8 + (i % 3), dot);
       if (i > 0 && i % 3 != 0) canvas.drawLine(points[i - 1], points[i], line);
-    }
-  }
-
-  void _pintarRayosCalidos(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..color = color.withValues(alpha: 0.13)
-      ..style = PaintingStyle.fill;
-    for (var i = 0; i < 4; i++) {
-      final drift = math.sin(progreso * math.pi * 2 + i) * 12;
-      final path = Path()
-        ..moveTo(size.width * (0.12 + i * 0.24) + drift, 0)
-        ..lineTo(size.width * (0.30 + i * 0.24) + drift, 0)
-        ..lineTo(size.width * (0.52 + i * 0.18), size.height)
-        ..lineTo(size.width * (0.34 + i * 0.18), size.height)
-        ..close();
-      canvas.drawPath(path, paint);
     }
   }
 
