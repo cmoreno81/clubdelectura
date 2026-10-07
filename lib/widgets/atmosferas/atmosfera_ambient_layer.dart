@@ -280,8 +280,10 @@ class _AtmosferaPainter extends CustomPainter {
         _pintarConstelacion(canvas, size);
 
       case AtmosferaLectura.marina:
-        _pintarOndas(canvas, size);
-        _pintarDestellos(canvas, size);
+        _pintarVientoMarino(canvas, size);
+        _pintarGaviotas(canvas, size);
+        _pintarMareaViva(canvas, size);
+        _pintarBrillosAgua(canvas, size);
 
       case AtmosferaLectura.bosque:
         // Sin rayos de luz: las bandas diagonales parecían rayas heredadas de
@@ -289,9 +291,11 @@ class _AtmosferaPainter extends CustomPainter {
         _pintarHojas(canvas, size);
 
       case AtmosferaLectura.oscura:
+        // Noche en calma: niebla, luna y estrellas. Sin lluvia ni brasas, que
+        // no casaban con una lectura «silenciosa».
+        _pintarEstrellasTenues(canvas, size);
+        _pintarLunaTenue(canvas, size);
         _pintarBruma(canvas, size);
-        _pintarLluvia(canvas, size);
-        _pintarBrasas(canvas, size);
 
       case AtmosferaLectura.gotica:
         _pintarBruma(canvas, size);
@@ -306,6 +310,8 @@ class _AtmosferaPainter extends CustomPainter {
         _pintarDestelloDiagonal(canvas, size);
 
       case AtmosferaLectura.epica:
+        _pintarResplandorFogata(canvas, size);
+        _pintarEstandartes(canvas, size);
         _pintarChispas(canvas, size);
 
       case AtmosferaLectura.acogedora:
@@ -375,32 +381,6 @@ class _AtmosferaPainter extends CustomPainter {
     }
   }
 
-  void _pintarOndas(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..color = color.withValues(alpha: 0.22)
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 1.4;
-
-    for (var fila = 0; fila < 8; fila++) {
-      final path = Path();
-
-      final yBase = size.height * (0.18 + fila * 0.17);
-      final desplazamiento = progreso * size.width * 0.35;
-
-      for (double x = -60; x <= size.width + 60; x += 8) {
-        final y = yBase + math.sin((x + desplazamiento + fila * 40) / 42) * 8;
-
-        if (x == -60) {
-          path.moveTo(x, y);
-        } else {
-          path.lineTo(x, y);
-        }
-      }
-
-      canvas.drawPath(path, paint);
-    }
-  }
-
   void _pintarHojas(Canvas canvas, Size size) {
     final paint = Paint()..color = color.withValues(alpha: 0.20);
 
@@ -448,45 +428,30 @@ class _AtmosferaPainter extends CustomPainter {
   }
 
   void _pintarChispas(Canvas canvas, Size size) {
-    // Pocas chispas y lentas: antes subían tan deprisa que cansaban.
-    for (var i = 0; i < 20; i++) {
-      final fase = (progreso * (0.10 + (i % 5) * 0.02) + i * 0.19) % 1;
-      final x = _fraccion(i * 45.73) * size.width;
-      final y = size.height + 20 - fase * (size.height + 40);
-      final intensidad = 0.10 + fase * 0.24;
+    final fase2pi = progreso * math.pi * 2;
+    for (var i = 0; i < 26; i++) {
+      // Cada ascua vive un ciclo: nace abajo, sube despacio balanceándose y
+      // se apaga antes de reiniciar (así el bucle de 10 s no da saltos).
+      final vida = (progreso + i * 0.0731) % 1;
+      final aparicion = math.sin(vida * math.pi);
+      final xBase = _fraccion(i * 45.73) * size.width;
+      final x = xBase + math.sin(fase2pi + i * 1.7) * 14;
+      final yInicio = size.height * (0.62 + _fraccion(i * 19.31) * 0.40);
+      final y = yInicio - vida * size.height * 0.34;
+      final parpadeo = (math.sin(fase2pi * 3 + i * 2.1) + 1) / 2;
+      final alfa = aparicion * (0.18 + parpadeo * 0.34);
 
-      // Estela ascendente: da sensación de chispa viva, no solo un punto.
-      canvas.drawLine(
+      canvas.drawCircle(
         Offset(x, y),
-        Offset(x, y + 15),
+        3.5 + (i % 3),
         Paint()
-          ..color = color.withValues(alpha: intensidad * 0.5)
-          ..strokeWidth = 1,
+          ..color = color.withValues(alpha: alfa * 0.35)
+          ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 3),
       );
-
       canvas.drawCircle(
         Offset(x, y),
-        1.5 + (i % 3),
-        Paint()..color = color.withValues(alpha: intensidad),
-      );
-    }
-  }
-
-  /// Brasas que ascienden parpadeando desde la oscuridad — el empujón extra
-  /// para Oscura, que antes solo tenía niebla y lluvia estática.
-  void _pintarBrasas(Canvas canvas, Size size) {
-    for (var i = 0; i < 20; i++) {
-      final velocidad = 0.28 + (i % 5) * 0.08;
-      final fase = (progreso * velocidad + i * 0.137) % 1;
-      final xBase = _fraccion(i * 63.11) * size.width;
-      final x = xBase + math.sin(progreso * math.pi * 2 + i * 1.3) * 16;
-      final y = size.height + 16 - fase * (size.height + 50);
-      final parpadeo = (math.sin(progreso * math.pi * 6 + i) + 1) / 2;
-
-      canvas.drawCircle(
-        Offset(x, y),
-        1.1 + parpadeo * 1.7,
-        Paint()..color = color.withValues(alpha: 0.10 + parpadeo * 0.26),
+        1.3 + (i % 3) * 0.6,
+        Paint()..color = color.withValues(alpha: alfa),
       );
     }
   }
@@ -669,18 +634,6 @@ class _AtmosferaPainter extends CustomPainter {
     }
   }
 
-  void _pintarLluvia(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..color = color.withValues(alpha: 0.28)
-      ..strokeWidth = 1.5;
-    for (var i = 0; i < 42; i++) {
-      final x = _fraccion(i * 57.19) * size.width;
-      final fase = (progreso * (0.7 + (i % 4) * 0.09) + i * 0.08) % 1;
-      final y = fase * size.height;
-      canvas.drawLine(Offset(x, y), Offset(x - 7, y + 30), paint);
-    }
-  }
-
   void _pintarConstelacion(Canvas canvas, Size size) {
     final points = <Offset>[];
     for (var i = 0; i < 12; i++) {
@@ -701,6 +654,232 @@ class _AtmosferaPainter extends CustomPainter {
       if (i > 0 && i % 3 != 0) canvas.drawLine(points[i - 1], points[i], line);
     }
   }
+
+  // ── Marina ────────────────────────────────────────────────────────────
+
+  /// Rayas de viento que cruzan la parte alta de lado a lado.
+  void _pintarVientoMarino(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = color.withValues(alpha: 0.16)
+      ..strokeWidth = 1.2
+      ..strokeCap = StrokeCap.round;
+    for (var i = 0; i < 7; i++) {
+      final y = size.height * (0.08 + _fraccion(i * 37.3) * 0.34);
+      final largo = size.width * (0.16 + _fraccion(i * 13.7) * 0.22);
+      // Multiplicador entero: el bucle de 10 s encaja sin saltos.
+      final x =
+          ((progreso * (1 + i % 3) + i * 0.17) % 1) * (size.width + largo * 2) -
+          largo;
+      canvas.drawLine(Offset(x, y), Offset(x + largo, y), paint);
+    }
+  }
+
+  /// Gaviotas que planean de un lado a otro moviendo las alas.
+  void _pintarGaviotas(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = color.withValues(alpha: 0.38)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1.7
+      ..strokeCap = StrokeCap.round;
+    for (var g = 0; g < 2; g++) {
+      final t = (progreso + g * 0.5) % 1;
+      final x = -40 + t * (size.width + 80);
+      final y = size.height * (0.17 + g * 0.10) + math.sin(t * math.pi * 4) * 9;
+      final ala = 8 + math.sin(t * math.pi * 12) * 2.6;
+      final path = Path()
+        ..moveTo(x - ala * 2, y + ala * 0.3)
+        ..quadraticBezierTo(x - ala, y - ala * 0.9, x, y)
+        ..quadraticBezierTo(x + ala, y - ala * 0.9, x + ala * 2, y + ala * 0.3);
+      canvas.drawPath(path, paint);
+    }
+  }
+
+  /// Cuatro capas de olas rellenas que suben y bajan a distinto ritmo, con
+  /// espuma en la cresta de la más cercana.
+  void _pintarMareaViva(Canvas canvas, Size size) {
+    final fase = progreso * math.pi * 2;
+    for (var capa = 0; capa < 4; capa++) {
+      final dir = capa.isEven ? 1 : -1;
+      final vel = 1 + capa % 2;
+      // Vaivén vertical de toda la capa, como respirando.
+      final base =
+          size.height * (0.62 + capa * 0.085) + math.sin(fase + capa * 1.3) * 6;
+      final amp = 9.0 + capa * 3;
+      final longitud = 58.0 + capa * 17;
+
+      final relleno = Path()..moveTo(-10, size.height + 10);
+      final cresta = Path();
+      final crestas = <Offset>[];
+      for (double x = -10; x <= size.width + 10; x += 6) {
+        final y =
+            base +
+            math.sin(x / longitud + fase * vel * dir) * amp +
+            math.sin(x / 23 - fase * 2) * 2.4;
+        relleno.lineTo(x, y);
+        if (x == -10) {
+          cresta.moveTo(x, y);
+        } else {
+          cresta.lineTo(x, y);
+        }
+        if (capa == 3 && (x + 10) % 36 == 0) crestas.add(Offset(x, y));
+      }
+      relleno
+        ..lineTo(size.width + 10, size.height + 10)
+        ..close();
+
+      canvas.drawPath(
+        relleno,
+        Paint()..color = color.withValues(alpha: 0.09 + capa * 0.035),
+      );
+      canvas.drawPath(
+        cresta,
+        Paint()
+          ..color = color.withValues(alpha: 0.18 + capa * 0.04)
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 1.5,
+      );
+      for (var i = 0; i < crestas.length; i++) {
+        final espuma = (math.sin(fase * 2 + i) + 1) / 2;
+        canvas.drawCircle(
+          crestas[i].translate(0, -2),
+          1.2 + espuma * 1.8,
+          Paint()..color = Colors.white.withValues(alpha: 0.10 + espuma * 0.22),
+        );
+      }
+    }
+  }
+
+  /// Destellos del sol sobre el agua: rayitas horizontales que titilan.
+  void _pintarBrillosAgua(Canvas canvas, Size size) {
+    final fase = progreso * math.pi * 2;
+    for (var i = 0; i < 24; i++) {
+      final x = _fraccion(i * 81.41) * size.width;
+      final y = size.height * (0.64 + _fraccion(i * 39.73) * 0.32);
+      final pulso = (math.sin(fase * (1 + i % 2) + i * 0.9) + 1) / 2;
+      canvas.drawLine(
+        Offset(x - 5 - pulso * 5, y),
+        Offset(x + 5 + pulso * 5, y),
+        Paint()
+          ..color = Colors.white.withValues(alpha: 0.06 + pulso * 0.24)
+          ..strokeWidth = 1.5
+          ..strokeCap = StrokeCap.round,
+      );
+    }
+  }
+
+  // ── Oscura ────────────────────────────────────────────────────────────
+
+  /// Luna con un halo que respira muy despacio, arriba a la derecha.
+  void _pintarLunaTenue(Canvas canvas, Size size) {
+    final centro = Offset(size.width * 0.80, size.height * 0.13);
+    final respiro = (math.sin(progreso * math.pi * 2) + 1) / 2;
+    canvas.drawCircle(
+      centro,
+      120,
+      Paint()
+        ..shader = RadialGradient(
+          colors: [
+            color.withValues(alpha: 0.20 + respiro * 0.08),
+            color.withValues(alpha: 0),
+          ],
+        ).createShader(Rect.fromCircle(center: centro, radius: 120)),
+    );
+    canvas.drawCircle(
+      centro,
+      24,
+      Paint()..color = color.withValues(alpha: 0.30 + respiro * 0.06),
+    );
+  }
+
+  /// Pocas estrellas que titilan en la parte alta.
+  void _pintarEstrellasTenues(Canvas canvas, Size size) {
+    for (var i = 0; i < 16; i++) {
+      final x = _fraccion(i * 71.37) * size.width;
+      final y = _fraccion(i * 29.11) * size.height * 0.45;
+      final titileo = (math.sin(progreso * math.pi * 2 * (1 + i % 2) + i) + 1) / 2;
+      canvas.drawCircle(
+        Offset(x, y),
+        0.9 + titileo * 1.0,
+        Paint()..color = color.withValues(alpha: 0.10 + titileo * 0.30),
+      );
+    }
+  }
+
+  // ── Épica ─────────────────────────────────────────────────────────────
+
+  /// Luz de hoguera que parpadea desde el borde de abajo.
+  void _pintarResplandorFogata(Canvas canvas, Size size) {
+    final fase = progreso * math.pi * 2;
+    final parpadeo =
+        0.5 + math.sin(fase * 3) * 0.25 + math.sin(fase * 7 + 1.3) * 0.15;
+    final centro = Offset(size.width * 0.5, size.height * 1.02);
+    final radio = size.height * 0.55;
+    canvas.drawCircle(
+      centro,
+      radio,
+      Paint()
+        ..shader = RadialGradient(
+          colors: [
+            color.withValues(alpha: 0.18 + parpadeo * 0.12),
+            color.withValues(alpha: 0),
+          ],
+        ).createShader(Rect.fromCircle(center: centro, radius: radio)),
+    );
+  }
+
+  /// Dos estandartes ondeando en los bordes, como un campamento antes de la
+  /// batalla.
+  void _pintarEstandartes(Canvas canvas, Size size) {
+    final fase = progreso * math.pi * 2;
+    for (var lado = 0; lado < 2; lado++) {
+      final dir = lado == 0 ? 1.0 : -1.0;
+      final xAsta = lado == 0 ? size.width * 0.07 : size.width * 0.93;
+      final yTop = size.height * (0.08 + lado * 0.05);
+      final largo = size.width * 0.30;
+      final alto = 58.0;
+
+      canvas.drawLine(
+        Offset(xAsta, yTop - 10),
+        Offset(xAsta, yTop + alto + size.height * 0.30),
+        Paint()
+          ..color = color.withValues(alpha: 0.30)
+          ..strokeWidth = 2.2
+          ..strokeCap = StrokeCap.round,
+      );
+
+      const pasos = 14;
+      final arriba = <Offset>[];
+      final abajo = <Offset>[];
+      for (var k = 0; k <= pasos; k++) {
+        final u = k / pasos;
+        final x = xAsta + dir * largo * u;
+        final ondulacion = math.sin(fase * 2 - u * 4 + lado) * 7 * u;
+        final mitad = alto / 2 * (1 - u);
+        final centroY = yTop + alto / 2 + ondulacion;
+        arriba.add(Offset(x, centroY - mitad));
+        abajo.add(Offset(x, centroY + mitad));
+      }
+      final bandera = Path()..moveTo(arriba.first.dx, arriba.first.dy);
+      for (final punto in arriba.skip(1)) {
+        bandera.lineTo(punto.dx, punto.dy);
+      }
+      for (final punto in abajo.reversed) {
+        bandera.lineTo(punto.dx, punto.dy);
+      }
+      bandera.close();
+
+      canvas.drawPath(bandera, Paint()..color = color.withValues(alpha: 0.20));
+      canvas.drawPath(
+        bandera,
+        Paint()
+          ..color = color.withValues(alpha: 0.34)
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 1.3
+          ..strokeJoin = StrokeJoin.round,
+      );
+    }
+  }
+
 
   double _fraccion(double valor) {
     return valor - valor.floorToDouble();
