@@ -65,7 +65,8 @@ class _ComprarLecturaClubCardState extends State<ComprarLecturaClubCard> {
     if (widget.bookId.isEmpty ||
         enlace == null ||
         !enlace.exacto ||
-        enlace.yaEmpezado) {
+        enlace.yaEmpezado ||
+        enlace.loTengo) {
       return const SizedBox.shrink();
     }
     return Container(

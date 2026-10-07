@@ -2879,7 +2879,11 @@ class _ComprarAhoraCardState extends State<_ComprarAhoraCard>
             );
       if (!mounted || peticion != _peticion) return;
       final portadas = candidatos
-          .where((i) => enlaces[i.bookId]?.exacto == true)
+          .where(
+            (i) =>
+                enlaces[i.bookId]?.exacto == true &&
+                enlaces[i.bookId]?.loTengo != true,
+          )
           .map((i) => i.coverUrl!)
           .take(3)
           .toList();

@@ -92,87 +92,149 @@ class _ComprarLibroCardState extends State<ComprarLibroCard> {
     if (widget.bookId.isEmpty || enlace == null || !enlace.exacto) {
       return const SizedBox.shrink();
     }
+    // Ya lo tiene: en lugar de ofrecer la compra, una línea discreta para
+    // deshacerlo si fue un error.
+    if (enlace.loTengo) {
+      return Padding(
+        padding: EdgeInsets.only(
+          top: widget.espacioAntes,
+          bottom: widget.espacioDespues,
+        ),
+        child: Row(
+          children: [
+            const Icon(
+              Icons.check_circle_outline,
+              size: 18,
+              color: ColoresCompra.verde,
+            ),
+            const SizedBox(width: AppSpacing.xs),
+            Expanded(
+              child: Text('Ya lo tienes', style: AppTextStyles.bodySecondary),
+            ),
+            TextButton(
+              onPressed: () => _marcarLoTengo(false),
+              child: const Text('Deshacer'),
+            ),
+          ],
+        ),
+      );
+    }
+    final puedeMarcar = enlace.enBiblioteca && !enlace.yaEmpezado;
     return Padding(
       padding: EdgeInsets.only(
         top: widget.espacioAntes,
         bottom: widget.espacioDespues,
       ),
-      child: ClubSectionCard(
-        onTap: _abrir,
-        backgroundColor: ColoresCompra.fondo,
-        borderColor: ColoresCompra.borde,
-        padding: const EdgeInsets.all(AppSpacing.md),
-        child: Row(
-          children: [
-            Container(
-              width: 48,
-              height: 48,
-              decoration: BoxDecoration(
-                color: ColoresCompra.verdeClaro,
-                borderRadius: BorderRadius.circular(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _tarjeta(),
+          if (puedeMarcar)
+            TextButton.icon(
+              onPressed: () => _marcarLoTengo(true),
+              icon: const Icon(Icons.check_circle_outline, size: 16),
+              label: const Text('Ya lo tengo'),
+              style: TextButton.styleFrom(
+                foregroundColor: ColoresCompra.verde,
+                visualDensity: VisualDensity.compact,
               ),
-              child: _abriendo
-                  ? const Padding(
-                      padding: EdgeInsets.all(14),
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    )
-                  : const Icon(
-                      Icons.shopping_bag_outlined,
-                      color: ColoresCompra.verde,
-                    ),
             ),
-            const SizedBox(width: AppSpacing.md),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Flexible(
-                        child: Text(
-                          'Comprar en Casa del Libro',
-                          style: AppTextStyles.subtitle.copyWith(
-                            color: AppColors.textPrimary,
-                            fontWeight: FontWeight.w700,
-                          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _marcarLoTengo(bool valor) async {
+    final messenger = ScaffoldMessenger.of(context);
+    final guardado = await ApiService().setLoTengo(widget.bookId, valor);
+    if (!mounted) return;
+    if (!guardado) {
+      messenger.showSnackBar(
+        const SnackBar(
+          content: Text('No se ha podido guardar. Inténtalo de nuevo.'),
+        ),
+      );
+      return;
+    }
+    await _cargar();
+  }
+
+  Widget _tarjeta() {
+    return ClubSectionCard(
+      onTap: _abrir,
+      backgroundColor: ColoresCompra.fondo,
+      borderColor: ColoresCompra.borde,
+      padding: const EdgeInsets.all(AppSpacing.md),
+      child: Row(
+        children: [
+          Container(
+            width: 48,
+            height: 48,
+            decoration: BoxDecoration(
+              color: ColoresCompra.verdeClaro,
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: _abriendo
+                ? const Padding(
+                    padding: EdgeInsets.all(14),
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
+                : const Icon(
+                    Icons.shopping_bag_outlined,
+                    color: ColoresCompra.verde,
+                  ),
+          ),
+          const SizedBox(width: AppSpacing.md),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Flexible(
+                      child: Text(
+                        'Comprar en Casa del Libro',
+                        style: AppTextStyles.subtitle.copyWith(
+                          color: AppColors.textPrimary,
+                          fontWeight: FontWeight.w700,
                         ),
                       ),
-                      const SizedBox(width: AppSpacing.xs),
-                      const EtiquetaPublicidad(),
+                    ),
+                    const SizedBox(width: AppSpacing.xs),
+                    const EtiquetaPublicidad(),
+                  ],
+                ),
+                const SizedBox(height: AppSpacing.xs),
+                Text(
+                  'Enlace de afiliado: ClubReads puede recibir una comisión, '
+                  'sin coste extra para ti.',
+                  style: AppTextStyles.bodySecondary,
+                ),
+                if ((_enlace?.formatos.length ?? 0) > 1) ...[
+                  const SizedBox(height: AppSpacing.sm),
+                  Wrap(
+                    spacing: AppSpacing.xs,
+                    runSpacing: AppSpacing.xs,
+                    children: [
+                      for (final f in _enlace!.formatos)
+                        ActionChip(
+                          label: Text(f.etiqueta),
+                          visualDensity: VisualDensity.compact,
+                          backgroundColor: f.formato == _enlace!.formato
+                              ? ColoresCompra.verdeClaro
+                              : Colors.white,
+                          side: const BorderSide(color: ColoresCompra.borde),
+                          onPressed: () => _abrir(f.url),
+                        ),
                     ],
                   ),
-                  const SizedBox(height: AppSpacing.xs),
-                  Text(
-                    'Enlace de afiliado: ClubReads puede recibir una comisión, '
-                    'sin coste extra para ti.',
-                    style: AppTextStyles.bodySecondary,
-                  ),
-                  if ((_enlace?.formatos.length ?? 0) > 1) ...[
-                    const SizedBox(height: AppSpacing.sm),
-                    Wrap(
-                      spacing: AppSpacing.xs,
-                      runSpacing: AppSpacing.xs,
-                      children: [
-                        for (final f in _enlace!.formatos)
-                          ActionChip(
-                            label: Text(f.etiqueta),
-                            visualDensity: VisualDensity.compact,
-                            backgroundColor: f.formato == _enlace!.formato
-                                ? ColoresCompra.verdeClaro
-                                : Colors.white,
-                            side: const BorderSide(color: ColoresCompra.borde),
-                            onPressed: () => _abrir(f.url),
-                          ),
-                      ],
-                    ),
-                  ],
                 ],
-              ),
+              ],
             ),
-            const SizedBox(width: AppSpacing.sm),
-            const Icon(Icons.chevron_right_rounded, color: ColoresCompra.verde),
-          ],
-        ),
+          ),
+          const SizedBox(width: AppSpacing.sm),
+          const Icon(Icons.chevron_right_rounded, color: ColoresCompra.verde),
+        ],
       ),
     );
   }

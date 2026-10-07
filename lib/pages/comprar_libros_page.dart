@@ -220,8 +220,13 @@ class _ComprarLibrosPageState extends State<ComprarLibrosPage>
     ]);
     // Solo se muestran los libros que se pueden comprar de verdad: los que la
     // tienda no tiene localizados no llevan a ninguna ficha.
-    List<_LibroCompra> comprables(List<_LibroCompra> l) =>
-        l.where((x) => enlaces[x.bookId]?.exacto == true).toList();
+    List<_LibroCompra> comprables(List<_LibroCompra> l) => l
+        .where(
+          (x) =>
+              enlaces[x.bookId]?.exacto == true &&
+              enlaces[x.bookId]?.loTengo != true,
+        )
+        .toList();
     return _ListasCompra(
       deseados: comprables(deseados),
       pendientes: comprables(pendientes),
@@ -243,6 +248,40 @@ class _ComprarLibrosPageState extends State<ComprarLibrosPage>
   }
 
   void _recargar() => setState(() => _future = _cargar());
+
+  // Libros marcados "Ya lo tengo" en esta pantalla: salen de la lista al
+  // momento, sin recargarla.
+  final Set<String> _tengo = {};
+
+  Future<void> _marcarLoTengo(_LibroCompra libro) async {
+    final messenger = ScaffoldMessenger.of(context);
+    setState(() => _tengo.add(libro.bookId));
+    final guardado = await ApiService().setLoTengo(libro.bookId, true);
+    if (!mounted) return;
+    if (!guardado) {
+      setState(() => _tengo.remove(libro.bookId));
+      messenger.showSnackBar(
+        const SnackBar(
+          content: Text('No se ha podido guardar. Inténtalo de nuevo.'),
+        ),
+      );
+      return;
+    }
+    messenger
+      ..hideCurrentSnackBar()
+      ..showSnackBar(
+        SnackBar(
+          content: Text('"${libro.titulo}" marcado como que ya lo tienes'),
+          action: SnackBarAction(
+            label: 'Deshacer',
+            onPressed: () async {
+              setState(() => _tengo.remove(libro.bookId));
+              await ApiService().setLoTengo(libro.bookId, false);
+            },
+          ),
+        ),
+      );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -273,6 +312,10 @@ class _ComprarLibrosPageState extends State<ComprarLibrosPage>
               );
             }
             final d = snap.data!;
+            final pendientes = [
+              for (final l in d.pendientes)
+                if (!_tengo.contains(l.bookId)) l,
+            ];
             return Column(
               children: [
                 const _AvisoPublicidad(),
@@ -286,7 +329,7 @@ class _ComprarLibrosPageState extends State<ComprarLibrosPage>
                   tabs: [
                     for (final etiqueta in [
                       'Deseados (${d.deseados.length})',
-                      'Pendientes (${d.pendientes.length})',
+                      'Pendientes (${pendientes.length})',
                       'Próximos (${d.proximos.length})',
                     ])
                       Tab(
@@ -309,8 +352,9 @@ class _ComprarLibrosPageState extends State<ComprarLibrosPage>
                       ),
                       _Lista(
                         onAbierto: _alAbrirTienda,
-                        libros: d.pendientes,
+                        libros: pendientes,
                         enlaces: d.enlaces,
+                        onYaLoTengo: _marcarLoTengo,
                         vacio:
                             'Ninguno de tus pendientes está a la venta en Casa del Libro.',
                       ),
@@ -402,12 +446,14 @@ class _Lista extends StatelessWidget {
     required this.enlaces,
     required this.vacio,
     this.onAbierto,
+    this.onYaLoTengo,
   });
 
   final List<_LibroCompra> libros;
   final Map<String, EnlaceCompra> enlaces;
   final String vacio;
   final void Function(_LibroCompra, EnlaceCompraFormato)? onAbierto;
+  final void Function(_LibroCompra)? onYaLoTengo;
 
   @override
   Widget build(BuildContext context) {
@@ -433,6 +479,7 @@ class _Lista extends StatelessWidget {
           libro: libro,
           enlace: enlaces[libro.bookId],
           onAbierto: onAbierto == null ? null : (f) => onAbierto!(libro, f),
+          onYaLoTengo: onYaLoTengo == null ? null : () => onYaLoTengo!(libro),
         );
       },
     );
@@ -444,11 +491,13 @@ class _FilaCompra extends StatelessWidget {
     required this.libro,
     required this.enlace,
     this.onAbierto,
+    this.onYaLoTengo,
   });
 
   final _LibroCompra libro;
   final EnlaceCompra? enlace;
   final ValueChanged<EnlaceCompraFormato>? onAbierto;
+  final VoidCallback? onYaLoTengo;
 
   @override
   Widget build(BuildContext context) {
@@ -498,6 +547,21 @@ class _FilaCompra extends StatelessWidget {
                   ),
                 const SizedBox(height: AppSpacing.sm),
                 if (e != null) BotonesCompra(enlace: e, onAbierto: onAbierto),
+                if (onYaLoTengo != null)
+                  TextButton.icon(
+                    onPressed: onYaLoTengo,
+                    icon: const Icon(Icons.check_circle_outline, size: 16),
+                    label: const Text('Ya lo tengo'),
+                    style: TextButton.styleFrom(
+                      foregroundColor: ColoresCompra.verde,
+                      visualDensity: VisualDensity.compact,
+                      padding: const EdgeInsets.symmetric(horizontal: 4),
+                      textStyle: const TextStyle(
+                        fontWeight: FontWeight.w700,
+                        fontSize: 13,
+                      ),
+                    ),
+                  ),
               ],
             ),
           ),

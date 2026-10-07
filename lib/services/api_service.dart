@@ -1214,6 +1214,16 @@ class ApiService {
     return EnlaceCompra.fromJson(data);
   }
 
+  /// Marca (o desmarca) "Ya lo tengo": solo apaga los botones de compra de
+  /// ese libro para la lectora. Devuelve false si no se ha podido guardar.
+  Future<bool> setLoTengo(String bookId, bool loTengo) async {
+    final uri = Uri.parse('$baseUrl/libros/$bookId/lo-tengo');
+    final response = loTengo
+        ? await _client.put(uri)
+        : await _client.delete(uri);
+    return response.statusCode == 200;
+  }
+
   /// Enlaces de varios libros de una vez, por id de libro. Los libros que la
   /// tienda no devuelve no aparecen en el mapa.
   Future<Map<String, EnlaceCompra>> getEnlacesCompraLote(
@@ -2818,6 +2828,8 @@ class EnlaceCompra {
     required this.formatos,
     this.exacto = true,
     this.yaEmpezado = false,
+    this.loTengo = false,
+    this.enBiblioteca = false,
   });
 
   final String url;
@@ -2832,6 +2844,13 @@ class EnlaceCompra {
 
   /// La lectora ya ha empezado o terminado este libro.
   final bool yaEmpezado;
+
+  /// La lectora ya tiene el libro (lo marcó con "Ya lo tengo" o compró el
+  /// deseo): no se le ofrece comprarlo.
+  final bool loTengo;
+
+  /// El libro está en su biblioteca, así que se puede marcar "Ya lo tengo".
+  final bool enBiblioteca;
 
   static EnlaceCompra? fromJson(Map<String, dynamic> data) {
     final url = data['url']?.toString() ?? '';
@@ -2860,6 +2879,8 @@ class EnlaceCompra {
       formatos: formatos,
       exacto: data['exacto'] != false,
       yaEmpezado: data['yaEmpezado'] == true,
+      loTengo: data['loTengo'] == true,
+      enBiblioteca: data['enBiblioteca'] == true,
     );
   }
 }
