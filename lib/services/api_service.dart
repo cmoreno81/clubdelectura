@@ -1501,6 +1501,19 @@ class ApiService {
     return _respuestaOk(response);
   }
 
+  /// Corrige el formato con el que la lectora leyó un libro que ya terminó
+  /// ([formato]: `FISICO`, `DIGITAL` o `AUDIOLIBRO`).
+  Future<bool> actualizarFormatoLibro({
+    required String bookId,
+    required String formato,
+  }) async {
+    final response = await _postJson('actualizarFormatoLibro', {
+      'bookId': bookId,
+      'formato': formato,
+    });
+    return _respuestaOk(response);
+  }
+
   Future<Map<String, dynamic>> actualizarIdiomaLibro({
     required String bookId,
     required String idioma,

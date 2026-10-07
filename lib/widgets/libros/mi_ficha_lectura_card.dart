@@ -6,6 +6,7 @@ import '../../theme/app_colors.dart';
 import '../../theme/app_spacing.dart';
 import '../../theme/app_text_styles.dart';
 import '../../utils/corregir_finalizacion_utils.dart';
+import '../../utils/formato_libro.dart';
 import '../../utils/idioma_utils.dart';
 import '../common/club_avatar.dart';
 import '../common/club_card.dart';
@@ -37,6 +38,7 @@ class _MiFichaLecturaCardState extends State<MiFichaLecturaCard> {
   bool _guardandoValoracion = false;
   bool _guardandoPicante = false;
   bool _guardandoIdioma = false;
+  bool _guardandoFormato = false;
   bool _corrigiendoFinalizacion = false;
 
   @override
@@ -50,7 +52,9 @@ class _MiFichaLecturaCardState extends State<MiFichaLecturaCard> {
   void didUpdateWidget(covariant MiFichaLecturaCard oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.finalizado.valoracion != widget.finalizado.valoracion) {
-      _valoracion = ClubRatingStars.parseValoracion(widget.finalizado.valoracion);
+      _valoracion = ClubRatingStars.parseValoracion(
+        widget.finalizado.valoracion,
+      );
     }
     if (oldWidget.finalizado.picante != widget.finalizado.picante) {
       _picante = _parsePicante(widget.finalizado.picante);
@@ -196,6 +200,88 @@ class _MiFichaLecturaCardState extends State<MiFichaLecturaCard> {
       _avisarError();
     } finally {
       if (mounted) setState(() => _guardandoIdioma = false);
+    }
+  }
+
+  /// Códigos que viajan al servidor para cada formato.
+  static const _formatos = [
+    (codigo: 'FISICO', clave: 'papel'),
+    (codigo: 'DIGITAL', clave: 'ebook'),
+    (codigo: 'AUDIOLIBRO', clave: 'audio'),
+  ];
+
+  Future<void> _elegirFormato() async {
+    final actual = FormatoLibro.normalizar(widget.finalizado.formato);
+    final seleccionado = await showModalBottomSheet<String>(
+      context: context,
+      showDragHandle: true,
+      useSafeArea: true,
+      isScrollControlled: true,
+      builder: (sheetContext) => SingleChildScrollView(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(
+            AppSpacing.md,
+            0,
+            AppSpacing.md,
+            AppSpacing.lg,
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Formato de "${widget.finalizado.libro}"',
+                style: AppTextStyles.section,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+              ),
+              const SizedBox(height: AppSpacing.xs),
+              Text(
+                'El formato en el que TÚ lo leíste. Se usa en tus estadísticas '
+                'y en la pila de pendientes.',
+                style: AppTextStyles.bodySecondary,
+              ),
+              const SizedBox(height: AppSpacing.md),
+              for (final f in _formatos)
+                ListTile(
+                  leading: Text(
+                    FormatoLibro.emoji(f.clave),
+                    style: const TextStyle(fontSize: 22),
+                  ),
+                  title: Text(FormatoLibro.etiqueta(f.clave)),
+                  trailing: f.clave == actual
+                      ? const Icon(
+                          Icons.check_rounded,
+                          color: AppColors.primary,
+                        )
+                      : null,
+                  onTap: () => Navigator.pop(sheetContext, f.codigo),
+                ),
+            ],
+          ),
+        ),
+      ),
+    );
+
+    if (seleccionado == null || !mounted) return;
+
+    setState(() => _guardandoFormato = true);
+    try {
+      final ok = await ApiService().actualizarFormatoLibro(
+        bookId: widget.finalizado.bookId,
+        formato: seleccionado,
+      );
+      if (!mounted) return;
+      if (ok) {
+        widget.onCambiado();
+      } else {
+        _avisarError();
+      }
+    } catch (_) {
+      if (!mounted) return;
+      _avisarError();
+    } finally {
+      if (mounted) setState(() => _guardandoFormato = false);
     }
   }
 
@@ -385,57 +471,119 @@ class _MiFichaLecturaCardState extends State<MiFichaLecturaCard> {
 
           const SizedBox(height: AppSpacing.sm),
 
-          Text(
-            'Idioma que leí',
-            style: AppTextStyles.caption.copyWith(
-              fontWeight: FontWeight.w700,
-              color: AppColors.textSecondary,
-            ),
-          ),
-          const SizedBox(height: AppSpacing.xs),
-          InkWell(
-            borderRadius: BorderRadius.circular(20),
-            onTap: _guardandoIdioma ? null : _elegirIdioma,
-            child: Padding(
-              padding: const EdgeInsets.symmetric(
-                horizontal: AppSpacing.sm,
-                vertical: AppSpacing.xs,
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    banderaIdioma(widget.finalizado.idioma),
-                    style: const TextStyle(fontSize: 18),
-                  ),
-                  const SizedBox(width: AppSpacing.xs),
-                  Text(
-                    widget.finalizado.idioma.isEmpty
-                        ? 'Sin especificar'
-                        : nombreIdioma(widget.finalizado.idioma),
-                    style: AppTextStyles.body.copyWith(
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                  const SizedBox(width: AppSpacing.xs),
-                  if (_guardandoIdioma)
-                    const SizedBox(
-                      width: 14,
-                      height: 14,
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    )
-                  else
-                    const Icon(
-                      Icons.edit_rounded,
-                      size: 16,
-                      color: AppColors.textMuted,
-                    ),
-                ],
-              ),
-            ),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(child: _columnaIdioma()),
+              const SizedBox(width: AppSpacing.sm),
+              Expanded(child: _columnaFormato()),
+            ],
           ),
         ],
       ),
     );
   }
+
+  Widget _columnaIdioma() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Idioma que leí',
+          style: AppTextStyles.caption.copyWith(
+            fontWeight: FontWeight.w700,
+            color: AppColors.textSecondary,
+          ),
+        ),
+        const SizedBox(height: AppSpacing.xs),
+        InkWell(
+          borderRadius: BorderRadius.circular(20),
+          onTap: _guardandoIdioma ? null : _elegirIdioma,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: AppSpacing.xs),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  banderaIdioma(widget.finalizado.idioma),
+                  style: const TextStyle(fontSize: 18),
+                ),
+                const SizedBox(width: AppSpacing.xs),
+                Flexible(
+                  child: Text(
+                    widget.finalizado.idioma.isEmpty
+                        ? 'Sin especificar'
+                        : nombreIdioma(widget.finalizado.idioma),
+                    overflow: TextOverflow.ellipsis,
+                    style: AppTextStyles.body.copyWith(
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: AppSpacing.xs),
+                _iconoEdicion(_guardandoIdioma),
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _columnaFormato() {
+    final clave = FormatoLibro.normalizar(widget.finalizado.formato);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Formato que leí',
+          style: AppTextStyles.caption.copyWith(
+            fontWeight: FontWeight.w700,
+            color: AppColors.textSecondary,
+          ),
+        ),
+        const SizedBox(height: AppSpacing.xs),
+        InkWell(
+          borderRadius: BorderRadius.circular(20),
+          onTap: _guardandoFormato ? null : _elegirFormato,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: AppSpacing.xs),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                if (clave != null) ...[
+                  Text(
+                    FormatoLibro.emoji(clave),
+                    style: const TextStyle(fontSize: 18),
+                  ),
+                  const SizedBox(width: AppSpacing.xs),
+                ],
+                Flexible(
+                  child: Text(
+                    clave == null
+                        ? 'Sin especificar'
+                        : FormatoLibro.etiqueta(clave),
+                    overflow: TextOverflow.ellipsis,
+                    style: AppTextStyles.body.copyWith(
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: AppSpacing.xs),
+                _iconoEdicion(_guardandoFormato),
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _iconoEdicion(bool guardando) => guardando
+      ? const SizedBox(
+          width: 14,
+          height: 14,
+          child: CircularProgressIndicator(strokeWidth: 2),
+        )
+      : const Icon(Icons.edit_rounded, size: 16, color: AppColors.textMuted);
 }
