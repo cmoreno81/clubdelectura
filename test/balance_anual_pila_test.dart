@@ -42,5 +42,6 @@ void main() {
     expect(find.byType(LinearProgressIndicator), findsNWidgets(2));
     expect(find.textContaining('te quedan 3 en casa'), findsOneWidget);
     expect(find.textContaining('nuevos este año: 4'), findsOneWidget);
+    expect(find.textContaining('terminados este año'), findsOneWidget);
   });
 }

@@ -465,9 +465,8 @@ const List<_HelpSection> _secciones = [
             '• "Tu año" compara los pendientes en papel que has leído o empezado este '
             'año con los que tienes en casa sin leer, que son los que te quedan por '
             'ir quitando. Cuenta como papel el libro con formato papel o sin '
-            'formato; los ebooks y audiolibros no entran. Debajo ves cuántos '
-            'pendientes en papel nuevos han entrado este año.\n'
-            '• La línea muestra cómo ha evolucionado la pila en los últimos 12 meses.\n\n'
+            'formato; los ebooks y audiolibros no entran. Debajo ves cuántos libros '
+            'en papel has terminado este año y cuántos pendientes nuevos han entrado.\n\n'
             'Debajo, "Ver lo que me falta por comprar" abre la lista de pendientes '
             'que aún no tienes. Las personas de tu club ven esta tarjeta en tu '
             'perfil, salvo que lo tengas en "Solo yo".',

@@ -10,9 +10,9 @@ import '../../services/wishlist_service.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_radius.dart';
 
-/// "Tu pila de pendientes": un contador con lo que sube o baja cada mes, el
-/// balance del año (pendientes leídos frente a nuevos) y la línea de cómo
-/// evoluciona la pila. En el perfil de otra lectora del club ([usuario]) se
+/// "Tu pila de pendientes": un contador con lo que sube o baja cada mes y el
+/// balance del año (pendientes en papel leídos frente a los que tienes en
+/// casa sin leer). En el perfil de otra lectora del club ([usuario]) se
 /// ve igual pero sin el enlace a comprar.
 class EstanteriaPendientesCard extends StatefulWidget {
   const EstanteriaPendientesCard({super.key, this.usuario = ''});
@@ -102,19 +102,6 @@ class _EstanteriaPendientesCardState extends State<EstanteriaPendientesCard> {
           _Contador(datos: d),
           const SizedBox(height: 16),
           BalanceAnualPila(datos: d),
-          if (d.hayHistorial) ...[
-            const SizedBox(height: 18),
-            const Text(
-              'Evolución de los últimos 12 meses',
-              style: TextStyle(
-                color: AppColors.textSecondary,
-                fontSize: 12,
-                fontWeight: FontWeight.w700,
-              ),
-            ),
-            const SizedBox(height: 6),
-            _LineaPila(serie: d.serie),
-          ],
           if (_propia && d.faltan > 0)
             Align(
               alignment: Alignment.centerLeft,
@@ -341,6 +328,13 @@ class BalanceAnualPila extends StatelessWidget {
           Padding(
             padding: const EdgeInsets.only(top: 2),
             child: Text(
+              'Libros en papel terminados este año: ${datos.terminadosPapelAnio}',
+              style: secundario,
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.only(top: 2),
+            child: Text(
               'Pendientes en papel nuevos este año: ${datos.entraronAnio}',
               style: secundario,
             ),
@@ -412,131 +406,4 @@ class _Barra extends StatelessWidget {
       ],
     );
   }
-}
-
-/// Línea con los pendientes al final de cada mes (último punto = hoy).
-class _LineaPila extends StatelessWidget {
-  const _LineaPila({required this.serie});
-
-  final List<PuntoPila> serie;
-
-  static const _meses = [
-    'E',
-    'F',
-    'M',
-    'A',
-    'M',
-    'J',
-    'J',
-    'A',
-    'S',
-    'O',
-    'N',
-    'D',
-  ];
-
-  @override
-  Widget build(BuildContext context) {
-    final valores = [for (final p in serie) p.pila];
-    String inicialMes(PuntoPila p) {
-      final m = int.tryParse(p.mes.length >= 7 ? p.mes.substring(5, 7) : '');
-      return m == null ? '' : _meses[(m - 1).clamp(0, 11)];
-    }
-
-    return Column(
-      children: [
-        SizedBox(
-          height: 90,
-          width: double.infinity,
-          child: CustomPaint(painter: _PintorLinea(valores)),
-        ),
-        const SizedBox(height: 4),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            for (final p in serie)
-              Text(
-                inicialMes(p),
-                style: const TextStyle(
-                  color: AppColors.textMuted,
-                  fontSize: 10,
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-          ],
-        ),
-      ],
-    );
-  }
-}
-
-class _PintorLinea extends CustomPainter {
-  _PintorLinea(this.valores);
-
-  final List<int> valores;
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    if (valores.length < 2) return;
-    final maximo = valores.reduce(math.max);
-    final minimo = valores.reduce(math.min);
-    final rango = math.max(1, maximo - minimo);
-    final paso = size.width / (valores.length - 1);
-    Offset punto(int i) => Offset(
-      i * paso,
-      size.height - 8 - ((valores[i] - minimo) / rango) * (size.height - 16),
-    );
-    // Rejilla fina en el máximo, el mínimo y el punto medio.
-    final rejilla = Paint()
-      ..color = AppColors.divider
-      ..strokeWidth = 1;
-    for (final f in [0.0, .5, 1.0]) {
-      final y = 8 + f * (size.height - 16);
-      canvas.drawLine(Offset(0, y), Offset(size.width, y), rejilla);
-    }
-    final linea = Path()..moveTo(punto(0).dx, punto(0).dy);
-    for (var i = 1; i < valores.length; i++) {
-      linea.lineTo(punto(i).dx, punto(i).dy);
-    }
-    final area = Path.from(linea)
-      ..lineTo(size.width, size.height)
-      ..lineTo(0, size.height)
-      ..close();
-    canvas.drawPath(
-      area,
-      Paint()..color = AppColors.primary.withValues(alpha: .12),
-    );
-    canvas.drawPath(
-      linea,
-      Paint()
-        ..color = AppColors.primary
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = 2.4
-        ..strokeJoin = StrokeJoin.round,
-    );
-    final fin = punto(valores.length - 1);
-    canvas.drawCircle(fin, 5, Paint()..color = AppColors.surface);
-    canvas.drawCircle(fin, 3.5, Paint()..color = AppColors.inkCoral);
-    // Etiquetas del máximo y del actual.
-    void etiqueta(String t, Offset o, {bool izquierda = false}) {
-      final tp = TextPainter(
-        text: TextSpan(
-          text: t,
-          style: const TextStyle(
-            color: AppColors.textSecondary,
-            fontSize: 10,
-            fontWeight: FontWeight.w800,
-          ),
-        ),
-        textDirection: TextDirection.ltr,
-      )..layout();
-      tp.paint(canvas, Offset(izquierda ? o.dx : o.dx - tp.width, o.dy));
-    }
-
-    etiqueta('$maximo', const Offset(2, -1), izquierda: true);
-    etiqueta('$minimo', Offset(2, size.height - 12), izquierda: true);
-  }
-
-  @override
-  bool shouldRepaint(covariant _PintorLinea old) => old.valores != valores;
 }
