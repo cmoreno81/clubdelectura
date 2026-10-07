@@ -1501,6 +1501,52 @@ class ApiService {
     return _respuestaOk(response);
   }
 
+  /// Kit de lectura guardado en la cuenta para [bookId]. `ok` es false si no se
+  /// ha podido consultar (sin red, error): no es lo mismo que «no hay kit».
+  Future<({bool ok, Map<String, dynamic>? kit, DateTime? actualizado})>
+  getKitLectura(String bookId) async {
+    try {
+      final response = await _client.get(
+        Uri.parse(baseUrl).replace(
+          queryParameters: {'action': 'kitLectura', 'bookId': bookId},
+        ),
+      );
+      if (response.statusCode != 200) return (ok: false, kit: null, actualizado: null);
+      final data = _decodeJson(response);
+      if (data is! Map<String, dynamic> || data['ok'] != true) {
+        return (ok: false, kit: null, actualizado: null);
+      }
+      final kit = data['kit'];
+      return (
+        ok: true,
+        kit: kit is Map ? Map<String, dynamic>.from(kit) : null,
+        actualizado: DateTime.tryParse(data['updatedAt']?.toString() ?? ''),
+      );
+    } catch (_) {
+      return (ok: false, kit: null, actualizado: null);
+    }
+  }
+
+  /// Guarda el kit de lectura en la cuenta. Devuelve la fecha del servidor, o
+  /// null si no se ha podido guardar.
+  Future<DateTime?> guardarKitLectura(
+    String bookId,
+    Map<String, dynamic> kit,
+  ) async {
+    try {
+      final response = await _postJson('guardarKitLectura', {
+        'bookId': bookId,
+        'kit': kit,
+      });
+      if (response.statusCode != 200) return null;
+      final data = _decodeJson(response);
+      if (data is! Map<String, dynamic> || data['ok'] != true) return null;
+      return DateTime.tryParse(data['updatedAt']?.toString() ?? '');
+    } catch (_) {
+      return null;
+    }
+  }
+
   /// Corrige el formato con el que la lectora leyó un libro que ya terminó
   /// ([formato]: `FISICO`, `DIGITAL` o `AUDIOLIBRO`).
   Future<bool> actualizarFormatoLibro({

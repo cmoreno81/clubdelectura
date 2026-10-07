@@ -123,6 +123,8 @@ class _GeneralDashboardPageState extends State<GeneralDashboardPage> {
     _newReleasesFuture = _loadNewReleasesPreview();
     _checkOnboarding();
     _loadNotificaciones();
+    // Copia en la cuenta los kits de lectura que solo estaban en este móvil.
+    unawaited(KitLecturaService().subirPendientes());
   }
 
   Future<void> _loadNotificaciones() async {
