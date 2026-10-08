@@ -1891,8 +1891,8 @@ class _AtmosferaPainter extends CustomPainter {
       while (x < size.width + 20) {
         final ancho = 34.0 + _fraccion(i * 11.3 + capa) * 34;
         final alto =
-            size.height * (0.05 + _fraccion(i * 5.9 + capa * 2) * 0.07) +
-            capa * 8;
+            size.height * (0.03 + _fraccion(i * 5.9 + capa * 2) * 0.045) +
+            capa * 5;
         final y = size.height - alto - (1 - capa) * 14;
         canvas.drawRect(Rect.fromLTWH(x, y, ancho, alto + 20), paint);
         if (i % 3 == 0) {
@@ -1915,7 +1915,9 @@ class _AtmosferaPainter extends CustomPainter {
       }
     }
     // Farola de gas.
-    final fx = size.width * 0.16;
+    // Pegada al borde izquierdo, fuera de la columna de iconos de las
+    // tarjetas, para que no las cruce.
+    final fx = size.width * 0.022;
     final base = size.height + 4;
     final altoFarola = size.height * 0.20;
     final luz = 0.6 + math.sin(fase * 3) * 0.15 + math.sin(fase * 7) * 0.08;
