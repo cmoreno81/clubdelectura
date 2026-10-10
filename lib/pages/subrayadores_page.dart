@@ -1,11 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import '../models/subrayador_categoria.dart';
+import '../services/categorias_comentario_service.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_spacing.dart';
 import '../theme/app_text_styles.dart';
 import '../widgets/common/club_book_cover.dart';
 import '../widgets/common/club_card.dart';
+import '../widgets/common/editor_categorias_sheet.dart';
 import '../widgets/kit/rotulador_preview.dart';
 
 class SubrayadoresPage extends StatelessWidget {
@@ -91,34 +94,39 @@ class SubrayadoresPage extends StatelessWidget {
 
           const SizedBox(height: 18),
 
-          _Categoria(
-            color: colores[0],
-            titulo: "Momentos favoritos",
-            descripcion: "Escenas que quieres volver a leer.",
+          // Los nombres son los que la lectora haya puesto a sus temas (los
+          // mismos que verá al comentar); si no ha cambiado ninguno, los de
+          // siempre con su descripción.
+          ValueListenableBuilder<List<SubrayadorCategoria>>(
+            valueListenable: CategoriasComentarioService.categorias,
+            builder: (context, categorias, _) => Column(
+              children: [
+                for (
+                  var i = 0;
+                  i < _propuestaBase.length && i < colores.length;
+                  i++
+                )
+                  _Categoria(
+                    color: colores[i],
+                    titulo: _esOriginal(categorias, i)
+                        ? _propuestaBase[i].titulo
+                        : '${categorias[i].emoji} ${categorias[i].nombre}'
+                              .trim(),
+                    descripcion: _esOriginal(categorias, i)
+                        ? _propuestaBase[i].descripcion
+                        : null,
+                  ),
+              ],
+            ),
           ),
 
-          _Categoria(
-            color: colores[1],
-            titulo: "Teorías",
-            descripcion: "Ideas, sospechas y predicciones.",
-          ),
-
-          _Categoria(
-            color: colores[2],
-            titulo: "Citas",
-            descripcion: "Frases que merecen quedarse contigo.",
-          ),
-
-          _Categoria(
-            color: colores[3],
-            titulo: "Personajes",
-            descripcion: "Detalles importantes del mundo.",
-          ),
-
-          _Categoria(
-            color: colores[4],
-            titulo: "Impacto",
-            descripcion: "Momentos que te dejaron sin respiración.",
+          Align(
+            alignment: Alignment.centerLeft,
+            child: TextButton.icon(
+              onPressed: () => mostrarEditorCategorias(context),
+              icon: const Icon(Icons.drive_file_rename_outline_rounded),
+              label: const Text('Editar mis temas'),
+            ),
           ),
 
           const SizedBox(height: 24),
@@ -225,9 +233,7 @@ class SubrayadoresPage extends StatelessWidget {
                   const SizedBox(height: AppSpacing.md),
                   OutlinedButton.icon(
                     onPressed: () => launchUrl(
-                      Uri.parse(
-                        'https://www.amazon.es/s?k=zebra+mildliner',
-                      ),
+                      Uri.parse('https://www.amazon.es/s?k=zebra+mildliner'),
                       mode: LaunchMode.externalApplication,
                     ),
                     icon: const Icon(Icons.open_in_new_rounded, size: 16),
@@ -250,15 +256,32 @@ class SubrayadoresPage extends StatelessWidget {
   }
 }
 
+/// Nombre y descripción de siempre de cada tema, en el orden de
+/// [kSubrayadorCategorias].
+const _propuestaBase = [
+  (
+    titulo: 'Momentos favoritos',
+    descripcion: 'Escenas que quieres volver a leer.',
+  ),
+  (titulo: 'Teorías', descripcion: 'Ideas, sospechas y predicciones.'),
+  (titulo: 'Citas', descripcion: 'Frases que merecen quedarse contigo.'),
+  (titulo: 'Personajes', descripcion: 'Detalles importantes del mundo.'),
+  (titulo: 'Impacto', descripcion: 'Momentos que te dejaron sin respiración.'),
+];
+
+bool _esOriginal(List<SubrayadorCategoria> categorias, int i) =>
+    categorias[i].nombre == kSubrayadorCategorias[i].nombre &&
+    categorias[i].emoji == kSubrayadorCategorias[i].emoji;
+
 class _Categoria extends StatelessWidget {
   final Color color;
   final String titulo;
-  final String descripcion;
+  final String? descripcion;
 
   const _Categoria({
     required this.color,
     required this.titulo,
-    required this.descripcion,
+    this.descripcion,
   });
 
   @override
@@ -272,7 +295,7 @@ class _Categoria extends StatelessWidget {
           child: ListTile(
             leading: RotuladorPreview(color: color, length: 68, thickness: 23),
             title: Text(titulo, style: AppTextStyles.subtitle),
-            subtitle: Text(descripcion),
+            subtitle: descripcion == null ? null : Text(descripcion!),
           ),
         ),
       ),
