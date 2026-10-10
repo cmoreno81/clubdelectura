@@ -1,7 +1,9 @@
 import 'dart:math';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:palette_generator_plus/palette_generator_plus.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../main.dart' show routeObserver;
 import '../../models/general_dashboard.dart';
@@ -25,6 +27,10 @@ class YearReadingShelf extends StatefulWidget {
   final ValueChanged<YearShelfBook> onBookTap;
   final VoidCallback? onShare;
 
+  /// Borra el orden recordado en memoria (para aislar los tests entre sí).
+  @visibleForTesting
+  static void olvidarOrden() => _YearReadingShelfState._rememberedOrder = null;
+
   @override
   State<YearReadingShelf> createState() => _YearReadingShelfState();
 }
@@ -32,11 +38,20 @@ class YearReadingShelf extends StatefulWidget {
 class _YearReadingShelfState extends State<YearReadingShelf>
     with SingleTickerProviderStateMixin
     implements RouteAware {
+  static const _orderPrefsKey = 'year_shelf_order';
+
+  /// Último orden elegido. Es estático porque la estantería se vuelve a crear
+  /// cada vez que se cambia de pestaña o se vuelve al perfil: sin esto el
+  /// orden se perdía en cada cambio y volvía a «aleatorio».
+  static _YearShelfOrder? _rememberedOrder;
+
+  /// Tono de cada portada ya calculado para el orden Arcoíris (coverUrl → 0..360).
+  static final Map<String, double> _colorHues = {};
+
   bool _expanded = false;
-  _YearShelfOrder _order = _YearShelfOrder.random;
+  _YearShelfOrder _order = _rememberedOrder ?? _YearShelfOrder.random;
   final _random = Random();
   final Map<String, double> _randomRanks = {};
-  final Map<String, double> _colorHues = {}; // coverUrl → hue (0..360)
   bool _extractingColors = false;
   late final AnimationController _ctrl;
 
@@ -52,6 +67,42 @@ class _YearReadingShelfState extends State<YearReadingShelf>
     );
     _seedRandomRanks(widget.books);
     _ctrl.forward(from: 0);
+    if (_order == _YearShelfOrder.rainbow) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _activateRainbow();
+      });
+    } else if (_rememberedOrder == null) {
+      _restoreOrder();
+    }
+  }
+
+  Future<void> _restoreOrder() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final saved = prefs.getString(_orderPrefsKey);
+      final order = _YearShelfOrder.values
+          .where((value) => value.name == saved)
+          .firstOrNull;
+      if (order == null) return;
+      _rememberedOrder = order;
+      if (!mounted) return;
+      if (order == _YearShelfOrder.rainbow) {
+        await _activateRainbow();
+      } else {
+        setState(() => _order = order);
+        _ctrl.forward(from: 0);
+      }
+    } catch (_) {
+      // Sin preferencias disponibles se queda el orden por defecto.
+    }
+  }
+
+  Future<void> _rememberOrder(_YearShelfOrder order) async {
+    _rememberedOrder = order;
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString(_orderPrefsKey, order.name);
+    } catch (_) {}
   }
 
   @override
@@ -231,6 +282,7 @@ class _YearReadingShelfState extends State<YearReadingShelf>
                   tooltip: 'Ordenar biblioteca anual',
                   initialValue: _order,
                   onSelected: (value) {
+                    _rememberOrder(value);
                     if (value == _YearShelfOrder.rainbow) {
                       _activateRainbow();
                     } else {

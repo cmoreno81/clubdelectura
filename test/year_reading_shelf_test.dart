@@ -2,8 +2,14 @@ import 'package:club_lectura_app/models/general_dashboard.dart';
 import 'package:club_lectura_app/widgets/dashboard/year_reading_shelf.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
+  setUp(() {
+    SharedPreferences.setMockInitialValues({});
+    YearReadingShelf.olvidarOrden();
+  });
+
   testWidgets('permite mostrar primero las lecturas más recientes', (
     tester,
   ) async {
@@ -227,5 +233,80 @@ void main() {
     expect(find.text('Libro 12'), findsOneWidget);
     // 13-15 should not be visible
     expect(find.text('Libro 13'), findsNothing);
+  });
+
+  testWidgets('recuerda el orden elegido al volver a crear la estantería', (
+    tester,
+  ) async {
+    final books = List.generate(13, (index) {
+      final day = 13 - index;
+      return YearShelfBook(
+        id: 'completion-$day',
+        bookId: 'book-$day',
+        title: 'Libro ${day.toString().padLeft(2, '0')}',
+        coverUrl: '',
+        finishedAt: '2026-01-${day.toString().padLeft(2, '0')}T12:00:00Z',
+      );
+    });
+    Widget estanteria() => MaterialApp(
+      home: Scaffold(
+        body: SingleChildScrollView(
+          child: YearReadingShelf(year: 2026, books: books, onBookTap: (_) {}),
+        ),
+      ),
+    );
+
+    await tester.pumpWidget(estanteria());
+    await tester.tap(find.byTooltip('Ordenar biblioteca anual'));
+    await tester.pumpAndSettle();
+    await tester.tap(
+      find.ancestor(
+        of: find.text('Primero del año'),
+        matching: find.byWidgetPredicate((widget) => widget is PopupMenuItem),
+      ),
+    );
+    await tester.pump();
+    expect(find.text('Libro 01'), findsNothing);
+
+    // Cambio de pestaña: la estantería se destruye y se vuelve a crear.
+    await tester.pumpWidget(const MaterialApp(home: Scaffold()));
+    await tester.pumpWidget(estanteria());
+    await tester.pump();
+
+    expect(find.text('Libro 13'), findsOneWidget);
+    expect(find.text('Libro 01'), findsNothing);
+    final prefs = await SharedPreferences.getInstance();
+    expect(prefs.getString('year_shelf_order'), 'firstRead');
+  });
+
+  testWidgets('tras cerrar la app recupera el orden guardado', (tester) async {
+    SharedPreferences.setMockInitialValues({'year_shelf_order': 'firstRead'});
+    final books = List.generate(13, (index) {
+      final day = 13 - index;
+      return YearShelfBook(
+        id: 'completion-$day',
+        bookId: 'book-$day',
+        title: 'Libro ${day.toString().padLeft(2, '0')}',
+        coverUrl: '',
+        finishedAt: '2026-01-${day.toString().padLeft(2, '0')}T12:00:00Z',
+      );
+    });
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: SingleChildScrollView(
+            child: YearReadingShelf(
+              year: 2026,
+              books: books,
+              onBookTap: (_) {},
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('Libro 13'), findsOneWidget);
+    expect(find.text('Libro 01'), findsNothing);
   });
 }
