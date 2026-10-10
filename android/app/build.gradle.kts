@@ -46,8 +46,14 @@ android {
     buildTypes {
         release {
             signingConfig = signingConfigs.getByName("release")
-            isMinifyEnabled = false
-            isShrinkResources = false
+            // R8: recorta y ofusca el código Java/Kotlin (Google Play avisa si la
+            // optimización de DEX queda por debajo del 25 %) y quita recursos sin usar.
+            isMinifyEnabled = true
+            isShrinkResources = true
+            proguardFiles(
+                getDefaultProguardFile("proguard-android-optimize.txt"),
+                "proguard-rules.pro",
+            )
         }
     }
 }
