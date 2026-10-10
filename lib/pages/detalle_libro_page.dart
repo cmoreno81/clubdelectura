@@ -80,6 +80,10 @@ class _DetalleLibroPageState extends State<DetalleLibroPage> {
   // Kit de lectura: atmósfera activa (Feature 2)
   KitLecturaSeleccion _kitSeleccion = const KitLecturaSeleccion();
 
+  /// Sube cada vez que se vuelve del kit para que su tarjeta recargue lo
+  /// guardado (paleta, secciones preparadas…) en lugar de quedarse con lo viejo.
+  int _kitVersion = 0;
+
   bool _controllerPreparado = false;
   bool _atmosferaCerrada = false;
   bool _toggling = false;
@@ -1146,7 +1150,10 @@ class _DetalleLibroPageState extends State<DetalleLibroPage> {
       ),
     );
 
-    if (!mounted || !_controllerPreparado || _atmosferaCerrada) {
+    if (!mounted) return;
+    setState(() => _kitVersion++);
+
+    if (!_controllerPreparado || _atmosferaCerrada) {
       return;
     }
 
@@ -1434,6 +1441,7 @@ class _DetalleLibroPageState extends State<DetalleLibroPage> {
                           const SizedBox(height: AppSpacing.sm),
                         ],
                         KitLecturaCard(
+                          key: ValueKey('kit-$_kitVersion'),
                           bookId: libro.bookId,
                           onTap: () => _abrirKitLectura(
                             finalizado: miEstado == 'FINALIZADO',
