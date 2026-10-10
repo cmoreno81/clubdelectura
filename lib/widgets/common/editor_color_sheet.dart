@@ -33,6 +33,15 @@ const coloresPostIt = <Color>[
   Color(0xFF1F4D3A), // verde bosque
   Color(0xFF5A3A2A), // marrón
   Color(0xFF3D1F5C), // morado oscuro
+  // Rojos y neutros cálidos.
+  Color(0xFFD62839), // rojo
+  Color(0xFFA63A2B), // rojo ladrillo
+  Color(0xFFF4C2C2), // rosa palo
+  Color(0xFFF3E9D2), // crema
+  Color(0xFFD9C3A0), // beige
+  Color(0xFFB5651D), // caramelo
+  Color(0xFFC9CED6), // plata
+  Color(0xFF1E6F7A), // azul petróleo
 ];
 
 /// Convierte «#RRGGBB» (con o sin almohadilla) en color; `null` si no es válido.

@@ -131,8 +131,9 @@ void main() {
     await tester.tap(find.text('Citas'));
     await tester.pumpAndSettle();
 
-    // Negro y granate disponibles en la rejilla.
+    // Negro, granate y rojo disponibles en la rejilla.
     expect(find.bySemanticsLabel('Color #141416'), findsOneWidget);
+    expect(find.bySemanticsLabel('Color #D62839'), findsOneWidget);
     await tester.tap(find.bySemanticsLabel('Color #7B1E2E'));
     await tester.pump();
     await tester.tap(find.text('Usar este color'));
