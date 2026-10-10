@@ -148,4 +148,86 @@ void main() {
 
     expect(resultado![2], '#7B1E2E');
   });
+
+  testWidgets('al volver a entrar se muestra la paleta que ya se guardó', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(900, 3200);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+    resultado = null;
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Builder(
+          builder: (context) => Scaffold(
+            body: TextButton(
+              onPressed: () async {
+                resultado = await Navigator.push<List<String>>(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => const PaletaLecturaPage(
+                      bookId: 'b1',
+                      libro: 'Libro de prueba',
+                      paletaGuardada: [
+                        '#D62839',
+                        '#141416',
+                        '#F9D71C',
+                        '#5DBB63',
+                        '#7B1E2E',
+                      ],
+                    ),
+                  ),
+                );
+              },
+              child: const Text('abrir'),
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.tap(find.text('abrir'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Combinación personalizada'), findsOneWidget);
+    await tester.scrollUntilVisible(
+      find.text('Usar esta paleta'),
+      200,
+      scrollable: find.byType(Scrollable).first,
+    );
+    await tester.tap(find.text('Usar esta paleta'));
+    await tester.pumpAndSettle();
+
+    expect(resultado, ['#D62839', '#141416', '#F9D71C', '#5DBB63', '#7B1E2E']);
+  });
+
+  testWidgets('si lo guardado es una propuesta automática se indica cuál', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(900, 3200);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+    // Sin portada se usa la paleta de reserva: la primera propuesta es esta.
+    await tester.pumpWidget(
+      const MaterialApp(
+        home: PaletaLecturaPage(
+          bookId: 'b1',
+          libro: 'Libro',
+          paletaGuardada: [
+            '#68489A',
+            '#B25A83',
+            '#6E8292',
+            '#B98A72',
+            '#384B48',
+          ],
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    await tester.scrollUntilVisible(
+      find.text('Usar esta paleta'),
+      200,
+      scrollable: find.byType(Scrollable).first,
+    );
+    expect(find.textContaining('Combinación 1 de 4'), findsOneWidget);
+  });
 }

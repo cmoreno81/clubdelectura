@@ -89,6 +89,7 @@ class _KitLecturaPageState extends State<KitLecturaPage> {
           bookId: widget.bookId,
           libro: widget.libro,
           coverUrl: widget.coverUrl,
+          paletaGuardada: _seleccion.paleta,
         ),
       ),
     );

@@ -20,11 +20,17 @@ class PaletaLecturaPage extends StatefulWidget {
   final String libro;
   final String coverUrl;
 
+  /// Colores (#RRGGBB) de la paleta que la lectora ya guardó en su kit. Si hay
+  /// 5, la pantalla se abre con ellos en lugar de recalcularlos desde la
+  /// portada, para que sus cambios no se pierdan al volver a entrar.
+  final List<String> paletaGuardada;
+
   const PaletaLecturaPage({
     super.key,
     required this.bookId,
     required this.libro,
     this.coverUrl = '',
+    this.paletaGuardada = const [],
   });
 
   @override
@@ -50,6 +56,37 @@ class _PaletaLecturaPageState extends State<PaletaLecturaPage> {
   }
 
   Future<List<_ColorLector>> _generarPaleta() async {
+    final generada = await _generarPaletaDesdePortada();
+    return _aplicarPaletaGuardada(generada);
+  }
+
+  /// Si la lectora ya tenía una paleta guardada se muestra esa: coincida con
+  /// una de las 4 propuestas o sea personalizada (en ese caso queda como
+  /// «combinación personalizada»).
+  List<_ColorLector> _aplicarPaletaGuardada(List<_ColorLector> generada) {
+    final guardados = [
+      for (final hex in widget.paletaGuardada) colorDesdeHex(hex),
+    ];
+    if (guardados.length != 5 || guardados.any((color) => color == null)) {
+      return generada;
+    }
+    final colores = guardados.whereType<Color>().toList(growable: false);
+
+    for (var v = 0; v < _variantes.length; v++) {
+      final coincide = [
+        for (var i = 0; i < 5; i++) _variantes[v][i].hex == hexDeColor(colores[i]),
+      ].every((igual) => igual);
+      if (coincide) {
+        _indiceVariante = v;
+        return _variantes[v];
+      }
+    }
+
+    _indiceVariante = -1;
+    return [for (var i = 0; i < 5; i++) _crearColorLector(colores[i], i)];
+  }
+
+  Future<List<_ColorLector>> _generarPaletaDesdePortada() async {
     final coverUrl = widget.coverUrl.trim();
 
     if (coverUrl.isEmpty) {
