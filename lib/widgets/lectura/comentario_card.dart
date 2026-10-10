@@ -11,6 +11,7 @@ import '../common/club_avatar.dart';
 import '../common/club_card.dart';
 import '../common/reaction_details_sheet.dart';
 import 'fecha_relativa.dart';
+import 'foto_comentario.dart';
 import 'respuesta_card.dart';
 
 class ComentarioCard extends StatefulWidget {
@@ -588,7 +589,9 @@ class _ComentarioCardState extends State<ComentarioCard> {
 
             const SizedBox(height: AppSpacing.md),
 
-            if (comentario.esCita)
+            if (comentario.comentario.trim().isEmpty && comentario.tieneImagen)
+              const SizedBox.shrink()
+            else if (comentario.esCita)
               Container(
                 width: double.infinity,
                 padding: const EdgeInsets.all(AppSpacing.md),
@@ -663,6 +666,12 @@ class _ComentarioCardState extends State<ComentarioCard> {
                     color: AppColors.textPrimary,
                   ),
                 ),
+            ],
+
+            if (comentario.tieneImagen) ...[
+              if (comentario.comentario.trim().isNotEmpty)
+                const SizedBox(height: AppSpacing.sm),
+              FotoComentarioWidget(url: comentario.imagenUrl),
             ],
 
             if (comentario.editado) ...[

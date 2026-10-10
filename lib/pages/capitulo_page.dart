@@ -10,6 +10,7 @@ import 'package:club_lectura_app/services/conversation_scroll_policy.dart';
 import 'package:club_lectura_app/services/comment_publication.dart';
 import 'package:club_lectura_app/services/debate_revelado_service.dart';
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_radius.dart';
@@ -18,6 +19,7 @@ import '../theme/app_text_styles.dart';
 import '../widgets/common/club_card.dart';
 import '../models/subrayador_categoria.dart';
 import '../services/api_service.dart';
+import '../services/foto_comentario_service.dart';
 import '../services/kit_lectura_service.dart';
 import '../widgets/lectura/comentario_card.dart';
 import '../widgets/lectura/comentario_input.dart';
@@ -50,6 +52,10 @@ class _CapituloPageState extends State<CapituloPage> {
   String? usuario;
   bool enviando = false;
   bool editorReflexionVisible = false;
+
+  /// Foto elegida para el comentario que se está escribiendo.
+  FotoComentario? _foto;
+  bool _eligiendoFoto = false;
 
   /// Key asignada al divisor "Nuevos" para poder hacer scroll automático.
   final GlobalKey _newsDividerKey = GlobalKey();
@@ -286,10 +292,54 @@ class _CapituloPageState extends State<CapituloPage> {
 
   Future<void> _recargar() => _pagination.loadFirst();
 
+  Future<void> _adjuntarFoto() async {
+    if (_eligiendoFoto || enviando) return;
+    final origen = await showModalBottomSheet<ImageSource>(
+      context: context,
+      showDragHandle: true,
+      builder: (context) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: const Icon(Icons.photo_library_outlined),
+              title: const Text('Elegir de la galería'),
+              onTap: () => Navigator.pop(context, ImageSource.gallery),
+            ),
+            ListTile(
+              leading: const Icon(Icons.photo_camera_outlined),
+              title: const Text('Hacer una foto'),
+              onTap: () => Navigator.pop(context, ImageSource.camera),
+            ),
+          ],
+        ),
+      ),
+    );
+    if (origen == null || !mounted) return;
+
+    _eligiendoFoto = true;
+    try {
+      final foto = await const FotoComentarioService().elegir(origen);
+      if (!mounted || foto == null) return;
+      if (!foto.cabe) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('La foto es demasiado grande. Prueba con otra.'),
+          ),
+        );
+        return;
+      }
+      setState(() => _foto = foto);
+    } finally {
+      _eligiendoFoto = false;
+    }
+  }
+
   Future<void> _publicar() async {
     final texto = controller.text.trim();
+    final foto = _foto;
 
-    if (texto.isEmpty || enviando) return;
+    if ((texto.isEmpty && foto == null) || enviando) return;
 
     if (usuario == null || usuario!.trim().isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -319,6 +369,7 @@ class _CapituloPageState extends State<CapituloPage> {
           usuario: usuario!,
           comentario: texto,
           tipo: _tipoComentario(_categoriaSeleccionada),
+          imagenBase64: foto?.dataUrl,
           color: (_categoriaSeleccionada != null &&
                   _categoriaSeleccionada! < coloresSubrayadores.length)
               ? _colorAHex(coloresSubrayadores[_categoriaSeleccionada!])
@@ -334,6 +385,7 @@ class _CapituloPageState extends State<CapituloPage> {
       FocusScope.of(context).unfocus();
 
       setState(() {
+        _foto = null;
         if (esReflexion) editorReflexionVisible = false;
       });
       if (estabaCercaDelFinal) {
@@ -732,6 +784,9 @@ class _CapituloPageState extends State<CapituloPage> {
                 onCategoriaChanged: esReflexion
                     ? null
                     : (i) => setState(() => _categoriaSeleccionada = i),
+                fotoAdjunta: _foto?.bytes,
+                onAdjuntarFoto: _adjuntarFoto,
+                onQuitarFoto: () => setState(() => _foto = null),
                 hintText: esReflexion
                     ? 'Comparte tu reflexión sobre el libro, '
                           'el desenlace, los personajes...'

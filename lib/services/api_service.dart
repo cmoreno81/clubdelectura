@@ -775,6 +775,7 @@ class ApiService {
     required String comentario,
     String tipo = 'COMMENT',
     String color = '',
+    String? imagenBase64,
   }) async {
     final response = await _postJson('guardarComentarioLectura', {
       'libro': libro,
@@ -782,6 +783,8 @@ class ApiService {
       'comentario': comentario,
       'tipo': tipo,
       if (color.trim().isNotEmpty) 'color': color,
+      if (imagenBase64 != null && imagenBase64.isNotEmpty)
+        'imagen': imagenBase64,
     });
     final decoded = _decodeJson(response);
     if (decoded is! Map<String, dynamic> ||

@@ -15,6 +15,9 @@ class ComentarioLectura {
   final String tipo;
   final String color;
 
+  /// URL de la foto adjunta al comentario (vacía si no tiene).
+  final String imagenUrl;
+
   final int likes;
 
   final bool miLike;
@@ -43,6 +46,7 @@ class ComentarioLectura {
     required this.comentario,
     required this.tipo,
     required this.color,
+    this.imagenUrl = '',
     required this.likes,
     required this.miLike,
     required this.reacciones,
@@ -69,6 +73,7 @@ class ComentarioLectura {
       comentario: json["comentario"]?.toString() ?? "",
       tipo: json["tipo"]?.toString().toUpperCase() ?? "COMMENT",
       color: json["color"]?.toString() ?? "",
+      imagenUrl: json["imagenUrl"]?.toString() ?? "",
       likes: json["likes"] as int? ?? 0,
       miLike: json["miLike"] as bool? ?? false,
       reacciones: _parseReacciones(json),
@@ -92,6 +97,8 @@ class ComentarioLectura {
 
   bool get esCita => tipo == 'QUOTE';
 
+  bool get tieneImagen => imagenUrl.trim().isNotEmpty;
+
   ComentarioLectura copyWith({
     String? comentario,
     bool? editado,
@@ -106,6 +113,7 @@ class ComentarioLectura {
     comentario: comentario ?? this.comentario,
     tipo: tipo,
     color: color,
+    imagenUrl: imagenUrl,
     likes: likes,
     miLike: miLike,
     reacciones: reacciones,

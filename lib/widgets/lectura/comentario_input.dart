@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 import 'package:flutter/material.dart';
 
 import '../../models/subrayador_categoria.dart';
@@ -17,6 +19,9 @@ class ComentarioInput extends StatelessWidget {
     this.categoriaSeleccionada,
     this.onCategoriaChanged,
     this.coloresCategorias = const [],
+    this.fotoAdjunta,
+    this.onAdjuntarFoto,
+    this.onQuitarFoto,
   });
 
   final TextEditingController controller;
@@ -35,6 +40,11 @@ class ComentarioInput extends StatelessWidget {
 
   /// Callback cuando el usuario cambia de categoría.
   final ValueChanged<int?>? onCategoriaChanged;
+
+  /// Foto ya elegida (vista previa). Si es `null` se ofrece añadir una.
+  final Uint8List? fotoAdjunta;
+  final VoidCallback? onAdjuntarFoto;
+  final VoidCallback? onQuitarFoto;
 
   bool get _esCita =>
       categoriaSeleccionada != null &&
@@ -216,14 +226,38 @@ class ComentarioInput extends StatelessWidget {
 
               const SizedBox(height: 10),
 
+              // ── Foto adjunta (no en citas del libro) ──
+              if (onAdjuntarFoto != null && !_esCita) ...[
+                if (fotoAdjunta != null)
+                  _FotoAdjuntaPreview(
+                    bytes: fotoAdjunta!,
+                    onQuitar: enviando ? null : onQuitarFoto,
+                  )
+                else
+                  Align(
+                    alignment: Alignment.centerLeft,
+                    child: TextButton.icon(
+                      onPressed: enviando ? null : onAdjuntarFoto,
+                      icon: const Icon(Icons.add_photo_alternate_outlined),
+                      label: const Text('Añadir foto'),
+                      style: TextButton.styleFrom(
+                        foregroundColor: const Color(0xFF6F4DBF),
+                      ),
+                    ),
+                  ),
+                const SizedBox(height: 6),
+              ],
+
               SizedBox(
                 width: double.infinity,
                 child: ValueListenableBuilder<TextEditingValue>(
                   valueListenable: controller,
                   builder: (context, value, _) {
                     final tieneTexto = value.text.trim().isNotEmpty;
+                    final puedeEnviar =
+                        tieneTexto || (fotoAdjunta != null && !_esCita);
                     return FilledButton.icon(
-                      onPressed: enviando || !tieneTexto ? null : onEnviar,
+                      onPressed: enviando || !puedeEnviar ? null : onEnviar,
                       icon: enviando
                           ? const SizedBox(
                               width: 19,
@@ -435,5 +469,48 @@ class _CategoriaChip extends StatelessWidget {
   static Color _readableColor(Color color) {
     if (color.computeLuminance() <= .52) return color;
     return Color.lerp(color, Colors.black, .38)!;
+  }
+}
+
+class _FotoAdjuntaPreview extends StatelessWidget {
+  const _FotoAdjuntaPreview({required this.bytes, required this.onQuitar});
+
+  final Uint8List bytes;
+  final VoidCallback? onQuitar;
+
+  @override
+  Widget build(BuildContext context) {
+    return Align(
+      alignment: Alignment.centerLeft,
+      child: Stack(
+        clipBehavior: Clip.none,
+        children: [
+          ClipRRect(
+            borderRadius: BorderRadius.circular(14),
+            child: Image.memory(
+              bytes,
+              width: 96,
+              height: 96,
+              fit: BoxFit.cover,
+              semanticLabel: 'Foto que se publicará con el comentario',
+            ),
+          ),
+          Positioned(
+            top: -10,
+            right: -10,
+            child: IconButton.filled(
+              tooltip: 'Quitar foto',
+              visualDensity: VisualDensity.compact,
+              style: IconButton.styleFrom(
+                backgroundColor: Colors.black87,
+                foregroundColor: Colors.white,
+              ),
+              onPressed: onQuitar,
+              icon: const Icon(Icons.close_rounded, size: 18),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }

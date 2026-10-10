@@ -3,9 +3,9 @@
 <plist version="1.0">
 <dict>
 	<key>NSPhotoLibraryUsageDescription</key>
-	<string>ClubReads necesita acceder a tu galería para elegir una foto de perfil.</string>
+	<string>ClubReads necesita acceder a tu galería para elegir tu foto de perfil o adjuntar una foto a un comentario.</string>
 	<key>NSCameraUsageDescription</key>
-	<string>ClubReads necesita usar la cámara para hacer una foto de perfil.</string>
+	<string>ClubReads necesita usar la cámara para hacer tu foto de perfil o una foto para un comentario.</string>
 	<key>CADisableMinimumFrameDurationOnPhone</key>
 	<true/>
 	<key>ITSAppUsesNonExemptEncryption</key>
