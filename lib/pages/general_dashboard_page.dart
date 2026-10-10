@@ -33,6 +33,7 @@ import '../widgets/common/club_book_cover.dart';
 import '../widgets/common/club_card.dart';
 import '../widgets/common/floating_nav_bar.dart';
 import '../widgets/common/calendar_edit_fechas_sheet.dart';
+import '../widgets/common/calendar_mode_toggle.dart';
 import '../widgets/common/reading_cover_calendar.dart';
 import '../widgets/common/optimized_network_image.dart';
 import '../widgets/dashboard/bingo_lector_card.dart';
@@ -1993,6 +1994,8 @@ class _GeneralDashboardPageState extends State<GeneralDashboardPage> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          const CalendarModeToggle(),
+          const SizedBox(height: AppSpacing.sm),
           ReadingCoverCalendar(
             calendar: calendar,
             onBookTap: (reading) => _editarFechasCalendario(reading),

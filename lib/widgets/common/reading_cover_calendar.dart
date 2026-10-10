@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../models/general_dashboard.dart';
 import '../../theme/app_colors.dart';
+import '../../services/reading_calendar_mode_service.dart';
 import 'optimized_network_image.dart';
 
 class ReadingCoverCalendar extends StatelessWidget {
@@ -12,7 +13,13 @@ class ReadingCoverCalendar extends StatelessWidget {
     this.showMonthHeader = true,
     this.cellAspectRatio = .72,
     this.highResolution = false,
+    this.soloDiaDeFin,
   });
+
+  /// `true`: la portada solo aparece el día que se terminó el libro; `false`:
+  /// todos los días de la lectura. Si es `null` se usa la preferencia de la
+  /// lectora ([ReadingCalendarModeService]).
+  final bool? soloDiaDeFin;
 
   final ReadingCalendar calendar;
   final ValueChanged<MonthlyReadingSpan>? onBookTap;
@@ -37,6 +44,15 @@ class ReadingCoverCalendar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final forzado = soloDiaDeFin;
+    if (forzado != null) return _calendario(context, forzado);
+    return ValueListenableBuilder<bool>(
+      valueListenable: ReadingCalendarModeService.soloDiaDeFin,
+      builder: (context, solo, _) => _calendario(context, solo),
+    );
+  }
+
+  Widget _calendario(BuildContext context, bool soloDiaDeFin) {
     final first = DateTime(calendar.year, calendar.month);
     final days = DateTime(calendar.year, calendar.month + 1, 0).day;
     final offset = first.weekday - 1;
@@ -106,8 +122,17 @@ class ReadingCoverCalendar extends StatelessWidget {
                 return const ColoredBox(color: Color(0xFFF4EFE8));
               }
               final date = DateTime(calendar.year, calendar.month, day);
+              // En modo «al terminar» solo cuentan los libros que se terminaron
+              // ese mismo día (los que tienen su insignia de fin en la fecha).
               final readings = calendar.readings
-                  .where((reading) => _contains(reading, date))
+                  .where(
+                    (reading) =>
+                        _contains(reading, date) &&
+                        (!soloDiaDeFin ||
+                            ratingsByBookAndDay.containsKey(
+                              _finishKey(reading.bookId, date),
+                            )),
+                  )
                   .toList(growable: false);
 
               return _ReadingDayCell(

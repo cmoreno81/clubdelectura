@@ -8,6 +8,7 @@ import '../../models/perfil_usuario.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_spacing.dart';
 import '../../theme/app_text_styles.dart';
+import '../common/calendar_mode_toggle.dart';
 import '../common/reading_cover_calendar.dart';
 
 const _meses = [
@@ -86,6 +87,8 @@ class _PerfilHistoricoMesesState extends State<PerfilHistoricoMeses> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
+        const CalendarModeToggle(),
+        const SizedBox(height: AppSpacing.sm),
         for (final anio in anios) ...[
           if (anio == anioActual)
             for (final i in indicesPorAnio[anio]!) ...[
