@@ -93,7 +93,7 @@ class TecnologiaCreditosPage extends StatelessWidget {
               ),
               _Tecnologia(
                 'Awin',
-                'Red de afiliación de los enlaces de compra a Casa del Libro',
+                'Red de afiliación de los enlaces de compra a algunas tiendas',
               ),
               _Tecnologia(
                 'Git y GitHub',

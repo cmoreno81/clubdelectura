@@ -2954,7 +2954,7 @@ class _ComprarAhoraCardState extends State<_ComprarAhoraCard>
                     ),
                     const SizedBox(height: AppSpacing.xs),
                     Text(
-                      'Casa del Libro · papel, ebook y audiolibro',
+                      'Papel, ebook y audiolibro',
                       style: AppTextStyles.caption.copyWith(
                         color: Colors.white.withValues(alpha: .88),
                       ),

@@ -60,7 +60,7 @@ const List<_TutorialStep> _pasos = [
     detalle:
         'En “Novedades” y “Próximos lanzamientos” del dashboard puedes guardar '
         'libros en tu lista de deseos pulsando el corazón ♡ sobre la portada, o '
-        'comprarlos en Casa del Libro con el botón verde de cada tarjeta.',
+        'comprarlos con el botón verde de cada tarjeta.',
   ),
   _TutorialStep(
     emoji: '🖊️',

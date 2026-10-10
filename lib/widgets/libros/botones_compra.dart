@@ -4,8 +4,9 @@ import 'package:url_launcher/url_launcher.dart';
 
 import '../../services/api_service.dart';
 import '../../theme/app_text_styles.dart';
+import '../ui/etiqueta_publicidad.dart';
 
-/// "Comprar en Casa del Libro" + un botón por cada formato disponible
+/// "Comprar en <tienda>" + un botón por cada formato disponible
 /// (Papel, Ebook, Audiolibro). Siempre se pinta igual, aunque solo haya un
 /// formato, para que todos los libros se lean del mismo modo. El formato
 /// principal (el que usa la lectora, o papel) va relleno.
@@ -99,13 +100,17 @@ class BotonesCompra extends StatelessWidget {
         Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(Icons.shopping_bag_outlined, size: 16, color: ColoresCompra.verde),
+            const Icon(
+              Icons.shopping_bag_outlined,
+              size: 16,
+              color: ColoresCompra.verde,
+            ),
             const SizedBox(width: 6),
             Flexible(
               child: Text(
                 reserva
-                    ? 'Reservar en Casa del Libro'
-                    : 'Comprar en Casa del Libro',
+                    ? 'Reservar en ${enlace.tienda}'
+                    : 'Comprar en ${enlace.tienda}',
                 style: AppTextStyles.subtitle.copyWith(
                   color: ColoresCompra.verde,
                   fontWeight: FontWeight.w800,
@@ -133,7 +138,76 @@ class BotonesCompra extends StatelessWidget {
             ],
           ],
         ),
+        for (final otra in enlace.otras) _tambienEn(context, otra),
       ],
+    );
+  }
+
+  /// Enlace discreto a otra tienda con el mismo libro; abre una hoja con sus
+  /// formatos.
+  Widget _tambienEn(BuildContext context, EnlaceCompra otra) {
+    return Padding(
+      padding: const EdgeInsets.only(top: 6),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(12),
+        onTap: () => showModalBottomSheet<void>(
+          context: context,
+          showDragHandle: true,
+          builder: (sheet) => SafeArea(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          '${reserva ? 'Reservar' : 'Comprar'} en ${otra.tienda}',
+                          style: AppTextStyles.subtitle.copyWith(
+                            fontWeight: FontWeight.w800,
+                          ),
+                        ),
+                      ),
+                      const EtiquetaPublicidad(),
+                    ],
+                  ),
+                  const SizedBox(height: 10),
+                  Row(
+                    children: [
+                      for (var i = 0; i < otra.formatos.length; i++) ...[
+                        if (i > 0) const SizedBox(width: 8),
+                        Expanded(
+                          child: OutlinedButton(
+                            onPressed: () {
+                              Navigator.pop(sheet);
+                              _abrir(context, otra.formatos[i]);
+                            },
+                            child: Text(otra.formatos[i].etiqueta),
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                  const SizedBox(height: 10),
+                  Text(otra.avisoLegal, style: AppTextStyles.caption),
+                ],
+              ),
+            ),
+          ),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 4),
+          child: Text(
+            'También en ${otra.tienda} ›',
+            style: AppTextStyles.caption.copyWith(
+              color: ColoresCompra.verde,
+              fontWeight: FontWeight.w800,
+            ),
+          ),
+        ),
+      ),
     );
   }
 }

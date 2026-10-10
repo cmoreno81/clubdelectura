@@ -116,6 +116,7 @@ class _ComprarLibrosPageState extends State<ComprarLibrosPage>
       context,
       titulo: item.title,
       formato: pendiente.formato.etiqueta,
+      tienda: pendiente.formato.tienda,
     );
     if (!comprado || !mounted) return;
 
@@ -369,7 +370,7 @@ class _ComprarLibrosPageState extends State<ComprarLibrosPage>
                         enlaces: d.enlaces,
                         formatoPrincipal: _formatoDelDeseo,
                         vacio:
-                            'Ninguno de tus deseos está a la venta en Casa del Libro ahora mismo.',
+                            'Ninguno de tus deseos está a la venta en nuestras tiendas asociadas ahora mismo.',
                       ),
                       _Lista(
                         onAbierto: _alAbrirTienda,
@@ -377,7 +378,7 @@ class _ComprarLibrosPageState extends State<ComprarLibrosPage>
                         enlaces: d.enlaces,
                         onYaLoTengo: _marcarLoTengo,
                         vacio:
-                            'Ninguno de tus pendientes está a la venta en Casa del Libro.',
+                            'Ninguno de tus pendientes está a la venta en nuestras tiendas asociadas.',
                       ),
                       _Lista(
                         onAbierto: _alAbrirTienda,
@@ -445,7 +446,7 @@ class _AvisoPublicidad extends StatelessWidget {
                 const EtiquetaPublicidad(sobreFondoOscuro: true),
                 const SizedBox(height: AppSpacing.xs),
                 Text(
-                  'Enlaces de afiliado a Casa del Libro: ClubReads puede '
+                  'Enlaces de afiliado: ClubReads puede '
                   'recibir una comisión si compras, sin coste extra para ti.',
                   style: AppTextStyles.caption.copyWith(
                     color: Colors.white.withValues(alpha: .92),

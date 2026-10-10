@@ -59,7 +59,7 @@ class PoliticaPrivacidadPage extends StatelessWidget {
           const _Apartado(
             titulo: 'Enlaces de compra y afiliados',
             texto:
-                'Algunos botones de compra llevan a Casa del Libro mediante enlaces de afiliado de la red Awin, y se identifican siempre como "Publicidad". Si compras, ClubReads puede recibir una comisión sin coste extra para ti. Al pulsarlos se abre tu navegador y, desde ahí, la tienda y la red de afiliación pueden usar cookies y tratar datos según sus propias políticas de privacidad. ClubReads no les envía tu nombre, tu correo ni datos de tu perfil, y no recibe información de tus compras en la tienda: solo guarda lo que tú marcas como comprado en tu lista de deseos.',
+                'Algunos botones de compra llevan a tiendas asociadas (como Casa del Libro, mediante la red Awin) con enlaces de afiliado, y se identifican siempre como "Publicidad". Si compras, ClubReads puede recibir una comisión sin coste extra para ti. Al pulsarlos se abre tu navegador y, desde ahí, la tienda y la red de afiliación pueden usar cookies y tratar datos según sus propias políticas de privacidad. ClubReads no les envía tu nombre, tu correo ni datos de tu perfil, y no recibe información de tus compras en la tienda: solo guarda lo que tú marcas como comprado en tu lista de deseos.',
           ),
           const _Apartado(
             titulo: 'Almacenamiento y servicios',

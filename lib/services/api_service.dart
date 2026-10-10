@@ -1211,9 +1211,9 @@ class ApiService {
   /// destino o el aviso legal sin tener que sacar una versión nueva.
   Future<EnlaceCompra?> getEnlaceCompra(String bookId) async {
     final response = await _client.get(
-      Uri.parse(baseUrl).replace(
-        queryParameters: {'action': 'enlaceCompra', 'bookId': bookId},
-      ),
+      Uri.parse(
+        baseUrl,
+      ).replace(queryParameters: {'action': 'enlaceCompra', 'bookId': bookId}),
     );
     if (response.statusCode != 200) return null;
     final data = _decodeJson(response);
@@ -1513,11 +1513,12 @@ class ApiService {
   getKitLectura(String bookId) async {
     try {
       final response = await _client.get(
-        Uri.parse(baseUrl).replace(
-          queryParameters: {'action': 'kitLectura', 'bookId': bookId},
-        ),
+        Uri.parse(
+          baseUrl,
+        ).replace(queryParameters: {'action': 'kitLectura', 'bookId': bookId}),
       );
-      if (response.statusCode != 200) return (ok: false, kit: null, actualizado: null);
+      if (response.statusCode != 200)
+        return (ok: false, kit: null, actualizado: null);
       final data = _decodeJson(response);
       if (data is! Map<String, dynamic> || data['ok'] != true) {
         return (ok: false, kit: null, actualizado: null);
@@ -1538,9 +1539,9 @@ class ApiService {
   Future<List<Map<String, String>>?> obtenerCategoriasComentario() async {
     try {
       final response = await _client.get(
-        Uri.parse(baseUrl).replace(
-          queryParameters: {'action': 'categoriasComentario'},
-        ),
+        Uri.parse(
+          baseUrl,
+        ).replace(queryParameters: {'action': 'categoriasComentario'}),
       );
       if (response.statusCode != 200) return null;
       final data = _decodeJson(response);
@@ -1805,7 +1806,8 @@ class ApiService {
     }
 
     if (data['ok'] == false) {
-      final mensaje = data['mensaje']?.toString() ?? 'No se pudo cargar el perfil';
+      final mensaje =
+          data['mensaje']?.toString() ?? 'No se pudo cargar el perfil';
       if (data['privado'] == true) {
         throw PerfilPrivadoException(mensaje);
       }
@@ -2511,9 +2513,7 @@ class ApiService {
   /// diciembre), o null si ninguno se ha otorgado todavía.
   Future<Map<String, dynamic>> getLigaLibroDeOro() async {
     final response = await _client.get(
-      Uri.parse(
-        baseUrl,
-      ).replace(queryParameters: {'action': 'ligaLibroDeOro'}),
+      Uri.parse(baseUrl).replace(queryParameters: {'action': 'ligaLibroDeOro'}),
     );
     if (response.statusCode != 200) throw ApiException.fromResponse(response);
     return _decodeJson(response) as Map<String, dynamic>;
@@ -2959,6 +2959,7 @@ class EnlaceCompra {
     this.yaEmpezado = false,
     this.loTengo = false,
     this.enBiblioteca = false,
+    this.otras = const [],
   });
 
   final String url;
@@ -2981,9 +2982,78 @@ class EnlaceCompra {
   /// El libro está en su biblioteca, así que se puede marcar "Ya lo tengo".
   final bool enBiblioteca;
 
+  /// Todas las tiendas de este libro, la principal primero.
+  List<EnlaceCompra> get tiendas => [this, ...otras];
+
+  /// Aviso de afiliación que debe verse junto a los botones: el de la tienda
+  /// que lleve una frase legal propia (p. ej. Amazon) o, si no, el genérico.
+  String get avisoLegal {
+    for (final t in tiendas) {
+      if (t.aviso.contains('Amazon')) return t.aviso;
+    }
+    return aviso.isNotEmpty
+        ? aviso
+        : 'Publicidad · Enlace de afiliado: ClubReads puede recibir una comisión '
+              'si compras, sin coste extra para ti.';
+  }
+
+  /// Otras tiendas donde también se puede comprar el libro (la principal es
+  /// la que describen los campos de arriba). Vacía si solo hay una.
+  final List<EnlaceCompra> otras;
+
   static EnlaceCompra? fromJson(Map<String, dynamic> data) {
+    // El servidor nuevo manda `tiendas` (varias, por orden de preferencia); el
+    // antiguo, una sola en el nivel superior. Se trabaja siempre con una
+    // principal y, si las hay, las demás en `otras`.
+    final listaTiendas = <Map<String, dynamic>>[
+      if (data['tiendas'] is List)
+        for (final t in data['tiendas'] as List)
+          if (t is Map) Map<String, dynamic>.from(t),
+    ];
+    final comunes = {
+      'yaEmpezado': data['yaEmpezado'],
+      'loTengo': data['loTengo'],
+      'enBiblioteca': data['enBiblioteca'],
+    };
+    if (listaTiendas.isNotEmpty) {
+      final disponibles = listaTiendas
+          .where((t) => t['exacto'] != false)
+          .toList();
+      final principal = disponibles.isNotEmpty
+          ? disponibles.first
+          : listaTiendas.first;
+      final resto = disponibles.where((t) => !identical(t, principal));
+      final base = _unaTienda({
+        ...principal,
+        ...comunes,
+        // El aviso de la lista (mismo para todas) manda sobre el de la tienda
+        // si el servidor lo envía; si no, el de la propia tienda.
+        'aviso': data['aviso'] ?? principal['aviso'],
+      });
+      if (base == null) return null;
+      return EnlaceCompra._copiaConOtras(base, [
+        for (final t in resto)
+          ?_unaTienda({...t, ...comunes, 'aviso': t['aviso']}),
+      ]);
+    }
+    return _unaTienda(data);
+  }
+
+  EnlaceCompra._copiaConOtras(EnlaceCompra base, this.otras)
+    : url = base.url,
+      tienda = base.tienda,
+      aviso = base.aviso,
+      formato = base.formato,
+      formatos = base.formatos,
+      exacto = base.exacto,
+      yaEmpezado = base.yaEmpezado,
+      loTengo = base.loTengo,
+      enBiblioteca = base.enBiblioteca;
+
+  static EnlaceCompra? _unaTienda(Map<String, dynamic> data) {
     final url = data['url']?.toString() ?? '';
     if (url.isEmpty) return null;
+    final nombreTienda = data['tienda']?.toString() ?? 'Casa del Libro';
     final formatos = <EnlaceCompraFormato>[];
     final lista = data['formatos'];
     if (lista is List) {
@@ -2996,13 +3066,14 @@ class EnlaceCompra {
             formato: f['formato']?.toString() ?? '',
             etiqueta: f['etiqueta']?.toString() ?? '',
             url: u,
+            tienda: nombreTienda,
           ),
         );
       }
     }
     return EnlaceCompra(
       url: url,
-      tienda: data['tienda']?.toString() ?? 'Casa del Libro',
+      tienda: nombreTienda,
       aviso: data['aviso']?.toString() ?? '',
       formato: data['formato']?.toString() ?? 'papel',
       formatos: formatos,
@@ -3019,9 +3090,13 @@ class EnlaceCompraFormato {
     required this.formato,
     required this.etiqueta,
     required this.url,
+    this.tienda = '',
   });
 
   final String formato;
   final String etiqueta;
   final String url;
+
+  /// Tienda a la que lleva este botón (vacía en respuestas muy antiguas).
+  final String tienda;
 }

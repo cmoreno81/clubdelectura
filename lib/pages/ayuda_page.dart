@@ -211,7 +211,7 @@ const List<_HelpSection> _secciones = [
             '"Mis adquisiciones", con el presupuesto, los libros ya disponibles y los '
             'próximos, un plan por meses y el historial de comprados. Desde ahí puedes '
             'editar o eliminar cada libro.\n\n'
-            '🛍️ Si Casa del Libro tiene el libro, el deseo muestra botones para '
+            '🛍️ Si una de nuestras tiendas asociadas tiene el libro, el deseo muestra botones para '
             'comprarlo en papel, ebook o audiolibro. Lo explicamos en la sección '
             '"Comprar libros".\n\n'
             '✅ Cuando lo compres, desliza su tarjeta hacia la derecha para marcarlo '
@@ -424,8 +424,9 @@ const List<_HelpSection> _secciones = [
       _HelpItem(
         pregunta: '¿Puedo comprar los libros desde ClubReads?',
         respuesta:
-            'Sí, en Casa del Libro. Cuando la tienda tiene el libro, verás el botón '
-            '"Comprar en Casa del Libro" (o "Reservar", si todavía no ha salido) en:\n\n'
+            'Sí, en nuestras tiendas asociadas (hoy, Casa del Libro). Cuando la tienda '
+            'tiene el libro, verás el botón "Comprar en <tienda>" (o "Reservar", si '
+            'todavía no ha salido) en:\n\n'
             '• La ficha del libro\n'
             '• "Tu próxima compra"\n'
             '• "Novedades disponibles" y "Próximos lanzamientos"\n'
@@ -443,7 +444,7 @@ const List<_HelpSection> _secciones = [
             '• Deseados: tu lista de deseos\n'
             '• Pendientes: los libros que tienes pendientes en tu biblioteca\n'
             '• Próximos: los próximos lanzamientos, con su fecha de salida\n\n'
-            'Solo aparecen los libros que Casa del Libro tiene localizados, para que '
+            'Solo aparecen los libros que la tienda tiene localizados, para que '
             'todos lleven a una ficha real.',
       ),
       _HelpItem(
@@ -478,7 +479,7 @@ const List<_HelpSection> _secciones = [
       _HelpItem(
         pregunta: '¿Qué formatos se ofrecen y en qué idioma?',
         respuesta:
-            'Debajo de "Comprar en Casa del Libro" verás un botón por cada formato '
+            'Debajo de "Comprar en <tienda>" verás un botón por cada formato '
             'disponible: Papel, Ebook y Audiolibro. El relleno es el formato que '
             'usas tú (el de tu biblioteca o el de tu deseo) y, si no hay ninguno, el '
             'papel. Cada botón lleva directo a la ficha de ese formato.\n\n'
@@ -489,7 +490,7 @@ const List<_HelpSection> _secciones = [
       _HelpItem(
         pregunta: '¿Por qué un libro no tiene botón de compra?',
         respuesta:
-            'Porque Casa del Libro no lo tiene o no hemos podido localizarlo con '
+            'Porque la tienda no lo tiene o no hemos podido localizarlo con '
             'seguridad: libros autopublicados, ediciones agotadas, títulos escritos de '
             'otra manera o sin autora. En esos casos preferimos no mostrar nada antes '
             'que llevarte a un libro equivocado.\n\n'

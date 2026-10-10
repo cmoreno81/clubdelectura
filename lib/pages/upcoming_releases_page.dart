@@ -396,9 +396,9 @@ class _UpcomingReleasesPageState extends State<UpcomingReleasesPage> {
                 child: Text(
                   upcoming
                       ? 'Toca el corazón para guardarlo en tu lista de deseos, '
-                            'o resérvalo directamente en Casa del Libro.'
+                            'o resérvalo directamente en la tienda.'
                       : 'Toca el corazón para guardarlo en tu lista de deseos, '
-                            'o cómpralo directamente en Casa del Libro.',
+                            'o cómpralo directamente en la tienda.',
                   style: TextStyle(
                     color: Colors.white.withValues(alpha: .84),
                     fontSize: 12.5,

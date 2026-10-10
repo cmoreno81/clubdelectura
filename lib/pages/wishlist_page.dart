@@ -90,8 +90,8 @@ class _WishlistPageState extends State<WishlistPage>
   Timer? _purchaseNoticeTimer;
   _WishlistTab _tab = _WishlistTab.all;
 
-  // Enlaces de compra por id de libro: solo los libros que Casa del Libro
-  // tiene localizados llevan botón de compra.
+  // Enlaces de compra por id de libro: solo los libros que la tienda tiene
+  // localizados llevan botón de compra.
   final Map<String, EnlaceCompra> _enlaces = {};
 
   // Último botón de compra que abrió la tienda: al volver a la app se
@@ -144,6 +144,7 @@ class _WishlistPageState extends State<WishlistPage>
       context,
       titulo: item.title,
       formato: pendiente.formato.etiqueta,
+      tienda: pendiente.formato.tienda,
     );
     if (!comprado || !mounted) return;
 
@@ -1414,8 +1415,8 @@ class _AccesoCompra extends StatelessWidget {
                   const SizedBox(height: AppSpacing.xs),
                   Text(
                     disponibles == 1
-                        ? '1 de tus deseos está en Casa del Libro'
-                        : '$disponibles de tus deseos están en Casa del Libro',
+                        ? '1 de tus deseos se puede comprar'
+                        : '$disponibles de tus deseos se pueden comprar',
                     style: AppTextStyles.subtitle.copyWith(
                       color: Colors.white,
                       fontWeight: FontWeight.w800,

@@ -138,7 +138,7 @@ class _ComprarLibroCardState extends State<ComprarLibroCard> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _tarjeta(),
+          _tarjeta(enlace),
           if (puedeMarcar)
             TextButton.icon(
               onPressed: () => _marcarLoTengo(true),
@@ -170,7 +170,7 @@ class _ComprarLibroCardState extends State<ComprarLibroCard> {
     await _cargar();
   }
 
-  Widget _tarjeta() {
+  Widget _tarjeta(EnlaceCompra enlace) {
     return ClubSectionCard(
       onTap: _abrir,
       backgroundColor: ColoresCompra.fondo,
@@ -204,7 +204,7 @@ class _ComprarLibroCardState extends State<ComprarLibroCard> {
                   children: [
                     Flexible(
                       child: Text(
-                        'Comprar en Casa del Libro',
+                        'Comprar en ${enlace.tienda}',
                         style: AppTextStyles.subtitle.copyWith(
                           color: AppColors.textPrimary,
                           fontWeight: FontWeight.w700,
@@ -217,10 +217,45 @@ class _ComprarLibroCardState extends State<ComprarLibroCard> {
                 ),
                 const SizedBox(height: AppSpacing.xs),
                 Text(
-                  'Enlace de afiliado: ClubReads puede recibir una comisión, '
-                  'sin coste extra para ti.',
+                  enlace.otras.isEmpty && !enlace.avisoLegal.contains('Amazon')
+                      ? 'Enlace de afiliado: ClubReads puede recibir una comisión, '
+                            'sin coste extra para ti.'
+                      : enlace.avisoLegal,
                   style: AppTextStyles.bodySecondary,
                 ),
+                for (final otra in enlace.otras) ...[
+                  const SizedBox(height: AppSpacing.sm),
+                  Row(
+                    children: [
+                      Flexible(
+                        child: Text(
+                          'También en ${otra.tienda}',
+                          style: AppTextStyles.caption.copyWith(
+                            color: ColoresCompra.verde,
+                            fontWeight: FontWeight.w800,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: AppSpacing.xs),
+                      const EtiquetaPublicidad(),
+                    ],
+                  ),
+                  const SizedBox(height: AppSpacing.xs),
+                  Wrap(
+                    spacing: AppSpacing.xs,
+                    runSpacing: AppSpacing.xs,
+                    children: [
+                      for (final f in otra.formatos)
+                        ActionChip(
+                          label: Text(f.etiqueta),
+                          visualDensity: VisualDensity.compact,
+                          backgroundColor: Colors.white,
+                          side: const BorderSide(color: ColoresCompra.borde),
+                          onPressed: () => _abrir(f.url),
+                        ),
+                    ],
+                  ),
+                ],
                 if ((_enlace?.formatos.length ?? 0) > 1) ...[
                   const SizedBox(height: AppSpacing.sm),
                   Wrap(
