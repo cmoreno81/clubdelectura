@@ -89,4 +89,66 @@ void main() {
     ]);
     expect(rows.every((row) => row.exclusiveShelf == 'read'), isTrue);
   });
+
+  test('lee la exportación con «Autores» y «Calificación» y varios registros', () {
+    final values = [
+      'Título',
+      'Autores',
+      'Estado',
+      'Período de lectura',
+      'Calificación',
+      'Comentario',
+      'Fecha de compra',
+      'La pareja perfecta',
+      'Elin Hilderbrand',
+      '¡Lo terminé de leer!',
+      '24/6/2025 ~ 6/7/2025',
+      '3.5',
+      'Buen libro',
+      '7/7/2025',
+    ];
+    final index = <String, int>{
+      for (var position = 0; position < values.length; position++)
+        values[position]: position,
+    };
+    String cell(String reference, String value) =>
+        '<c r="$reference" t="s"><v>${index[value]}</v></c>';
+    final sheet =
+        '''
+      <worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">
+        <sheetData>
+          <row r="1"></row>
+          <row r="2">
+            ${cell('A2', 'Título')}${cell('B2', 'Autores')}
+            ${cell('P2', 'Estado')}${cell('Q2', 'Período de lectura')}
+            ${cell('R2', 'Calificación')}${cell('S2', 'Comentario')}
+            ${cell('U2', 'Fecha de compra')}
+          </row>
+          <row r="3">
+            ${cell('A3', 'La pareja perfecta')}${cell('B3', 'Elin Hilderbrand')}
+            ${cell('P3', '¡Lo terminé de leer!')}${cell('Q3', '24/6/2025 ~ 6/7/2025')}
+            ${cell('R3', '3.5')}${cell('S3', 'Buen libro')}
+            ${cell('U3', '7/7/2025')}
+          </row>
+        </sheetData>
+      </worksheet>
+    ''';
+    final sharedStrings =
+        '<sst xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">'
+        '${values.map((value) => '<si><t>${htmlEscape.convert(value)}</t></si>').join()}'
+        '</sst>';
+    final archive = Archive()
+      ..addFile(ArchiveFile.string('xl/sharedStrings.xml', sharedStrings))
+      ..addFile(ArchiveFile.string('xl/worksheets/sheet1.xml', sheet));
+    final bytes = Uint8List.fromList(ZipEncoder().encode(archive));
+
+    final rows = const BookmoryXlsxParser().parse(bytes);
+
+    expect(rows, hasLength(1));
+    expect(rows.single.author, 'Elin Hilderbrand');
+    expect(rows.single.rating, 3.5);
+    expect(rows.single.review, 'Buen libro');
+    expect(rows.single.dateRead, '2025-07-06T12:00:00.000Z');
+    expect(rows.single.exclusiveShelf, 'read');
+  });
 }

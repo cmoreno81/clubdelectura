@@ -32,8 +32,13 @@ class BookmoryXlsxParser {
         headers[header] = column;
       }
     }
+    final authorKey = [
+      'autores as',
+      'autores',
+      'autor',
+    ].where(headers.containsKey).firstOrNull;
     if (!headers.containsKey('titulo') ||
-        !headers.containsKey('autores as') ||
+        authorKey == null ||
         !headers.containsKey('estado')) {
       throw const FormatException(
         'No parece un archivo exportado por Bookmory.',
@@ -44,31 +49,30 @@ class BookmoryXlsxParser {
         column < row.length ? row[column].trim() : '';
 
     final titleColumn = headers['titulo']!;
-    final authorColumn = headers['autores as']!;
+    final authorColumn = headers[authorKey]!;
     final isbnColumn = headers['isbn'];
     final pagesColumn = headers['total de paginas'];
     final publicationColumn = headers['fecha de publicacion'];
     final statusColumn = headers['estado']!;
-    final firstPeriodColumn = headers['periodo de lectura'] ?? 14;
-    final firstRatingColumn = headers['calificaciones de estrellas'] ?? 15;
+    final readings = _readingColumns(rows[1]);
 
     return rows
         .skip(2)
         .where((row) => value(row, titleColumn).isNotEmpty)
         .map((row) {
-          final firstReading = _reading(
-            row,
-            periodColumn: firstPeriodColumn,
-            ratingColumn: firstRatingColumn,
+          final allReadings = readings
+              .map(
+                (columns) => _reading(
+                  row,
+                  periodColumn: columns.$1,
+                  ratingColumn: columns.$2,
+                ),
+              )
+              .toList(growable: false);
+          final reading = allReadings.lastWhere(
+            (candidate) => candidate.rating != null,
+            orElse: () => allReadings.first,
           );
-          final secondReading = _reading(
-            row,
-            periodColumn: firstPeriodColumn + 4,
-            ratingColumn: firstRatingColumn + 4,
-          );
-          final reading = secondReading.rating != null
-              ? secondReading
-              : firstReading;
           final finished = _normalize(
             value(row, statusColumn),
           ).contains('lo termine de leer');
@@ -92,6 +96,24 @@ class BookmoryXlsxParser {
           );
         })
         .toList(growable: false);
+  }
+
+  /// Pares (período, calificación) de cada registro de lectura. Las versiones
+  /// de Bookmory nombran distinto la columna de nota («Calificación» o
+  /// «Calificaciones de estrellas»), así que se busca por cabecera y no por
+  /// posición; si no hay cabeceras reconocibles se usa el diseño antiguo.
+  List<(int, int)> _readingColumns(List<String> headerRow) {
+    final normalized = headerRow.map(_normalize).toList(growable: false);
+    final result = <(int, int)>[];
+    for (var column = 0; column < normalized.length; column++) {
+      if (normalized[column] != 'periodo de lectura') continue;
+      final rating =
+          [for (var next = column + 1; next < normalized.length; next++) next]
+              .where((next) => normalized[next].startsWith('calificacion'))
+              .firstOrNull;
+      if (rating != null) result.add((column, rating));
+    }
+    return result.isEmpty ? const [(14, 15), (18, 19)] : result;
   }
 
   List<String> _readSharedStrings(ArchiveFile file) {
