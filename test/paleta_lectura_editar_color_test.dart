@@ -118,4 +118,33 @@ void main() {
     expect(boton.onPressed, isNull);
     expect(find.text('Escribe 6 letras o números'), findsOneWidget);
   });
+
+  testWidgets('hay colores oscuros para los libros de portada negra', (
+    tester,
+  ) async {
+    await abrir(tester);
+    await tester.scrollUntilVisible(
+      find.text('Citas'),
+      200,
+      scrollable: find.byType(Scrollable).first,
+    );
+    await tester.tap(find.text('Citas'));
+    await tester.pumpAndSettle();
+
+    // Negro y granate disponibles en la rejilla.
+    expect(find.bySemanticsLabel('Color #141416'), findsOneWidget);
+    await tester.tap(find.bySemanticsLabel('Color #7B1E2E'));
+    await tester.pump();
+    await tester.tap(find.text('Usar este color'));
+    await tester.pumpAndSettle();
+    await tester.scrollUntilVisible(
+      find.text('Usar esta paleta'),
+      200,
+      scrollable: find.byType(Scrollable).first,
+    );
+    await tester.tap(find.text('Usar esta paleta'));
+    await tester.pumpAndSettle();
+
+    expect(resultado![2], '#7B1E2E');
+  });
 }

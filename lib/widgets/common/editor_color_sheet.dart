@@ -5,7 +5,8 @@ import '../../theme/app_colors.dart';
 import '../../theme/app_spacing.dart';
 import '../../theme/app_text_styles.dart';
 
-/// Colores habituales de post-it y marcadores, para elegir con un toque.
+/// Colores habituales de post-it y marcadores (claros y oscuros), para elegir
+/// con un toque.
 const coloresPostIt = <Color>[
   Color(0xFFF9D71C), // amarillo canario
   Color(0xFFFFE45E), // amarillo pastel
@@ -23,6 +24,15 @@ const coloresPostIt = <Color>[
   Color(0xFF5DBB63), // verde
   Color(0xFFC6E64C), // lima
   Color(0xFF9AA3AF), // gris
+  // Tonos oscuros, para los libros de portada negra.
+  Color(0xFF141416), // negro
+  Color(0xFF3B4048), // grafito
+  Color(0xFF7B1E2E), // granate
+  Color(0xFF4F1022), // burdeos
+  Color(0xFF1F2A4D), // azul marino
+  Color(0xFF1F4D3A), // verde bosque
+  Color(0xFF5A3A2A), // marrón
+  Color(0xFF3D1F5C), // morado oscuro
 ];
 
 /// Convierte «#RRGGBB» (con o sin almohadilla) en color; `null` si no es válido.
