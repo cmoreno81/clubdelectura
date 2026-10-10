@@ -9,6 +9,9 @@ import '../theme/app_spacing.dart';
 import '../theme/app_text_styles.dart';
 import '../widgets/common/club_book_cover.dart';
 import '../widgets/common/club_card.dart';
+import '../models/subrayador_categoria.dart';
+import '../services/categorias_comentario_service.dart';
+import '../widgets/common/editor_categorias_sheet.dart';
 import '../widgets/common/editor_color_sheet.dart';
 import '../widgets/ui/club_section_title.dart';
 
@@ -361,9 +364,10 @@ class _PaletaLecturaPageState extends State<PaletaLecturaPage> {
 
   Future<void> _editarColor(int index, List<_ColorLector> colores) async {
     final item = colores[index];
+    final categorias = CategoriasComentarioService.categorias.value;
     final nuevo = await mostrarEditorColor(
       context,
-      titulo: item.uso.titulo,
+      titulo: '${categorias[index].emoji} ${categorias[index].nombre}'.trim(),
       inicial: item.color,
     );
     if (nuevo == null || !mounted || nuevo == item.color) return;
@@ -713,27 +717,70 @@ class _LeyendaCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ClubCard(
-      elevated: false,
-      padding: const EdgeInsets.all(AppSpacing.md),
-      borderColor: AppColors.border,
-      child: Column(
-        children: [
-          for (int i = 0; i < colores.length; i++) ...[
-            _LeyendaRow(item: colores[i], onTap: () => onEditar(i)),
-            if (i < colores.length - 1) const Divider(height: AppSpacing.lg),
+    return ValueListenableBuilder<List<SubrayadorCategoria>>(
+      valueListenable: CategoriasComentarioService.categorias,
+      builder: (context, categorias, _) => ClubCard(
+        elevated: false,
+        padding: const EdgeInsets.all(AppSpacing.md),
+        borderColor: AppColors.border,
+        child: Column(
+          children: [
+            for (int i = 0; i < colores.length; i++) ...[
+              _LeyendaRow(
+                item: colores[i],
+                // Con un nombre propio se oculta la descripción estándar,
+                // que ya no describiría ese tema.
+                titulo: _tituloTema(categorias, i, colores[i]),
+                descripcion: _esNombreOriginal(categorias, i)
+                    ? colores[i].uso.descripcion
+                    : null,
+                onTap: () => onEditar(i),
+              ),
+              if (i < colores.length - 1) const Divider(height: AppSpacing.lg),
+            ],
+            const SizedBox(height: AppSpacing.sm),
+            Align(
+              alignment: Alignment.centerLeft,
+              child: TextButton.icon(
+                onPressed: () => mostrarEditorCategorias(context),
+                icon: const Icon(Icons.drive_file_rename_outline_rounded),
+                label: const Text('Editar mis temas'),
+              ),
+            ),
           ],
-        ],
+        ),
       ),
     );
   }
 }
 
+bool _esNombreOriginal(List<SubrayadorCategoria> categorias, int i) =>
+    categorias[i].nombre == kSubrayadorCategorias[i].nombre &&
+    categorias[i].emoji == kSubrayadorCategorias[i].emoji;
+
+/// Nombre del tema en la leyenda: el de la lectora si lo ha cambiado, y si no
+/// el de siempre de esta pantalla.
+String _tituloTema(
+  List<SubrayadorCategoria> categorias,
+  int i,
+  _ColorLector item,
+) {
+  if (_esNombreOriginal(categorias, i)) return item.uso.titulo;
+  return '${categorias[i].emoji} ${categorias[i].nombre}'.trim();
+}
+
 class _LeyendaRow extends StatelessWidget {
   final _ColorLector item;
+  final String titulo;
+  final String? descripcion;
   final VoidCallback onTap;
 
-  const _LeyendaRow({required this.item, required this.onTap});
+  const _LeyendaRow({
+    required this.item,
+    required this.titulo,
+    required this.descripcion,
+    required this.onTap,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -759,15 +806,16 @@ class _LeyendaRow extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  item.uso.titulo,
+                  titulo,
                   style: AppTextStyles.body.copyWith(
                     fontWeight: FontWeight.w800,
                   ),
                 ),
 
-                const SizedBox(height: 2),
-
-                Text(item.uso.descripcion, style: AppTextStyles.caption),
+                if (descripcion != null) ...[
+                  const SizedBox(height: 2),
+                  Text(descripcion!, style: AppTextStyles.caption),
+                ],
               ],
             ),
           ),

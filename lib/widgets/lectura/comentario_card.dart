@@ -552,6 +552,7 @@ class _ComentarioCardState extends State<ComentarioCard> {
                         const SizedBox(height: 4),
                         _CategoriaTag(
                           tag: _categoriaTag(comentario.tipo)!,
+                          etiqueta: comentario.etiqueta,
                         ),
                       ],
                     ],
@@ -612,7 +613,9 @@ class _ComentarioCardState extends State<ComentarioCard> {
                         ),
                         const SizedBox(width: AppSpacing.xs),
                         Text(
-                          'Cita del libro',
+                          comentario.etiqueta.trim().isNotEmpty
+                              ? comentario.etiqueta.trim()
+                              : 'Cita del libro',
                           style: AppTextStyles.caption.copyWith(
                             color: colorCita,
                             fontWeight: FontWeight.w900,
@@ -856,9 +859,12 @@ class _ComentarioCardState extends State<ComentarioCard> {
 /// Pequeño badge que indica la categoría del comentario (Teoría, Personaje…).
 /// Usa el color morado estándar de la app, no el color del subrayador.
 class _CategoriaTag extends StatelessWidget {
-  const _CategoriaTag({required this.tag});
+  const _CategoriaTag({required this.tag, this.etiqueta = ''});
 
   final ({String emoji, String nombre}) tag;
+
+  /// Nombre elegido por la autora; si viene, sustituye al estándar.
+  final String etiqueta;
 
   @override
   Widget build(BuildContext context) {
@@ -870,7 +876,7 @@ class _CategoriaTag extends StatelessWidget {
         border: Border.all(color: AppColors.primary.withValues(alpha: .30)),
       ),
       child: Text(
-        '${tag.emoji} ${tag.nombre}',
+        etiqueta.trim().isNotEmpty ? etiqueta.trim() : '${tag.emoji} ${tag.nombre}',
         style: TextStyle(
           fontSize: 11,
           fontWeight: FontWeight.w700,

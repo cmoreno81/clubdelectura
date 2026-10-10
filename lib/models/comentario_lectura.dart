@@ -18,6 +18,10 @@ class ComentarioLectura {
   /// URL de la foto adjunta al comentario (vacía si no tiene).
   final String imagenUrl;
 
+  /// Nombre de la categoría tal y como la puso la autora («🎭 Villanos»).
+  /// Vacío si usó el nombre estándar o es un comentario libre.
+  final String etiqueta;
+
   final int likes;
 
   final bool miLike;
@@ -47,6 +51,7 @@ class ComentarioLectura {
     required this.tipo,
     required this.color,
     this.imagenUrl = '',
+    this.etiqueta = '',
     required this.likes,
     required this.miLike,
     required this.reacciones,
@@ -74,6 +79,7 @@ class ComentarioLectura {
       tipo: json["tipo"]?.toString().toUpperCase() ?? "COMMENT",
       color: json["color"]?.toString() ?? "",
       imagenUrl: json["imagenUrl"]?.toString() ?? "",
+      etiqueta: json["etiqueta"]?.toString() ?? "",
       likes: json["likes"] as int? ?? 0,
       miLike: json["miLike"] as bool? ?? false,
       reacciones: _parseReacciones(json),
@@ -114,6 +120,7 @@ class ComentarioLectura {
     tipo: tipo,
     color: color,
     imagenUrl: imagenUrl,
+    etiqueta: etiqueta,
     likes: likes,
     miLike: miLike,
     reacciones: reacciones,

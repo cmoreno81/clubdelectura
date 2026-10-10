@@ -776,6 +776,7 @@ class ApiService {
     String tipo = 'COMMENT',
     String color = '',
     String? imagenBase64,
+    String? etiqueta,
   }) async {
     final response = await _postJson('guardarComentarioLectura', {
       'libro': libro,
@@ -785,6 +786,8 @@ class ApiService {
       if (color.trim().isNotEmpty) 'color': color,
       if (imagenBase64 != null && imagenBase64.isNotEmpty)
         'imagen': imagenBase64,
+      if (etiqueta != null && etiqueta.trim().isNotEmpty)
+        'etiqueta': etiqueta.trim(),
     });
     final decoded = _decodeJson(response);
     if (decoded is! Map<String, dynamic> ||
@@ -1527,6 +1530,50 @@ class ApiService {
       );
     } catch (_) {
       return (ok: false, kit: null, actualizado: null);
+    }
+  }
+
+  /// Nombres personalizados de las 5 categorías de comentario de la lectora
+  /// (`null` si usa los de siempre o no se ha podido consultar).
+  Future<List<Map<String, String>>?> obtenerCategoriasComentario() async {
+    try {
+      final response = await _client.get(
+        Uri.parse(baseUrl).replace(
+          queryParameters: {'action': 'categoriasComentario'},
+        ),
+      );
+      if (response.statusCode != 200) return null;
+      final data = _decodeJson(response);
+      if (data is! Map<String, dynamic> || data['ok'] != true) return null;
+      final lista = data['categorias'];
+      if (lista is! List) return null;
+      return [
+        for (final item in lista)
+          if (item is Map)
+            {
+              'emoji': item['emoji']?.toString() ?? '',
+              'nombre': item['nombre']?.toString() ?? '',
+            },
+      ];
+    } catch (_) {
+      return null;
+    }
+  }
+
+  /// Guarda las categorías de comentario (`null` las restablece). Devuelve
+  /// `true` si el servidor las ha aceptado.
+  Future<bool> guardarCategoriasComentario(
+    List<Map<String, String>>? categorias,
+  ) async {
+    try {
+      final response = await _postJson('guardarCategoriasComentario', {
+        'categorias': categorias,
+      });
+      if (response.statusCode != 200) return false;
+      final data = _decodeJson(response);
+      return data is Map<String, dynamic> && data['ok'] == true;
+    } catch (_) {
+      return false;
     }
   }
 

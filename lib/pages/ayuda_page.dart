@@ -1233,6 +1233,11 @@ const List<_HelpSection> _secciones = [
             'código HEX para igualarlo con los que tienes en casa. Con "Probar otra '
             'combinación" vuelves a las propuestas automáticas. Tu paleta es solo '
             'tuya, de ese libro.\n\n'
+            'Con "Editar mis temas" (debajo de la leyenda) puedes ponerle tu propio '
+            'nombre y emoji a los 5 temas de subrayado, por ejemplo "Villanos" en '
+            'lugar de "Personaje". Valen para todos tus libros y las demás lectoras '
+            'verán esos nombres en tus comentarios. La categoría de cita sigue '
+            'siendo una cita aunque la renombres.\n\n'
             'Los colores de la paleta se usan como base para generar el Story y el '
             'wallpaper personalizados del libro.',
       ),

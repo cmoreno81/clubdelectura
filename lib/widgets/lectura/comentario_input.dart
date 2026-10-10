@@ -3,6 +3,7 @@ import 'dart:typed_data';
 import 'package:flutter/material.dart';
 
 import '../../models/subrayador_categoria.dart';
+import '../../services/categorias_comentario_service.dart';
 
 class ComentarioInput extends StatelessWidget {
   const ComentarioInput({
@@ -144,25 +145,26 @@ class ComentarioInput extends StatelessWidget {
                 enableSuggestions: true,
                 smartDashesType: SmartDashesType.enabled,
                 smartQuotesType: SmartQuotesType.enabled,
-                buildCounter: (
-                  context, {
-                  required currentLength,
-                  required isFocused,
-                  maxLength,
-                }) {
-                  if (maxLength == null) return null;
-                  final restantes = maxLength - currentLength;
-                  if (restantes > 200) return null;
-                  return Text(
-                    '$restantes restantes',
-                    style: TextStyle(
-                      fontSize: 11,
-                      color: restantes < 50
-                          ? Colors.red.shade600
-                          : Colors.grey.shade500,
-                    ),
-                  );
-                },
+                buildCounter:
+                    (
+                      context, {
+                      required currentLength,
+                      required isFocused,
+                      maxLength,
+                    }) {
+                      if (maxLength == null) return null;
+                      final restantes = maxLength - currentLength;
+                      if (restantes > 200) return null;
+                      return Text(
+                        '$restantes restantes',
+                        style: TextStyle(
+                          fontSize: 11,
+                          color: restantes < 50
+                              ? Colors.red.shade600
+                              : Colors.grey.shade500,
+                        ),
+                      );
+                    },
                 decoration: InputDecoration(
                   hintText: _esCita
                       ? 'Escribe aquí la frase del libro…'
@@ -322,24 +324,27 @@ class _SelectorSimple extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final esCita = seleccionada == _citaIndex;
-    return Row(
-      children: [
-        _CategoriaChip(
-          emoji: '✏️',
-          nombre: 'Comentario',
-          color: null,
-          seleccionada: !esCita,
-          onTap: () => onSeleccionada(null),
-        ),
-        const SizedBox(width: 6),
-        _CategoriaChip(
-          emoji: kSubrayadorCategorias[_citaIndex].emoji,
-          nombre: kSubrayadorCategorias[_citaIndex].nombre,
-          color: null,
-          seleccionada: esCita,
-          onTap: () => onSeleccionada(_citaIndex),
-        ),
-      ],
+    return ValueListenableBuilder<List<SubrayadorCategoria>>(
+      valueListenable: CategoriasComentarioService.categorias,
+      builder: (context, categorias, _) => Row(
+        children: [
+          _CategoriaChip(
+            emoji: '✏️',
+            nombre: 'Comentario',
+            color: null,
+            seleccionada: !esCita,
+            onTap: () => onSeleccionada(null),
+          ),
+          const SizedBox(width: 6),
+          _CategoriaChip(
+            emoji: categorias[_citaIndex].emoji,
+            nombre: categorias[_citaIndex].nombre,
+            color: null,
+            seleccionada: esCita,
+            onTap: () => onSeleccionada(_citaIndex),
+          ),
+        ],
+      ),
     );
   }
 }
@@ -359,6 +364,13 @@ class _CategoriasSelector extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    return ValueListenableBuilder<List<SubrayadorCategoria>>(
+      valueListenable: CategoriasComentarioService.categorias,
+      builder: (context, categorias, _) => _selector(categorias),
+    );
+  }
+
+  Widget _selector(List<SubrayadorCategoria> categorias) {
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
       child: Row(
@@ -375,16 +387,12 @@ class _CategoriasSelector extends StatelessWidget {
           // Opciones de categoría del kit.
           // Las citas van primero (índice 2) porque son el tipo más frecuente;
           // el resto mantiene el orden original.
-          for (final i in [
-            2,
-            0,
-            1,
-            3,
-            4,
-          ].where((i) => i < kSubrayadorCategorias.length && i < colores.length)) ...[
+          for (final i in [2, 0, 1, 3, 4].where(
+            (i) => i < kSubrayadorCategorias.length && i < colores.length,
+          )) ...[
             _CategoriaChip(
-              emoji: kSubrayadorCategorias[i].emoji,
-              nombre: kSubrayadorCategorias[i].nombre,
+              emoji: categorias[i].emoji,
+              nombre: categorias[i].nombre,
               color: colores[i],
               seleccionada: seleccionada == i,
               onTap: () => onSeleccionada(i),
@@ -428,10 +436,7 @@ class _CategoriaChip extends StatelessWidget {
         decoration: BoxDecoration(
           color: bgColor,
           borderRadius: BorderRadius.circular(20),
-          border: Border.all(
-            color: borderColor,
-            width: seleccionada ? 1.5 : 1,
-          ),
+          border: Border.all(color: borderColor, width: seleccionada ? 1.5 : 1),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
@@ -440,10 +445,7 @@ class _CategoriaChip extends StatelessWidget {
               Container(
                 width: 11,
                 height: 11,
-                decoration: BoxDecoration(
-                  color: color,
-                  shape: BoxShape.circle,
-                ),
+                decoration: BoxDecoration(color: color, shape: BoxShape.circle),
               ),
               const SizedBox(width: 5),
             ],
@@ -451,12 +453,11 @@ class _CategoriaChip extends StatelessWidget {
               '$emoji $nombre',
               style: TextStyle(
                 fontSize: 12,
-                fontWeight:
-                    seleccionada ? FontWeight.w800 : FontWeight.w600,
+                fontWeight: seleccionada ? FontWeight.w800 : FontWeight.w600,
                 color: seleccionada
                     ? (color != null
-                        ? _readableColor(chipColor)
-                        : const Color(0xFF5B3CA8))
+                          ? _readableColor(chipColor)
+                          : const Color(0xFF5B3CA8))
                     : Colors.grey.shade700,
               ),
             ),

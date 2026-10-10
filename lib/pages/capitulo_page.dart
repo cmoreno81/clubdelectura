@@ -19,6 +19,7 @@ import '../theme/app_text_styles.dart';
 import '../widgets/common/club_card.dart';
 import '../models/subrayador_categoria.dart';
 import '../services/api_service.dart';
+import '../services/categorias_comentario_service.dart';
 import '../services/foto_comentario_service.dart';
 import '../services/kit_lectura_service.dart';
 import '../widgets/lectura/comentario_card.dart';
@@ -133,6 +134,19 @@ class _CapituloPageState extends State<CapituloPage> {
       4 => 'IMPACTO',
       _ => 'COMMENT',
     };
+  }
+
+  /// Nombre que la lectora da a la categoría elegida («🎭 Villanos»), para que
+  /// el resto del club lo vea tal cual. Los comentarios libres no llevan.
+  String? _etiquetaCategoria(int? categoriaIndex) {
+    final categorias = CategoriasComentarioService.categorias.value;
+    if (categoriaIndex == null || categoriaIndex >= categorias.length) {
+      return null;
+    }
+    final categoria = categorias[categoriaIndex];
+    return [categoria.emoji, categoria.nombre]
+        .where((parte) => parte.trim().isNotEmpty)
+        .join(' ');
   }
 
   void _onPaginationChanged() {
@@ -370,6 +384,7 @@ class _CapituloPageState extends State<CapituloPage> {
           comentario: texto,
           tipo: _tipoComentario(_categoriaSeleccionada),
           imagenBase64: foto?.dataUrl,
+          etiqueta: _etiquetaCategoria(_categoriaSeleccionada),
           color: (_categoriaSeleccionada != null &&
                   _categoriaSeleccionada! < coloresSubrayadores.length)
               ? _colorAHex(coloresSubrayadores[_categoriaSeleccionada!])
