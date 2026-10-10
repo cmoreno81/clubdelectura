@@ -1228,6 +1228,11 @@ const List<_HelpSection> _secciones = [
             '🟡 Tus post-its — marcadores temáticos (favoritos, citas, teorías, '
             'personajes, impacto) para organizar tus anotaciones visualmente.\n\n'
             '📖 La leyenda de lectura — el significado de cada color del set.\n\n'
+            'Puedes cambiar cualquier color tocándolo (en los post-its o en la '
+            'leyenda): elige uno de los colores habituales de post-it o escribe su '
+            'código HEX para igualarlo con los que tienes en casa. Con "Probar otra '
+            'combinación" vuelves a las propuestas automáticas. Tu paleta es solo '
+            'tuya, de ese libro.\n\n'
             'Los colores de la paleta se usan como base para generar el Story y el '
             'wallpaper personalizados del libro.',
       ),

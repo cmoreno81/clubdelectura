@@ -9,6 +9,7 @@ import '../theme/app_spacing.dart';
 import '../theme/app_text_styles.dart';
 import '../widgets/common/club_book_cover.dart';
 import '../widgets/common/club_card.dart';
+import '../widgets/common/editor_color_sheet.dart';
 import '../widgets/ui/club_section_title.dart';
 
 class PaletaLecturaPage extends StatefulWidget {
@@ -31,6 +32,13 @@ class _PaletaLecturaPageState extends State<PaletaLecturaPage> {
   late Future<List<_ColorLector>> _futurePaleta;
   List<List<_ColorLector>> _variantes = [];
   int _indiceVariante = 0;
+
+  /// Paleta que se está mostrando; sirve de valor inicial del FutureBuilder
+  /// para que al cambiar un color no reaparezca la pantalla de carga.
+  List<_ColorLector>? _actual;
+
+  /// `true` si la lectora ha cambiado algún color a mano.
+  bool get _esPersonalizada => _indiceVariante < 0;
 
   @override
   void initState() {
@@ -346,8 +354,28 @@ class _PaletaLecturaPageState extends State<PaletaLecturaPage> {
 
     setState(() {
       _indiceVariante = (_indiceVariante + 1) % _variantes.length;
+      _actual = _variantes[_indiceVariante];
+      _futurePaleta = Future.value(_actual);
+    });
+  }
 
-      _futurePaleta = Future.value(_variantes[_indiceVariante]);
+  Future<void> _editarColor(int index, List<_ColorLector> colores) async {
+    final item = colores[index];
+    final nuevo = await mostrarEditorColor(
+      context,
+      titulo: item.uso.titulo,
+      inicial: item.color,
+    );
+    if (nuevo == null || !mounted || nuevo == item.color) return;
+
+    final editada = [
+      for (var i = 0; i < colores.length; i++)
+        i == index ? _crearColorLector(nuevo, i) : colores[i],
+    ];
+    setState(() {
+      _indiceVariante = -1;
+      _actual = editada;
+      _futurePaleta = Future.value(editada);
     });
   }
 
@@ -372,15 +400,16 @@ class _PaletaLecturaPageState extends State<PaletaLecturaPage> {
     }
   }
 
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text('Paleta de lectura')),
       body: FutureBuilder<List<_ColorLector>>(
         future: _futurePaleta,
+        initialData: _actual,
         builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
+          if (snapshot.connectionState == ConnectionState.waiting &&
+              snapshot.data == null) {
             return _CargandoPaleta(
               libro: widget.libro,
               coverUrl: widget.coverUrl,
@@ -416,12 +445,15 @@ class _PaletaLecturaPageState extends State<PaletaLecturaPage> {
                 icon: Icons.bookmark_border_rounded,
                 color: Color(0xFFD85D88),
                 title: 'Tus post-it',
-                subtitle: 'Así podría quedar tu combinación física',
+                subtitle: 'Toca un post-it para cambiar su color',
               ),
 
               const SizedBox(height: AppSpacing.md),
 
-              _PostItsCard(colores: colores),
+              _PostItsCard(
+                colores: colores,
+                onEditar: (i) => _editarColor(i, colores),
+              ),
 
               const SizedBox(height: AppSpacing.xl),
 
@@ -429,12 +461,15 @@ class _PaletaLecturaPageState extends State<PaletaLecturaPage> {
                 icon: Icons.auto_awesome_outlined,
                 color: Color(0xFFE49A24),
                 title: 'Leyenda de lectura',
-                subtitle: 'Una propuesta para organizar tus marcas',
+                subtitle: 'Toca un color para poner el de tus post-it',
               ),
 
               const SizedBox(height: AppSpacing.md),
 
-              _LeyendaCard(colores: colores),
+              _LeyendaCard(
+                colores: colores,
+                onEditar: (i) => _editarColor(i, colores),
+              ),
 
               const SizedBox(height: AppSpacing.lg),
 
@@ -465,7 +500,9 @@ class _PaletaLecturaPageState extends State<PaletaLecturaPage> {
               const SizedBox(height: AppSpacing.md),
 
               Text(
-                _variantes.isEmpty
+                _esPersonalizada
+                    ? 'Combinación personalizada'
+                    : _variantes.isEmpty
                     ? 'Paleta generada automáticamente desde la portada.'
                     : 'Combinación ${_indiceVariante + 1} de '
                           '${_variantes.length} · '
@@ -479,7 +516,7 @@ class _PaletaLecturaPageState extends State<PaletaLecturaPage> {
               const SizedBox(height: AppSpacing.xs),
 
               Text(
-                'Toca cualquier color para copiar su código HEX.',
+                'Toca un color para cambiarlo o copiar su código HEX.',
                 textAlign: TextAlign.center,
                 style: AppTextStyles.caption,
               ),
@@ -577,8 +614,9 @@ class _HeroPaleta extends StatelessWidget {
 
 class _PostItsCard extends StatelessWidget {
   final List<_ColorLector> colores;
+  final ValueChanged<int> onEditar;
 
-  const _PostItsCard({required this.colores});
+  const _PostItsCard({required this.colores, required this.onEditar});
 
   @override
   Widget build(BuildContext context) {
@@ -600,9 +638,16 @@ class _PostItsCard extends StatelessWidget {
                     top: 20.0 + ((i % 2) * 13),
                     child: Transform.rotate(
                       angle: (i - 2) * 0.07,
-                      child: _PostIt(
-                        color: colores[i].color,
-                        texto: '${i + 1}',
+                      child: Semantics(
+                        button: true,
+                        label: 'Cambiar el color de ${colores[i].uso.titulo}',
+                        child: GestureDetector(
+                          onTap: () => onEditar(i),
+                          child: _PostIt(
+                            color: colores[i].color,
+                            texto: '${i + 1}',
+                          ),
+                        ),
                       ),
                     ),
                   ),
@@ -662,8 +707,9 @@ class _PostIt extends StatelessWidget {
 
 class _LeyendaCard extends StatelessWidget {
   final List<_ColorLector> colores;
+  final ValueChanged<int> onEditar;
 
-  const _LeyendaCard({required this.colores});
+  const _LeyendaCard({required this.colores, required this.onEditar});
 
   @override
   Widget build(BuildContext context) {
@@ -674,7 +720,7 @@ class _LeyendaCard extends StatelessWidget {
       child: Column(
         children: [
           for (int i = 0; i < colores.length; i++) ...[
-            _LeyendaRow(item: colores[i]),
+            _LeyendaRow(item: colores[i], onTap: () => onEditar(i)),
             if (i < colores.length - 1) const Divider(height: AppSpacing.lg),
           ],
         ],
@@ -685,50 +731,66 @@ class _LeyendaCard extends StatelessWidget {
 
 class _LeyendaRow extends StatelessWidget {
   final _ColorLector item;
+  final VoidCallback onTap;
 
-  const _LeyendaRow({required this.item});
+  const _LeyendaRow({required this.item, required this.onTap});
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      children: [
-        Container(
-          width: 45,
-          height: 45,
-          decoration: BoxDecoration(
-            color: item.color.withValues(alpha: 0.16),
-            borderRadius: BorderRadius.circular(AppRadius.md),
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(AppRadius.md),
+      child: Row(
+        children: [
+          Container(
+            width: 45,
+            height: 45,
+            decoration: BoxDecoration(
+              color: item.color.withValues(alpha: 0.16),
+              borderRadius: BorderRadius.circular(AppRadius.md),
+            ),
+            child: Icon(item.uso.icono, color: item.color, size: 22),
           ),
-          child: Icon(item.uso.icono, color: item.color, size: 22),
-        ),
 
-        const SizedBox(width: AppSpacing.md),
+          const SizedBox(width: AppSpacing.md),
 
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                item.uso.titulo,
-                style: AppTextStyles.body.copyWith(fontWeight: FontWeight.w800),
-              ),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  item.uso.titulo,
+                  style: AppTextStyles.body.copyWith(
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
 
-              const SizedBox(height: 2),
+                const SizedBox(height: 2),
 
-              Text(item.uso.descripcion, style: AppTextStyles.caption),
-            ],
+                Text(item.uso.descripcion, style: AppTextStyles.caption),
+              ],
+            ),
           ),
-        ),
 
-        Container(
-          width: 26,
-          height: 44,
-          decoration: BoxDecoration(
-            color: item.color,
-            borderRadius: BorderRadius.circular(4),
+          Container(
+            width: 26,
+            height: 44,
+            decoration: BoxDecoration(
+              color: item.color,
+              borderRadius: BorderRadius.circular(4),
+            ),
           ),
-        ),
-      ],
+
+          const SizedBox(width: AppSpacing.xs),
+
+          Icon(
+            Icons.edit_outlined,
+            size: 17,
+            color: AppColors.textSecondary,
+            semanticLabel: 'Cambiar color',
+          ),
+        ],
+      ),
     );
   }
 }
