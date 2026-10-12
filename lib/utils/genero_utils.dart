@@ -6,6 +6,7 @@ const generosSoportados = [
   'Romance',
   'Dark Romance',
   'Mafia Romance',
+  'Romance Paranormal',
   'Thriller',
   'Novela negra',
   'Dark Academia',
@@ -53,6 +54,9 @@ String iconoGenero(String genero) {
       return '🖤';
     case 'mafia romance':
       return '🌹🔫';
+    case 'romance paranormal':
+    case 'paranormal':
+      return '🧛';
     case 'drama':
       return '😭';
     case 'clásicos':
