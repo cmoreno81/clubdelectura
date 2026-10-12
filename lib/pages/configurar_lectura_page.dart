@@ -317,7 +317,9 @@ class _ConfigurarLecturaPageState extends State<ConfigurarLecturaPage> {
               subtitle:
                   'Si queréis leer por tramos, poned hasta qué capítulo y qué '
                   'día lo comentáis. Os avisamos el día antes y ese día. '
-                  'Si no ponéis ninguna, todo sigue igual.',
+                  'Los capítulos que quedan por delante de la meta en curso '
+                  'se cierran hasta que pase su fecha, para que nadie se '
+                  'adelante. Si no ponéis ninguna, todo sigue igual.',
             ),
 
             const SizedBox(height: AppSpacing.md),

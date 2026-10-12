@@ -4,6 +4,11 @@ class CapituloLectura {
   final int likes;
   final String? ultimaActividad;
 
+  /// En lecturas con metas, los capítulos por delante de la meta en curso
+  /// están cerrados hasta [desbloqueaEl] (`yyyy-MM-dd`).
+  final bool bloqueado;
+  final String? desbloqueaEl;
+
   final int nuevosComentarios;
   final bool tieneNovedades;
   final int respuestas;
@@ -20,6 +25,8 @@ class CapituloLectura {
     required this.respuestas,
     required this.nuevasRespuestas,
     required this.nuevosTotal,
+    this.bloqueado = false,
+    this.desbloqueaEl,
   });
 
   factory CapituloLectura.fromJson(Map<String, dynamic> json) {
@@ -41,6 +48,8 @@ class CapituloLectura {
       nuevasRespuestas: nuevasRespuestas,
       nuevosTotal: nuevosTotal,
       tieneNovedades: json['tieneNovedades'] as bool? ?? nuevosTotal > 0,
+      bloqueado: json['bloqueado'] == true,
+      desbloqueaEl: json['desbloqueaEl']?.toString(),
     );
   }
 }

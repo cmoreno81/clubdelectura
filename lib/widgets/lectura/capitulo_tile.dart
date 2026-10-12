@@ -7,6 +7,7 @@ import '../../theme/app_spacing.dart';
 import '../../theme/app_text_styles.dart';
 import '../common/club_card.dart';
 import '../ui/club_metric.dart';
+import 'editor_metas.dart' show fechaLegible;
 import 'fecha_relativa.dart';
 
 class CapituloTile extends StatelessWidget {
@@ -40,6 +41,8 @@ class CapituloTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    if (capitulo.bloqueado) return _CapituloCerrado(capitulo: capitulo);
+
     final tieneActividad = capitulo.ultimaActividad?.trim().isNotEmpty == true;
 
     final tieneNovedades = capitulo.tieneNovedades && capitulo.nuevosTotal > 0;
@@ -444,6 +447,70 @@ class _NovedadesBadge extends StatelessWidget {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+/// Capítulo que aún no toca según las metas de la lectura: se ve, pero no se
+/// puede abrir ni comentar hasta que pase la meta anterior.
+class _CapituloCerrado extends StatelessWidget {
+  final CapituloLectura capitulo;
+
+  const _CapituloCerrado({required this.capitulo});
+
+  @override
+  Widget build(BuildContext context) {
+    final esReflexion =
+        capitulo.nombre.trim() == CapituloTile._tituloReflexionFinal;
+    final fecha = capitulo.desbloqueaEl;
+    final cuando = fecha == null || fecha.isEmpty
+        ? 'Se abrirá cuando pase la meta anterior'
+        : 'Se abre el ${fechaLegible(fecha)}';
+
+    return Semantics(
+      label: '${capitulo.nombre}, cerrado. $cuando',
+      child: ClubCard(
+        elevated: false,
+        padding: const EdgeInsets.all(AppSpacing.md),
+        backgroundColor: AppColors.surfaceSoft,
+        borderColor: AppColors.border,
+        child: Row(
+          children: [
+            Container(
+              width: 40,
+              height: 40,
+              decoration: const BoxDecoration(
+                color: AppColors.surface,
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(
+                Icons.lock_outline_rounded,
+                size: 20,
+                color: AppColors.textMuted,
+              ),
+            ),
+            const SizedBox(width: AppSpacing.md),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    esReflexion ? '🗣️ Debate final' : capitulo.nombre,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: AppTextStyles.subtitle.copyWith(
+                      color: AppColors.textMuted,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                  const SizedBox(height: AppSpacing.xs),
+                  Text(cuando, style: AppTextStyles.caption),
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
