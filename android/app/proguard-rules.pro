@@ -8,3 +8,15 @@
 
 # Flutter referencia Play Core para módulos diferidos, que esta app no usa.
 -dontwarn com.google.android.play.core.**
+
+# Firebase descubre sus componentes (Crashlytics, Core…) por reflexión a través
+# de los «registrars» declarados en el manifiesto. Si R8 los elimina o les
+# cambia el nombre, Firebase.initializeApp() falla al arrancar con «component
+# is not present» y la app no llega a abrirse.
+-keep class * implements com.google.firebase.components.ComponentRegistrar { *; }
+-keep class * implements com.google.firebase.components.ComponentRegistrarProcessor { *; }
+-keep class com.google.firebase.provider.FirebaseInitProvider { *; }
+-keep class com.google.firebase.crashlytics.** { *; }
+-keep class com.google.firebase.components.** { *; }
+-keep class io.flutter.plugins.firebase.** { *; }
+-dontwarn com.google.firebase.**

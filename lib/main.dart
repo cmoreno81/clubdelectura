@@ -42,10 +42,26 @@ Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   configureUiPerformanceDiagnostics();
 
-  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+  // La app tiene que abrirse aunque Firebase falle: Crashlytics es solo el
+  // informe de errores. Si no arranca, se sigue sin él.
+  var firebaseListo = false;
+  try {
+    await Firebase.initializeApp(
+      options: DefaultFirebaseOptions.currentPlatform,
+    );
+    firebaseListo = true;
+  } catch (error, stack) {
+    debugPrint('Firebase no se ha podido iniciar: $error\n$stack');
+  }
 
-  // Redirigir errores de Flutter y errores no capturados a Crashlytics.
-  // En debug se siguen mostrando en consola normalmente.
+  if (firebaseListo) _configurarCrashlytics();
+
+  runApp(const MyApp());
+}
+
+/// Redirigir errores de Flutter y errores no capturados a Crashlytics.
+/// En debug se siguen mostrando en consola normalmente.
+void _configurarCrashlytics() {
   //
   // Los fallos de red transitorios (timeout, conexión caída, sin internet…)
   // se siguen registrando para poder ver su frecuencia, pero como NO fatales:
@@ -71,8 +87,6 @@ Future<void> main() async {
     );
     return true;
   };
-
-  runApp(const MyApp());
 }
 
 class MyApp extends StatefulWidget {
