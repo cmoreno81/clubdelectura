@@ -1002,61 +1002,103 @@ class _LibrosPageState extends State<LibrosPage> with WidgetsBindingObserver {
     final bookId = libro.bookId;
     if (bookId.isEmpty) return;
 
-    final seleccionado = await showModalBottomSheet<String>(
+    // El primero de la lista es el género principal.
+    final seleccionados = libro.generosLista.toList();
+
+    final elegidos = await showModalBottomSheet<List<String>>(
       context: context,
       showDragHandle: true,
       useSafeArea: true,
       isScrollControlled: true,
       builder: (sheetContext) {
-        return FractionallySizedBox(
-          heightFactor: 0.72,
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(
-              AppSpacing.md,
-              0,
-              AppSpacing.md,
-              AppSpacing.lg,
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Género de "${libro.libro}"',
-                  style: AppTextStyles.section,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
+        return StatefulBuilder(
+          builder: (context, setSheetState) {
+            final color = Theme.of(context).colorScheme.primary;
+            return FractionallySizedBox(
+              heightFactor: 0.8,
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(
+                  AppSpacing.md,
+                  0,
+                  AppSpacing.md,
+                  AppSpacing.lg,
                 ),
-                const SizedBox(height: AppSpacing.xs),
-                Text(
-                  'Corrige el género si no encaja con este libro.',
-                  style: AppTextStyles.bodySecondary,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Género de "${libro.libro}"',
+                      style: AppTextStyles.section,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: AppSpacing.xs),
+                    Text(
+                      'Elige hasta $maxGenerosLibro. El primero que marques '
+                      'es el principal.',
+                      style: AppTextStyles.bodySecondary,
+                    ),
+                    const SizedBox(height: AppSpacing.md),
+                    Expanded(
+                      child: ListView(
+                        padding: EdgeInsets.zero,
+                        children: [
+                          for (final opcion in generosSoportados)
+                            _opcionGeneroLibro(
+                              color: color,
+                              genero: opcion,
+                              seleccionado: seleccionados.contains(opcion),
+                              onTap: () {
+                                setSheetState(() {
+                                  if (seleccionados.contains(opcion)) {
+                                    if (seleccionados.length > 1) {
+                                      seleccionados.remove(opcion);
+                                    }
+                                  } else if (seleccionados.length >=
+                                      maxGenerosLibro) {
+                                    ScaffoldMessenger.of(context)
+                                      ..hideCurrentSnackBar()
+                                      ..showSnackBar(
+                                        const SnackBar(
+                                          content: Text(
+                                            'Como máximo 3 géneros por libro.',
+                                          ),
+                                        ),
+                                      );
+                                  } else {
+                                    seleccionados.add(opcion);
+                                  }
+                                });
+                              },
+                            ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: AppSpacing.sm),
+                    SizedBox(
+                      width: double.infinity,
+                      child: FilledButton(
+                        onPressed: () =>
+                            Navigator.pop(sheetContext, seleccionados),
+                        child: const Text('Guardar'),
+                      ),
+                    ),
+                  ],
                 ),
-                const SizedBox(height: AppSpacing.md),
-                Expanded(
-                  child: ListView(
-                    padding: EdgeInsets.zero,
-                    children: [
-                      for (final opcion in generosSoportados)
-                        _opcionGeneroLibro(
-                          context: sheetContext,
-                          libro: libro,
-                          genero: opcion,
-                        ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
+              ),
+            );
+          },
         );
       },
     );
 
-    if (seleccionado == null || !mounted) return;
+    if (elegidos == null || elegidos.isEmpty || !mounted) return;
+    if (elegidos.join('|') == libro.generosLista.join('|')) return;
 
     final resultado = await ApiService().actualizarGeneroLibro(
       bookId: bookId,
-      genero: seleccionado,
+      genero: elegidos.first,
+      generosExtra: elegidos.skip(1).toList(),
     );
 
     if (!mounted) return;
@@ -1084,13 +1126,11 @@ class _LibrosPageState extends State<LibrosPage> with WidgetsBindingObserver {
   }
 
   Widget _opcionGeneroLibro({
-    required BuildContext context,
-    required LibroAgrupado libro,
+    required Color color,
     required String genero,
+    required bool seleccionado,
+    required VoidCallback onTap,
   }) {
-    final seleccionado = libro.genero == genero;
-    final color = Theme.of(context).colorScheme.primary;
-
     return Padding(
       padding: const EdgeInsets.only(bottom: AppSpacing.xs),
       child: ListTile(
@@ -1108,7 +1148,7 @@ class _LibrosPageState extends State<LibrosPage> with WidgetsBindingObserver {
         trailing: seleccionado
             ? Icon(Icons.check_circle_rounded, color: color)
             : const Icon(Icons.circle_outlined, color: AppColors.textMuted),
-        onTap: () => Navigator.pop(context, genero),
+        onTap: onTap,
       ),
     );
   }
