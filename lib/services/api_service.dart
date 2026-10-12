@@ -120,7 +120,7 @@ class ApiService {
   /// Vista ClubReads: todos los usuarios sin filtro de club.
   Future<List<Libro>> getLibrosGlobal() async {
     final response = await _client.get(
-      Uri.parse('$baseUrl?action=librosGlobal'),
+      Uri.parse('$baseUrl?action=librosGlobal&catalogo=1'),
     );
     if (response.statusCode == 200) {
       final List data = _decodeJson(response);

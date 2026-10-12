@@ -40,7 +40,7 @@ class SelloTalentoEmergente extends StatelessWidget {
   }
 }
 
-/// Tarjeta «De la autora»: su nota, el picante y los tropos que declara y el
+/// Tarjeta «Nota de quien lo escribió»: su nota, el picante y los tropos que declara y el
 /// enlace propio donde comprar o leer el libro. Solo aparece en libros con
 /// sello de Talento emergente.
 class TarjetaDeLaAutora extends StatelessWidget {
@@ -85,7 +85,7 @@ class TarjetaDeLaAutora extends StatelessWidget {
           children: [
             const SelloTalentoEmergente(compacto: true),
             const SizedBox(height: AppSpacing.sm),
-            Text('De la autora', style: AppTextStyles.section),
+            Text('Nota de quien lo escribió', style: AppTextStyles.section),
             if (nota.isNotEmpty) ...[
               const SizedBox(height: AppSpacing.xs),
               Text(
@@ -97,8 +97,8 @@ class TarjetaDeLaAutora extends StatelessWidget {
               const SizedBox(height: AppSpacing.sm),
               Text(
                 picante == 0
-                    ? '🌶️ Picante según la autora: sin escenas de contenido sexual'
-                    : '🌶️ Picante según la autora: $picante de 5',
+                    ? '🌶️ Picante según su autoría: sin escenas de contenido sexual'
+                    : '🌶️ Picante según su autoría: $picante de 5',
                 style: AppTextStyles.bodySecondary,
               ),
             ],
@@ -139,7 +139,7 @@ class TarjetaDeLaAutora extends StatelessWidget {
                     OutlinedButton.icon(
                       onPressed: () => _abrir(web),
                       icon: const Icon(Icons.language_rounded, size: 18),
-                      label: const Text('Web de la autora'),
+                      label: const Text('Su web'),
                     ),
                 ],
               ),

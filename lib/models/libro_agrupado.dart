@@ -145,7 +145,8 @@ class LibroAgrupado {
   int? get picanteAutora => _talento.picante;
   List<String> get troposAutora => _talento.tropos;
 
-  int get total => registros.length;
+  /// Lectoras de verdad: las entradas «solo catálogo» no cuentan.
+  int get total => registros.where((r) => !r.soloCatalogo).length;
 
   int get totalFinalizados => finalizados.length;
 

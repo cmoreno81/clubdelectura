@@ -11,7 +11,7 @@ class LibroFinalizado {
   /// Género principal + adicionales (máx. 3). Vacía si el servidor no la envía.
   final List<String> generos;
 
-  /// Libro de una autora/autor autopublicado del programa «Talento emergente».
+  /// Libro de una persona autopublicada del programa «Talento emergente».
   final bool talentoEmergente;
   final String notaAutora;
   final String enlaceAutora;

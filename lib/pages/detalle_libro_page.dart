@@ -115,8 +115,11 @@ class _DetalleLibroPageState extends State<DetalleLibroPage> {
   /// pertenece. LibroInteresadasSection ya sabe agrupar estas entradas en
   /// el resumen por estados en vez de tarjetas individuales.
   List<Libro> get _registrosParaLectoresInteresados {
-    if (!_hayEstadisticasComunidad) return registros;
-    final misClub = registros
+    // Las entradas «solo catálogo» (libros de Talento emergente sin lectoras)
+    // no son lectoras.
+    final lectoras = registros.where((r) => !r.soloCatalogo).toList();
+    if (!_hayEstadisticasComunidad) return lectoras;
+    final misClub = lectoras
         .map((r) => r.usuario.trim().toLowerCase())
         .where((u) => u.isNotEmpty)
         .toSet();
@@ -125,7 +128,7 @@ class _DetalleLibroPageState extends State<DetalleLibroPage> {
           (r) => !misClub.contains(r.usuario.trim().toLowerCase()),
         )
         .map((r) => r.mismoClub ? r.copyWith(mismoClub: false) : r);
-    return [...registros, ...deOtrosClubes];
+    return [...lectoras, ...deOtrosClubes];
   }
 
   @override

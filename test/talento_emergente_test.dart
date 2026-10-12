@@ -57,7 +57,7 @@ void main() {
     expect(a.notaAutora, 'Gracias por leerme');
   });
 
-  testWidgets('la tarjeta «De la autora» enseña nota, picante, tropos y enlace', (
+  testWidgets('la tarjeta de la nota enseña nota, picante, tropos y enlace', (
     tester,
   ) async {
     await tester.pumpWidget(
@@ -69,12 +69,12 @@ void main() {
         ),
       ),
     );
-    expect(find.text('De la autora'), findsOneWidget);
+    expect(find.text('Nota de quien lo escribió'), findsOneWidget);
     expect(find.textContaining('Gracias por leerme'), findsOneWidget);
     expect(find.textContaining('3 de 5'), findsOneWidget);
     expect(find.text('slow burn'), findsOneWidget);
     expect(find.text('Ver ficha del libro'), findsOneWidget);
-    expect(find.text('Web de la autora'), findsOneWidget);
+    expect(find.text('Su web'), findsOneWidget);
     expect(find.text('✨ Talento emergente'), findsOneWidget);
   });
 
@@ -86,6 +86,6 @@ void main() {
         ),
       ),
     );
-    expect(find.text('De la autora'), findsNothing);
+    expect(find.text('Nota de quien lo escribió'), findsNothing);
   });
 }

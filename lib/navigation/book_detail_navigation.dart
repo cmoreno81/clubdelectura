@@ -8,6 +8,7 @@ import '../pages/catalog_book_detail_page.dart';
 import '../pages/detalle_libro_page.dart';
 import '../services/api_service.dart';
 import '../services/libros_data_cache.dart';
+import '../utils/genero_utils.dart';
 import 'book_detail_page_route.dart';
 
 // ── Modelo de respuesta de libroPorId (público para inyección en tests) ────────
@@ -590,5 +591,56 @@ Future<bool> openCatalogBookDetail(
       ),
     );
     return false;
+  }
+}
+
+// ── abrirLibroDeTalento ───────────────────────────────────────────────────────
+//
+// Los libros de Talento emergente pueden no tener aún ninguna lectora: se
+// abre siempre la ficha completa con los datos del catálogo (sello, nota,
+// enlaces), no la ficha mínima de catálogo.
+Future<void> abrirLibroDeTalento(
+  BuildContext context, {
+  required String bookId,
+  required String title,
+  String coverUrl = '',
+}) async {
+  try {
+    final data = await ApiService().getLibroPorId(bookId, global: true);
+    if (data['ok'] != true || data['libro'] is! Map) {
+      throw Exception('Libro no encontrado');
+    }
+    final catalogo = Map<String, dynamic>.from(data['libro'] as Map);
+    final registros = (data['libros'] as List? ?? [])
+        .map((e) => Libro.fromJson(Map<String, dynamic>.from(e as Map)))
+        .toList();
+    final finalizados = (data['finalizados'] as List? ?? [])
+        .map(
+          (e) => LibroFinalizado.fromJson(Map<String, dynamic>.from(e as Map)),
+        )
+        .toList();
+    if (!context.mounted) return;
+    await Navigator.push<void>(
+      context,
+      BookDetailPageRoute(
+        builder: (_) => DetalleLibroPage(
+          libro: LibroAgrupado(
+            libro: catalogo['titulo']?.toString() ?? title,
+            genero: catalogo['genero']?.toString() ?? '',
+            generos: leerGeneros(catalogo['generos']),
+            registros: registros,
+            finalizados: finalizados,
+            yaLoTengo: registros.any((item) => item.yaLoTengo),
+            leidoPorMi: finalizados.any((item) => item.yaLoTengo),
+            coverUrl: catalogo['coverUrl']?.toString() ?? coverUrl,
+            bookId: bookId,
+            talentoCatalogo: DatosTalento.fromJson(catalogo),
+          ),
+        ),
+      ),
+    );
+  } catch (_) {
+    if (!context.mounted) return;
+    await openBookDetail(context, title: title, bookId: bookId, coverUrl: coverUrl);
   }
 }

@@ -1516,11 +1516,13 @@ class _LibrosPageState extends State<LibrosPage> with WidgetsBindingObserver {
                       ],
                     ),
 
-                    if (libro.registros.isNotEmpty) ...[
+                    if (libro.registros.any((r) => !r.soloCatalogo)) ...[
                       const SizedBox(height: AppSpacing.sm),
 
                       Text(
-                        _resumenLectores(libro.registros),
+                        _resumenLectores(
+                          libro.registros.where((r) => !r.soloCatalogo).toList(),
+                        ),
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
                         style: AppTextStyles.caption,

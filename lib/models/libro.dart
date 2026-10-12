@@ -11,13 +11,17 @@ class Libro {
   /// Género principal + adicionales (máx. 3). Vacía si el servidor no la envía.
   final List<String> generos;
 
-  /// Libro de una autora/autor autopublicado del programa «Talento emergente».
+  /// Libro de una persona autopublicada del programa «Talento emergente».
   final bool talentoEmergente;
   final String notaAutora;
   final String enlaceAutora;
   final String webAutora;
   final int? picanteAutora;
   final List<String> troposAutora;
+
+  /// Entrada que solo existe en el catálogo (libro de Talento emergente que
+  /// aún no tiene en su biblioteca ninguna lectora): no cuenta como lectora.
+  final bool soloCatalogo;
   final String saga;
   final String numSaga;
   final String autoconclusivo;
@@ -65,6 +69,7 @@ class Libro {
     this.webAutora = '',
     this.picanteAutora,
     this.troposAutora = const [],
+    this.soloCatalogo = false,
     required this.saga,
     required this.numSaga,
     required this.autoconclusivo,
@@ -102,6 +107,7 @@ class Libro {
       webAutora: json['webAutora']?.toString() ?? '',
       picanteAutora: (json['picanteAutora'] as num?)?.toInt(),
       troposAutora: leerGeneros(json['troposAutora']),
+      soloCatalogo: json['soloCatalogo'] == true,
       saga: json['saga']?.toString() ?? '',
       numSaga: json['numSaga']?.toString() ?? '',
       autoconclusivo: json['autoconclusivo']?.toString() ?? '',
@@ -179,6 +185,7 @@ class Libro {
       webAutora: webAutora,
       picanteAutora: picanteAutora,
       troposAutora: troposAutora,
+      soloCatalogo: soloCatalogo,
       saga: saga ?? this.saga,
       numSaga: numSaga ?? this.numSaga,
       autoconclusivo: autoconclusivo ?? this.autoconclusivo,

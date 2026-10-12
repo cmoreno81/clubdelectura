@@ -1,3 +1,4 @@
+import '../widgets/inicio/talento_de_la_semana_card.dart';
 import '../widgets/common/bandera_idioma.dart';
 import 'package:club_lectura_app/widgets/ui/etiqueta_publicidad.dart';
 import 'dart:async';
@@ -866,6 +867,14 @@ class _GeneralDashboardPageState extends State<GeneralDashboardPage> {
                       _hero(data),
                       const SizedBox(height: AppSpacing.sm),
                       _metrics(data),
+                      TalentoDeLaSemanaCard(
+                        onAbrir: (libro) => abrirLibroDeTalento(
+                          context,
+                          bookId: libro.bookId,
+                          title: libro.titulo,
+                          coverUrl: libro.coverUrl,
+                        ),
+                      ),
                       if (data.calendar.finishedBooks.isNotEmpty) ...[
                         const SizedBox(height: AppSpacing.xl),
                         MonthlyReadingShelf(
