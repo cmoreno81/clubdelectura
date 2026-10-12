@@ -10,6 +10,13 @@ class LibroFinalizado {
 
   /// Género principal + adicionales (máx. 3). Vacía si el servidor no la envía.
   final List<String> generos;
+
+  /// Libro de una autora/autor autopublicado del programa «Talento emergente».
+  final bool talentoEmergente;
+  final String notaAutora;
+  final String enlaceAutora;
+  final int? picanteAutora;
+  final List<String> troposAutora;
   final String saga;
   final String numSaga;
   final String autoconclusivo;
@@ -48,6 +55,11 @@ class LibroFinalizado {
     this.autor = '',
     required this.genero,
     this.generos = const [],
+    this.talentoEmergente = false,
+    this.notaAutora = '',
+    this.enlaceAutora = '',
+    this.picanteAutora,
+    this.troposAutora = const [],
     required this.saga,
     required this.numSaga,
     required this.autoconclusivo,
@@ -78,6 +90,11 @@ class LibroFinalizado {
       autor: json['autor']?.toString() ?? json['author']?.toString() ?? '',
       genero: json['genero']?.toString() ?? '',
       generos: leerGeneros(json['generos']),
+      talentoEmergente: json['talentoEmergente'] == true,
+      notaAutora: json['notaAutora']?.toString() ?? '',
+      enlaceAutora: json['enlaceAutora']?.toString() ?? '',
+      picanteAutora: (json['picanteAutora'] as num?)?.toInt(),
+      troposAutora: leerGeneros(json['troposAutora']),
       saga: json['saga']?.toString() ?? '',
       numSaga: json['numSaga']?.toString() ?? '',
       autoconclusivo: json['autoconclusivo']?.toString() ?? '',

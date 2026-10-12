@@ -37,6 +37,7 @@ import '../services/auth_session_service.dart';
 import '../services/library_order_preferences.dart';
 import '../services/library_refresh_notifier.dart';
 import '../utils/genero_utils.dart';
+import '../widgets/libros/talento_emergente.dart';
 import '../utils/idioma_utils.dart';
 import '../utils/lector_count_utils.dart';
 import '../utils/reading_status_copy.dart';
@@ -151,6 +152,7 @@ class _LibrosPageState extends State<LibrosPage> with WidgetsBindingObserver {
   // aunque alguien los tenga también en el idioma elegido, así que dejamos
   // que sea la propia usuaria quien lo active si lo necesita.
   String? filtroIdioma;
+  bool soloTalento = false;
   // Lista de miembros del club — se actualiza solo con datos DEL_CLUB
   List<String> _miembrosClub = [];
   List<Libro>? _cachedBooks;
@@ -445,6 +447,9 @@ class _LibrosPageState extends State<LibrosPage> with WidgetsBindingObserver {
                   _cabeceraFiltros(
                     usuariosFiltro: usuariosFiltro,
                     idiomasDisponibles: idiomasDisponibles,
+                    hayTalento:
+                        libros.any((l) => l.talentoEmergente) ||
+                        finalizados.any((f) => f.talentoEmergente),
                     totalResultados: resultado.length,
                   ),
                   // ── Vibe Reader (solo en modo PENDIENTE) ───────────────
@@ -466,6 +471,7 @@ class _LibrosPageState extends State<LibrosPage> with WidgetsBindingObserver {
                                     filtroEstado != 'TODOS' ||
                                     filtroUsuario != 'TODAS' ||
                                     filtroIdioma != null ||
+                                    soloTalento ||
                                     filtroOrigen != 'DEL_CLUB'
                                 ? 'Limpiar filtros'
                                 : null,
@@ -474,6 +480,7 @@ class _LibrosPageState extends State<LibrosPage> with WidgetsBindingObserver {
                                     filtroEstado != 'TODOS' ||
                                     filtroUsuario != 'TODAS' ||
                                     filtroIdioma != null ||
+                                    soloTalento ||
                                     filtroOrigen != 'DEL_CLUB'
                                 ? _limpiarFiltros
                                 : null,
@@ -513,6 +520,7 @@ class _LibrosPageState extends State<LibrosPage> with WidgetsBindingObserver {
   Widget _cabeceraFiltros({
     required List<String> usuariosFiltro,
     required List<String> idiomasDisponibles,
+    required bool hayTalento,
     required int totalResultados,
   }) {
     return Container(
@@ -643,6 +651,18 @@ class _LibrosPageState extends State<LibrosPage> with WidgetsBindingObserver {
                 // ── Chip de idioma (va primero para que se vea al abrir) ────
                 if (idiomasDisponibles.isNotEmpty) ...[
                   _chipIdioma(idiomasDisponibles),
+                  const SizedBox(width: AppSpacing.xs),
+                ],
+                if (hayTalento || soloTalento) ...[
+                  ClubChip(
+                    label: '✨ Talento emergente',
+                    selected: soloTalento,
+                    variant: ClubChipVariant.warning,
+                    onTap: () {
+                      HapticFeedback.selectionClick();
+                      setState(() => soloTalento = !soloTalento);
+                    },
+                  ),
                   const SizedBox(width: AppSpacing.xs),
                 ],
                 // ── Chips de estado ────────────────────────────────────────
@@ -1462,6 +1482,9 @@ class _LibrosPageState extends State<LibrosPage> with WidgetsBindingObserver {
                       spacing: AppSpacing.xs,
                       runSpacing: AppSpacing.xs,
                       children: [
+                        if (libro.esTalentoEmergente)
+                          const SelloTalentoEmergente(compacto: true),
+
                         ClubChip(
                           label:
                               '${libro.total} ${lectoresInteresadosLabel(libro.total)}',
@@ -1808,7 +1831,7 @@ class _LibrosPageState extends State<LibrosPage> with WidgetsBindingObserver {
     final filterKey =
         '$filtroBusqueda\u0000$filtroEstado\u0000$filtroUsuario\u0000$ordenSeleccionado';
     final filterKeyFull =
-        '$filterKey|${filtroVibe ?? ''}|${filtroIdioma ?? ''}';
+        '$filterKey|${filtroVibe ?? ''}|${filtroIdioma ?? ''}|$soloTalento';
     if (identical(_cachedBooks, libros) &&
         identical(_cachedFinishedBooks, finalizados) &&
         _cachedFilterKey == filterKeyFull) {
@@ -1956,6 +1979,9 @@ class _LibrosPageState extends State<LibrosPage> with WidgetsBindingObserver {
       if (filtroIdioma != null) {
         resultado = resultado.where(_grupoTieneIdioma).toList();
       }
+      if (soloTalento) {
+        resultado = resultado.where((g) => g.esTalentoEmergente).toList();
+      }
 
       _aplicarOrden(resultado);
 
@@ -2041,6 +2067,9 @@ class _LibrosPageState extends State<LibrosPage> with WidgetsBindingObserver {
 
     if (filtroIdioma != null) {
       resultado = resultado.where(_grupoTieneIdioma).toList();
+    }
+    if (soloTalento) {
+      resultado = resultado.where((g) => g.esTalentoEmergente).toList();
     }
 
     _aplicarOrden(resultado);
@@ -2131,6 +2160,7 @@ class _LibrosPageState extends State<LibrosPage> with WidgetsBindingObserver {
       filtroUsuario = 'TODAS';
       filtroVibe = null;
       filtroIdioma = null;
+      soloTalento = false;
       filtroOrigen = widget.initialFiltroOrigen;
     });
     // Recargar solo si el origen cambió respecto al que había antes de limpiar

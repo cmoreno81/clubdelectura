@@ -10,6 +10,13 @@ class Libro {
 
   /// Género principal + adicionales (máx. 3). Vacía si el servidor no la envía.
   final List<String> generos;
+
+  /// Libro de una autora/autor autopublicado del programa «Talento emergente».
+  final bool talentoEmergente;
+  final String notaAutora;
+  final String enlaceAutora;
+  final int? picanteAutora;
+  final List<String> troposAutora;
   final String saga;
   final String numSaga;
   final String autoconclusivo;
@@ -51,6 +58,11 @@ class Libro {
     this.autor = '',
     required this.genero,
     this.generos = const [],
+    this.talentoEmergente = false,
+    this.notaAutora = '',
+    this.enlaceAutora = '',
+    this.picanteAutora,
+    this.troposAutora = const [],
     required this.saga,
     required this.numSaga,
     required this.autoconclusivo,
@@ -82,6 +94,11 @@ class Libro {
       autor: json['autor']?.toString() ?? json['author']?.toString() ?? '',
       genero: json['genero']?.toString() ?? '',
       generos: leerGeneros(json['generos']),
+      talentoEmergente: json['talentoEmergente'] == true,
+      notaAutora: json['notaAutora']?.toString() ?? '',
+      enlaceAutora: json['enlaceAutora']?.toString() ?? '',
+      picanteAutora: (json['picanteAutora'] as num?)?.toInt(),
+      troposAutora: leerGeneros(json['troposAutora']),
       saga: json['saga']?.toString() ?? '',
       numSaga: json['numSaga']?.toString() ?? '',
       autoconclusivo: json['autoconclusivo']?.toString() ?? '',
@@ -124,6 +141,7 @@ class Libro {
     String? autor,
     String? genero,
     List<String>? generos,
+    bool? talentoEmergente,
     String? saga,
     String? numSaga,
     String? autoconclusivo,
@@ -152,6 +170,11 @@ class Libro {
       autor: autor ?? this.autor,
       genero: genero ?? this.genero,
       generos: generos ?? this.generos,
+      talentoEmergente: talentoEmergente ?? this.talentoEmergente,
+      notaAutora: notaAutora,
+      enlaceAutora: enlaceAutora,
+      picanteAutora: picanteAutora,
+      troposAutora: troposAutora,
       saga: saga ?? this.saga,
       numSaga: numSaga ?? this.numSaga,
       autoconclusivo: autoconclusivo ?? this.autoconclusivo,

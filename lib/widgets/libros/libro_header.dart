@@ -14,6 +14,7 @@ import '../../utils/reading_status_copy.dart';
 import '../../pages/sagas_page.dart';
 import '../common/club_book_cover.dart';
 import '../common/club_card.dart';
+import 'talento_emergente.dart';
 import '../ui/club_metric.dart';
 import '../ui/club_section_card.dart';
 
@@ -92,6 +93,11 @@ class LibroHeader extends StatelessWidget {
               ],
 
               const SizedBox(height: AppSpacing.sm),
+
+              if (libro.esTalentoEmergente) ...[
+                const SelloTalentoEmergente(),
+                const SizedBox(height: AppSpacing.sm),
+              ],
 
               Text(
                 libro.generosLista

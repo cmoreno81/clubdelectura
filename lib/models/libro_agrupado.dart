@@ -1,5 +1,32 @@
+import '../utils/genero_utils.dart';
 import 'libro.dart';
 import 'libro_finalizado.dart';
+
+/// Datos de «Talento emergente» de un libro del catálogo (los que envía el
+/// servidor aunque nadie del club lo tenga aún en su biblioteca).
+class DatosTalento {
+  final bool activo;
+  final String nota;
+  final String enlace;
+  final int? picante;
+  final List<String> tropos;
+
+  const DatosTalento({
+    this.activo = false,
+    this.nota = '',
+    this.enlace = '',
+    this.picante,
+    this.tropos = const [],
+  });
+
+  factory DatosTalento.fromJson(Map<String, dynamic> json) => DatosTalento(
+    activo: json['talentoEmergente'] == true,
+    nota: json['notaAutora']?.toString() ?? '',
+    enlace: json['enlaceAutora']?.toString() ?? '',
+    picante: (json['picanteAutora'] as num?)?.toInt(),
+    tropos: leerGeneros(json['troposAutora']),
+  );
+}
 
 class LibroAgrupado {
   final String libro;
@@ -22,6 +49,7 @@ class LibroAgrupado {
   /// están vacíos (si no, el formulario no sabe que el libro pertenece a
   /// una saga y al guardar lo marca como autoconclusivo).
   final String? sagaCatalogo;
+  final DatosTalento? talentoCatalogo;
   final String? numSagaCatalogo;
   final bool? standaloneCatalogo;
 
@@ -40,6 +68,7 @@ class LibroAgrupado {
     required this.coverUrl,
     String? bookId,
     this.sagaCatalogo,
+    this.talentoCatalogo,
     this.numSagaCatalogo,
     this.standaloneCatalogo,
   }) : _bookIdOverride = (bookId?.trim().isNotEmpty == true) ? bookId!.trim() : null;
@@ -56,6 +85,57 @@ class LibroAgrupado {
     final principal = genero.trim();
     return principal.isEmpty ? const [] : [principal];
   }
+
+  /// Datos de «Talento emergente»: salen del primer registro o finalizado
+  /// que los traiga (todos comparten el libro del catálogo).
+  ({
+    bool talento,
+    String nota,
+    String enlace,
+    int? picante,
+    List<String> tropos,
+  })
+  get _talento {
+    for (final r in registros) {
+      if (r.talentoEmergente) {
+        return (
+          talento: true,
+          nota: r.notaAutora,
+          enlace: r.enlaceAutora,
+          picante: r.picanteAutora,
+          tropos: r.troposAutora,
+        );
+      }
+    }
+    for (final f in finalizados) {
+      if (f.talentoEmergente) {
+        return (
+          talento: true,
+          nota: f.notaAutora,
+          enlace: f.enlaceAutora,
+          picante: f.picanteAutora,
+          tropos: f.troposAutora,
+        );
+      }
+    }
+    final catalogo = talentoCatalogo;
+    if (catalogo != null && catalogo.activo) {
+      return (
+        talento: true,
+        nota: catalogo.nota,
+        enlace: catalogo.enlace,
+        picante: catalogo.picante,
+        tropos: catalogo.tropos,
+      );
+    }
+    return (talento: false, nota: '', enlace: '', picante: null, tropos: const []);
+  }
+
+  bool get esTalentoEmergente => _talento.talento;
+  String get notaAutora => _talento.nota;
+  String get enlaceAutora => _talento.enlace;
+  int? get picanteAutora => _talento.picante;
+  List<String> get troposAutora => _talento.tropos;
 
   int get total => registros.length;
 

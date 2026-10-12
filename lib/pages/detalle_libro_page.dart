@@ -9,6 +9,8 @@ import 'package:url_launcher/url_launcher.dart';
 import '../models/kit_lectura_seleccion.dart';
 import '../models/libro.dart';
 import '../models/libro_agrupado.dart';
+import '../widgets/libros/talento_emergente.dart';
+import '../utils/genero_utils.dart';
 import '../models/libro_finalizado.dart';
 import '../models/perfil_usuario.dart';
 import '../navigation/book_detail_navigation.dart';
@@ -861,6 +863,14 @@ class _DetalleLibroPageState extends State<DetalleLibroPage> {
               leidoPorMi: finalizadosActualizados.any((l) => l.yaLoTengo),
               coverUrl: coverFresh,
               bookId: libro.bookId,
+              generos: data['libro'] is Map
+                  ? leerGeneros((data['libro'] as Map)['generos'])
+                  : const [],
+              talentoCatalogo: data['libro'] is Map
+                  ? DatosTalento.fromJson(
+                      Map<String, dynamic>.from(data['libro'] as Map),
+                    )
+                  : null,
             );
             registros = List<Libro>.from(libro.registros);
           });
@@ -1307,6 +1317,8 @@ class _DetalleLibroPageState extends State<DetalleLibroPage> {
                   globalStats: widget.globalStats,
                   miEstado: miEstado,
                 ),
+
+                TarjetaDeLaAutora(libro: libro),
 
                 // Aparece tarde (espera al servidor): el ancla evita que empuje
                 // lo que se está leyendo más abajo.
