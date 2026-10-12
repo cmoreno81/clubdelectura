@@ -15,6 +15,7 @@ class Libro {
   final bool talentoEmergente;
   final String notaAutora;
   final String enlaceAutora;
+  final String webAutora;
   final int? picanteAutora;
   final List<String> troposAutora;
   final String saga;
@@ -61,6 +62,7 @@ class Libro {
     this.talentoEmergente = false,
     this.notaAutora = '',
     this.enlaceAutora = '',
+    this.webAutora = '',
     this.picanteAutora,
     this.troposAutora = const [],
     required this.saga,
@@ -97,6 +99,7 @@ class Libro {
       talentoEmergente: json['talentoEmergente'] == true,
       notaAutora: json['notaAutora']?.toString() ?? '',
       enlaceAutora: json['enlaceAutora']?.toString() ?? '',
+      webAutora: json['webAutora']?.toString() ?? '',
       picanteAutora: (json['picanteAutora'] as num?)?.toInt(),
       troposAutora: leerGeneros(json['troposAutora']),
       saga: json['saga']?.toString() ?? '',
@@ -173,6 +176,7 @@ class Libro {
       talentoEmergente: talentoEmergente ?? this.talentoEmergente,
       notaAutora: notaAutora,
       enlaceAutora: enlaceAutora,
+      webAutora: webAutora,
       picanteAutora: picanteAutora,
       troposAutora: troposAutora,
       saga: saga ?? this.saga,

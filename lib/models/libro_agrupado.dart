@@ -8,6 +8,7 @@ class DatosTalento {
   final bool activo;
   final String nota;
   final String enlace;
+  final String web;
   final int? picante;
   final List<String> tropos;
 
@@ -15,6 +16,7 @@ class DatosTalento {
     this.activo = false,
     this.nota = '',
     this.enlace = '',
+    this.web = '',
     this.picante,
     this.tropos = const [],
   });
@@ -23,6 +25,7 @@ class DatosTalento {
     activo: json['talentoEmergente'] == true,
     nota: json['notaAutora']?.toString() ?? '',
     enlace: json['enlaceAutora']?.toString() ?? '',
+    web: json['webAutora']?.toString() ?? '',
     picante: (json['picanteAutora'] as num?)?.toInt(),
     tropos: leerGeneros(json['troposAutora']),
   );
@@ -92,6 +95,7 @@ class LibroAgrupado {
     bool talento,
     String nota,
     String enlace,
+    String web,
     int? picante,
     List<String> tropos,
   })
@@ -102,6 +106,7 @@ class LibroAgrupado {
           talento: true,
           nota: r.notaAutora,
           enlace: r.enlaceAutora,
+          web: r.webAutora,
           picante: r.picanteAutora,
           tropos: r.troposAutora,
         );
@@ -113,6 +118,7 @@ class LibroAgrupado {
           talento: true,
           nota: f.notaAutora,
           enlace: f.enlaceAutora,
+          web: f.webAutora,
           picante: f.picanteAutora,
           tropos: f.troposAutora,
         );
@@ -124,16 +130,18 @@ class LibroAgrupado {
         talento: true,
         nota: catalogo.nota,
         enlace: catalogo.enlace,
+        web: catalogo.web,
         picante: catalogo.picante,
         tropos: catalogo.tropos,
       );
     }
-    return (talento: false, nota: '', enlace: '', picante: null, tropos: const []);
+    return (talento: false, nota: '', enlace: '', web: '', picante: null, tropos: const []);
   }
 
   bool get esTalentoEmergente => _talento.talento;
   String get notaAutora => _talento.nota;
   String get enlaceAutora => _talento.enlace;
+  String get webAutora => _talento.web;
   int? get picanteAutora => _talento.picante;
   List<String> get troposAutora => _talento.tropos;
 

@@ -48,8 +48,8 @@ class TarjetaDeLaAutora extends StatelessWidget {
 
   final LibroAgrupado libro;
 
-  Future<void> _abrirEnlace() async {
-    var url = libro.enlaceAutora.trim();
+  Future<void> _abrir(String enlace) async {
+    var url = enlace.trim();
     if (url.isEmpty) return;
     if (!url.startsWith('http')) url = 'https://$url';
     final uri = Uri.parse(url);
@@ -65,7 +65,12 @@ class TarjetaDeLaAutora extends StatelessWidget {
     final tropos = libro.troposAutora;
     final picante = libro.picanteAutora;
     final enlace = libro.enlaceAutora.trim();
-    if (nota.isEmpty && tropos.isEmpty && picante == null && enlace.isEmpty) {
+    final web = libro.webAutora.trim();
+    if (nota.isEmpty &&
+        tropos.isEmpty &&
+        picante == null &&
+        enlace.isEmpty &&
+        web.isEmpty) {
       return const SizedBox.shrink();
     }
 
@@ -118,17 +123,25 @@ class TarjetaDeLaAutora extends StatelessWidget {
                 ],
               ),
             ],
-            if (enlace.isNotEmpty) ...[
+            if (enlace.isNotEmpty || web.isNotEmpty) ...[
               const SizedBox(height: AppSpacing.md),
-              OutlinedButton.icon(
-                onPressed: _abrirEnlace,
-                icon: const Icon(Icons.open_in_new_rounded, size: 18),
-                label: const Text('Ver el libro de la autora'),
-              ),
-              const SizedBox(height: AppSpacing.xs),
-              Text(
-                'Enlace de la propia autora, no es de afiliado.',
-                style: AppTextStyles.caption,
+              Wrap(
+                spacing: AppSpacing.sm,
+                runSpacing: AppSpacing.xs,
+                children: [
+                  if (enlace.isNotEmpty)
+                    OutlinedButton.icon(
+                      onPressed: () => _abrir(enlace),
+                      icon: const Icon(Icons.info_outline_rounded, size: 18),
+                      label: const Text('Ver ficha del libro'),
+                    ),
+                  if (web.isNotEmpty)
+                    OutlinedButton.icon(
+                      onPressed: () => _abrir(web),
+                      icon: const Icon(Icons.language_rounded, size: 18),
+                      label: const Text('Web de la autora'),
+                    ),
+                ],
               ),
             ],
           ],

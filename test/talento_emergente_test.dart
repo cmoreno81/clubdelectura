@@ -15,7 +15,8 @@ Libro _libro(Map<String, dynamic> extra) => Libro.fromJson({
 const _talento = {
   'talentoEmergente': true,
   'notaAutora': 'Gracias por leerme',
-  'enlaceAutora': 'https://www.amazon.es/dp/B0TEST',
+  'enlaceAutora': 'https://www.goodreads.com/book/show/1',
+  'webAutora': 'https://lucia.example',
   'picanteAutora': 3,
   'troposAutora': ['slow burn', 'familia elegida'],
 };
@@ -72,7 +73,8 @@ void main() {
     expect(find.textContaining('Gracias por leerme'), findsOneWidget);
     expect(find.textContaining('3 de 5'), findsOneWidget);
     expect(find.text('slow burn'), findsOneWidget);
-    expect(find.text('Ver el libro de la autora'), findsOneWidget);
+    expect(find.text('Ver ficha del libro'), findsOneWidget);
+    expect(find.text('Web de la autora'), findsOneWidget);
     expect(find.text('✨ Talento emergente'), findsOneWidget);
   });
 
