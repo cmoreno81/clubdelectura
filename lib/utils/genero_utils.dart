@@ -6,7 +6,7 @@ const generosSoportados = [
   'Romance',
   'Dark Romance',
   'Mafia Romance',
-  'Romance Paranormal',
+  'Paranormal',
   'Thriller',
   'Novela negra',
   'Dark Academia',

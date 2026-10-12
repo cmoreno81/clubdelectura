@@ -7,9 +7,9 @@ void main() {
     expect(iconoGenero('No ficcion'), '🧠');
   });
 
-  test('Romance Paranormal es un género soportado con su icono', () {
-    expect(generosSoportados, contains('Romance Paranormal'));
-    expect(iconoGenero('Romance Paranormal'), '🧛');
+  test('Paranormal es un género soportado con su icono', () {
+    expect(generosSoportados, contains('Paranormal'));
+    expect(iconoGenero('Paranormal'), '🧛');
     expect(iconoGenero('paranormal'), '🧛');
   });
 }
