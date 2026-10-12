@@ -54,6 +54,9 @@ class Notificacion {
     'LIGA_CIERRE_PROXIMO' => '⏳',
     'LIGA_RACHA_EN_RIESGO' => '🔥',
     'LECTURA_NUEVA' => '📖',
+    'LECTURA_META_PROXIMA' => '📖',
+    'LECTURA_META_HOY' => '💬',
+    'LECTURA_INVITACION' => '💌',
     'COMENTARIO_LECTURA' => '💬',
     'LIBRO_TERMINADO' => '✅',
     'LIBRO_EMPEZADO' => '📖',
@@ -68,6 +71,9 @@ enum NotificationBadgeCategory { club, lecturas, clubvision }
 NotificationBadgeCategory notificationBadgeCategory(String tipo) =>
     switch (tipo) {
       'LECTURA_NUEVA' ||
+      'LECTURA_META_PROXIMA' ||
+      'LECTURA_META_HOY' ||
+      'LECTURA_INVITACION' ||
       'COMENTARIO_LECTURA' => NotificationBadgeCategory.lecturas,
       'CLUBVISION_ABIERTA' ||
       'CLUBVISION_RESULTADOS' => NotificationBadgeCategory.clubvision,

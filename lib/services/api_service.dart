@@ -883,6 +883,7 @@ class ApiService {
     required bool epilogo,
     int? paginas,
     String tipo = "LIBRE",
+    List<MetaLectura> metas = const [],
   }) async {
     final response = await _postJson('crearLectura', {
       'libro': libro,
@@ -891,6 +892,7 @@ class ApiService {
       'epilogo': epilogo ? 1 : 0,
       'paginas': ?paginas,
       'tipo': tipo,
+      if (metas.isNotEmpty) 'metas': [for (final m in metas) m.toJson()],
     });
 
     return _respuestaOk(response);
@@ -920,15 +922,39 @@ class ApiService {
     required int capitulos,
     required bool prologo,
     required bool epilogo,
+    List<MetaLectura>? metas,
   }) async {
     final response = await _postJson('editarLectura', {
       'libro': libro,
       'capitulos': capitulos,
       'prologo': prologo ? 1 : 0,
       'epilogo': epilogo ? 1 : 0,
+      // Con lista (aunque vacía) se sustituyen las metas; sin ella no se tocan.
+      if (metas != null) 'metas': [for (final m in metas) m.toJson()],
     });
     if (response.statusCode != 200) throw ApiException.fromResponse(response);
     return _decodeJson(response) as Map<String, dynamic>;
+  }
+
+  /// Invita a miembros del club a una lectura conjunta activa. Devuelve
+  /// cuántas invitaciones se han enviado (0 si ya la leían o ya estaban
+  /// invitadas), o `null` si no se ha podido.
+  Future<int?> invitarALectura({
+    required String libro,
+    required List<String> usuarios,
+  }) async {
+    try {
+      final response = await _postJson('invitarALectura', {
+        'libro': libro,
+        'usuarios': usuarios,
+      });
+      if (response.statusCode != 200) return null;
+      final data = _decodeJson(response);
+      if (data is! Map<String, dynamic> || data['ok'] != true) return null;
+      return (data['invitadas'] as num?)?.toInt() ?? 0;
+    } catch (_) {
+      return null;
+    }
   }
 
   /// Cambia el título de un capítulo (por ejemplo, cuando el libro no

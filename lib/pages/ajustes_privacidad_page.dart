@@ -26,6 +26,21 @@ const _etiquetasNotificacion = <String, (String, String, String)>{
     'Nueva lectura',
     'Cuando el club empieza una lectura oficial o compartida',
   ),
+  'LECTURA_META_PROXIMA': (
+    '📖',
+    'Metas de lectura: el día antes',
+    'Un aviso amable el día antes de comentar un tramo de la lectura',
+  ),
+  'LECTURA_META_HOY': (
+    '💬',
+    'Metas de lectura: el mismo día',
+    'Un aviso amable el día de comentar un tramo de la lectura',
+  ),
+  'LECTURA_INVITACION': (
+    '💌',
+    'Invitaciones a lecturas',
+    'Cuando una compañera te invita a una lectura conjunta',
+  ),
   'LIBRO_NUEVO_BIBLIOTECA': (
     '✨',
     'Libros nuevos en la biblioteca',

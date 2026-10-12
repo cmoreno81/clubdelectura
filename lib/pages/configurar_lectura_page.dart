@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../models/catalog_book.dart';
+import '../models/configuracion_lectura.dart';
 import '../services/api_service.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_radius.dart';
@@ -13,6 +14,7 @@ import '../widgets/common/club_book_cover.dart';
 import '../widgets/common/club_button.dart';
 import '../widgets/common/club_card.dart';
 import '../widgets/common/club_chip.dart';
+import '../widgets/lectura/editor_metas.dart';
 
 class ConfigurarLecturaPage extends StatefulWidget {
   final String libro;
@@ -26,6 +28,9 @@ class ConfigurarLecturaPage extends StatefulWidget {
   final bool prologoInicial;
   final bool epilogoInicial;
 
+  /// Metas que ya tiene la lectura (solo en modo edición).
+  final List<MetaLectura> metasIniciales;
+
   const ConfigurarLecturaPage({
     super.key,
     required this.libro,
@@ -34,6 +39,7 @@ class ConfigurarLecturaPage extends StatefulWidget {
     this.capitulosIniciales = 0,
     this.prologoInicial = false,
     this.epilogoInicial = false,
+    this.metasIniciales = const [],
   });
 
   @override
@@ -48,6 +54,9 @@ class _ConfigurarLecturaPageState extends State<ConfigurarLecturaPage> {
   bool prologo = false;
   bool epilogo = false;
   bool creando = false;
+
+  /// Metas opcionales de la lectura (vacío = sin metas, como siempre).
+  List<MetaLectura> metas = [];
 
   CatalogBook? edicionVinculada;
   List<CatalogBook> resultadosEdicion = [];
@@ -65,6 +74,7 @@ class _ConfigurarLecturaPageState extends State<ConfigurarLecturaPage> {
       }
       prologo = widget.prologoInicial;
       epilogo = widget.epilogoInicial;
+      metas = [...widget.metasIniciales];
     }
 
     controllerCapitulos.addListener(() {
@@ -301,6 +311,34 @@ class _ConfigurarLecturaPageState extends State<ConfigurarLecturaPage> {
             const SizedBox(height: AppSpacing.xl),
 
             const _SectionHeader(
+              icon: Icons.flag_outlined,
+              color: Color(0xFFE49A24),
+              title: 'Metas (opcional)',
+              subtitle:
+                  'Si queréis leer por tramos, poned hasta qué capítulo y qué '
+                  'día lo comentáis. Os avisamos el día antes y ese día. '
+                  'Si no ponéis ninguna, todo sigue igual.',
+            ),
+
+            const SizedBox(height: AppSpacing.md),
+
+            ClubCard(
+              elevated: false,
+              padding: const EdgeInsets.all(AppSpacing.md),
+              child: ListenableBuilder(
+                listenable: controllerCapitulos,
+                builder: (context, _) => EditorMetas(
+                  metas: metas,
+                  capitulos: int.tryParse(controllerCapitulos.text.trim()) ?? 0,
+                  habilitado: !creando,
+                  onChanged: (nuevas) => setState(() => metas = nuevas),
+                ),
+              ),
+            ),
+
+            const SizedBox(height: AppSpacing.xl),
+
+            const _SectionHeader(
               icon: Icons.link_rounded,
               color: AppColors.primary,
               title: 'Otra edición de este libro',
@@ -368,6 +406,31 @@ class _ConfigurarLecturaPageState extends State<ConfigurarLecturaPage> {
       return;
     }
 
+    // Una meta posterior no puede caer antes que la anterior.
+    final ordenadas = [...metas]
+      ..sort((x, y) => x.capitulo.compareTo(y.capitulo));
+    for (var i = 1; i < ordenadas.length; i++) {
+      if (ordenadas[i].fecha.compareTo(ordenadas[i - 1].fecha) < 0) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              'La meta del capítulo ${ordenadas[i].capitulo} no puede ser '
+              'antes que la del capítulo ${ordenadas[i - 1].capitulo}.',
+            ),
+          ),
+        );
+        return;
+      }
+    }
+    if (metas.any((m) => m.capitulo > capitulos)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Hay una meta que supera el número de capítulos.'),
+        ),
+      );
+      return;
+    }
+
     setState(() {
       creando = true;
     });
@@ -395,6 +458,7 @@ class _ConfigurarLecturaPageState extends State<ConfigurarLecturaPage> {
           capitulos: capitulos,
           prologo: prologo,
           epilogo: epilogo,
+          metas: metas,
         );
 
         if (!mounted) return;
@@ -429,6 +493,7 @@ class _ConfigurarLecturaPageState extends State<ConfigurarLecturaPage> {
         epilogo: epilogo,
         paginas: paginas,
         tipo: widget.tipo,
+        metas: metas,
       );
 
       if (!mounted) return;

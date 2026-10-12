@@ -13,6 +13,8 @@ import '../widgets/common/club_book_cover.dart';
 import '../widgets/common/club_card.dart';
 import '../widgets/ui/club_section_title.dart';
 import '../widgets/lectura/capitulo_tile.dart';
+import '../widgets/lectura/invitar_a_lectura_sheet.dart';
+import '../widgets/lectura/tarjeta_meta_lectura.dart';
 import 'capitulo_page.dart';
 import 'configurar_lectura_page.dart';
 import 'package:club_lectura_app/widgets/common/club_shimmer.dart';
@@ -186,6 +188,7 @@ class _LecturaPageState extends State<LecturaPage> {
           capitulosIniciales: config.capitulos,
           prologoInicial: config.prologo,
           epilogoInicial: config.epilogo,
+          metasIniciales: config.metas,
         ),
       ),
     );
@@ -350,6 +353,16 @@ class _LecturaPageState extends State<LecturaPage> {
                       ),
                     ],
                   ),
+                ),
+
+                TarjetaMetaLectura(config: config),
+
+                const SizedBox(height: AppSpacing.md),
+
+                OutlinedButton.icon(
+                  onPressed: () => mostrarInvitarALectura(context, widget.libro),
+                  icon: const Icon(Icons.person_add_alt_1_rounded),
+                  label: const Text('Invitar a gente del club'),
                 ),
 
                 const SizedBox(height: AppSpacing.xl),

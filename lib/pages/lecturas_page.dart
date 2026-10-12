@@ -60,7 +60,11 @@ class _LecturasPageState extends State<LecturasPage> {
       titulo: 'Novedades en Lecturas',
       filtro: (n) {
         final esTipoLectura =
-            n.tipo == 'LECTURA_NUEVA' || n.tipo == 'COMENTARIO_LECTURA';
+            n.tipo == 'LECTURA_NUEVA' ||
+            n.tipo == 'LECTURA_META_PROXIMA' ||
+            n.tipo == 'LECTURA_META_HOY' ||
+            n.tipo == 'LECTURA_INVITACION' ||
+            n.tipo == 'COMENTARIO_LECTURA';
         if (!esTipoLectura) return false;
         // Si conocemos el club activo, filtrar solo sus notificaciones
         final clubId = widget.clubId;

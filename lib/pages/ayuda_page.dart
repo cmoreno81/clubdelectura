@@ -1119,6 +1119,19 @@ const List<_HelpSection> _secciones = [
     titulo: 'Lecturas y citas',
     items: [
       _HelpItem(
+        pregunta: '¿Puedo poner metas y días para comentar en una lectura conjunta?',
+        respuesta:
+            'Sí, y es opcional. Al crear la conversación (o al editarla con el icono '
+            'de ajustes) verás "Metas (opcional)": añade una meta con "Hasta el '
+            'capítulo N" y el día en que lo comentáis. En la lectura aparece la próxima '
+            'meta y, el día antes y el mismo día, os llega un aviso amable a quienes '
+            'estáis leyendo el libro. Si no ponéis ninguna, todo funciona como siempre. '
+            'Los avisos se pueden desactivar en Ajustes → Notificaciones.\n\n'
+            'También puedes invitar a gente de tu club con "Invitar a gente del club", '
+            'dentro de la lectura: les llega un aviso con la invitación. Solo se puede '
+            'invitar a miembros del propio club.',
+      ),
+      _HelpItem(
         pregunta: '¿Cómo sigo la lectura activa del club?',
         respuesta:
             'En la pestaña "Lecturas" encontrarás el libro actual del club '

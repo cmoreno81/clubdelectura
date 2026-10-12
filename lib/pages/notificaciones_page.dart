@@ -292,6 +292,9 @@ class _NotificacionesPageState extends State<NotificacionesPage> {
         }
         break;
       case 'LECTURA_NUEVA':
+      case 'LECTURA_META_PROXIMA':
+      case 'LECTURA_META_HOY':
+      case 'LECTURA_INVITACION':
       case 'COMENTARIO_LECTURA':
         if (title.isNotEmpty) {
           await Navigator.push<void>(
