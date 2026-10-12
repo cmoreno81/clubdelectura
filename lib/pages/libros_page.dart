@@ -1396,7 +1396,9 @@ class _LibrosPageState extends State<LibrosPage> with WidgetsBindingObserver {
                               iconoGenero(libro.genero),
                               style: const TextStyle(fontSize: 15),
                             ),
-                            label: libro.genero,
+                            label: libro.generosLista.isEmpty
+                                ? libro.genero
+                                : libro.generosLista.join(' · '),
                             labelColor: AppColors.primary,
                             onTap: () => _corregirGeneroLibro(libro),
                           ),

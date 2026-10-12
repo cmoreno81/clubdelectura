@@ -4,6 +4,9 @@ class NuevoLibro {
   final String libro;
   final String autor;
   final String genero;
+
+  /// Géneros adicionales al principal (máx. 2).
+  final List<String> generosExtra;
   final String saga;
   final String numSaga;
   final String autoconclusivo;
@@ -22,6 +25,7 @@ class NuevoLibro {
     required this.libro,
     this.autor = '',
     required this.genero,
+    this.generosExtra = const [],
     required this.saga,
     required this.numSaga,
     required this.autoconclusivo,
@@ -42,6 +46,7 @@ class NuevoLibro {
       'libro': libro,
       if (autor.trim().isNotEmpty) 'autor': autor.trim(), // ← omitir si vacío
       'genero': genero,
+      'generosExtra': generosExtra,
       'saga': saga,
       'numSaga': numSaga,
       'autoconclusivo': autoconclusivo,

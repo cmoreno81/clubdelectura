@@ -1661,10 +1661,12 @@ class ApiService {
   Future<Map<String, dynamic>> actualizarGeneroLibro({
     required String bookId,
     required String genero,
+    List<String>? generosExtra,
   }) async {
     final response = await _postJson('actualizarGeneroLibro', {
       'bookId': bookId,
       'genero': genero,
+      if (generosExtra != null) 'generosExtra': generosExtra,
     });
 
     if (response.statusCode != 200) {

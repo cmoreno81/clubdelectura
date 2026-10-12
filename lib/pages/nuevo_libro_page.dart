@@ -8,6 +8,7 @@ import 'detalle_libro_page.dart';
 import '../models/nuevo_libro.dart';
 import '../services/api_service.dart';
 import '../services/usuario_service.dart';
+import '../utils/genero_utils.dart';
 import '../utils/idioma_utils.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_radius.dart';
@@ -81,6 +82,8 @@ class _NuevoLibroPageState extends State<NuevoLibroPage> {
   final paginasController = TextEditingController();
 
   String genero = 'Fantasía';
+  // Géneros adicionales al principal (máx. 2): un libro admite hasta 3.
+  List<String> generosExtra = [];
   String prioridad = 'MEDIA';
   String formato = '';
   String idioma = '';
@@ -96,6 +99,28 @@ class _NuevoLibroPageState extends State<NuevoLibroPage> {
   String get tituloActual => libroController.text.trim();
 
   String get portadaActual => coverUrlController.text.trim();
+
+  /// Marca o desmarca un género. Siempre queda al menos uno (el principal);
+  /// si se quita el principal, pasa a serlo el siguiente.
+  void _alternarGenero(String valor) {
+    setState(() {
+      if (valor == genero) {
+        if (generosExtra.isNotEmpty) genero = generosExtra.removeAt(0);
+      } else if (generosExtra.contains(valor)) {
+        generosExtra.remove(valor);
+      } else if (1 + generosExtra.length >= maxGenerosLibro) {
+        ScaffoldMessenger.of(context)
+          ..hideCurrentSnackBar()
+          ..showSnackBar(
+            const SnackBar(
+              content: Text('Como máximo 3 géneros por libro.'),
+            ),
+          );
+      } else {
+        generosExtra.add(valor);
+      }
+    });
+  }
 
   static const List<_GeneroOption> generos = [
     _GeneroOption('🐉', 'Fantasía', 'Fantasía'),
@@ -146,6 +171,10 @@ class _NuevoLibroPageState extends State<NuevoLibroPage> {
     genero = agrupado.genero.trim().isEmpty
         ? 'Fantasía'
         : agrupado.genero.trim();
+    generosExtra = agrupado.generosLista
+        .where((g) => g.trim().toLowerCase() != genero.toLowerCase())
+        .take(maxGenerosLibro - 1)
+        .toList();
 
     // Si nadie del club tiene aún este libro (registro/finalizado vacíos),
     // caemos en la saga real del catálogo: sin este respaldo el formulario
@@ -358,6 +387,7 @@ class _NuevoLibroPageState extends State<NuevoLibroPage> {
       libro: titulo,
       autor: autorController.text.trim(),
       genero: genero,
+      generosExtra: generosExtra,
       saga: autoconclusivo == 'No' ? sagaController.text.trim() : '',
       numSaga: autoconclusivo == 'No' ? numSagaController.text.trim() : '',
       autoconclusivo: autoconclusivo,
@@ -611,7 +641,8 @@ class _NuevoLibroPageState extends State<NuevoLibroPage> {
               icon: Icons.sell_outlined,
               color: Color(0xFFD75784),
               title: 'Género',
-              subtitle: 'Elige la categoría que mejor representa la historia',
+              subtitle:
+                  'Elige hasta $maxGenerosLibro. El primero que marques es el principal',
             ),
 
             const SizedBox(height: AppSpacing.md),
@@ -626,15 +657,15 @@ class _NuevoLibroPageState extends State<NuevoLibroPage> {
                   for (final option in generos)
                     ClubChip(
                       label: '${option.emoji} ${option.label}',
-                      selected: genero == option.value,
-                      variant: genero == option.value
+                      selected:
+                          genero == option.value ||
+                          generosExtra.contains(option.value),
+                      variant:
+                          genero == option.value ||
+                              generosExtra.contains(option.value)
                           ? ClubChipVariant.primary
                           : ClubChipVariant.neutral,
-                      onTap: () {
-                        setState(() {
-                          genero = option.value;
-                        });
-                      },
+                      onTap: () => _alternarGenero(option.value),
                     ),
                 ],
               ),

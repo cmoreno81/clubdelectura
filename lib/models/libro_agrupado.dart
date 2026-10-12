@@ -5,6 +5,10 @@ class LibroAgrupado {
   final String libro;
   final String genero;
 
+  /// Géneros que envía el servidor (principal + adicionales). Si viene vacía
+  /// se deducen de los registros; ver [generosLista].
+  final List<String> generos;
+
   final List<Libro> registros;
 
   final List<LibroFinalizado> finalizados;
@@ -28,6 +32,7 @@ class LibroAgrupado {
   LibroAgrupado({
     required this.libro,
     required this.genero,
+    this.generos = const [],
     required this.registros,
     required this.finalizados,
     required this.yaLoTengo,
@@ -38,6 +43,19 @@ class LibroAgrupado {
     this.numSagaCatalogo,
     this.standaloneCatalogo,
   }) : _bookIdOverride = (bookId?.trim().isNotEmpty == true) ? bookId!.trim() : null;
+
+  /// Todos los géneros del libro, el principal primero (1 a 3).
+  List<String> get generosLista {
+    if (generos.length > 1) return generos;
+    for (final r in registros) {
+      if (r.generos.length > 1) return r.generos;
+    }
+    for (final f in finalizados) {
+      if (f.generos.length > 1) return f.generos;
+    }
+    final principal = genero.trim();
+    return principal.isEmpty ? const [] : [principal];
+  }
 
   int get total => registros.length;
 

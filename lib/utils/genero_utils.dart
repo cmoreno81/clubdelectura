@@ -81,3 +81,16 @@ String iconoGenero(String genero) {
       return '📚';
   }
 }
+
+/// Lee la lista `generos` del servidor (principal primero). Los servidores
+/// o respuestas antiguas no la traen: se queda vacía y se usa `genero`.
+List<String> leerGeneros(dynamic raw) {
+  if (raw is! List) return const [];
+  return raw
+      .map((e) => e.toString().trim())
+      .where((e) => e.isNotEmpty)
+      .toList();
+}
+
+/// Máximo de géneros que puede tener un libro.
+const maxGenerosLibro = 3;

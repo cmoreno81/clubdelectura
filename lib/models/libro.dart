@@ -1,3 +1,5 @@
+import '../utils/genero_utils.dart';
+
 class Libro {
   final String bookId;
 
@@ -5,6 +7,9 @@ class Libro {
   final String libro;
   final String autor;
   final String genero;
+
+  /// Género principal + adicionales (máx. 3). Vacía si el servidor no la envía.
+  final List<String> generos;
   final String saga;
   final String numSaga;
   final String autoconclusivo;
@@ -45,6 +50,7 @@ class Libro {
     required this.libro,
     this.autor = '',
     required this.genero,
+    this.generos = const [],
     required this.saga,
     required this.numSaga,
     required this.autoconclusivo,
@@ -75,6 +81,7 @@ class Libro {
       libro: json['libro']?.toString() ?? '',
       autor: json['autor']?.toString() ?? json['author']?.toString() ?? '',
       genero: json['genero']?.toString() ?? '',
+      generos: leerGeneros(json['generos']),
       saga: json['saga']?.toString() ?? '',
       numSaga: json['numSaga']?.toString() ?? '',
       autoconclusivo: json['autoconclusivo']?.toString() ?? '',
@@ -116,6 +123,7 @@ class Libro {
     String? libro,
     String? autor,
     String? genero,
+    List<String>? generos,
     String? saga,
     String? numSaga,
     String? autoconclusivo,
@@ -143,6 +151,7 @@ class Libro {
       libro: libro ?? this.libro,
       autor: autor ?? this.autor,
       genero: genero ?? this.genero,
+      generos: generos ?? this.generos,
       saga: saga ?? this.saga,
       numSaga: numSaga ?? this.numSaga,
       autoconclusivo: autoconclusivo ?? this.autoconclusivo,

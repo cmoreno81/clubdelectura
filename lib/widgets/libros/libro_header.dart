@@ -94,7 +94,9 @@ class LibroHeader extends StatelessWidget {
               const SizedBox(height: AppSpacing.sm),
 
               Text(
-                '${iconoGenero(libro.genero)} ${libro.genero}',
+                libro.generosLista
+                    .map((g) => '${iconoGenero(g)} $g')
+                    .join('  ·  '),
                 textAlign: TextAlign.center,
                 style: AppTextStyles.bodySecondary.copyWith(
                   color: AppColors.primary,
