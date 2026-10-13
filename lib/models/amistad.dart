@@ -343,3 +343,60 @@ class ActividadAmistad {
     );
   }
 }
+
+/// Un comentario en el progreso de una lectura.
+class ComentarioProgreso {
+  const ComentarioProgreso({
+    required this.id,
+    required this.autor,
+    this.avatarUrl = '',
+    required this.texto,
+    this.fecha,
+    this.esMio = false,
+    this.puedoBorrar = false,
+  });
+
+  final String id;
+  final String autor;
+  final String avatarUrl;
+  final String texto;
+  final DateTime? fecha;
+  final bool esMio;
+  final bool puedoBorrar;
+
+  factory ComentarioProgreso.fromJson(Map<String, dynamic> json) =>
+      ComentarioProgreso(
+        id: json['id']?.toString() ?? '',
+        autor: json['autor']?.toString() ?? '',
+        avatarUrl: json['avatarUrl']?.toString() ?? '',
+        texto: json['texto']?.toString() ?? '',
+        fecha: DateTime.tryParse(json['fecha']?.toString() ?? '')?.toLocal(),
+        esMio: json['esMio'] == true,
+        puedoBorrar: json['puedoBorrar'] == true,
+      );
+}
+
+/// Comentarios de una lectura y si quien mira es la persona que la lee.
+class ComentariosProgresoData {
+  const ComentariosProgresoData({
+    this.titulo = '',
+    this.soyDuena = false,
+    this.comentarios = const [],
+  });
+
+  final String titulo;
+  final bool soyDuena;
+  final List<ComentarioProgreso> comentarios;
+
+  factory ComentariosProgresoData.fromJson(Map<String, dynamic> json) =>
+      ComentariosProgresoData(
+        titulo: json['titulo']?.toString() ?? '',
+        soyDuena: json['soyDuena'] == true,
+        comentarios: (json['comentarios'] as List? ?? [])
+            .whereType<Map>()
+            .map(
+              (e) => ComentarioProgreso.fromJson(Map<String, dynamic>.from(e)),
+            )
+            .toList(),
+      );
+}

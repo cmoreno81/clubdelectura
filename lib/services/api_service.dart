@@ -1083,6 +1083,41 @@ class ApiService {
   Future<ResultadoAmistad> quitarAmistad(String nombre) =>
       _accionAmistad('quitarAmistad', {'nombre': nombre});
 
+  Future<ComentariosProgresoData> getComentariosProgreso(
+    String libraryId,
+  ) async {
+    final response = await _client.get(
+      Uri.parse(baseUrl).replace(
+        queryParameters: {
+          'action': 'comentariosProgreso',
+          'libraryId': libraryId,
+        },
+      ),
+    );
+    if (response.statusCode != 200) {
+      throw ApiException.fromResponse(response);
+    }
+    final data = Map<String, dynamic>.from(_decodeJson(response) as Map);
+    if (data['ok'] != true) {
+      throw ApiException(
+        statusCode: 200,
+        message:
+            data['mensaje']?.toString() ??
+            'No se han podido cargar los comentarios.',
+      );
+    }
+    return ComentariosProgresoData.fromJson(data);
+  }
+
+  Future<ResultadoAmistad> comentarProgreso(String libraryId, String texto) =>
+      _accionAmistad('comentarProgreso', {
+        'libraryId': libraryId,
+        'texto': texto,
+      });
+
+  Future<ResultadoAmistad> borrarComentarioProgreso(String id) =>
+      _accionAmistad('borrarComentarioProgreso', {'id': id});
+
   /// Recomienda un libro a amistades (o las invita a leerlo juntas).
   Future<ResultadoAmistad> recomendarLibro({
     required String bookId,
@@ -3079,7 +3114,7 @@ class ApiService {
   /// Reporta un comentario o reseña — crea el mismo ticket de Jira que
   /// [enviarFeedback], para que quien administra la app pueda revisarlo.
   Future<bool> reportarContenido({
-    required String tipo, // 'comentario' | 'resena'
+    required String tipo, // 'comentario' | 'resena' | 'comentarioProgreso'
     required String id,
     String motivo = '',
   }) async {

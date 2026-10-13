@@ -7,6 +7,7 @@ import '../services/api_service.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_spacing.dart';
 import '../theme/app_text_styles.dart';
+import '../widgets/amistades/comentarios_progreso.dart';
 import '../widgets/amistades/reacciones_progreso.dart';
 import '../widgets/common/club_avatar.dart';
 import '../widgets/common/club_book_cover.dart';
@@ -209,6 +210,20 @@ class _PerfilAmistadPageState extends State<PerfilAmistadPage> {
                     ],
                     const SizedBox(height: AppSpacing.xs),
                     ReaccionesProgreso(lectura: l),
+                    TextButton.icon(
+                      onPressed: l.libraryId.isEmpty
+                          ? null
+                          : () => mostrarComentariosProgreso(
+                              context,
+                              libraryId: l.libraryId,
+                              titulo: l.titulo,
+                            ),
+                      icon: const Icon(
+                        Icons.chat_bubble_outline_rounded,
+                        size: 19,
+                      ),
+                      label: const Text('Comentarios'),
+                    ),
                   ],
                 ),
               ),

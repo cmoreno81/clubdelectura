@@ -1,3 +1,4 @@
+import '../widgets/amistades/comentarios_progreso.dart';
 import 'amistades_page.dart';
 import 'package:flutter/material.dart';
 
@@ -302,6 +303,17 @@ class _NotificacionesPageState extends State<NotificacionesPage> {
           await Navigator.push<void>(
             context,
             AppPageRoute(builder: (_) => LecturaPage(libro: title)),
+          );
+          return;
+        }
+        break;
+      case 'PROGRESO_COMENTARIO':
+        final libraryId = n.extra?['libraryId']?.toString() ?? '';
+        if (libraryId.isNotEmpty) {
+          await mostrarComentariosProgreso(
+            context,
+            libraryId: libraryId,
+            titulo: title,
           );
           return;
         }
