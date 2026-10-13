@@ -317,7 +317,7 @@ void main() {
         }),
       );
       expect(find.textContaining('Lista de deseos 🎁 (2)'), findsOneWidget);
-      expect(find.text('Ideas para regalar'), findsOneWidget);
+      expect(find.textContaining('Ideas para regalar'), findsOneWidget);
       expect(find.text('Una Autora'), findsOneWidget);
       expect(find.text('💜 Prioridad'), findsOneWidget);
 
@@ -331,6 +331,57 @@ void main() {
         find.text('Lucía no comparte su lista de deseos.'),
         findsOneWidget,
       );
+    },
+  );
+
+  testWidgets(
+    'reservar un regalo: libre, reservado por mí (deshacer) y reservado por otra',
+    (tester) async {
+      tester.view.physicalSize = const Size(1000, 3200);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.reset);
+      final llamadas = <String>[];
+      await tester.pumpWidget(
+        MaterialApp(
+          home: PerfilAmistadPage(
+            nombre: 'Lucía',
+            cargar: (_) async => PerfilAmistad.fromJson({
+              'nombre': 'Lucía',
+              'compartido': {'deseos': true},
+              'deseos': [
+                {'id': 'w1', 'bookId': 'b1', 'titulo': 'Libre'},
+                {
+                  'id': 'w2',
+                  'bookId': 'b2',
+                  'titulo': 'Mío',
+                  'reservado': true,
+                  'reservadoPorMi': true,
+                },
+                {
+                  'id': 'w3',
+                  'bookId': 'b3',
+                  'titulo': 'Ajeno',
+                  'reservado': true,
+                },
+              ],
+            }),
+            reservar: (id, reservar) async {
+              llamadas.add('$id:$reservar');
+              return const ResultadoAmistad(ok: true);
+            },
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(find.text('🎁 Lo regalo yo'), findsOneWidget);
+      expect(find.text('✓ Lo regalas tú · Deshacer'), findsOneWidget);
+      expect(find.text('🎁 Ya reservado'), findsOneWidget);
+
+      await tester.tap(find.text('🎁 Lo regalo yo'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('✓ Lo regalas tú · Deshacer'));
+      await tester.pumpAndSettle();
+      expect(llamadas, ['w1:true', 'w2:false']);
     },
   );
 }

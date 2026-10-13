@@ -1151,6 +1151,10 @@ class ApiService {
     'aceptar': aceptar,
   });
 
+  /// «Yo lo regalo»: reserva (o deja de reservar) un libro de su lista de deseos.
+  Future<ResultadoAmistad> reservarRegalo(String itemId, {bool reservar = true}) =>
+      _accionAmistad('reservarRegalo', {'itemId': itemId, 'reservar': reservar});
+
   /// Recomienda un libro a amistades (o las invita a leerlo juntas).
   Future<ResultadoAmistad> recomendarLibro({
     required String bookId,

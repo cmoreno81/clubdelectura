@@ -19,12 +19,19 @@ import '../widgets/error_view.dart';
 /// último que ha terminado, sus pendientes y sus reseñas, según lo que haya
 /// decidido compartir.
 class PerfilAmistadPage extends StatefulWidget {
-  const PerfilAmistadPage({super.key, required this.nombre, this.cargar});
+  const PerfilAmistadPage({
+    super.key,
+    required this.nombre,
+    this.cargar,
+    this.reservar,
+  });
 
   final String nombre;
 
   /// Para pruebas.
   final Future<PerfilAmistad> Function(String nombre)? cargar;
+  final Future<ResultadoAmistad> Function(String itemId, bool reservar)?
+  reservar;
 
   @override
   State<PerfilAmistadPage> createState() => _PerfilAmistadPageState();
@@ -270,9 +277,75 @@ class _PerfilAmistadPageState extends State<PerfilAmistadPage> {
     );
   }
 
+  Future<void> _reservar(LibroDeAmistad libro, bool reservar) async {
+    final r =
+        await (widget.reservar ??
+            (id, v) => ApiService().reservarRegalo(id, reservar: v))(
+          libro.id,
+          reservar,
+        );
+    if (!mounted) return;
+    if (!r.ok) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            r.mensaje.isEmpty ? 'No se ha podido guardar.' : r.mensaje,
+          ),
+        ),
+      );
+    } else if (reservar) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            '¡Reservado! ${widget.nombre} no verá que lo regalas tú 🎁',
+          ),
+        ),
+      );
+    }
+    await _cargar();
+  }
+
+  Widget _accionRegalo(LibroDeAmistad libro) {
+    if (libro.id.isEmpty) return const SizedBox.shrink();
+    if (libro.reservadoPorMi) {
+      return InkWell(
+        onTap: () => _reservar(libro, false),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 4),
+          child: Text(
+            '✓ Lo regalas tú · Deshacer',
+            style: AppTextStyles.caption.copyWith(
+              color: AppColors.primary,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+        ),
+      );
+    }
+    if (libro.reservado) {
+      return Padding(
+        padding: const EdgeInsets.symmetric(vertical: 4),
+        child: Text('🎁 Ya reservado', style: AppTextStyles.caption),
+      );
+    }
+    return InkWell(
+      onTap: () => _reservar(libro, true),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 4),
+        child: Text(
+          '🎁 Lo regalo yo',
+          style: AppTextStyles.caption.copyWith(
+            color: AppColors.primary,
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+      ),
+    );
+  }
+
   Widget _tiraDeLibros(List<LibroDeAmistad> libros, {bool deseos = false}) {
     return SizedBox(
-      height: deseos ? 272 : 236,
+      height: deseos ? 304 : 236,
       child: ListView.separated(
         scrollDirection: Axis.horizontal,
         itemCount: libros.length,
@@ -316,6 +389,7 @@ class _PerfilAmistadPageState extends State<PerfilAmistadPage> {
                     ),
                   if (deseos && libro.prioridad == 'HIGH')
                     Text('💜 Prioridad', style: AppTextStyles.caption),
+                  if (deseos) _accionRegalo(libro),
                 ],
               ),
             ),
@@ -381,7 +455,11 @@ class _PerfilAmistadPageState extends State<PerfilAmistadPage> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         _titulo('Lista de deseos 🎁 (${p.deseos.length})'),
-        Text('Ideas para regalar', style: AppTextStyles.caption),
+        Text(
+          'Ideas para regalar. Si reservas uno, ${p.nombre} no lo verá '
+          '(¡sorpresa!), pero sus otras amistades sí.',
+          style: AppTextStyles.caption,
+        ),
         const SizedBox(height: AppSpacing.sm),
         _tiraDeLibros(p.deseos, deseos: true),
       ],

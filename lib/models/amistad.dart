@@ -231,6 +231,9 @@ class LibroDeAmistad {
     this.contieneSpoilers = false,
     this.autor = '',
     this.prioridad = '',
+    this.id = '',
+    this.reservado = false,
+    this.reservadoPorMi = false,
   });
 
   final String bookId;
@@ -244,6 +247,12 @@ class LibroDeAmistad {
   final String autor;
   final String prioridad;
 
+  /// Solo en la lista de deseos: identificador del deseo y si otra amistad (o tú)
+  /// ya lo ha reservado para regalar. Quien tiene la lista nunca lo ve.
+  final String id;
+  final bool reservado;
+  final bool reservadoPorMi;
+
   factory LibroDeAmistad.fromJson(Map<String, dynamic> json) => LibroDeAmistad(
     bookId: json['bookId']?.toString() ?? '',
     titulo: json['titulo']?.toString() ?? '',
@@ -253,6 +262,9 @@ class LibroDeAmistad {
     contieneSpoilers: json['contieneSpoilers'] == true,
     autor: json['autor']?.toString() ?? '',
     prioridad: json['prioridad']?.toString() ?? '',
+    id: json['id']?.toString() ?? '',
+    reservado: json['reservado'] == true,
+    reservadoPorMi: json['reservadoPorMi'] == true,
   );
 }
 
