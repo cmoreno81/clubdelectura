@@ -473,7 +473,7 @@ class _AmistadesPageState extends State<AmistadesPage> {
                 onSubmitted: (_) => _anadirPorCodigo(),
                 decoration: const InputDecoration(
                   prefixIcon: Icon(Icons.vpn_key_outlined),
-                  hintText: '¿Tienes un código? Escríbelo aquí',
+                  hintText: '¿Tienes un código?',
                 ),
               ),
             ),

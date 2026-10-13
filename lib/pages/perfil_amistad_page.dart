@@ -218,7 +218,7 @@ class _PerfilAmistadPageState extends State<PerfilAmistadPage> {
 
   Widget _tiraDeLibros(List<LibroDeAmistad> libros) {
     return SizedBox(
-      height: 190,
+      height: 236,
       child: ListView.separated(
         scrollDirection: Axis.horizontal,
         itemCount: libros.length,
