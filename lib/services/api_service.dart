@@ -1151,6 +1151,10 @@ class ApiService {
     'aceptar': aceptar,
   });
 
+  /// Avisa a la otra persona de la lectura a la vez, una vez configurada.
+  Future<ResultadoAmistad> enviarInvitacionLectura(String clubId) =>
+      _accionAmistad('enviarInvitacionLectura', {'clubId': clubId});
+
   /// Sale de una lectura a la vez; con [eliminar] la borra para las dos personas.
   Future<ResultadoAmistad> salirLecturaAmistad(
     String clubId, {

@@ -42,6 +42,24 @@ Future<void> abrirLecturaConAmistad(
         AppPageRoute(builder: (_) => ConfigurarLecturaPage(libro: libro)),
       );
       abrir = creada == true;
+      if (abrir) {
+        // Ya configurada: ahora sí se avisa a la otra persona.
+        final r = await ApiService().enviarInvitacionLectura(clubId);
+        mensajes.showSnackBar(
+          SnackBar(
+            content: Text(
+              r.ok
+                  ? 'Invitación enviada 💌'
+                  : (r.mensaje.isEmpty
+                        ? 'No se ha podido enviar la invitación.'
+                        : r.mensaje),
+            ),
+          ),
+        );
+      } else {
+        // Saliste sin guardar: no queda nada creado ni se avisa a nadie.
+        await ApiService().salirLecturaAmistad(clubId, eliminar: true);
+      }
     }
     if (abrir) {
       await nav.push<void>(
