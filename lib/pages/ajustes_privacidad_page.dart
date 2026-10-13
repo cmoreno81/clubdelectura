@@ -36,6 +36,16 @@ const _etiquetasNotificacion = <String, (String, String, String)>{
     'Metas de lectura: el mismo día',
     'Un aviso amable el día de comentar un tramo de la lectura',
   ),
+  'AMISTAD_SOLICITUD': (
+    '👋',
+    'Solicitudes de amistad',
+    'Cuando alguien quiere ser tu amistad en ClubReads',
+  ),
+  'AMISTAD_ACEPTADA': (
+    '🎉',
+    'Amistades aceptadas',
+    'Cuando alguien acepta tu solicitud de amistad',
+  ),
   'LECTURA_INVITACION': (
     '💌',
     'Invitaciones a lecturas',

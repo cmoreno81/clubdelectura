@@ -1,3 +1,4 @@
+import 'amistades_page.dart';
 import 'package:flutter/material.dart';
 
 import '../models/notificacion.dart';
@@ -304,6 +305,13 @@ class _NotificacionesPageState extends State<NotificacionesPage> {
           return;
         }
         break;
+      case 'AMISTAD_SOLICITUD':
+      case 'AMISTAD_ACEPTADA':
+        await Navigator.push<void>(
+          context,
+          AppPageRoute(builder: (_) => const AmistadesPage()),
+        );
+        return;
       case 'CLUBVISION_ABIERTA':
       case 'CLUBVISION_RESULTADOS':
         await Navigator.push<void>(

@@ -57,6 +57,8 @@ class Notificacion {
     'LECTURA_META_PROXIMA' => '📖',
     'LECTURA_META_HOY' => '💬',
     'LECTURA_INVITACION' => '💌',
+    'AMISTAD_SOLICITUD' => '👋',
+    'AMISTAD_ACEPTADA' => '🎉',
     'COMENTARIO_LECTURA' => '💬',
     'LIBRO_TERMINADO' => '✅',
     'LIBRO_EMPEZADO' => '📖',

@@ -1,0 +1,539 @@
+import 'dart:async';
+
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:share_plus/share_plus.dart';
+
+import '../models/amistad.dart';
+import '../services/api_exception.dart';
+import '../services/api_service.dart';
+import '../theme/app_colors.dart';
+import '../theme/app_spacing.dart';
+import '../theme/app_text_styles.dart';
+import '../widgets/common/club_avatar.dart';
+import '../widgets/common/club_card.dart';
+import '../widgets/error_view.dart';
+
+/// Amistades: buscar a gente, enviar y responder solicitudes, tu código para
+/// compartir y la lista de tus amistades.
+class AmistadesPage extends StatefulWidget {
+  const AmistadesPage({super.key, this.cargar});
+
+  /// Para pruebas: sustituye la carga real.
+  final Future<AmistadesData> Function()? cargar;
+
+  @override
+  State<AmistadesPage> createState() => _AmistadesPageState();
+}
+
+class _AmistadesPageState extends State<AmistadesPage> {
+  AmistadesData? _data;
+  Object? _error;
+  bool _cargando = true;
+
+  final _codigoCtrl = TextEditingController();
+  final _buscarCtrl = TextEditingController();
+  Timer? _debounce;
+  List<PersonaBuscada>? _resultados;
+  String? _errorBusqueda;
+  bool _buscando = false;
+  int _busquedaId = 0;
+
+  /// Nombres con una acción en curso, para desactivar sus botones.
+  final Set<String> _ocupadas = {};
+
+  @override
+  void initState() {
+    super.initState();
+    _cargar();
+  }
+
+  @override
+  void dispose() {
+    _debounce?.cancel();
+    _codigoCtrl.dispose();
+    _buscarCtrl.dispose();
+    super.dispose();
+  }
+
+  Future<void> _cargar({bool silencioso = false}) async {
+    if (!silencioso) setState(() => _cargando = true);
+    try {
+      final data = await (widget.cargar ?? ApiService().getAmistades)();
+      if (!mounted) return;
+      setState(() {
+        _data = data;
+        _error = null;
+        _cargando = false;
+      });
+    } catch (error) {
+      if (!mounted) return;
+      setState(() {
+        _error = error;
+        _cargando = false;
+      });
+    }
+  }
+
+  void _aviso(String texto) {
+    if (!mounted || texto.isEmpty) return;
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(SnackBar(content: Text(texto)));
+  }
+
+  // ── Buscar ───────────────────────────────────────────────────────────────
+
+  void _alEscribirBusqueda(String texto) {
+    _debounce?.cancel();
+    final limpio = texto.trim();
+    if (limpio.length < 3) {
+      setState(() {
+        _resultados = null;
+        _errorBusqueda = null;
+        _buscando = false;
+      });
+      return;
+    }
+    _debounce = Timer(const Duration(milliseconds: 450), () => _buscar(limpio));
+  }
+
+  Future<void> _buscar(String texto) async {
+    final id = ++_busquedaId;
+    setState(() {
+      _buscando = true;
+      _errorBusqueda = null;
+    });
+    try {
+      final resultados = await ApiService().buscarPersonas(texto);
+      if (!mounted || id != _busquedaId) return;
+      setState(() {
+        _resultados = resultados;
+        _buscando = false;
+      });
+    } on ApiException catch (e) {
+      if (!mounted || id != _busquedaId) return;
+      setState(() {
+        _errorBusqueda = e.message;
+        _buscando = false;
+      });
+    } catch (_) {
+      if (!mounted || id != _busquedaId) return;
+      setState(() {
+        _errorBusqueda = 'No se ha podido buscar. Inténtalo de nuevo.';
+        _buscando = false;
+      });
+    }
+  }
+
+  // ── Acciones ─────────────────────────────────────────────────────────────
+
+  Future<void> _ejecutar(
+    String nombre,
+    Future<ResultadoAmistad> Function() accion, {
+    String? okPorDefecto,
+    void Function(ResultadoAmistad)? alTerminar,
+  }) async {
+    if (_ocupadas.contains(nombre)) return;
+    setState(() => _ocupadas.add(nombre));
+    final resultado = await accion();
+    if (!mounted) return;
+    setState(() => _ocupadas.remove(nombre));
+    if (!resultado.ok) {
+      _aviso(resultado.mensaje);
+      return;
+    }
+    alTerminar?.call(resultado);
+    final texto = resultado.mensaje.isNotEmpty
+        ? resultado.mensaje
+        : (okPorDefecto ?? '');
+    _aviso(texto);
+    await _cargar(silencioso: true);
+  }
+
+  void _marcarEnBusqueda(String nombre, EstadoAmistad estado) {
+    final lista = _resultados;
+    if (lista == null) return;
+    setState(() {
+      _resultados = [
+        for (final p in lista)
+          p.nombre == nombre
+              ? PersonaBuscada(
+                  nombre: p.nombre,
+                  avatarUrl: p.avatarUrl,
+                  estado: estado,
+                )
+              : p,
+      ];
+    });
+  }
+
+  Future<void> _solicitar(PersonaBuscada persona) => _ejecutar(
+    persona.nombre,
+    () => ApiService().solicitarAmistad(nombre: persona.nombre),
+    okPorDefecto: 'Solicitud enviada.',
+    alTerminar: (r) =>
+        _marcarEnBusqueda(persona.nombre, r.estado ?? EstadoAmistad.enviada),
+  );
+
+  Future<void> _aceptar(String nombre) => _ejecutar(
+    nombre,
+    () => ApiService().responderAmistad(nombre, true),
+    okPorDefecto: '¡Ya sois amistades! 🎉',
+  );
+
+  Future<void> _rechazar(String nombre) =>
+      _ejecutar(nombre, () => ApiService().responderAmistad(nombre, false));
+
+  Future<void> _cancelar(String nombre) => _ejecutar(
+    nombre,
+    () => ApiService().cancelarSolicitudAmistad(nombre),
+    okPorDefecto: 'Solicitud cancelada.',
+  );
+
+  Future<void> _quitar(String nombre) async {
+    final confirmar = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text('¿Quitar a $nombre de tus amistades?'),
+        content: const Text(
+          'Dejaréis de veros lo que leéis. Si quieres, podéis volver a '
+          'añadiros más adelante.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancelar'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Quitar'),
+          ),
+        ],
+      ),
+    );
+    if (confirmar != true || !mounted) return;
+    await _ejecutar(
+      nombre,
+      () => ApiService().quitarAmistad(nombre),
+      okPorDefecto: 'Amistad eliminada.',
+    );
+  }
+
+  Future<void> _anadirPorCodigo() async {
+    final codigo = _codigoCtrl.text.trim();
+    if (codigo.isEmpty) {
+      _aviso('Escribe el código que te han pasado.');
+      return;
+    }
+    FocusScope.of(context).unfocus();
+    await _ejecutar(
+      '__codigo__',
+      () => ApiService().solicitarAmistad(codigo: codigo),
+      okPorDefecto: 'Solicitud enviada.',
+      alTerminar: (_) => _codigoCtrl.clear(),
+    );
+  }
+
+  Future<void> _copiarCodigo(String codigo) async {
+    await Clipboard.setData(ClipboardData(text: codigo));
+    _aviso('Código copiado.');
+  }
+
+  Future<void> _compartirCodigo(String codigo) async {
+    await SharePlus.instance.share(
+      ShareParams(
+        text:
+            'Añádeme en ClubReads 📚 Abre la app, entra en Amistades y escribe '
+            'mi código: $codigo',
+      ),
+    );
+  }
+
+  // ── Interfaz ─────────────────────────────────────────────────────────────
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: const Text('Amistades')),
+      body: _cargando && _data == null
+          ? const Center(child: CircularProgressIndicator())
+          : _error != null && _data == null
+          ? ErrorView(onRetry: _cargar)
+          : RefreshIndicator(
+              onRefresh: () => _cargar(silencioso: true),
+              child: ListView(
+                physics: const AlwaysScrollableScrollPhysics(),
+                padding: const EdgeInsets.all(AppSpacing.md),
+                children: _secciones(_data ?? const AmistadesData()),
+              ),
+            ),
+    );
+  }
+
+  List<Widget> _secciones(AmistadesData data) {
+    return [
+      _tarjetaCodigo(data.miCodigo),
+      const SizedBox(height: AppSpacing.lg),
+      _bloqueBuscar(),
+      if (data.recibidas.isNotEmpty) ...[
+        const SizedBox(height: AppSpacing.lg),
+        _titulo('Solicitudes recibidas', data.recibidas.length),
+        for (final p in data.recibidas) _filaRecibida(p),
+      ],
+      if (data.enviadas.isNotEmpty) ...[
+        const SizedBox(height: AppSpacing.lg),
+        _titulo('Solicitudes enviadas', data.enviadas.length),
+        for (final p in data.enviadas) _filaEnviada(p),
+      ],
+      const SizedBox(height: AppSpacing.lg),
+      _titulo('Tus amistades', data.amistades.length),
+      if (data.amistades.isEmpty)
+        Padding(
+          padding: const EdgeInsets.symmetric(vertical: AppSpacing.md),
+          child: Text(
+            'Todavía no tienes amistades en ClubReads. Busca a alguien por su '
+            'nombre o comparte tu código.',
+            style: AppTextStyles.bodySecondary,
+          ),
+        )
+      else
+        for (final p in data.amistades) _filaAmistad(p),
+      const SizedBox(height: AppSpacing.xl),
+    ];
+  }
+
+  Widget _titulo(String texto, [int? total]) => Padding(
+    padding: const EdgeInsets.only(bottom: AppSpacing.sm),
+    child: Text(
+      total == null ? texto : '$texto ($total)',
+      style: AppTextStyles.section,
+    ),
+  );
+
+  Widget _tarjetaCodigo(String codigo) {
+    return ClubCard(
+      padding: const EdgeInsets.all(AppSpacing.lg),
+      backgroundColor: AppColors.primary.withValues(alpha: 0.06),
+      borderColor: AppColors.primary.withValues(alpha: 0.25),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text('Tu código de amistad', style: AppTextStyles.section),
+          const SizedBox(height: AppSpacing.xs),
+          Text(
+            'Compártelo para que te añadan sin tener que buscarte.',
+            style: AppTextStyles.bodySecondary,
+          ),
+          const SizedBox(height: AppSpacing.md),
+          Center(
+            child: SelectableText(
+              codigo.isEmpty ? '········' : codigo,
+              style: AppTextStyles.title.copyWith(letterSpacing: 4),
+            ),
+          ),
+          const SizedBox(height: AppSpacing.md),
+          Row(
+            children: [
+              Expanded(
+                child: OutlinedButton.icon(
+                  onPressed: codigo.isEmpty
+                      ? null
+                      : () => _copiarCodigo(codigo),
+                  icon: const Icon(Icons.copy_rounded, size: 18),
+                  label: const Text('Copiar'),
+                ),
+              ),
+              const SizedBox(width: AppSpacing.sm),
+              Expanded(
+                child: FilledButton.icon(
+                  onPressed: codigo.isEmpty
+                      ? null
+                      : () => _compartirCodigo(codigo),
+                  icon: const Icon(Icons.ios_share_rounded, size: 18),
+                  label: const Text('Compartir'),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _bloqueBuscar() {
+    final ocupadoCodigo = _ocupadas.contains('__codigo__');
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _titulo('Añadir amistades'),
+        TextField(
+          controller: _buscarCtrl,
+          onChanged: _alEscribirBusqueda,
+          textInputAction: TextInputAction.search,
+          decoration: const InputDecoration(
+            prefixIcon: Icon(Icons.search_rounded),
+            hintText: 'Busca por nombre (mínimo 3 letras)',
+          ),
+        ),
+        const SizedBox(height: AppSpacing.xs),
+        Text(
+          'Solo aparecen personas con el perfil público. Si alguien no '
+          'sale, pídele su código.',
+          style: AppTextStyles.caption,
+        ),
+        if (_buscando)
+          const Padding(
+            padding: EdgeInsets.all(AppSpacing.md),
+            child: Center(child: CircularProgressIndicator(strokeWidth: 2)),
+          ),
+        if (_errorBusqueda != null)
+          Padding(
+            padding: const EdgeInsets.only(top: AppSpacing.sm),
+            child: Text(
+              _errorBusqueda!,
+              style: AppTextStyles.bodySecondary.copyWith(
+                color: AppColors.danger,
+              ),
+            ),
+          ),
+        if (_resultados != null && !_buscando) ...[
+          const SizedBox(height: AppSpacing.sm),
+          if (_resultados!.isEmpty)
+            Text(
+              'No hemos encontrado a nadie con ese nombre.',
+              style: AppTextStyles.bodySecondary,
+            )
+          else
+            for (final p in _resultados!) _filaBusqueda(p),
+        ],
+        const SizedBox(height: AppSpacing.md),
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Expanded(
+              child: TextField(
+                controller: _codigoCtrl,
+                textCapitalization: TextCapitalization.characters,
+                textInputAction: TextInputAction.done,
+                onSubmitted: (_) => _anadirPorCodigo(),
+                decoration: const InputDecoration(
+                  prefixIcon: Icon(Icons.vpn_key_outlined),
+                  hintText: '¿Tienes un código? Escríbelo aquí',
+                ),
+              ),
+            ),
+            const SizedBox(width: AppSpacing.sm),
+            FilledButton(
+              onPressed: ocupadoCodigo ? null : _anadirPorCodigo,
+              child: const Text('Añadir'),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget _fila({
+    required PersonaAmistad persona,
+    required Widget accion,
+    String? subtitulo,
+  }) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: AppSpacing.sm),
+      child: ClubCard(
+        elevated: false,
+        padding: const EdgeInsets.symmetric(
+          horizontal: AppSpacing.md,
+          vertical: AppSpacing.sm,
+        ),
+        child: Row(
+          children: [
+            ClubAvatar(
+              nombre: persona.nombre,
+              imageUrl: persona.avatarUrl,
+              size: 44,
+            ),
+            const SizedBox(width: AppSpacing.md),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    persona.nombre,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(fontWeight: FontWeight.w700),
+                  ),
+                  if (subtitulo != null)
+                    Text(subtitulo, style: AppTextStyles.caption),
+                ],
+              ),
+            ),
+            accion,
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _filaBusqueda(PersonaBuscada p) {
+    final ocupada = _ocupadas.contains(p.nombre);
+    return _fila(
+      persona: p,
+      accion: switch (p.estado) {
+        EstadoAmistad.ninguna => FilledButton(
+          onPressed: ocupada ? null : () => _solicitar(p),
+          child: const Text('Añadir'),
+        ),
+        EstadoAmistad.enviada => const Text('Solicitud enviada'),
+        EstadoAmistad.recibida => FilledButton(
+          onPressed: ocupada ? null : () => _aceptar(p.nombre),
+          child: const Text('Aceptar'),
+        ),
+        EstadoAmistad.amiga => const Text('Amistad ✓'),
+      },
+    );
+  }
+
+  Widget _filaRecibida(PersonaAmistad p) {
+    final ocupada = _ocupadas.contains(p.nombre);
+    return _fila(
+      persona: p,
+      subtitulo: 'Quiere ser tu amistad',
+      accion: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          TextButton(
+            onPressed: ocupada ? null : () => _rechazar(p.nombre),
+            child: const Text('Rechazar'),
+          ),
+          FilledButton(
+            onPressed: ocupada ? null : () => _aceptar(p.nombre),
+            child: const Text('Aceptar'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _filaEnviada(PersonaAmistad p) => _fila(
+    persona: p,
+    subtitulo: 'Esperando respuesta',
+    accion: TextButton(
+      onPressed: _ocupadas.contains(p.nombre)
+          ? null
+          : () => _cancelar(p.nombre),
+      child: const Text('Cancelar'),
+    ),
+  );
+
+  Widget _filaAmistad(PersonaAmistad p) => _fila(
+    persona: p,
+    accion: IconButton(
+      tooltip: 'Quitar amistad',
+      icon: const Icon(Icons.person_remove_outlined),
+      onPressed: _ocupadas.contains(p.nombre) ? null : () => _quitar(p.nombre),
+    ),
+  );
+}

@@ -1,3 +1,4 @@
+import '../widgets/inicio/amistades_atajo_card.dart';
 import '../widgets/inicio/talento_de_la_semana_card.dart';
 import '../widgets/common/bandera_idioma.dart';
 import 'package:club_lectura_app/widgets/ui/etiqueta_publicidad.dart';
@@ -870,6 +871,7 @@ class _GeneralDashboardPageState extends State<GeneralDashboardPage> {
                       _hero(data),
                       const SizedBox(height: AppSpacing.sm),
                       _metrics(data),
+                      const AmistadesAtajoCard(),
                       TalentoDeLaSemanaCard(
                         onAbrir: (libro) => abrirLibroDeTalento(
                           context,

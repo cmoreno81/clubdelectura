@@ -1,3 +1,4 @@
+import 'amistades_page.dart';
 import 'dart:async';
 import 'dart:io';
 
@@ -1203,6 +1204,16 @@ class _PerfilUsuarioPageState extends State<PerfilUsuarioPage> {
                   onTap: () => Navigator.push<void>(
                     context,
                     AppPageRoute(builder: (_) => const ChangePasswordPage()),
+                  ),
+                ),
+                const Divider(height: 1),
+                ListTile(
+                  leading: const Icon(Icons.group_add_outlined),
+                  title: const Text('Amistades'),
+                  trailing: const Icon(Icons.chevron_right_rounded),
+                  onTap: () => Navigator.push<void>(
+                    context,
+                    AppPageRoute(builder: (_) => const AmistadesPage()),
                   ),
                 ),
                 const Divider(height: 1),

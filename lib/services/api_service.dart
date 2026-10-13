@@ -11,6 +11,7 @@ import '../models/achievements/achievement.dart';
 import '../models/propuesta_lectura.dart';
 import '../models/dashboard.dart';
 import '../models/reaction_details.dart';
+import '../models/amistad.dart';
 import '../models/libro.dart';
 import '../models/libro_finalizado.dart';
 import '../models/nuevo_libro.dart';
@@ -956,6 +957,86 @@ class ApiService {
       return null;
     }
   }
+
+  // ── Amistades ────────────────────────────────────────────────────────────
+
+  Future<AmistadesData> getAmistades() async {
+    final response = await _client.get(
+      Uri.parse(baseUrl).replace(queryParameters: {'action': 'amistades'}),
+    );
+    if (response.statusCode != 200) {
+      throw ApiException.fromResponse(response);
+    }
+    return AmistadesData.fromJson(
+      Map<String, dynamic>.from(_decodeJson(response) as Map),
+    );
+  }
+
+  /// Personas con el perfil público cuyo nombre contiene [consulta].
+  Future<List<PersonaBuscada>> buscarPersonas(String consulta) async {
+    final response = await _client.get(
+      Uri.parse(
+        baseUrl,
+      ).replace(queryParameters: {'action': 'buscarPersonas', 'q': consulta}),
+    );
+    if (response.statusCode != 200) {
+      throw ApiException.fromResponse(response);
+    }
+    final data = Map<String, dynamic>.from(_decodeJson(response) as Map);
+    if (data['ok'] != true) {
+      throw ApiException(
+        statusCode: 200,
+        message: data['mensaje']?.toString() ?? 'No se ha podido buscar.',
+      );
+    }
+    return (data['personas'] as List? ?? [])
+        .whereType<Map>()
+        .map((e) => PersonaBuscada.fromJson(Map<String, dynamic>.from(e)))
+        .toList();
+  }
+
+  Future<ResultadoAmistad> _accionAmistad(
+    String accion,
+    Map<String, dynamic> cuerpo,
+  ) async {
+    try {
+      final response = await _postJson(accion, cuerpo);
+      if (response.statusCode != 200) {
+        return const ResultadoAmistad(
+          ok: false,
+          mensaje: 'No se ha podido completar. Inténtalo de nuevo.',
+        );
+      }
+      final data = Map<String, dynamic>.from(_decodeJson(response) as Map);
+      return ResultadoAmistad(
+        ok: data['ok'] == true,
+        mensaje: data['mensaje']?.toString() ?? '',
+        estado: data['estado'] == null
+            ? null
+            : EstadoAmistad.desde(data['estado'].toString()),
+      );
+    } catch (_) {
+      return const ResultadoAmistad(
+        ok: false,
+        mensaje: 'Sin conexión. Inténtalo de nuevo.',
+      );
+    }
+  }
+
+  Future<ResultadoAmistad> solicitarAmistad({String? nombre, String? codigo}) =>
+      _accionAmistad('solicitarAmistad', {
+        if (nombre != null) 'nombre': nombre,
+        if (codigo != null) 'codigo': codigo,
+      });
+
+  Future<ResultadoAmistad> responderAmistad(String nombre, bool aceptar) =>
+      _accionAmistad('responderAmistad', {'nombre': nombre, 'aceptar': aceptar});
+
+  Future<ResultadoAmistad> cancelarSolicitudAmistad(String nombre) =>
+      _accionAmistad('cancelarSolicitudAmistad', {'nombre': nombre});
+
+  Future<ResultadoAmistad> quitarAmistad(String nombre) =>
+      _accionAmistad('quitarAmistad', {'nombre': nombre});
 
   /// Cambia el título de un capítulo (por ejemplo, cuando el libro no
   /// numera capítulos y se prefiere poner el título real). Los comentarios
