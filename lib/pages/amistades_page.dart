@@ -180,7 +180,7 @@ class _AmistadesPageState extends State<AmistadesPage> {
   Future<void> _aceptar(String nombre) => _ejecutar(
     nombre,
     () => ApiService().responderAmistad(nombre, true),
-    okPorDefecto: '¡Ya sois amistades! 🎉',
+    okPorDefecto: '¡Ya sois amigos! 🎉',
   );
 
   Future<void> _rechazar(String nombre) =>
