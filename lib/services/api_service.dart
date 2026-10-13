@@ -1014,6 +1014,8 @@ class ApiService {
         estado: data['estado'] == null
             ? null
             : EstadoAmistad.desde(data['estado'].toString()),
+        enviadas: (data['enviadas'] as num?)?.toInt() ?? 0,
+        yaRecomendado: (data['yaRecomendado'] as num?)?.toInt() ?? 0,
       );
     } catch (_) {
       return const ResultadoAmistad(
@@ -1079,6 +1081,19 @@ class ApiService {
 
   Future<ResultadoAmistad> quitarAmistad(String nombre) =>
       _accionAmistad('quitarAmistad', {'nombre': nombre});
+
+  /// Recomienda un libro a amistades (o las invita a leerlo juntas).
+  Future<ResultadoAmistad> recomendarLibro({
+    required String bookId,
+    required List<String> usuarios,
+    String mensaje = '',
+    bool juntas = false,
+  }) => _accionAmistad('recomendarLibro', {
+    'bookId': bookId,
+    'usuarios': usuarios,
+    if (mensaje.trim().isNotEmpty) 'mensaje': mensaje.trim(),
+    'juntas': juntas,
+  });
 
   /// Cambia el título de un capítulo (por ejemplo, cuando el libro no
   /// numera capítulos y se prefiere poner el título real). Los comentarios

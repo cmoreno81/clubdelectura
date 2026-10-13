@@ -283,6 +283,7 @@ class _NotificacionesPageState extends State<NotificacionesPage> {
       case 'LIBRO_TERMINADO':
       case 'LIBRO_EMPEZADO':
       case 'LIBRO_NUEVO_BIBLIOTECA':
+      case 'LIBRO_RECOMENDADO':
         if (title.isNotEmpty) {
           await openBookDetail(
             context,

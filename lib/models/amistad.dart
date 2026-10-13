@@ -118,11 +118,22 @@ class AmistadesData {
 
 /// Respuesta de una acción de amistad: si salió bien y el mensaje para la persona.
 class ResultadoAmistad {
-  const ResultadoAmistad({required this.ok, this.mensaje = '', this.estado});
+  const ResultadoAmistad({
+    required this.ok,
+    this.mensaje = '',
+    this.estado,
+    this.enviadas = 0,
+    this.yaRecomendado = 0,
+  });
 
   final bool ok;
   final String mensaje;
   final EstadoAmistad? estado;
+
+  /// Recomendaciones: cuántas se han enviado y a cuántas ya se les había
+  /// recomendado ese libro hace poco.
+  final int enviadas;
+  final int yaRecomendado;
 }
 
 Map<ReaccionComentario, int> _leerReacciones(dynamic raw) {

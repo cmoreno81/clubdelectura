@@ -46,6 +46,11 @@ const _etiquetasNotificacion = <String, (String, String, String)>{
     'Amistades aceptadas',
     'Cuando alguien acepta tu solicitud de amistad',
   ),
+  'LIBRO_RECOMENDADO': (
+    '📚',
+    'Libros recomendados',
+    'Cuando una amistad te recomienda un libro',
+  ),
   'LECTURA_INVITACION': (
     '💌',
     'Invitaciones a lecturas',
