@@ -1,4 +1,5 @@
 import '../services/amistades_cambios.dart';
+import '../widgets/amistades/lectura_con_amistad.dart';
 import '../widgets/inicio/actividad_amistades_card.dart';
 import '../widgets/inicio/amistades_atajo_card.dart';
 import '../widgets/inicio/talento_de_la_semana_card.dart';
@@ -876,6 +877,7 @@ class _GeneralDashboardPageState extends State<GeneralDashboardPage> {
                       _metrics(data),
                       const AmistadesAtajoCard(),
                       const ActividadAmistadesCard(),
+                      const LecturasConAmistadesSeccion(),
                       TalentoDeLaSemanaCard(
                         onAbrir: (libro) => abrirLibroDeTalento(
                           context,

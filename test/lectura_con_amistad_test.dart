@@ -158,4 +158,50 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('Lecturas a la vez 📖'), findsNothing);
   });
+
+  testWidgets(
+    'en el perfil de una amistad solo salen sus lecturas, o un espacio vacío',
+    (tester) async {
+      tester.view.physicalSize = const Size(800, 2000);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.reset);
+      const datos = LecturasAmistadesData(
+        lecturas: [
+          LecturaConAmistad(
+            clubId: 'c1',
+            bookId: 'b1',
+            libro: 'Libro de Lucía',
+            con: 'Lucía',
+          ),
+          LecturaConAmistad(
+            clubId: 'c2',
+            bookId: 'b2',
+            libro: 'Libro de Marta',
+            con: 'Marta',
+          ),
+        ],
+      );
+      Widget con(String nombre) => MaterialApp(
+        key: UniqueKey(),
+        home: Scaffold(
+          body: LecturasConAmistadesSeccion(
+            cargar: () async => datos,
+            soloCon: nombre,
+            titulo: 'Lecturas abiertas con $nombre 📖',
+            textoVacio: 'Todavía no leéis nada a la vez.',
+          ),
+        ),
+      );
+
+      await tester.pumpWidget(con('Lucía'));
+      await tester.pumpAndSettle();
+      expect(find.text('Lecturas abiertas con Lucía 📖'), findsOneWidget);
+      expect(find.text('Libro de Lucía'), findsOneWidget);
+      expect(find.text('Libro de Marta'), findsNothing);
+
+      await tester.pumpWidget(con('Noa'));
+      await tester.pumpAndSettle();
+      expect(find.text('Todavía no leéis nada a la vez.'), findsOneWidget);
+    },
+  );
 }

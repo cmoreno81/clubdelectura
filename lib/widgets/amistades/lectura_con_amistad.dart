@@ -285,7 +285,17 @@ class LecturasConAmistadesSeccion extends StatefulWidget {
     this.cargar,
     this.responder,
     this.abrir,
+    this.soloCon,
+    this.titulo = 'Lecturas a la vez 📖',
+    this.textoVacio,
   });
+
+  /// Si se indica, solo se enseña lo que hay con esa amistad (en su perfil).
+  final String? soloCon;
+  final String titulo;
+
+  /// Si se indica, en vez de ocultarse cuando no hay nada, enseña este mensaje.
+  final String? textoVacio;
 
   final Future<LecturasAmistadesData> Function()? cargar;
   final Future<ResultadoAmistad> Function(String clubId, bool aceptar)?
@@ -319,9 +329,21 @@ class _LecturasConAmistadesSeccionState
 
   Future<void> _cargar() async {
     try {
-      final data = await (widget.cargar ?? ApiService().getLecturasAmistades)();
+      final todo = await (widget.cargar ?? ApiService().getLecturasAmistades)();
       if (!mounted) return;
-      setState(() => _data = data);
+      final con = widget.soloCon?.toLowerCase();
+      setState(
+        () => _data = con == null
+            ? todo
+            : LecturasAmistadesData(
+                recibidas: todo.recibidas
+                    .where((i) => i.de.toLowerCase() == con)
+                    .toList(),
+                lecturas: todo.lecturas
+                    .where((l) => l.con.toLowerCase() == con)
+                    .toList(),
+              ),
+      );
     } catch (_) {
       if (!mounted) return;
       setState(() => _data = null);
@@ -361,15 +383,18 @@ class _LecturasConAmistadesSeccionState
   @override
   Widget build(BuildContext context) {
     final data = _data;
-    if (data == null || data.vacia) return const SizedBox.shrink();
+    if (data == null) return const SizedBox.shrink();
+    if (data.vacia && widget.textoVacio == null) return const SizedBox.shrink();
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const SizedBox(height: AppSpacing.lg),
         Padding(
           padding: const EdgeInsets.only(bottom: AppSpacing.sm),
-          child: Text('Lecturas a la vez 📖', style: AppTextStyles.section),
+          child: Text(widget.titulo, style: AppTextStyles.section),
         ),
+        if (data.vacia)
+          Text(widget.textoVacio!, style: AppTextStyles.bodySecondary),
         for (final i in data.recibidas)
           Padding(
             padding: const EdgeInsets.only(bottom: AppSpacing.sm),

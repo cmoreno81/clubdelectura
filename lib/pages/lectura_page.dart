@@ -207,9 +207,7 @@ class _LecturaPageState extends State<LecturaPage> {
           controller: controller,
           autofocus: true,
           maxLength: 60,
-          decoration: const InputDecoration(
-            hintText: 'Título del capítulo',
-          ),
+          decoration: const InputDecoration(hintText: 'Título del capítulo'),
           onSubmitted: (value) => Navigator.pop(dialogContext, value),
         ),
         actions: [
@@ -359,13 +357,15 @@ class _LecturaPageState extends State<LecturaPage> {
 
                 const SizedBox(height: AppSpacing.md),
 
-                OutlinedButton.icon(
-                  onPressed: () => mostrarInvitarALectura(context, widget.libro),
-                  icon: const Icon(Icons.person_add_alt_1_rounded),
-                  label: const Text('Invitar a gente del club'),
-                ),
-
-                const SizedBox(height: AppSpacing.xl),
+                if (!config.esAmistades) ...[
+                  OutlinedButton.icon(
+                    onPressed: () =>
+                        mostrarInvitarALectura(context, widget.libro),
+                    icon: const Icon(Icons.person_add_alt_1_rounded),
+                    label: const Text('Invitar a gente del club'),
+                  ),
+                  const SizedBox(height: AppSpacing.xl),
+                ],
 
                 const ClubSectionTitle(
                   icon: Icons.forum_outlined,

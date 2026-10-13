@@ -30,6 +30,9 @@ class ConfiguracionLectura {
   /// Metas de la lectura (vacía si el club no ha puesto ninguna).
   final List<MetaLectura> metas;
 
+  /// Lectura a la vez entre dos amistades: no se invita a gente del club.
+  final bool esAmistades;
+
   ConfiguracionLectura({
     required this.capitulos,
     required this.prologo,
@@ -38,6 +41,7 @@ class ConfiguracionLectura {
     required this.coverUrl,
     required this.bookId,
     this.metas = const [],
+    this.esAmistades = false,
   });
 
   /// Próxima meta (la de hoy cuenta) con el rango de capítulos que cubre, o
@@ -71,6 +75,7 @@ class ConfiguracionLectura {
           .whereType<Map>()
           .map((e) => MetaLectura.fromJson(Map<String, dynamic>.from(e)))
           .toList(),
+      esAmistades: json['esAmistades'] == true,
     );
   }
 }

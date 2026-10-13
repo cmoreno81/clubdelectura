@@ -8,6 +8,7 @@ import '../theme/app_colors.dart';
 import '../theme/app_spacing.dart';
 import '../theme/app_text_styles.dart';
 import '../widgets/amistades/comentarios_progreso.dart';
+import '../widgets/amistades/lectura_con_amistad.dart';
 import '../widgets/amistades/reacciones_progreso.dart';
 import '../widgets/common/club_avatar.dart';
 import '../widgets/common/club_book_cover.dart';
@@ -67,6 +68,31 @@ class _PerfilAmistadPageState extends State<PerfilAmistadPage> {
     }
   }
 
+  /// Propone leer a la vez el libro que esta amistad está leyendo.
+  Future<void> _leerALaVez(LecturaAmistad l) async {
+    final r = await ApiService().crearLecturaConAmistad(
+      bookId: l.bookId,
+      nombre: widget.nombre,
+    );
+    if (!mounted) return;
+    if (!r.ok || r.clubId.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            r.mensaje.isEmpty ? 'No se ha podido crear la lectura.' : r.mensaje,
+          ),
+        ),
+      );
+      return;
+    }
+    await abrirLecturaConAmistad(
+      context,
+      clubId: r.clubId,
+      libro: r.libro.isEmpty ? l.titulo : r.libro,
+      configurar: !r.yaExistia,
+    );
+  }
+
   Future<void> _abrirLibro(String bookId, String titulo, String coverUrl) =>
       abrirLibroDeTalento(
         context,
@@ -110,6 +136,13 @@ class _PerfilAmistadPageState extends State<PerfilAmistadPage> {
         ],
       ),
       const SizedBox(height: AppSpacing.lg),
+      LecturasConAmistadesSeccion(
+        soloCon: p.nombre,
+        titulo: 'Lecturas abiertas con ${p.nombre} 📖',
+        textoVacio:
+            'Todavía no leéis nada a la vez. Toca «Leer a la vez» en lo que '
+            'está leyendo o en la ficha de cualquier libro.',
+      ),
       _leyendo(p),
       _terminados(p),
       _pendientes(p),
@@ -223,6 +256,11 @@ class _PerfilAmistadPageState extends State<PerfilAmistadPage> {
                         size: 19,
                       ),
                       label: const Text('Comentarios'),
+                    ),
+                    TextButton.icon(
+                      onPressed: l.bookId.isEmpty ? null : () => _leerALaVez(l),
+                      icon: const Icon(Icons.menu_book_rounded, size: 19),
+                      label: const Text('Leer a la vez'),
                     ),
                   ],
                 ),
