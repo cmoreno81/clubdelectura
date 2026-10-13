@@ -1329,6 +1329,7 @@ class _DetalleLibroPageState extends State<DetalleLibroPage> {
                   AnclaDeScroll(
                     child: ComprarLibroCard(
                       bookId: libro.bookId,
+                      titulo: libro.libro,
                       espacioAntes: AppSpacing.md,
                     ),
                   ),

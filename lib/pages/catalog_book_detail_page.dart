@@ -550,6 +550,7 @@ class _CatalogBookDetailPageState extends State<CatalogBookDetailPage> {
           if (widget.bookId.isNotEmpty)
             ComprarLibroCard(
               bookId: widget.bookId,
+              titulo: widget.title,
               espacioDespues: AppSpacing.md,
             ),
 

@@ -571,8 +571,9 @@ class _GeneralDashboardPageState extends State<GeneralDashboardPage> {
 
   Future<void> _openPersonalBook(
     PersonalLibraryBook book,
-    String userName,
-  ) async {
+    String userName, [
+    String avatarUrl = '',
+  ]) async {
     if (_openingBook) return;
     setState(() => _openingBook = true);
     try {
@@ -586,6 +587,8 @@ class _GeneralDashboardPageState extends State<GeneralDashboardPage> {
         'estado': book.status,
         'yaLoTengo': true,
         'coverUrl': book.coverUrl,
+        // Tu foto: sin ella la tarjeta de «lectores interesados» sale con iniciales.
+        'avatarUrl': avatarUrl,
       });
       await Navigator.push<void>(
         context,
@@ -951,12 +954,16 @@ class _GeneralDashboardPageState extends State<GeneralDashboardPage> {
                           Icons.bookmarks_outlined,
                         ),
                         const SizedBox(height: AppSpacing.sm),
-                        _personalLibrary(data.personalLibrary, data.userName),
+                        _personalLibrary(
+                          data.personalLibrary,
+                          data.userName,
+                          data.avatarUrl,
+                        ),
                         const SizedBox(height: AppSpacing.md),
                         TbrRouletteCard(
                           books: data.personalLibrary,
                           onOpenBook: (book) =>
-                              _openPersonalBook(book, data.userName),
+                              _openPersonalBook(book, data.userName, data.avatarUrl),
                         ),
                         // El bingo lector vive en Mi espacio para quien
                         // tiene espacio personal; para cuentas solo-club
@@ -1647,12 +1654,16 @@ class _GeneralDashboardPageState extends State<GeneralDashboardPage> {
     );
   }
 
-  Widget _personalLibraryBookCard(PersonalLibraryBook book, String userName) {
+  Widget _personalLibraryBookCard(
+    PersonalLibraryBook book,
+    String userName, [
+    String avatarUrl = '',
+  ]) {
     return SizedBox(
       width: 122,
       child: InkWell(
         borderRadius: BorderRadius.circular(16),
-        onTap: () => _openPersonalBook(book, userName),
+        onTap: () => _openPersonalBook(book, userName, avatarUrl),
         onLongPress: () => _openQuickActions(
           title: book.title,
           bookId: book.id,
@@ -1722,7 +1733,11 @@ class _GeneralDashboardPageState extends State<GeneralDashboardPage> {
     );
   }
 
-  Widget _personalLibrary(List<PersonalLibraryBook> books, String userName) {
+  Widget _personalLibrary(
+    List<PersonalLibraryBook> books,
+    String userName, [
+    String avatarUrl = '',
+  ]) {
     const cardWidth = 122.0;
     const gap = AppSpacing.md;
 
@@ -1739,7 +1754,7 @@ class _GeneralDashboardPageState extends State<GeneralDashboardPage> {
               children: [
                 for (var i = 0; i < books.length; i++) ...[
                   if (i > 0) const SizedBox(width: gap),
-                  _personalLibraryBookCard(books[i], userName),
+                  _personalLibraryBookCard(books[i], userName, avatarUrl),
                 ],
               ],
             ),
@@ -1757,7 +1772,7 @@ class _GeneralDashboardPageState extends State<GeneralDashboardPage> {
             itemCount: books.length,
             separatorBuilder: (_, _) => const SizedBox(width: gap),
             itemBuilder: (_, index) =>
-                _personalLibraryBookCard(books[index], userName),
+                _personalLibraryBookCard(books[index], userName, avatarUrl),
           ),
         );
       },

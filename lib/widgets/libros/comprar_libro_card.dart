@@ -9,6 +9,7 @@ import '../../theme/app_colors.dart';
 import '../../theme/app_spacing.dart';
 import '../../theme/app_text_styles.dart';
 import '../ui/club_section_card.dart';
+import 'pregunta_compra.dart';
 
 /// "Comprar en Casa del Libro" — enlace de afiliado (Awin). El código de
 /// conducta de publicidad exige identificarlo como publicidad y de forma
@@ -17,11 +18,15 @@ class ComprarLibroCard extends StatefulWidget {
   const ComprarLibroCard({
     super.key,
     required this.bookId,
+    this.titulo = '',
     this.espacioAntes = 0,
     this.espacioDespues = 0,
   });
 
   final String bookId;
+
+  /// Título del libro, para preguntar «¿Has comprado …?» al volver de la tienda.
+  final String titulo;
 
   /// Separación sobre y bajo la tarjeta. Se aplica solo cuando la tarjeta se
   /// ve: si el libro no está en la tienda, no deja huecos vacíos.
@@ -32,21 +37,48 @@ class ComprarLibroCard extends StatefulWidget {
   State<ComprarLibroCard> createState() => _ComprarLibroCardState();
 }
 
-class _ComprarLibroCardState extends State<ComprarLibroCard> {
+class _ComprarLibroCardState extends State<ComprarLibroCard>
+    with WidgetsBindingObserver {
   bool _abriendo = false;
   EnlaceCompra? _enlace;
+
+  /// Tienda y formato del último botón pulsado: al volver a la app se
+  /// pregunta si se ha comprado. Todo local, no se envía nada a la tienda.
+  ({String tienda, String formato})? _compraPendiente;
 
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     WishlistService.cambios.addListener(_alCambiar);
     _cargar();
   }
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     WishlistService.cambios.removeListener(_alCambiar);
     super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) _preguntarCompra();
+  }
+
+  Future<void> _preguntarCompra() async {
+    final pendiente = _compraPendiente;
+    if (pendiente == null || !mounted) return;
+    if (ModalRoute.of(context)?.isCurrent != true) return;
+    _compraPendiente = null;
+
+    final comprado = await preguntarSiLoHasComprado(
+      context,
+      titulo: widget.titulo.isEmpty ? 'este libro' : widget.titulo,
+      formato: pendiente.formato,
+      tienda: pendiente.tienda,
+    );
+    if (comprado && mounted) await _marcarLoTengo(true);
   }
 
   void _alCambiar() => _cargar();
@@ -74,7 +106,7 @@ class _ComprarLibroCardState extends State<ComprarLibroCard> {
     }
   }
 
-  Future<void> _abrir([String? url]) async {
+  Future<void> _abrir([String? url, String? tienda, String? formato]) async {
     if (_abriendo || widget.bookId.isEmpty) return;
     setState(() => _abriendo = true);
     try {
@@ -84,6 +116,22 @@ class _ComprarLibroCardState extends State<ComprarLibroCard> {
       final abierto =
           uri != null &&
           await launchUrl(uri, mode: LaunchMode.externalApplication);
+      if (abierto) {
+        final enlace = _enlace;
+        // Solo se pregunta si se puede marcar como «lo tengo»: el libro está
+        // en la biblioteca y no se ha empezado ni marcado ya.
+        final puedeMarcar =
+            enlace != null &&
+            enlace.enBiblioteca &&
+            !enlace.yaEmpezado &&
+            !enlace.loTengo;
+        _compraPendiente = puedeMarcar
+            ? (
+                tienda: tienda ?? enlace.tienda,
+                formato: formato ?? enlace.formato,
+              )
+            : null;
+      }
       if (!abierto && mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('No se ha podido abrir la tienda.')),
@@ -172,7 +220,7 @@ class _ComprarLibroCardState extends State<ComprarLibroCard> {
 
   Widget _tarjeta(EnlaceCompra enlace) {
     return ClubSectionCard(
-      onTap: _abrir,
+      onTap: () => _abrir(),
       backgroundColor: ColoresCompra.fondo,
       borderColor: ColoresCompra.borde,
       padding: const EdgeInsets.all(AppSpacing.md),
@@ -251,7 +299,8 @@ class _ComprarLibroCardState extends State<ComprarLibroCard> {
                           visualDensity: VisualDensity.compact,
                           backgroundColor: Colors.white,
                           side: const BorderSide(color: ColoresCompra.borde),
-                          onPressed: () => _abrir(f.url),
+                          onPressed: () =>
+                              _abrir(f.url, otra.tienda, f.etiqueta),
                         ),
                     ],
                   ),
@@ -270,7 +319,8 @@ class _ComprarLibroCardState extends State<ComprarLibroCard> {
                               ? ColoresCompra.verdeClaro
                               : Colors.white,
                           side: const BorderSide(color: ColoresCompra.borde),
-                          onPressed: () => _abrir(f.url),
+                          onPressed: () =>
+                              _abrir(f.url, enlace.tienda, f.etiqueta),
                         ),
                     ],
                   ),
