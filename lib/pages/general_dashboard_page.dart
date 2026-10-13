@@ -1,3 +1,4 @@
+import '../widgets/inicio/actividad_amistades_card.dart';
 import '../widgets/inicio/amistades_atajo_card.dart';
 import '../widgets/inicio/talento_de_la_semana_card.dart';
 import '../widgets/common/bandera_idioma.dart';
@@ -872,6 +873,7 @@ class _GeneralDashboardPageState extends State<GeneralDashboardPage> {
                       const SizedBox(height: AppSpacing.sm),
                       _metrics(data),
                       const AmistadesAtajoCard(),
+                      const ActividadAmistadesCard(),
                       TalentoDeLaSemanaCard(
                         onAbrir: (libro) => abrirLibroDeTalento(
                           context,

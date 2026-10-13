@@ -13,6 +13,7 @@ import '../theme/app_text_styles.dart';
 import '../widgets/common/club_avatar.dart';
 import '../widgets/common/club_card.dart';
 import '../widgets/error_view.dart';
+import 'perfil_amistad_page.dart';
 
 /// Amistades: buscar a gente, enviar y responder solicitudes, tu código para
 /// compartir y la lista de tus amistades.
@@ -299,8 +300,61 @@ class _AmistadesPageState extends State<AmistadesPage> {
         )
       else
         for (final p in data.amistades) _filaAmistad(p),
+      const SizedBox(height: AppSpacing.lg),
+      _bloquePrivacidad(data.privacidad),
       const SizedBox(height: AppSpacing.xl),
     ];
+  }
+
+  Future<void> _cambiarPrivacidad(PrivacidadAmistades nueva) async {
+    final anterior = _data;
+    if (anterior == null) return;
+    setState(() => _data = anterior.conPrivacidad(nueva));
+    final r = await ApiService().guardarPrivacidadAmistades(nueva);
+    if (!mounted) return;
+    if (!r.ok) {
+      setState(() => _data = anterior);
+      _aviso('No se ha podido guardar. Inténtalo de nuevo.');
+    }
+  }
+
+  Widget _bloquePrivacidad(PrivacidadAmistades p) {
+    Widget interruptor(
+      String titulo,
+      String detalle,
+      bool valor,
+      PrivacidadAmistades Function(bool) alCambiar,
+    ) => SwitchListTile(
+      contentPadding: EdgeInsets.zero,
+      title: Text(titulo),
+      subtitle: Text(detalle, style: AppTextStyles.caption),
+      value: valor,
+      onChanged: (v) => _cambiarPrivacidad(alCambiar(v)),
+    );
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _titulo('Qué ven tus amistades de ti'),
+        interruptor(
+          'Lo que estoy leyendo',
+          'Tu lectura actual, tu progreso y lo que has terminado',
+          p.leyendo,
+          (v) => p.copyWith(leyendo: v),
+        ),
+        interruptor(
+          'Mi biblioteca',
+          'Tus pendientes y cuántos libros llevas',
+          p.biblioteca,
+          (v) => p.copyWith(biblioteca: v),
+        ),
+        interruptor(
+          'Mis reseñas y valoraciones',
+          'Las que escribes en los libros (las que tienen spoilers no se enseñan)',
+          p.resenas,
+          (v) => p.copyWith(resenas: v),
+        ),
+      ],
+    );
   }
 
   Widget _titulo(String texto, [int? total]) => Padding(
@@ -438,11 +492,13 @@ class _AmistadesPageState extends State<AmistadesPage> {
     required PersonaAmistad persona,
     required Widget accion,
     String? subtitulo,
+    VoidCallback? onTap,
   }) {
     return Padding(
       padding: const EdgeInsets.only(bottom: AppSpacing.sm),
       child: ClubCard(
         elevated: false,
+        onTap: onTap,
         padding: const EdgeInsets.symmetric(
           horizontal: AppSpacing.md,
           vertical: AppSpacing.sm,
@@ -530,6 +586,10 @@ class _AmistadesPageState extends State<AmistadesPage> {
 
   Widget _filaAmistad(PersonaAmistad p) => _fila(
     persona: p,
+    onTap: () => Navigator.push<void>(
+      context,
+      MaterialPageRoute(builder: (_) => PerfilAmistadPage(nombre: p.nombre)),
+    ),
     accion: IconButton(
       tooltip: 'Quitar amistad',
       icon: const Icon(Icons.person_remove_outlined),

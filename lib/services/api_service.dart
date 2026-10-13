@@ -1023,6 +1023,45 @@ class ApiService {
     }
   }
 
+  Future<PerfilAmistad> getPerfilAmistad(String nombre) async {
+    final response = await _client.get(
+      Uri.parse(
+        baseUrl,
+      ).replace(queryParameters: {'action': 'perfilAmistad', 'nombre': nombre}),
+    );
+    if (response.statusCode != 200) throw ApiException.fromResponse(response);
+    final data = Map<String, dynamic>.from(_decodeJson(response) as Map);
+    if (data['ok'] != true) {
+      throw ApiException(
+        statusCode: 200,
+        message:
+            data['mensaje']?.toString() ?? 'No se ha podido abrir el perfil.',
+      );
+    }
+    return PerfilAmistad.fromJson(data);
+  }
+
+  Future<List<ActividadAmistad>> getActividadAmistades() async {
+    final response = await _client.get(
+      Uri.parse(
+        baseUrl,
+      ).replace(queryParameters: {'action': 'actividadAmistades'}),
+    );
+    if (response.statusCode != 200) throw ApiException.fromResponse(response);
+    final data = Map<String, dynamic>.from(_decodeJson(response) as Map);
+    return (data['items'] as List? ?? [])
+        .whereType<Map>()
+        .map((e) => ActividadAmistad.fromJson(Map<String, dynamic>.from(e)))
+        .toList();
+  }
+
+  Future<ResultadoAmistad> guardarPrivacidadAmistades(PrivacidadAmistades p) =>
+      _accionAmistad('guardarPrivacidadAmistades', {
+        'leyendo': p.leyendo,
+        'biblioteca': p.biblioteca,
+        'resenas': p.resenas,
+      });
+
   Future<ResultadoAmistad> solicitarAmistad({String? nombre, String? codigo}) =>
       _accionAmistad('solicitarAmistad', {
         if (nombre != null) 'nombre': nombre,
@@ -1030,7 +1069,10 @@ class ApiService {
       });
 
   Future<ResultadoAmistad> responderAmistad(String nombre, bool aceptar) =>
-      _accionAmistad('responderAmistad', {'nombre': nombre, 'aceptar': aceptar});
+      _accionAmistad('responderAmistad', {
+        'nombre': nombre,
+        'aceptar': aceptar,
+      });
 
   Future<ResultadoAmistad> cancelarSolicitudAmistad(String nombre) =>
       _accionAmistad('cancelarSolicitudAmistad', {'nombre': nombre});
