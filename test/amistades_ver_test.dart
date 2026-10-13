@@ -186,14 +186,13 @@ void main() {
       );
       await tester.pumpAndSettle();
       expect(find.text('Qué leen tus amistades'), findsOneWidget);
-      expect(
-        find.textContaining('está leyendo «Entre dos tormentas» · 40%'),
-        findsOneWidget,
-      );
-      expect(
-        find.textContaining('ha terminado «Otro libro» · ⭐ 4.0'),
-        findsOneWidget,
-      );
+      expect(find.text('Ver todas'), findsOneWidget);
+      expect(find.text('Lucía'), findsOneWidget);
+      expect(find.text('Leyendo · 40%'), findsOneWidget);
+      expect(find.text('Entre dos tormentas'), findsWidgets);
+      expect(find.text('Marta'), findsOneWidget);
+      expect(find.text('Ha terminado'), findsOneWidget);
+      expect(find.text('⭐ 4.0'), findsOneWidget);
 
       await tester.pumpWidget(
         MaterialApp(
@@ -246,5 +245,40 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('Qué leen tus amistades'), findsOneWidget);
     expect(cargas, 2);
+  });
+
+  testWidgets('el carrusel enseña una sola tarjeta por persona', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: SingleChildScrollView(
+            child: ActividadAmistadesCard(
+              cargar: () async => [
+                const ActividadAmistad(
+                  tipo: 'TERMINADO',
+                  nombre: 'Lucía',
+                  bookId: 'b1',
+                  titulo: 'El más reciente',
+                  valoracion: 5,
+                ),
+                const ActividadAmistad(
+                  tipo: 'TERMINADO',
+                  nombre: 'Lucía',
+                  bookId: 'b2',
+                  titulo: 'El más antiguo',
+                  valoracion: 3,
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(find.text('Lucía'), findsOneWidget);
+    expect(find.text('El más reciente'), findsWidgets);
+    expect(find.text('El más antiguo'), findsNothing);
   });
 }

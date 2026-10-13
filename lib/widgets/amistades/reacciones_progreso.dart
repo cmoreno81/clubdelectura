@@ -9,9 +9,18 @@ import '../../theme/app_text_styles.dart';
 /// Reacciones al progreso de lectura de una amistad: lo que ya han puesto
 /// otras personas y un botón para reaccionar tú (o quitar tu reacción).
 class ReaccionesProgreso extends StatefulWidget {
-  const ReaccionesProgreso({super.key, required this.lectura, this.reaccionar});
+  const ReaccionesProgreso({
+    super.key,
+    required this.lectura,
+    this.reaccionar,
+    this.compacto = false,
+  });
 
   final LecturaAmistad lectura;
+
+  /// Versión pequeña (una pastilla con tu reacción y el total) para tarjetas
+  /// con poco sitio, como el carrusel de Inicio.
+  final bool compacto;
 
   /// Para pruebas: sustituye la llamada al servidor. Devuelve el estado final
   /// o `null` si falló.
@@ -132,6 +141,7 @@ class _ReaccionesProgresoState extends State<ReaccionesProgreso> {
 
   @override
   Widget build(BuildContext context) {
+    if (widget.compacto) return _pastilla();
     return Wrap(
       spacing: AppSpacing.xs,
       crossAxisAlignment: WrapCrossAlignment.center,
@@ -153,6 +163,43 @@ class _ReaccionesProgresoState extends State<ReaccionesProgreso> {
           label: const Text('Reaccionar'),
         ),
       ],
+    );
+  }
+
+  Widget _pastilla() {
+    final total = _lectura.reacciones.values.fold<int>(0, (a, b) => a + b);
+    return Material(
+      color: Colors.white.withValues(alpha: 0.92),
+      shape: const StadiumBorder(),
+      elevation: 1,
+      child: InkWell(
+        customBorder: const StadiumBorder(),
+        onTap: _lectura.libraryId.isEmpty ? null : _reaccionar,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              _lectura.miReaccion == null
+                  ? const Icon(Icons.add_reaction_outlined, size: 18)
+                  : Text(
+                      _lectura.miReaccion!.emoji,
+                      style: const TextStyle(fontSize: 16, height: 1.1),
+                    ),
+              if (total > 0) ...[
+                const SizedBox(width: 4),
+                Text(
+                  '$total',
+                  style: const TextStyle(
+                    fontWeight: FontWeight.w800,
+                    fontSize: 13,
+                  ),
+                ),
+              ],
+            ],
+          ),
+        ),
+      ),
     );
   }
 }
