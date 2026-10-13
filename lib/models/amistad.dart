@@ -2,14 +2,22 @@ import 'reaccion_comentario.dart';
 
 /// Una persona en la lista de amistades o en una solicitud.
 class PersonaAmistad {
-  const PersonaAmistad({required this.nombre, this.avatarUrl = ''});
+  const PersonaAmistad({
+    required this.nombre,
+    this.avatarUrl = '',
+    this.clubEnComun = '',
+  });
 
   final String nombre;
   final String avatarUrl;
 
+  /// Nombre de un club que ya compartes con esta persona ('' si ninguno).
+  final String clubEnComun;
+
   factory PersonaAmistad.fromJson(Map<String, dynamic> json) => PersonaAmistad(
     nombre: json['nombre']?.toString() ?? '',
     avatarUrl: json['avatarUrl']?.toString() ?? '',
+    clubEnComun: json['clubEnComun']?.toString() ?? '',
   );
 }
 
@@ -32,6 +40,7 @@ class PersonaBuscada extends PersonaAmistad {
   const PersonaBuscada({
     required super.nombre,
     super.avatarUrl,
+    super.clubEnComun,
     this.estado = EstadoAmistad.ninguna,
   });
 
@@ -40,6 +49,7 @@ class PersonaBuscada extends PersonaAmistad {
   factory PersonaBuscada.fromJson(Map<String, dynamic> json) => PersonaBuscada(
     nombre: json['nombre']?.toString() ?? '',
     avatarUrl: json['avatarUrl']?.toString() ?? '',
+    clubEnComun: json['clubEnComun']?.toString() ?? '',
     estado: EstadoAmistad.desde(json['estado']?.toString()),
   );
 }

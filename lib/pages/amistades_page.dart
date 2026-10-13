@@ -547,6 +547,10 @@ class _AmistadesPageState extends State<AmistadesPage> {
     final ocupada = _ocupadas.contains(p.nombre);
     return _fila(
       persona: p,
+      subtitulo: p.clubEnComun.isNotEmpty && p.estado == EstadoAmistad.ninguna
+          ? 'Ya compartís el club «${p.clubEnComun}». Podéis ser amistades '
+                'igualmente: regalos, lecturas a la vez…'
+          : null,
       accion: switch (p.estado) {
         EstadoAmistad.ninguna => FilledButton(
           onPressed: ocupada ? null : () => _solicitar(p),
@@ -596,6 +600,7 @@ class _AmistadesPageState extends State<AmistadesPage> {
 
   Widget _filaAmistad(PersonaAmistad p) => _fila(
     persona: p,
+    subtitulo: p.clubEnComun.isEmpty ? null : 'De tu club «${p.clubEnComun}»',
     onTap: () => Navigator.push<void>(
       context,
       MaterialPageRoute(builder: (_) => PerfilAmistadPage(nombre: p.nombre)),

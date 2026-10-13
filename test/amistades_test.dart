@@ -105,4 +105,41 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('Amistades'), findsNothing);
   });
+
+  test('el club en común se lee de la lista y de la búsqueda', () {
+    final data = AmistadesData.fromJson({
+      'amistades': [
+        {'nombre': 'Lucía', 'clubEnComun': ''},
+        {'nombre': 'Ana', 'clubEnComun': 'Club Lunar'},
+      ],
+    });
+    expect(data.amistades.map((a) => a.clubEnComun), ['', 'Club Lunar']);
+    final p = PersonaBuscada.fromJson({
+      'nombre': 'Ana',
+      'clubEnComun': 'Club Lunar',
+    });
+    expect(p.clubEnComun, 'Club Lunar');
+  });
+
+  testWidgets('en la lista, quien es de tu club lo indica', (tester) async {
+    tester.view.physicalSize = const Size(800, 3200);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+    await tester.pumpWidget(
+      MaterialApp(
+        home: AmistadesPage(
+          cargar: () async => const AmistadesData(
+            miCodigo: 'X',
+            amistades: [
+              PersonaAmistad(nombre: 'Lucía'),
+              PersonaAmistad(nombre: 'Ana', clubEnComun: 'Club Lunar'),
+            ],
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(find.text('De tu club «Club Lunar»'), findsOneWidget);
+    expect(find.textContaining('De tu club'), findsOneWidget);
+  });
 }
