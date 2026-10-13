@@ -1016,6 +1016,9 @@ class ApiService {
             : EstadoAmistad.desde(data['estado'].toString()),
         enviadas: (data['enviadas'] as num?)?.toInt() ?? 0,
         yaRecomendado: (data['yaRecomendado'] as num?)?.toInt() ?? 0,
+        clubId: data['clubId']?.toString() ?? '',
+        libro: data['libro']?.toString() ?? '',
+        yaExistia: data['yaExistia'] == true,
       );
     } catch (_) {
       return const ResultadoAmistad(
@@ -1117,6 +1120,36 @@ class ApiService {
 
   Future<ResultadoAmistad> borrarComentarioProgreso(String id) =>
       _accionAmistad('borrarComentarioProgreso', {'id': id});
+
+  Future<LecturasAmistadesData> getLecturasAmistades() async {
+    final response = await _client.get(
+      Uri.parse(
+        baseUrl,
+      ).replace(queryParameters: {'action': 'lecturasAmistades'}),
+    );
+    if (response.statusCode != 200) {
+      throw ApiException.fromResponse(response);
+    }
+    return LecturasAmistadesData.fromJson(
+      Map<String, dynamic>.from(_decodeJson(response) as Map),
+    );
+  }
+
+  Future<ResultadoAmistad> crearLecturaConAmistad({
+    required String bookId,
+    required String nombre,
+  }) => _accionAmistad('crearLecturaConAmistad', {
+    'bookId': bookId,
+    'nombre': nombre,
+  });
+
+  Future<ResultadoAmistad> responderLecturaAmistad(
+    String clubId,
+    bool aceptar,
+  ) => _accionAmistad('responderLecturaAmistad', {
+    'clubId': clubId,
+    'aceptar': aceptar,
+  });
 
   /// Recomienda un libro a amistades (o las invita a leerlo juntas).
   Future<ResultadoAmistad> recomendarLibro({

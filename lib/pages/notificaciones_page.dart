@@ -320,6 +320,8 @@ class _NotificacionesPageState extends State<NotificacionesPage> {
         break;
       case 'AMISTAD_SOLICITUD':
       case 'AMISTAD_ACEPTADA':
+      case 'LECTURA_AMISTAD_INVITACION':
+      case 'LECTURA_AMISTAD_ACEPTADA':
         await Navigator.push<void>(
           context,
           AppPageRoute(builder: (_) => const AmistadesPage()),

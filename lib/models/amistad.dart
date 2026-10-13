@@ -129,6 +129,9 @@ class ResultadoAmistad {
     this.estado,
     this.enviadas = 0,
     this.yaRecomendado = 0,
+    this.clubId = '',
+    this.libro = '',
+    this.yaExistia = false,
   });
 
   final bool ok;
@@ -139,6 +142,11 @@ class ResultadoAmistad {
   /// recomendado ese libro hace poco.
   final int enviadas;
   final int yaRecomendado;
+
+  /// Lecturas con amistades: el grupo creado o aceptado y si ya existía.
+  final String clubId;
+  final String libro;
+  final bool yaExistia;
 }
 
 Map<ReaccionComentario, int> _leerReacciones(dynamic raw) {
@@ -399,4 +407,83 @@ class ComentariosProgresoData {
             )
             .toList(),
       );
+}
+
+/// Invitación recibida para leer un libro a la vez con una amistad.
+class InvitacionLecturaAmistad {
+  const InvitacionLecturaAmistad({
+    required this.clubId,
+    required this.bookId,
+    required this.libro,
+    required this.de,
+    this.avatarUrl = '',
+  });
+
+  final String clubId;
+  final String bookId;
+  final String libro;
+  final String de;
+  final String avatarUrl;
+
+  factory InvitacionLecturaAmistad.fromJson(Map<String, dynamic> json) =>
+      InvitacionLecturaAmistad(
+        clubId: json['clubId']?.toString() ?? '',
+        bookId: json['bookId']?.toString() ?? '',
+        libro: json['libro']?.toString() ?? '',
+        de: json['de']?.toString() ?? '',
+        avatarUrl: json['avatarUrl']?.toString() ?? '',
+      );
+}
+
+/// Una lectura a la vez con una amistad (`esperando`: aún no ha respondido).
+class LecturaConAmistad {
+  const LecturaConAmistad({
+    required this.clubId,
+    required this.bookId,
+    required this.libro,
+    required this.con,
+    this.avatarUrl = '',
+    this.esperando = false,
+  });
+
+  final String clubId;
+  final String bookId;
+  final String libro;
+  final String con;
+  final String avatarUrl;
+  final bool esperando;
+
+  factory LecturaConAmistad.fromJson(Map<String, dynamic> json) =>
+      LecturaConAmistad(
+        clubId: json['clubId']?.toString() ?? '',
+        bookId: json['bookId']?.toString() ?? '',
+        libro: json['libro']?.toString() ?? '',
+        con: json['con']?.toString() ?? '',
+        avatarUrl: json['avatarUrl']?.toString() ?? '',
+        esperando: json['esperando'] == true,
+      );
+}
+
+class LecturasAmistadesData {
+  const LecturasAmistadesData({
+    this.recibidas = const [],
+    this.lecturas = const [],
+  });
+
+  final List<InvitacionLecturaAmistad> recibidas;
+  final List<LecturaConAmistad> lecturas;
+
+  bool get vacia => recibidas.isEmpty && lecturas.isEmpty;
+
+  factory LecturasAmistadesData.fromJson(Map<String, dynamic> json) {
+    List<T> lista<T>(String clave, T Function(Map<String, dynamic>) crear) =>
+        (json[clave] as List? ?? [])
+            .whereType<Map>()
+            .map((e) => crear(Map<String, dynamic>.from(e)))
+            .toList();
+    return LecturasAmistadesData(
+      recibidas: lista('recibidas', InvitacionLecturaAmistad.fromJson),
+      lecturas: lista('lecturas', LecturaConAmistad.fromJson),
+    );
+  }
 }

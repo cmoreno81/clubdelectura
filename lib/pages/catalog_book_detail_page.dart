@@ -13,6 +13,7 @@ import '../theme/app_colors.dart';
 import '../theme/app_spacing.dart';
 import '../theme/app_text_styles.dart';
 import '../widgets/common/club_book_cover.dart';
+import '../widgets/amistades/lectura_con_amistad.dart';
 import '../widgets/amistades/recomendar_libro.dart';
 import '../widgets/libros/comprar_libro_card.dart';
 import '../widgets/common/club_card.dart';
@@ -557,6 +558,13 @@ class _CatalogBookDetailPageState extends State<CatalogBookDetailPage> {
 
           if (widget.bookId.isNotEmpty)
             BotonRecomendarLibro(
+              bookId: widget.bookId,
+              titulo: widget.title,
+              espacioDespues: AppSpacing.sm,
+            ),
+
+          if (widget.bookId.isNotEmpty)
+            BotonLeerConAmistad(
               bookId: widget.bookId,
               titulo: widget.title,
               espacioDespues: AppSpacing.md,

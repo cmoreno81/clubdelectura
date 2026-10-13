@@ -40,6 +40,7 @@ import '../widgets/libros/conversaciones_libro_card.dart';
 import '../widgets/libros/finalizar_libro_dialog.dart';
 import '../widgets/libros/kit_lectura_card.dart';
 import '../widgets/libros/libro_header.dart';
+import '../widgets/amistades/lectura_con_amistad.dart';
 import '../widgets/amistades/recomendar_libro.dart';
 import '../widgets/libros/comprar_libro_card.dart';
 import 'package:club_lectura_app/utils/formato_libro.dart';
@@ -1338,9 +1339,18 @@ class _DetalleLibroPageState extends State<DetalleLibroPage> {
                 if (libro.bookId.isNotEmpty)
                   Padding(
                     padding: const EdgeInsets.only(top: AppSpacing.md),
-                    child: BotonRecomendarLibro(
-                      bookId: libro.bookId,
-                      titulo: libro.libro,
+                    child: Column(
+                      children: [
+                        BotonRecomendarLibro(
+                          bookId: libro.bookId,
+                          titulo: libro.libro,
+                          espacioDespues: AppSpacing.sm,
+                        ),
+                        BotonLeerConAmistad(
+                          bookId: libro.bookId,
+                          titulo: libro.libro,
+                        ),
+                      ],
                     ),
                   ),
 

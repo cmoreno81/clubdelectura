@@ -11,6 +11,7 @@ import '../services/api_service.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_spacing.dart';
 import '../theme/app_text_styles.dart';
+import '../widgets/amistades/lectura_con_amistad.dart';
 import '../widgets/common/club_avatar.dart';
 import '../widgets/common/club_card.dart';
 import '../widgets/error_view.dart';
@@ -279,6 +280,7 @@ class _AmistadesPageState extends State<AmistadesPage> {
       _tarjetaCodigo(data.miCodigo),
       const SizedBox(height: AppSpacing.lg),
       _bloqueBuscar(),
+      const LecturasConAmistadesSeccion(),
       if (data.recibidas.isNotEmpty) ...[
         const SizedBox(height: AppSpacing.lg),
         _titulo('Solicitudes recibidas', data.recibidas.length),
