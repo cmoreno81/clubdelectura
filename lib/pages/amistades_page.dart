@@ -6,6 +6,7 @@ import 'package:share_plus/share_plus.dart';
 
 import '../models/amistad.dart';
 import '../services/api_exception.dart';
+import '../services/amistades_cambios.dart';
 import '../services/api_service.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_spacing.dart';
@@ -145,6 +146,7 @@ class _AmistadesPageState extends State<AmistadesPage> {
       return;
     }
     alTerminar?.call(resultado);
+    AmistadesCambios.avisar();
     final texto = resultado.mensaje.isNotEmpty
         ? resultado.mensaje
         : (okPorDefecto ?? '');

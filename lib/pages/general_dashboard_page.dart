@@ -1,3 +1,4 @@
+import '../services/amistades_cambios.dart';
 import '../widgets/inicio/actividad_amistades_card.dart';
 import '../widgets/inicio/amistades_atajo_card.dart';
 import '../widgets/inicio/talento_de_la_semana_card.dart';
@@ -271,6 +272,7 @@ class _GeneralDashboardPageState extends State<GeneralDashboardPage> {
         _newReleasesFuture = newReleasesRefresh;
       });
       WishlistService.avisarCambio();
+      AmistadesCambios.avisar();
     } catch (error, stack) {
       debugPrint('[dashboard] _reload falló: $error\n$stack');
       if (silent || !mounted) return;

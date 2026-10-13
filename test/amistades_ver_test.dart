@@ -1,6 +1,7 @@
 import 'package:club_lectura_app/models/amistad.dart';
 import 'package:club_lectura_app/models/reaccion_comentario.dart';
 import 'package:club_lectura_app/pages/perfil_amistad_page.dart';
+import 'package:club_lectura_app/services/amistades_cambios.dart';
 import 'package:club_lectura_app/widgets/amistades/reacciones_progreso.dart';
 import 'package:club_lectura_app/widgets/inicio/actividad_amistades_card.dart';
 import 'package:flutter/material.dart';
@@ -208,4 +209,42 @@ void main() {
       expect(find.text('Qué leen tus amistades'), findsNothing);
     },
   );
+
+  testWidgets('la actividad se vuelve a cargar cuando cambian las amistades', (
+    tester,
+  ) async {
+    var cargas = 0;
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: SingleChildScrollView(
+            child: ActividadAmistadesCard(
+              cargar: () async {
+                cargas++;
+                // La primera vez aún no hay amistad; la segunda ya sí.
+                return cargas == 1
+                    ? []
+                    : [
+                        ActividadAmistad(
+                          tipo: 'LEYENDO',
+                          nombre: 'Cris M.',
+                          bookId: 'b1',
+                          titulo: 'Yesteryear',
+                          lectura: _lectura(),
+                        ),
+                      ];
+              },
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(find.text('Qué leen tus amistades'), findsNothing);
+
+    AmistadesCambios.avisar();
+    await tester.pumpAndSettle();
+    expect(find.text('Qué leen tus amistades'), findsOneWidget);
+    expect(cargas, 2);
+  });
 }

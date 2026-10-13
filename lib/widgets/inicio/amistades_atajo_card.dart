@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../models/amistad.dart';
 import '../../pages/amistades_page.dart';
+import '../../services/amistades_cambios.dart';
 import '../../services/api_service.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_spacing.dart';
@@ -31,7 +32,14 @@ class _AmistadesAtajoCardState extends State<AmistadesAtajoCard>
   @override
   void initState() {
     super.initState();
+    AmistadesCambios.cambios.addListener(_cargar);
     _cargar();
+  }
+
+  @override
+  void dispose() {
+    AmistadesCambios.cambios.removeListener(_cargar);
+    super.dispose();
   }
 
   Future<void> _cargar() async {
