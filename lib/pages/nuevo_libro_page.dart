@@ -395,7 +395,13 @@ class _NuevoLibroPageState extends State<NuevoLibroPage> {
       formato: formato,
       idioma: idioma,
       goodreads: goodreadsController.text.trim(),
-      coverUrl: coverUrlController.text.trim(),
+      // Al editar, si la portada no se ha cambiado no se reenvía: la ficha conserva la suya
+      // (algunas fichas antiguas la guardan como imagen incrustada, enorme para reenviarla).
+      coverUrl:
+          esEdicion &&
+              coverUrlController.text.trim() == widget.libro!.coverUrl.trim()
+          ? ''
+          : coverUrlController.text.trim(),
       paginas: paginas,
       confirmarNuevo: confirmarNuevo ? true : null,
     );

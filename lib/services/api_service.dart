@@ -1303,9 +1303,11 @@ class ApiService {
     );
 
     if (response.statusCode != 200) {
+      // Se enseña el motivo real (datos inválidos, sesión caducada, servidor caído…)
+      // en lugar de un genérico «no se ha podido conectar».
       return {
         'ok': false,
-        'mensaje': 'No se ha podido conectar con el servidor.',
+        'mensaje': ApiException.fromResponse(response).message,
       };
     }
 
