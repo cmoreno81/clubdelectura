@@ -281,4 +281,56 @@ void main() {
     expect(find.text('El más reciente'), findsWidgets);
     expect(find.text('El más antiguo'), findsNothing);
   });
+
+  testWidgets(
+    'el perfil enseña la lista de deseos o avisa de que no se comparte',
+    (tester) async {
+      tester.view.physicalSize = const Size(800, 3200);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.reset);
+      Future<void> abrir(PerfilAmistad perfil) async {
+        await tester.pumpWidget(
+          MaterialApp(
+            key: UniqueKey(),
+            home: PerfilAmistadPage(
+              nombre: 'Lucía',
+              cargar: (_) async => perfil,
+            ),
+          ),
+        );
+        await tester.pumpAndSettle();
+      }
+
+      await abrir(
+        PerfilAmistad.fromJson({
+          'nombre': 'Lucía',
+          'compartido': {'deseos': true},
+          'deseos': [
+            {
+              'bookId': 'b9',
+              'titulo': 'Libro regalo',
+              'autor': 'Una Autora',
+              'prioridad': 'HIGH',
+            },
+            {'bookId': '', 'titulo': 'Manual', 'prioridad': 'LOW'},
+          ],
+        }),
+      );
+      expect(find.textContaining('Lista de deseos 🎁 (2)'), findsOneWidget);
+      expect(find.text('Ideas para regalar'), findsOneWidget);
+      expect(find.text('Una Autora'), findsOneWidget);
+      expect(find.text('💜 Prioridad'), findsOneWidget);
+
+      await abrir(
+        PerfilAmistad.fromJson({
+          'nombre': 'Lucía',
+          'compartido': {'deseos': false},
+        }),
+      );
+      expect(
+        find.text('Lucía no comparte su lista de deseos.'),
+        findsOneWidget,
+      );
+    },
+  );
 }

@@ -50,27 +50,32 @@ class PrivacidadAmistades {
     this.leyendo = true,
     this.biblioteca = true,
     this.resenas = true,
+    this.deseos = true,
   });
 
   final bool leyendo;
   final bool biblioteca;
   final bool resenas;
+  final bool deseos;
 
   factory PrivacidadAmistades.fromJson(Map<String, dynamic> json) =>
       PrivacidadAmistades(
         leyendo: json['leyendo'] != false,
         biblioteca: json['biblioteca'] != false,
         resenas: json['resenas'] != false,
+        deseos: json['deseos'] != false,
       );
 
   PrivacidadAmistades copyWith({
     bool? leyendo,
     bool? biblioteca,
     bool? resenas,
+    bool? deseos,
   }) => PrivacidadAmistades(
     leyendo: leyendo ?? this.leyendo,
     biblioteca: biblioteca ?? this.biblioteca,
     resenas: resenas ?? this.resenas,
+    deseos: deseos ?? this.deseos,
   );
 }
 
@@ -216,6 +221,8 @@ class LibroDeAmistad {
     this.valoracion,
     this.texto = '',
     this.contieneSpoilers = false,
+    this.autor = '',
+    this.prioridad = '',
   });
 
   final String bookId;
@@ -225,6 +232,10 @@ class LibroDeAmistad {
   final String texto;
   final bool contieneSpoilers;
 
+  /// Solo en la lista de deseos: autoría y prioridad (`HIGH`, `MEDIUM`, `LOW`).
+  final String autor;
+  final String prioridad;
+
   factory LibroDeAmistad.fromJson(Map<String, dynamic> json) => LibroDeAmistad(
     bookId: json['bookId']?.toString() ?? '',
     titulo: json['titulo']?.toString() ?? '',
@@ -232,6 +243,8 @@ class LibroDeAmistad {
     valoracion: (json['valoracion'] as num?)?.toDouble(),
     texto: json['texto']?.toString() ?? '',
     contieneSpoilers: json['contieneSpoilers'] == true,
+    autor: json['autor']?.toString() ?? '',
+    prioridad: json['prioridad']?.toString() ?? '',
   );
 }
 
@@ -246,6 +259,7 @@ class PerfilAmistad {
     this.terminados = const [],
     this.pendientes = const [],
     this.resenas = const [],
+    this.deseos = const [],
     this.totalPendientes,
     this.totalTerminados,
   });
@@ -258,6 +272,7 @@ class PerfilAmistad {
   final List<LibroDeAmistad> terminados;
   final List<LibroDeAmistad> pendientes;
   final List<LibroDeAmistad> resenas;
+  final List<LibroDeAmistad> deseos;
   final int? totalPendientes;
   final int? totalTerminados;
 
@@ -280,6 +295,7 @@ class PerfilAmistad {
       terminados: lista('terminados', LibroDeAmistad.fromJson),
       pendientes: lista('pendientes', LibroDeAmistad.fromJson),
       resenas: lista('resenas', LibroDeAmistad.fromJson),
+      deseos: lista('deseos', LibroDeAmistad.fromJson),
       totalPendientes: (json['totalPendientes'] as num?)?.toInt(),
       totalTerminados: (json['totalTerminados'] as num?)?.toInt(),
     );

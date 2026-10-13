@@ -1062,6 +1062,7 @@ class ApiService {
         'leyendo': p.leyendo,
         'biblioteca': p.biblioteca,
         'resenas': p.resenas,
+        'deseos': p.deseos,
       });
 
   Future<ResultadoAmistad> solicitarAmistad({String? nombre, String? codigo}) =>

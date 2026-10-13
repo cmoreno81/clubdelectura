@@ -112,6 +112,7 @@ class _PerfilAmistadPageState extends State<PerfilAmistadPage> {
       _leyendo(p),
       _terminados(p),
       _pendientes(p),
+      _deseos(p),
       _resenas(p),
       const SizedBox(height: AppSpacing.xl),
     ];
@@ -216,9 +217,9 @@ class _PerfilAmistadPageState extends State<PerfilAmistadPage> {
     );
   }
 
-  Widget _tiraDeLibros(List<LibroDeAmistad> libros) {
+  Widget _tiraDeLibros(List<LibroDeAmistad> libros, {bool deseos = false}) {
     return SizedBox(
-      height: 236,
+      height: deseos ? 272 : 236,
       child: ListView.separated(
         scrollDirection: Axis.horizontal,
         itemCount: libros.length,
@@ -226,8 +227,9 @@ class _PerfilAmistadPageState extends State<PerfilAmistadPage> {
         itemBuilder: (context, i) {
           final libro = libros[i];
           return InkWell(
-            onTap: () =>
-                _abrirLibro(libro.bookId, libro.titulo, libro.coverUrl),
+            onTap: libro.bookId.isEmpty
+                ? null
+                : () => _abrirLibro(libro.bookId, libro.titulo, libro.coverUrl),
             child: SizedBox(
               width: 104,
               child: Column(
@@ -250,6 +252,17 @@ class _PerfilAmistadPageState extends State<PerfilAmistadPage> {
                       '⭐ ${libro.valoracion!.toStringAsFixed(1)}',
                       style: AppTextStyles.caption,
                     ),
+                  if (deseos && libro.autor.isNotEmpty)
+                    Text(
+                      libro.autor,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: AppTextStyles.caption.copyWith(
+                        color: AppColors.textMuted,
+                      ),
+                    ),
+                  if (deseos && libro.prioridad == 'HIGH')
+                    Text('💜 Prioridad', style: AppTextStyles.caption),
                 ],
               ),
             ),
@@ -296,6 +309,28 @@ class _PerfilAmistadPageState extends State<PerfilAmistadPage> {
               : 'Pendientes (${p.totalPendientes})',
         ),
         _tiraDeLibros(p.pendientes),
+      ],
+    );
+  }
+
+  Widget _deseos(PerfilAmistad p) {
+    if (!p.compartido.deseos) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _titulo('Lista de deseos 🎁'),
+          _noComparte('${p.nombre} no comparte su lista de deseos.'),
+        ],
+      );
+    }
+    if (p.deseos.isEmpty) return const SizedBox.shrink();
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _titulo('Lista de deseos 🎁 (${p.deseos.length})'),
+        Text('Ideas para regalar', style: AppTextStyles.caption),
+        const SizedBox(height: AppSpacing.sm),
+        _tiraDeLibros(p.deseos, deseos: true),
       ],
     );
   }

@@ -355,6 +355,12 @@ class _AmistadesPageState extends State<AmistadesPage> {
           p.resenas,
           (v) => p.copyWith(resenas: v),
         ),
+        interruptor(
+          'Mi lista de deseos',
+          'Qué libros quieres, para que sepan qué regalarte (sin precios ni notas)',
+          p.deseos,
+          (v) => p.copyWith(deseos: v),
+        ),
       ],
     );
   }
