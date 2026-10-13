@@ -466,6 +466,9 @@ class LecturaConAmistad {
     required this.con,
     this.avatarUrl = '',
     this.esperando = false,
+    this.salio = false,
+    this.esDuena = false,
+    this.terminada = false,
   });
 
   final String clubId;
@@ -475,6 +478,15 @@ class LecturaConAmistad {
   final String avatarUrl;
   final bool esperando;
 
+  /// La otra persona ya no está en la lectura (la conversación sigue para ti).
+  final bool salio;
+
+  /// Quien la abrió: puede eliminarla para las dos personas.
+  final bool esDuena;
+
+  /// Quienes siguen en ella han terminado el libro. La conversación se conserva.
+  final bool terminada;
+
   factory LecturaConAmistad.fromJson(Map<String, dynamic> json) =>
       LecturaConAmistad(
         clubId: json['clubId']?.toString() ?? '',
@@ -483,6 +495,9 @@ class LecturaConAmistad {
         con: json['con']?.toString() ?? '',
         avatarUrl: json['avatarUrl']?.toString() ?? '',
         esperando: json['esperando'] == true,
+        salio: json['salio'] == true,
+        esDuena: json['esDuena'] == true,
+        terminada: json['terminada'] == true,
       );
 }
 
@@ -496,6 +511,14 @@ class LecturasAmistadesData {
   final List<LecturaConAmistad> lecturas;
 
   bool get vacia => recibidas.isEmpty && lecturas.isEmpty;
+
+  /// Lecturas que siguen en marcha (incluye las que esperan respuesta).
+  List<LecturaConAmistad> get enCurso =>
+      lecturas.where((l) => !l.terminada).toList();
+
+  /// Lecturas terminadas, que se conservan para volver a consultarlas.
+  List<LecturaConAmistad> get terminadas =>
+      lecturas.where((l) => l.terminada).toList();
 
   factory LecturasAmistadesData.fromJson(Map<String, dynamic> json) {
     List<T> lista<T>(String clave, T Function(Map<String, dynamic>) crear) =>

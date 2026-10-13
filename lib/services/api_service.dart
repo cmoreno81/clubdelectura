@@ -1151,9 +1151,23 @@ class ApiService {
     'aceptar': aceptar,
   });
 
+  /// Sale de una lectura a la vez; con [eliminar] la borra para las dos personas.
+  Future<ResultadoAmistad> salirLecturaAmistad(
+    String clubId, {
+    bool eliminar = false,
+  }) => _accionAmistad('salirLecturaAmistad', {
+    'clubId': clubId,
+    'eliminar': eliminar,
+  });
+
   /// «Yo lo regalo»: reserva (o deja de reservar) un libro de su lista de deseos.
-  Future<ResultadoAmistad> reservarRegalo(String itemId, {bool reservar = true}) =>
-      _accionAmistad('reservarRegalo', {'itemId': itemId, 'reservar': reservar});
+  Future<ResultadoAmistad> reservarRegalo(
+    String itemId, {
+    bool reservar = true,
+  }) => _accionAmistad('reservarRegalo', {
+    'itemId': itemId,
+    'reservar': reservar,
+  });
 
   /// Recomienda un libro a amistades (o las invita a leerlo juntas).
   Future<ResultadoAmistad> recomendarLibro({

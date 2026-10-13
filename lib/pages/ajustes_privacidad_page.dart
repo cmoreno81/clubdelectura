@@ -51,6 +51,11 @@ const _etiquetasNotificacion = <String, (String, String, String)>{
     'Invitaciones a leer a la vez',
     'Cuando una amistad te propone leer un libro a la vez',
   ),
+  'LECTURA_AMISTAD_ELIMINADA': (
+    '📖',
+    'Lecturas a la vez eliminadas',
+    'Cuando una amistad elimina una lectura que compartíais',
+  ),
   'LECTURA_AMISTAD_ACEPTADA': (
     '📖',
     'Lecturas a la vez aceptadas',

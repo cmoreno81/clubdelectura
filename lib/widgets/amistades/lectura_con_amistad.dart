@@ -286,9 +286,13 @@ class LecturasConAmistadesSeccion extends StatefulWidget {
     this.responder,
     this.abrir,
     this.soloCon,
+    this.salir,
     this.titulo = 'Lecturas a la vez 📖',
     this.textoVacio,
   });
+
+  /// Para pruebas: sustituye la llamada para salir o eliminar.
+  final Future<ResultadoAmistad> Function(String clubId, bool eliminar)? salir;
 
   /// Si se indica, solo se enseña lo que hay con esa amistad (en su perfil).
   final String? soloCon;
@@ -313,6 +317,7 @@ class _LecturasConAmistadesSeccionState
     extends State<LecturasConAmistadesSeccion> {
   LecturasAmistadesData? _data;
   final Set<String> _ocupadas = {};
+  bool _verTerminadas = false;
 
   @override
   void initState() {
@@ -380,6 +385,105 @@ class _LecturasConAmistadesSeccionState
     return abrirLecturaConAmistad(context, clubId: clubId, libro: libro);
   }
 
+  Future<void> _salir(LecturaConAmistad l, {required bool eliminar}) async {
+    final confirmar = await showDialog<bool>(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: Text(eliminar ? 'Eliminar para las dos' : 'Salir de la lectura'),
+        content: Text(
+          eliminar
+              ? 'Se borrará «${l.libro}» y toda su conversación para ${l.con} '
+                    'y para ti. No se puede deshacer.'
+              : 'Dejarás de ver «${l.libro}». ${l.con} conservará la '
+                    'conversación.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancelar'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: Text(eliminar ? 'Eliminar' : 'Salir'),
+          ),
+        ],
+      ),
+    );
+    if (confirmar != true || !mounted) return;
+    final r =
+        await (widget.salir ??
+            (id, borrar) => ApiService().salirLecturaAmistad(
+              id,
+              eliminar: borrar,
+            ))(l.clubId, eliminar);
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          r.ok
+              ? (eliminar ? 'Lectura eliminada.' : 'Has salido de la lectura.')
+              : (r.mensaje.isEmpty ? 'No se ha podido completar.' : r.mensaje),
+        ),
+      ),
+    );
+    await _cargar();
+    AmistadesCambios.avisar();
+  }
+
+  Widget _tarjeta(LecturaConAmistad l) {
+    final subtitulo = l.esperando
+        ? 'Con ${l.con} · esperando su respuesta'
+        : l.salio
+        ? '${l.con} ha salido · puedes seguir consultándola'
+        : l.terminada
+        ? 'Terminada ✓ · Con ${l.con}'
+        : 'Con ${l.con}';
+    return Padding(
+      padding: const EdgeInsets.only(bottom: AppSpacing.sm),
+      child: ClubCard(
+        elevated: false,
+        onTap: () => _abrir(l.clubId, l.libro),
+        padding: const EdgeInsets.all(AppSpacing.md),
+        child: Row(
+          children: [
+            ClubAvatar(nombre: l.con, imageUrl: l.avatarUrl, size: 36),
+            const SizedBox(width: AppSpacing.sm),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    l.libro,
+                    style: const TextStyle(fontWeight: FontWeight.w700),
+                  ),
+                  Text(subtitulo, style: AppTextStyles.caption),
+                ],
+              ),
+            ),
+            PopupMenuButton<String>(
+              tooltip: 'Más opciones',
+              icon: const Icon(Icons.more_horiz_rounded),
+              onSelected: (accion) => _salir(l, eliminar: accion == 'eliminar'),
+              itemBuilder: (_) => [
+                PopupMenuItem(
+                  value: 'salir',
+                  child: Text(
+                    l.esperando ? 'Cancelar invitación' : 'Salir de la lectura',
+                  ),
+                ),
+                if (l.esDuena && !l.esperando)
+                  const PopupMenuItem(
+                    value: 'eliminar',
+                    child: Text('Eliminar para las dos'),
+                  ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final data = _data;
@@ -438,39 +542,40 @@ class _LecturasConAmistadesSeccionState
               ),
             ),
           ),
-        for (final l in data.lecturas)
-          Padding(
-            padding: const EdgeInsets.only(bottom: AppSpacing.sm),
-            child: ClubCard(
-              elevated: false,
-              onTap: () => _abrir(l.clubId, l.libro),
-              padding: const EdgeInsets.all(AppSpacing.md),
+        for (final l in data.enCurso) _tarjeta(l),
+        if (data.terminadas.isNotEmpty) ...[
+          InkWell(
+            onTap: () => setState(() => _verTerminadas = !_verTerminadas),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
               child: Row(
                 children: [
-                  ClubAvatar(nombre: l.con, imageUrl: l.avatarUrl, size: 36),
-                  const SizedBox(width: AppSpacing.sm),
                   Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          l.libro,
-                          style: const TextStyle(fontWeight: FontWeight.w700),
-                        ),
-                        Text(
-                          l.esperando
-                              ? 'Con ${l.con} · esperando su respuesta'
-                              : 'Con ${l.con}',
-                          style: AppTextStyles.caption,
-                        ),
-                      ],
+                    child: Text(
+                      'Terminadas ✓ (${data.terminadas.length})',
+                      style: AppTextStyles.section,
                     ),
                   ),
-                  const Icon(Icons.chevron_right_rounded),
+                  Icon(
+                    _verTerminadas
+                        ? Icons.expand_less_rounded
+                        : Icons.expand_more_rounded,
+                  ),
                 ],
               ),
             ),
           ),
+          if (_verTerminadas) ...[
+            for (final l in data.terminadas) _tarjeta(l),
+          ] else
+            Padding(
+              padding: const EdgeInsets.only(bottom: AppSpacing.sm),
+              child: Text(
+                'Sus conversaciones se conservan: tócalo para volver a verlas.',
+                style: AppTextStyles.caption,
+              ),
+            ),
+        ],
       ],
     );
   }

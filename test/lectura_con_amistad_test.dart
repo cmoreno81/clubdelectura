@@ -204,4 +204,131 @@ void main() {
       expect(find.text('Todavía no leéis nada a la vez.'), findsOneWidget);
     },
   );
+
+  test('las lecturas se separan en curso y terminadas', () {
+    final d = LecturasAmistadesData.fromJson({
+      'lecturas': [
+        {'clubId': 'a', 'libro': 'A', 'con': 'X', 'terminada': false},
+        {'clubId': 'b', 'libro': 'B', 'con': 'X', 'terminada': true},
+        {'clubId': 'c', 'libro': 'C', 'con': 'Y', 'esperando': true},
+      ],
+    });
+    expect(d.enCurso.map((l) => l.libro), ['A', 'C']);
+    expect(d.terminadas.map((l) => l.libro), ['B']);
+  });
+
+  testWidgets(
+    'las terminadas van aparte, plegadas, y se pueden volver a abrir',
+    (tester) async {
+      tester.view.physicalSize = const Size(800, 2400);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.reset);
+      String? abierta;
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: SingleChildScrollView(
+              child: LecturasConAmistadesSeccion(
+                cargar: () async => const LecturasAmistadesData(
+                  lecturas: [
+                    LecturaConAmistad(
+                      clubId: 'c1',
+                      bookId: 'b1',
+                      libro: 'En marcha',
+                      con: 'Lucía',
+                    ),
+                    LecturaConAmistad(
+                      clubId: 'c2',
+                      bookId: 'b2',
+                      libro: 'Ya leído',
+                      con: 'Marta',
+                      terminada: true,
+                    ),
+                  ],
+                ),
+                abrir: (clubId, libro) async => abierta = clubId,
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(find.text('En marcha'), findsOneWidget);
+      expect(find.text('Terminadas ✓ (1)'), findsOneWidget);
+      expect(find.text('Ya leído'), findsNothing);
+
+      await tester.tap(find.text('Terminadas ✓ (1)'));
+      await tester.pumpAndSettle();
+      expect(find.text('Ya leído'), findsOneWidget);
+      expect(find.text('Terminada ✓ · Con Marta'), findsOneWidget);
+      await tester.tap(find.text('Ya leído'));
+      await tester.pump();
+      expect(abierta, 'c2');
+    },
+  );
+
+  testWidgets(
+    'salir o eliminar piden confirmación; eliminar solo lo ofrece quien la abrió',
+    (tester) async {
+      tester.view.physicalSize = const Size(800, 2400);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.reset);
+      final llamadas = <String>[];
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: SingleChildScrollView(
+              child: LecturasConAmistadesSeccion(
+                cargar: () async => const LecturasAmistadesData(
+                  lecturas: [
+                    LecturaConAmistad(
+                      clubId: 'c1',
+                      bookId: 'b1',
+                      libro: 'Mía',
+                      con: 'Lucía',
+                      esDuena: true,
+                    ),
+                    LecturaConAmistad(
+                      clubId: 'c2',
+                      bookId: 'b2',
+                      libro: 'De Marta',
+                      con: 'Marta',
+                      salio: true,
+                    ),
+                  ],
+                ),
+                salir: (id, eliminar) async {
+                  llamadas.add('$id:$eliminar');
+                  return const ResultadoAmistad(ok: true);
+                },
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(
+        find.text('Marta ha salido · puedes seguir consultándola'),
+        findsOneWidget,
+      );
+
+      // La de Marta: solo «Salir».
+      await tester.tap(find.byType(PopupMenuButton<String>).last);
+      await tester.pumpAndSettle();
+      expect(find.text('Salir de la lectura'), findsOneWidget);
+      expect(find.text('Eliminar para las dos'), findsNothing);
+      await tester.tapAt(const Offset(5, 5)); // cierra el menú
+      await tester.pumpAndSettle();
+
+      // La mía: eliminar con confirmación.
+      await tester.tap(find.byType(PopupMenuButton<String>).first);
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Eliminar para las dos'));
+      await tester.pumpAndSettle();
+      expect(llamadas, isEmpty); // aún sin confirmar
+      await tester.tap(find.text('Eliminar'));
+      await tester.pumpAndSettle();
+      expect(llamadas, ['c1:true']);
+    },
+  );
 }
