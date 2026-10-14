@@ -835,7 +835,7 @@ class _GeneralDashboardPageState extends State<GeneralDashboardPage> {
                 // ── Tutorial primera visita ──
                 SliverToBoxAdapter(
                   child: ScreenHintBanner(
-                    featureKey: 'hint_dashboard_v4',
+                    featureKey: 'hint_dashboard_v5',
                     titulo: 'Tu universo lector de un vistazo',
                     tips: const [
                       ScreenHintTip(
@@ -844,11 +844,15 @@ class _GeneralDashboardPageState extends State<GeneralDashboardPage> {
                       ),
                       ScreenHintTip(
                         '📖',
-                        'Pulsa el botón + (abajo a la derecha) para añadir un libro a tu biblioteca',
+                        'Añade libros a tu biblioteca con «Añadir libro» o buscándolos en el catálogo',
                       ),
                       ScreenHintTip(
                         '🧭',
                         'Usa el icono de exploración (arriba) para descubrir libros del catálogo',
+                      ),
+                      ScreenHintTip(
+                        '👯',
+                        'En «Amigos» añade a tus amigos con su código y mira qué están leyendo',
                       ),
                       ScreenHintTip(
                         '📚',
