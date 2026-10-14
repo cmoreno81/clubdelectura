@@ -41,6 +41,9 @@ class FinalizarLibroDialog extends StatefulWidget {
 class _FinalizarLibroDialogState extends State<FinalizarLibroDialog> {
   double? valoracion;
   int? picante;
+
+  /// La reseña cuenta el final: las amistades no ven su texto.
+  bool contieneSpoilers = false;
   late String formato;
   late DateTime fechaInicio;
   late DateTime fechaFin;
@@ -159,6 +162,7 @@ class _FinalizarLibroDialogState extends State<FinalizarLibroDialog> {
       'valoracion': valoracion.toString(),
       'picante': picante?.toString() ?? '',
       'reflexion': _controller.text.trim(),
+      'contieneSpoilers': contieneSpoilers.toString(),
       'fechaInicio': _fechaApi(fechaInicio),
       'fechaFin': _fechaApi(fechaFin),
       'formato': formato,
@@ -180,7 +184,8 @@ class _FinalizarLibroDialogState extends State<FinalizarLibroDialog> {
       ),
       // Padding bottom = teclado + safe area, para que nada quede tapado.
       padding: EdgeInsets.only(bottom: bottomInset),
-      child: Column(
+      child: // Con Material dentro del fondo, los ListTile (fechas, interruptor) pintan bien.
+      Material(color: Colors.transparent, child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
           // ── Handle ────────────────────────────────────────────────────────
@@ -441,6 +446,16 @@ class _FinalizarLibroDialogState extends State<FinalizarLibroDialog> {
                     ),
                   ),
 
+                  SwitchListTile(
+                    contentPadding: EdgeInsets.zero,
+                    value: contieneSpoilers,
+                    onChanged: (v) => setState(() => contieneSpoilers = v),
+                    title: const Text('Mi reseña contiene spoilers'),
+                    subtitle: const Text(
+                      'Tus amigos no verán el texto de esta reseña en tu perfil.',
+                    ),
+                  ),
+
                   const SizedBox(height: 8),
                 ],
               ),
@@ -478,7 +493,7 @@ class _FinalizarLibroDialogState extends State<FinalizarLibroDialog> {
             ),
           ),
         ],
-      ),
+      )),
     );
   }
 

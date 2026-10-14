@@ -139,6 +139,7 @@ class LibroInteresadasSection extends StatelessWidget {
     String? valoracion,
     String? picante,
     String? reflexion,
+    bool? contieneSpoilers,
     String? motivoPausa,
     String? fechaInicio,
     String? fechaFin,
@@ -583,6 +584,7 @@ class _LectoraCard extends StatelessWidget {
     String? valoracion,
     String? picante,
     String? reflexion,
+    bool? contieneSpoilers,
     String? motivoPausa,
     String? fechaInicio,
     String? fechaFin,
@@ -824,6 +826,9 @@ class _LectoraCard extends StatelessWidget {
                   valoracion: datosValoracion?['valoracion'],
                   picante: datosValoracion?['picante'],
                   reflexion: datosValoracion?['reflexion'],
+                  contieneSpoilers: datosValoracion == null
+                      ? null
+                      : datosValoracion['contieneSpoilers'] == 'true',
                   fechaInicio: datosValoracion?['fechaInicio'],
                   fechaFin: datosValoracion?['fechaFin'],
                   formato: datosValoracion?['formato'],

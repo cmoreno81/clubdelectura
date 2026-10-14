@@ -225,6 +225,9 @@ class PerfilLibroTerminado {
   final String valoracion;
   final String picante;
   final String resena;
+
+  /// La reseña cuenta el final: las amistades no ven su texto.
+  final bool contieneSpoilers;
   final String coverUrl;
   final bool esRelectura;
 
@@ -239,6 +242,7 @@ class PerfilLibroTerminado {
     required this.valoracion,
     this.picante = '',
     required this.resena,
+    this.contieneSpoilers = false,
     required this.coverUrl,
     required this.esRelectura,
   });
@@ -265,6 +269,7 @@ class PerfilLibroTerminado {
       valoracion: json['valoracion']?.toString() ?? '',
       picante: json['picante']?.toString() ?? '',
       resena: json['resena']?.toString() ?? json['review']?.toString() ?? '',
+      contieneSpoilers: json['contieneSpoilers'] == true,
       coverUrl: json['coverUrl']?.toString() ?? '',
       esRelectura: json['esRelectura'] == true,
     );

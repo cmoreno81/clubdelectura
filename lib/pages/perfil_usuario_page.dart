@@ -392,6 +392,7 @@ class _PerfilUsuarioPageState extends State<PerfilUsuarioPage> {
         valoracion: resultado['valoracion'],
         picante: resultado['picante'],
         resena: resultado['resena'],
+        contieneSpoilers: resultado['contieneSpoilers'] == 'true',
       );
     } catch (_) {
       respuesta = {

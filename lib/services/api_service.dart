@@ -1384,6 +1384,7 @@ class ApiService {
     String? valoracion,
     String? picante,
     String? reflexion,
+    bool? contieneSpoilers,
     String? motivoPausa,
     String? fechaInicio,
     String? fechaFin,
@@ -1398,6 +1399,7 @@ class ApiService {
         'valoracion': valoracion ?? '',
         'picante': picante ?? '',
         'reflexion': reflexion ?? '',
+        if (contieneSpoilers != null) 'contieneSpoilers': contieneSpoilers,
         'motivoPausa': motivoPausa ?? '',
         'fechaInicio': fechaInicio ?? '',
         'fechaFin': fechaFin ?? '',
@@ -2153,6 +2155,7 @@ class ApiService {
     String? valoracion,
     String? picante,
     String? resena,
+    bool? contieneSpoilers,
   }) async {
     final body = <String, dynamic>{
       'libraryId': libraryId,
@@ -2165,6 +2168,7 @@ class ApiService {
     if (valoracion != null) body['valoracion'] = valoracion;
     if (picante != null) body['picante'] = picante;
     if (resena != null) body['resena'] = resena;
+    if (contieneSpoilers != null) body['contieneSpoilers'] = contieneSpoilers;
 
     final response = await _client.post(
       Uri.parse('$baseUrl?action=actualizarFechasLectura'),

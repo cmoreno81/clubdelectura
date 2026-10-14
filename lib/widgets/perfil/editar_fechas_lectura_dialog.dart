@@ -20,6 +20,7 @@ class _EditarFechasLecturaDialogState extends State<EditarFechasLecturaDialog> {
   double? valoracion;
   int? picante;
   late final TextEditingController resenaController;
+  late bool contieneSpoilers;
 
   @override
   void initState() {
@@ -30,6 +31,7 @@ class _EditarFechasLecturaDialogState extends State<EditarFechasLecturaDialog> {
     valoracion = _parseValoracion(widget.libro.valoracion);
     picante = _parsePicante(widget.libro.picante);
     resenaController = TextEditingController(text: widget.libro.resena);
+    contieneSpoilers = widget.libro.contieneSpoilers;
 
     if (fechaInicio != null &&
         fechaFin != null &&
@@ -226,6 +228,7 @@ class _EditarFechasLecturaDialogState extends State<EditarFechasLecturaDialog> {
       'valoracion': valoracion?.toString() ?? '',
       'picante': picante?.toString() ?? '',
       'resena': resenaController.text.trim(),
+      'contieneSpoilers': contieneSpoilers.toString(),
     });
   }
 
@@ -427,6 +430,15 @@ class _EditarFechasLecturaDialogState extends State<EditarFechasLecturaDialog> {
                       width: 1.5,
                     ),
                   ),
+                ),
+              ),
+              SwitchListTile(
+                contentPadding: EdgeInsets.zero,
+                value: contieneSpoilers,
+                onChanged: (v) => setState(() => contieneSpoilers = v),
+                title: const Text('Mi reseña contiene spoilers'),
+                subtitle: const Text(
+                  'Tus amigos no verán el texto de esta reseña en tu perfil.',
                 ),
               ),
             ],

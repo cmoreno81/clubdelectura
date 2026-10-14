@@ -122,6 +122,7 @@ Future<bool> mostrarAccionesRapidasLibro(
         valoracion: resultado['valoracion'],
         picante: resultado['picante'],
         reflexion: resultado['reflexion'],
+        contieneSpoilers: resultado['contieneSpoilers'] == 'true',
         fechaInicio: resultado['fechaInicio'],
         fechaFin: resultado['fechaFin'],
         formato: resultado['formato'],
