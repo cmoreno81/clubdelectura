@@ -94,3 +94,13 @@ List<String> leerGeneros(dynamic raw) {
 
 /// Máximo de géneros que puede tener un libro.
 const maxGenerosLibro = 3;
+
+/// El género con la grafía de [validos] si coincide sin distinguir mayúsculas
+/// («Ciencia Ficción» → «Ciencia ficción»); si no coincide, tal cual está.
+String canonicoGenero(String genero, Iterable<String> validos) {
+  final limpio = genero.trim();
+  for (final v in validos) {
+    if (v.toLowerCase() == limpio.toLowerCase()) return v;
+  }
+  return limpio;
+}

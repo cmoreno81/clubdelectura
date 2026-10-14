@@ -1023,7 +1023,15 @@ class _LibrosPageState extends State<LibrosPage> with WidgetsBindingObserver {
     if (bookId.isEmpty) return;
 
     // El primero de la lista es el género principal.
-    final seleccionados = libro.generosLista.toList();
+    final seleccionados = libro.generosLista
+        .map((g) => canonicoGenero(g, generosSoportados))
+        .toList();
+    // Géneros que el libro ya tiene pero que no están entre los que se pueden elegir
+    // (p. ej. «Fiction» de un catálogo externo): se enseñan igualmente, marcados,
+    // para que se vea todo lo que cuenta y se puedan quitar.
+    final fueraDeLista = seleccionados
+        .where((g) => !generosSoportados.contains(g))
+        .toList();
 
     final elegidos = await showModalBottomSheet<List<String>>(
       context: context,
@@ -1063,7 +1071,10 @@ class _LibrosPageState extends State<LibrosPage> with WidgetsBindingObserver {
                       child: ListView(
                         padding: EdgeInsets.zero,
                         children: [
-                          for (final opcion in generosSoportados)
+                          for (final opcion in [
+                            ...fueraDeLista,
+                            ...generosSoportados,
+                          ])
                             _opcionGeneroLibro(
                               color: color,
                               genero: opcion,

@@ -168,11 +168,13 @@ class _NuevoLibroPageState extends State<NuevoLibroPage> {
     libroController.text = agrupado.libro;
     autorController.text = registro?.autor ?? finalizado?.autor ?? '';
 
+    final validos = generos.map((o) => o.value);
     genero = agrupado.genero.trim().isEmpty
         ? 'Fantasía'
-        : agrupado.genero.trim();
+        : canonicoGenero(agrupado.genero, validos);
     generosExtra = agrupado.generosLista
         .where((g) => g.trim().toLowerCase() != genero.toLowerCase())
+        .map((g) => canonicoGenero(g, validos))
         .take(maxGenerosLibro - 1)
         .toList();
 
@@ -660,6 +662,17 @@ class _NuevoLibroPageState extends State<NuevoLibroPage> {
                 spacing: AppSpacing.sm,
                 runSpacing: AppSpacing.sm,
                 children: [
+                  // Géneros que ya tiene el libro pero no están en la lista de elegibles
+                  // (p. ej. «Fiction» de un catálogo externo): se ven marcados y se pueden quitar.
+                  for (final g in [genero, ...generosExtra].where(
+                    (g) => !generos.any((o) => o.value == g),
+                  ))
+                    ClubChip(
+                      label: '${iconoGenero(g)} $g',
+                      selected: true,
+                      variant: ClubChipVariant.primary,
+                      onTap: () => _alternarGenero(g),
+                    ),
                   for (final option in generos)
                     ClubChip(
                       label: '${option.emoji} ${option.label}',
