@@ -27,7 +27,7 @@ class BotonRecomendarLibro extends StatelessWidget {
         onPressed: () =>
             mostrarRecomendarLibro(context, bookId: bookId, titulo: titulo),
         icon: const Icon(Icons.favorite_border_rounded),
-        label: const Text('Recomendar a una amistad'),
+        label: const Text('Recomendar a un amigo'),
         style: OutlinedButton.styleFrom(
           minimumSize: const Size(double.infinity, 48),
         ),
@@ -146,7 +146,7 @@ class _RecomendarLibroSheetState extends State<RecomendarLibroSheet> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Recomendar a una amistad',
+            'Recomendar a un amigo',
             style: AppTextStyles.body.copyWith(
               fontSize: 18,
               fontWeight: FontWeight.w800,

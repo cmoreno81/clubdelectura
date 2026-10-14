@@ -97,7 +97,7 @@ class BotonLeerConAmistad extends StatelessWidget {
         onPressed: () =>
             mostrarLeerConAmistad(context, bookId: bookId, titulo: titulo),
         icon: const Icon(Icons.menu_book_rounded),
-        label: const Text('Leer a la vez con una amistad'),
+        label: const Text('Leer a la vez con un amigo'),
         style: OutlinedButton.styleFrom(
           minimumSize: const Size(double.infinity, 48),
         ),
@@ -200,7 +200,7 @@ class _LeerConAmistadSheetState extends State<LeerConAmistadSheet> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Leer a la vez con una amistad',
+            'Leer a la vez con un amigo',
             style: AppTextStyles.body.copyWith(
               fontSize: 18,
               fontWeight: FontWeight.w800,
