@@ -24,4 +24,19 @@ void main() {
     await tester.pump();
     expect(find.text('Usa al menos 10 caracteres'), findsNothing);
   });
+
+  testWidgets('avisa de que el código puede llegar a la carpeta de spam', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      const MaterialApp(
+        home: CodePasswordPage(
+          email: 'nueva@hotmail.com',
+          mode: CodePasswordMode.registration,
+        ),
+      ),
+    );
+    expect(find.byKey(const ValueKey('auth-code-spam-hint')), findsOneWidget);
+    expect(find.textContaining('carpeta de spam'), findsOneWidget);
+  });
 }

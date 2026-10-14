@@ -1689,6 +1689,20 @@ const List<_HelpSection> _secciones = [
             'Puedes volver a cualquier opción cuando quieras.',
       ),
       _HelpItem(
+        pregunta: '¿No me llega el código del correo?',
+        respuesta:
+            'Pasa a veces, sobre todo con correos de Hotmail y Outlook: el '
+            'mensaje llega a la carpeta de "Spam" o "Correo no deseado".\n\n'
+            '1. Espera un par de minutos.\n'
+            '2. Mira en Spam / Correo no deseado. Si está ahí, márcalo como '
+            '"No es spam" y copia el código.\n'
+            '3. Comprueba que el correo que escribiste es el correcto.\n'
+            '4. Si pasa más de 10 minutos, el código caduca: vuelve atrás y '
+            'pide uno nuevo.\n\n'
+            'Si sigue sin llegar, escríbenos a clubreads.app@gmail.com '
+            'diciéndonos qué correo usas y lo revisamos.',
+      ),
+      _HelpItem(
         pregunta: '¿Cómo cambio mi nombre de usuaria o mi contraseña?',
         respuesta:
             'Ve a Perfil → "Más" → Ajustes y encontrarás "Cambiar nombre" '

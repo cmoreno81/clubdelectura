@@ -102,6 +102,15 @@ class _CodePasswordPageState extends State<CodePasswordPage> {
               message:
                   'Hemos enviado un código de seis dígitos a ${widget.email}.',
             ),
+            const SizedBox(height: AppSpacing.sm),
+            // Con Hotmail/Outlook el código llega a veces a la carpeta de spam.
+            Text(
+              '¿No te llega? Espera un par de minutos y revisa la carpeta de '
+              'spam o correo no deseado, sobre todo con Hotmail u Outlook.',
+              key: const ValueKey('auth-code-spam-hint'),
+              textAlign: TextAlign.center,
+              style: Theme.of(context).textTheme.bodySmall,
+            ),
             const SizedBox(height: AppSpacing.md),
             ClubCard(
               elevated: false,
