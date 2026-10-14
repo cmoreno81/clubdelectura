@@ -75,7 +75,7 @@ class _AmistadesAtajoCardState extends State<AmistadesAtajoCard>
               : '$pendientes solicitudes por responder')
         : data.amistades.isEmpty
         ? 'Añade a gente con su nombre o con un código'
-        : '${data.amistades.length} ${data.amistades.length == 1 ? 'amistad' : 'amistades'}';
+        : '${data.amistades.length} ${data.amistades.length == 1 ? 'amigo' : 'amigos'}';
 
     return Padding(
       padding: const EdgeInsets.only(top: AppSpacing.md),
@@ -94,7 +94,7 @@ class _AmistadesAtajoCardState extends State<AmistadesAtajoCard>
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('Amistades', style: AppTextStyles.section),
+                  Text('Amigos', style: AppTextStyles.section),
                   Text(
                     subtitulo,
                     style: AppTextStyles.bodySecondary.copyWith(

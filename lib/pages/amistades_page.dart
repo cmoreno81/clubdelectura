@@ -199,7 +199,7 @@ class _AmistadesPageState extends State<AmistadesPage> {
     final confirmar = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text('¿Quitar a $nombre de tus amistades?'),
+        title: Text('¿Quitar a $nombre de tus amigos?'),
         content: const Text(
           'Dejaréis de veros lo que leéis. Si quieres, podéis volver a '
           'añadiros más adelante.',
@@ -220,7 +220,7 @@ class _AmistadesPageState extends State<AmistadesPage> {
     await _ejecutar(
       nombre,
       () => ApiService().quitarAmistad(nombre),
-      okPorDefecto: 'Amistad eliminada.',
+      okPorDefecto: 'Amigo eliminado.',
     );
   }
 
@@ -248,7 +248,7 @@ class _AmistadesPageState extends State<AmistadesPage> {
     await SharePlus.instance.share(
       ShareParams(
         text:
-            'Añádeme en ClubReads 📚 Abre la app, entra en Amistades y escribe '
+            'Añádeme en ClubReads 📚 Abre la app, entra en Amigos y escribe '
             'mi código: $codigo',
       ),
     );
@@ -259,7 +259,7 @@ class _AmistadesPageState extends State<AmistadesPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Amistades')),
+      appBar: AppBar(title: const Text('Amigos')),
       body: _cargando && _data == null
           ? const Center(child: CircularProgressIndicator())
           : _error != null && _data == null
@@ -292,12 +292,12 @@ class _AmistadesPageState extends State<AmistadesPage> {
         for (final p in data.enviadas) _filaEnviada(p),
       ],
       const SizedBox(height: AppSpacing.lg),
-      _titulo('Tus amistades', data.amistades.length),
+      _titulo('Tus amigos', data.amistades.length),
       if (data.amistades.isEmpty)
         Padding(
           padding: const EdgeInsets.symmetric(vertical: AppSpacing.md),
           child: Text(
-            'Todavía no tienes amistades en ClubReads. Busca a alguien por su '
+            'Todavía no tienes amigos en ClubReads. Busca a alguien por su '
             'nombre o comparte tu código.',
             style: AppTextStyles.bodySecondary,
           ),
@@ -338,7 +338,7 @@ class _AmistadesPageState extends State<AmistadesPage> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _titulo('Qué ven tus amistades de ti'),
+        _titulo('Qué ven tus amigos de ti'),
         interruptor(
           'Lo que estoy leyendo',
           'Tu lectura actual, tu progreso y lo que has terminado',
@@ -383,7 +383,7 @@ class _AmistadesPageState extends State<AmistadesPage> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('Tu código de amistad', style: AppTextStyles.section),
+          Text('Tu código de amigo', style: AppTextStyles.section),
           const SizedBox(height: AppSpacing.xs),
           Text(
             'Compártelo para que te añadan sin tener que buscarte.',
@@ -430,7 +430,7 @@ class _AmistadesPageState extends State<AmistadesPage> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _titulo('Añadir amistades'),
+        _titulo('Añadir amigos'),
         TextField(
           controller: _buscarCtrl,
           onChanged: _alEscribirBusqueda,
@@ -548,7 +548,7 @@ class _AmistadesPageState extends State<AmistadesPage> {
     return _fila(
       persona: p,
       subtitulo: p.clubEnComun.isNotEmpty && p.estado == EstadoAmistad.ninguna
-          ? 'Ya compartís el club «${p.clubEnComun}». Podéis ser amistades '
+          ? 'Ya compartís el club «${p.clubEnComun}». Podéis ser amigos '
                 'igualmente: regalos, lecturas a la vez…'
           : null,
       accion: switch (p.estado) {
@@ -561,7 +561,7 @@ class _AmistadesPageState extends State<AmistadesPage> {
           onPressed: ocupada ? null : () => _aceptar(p.nombre),
           child: const Text('Aceptar'),
         ),
-        EstadoAmistad.amiga => const Text('Amistad ✓'),
+        EstadoAmistad.amiga => const Text('Amigo ✓'),
       },
     );
   }
@@ -570,7 +570,7 @@ class _AmistadesPageState extends State<AmistadesPage> {
     final ocupada = _ocupadas.contains(p.nombre);
     return _fila(
       persona: p,
-      subtitulo: 'Quiere ser tu amistad',
+      subtitulo: 'Quiere ser tu amigo',
       accion: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -606,7 +606,7 @@ class _AmistadesPageState extends State<AmistadesPage> {
       MaterialPageRoute(builder: (_) => PerfilAmistadPage(nombre: p.nombre)),
     ),
     accion: IconButton(
-      tooltip: 'Quitar amistad',
+      tooltip: 'Quitar amigo',
       icon: const Icon(Icons.person_remove_outlined),
       onPressed: _ocupadas.contains(p.nombre) ? null : () => _quitar(p.nombre),
     ),

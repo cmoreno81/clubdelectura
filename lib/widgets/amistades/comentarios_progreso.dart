@@ -191,7 +191,7 @@ class _ComentariosProgresoSheetState extends State<ComentariosProgresoSheet> {
       builder: (_) => AlertDialog(
         title: const Text('¿Bloquear a esta persona?'),
         content: Text(
-          'Dejarás de ver sus comentarios y ya no seréis amistades. Puedes '
+          'Dejarás de ver sus comentarios y ya no seréis amigos. Puedes '
           'deshacerlo desde Perfil → Más → Cuentas bloqueadas.',
         ),
         actions: [

@@ -457,7 +457,7 @@ class _PerfilAmistadPageState extends State<PerfilAmistadPage> {
         _titulo('Lista de deseos 🎁 (${p.deseos.length})'),
         Text(
           'Ideas para regalar. Si reservas uno, ${p.nombre} no lo verá '
-          '(¡sorpresa!), pero sus otras amistades sí.',
+          '(¡sorpresa!), pero sus otros amigos sí.',
           style: AppTextStyles.caption,
         ),
         const SizedBox(height: AppSpacing.sm),

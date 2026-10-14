@@ -227,7 +227,7 @@ class _LeerConAmistadSheetState extends State<LeerConAmistadSheet> {
                   return Padding(
                     padding: const EdgeInsets.all(16),
                     child: Text(
-                      'No se han podido cargar tus amistades. Inténtalo más tarde.',
+                      'No se han podido cargar tus amigos. Inténtalo más tarde.',
                       style: AppTextStyles.bodySecondary,
                     ),
                   );
@@ -238,8 +238,8 @@ class _LeerConAmistadSheetState extends State<LeerConAmistadSheet> {
                   return Padding(
                     padding: const EdgeInsets.all(16),
                     child: Text(
-                      'Todavía no tienes amistades en ClubReads. Añade alguna '
-                      'desde Amistades y vuelve aquí.',
+                      'Todavía no tienes amigos en ClubReads. Añade alguna '
+                      'desde Amigos y vuelve aquí.',
                       style: AppTextStyles.bodySecondary,
                     ),
                   );
@@ -280,7 +280,7 @@ class _LeerConAmistadSheetState extends State<LeerConAmistadSheet> {
                       ),
                       child: Text(
                         _elegida == null
-                            ? 'Elige una amistad'
+                            ? 'Elige un amigo'
                             : 'Invitar a $_elegida',
                       ),
                     ),

@@ -172,7 +172,7 @@ class _RecomendarLibroSheetState extends State<RecomendarLibroSheet> {
                   return Padding(
                     padding: const EdgeInsets.all(16),
                     child: Text(
-                      'No se han podido cargar tus amistades. Inténtalo más tarde.',
+                      'No se han podido cargar tus amigos. Inténtalo más tarde.',
                       style: AppTextStyles.bodySecondary,
                     ),
                   );
@@ -186,7 +186,7 @@ class _RecomendarLibroSheetState extends State<RecomendarLibroSheet> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          'Todavía no tienes amistades en ClubReads.',
+                          'Todavía no tienes amigos en ClubReads.',
                           style: AppTextStyles.bodySecondary,
                         ),
                         TextButton(
@@ -199,7 +199,7 @@ class _RecomendarLibroSheetState extends State<RecomendarLibroSheet> {
                               ),
                             );
                           },
-                          child: const Text('Buscar o invitar amistades'),
+                          child: const Text('Buscar o invitar amigos'),
                         ),
                       ],
                     ),
@@ -256,8 +256,8 @@ class _RecomendarLibroSheetState extends State<RecomendarLibroSheet> {
                         _elegidas.isEmpty
                             ? 'Elige a alguien'
                             : _elegidas.length == 1
-                            ? 'Enviar a 1 amistad'
-                            : 'Enviar a ${_elegidas.length} amistades',
+                            ? 'Enviar a 1 amigo'
+                            : 'Enviar a ${_elegidas.length} amigos',
                       ),
                     ),
                   ],

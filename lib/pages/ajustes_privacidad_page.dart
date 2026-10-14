@@ -39,37 +39,37 @@ const _etiquetasNotificacion = <String, (String, String, String)>{
   'AMISTAD_SOLICITUD': (
     '👋',
     'Solicitudes de amistad',
-    'Cuando alguien quiere ser tu amistad en ClubReads',
+    'Cuando alguien quiere ser tu amigo en ClubReads',
   ),
   'AMISTAD_ACEPTADA': (
     '🎉',
-    'Amistades aceptadas',
+    'Amigos aceptados',
     'Cuando alguien acepta tu solicitud de amistad',
   ),
   'LECTURA_AMISTAD_INVITACION': (
     '💌',
     'Invitaciones a leer a la vez',
-    'Cuando una amistad te propone leer un libro a la vez',
+    'Cuando un amigo te propone leer un libro a la vez',
   ),
   'LECTURA_AMISTAD_ELIMINADA': (
     '📖',
     'Lecturas a la vez eliminadas',
-    'Cuando una amistad elimina una lectura que compartíais',
+    'Cuando un amigo elimina una lectura que compartíais',
   ),
   'LECTURA_AMISTAD_ACEPTADA': (
     '📖',
     'Lecturas a la vez aceptadas',
-    'Cuando una amistad acepta leer contigo',
+    'Cuando un amigo acepta leer contigo',
   ),
   'PROGRESO_COMENTARIO': (
     '💬',
     'Comentarios en tu lectura',
-    'Cuando una amistad comenta tu progreso de lectura',
+    'Cuando un amigo comenta tu progreso de lectura',
   ),
   'LIBRO_RECOMENDADO': (
     '📚',
     'Libros recomendados',
-    'Cuando una amistad te recomienda un libro',
+    'Cuando un amigo te recomienda un libro',
   ),
   'LECTURA_INVITACION': (
     '💌',

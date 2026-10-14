@@ -69,7 +69,7 @@ void main() {
     );
     await tester.tap(find.text('abrir'));
     await tester.pumpAndSettle();
-    expect(find.text('Elige una amistad'), findsOneWidget);
+    expect(find.text('Elige un amigo'), findsOneWidget);
 
     await tester.tap(find.text('Marta'));
     await tester.pump();

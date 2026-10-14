@@ -52,7 +52,7 @@ void main() {
     expect(find.text('Rechazar'), findsOneWidget);
     expect(find.text('Solicitudes enviadas (1)'), findsOneWidget);
     expect(find.text('Noa'), findsOneWidget);
-    expect(find.text('Tus amistades (1)'), findsOneWidget);
+    expect(find.text('Tus amigos (1)'), findsOneWidget);
     expect(find.text('Lucía'), findsOneWidget);
     expect(find.byIcon(Icons.person_remove_outlined), findsOneWidget);
     expect(find.textContaining('mínimo 3 letras'), findsOneWidget);
@@ -73,7 +73,7 @@ void main() {
       );
       await tester.pumpAndSettle();
       expect(
-        find.textContaining('Todavía no tienes amistades'),
+        find.textContaining('Todavía no tienes amigos'),
         findsOneWidget,
       );
       expect(find.text('Solicitudes recibidas (0)'), findsNothing);
@@ -89,7 +89,7 @@ void main() {
       ),
     );
     await tester.pumpAndSettle();
-    expect(find.text('Amistades'), findsOneWidget);
+    expect(find.text('Amigos'), findsOneWidget);
     expect(find.text('1 solicitud por responder'), findsOneWidget);
 
     await tester.pumpWidget(
@@ -103,7 +103,7 @@ void main() {
       ),
     );
     await tester.pumpAndSettle();
-    expect(find.text('Amistades'), findsNothing);
+    expect(find.text('Amigos'), findsNothing);
   });
 
   test('el club en común se lee de la lista y de la búsqueda', () {

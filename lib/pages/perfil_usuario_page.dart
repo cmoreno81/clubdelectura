@@ -1209,7 +1209,7 @@ class _PerfilUsuarioPageState extends State<PerfilUsuarioPage> {
                 const Divider(height: 1),
                 ListTile(
                   leading: const Icon(Icons.group_add_outlined),
-                  title: const Text('Amistades'),
+                  title: const Text('Amigos'),
                   trailing: const Icon(Icons.chevron_right_rounded),
                   onTap: () => Navigator.push<void>(
                     context,

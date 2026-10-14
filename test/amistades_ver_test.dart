@@ -185,7 +185,7 @@ void main() {
         ),
       );
       await tester.pumpAndSettle();
-      expect(find.text('Qué leen tus amistades'), findsOneWidget);
+      expect(find.text('Qué leen tus amigos'), findsOneWidget);
       expect(find.text('Ver todas'), findsOneWidget);
       expect(find.text('Lucía'), findsOneWidget);
       expect(find.text('Leyendo · 40%'), findsOneWidget);
@@ -205,7 +205,7 @@ void main() {
         ),
       );
       await tester.pumpAndSettle();
-      expect(find.text('Qué leen tus amistades'), findsNothing);
+      expect(find.text('Qué leen tus amigos'), findsNothing);
     },
   );
 
@@ -239,11 +239,11 @@ void main() {
       ),
     );
     await tester.pumpAndSettle();
-    expect(find.text('Qué leen tus amistades'), findsNothing);
+    expect(find.text('Qué leen tus amigos'), findsNothing);
 
     AmistadesCambios.avisar();
     await tester.pumpAndSettle();
-    expect(find.text('Qué leen tus amistades'), findsOneWidget);
+    expect(find.text('Qué leen tus amigos'), findsOneWidget);
     expect(cargas, 2);
   });
 

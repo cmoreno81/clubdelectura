@@ -63,8 +63,8 @@ void main() {
 
     await tester.tap(find.text('Marta'));
     await tester.pump();
-    expect(find.text('Enviar a 1 amistad'), findsOneWidget);
-    await tester.tap(find.text('Enviar a 1 amistad'));
+    expect(find.text('Enviar a 1 amigo'), findsOneWidget);
+    await tester.tap(find.text('Enviar a 1 amigo'));
     await tester.pump();
     expect(enviados, ['Marta']);
     expect(textoEnviado, '');
@@ -87,7 +87,7 @@ void main() {
       ),
     );
     await tester.pumpAndSettle();
-    expect(find.text('Buscar o invitar amistades'), findsOneWidget);
+    expect(find.text('Buscar o invitar amigos'), findsOneWidget);
 
     await tester.pumpWidget(
       _hoja(
