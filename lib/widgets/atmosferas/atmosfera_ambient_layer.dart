@@ -134,6 +134,38 @@ class _AtmosferaAmbientLayerState extends State<AtmosferaAmbientLayer>
   }
 }
 
+/// La escena de una atmósfera congelada en un instante, para pintarla de fondo
+/// (muy suave) en imágenes que se comparten, donde no hay animación.
+class AtmosferaEscenaEstatica extends StatelessWidget {
+  final AtmosferaLectura atmosfera;
+  final Color color;
+  final Color accentColor;
+  final double progreso;
+
+  const AtmosferaEscenaEstatica({
+    super.key,
+    required this.atmosfera,
+    required this.color,
+    required this.accentColor,
+    this.progreso = 0.5,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return RepaintBoundary(
+      child: CustomPaint(
+        size: Size.infinite,
+        painter: _AtmosferaPainter(
+          progreso: progreso,
+          atmosfera: atmosfera,
+          color: color,
+          acento: accentColor,
+        ),
+      ),
+    );
+  }
+}
+
 class _EditorialPaperPainter extends CustomPainter {
   const _EditorialPaperPainter();
 

@@ -2,9 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:club_lectura_app/pages/kit_export_page.dart';
+import 'package:club_lectura_app/widgets/atmosferas/atmosfera_ambient_layer.dart';
 
 void main() {
-  Future<void> abrir(WidgetTester tester, KitExportTipo tipo) async {
+  Future<void> abrir(
+    WidgetTester tester,
+    KitExportTipo tipo, {
+    String atmosferaId = '',
+  }) async {
     tester.view.physicalSize = const Size(1170, 2532);
     tester.view.devicePixelRatio = 3;
     addTearDown(tester.view.reset);
@@ -21,6 +26,7 @@ void main() {
           ],
           atmosferaTitulo: 'Bosque',
           atmosferaIcono: '🌲',
+          atmosferaId: atmosferaId,
           valoracion: 4.5,
         ),
       ),
@@ -45,5 +51,18 @@ void main() {
   testWidgets('el fondo de pantalla no ofrece formato feed', (tester) async {
     await abrir(tester, KitExportTipo.wallpaper);
     expect(find.text('Feed · 4:5'), findsNothing);
+  });
+
+  testWidgets('con atmósfera guardada su escena sale de fondo; sin ella, no', (
+    tester,
+  ) async {
+    await abrir(tester, KitExportTipo.story);
+    expect(find.byType(AtmosferaEscenaEstatica), findsNothing);
+
+    await abrir(tester, KitExportTipo.story, atmosferaId: 'EPICA');
+    expect(find.byType(AtmosferaEscenaEstatica), findsOneWidget);
+
+    await abrir(tester, KitExportTipo.wallpaper, atmosferaId: 'MARINA');
+    expect(find.byType(AtmosferaEscenaEstatica), findsOneWidget);
   });
 }

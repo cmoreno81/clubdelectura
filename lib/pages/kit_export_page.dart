@@ -7,7 +7,9 @@ import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
 
 import '../theme/app_spacing.dart';
+import '../theme/atmosferas/atmosfera_tipo.dart';
 import '../theme/app_text_styles.dart';
+import '../widgets/atmosferas/atmosfera_ambient_layer.dart';
 import '../widgets/common/club_book_cover.dart';
 
 enum KitExportTipo { wallpaper, story }
@@ -20,6 +22,10 @@ class KitExportPage extends StatefulWidget {
   final List<Color> subrayadores;
   final String atmosferaTitulo;
   final String atmosferaIcono;
+
+  /// Identificador de la atmósfera guardada en el kit (p. ej. «EPICA»). Si es
+  /// una atmósfera real, su escena sale de fondo, muy suave, en la imagen.
+  final String atmosferaId;
 
   /// Etiqueta superior en la story (por defecto «ESTOY LEYENDO»).
   /// Pasa «YA LO HE LEÍDO» cuando la story se genera al finalizar.
@@ -37,6 +43,7 @@ class KitExportPage extends StatefulWidget {
     this.subrayadores = const [],
     required this.atmosferaTitulo,
     required this.atmosferaIcono,
+    this.atmosferaId = '',
     this.etiquetaStory = 'ESTOY LEYENDO',
     this.valoracion,
   });
@@ -153,6 +160,7 @@ class _KitExportPageState extends State<KitExportPage> {
                         : widget.subrayadores,
                     atmosferaTitulo: widget.atmosferaTitulo,
                     atmosferaIcono: widget.atmosferaIcono,
+                    atmosferaId: widget.atmosferaId,
                     etiquetaStory: widget.etiquetaStory,
                     valoracion: widget.valoracion,
                   ),
@@ -204,6 +212,7 @@ class _KitPoster extends StatelessWidget {
   final List<Color> subrayadores;
   final String atmosferaTitulo;
   final String atmosferaIcono;
+  final String atmosferaId;
   final String etiquetaStory;
   final double? valoracion;
 
@@ -216,6 +225,7 @@ class _KitPoster extends StatelessWidget {
     required this.subrayadores,
     required this.atmosferaTitulo,
     required this.atmosferaIcono,
+    this.atmosferaId = '',
     this.etiquetaStory = 'ESTOY LEYENDO',
     this.valoracion,
   });
@@ -274,30 +284,55 @@ class _KitPoster extends StatelessWidget {
         decoration: decoration,
         child: CustomPaint(
           painter: _PosterTexture(color: foreground, editorial: story),
-          child: story
-              ? _formatoStory(
-                  _StoryComposition(
-                    feed: feed,
+          child: _conEscena(
+            story
+                ? _formatoStory(
+                    _StoryComposition(
+                      feed: feed,
+                      libro: libro,
+                      coverUrl: coverUrl,
+                      colores: colores,
+                      subrayadores: subrayadores,
+                      foreground: foreground,
+                      atmosferaTitulo: atmosferaTitulo,
+                      atmosferaIcono: atmosferaIcono,
+                      etiquetaStory: etiquetaStory,
+                      valoracion: valoracion,
+                    ),
+                  )
+                : _WallpaperComposition(
                     libro: libro,
                     coverUrl: coverUrl,
-                    colores: colores,
-                    subrayadores: subrayadores,
                     foreground: foreground,
                     atmosferaTitulo: atmosferaTitulo,
                     atmosferaIcono: atmosferaIcono,
-                    etiquetaStory: etiquetaStory,
-                    valoracion: valoracion,
                   ),
-                )
-              : _WallpaperComposition(
-                  libro: libro,
-                  coverUrl: coverUrl,
-                  foreground: foreground,
-                  atmosferaTitulo: atmosferaTitulo,
-                  atmosferaIcono: atmosferaIcono,
-                ),
+          ),
         ),
       ),
+    );
+  }
+
+  /// Si el kit tiene una atmósfera guardada, su escena va de fondo, muy suave,
+  /// por detrás de la composición.
+  Widget _conEscena(Widget composicion) {
+    final atmosfera = AtmosferaLecturaParser.fromApi(atmosferaId);
+    if (atmosfera == AtmosferaLectura.neutra) return composicion;
+    return Stack(
+      fit: StackFit.expand,
+      children: [
+        IgnorePointer(
+          child: Opacity(
+            opacity: 0.32,
+            child: AtmosferaEscenaEstatica(
+              atmosfera: atmosfera,
+              color: colores.first,
+              accentColor: colores.last,
+            ),
+          ),
+        ),
+        composicion,
+      ],
     );
   }
 }

@@ -628,6 +628,7 @@ class _DetalleLibroPageState extends State<DetalleLibroPage> {
           subrayadores: kit.subrayadores.map(_colorDesdeHex).toList(),
           atmosferaTitulo: kit.atmosferaTitulo,
           atmosferaIcono: kit.atmosferaIcono,
+          atmosferaId: kit.atmosferaId,
           etiquetaStory: finalizado ? 'YA LO HE LEÍDO' : 'ESTOY LEYENDO',
           valoracion: _parseStarsCount(valoracionStr),
         ),

@@ -277,6 +277,7 @@ class _KitLecturaPageState extends State<KitLecturaPage> {
           subrayadores: _seleccion.subrayadores.map(_colorDesdeHex).toList(),
           atmosferaTitulo: _seleccion.atmosferaTitulo,
           atmosferaIcono: _seleccion.atmosferaIcono,
+          atmosferaId: _seleccion.atmosferaId,
           etiquetaStory: widget.finalizado ? 'YA LO HE LEÍDO' : 'ESTOY LEYENDO',
           valoracion: widget.valoracion,
         ),
