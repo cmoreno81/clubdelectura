@@ -322,10 +322,11 @@ class _ExploreCatalogPageState extends State<ExploreCatalogPage> {
             ),
           ),
           ScreenHintBanner(
-            featureKey: 'hint_catalogo_v2',
+            featureKey: 'hint_catalogo_v3',
             titulo: 'Explorar el catálogo',
             tips: const [
               ScreenHintTip('🔍', 'Busca por título, autor o ISBN para encontrar cualquier libro'),
+              ScreenHintTip('🟣', 'Los libros que ya están en ClubReads salen primero: elige uno de ellos para no duplicar fichas'),
               ScreenHintTip('📚', 'Pulsa un libro para ver la ficha y añadirlo a tu biblioteca'),
               ScreenHintTip('✋', 'Pulsación larga para cambiar su estado (leyendo, leído, TBR…) directamente'),
             ],

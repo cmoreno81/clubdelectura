@@ -419,7 +419,7 @@ class _LibrosPageState extends State<LibrosPage> with WidgetsBindingObserver {
               Column(
                 children: [
                   ScreenHintBanner(
-                    featureKey: 'hint_biblioteca_v2',
+                    featureKey: 'hint_biblioteca_v3',
                     titulo: 'Cómo sacar el máximo a tu biblioteca',
                     tips: const [
                       ScreenHintTip(
@@ -428,7 +428,7 @@ class _LibrosPageState extends State<LibrosPage> with WidgetsBindingObserver {
                       ),
                       ScreenHintTip(
                         '✅',
-                        'Marca "Finalizar" cuando termines un libro para registrarlo en tu historial',
+                        'Cuando termines un libro, márcalo como finalizado para registrarlo en tu historial',
                       ),
                       ScreenHintTip(
                         '🔍',
