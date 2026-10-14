@@ -100,3 +100,41 @@ String banderaIdioma(String codigo) {
       return '🌐';
   }
 }
+
+/// Agrupa libros (mapas con la clave `idioma`) por idioma para enseñarlos por secciones.
+/// Orden: español primero, inglés después, el resto por nombre y «sin idioma» al final.
+/// Dentro de cada grupo, por título. Un libro sin idioma conocido va en el grupo de código ''.
+List<({String codigo, List<Map<String, dynamic>> libros})> agruparLibrosPorIdioma(
+  List<Map<String, dynamic>> libros,
+) {
+  final porIdioma = <String, List<Map<String, dynamic>>>{};
+  for (final libro in libros) {
+    final codigo = (libro['idioma']?.toString() ?? '').trim().toLowerCase();
+    porIdioma.putIfAbsent(codigo, () => []).add(libro);
+  }
+  int prioridad(String codigo) => switch (codigo) {
+    'es' => 0,
+    'en' => 1,
+    '' => 3,
+    _ => 2,
+  };
+  final codigos = porIdioma.keys.toList()
+    ..sort((a, b) {
+      final porPrioridad = prioridad(a).compareTo(prioridad(b));
+      return porPrioridad != 0
+          ? porPrioridad
+          : nombreIdioma(a).compareTo(nombreIdioma(b));
+    });
+  return [
+    for (final codigo in codigos)
+      (
+        codigo: codigo,
+        libros: porIdioma[codigo]!
+          ..sort(
+            (a, b) => (a['titulo']?.toString() ?? '').toLowerCase().compareTo(
+              (b['titulo']?.toString() ?? '').toLowerCase(),
+            ),
+          ),
+      ),
+  ];
+}

@@ -7,6 +7,7 @@ import '../theme/app_radius.dart';
 import '../theme/app_spacing.dart';
 import '../theme/app_text_styles.dart';
 import '../utils/genero_utils.dart';
+import '../utils/idioma_utils.dart';
 import '../widgets/common/club_book_cover.dart';
 import '../widgets/common/club_card.dart';
 import '../widgets/common/optimized_network_image.dart';
@@ -20,11 +21,15 @@ class AutorLibrosPage extends StatefulWidget {
     required this.autorId,
     required this.nombre,
     required this.photoUrl,
+    this.cargar,
   });
 
   final String autorId;
   final String nombre;
   final String photoUrl;
+
+  /// Para pruebas: sustituye la carga real.
+  final Future<Map<String, dynamic>> Function(String autorId)? cargar;
 
   @override
   State<AutorLibrosPage> createState() => _AutorLibrosPageState();
@@ -38,8 +43,11 @@ class _AutorLibrosPageState extends State<AutorLibrosPage> {
   @override
   void initState() {
     super.initState();
-    _future = ApiService().getLibrosPorAutor(widget.autorId);
+    _future = _cargarLibros();
   }
+
+  Future<Map<String, dynamic>> _cargarLibros() =>
+      (widget.cargar ?? ApiService().getLibrosPorAutor)(widget.autorId);
 
   @override
   void dispose() {
@@ -54,7 +62,7 @@ class _AutorLibrosPageState extends State<AutorLibrosPage> {
   // hubo una edición explícita (p. ej. desde las acciones rápidas).
   Future<void> _reloadBooks({bool silent = false}) async {
     try {
-      final data = await ApiService().getLibrosPorAutor(widget.autorId);
+      final data = await _cargarLibros();
       if (mounted) setState(() => _future = Future.value(data));
     } catch (_) {
       if (silent || !mounted) return;
@@ -124,7 +132,7 @@ class _AutorLibrosPageState extends State<AutorLibrosPage> {
               appBar: AppBar(title: Text(widget.nombre)),
               body: ErrorView(
                 onRetry: () => setState(() {
-                  _future = ApiService().getLibrosPorAutor(widget.autorId);
+                  _future = _cargarLibros();
                 }),
               ),
             );
@@ -387,11 +395,47 @@ class _LibrosAgrupados extends StatelessWidget {
             _GridHeader(nombre: 'Independientes'),
             const SizedBox(height: AppSpacing.sm),
           ],
-          _LibroGrid(
-            libros: sueltos,
-            onTap: onTap,
-            onLongPress: onLongPress,
-          ),
+          // Si hay libros en varios idiomas (p. ej. una edición en español y otra en
+          // inglés del mismo libro) se separan por idioma para que tenga sentido.
+          ...() {
+            final grupos = agruparLibrosPorIdioma(sueltos);
+            if (grupos.length <= 1) {
+              return [
+                _LibroGrid(
+                  libros: sueltos,
+                  onTap: onTap,
+                  onLongPress: onLongPress,
+                ),
+              ];
+            }
+            return [
+              for (final grupo in grupos) ...[
+                Padding(
+                  padding: const EdgeInsets.only(
+                    top: AppSpacing.sm,
+                    bottom: AppSpacing.sm,
+                  ),
+                  child: Text(
+                    grupo.codigo.isEmpty
+                        ? 'Sin idioma indicado (${grupo.libros.length})'
+                        : '${banderaIdioma(grupo.codigo)} '
+                              '${nombreIdioma(grupo.codigo)} '
+                              '(${grupo.libros.length})',
+                    style: AppTextStyles.caption.copyWith(
+                      fontWeight: FontWeight.w800,
+                      color: AppColors.textSecondary,
+                    ),
+                  ),
+                ),
+                _LibroGrid(
+                  libros: grupo.libros,
+                  onTap: onTap,
+                  onLongPress: onLongPress,
+                ),
+                const SizedBox(height: AppSpacing.md),
+              ],
+            ];
+          }(),
         ],
       ],
     );
