@@ -175,7 +175,9 @@ class _KitExportPageState extends State<KitExportPage> {
               _exportando
                   ? 'Preparando imagen…'
                   : story
-                  ? 'Compartir story'
+                  ? _feed
+                        ? 'Compartir para el feed'
+                        : 'Compartir story'
                   : 'Guardar o compartir',
             ),
           ),

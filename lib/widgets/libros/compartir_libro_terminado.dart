@@ -261,7 +261,7 @@ class TarjetaLibroTerminado extends StatelessWidget {
           gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
-            colors: [AppColors.primaryLight, AppColors.background],
+            colors: [AppColors.primaryLight, AppColors.surfaceSoft],
           ),
         ),
         child: Padding(
