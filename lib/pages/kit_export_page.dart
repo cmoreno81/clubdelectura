@@ -20,9 +20,11 @@ class KitExportPage extends StatefulWidget {
   final List<Color> subrayadores;
   final String atmosferaTitulo;
   final String atmosferaIcono;
+
   /// Etiqueta superior en la story (por defecto «ESTOY LEYENDO»).
   /// Pasa «YA LO HE LEÍDO» cuando la story se genera al finalizar.
   final String etiquetaStory;
+
   /// Valoración en estrellas (1–5, admite medias). Si es null no se muestran.
   final double? valoracion;
 
@@ -47,6 +49,9 @@ class _KitExportPageState extends State<KitExportPage> {
   final GlobalKey _captureKey = GlobalKey();
   bool _exportando = false;
 
+  /// Solo para la story: false = 9:16 (stories), true = 4:5 (feed de Instagram).
+  bool _feed = false;
+
   List<Color> get _colores {
     if (widget.colores.length >= 3) return widget.colores;
     return const [Color(0xFF6D4BC3), Color(0xFFB99CEB), Color(0xFFF5D9E8)];
@@ -68,7 +73,9 @@ class _KitExportPageState extends State<KitExportPage> {
       if (bytes == null) throw StateError('No se pudo crear la imagen');
 
       final directory = await getTemporaryDirectory();
-      final suffix = widget.tipo == KitExportTipo.story ? 'story' : 'wallpaper';
+      final suffix = widget.tipo == KitExportTipo.story
+          ? (_feed ? 'feed' : 'story')
+          : 'wallpaper';
       final file = File(
         '${directory.path}/clubreads_${suffix}_${DateTime.now().millisecondsSinceEpoch}.png',
       );
@@ -115,15 +122,29 @@ class _KitExportPageState extends State<KitExportPage> {
           40,
         ),
         children: [
+          if (story) ...[
+            SegmentedButton<bool>(
+              key: const Key('kit-formato'),
+              showSelectedIcon: false,
+              segments: const [
+                ButtonSegment(value: false, label: Text('Story · 9:16')),
+                ButtonSegment(value: true, label: Text('Feed · 4:5')),
+              ],
+              selected: {_feed},
+              onSelectionChanged: (s) => setState(() => _feed = s.first),
+            ),
+            const SizedBox(height: AppSpacing.md),
+          ],
           Center(
             child: ConstrainedBox(
               constraints: const BoxConstraints(maxWidth: 390),
               child: AspectRatio(
-                aspectRatio: 9 / 16,
+                aspectRatio: story && _feed ? 4 / 5 : 9 / 16,
                 child: RepaintBoundary(
                   key: _captureKey,
                   child: _KitPoster(
                     story: story,
+                    feed: story && _feed,
                     libro: widget.libro,
                     coverUrl: widget.coverUrl,
                     colores: _colores,
@@ -160,7 +181,9 @@ class _KitExportPageState extends State<KitExportPage> {
           ),
           const SizedBox(height: AppSpacing.sm),
           Text(
-            'Formato vertical 9:16 listo para tu móvil.',
+            story && _feed
+                ? 'Formato 4:5 para publicar en el feed de Instagram.'
+                : 'Formato vertical 9:16 listo para tu móvil.',
             textAlign: TextAlign.center,
             style: AppTextStyles.caption,
           ),
@@ -172,6 +195,7 @@ class _KitExportPageState extends State<KitExportPage> {
 
 class _KitPoster extends StatelessWidget {
   final bool story;
+  final bool feed;
   final String libro;
   final String coverUrl;
   final List<Color> colores;
@@ -183,6 +207,7 @@ class _KitPoster extends StatelessWidget {
 
   const _KitPoster({
     required this.story,
+    this.feed = false,
     required this.libro,
     required this.coverUrl,
     required this.colores,
@@ -192,6 +217,16 @@ class _KitPoster extends StatelessWidget {
     this.etiquetaStory = 'ESTOY LEYENDO',
     this.valoracion,
   });
+
+  /// En el feed (4:5) la composición de la story se reduce para caber entera,
+  /// centrada sobre el mismo fondo; el diseño está medido para 9:16.
+  Widget _formatoStory(Widget composicion) {
+    if (!feed) return composicion;
+    return FittedBox(
+      fit: BoxFit.contain,
+      child: SizedBox(width: 390, height: 693, child: composicion),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -208,8 +243,8 @@ class _KitPoster extends StatelessWidget {
     final foreground = story
         ? const Color(0xFF1A0F33) // morado muy oscuro sobre fondos claros
         : ThemeData.estimateBrightnessForColor(colores.first) == Brightness.dark
-            ? Colors.white
-            : const Color(0xFF201A29);
+        ? Colors.white
+        : const Color(0xFF201A29);
 
     final decoration = story
         ? BoxDecoration(
@@ -238,16 +273,19 @@ class _KitPoster extends StatelessWidget {
         child: CustomPaint(
           painter: _PosterTexture(color: foreground, editorial: story),
           child: story
-              ? _StoryComposition(
-                  libro: libro,
-                  coverUrl: coverUrl,
-                  colores: colores,
-                  subrayadores: subrayadores,
-                  foreground: foreground,
-                  atmosferaTitulo: atmosferaTitulo,
-                  atmosferaIcono: atmosferaIcono,
-                  etiquetaStory: etiquetaStory,
-                  valoracion: valoracion,
+              ? _formatoStory(
+                  _StoryComposition(
+                    feed: feed,
+                    libro: libro,
+                    coverUrl: coverUrl,
+                    colores: colores,
+                    subrayadores: subrayadores,
+                    foreground: foreground,
+                    atmosferaTitulo: atmosferaTitulo,
+                    atmosferaIcono: atmosferaIcono,
+                    etiquetaStory: etiquetaStory,
+                    valoracion: valoracion,
+                  ),
                 )
               : _WallpaperComposition(
                   libro: libro,
@@ -336,6 +374,9 @@ class _WallpaperComposition extends StatelessWidget {
 }
 
 class _StoryComposition extends StatelessWidget {
+  /// En el feed la composición va reducida dentro de un lienzo mayor: sus
+  /// destellos de fondo no se recortan en el borde de la composición.
+  final bool feed;
   final String libro;
   final String coverUrl;
   final List<Color> colores;
@@ -347,6 +388,7 @@ class _StoryComposition extends StatelessWidget {
   final double? valoracion;
 
   const _StoryComposition({
+    this.feed = false,
     required this.libro,
     required this.coverUrl,
     required this.colores,
@@ -401,10 +443,12 @@ class _StoryComposition extends StatelessWidget {
         final tabOffsets = [0.0, w * 0.012, -w * 0.008, w * 0.015, 0.0];
 
         // Color del acento para branding y detalles
-        final accentColor = tonos.isNotEmpty ? tonos.first : const Color(0xFF6D4BC3);
+        final accentColor = tonos.isNotEmpty
+            ? tonos.first
+            : const Color(0xFF6D4BC3);
 
         return Stack(
-          clipBehavior: Clip.hardEdge,
+          clipBehavior: feed ? Clip.none : Clip.hardEdge,
           children: [
             // ── Orb decorativo arriba-derecha ──────────────────────────
             Positioned(
@@ -417,8 +461,9 @@ class _StoryComposition extends StatelessWidget {
                   shape: BoxShape.circle,
                   gradient: RadialGradient(
                     colors: [
-                      (tonos.length > 1 ? tonos[1] : accentColor)
-                          .withValues(alpha: 0.28),
+                      (tonos.length > 1 ? tonos[1] : accentColor).withValues(
+                        alpha: 0.28,
+                      ),
                       Colors.transparent,
                     ],
                   ),
@@ -593,8 +638,8 @@ class _StoryComposition extends StatelessWidget {
                       filled
                           ? Icons.star_rounded
                           : half
-                              ? Icons.star_half_rounded
-                              : Icons.star_outline_rounded,
+                          ? Icons.star_half_rounded
+                          : Icons.star_outline_rounded,
                       size: 28,
                       color: (filled || half)
                           ? goldColor
@@ -692,9 +737,9 @@ class _PageTab extends StatelessWidget {
   final Color color;
   final String emoji;
   final String label;
-  final double totalWidth;  // ancho total incluyendo la parte oculta
+  final double totalWidth; // ancho total incluyendo la parte oculta
   final double height;
-  final double overlap;     // cuántos px quedan bajo la portada
+  final double overlap; // cuántos px quedan bajo la portada
 
   const _PageTab({
     required this.color,
@@ -797,7 +842,7 @@ class _PageTab extends StatelessWidget {
 
           // ── Emoji + texto de leyenda ──────────────────────────────────
           Positioned(
-            left: overlap + 8,  // empezar después de la zona oculta
+            left: overlap + 8, // empezar después de la zona oculta
             right: 6,
             top: 0,
             height: height,
@@ -806,10 +851,7 @@ class _PageTab extends StatelessWidget {
               children: [
                 Text(
                   emoji,
-                  style: TextStyle(
-                    fontSize: height * 0.46,
-                    height: 1.0,
-                  ),
+                  style: TextStyle(fontSize: height * 0.46, height: 1.0),
                 ),
                 SizedBox(width: height * 0.22),
                 Expanded(
