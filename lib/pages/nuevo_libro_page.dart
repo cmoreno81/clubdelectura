@@ -145,6 +145,8 @@ class _NuevoLibroPageState extends State<NuevoLibroPage> {
     _GeneroOption('🎈', 'Infantil', 'Infantil'),
     _GeneroOption('🎒', 'Juvenil', 'Juvenil'),
     _GeneroOption('🪶', 'Poesía', 'Poesía'),
+    _GeneroOption('📚', 'Narrativa', 'Narrativa'),
+    _GeneroOption('⚔️', 'Grimdark', 'Grimdark'),
   ];
 
   @override
