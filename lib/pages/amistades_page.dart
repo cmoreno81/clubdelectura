@@ -570,7 +570,7 @@ class _AmistadesPageState extends State<AmistadesPage> {
     final ocupada = _ocupadas.contains(p.nombre);
     return _fila(
       persona: p,
-      subtitulo: 'Quiere ser tu amigo',
+      subtitulo: 'Te ha enviado una solicitud',
       accion: Row(
         mainAxisSize: MainAxisSize.min,
         children: [

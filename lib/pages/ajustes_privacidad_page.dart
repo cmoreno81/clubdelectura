@@ -39,7 +39,7 @@ const _etiquetasNotificacion = <String, (String, String, String)>{
   'AMISTAD_SOLICITUD': (
     '👋',
     'Solicitudes de amistad',
-    'Cuando alguien quiere ser tu amigo en ClubReads',
+    'Cuando alguien te envía una solicitud de amistad',
   ),
   'AMISTAD_ACEPTADA': (
     '🎉',
