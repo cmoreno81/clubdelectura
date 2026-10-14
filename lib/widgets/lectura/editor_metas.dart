@@ -197,6 +197,9 @@ class _FilaMeta extends StatelessWidget {
                 DropdownButton<int>(
                   value: meta.capitulo.clamp(1, capitulos < 1 ? 1 : capitulos),
                   underline: const SizedBox.shrink(),
+                  // Con muchos capítulos la lista no ocupa toda la pantalla: se queda en unas
+                  // 5 filas y se desplaza (así no se corta en móviles pequeños).
+                  menuMaxHeight: 260,
                   onChanged: habilitado
                       ? (n) => n == null ? null : onCapitulo(n)
                       : null,
