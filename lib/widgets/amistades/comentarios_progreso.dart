@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../models/amistad.dart';
+import '../../models/reaccion_comentario.dart';
 import '../../services/amistades_cambios.dart';
 import '../../services/api_exception.dart';
 import '../../services/api_service.dart';
@@ -223,6 +224,26 @@ class _ComentariosProgresoSheetState extends State<ComentariosProgresoSheet> {
     ).showSnackBar(SnackBar(content: Text('Has bloqueado a ${c.autor}.')));
   }
 
+  /// Reacciones a la lectura. Quien lee ve quién ha reaccionado; el resto, el recuento.
+  Widget _reacciones() {
+    final data = _data;
+    if (data == null) return const SizedBox.shrink();
+    final total = data.reacciones.values.fold<int>(0, (a, b) => a + b);
+    if (total == 0) return const SizedBox.shrink();
+    final detalle = data.soyDuena && data.reaccionesDe.isNotEmpty
+        ? data.reaccionesDe
+              .map((r) => '${r.reaccion?.emoji ?? ''} ${r.nombre}'.trim())
+              .join(' · ')
+        : [
+            for (final e in data.reacciones.entries)
+              if (e.value > 0) '${e.key.emoji} ${e.value}',
+          ].join('  ');
+    return Padding(
+      padding: const EdgeInsets.only(bottom: AppSpacing.sm),
+      child: Text('Reacciones: $detalle', style: AppTextStyles.bodySecondary),
+    );
+  }
+
   Widget _comentario(ComentarioProgreso c) {
     return Padding(
       padding: const EdgeInsets.only(bottom: AppSpacing.sm),
@@ -294,6 +315,7 @@ class _ComentariosProgresoSheetState extends State<ComentariosProgresoSheet> {
           ),
           Text(widget.titulo, style: AppTextStyles.caption),
           const SizedBox(height: AppSpacing.sm),
+          _reacciones(),
           Flexible(
             child: _cargando
                 ? const Padding(

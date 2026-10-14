@@ -412,11 +412,19 @@ class ComentariosProgresoData {
     this.titulo = '',
     this.soyDuena = false,
     this.comentarios = const [],
+    this.reacciones = const {},
+    this.reaccionesDe = const [],
   });
 
   final String titulo;
   final bool soyDuena;
   final List<ComentarioProgreso> comentarios;
+
+  /// Recuento de reacciones a la lectura (por tipo).
+  final Map<ReaccionComentario, int> reacciones;
+
+  /// Quién ha reaccionado (solo lo recibe quien lee).
+  final List<({String nombre, ReaccionComentario? reaccion})> reaccionesDe;
 
   factory ComentariosProgresoData.fromJson(Map<String, dynamic> json) =>
       ComentariosProgresoData(
@@ -428,6 +436,44 @@ class ComentariosProgresoData {
               (e) => ComentarioProgreso.fromJson(Map<String, dynamic>.from(e)),
             )
             .toList(),
+        reacciones: _leerReacciones(json['reacciones']),
+        reaccionesDe: (json['reaccionesDe'] as List? ?? [])
+            .whereType<Map>()
+            .map(
+              (e) => (
+                nombre: e['nombre']?.toString() ?? '',
+                reaccion: ReaccionComentarioDatos.fromApi(
+                  e['reaccion']?.toString(),
+                ),
+              ),
+            )
+            .toList(),
+      );
+}
+
+/// Lo que dejan tus amigos en una lectura tuya: comentarios y reacciones.
+class ResumenAmigosLectura {
+  const ResumenAmigosLectura({
+    this.libraryId = '',
+    this.comentarios = 0,
+    this.reacciones = const {},
+    this.totalReacciones = 0,
+  });
+
+  final String libraryId;
+  final int comentarios;
+  final Map<ReaccionComentario, int> reacciones;
+  final int totalReacciones;
+
+  bool get hayAlgo =>
+      libraryId.isNotEmpty && (comentarios > 0 || totalReacciones > 0);
+
+  factory ResumenAmigosLectura.fromJson(Map<String, dynamic> json) =>
+      ResumenAmigosLectura(
+        libraryId: json['libraryId']?.toString() ?? '',
+        comentarios: (json['comentarios'] as num?)?.toInt() ?? 0,
+        reacciones: _leerReacciones(json['reacciones']),
+        totalReacciones: (json['totalReacciones'] as num?)?.toInt() ?? 0,
       );
 }
 

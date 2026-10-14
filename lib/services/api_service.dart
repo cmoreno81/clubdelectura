@@ -1155,6 +1155,21 @@ class ApiService {
   Future<ResultadoAmistad> enviarInvitacionLectura(String clubId) =>
       _accionAmistad('enviarInvitacionLectura', {'clubId': clubId});
 
+  /// Lo que han dejado tus amigos (comentarios y reacciones) en tu lectura de [bookId].
+  Future<ResumenAmigosLectura> getResumenAmigosLectura(String bookId) async {
+    final response = await _client.get(
+      Uri.parse(baseUrl).replace(
+        queryParameters: {'action': 'resumenAmigosLectura', 'bookId': bookId},
+      ),
+    );
+    if (response.statusCode != 200) {
+      throw ApiException.fromResponse(response);
+    }
+    return ResumenAmigosLectura.fromJson(
+      Map<String, dynamic>.from(_decodeJson(response) as Map),
+    );
+  }
+
   /// Sale de una lectura a la vez; con [eliminar] la borra para las dos personas.
   Future<ResultadoAmistad> salirLecturaAmistad(
     String clubId, {

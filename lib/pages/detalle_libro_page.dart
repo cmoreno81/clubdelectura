@@ -40,6 +40,7 @@ import '../widgets/libros/conversaciones_libro_card.dart';
 import '../widgets/libros/finalizar_libro_dialog.dart';
 import '../widgets/libros/kit_lectura_card.dart';
 import '../widgets/libros/libro_header.dart';
+import '../widgets/amistades/amigos_de_mi_lectura.dart';
 import '../widgets/amistades/lectura_con_amistad.dart';
 import '../widgets/amistades/recomendar_libro.dart';
 import '../widgets/libros/comprar_libro_card.dart';
@@ -1327,6 +1328,13 @@ class _DetalleLibroPageState extends State<DetalleLibroPage> {
 
                 // Aparece tarde (espera al servidor): el ancla evita que empuje
                 // lo que se está leyendo más abajo.
+                // Lo que tus amigos han dejado en tu lectura (comentarios y reacciones).
+                if (libro.bookId.isNotEmpty)
+                  AmigosDeMiLecturaCard(
+                    bookId: libro.bookId,
+                    titulo: libro.libro,
+                  ),
+
                 if (libro.bookId.isNotEmpty)
                   AnclaDeScroll(
                     child: ComprarLibroCard(
