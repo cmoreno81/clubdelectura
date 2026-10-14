@@ -20,6 +20,7 @@ class CatalogBook {
     this.seriesPosition = '',
     this.startedAt,
     this.finishedAt,
+    this.readers,
   });
 
   final String id;
@@ -40,6 +41,9 @@ class CatalogBook {
   final String publicationDate;
   final String series;
   final String seriesPosition;
+
+  /// Cuánta gente tiene ya este libro en ClubReads (solo en los que ya están).
+  final int? readers;
   final DateTime? startedAt;
   final DateTime? finishedAt;
 
@@ -91,6 +95,7 @@ class CatalogBook {
     finishedAt: json['fechaFin'] != null
         ? DateTime.tryParse(json['fechaFin'].toString())
         : null,
+    readers: _intOrNull(json['lectores']),
   );
 
   CatalogBook copyWith({
@@ -119,6 +124,7 @@ class CatalogBook {
     seriesPosition: seriesPosition,
     startedAt: startedAt ?? this.startedAt,
     finishedAt: finishedAt ?? this.finishedAt,
+    readers: readers,
   );
 }
 

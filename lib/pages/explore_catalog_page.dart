@@ -12,17 +12,24 @@ import '../theme/app_colors.dart';
 import '../theme/app_spacing.dart';
 import '../navigation/book_detail_navigation.dart';
 import '../widgets/common/libro_finalizado_celebration.dart';
-import '../widgets/common/optimized_network_image.dart';
 import '../widgets/libros/add_book_sheet.dart';
 import '../widgets/libros/apply_initial_status.dart';
 import '../widgets/libros/libro_acciones_rapidas.dart';
+import '../widgets/libros/resultado_catalogo.dart';
 import 'package:club_lectura_app/widgets/common/club_shimmer.dart';
 import '../widgets/common/screen_hint_banner.dart';
 
 class ExploreCatalogPage extends StatefulWidget {
-  const ExploreCatalogPage({super.key, this.initialQuery = ''});
+  const ExploreCatalogPage({
+    super.key,
+    this.initialQuery = '',
+    this.cargarBusqueda,
+  });
 
   final String initialQuery;
+
+  /// Para pruebas: sustituye la búsqueda real.
+  final Future<List<CatalogBook>> Function(String query)? cargarBusqueda;
 
   @override
   State<ExploreCatalogPage> createState() => _ExploreCatalogPageState();
@@ -92,7 +99,8 @@ class _ExploreCatalogPageState extends State<ExploreCatalogPage> {
       _error = null;
     });
     try {
-      final books = await ApiService().getCatalogoGeneral(query: normalized);
+      final books = await (widget.cargarBusqueda ??
+          (q) => ApiService().getCatalogoGeneral(query: q))(normalized);
       if (mounted && _searchGeneration.isCurrent(generation)) {
         setState(() => _books = _deduplicate(books));
       }
@@ -125,7 +133,73 @@ class _ExploreCatalogPageState extends State<ExploreCatalogPage> {
     _debounce = Timer(const Duration(milliseconds: 350), () => _load(value));
   }
 
+  /// Resultados de una búsqueda: primero lo que ya está en ClubReads, luego lo externo.
+  List<Object> _agrupar(List<CatalogBook> books) {
+    final propios = books.where((b) => b.source == 'CLUBREADS').toList();
+    final externos = books.where((b) => b.source != 'CLUBREADS').toList();
+    return [
+      if (propios.isNotEmpty) ...[
+        CabeceraResultados(
+          titulo: 'En ClubReads',
+          total: propios.length,
+          destacada: true,
+          subtitulo:
+              'Elige uno de estos: así todos leemos la misma ficha y las '
+              'conversaciones se juntan.',
+        ),
+        ...propios,
+      ],
+      if (externos.isNotEmpty) ...[
+        CabeceraResultados(
+          titulo: 'Otros resultados',
+          subtitulo: propios.isEmpty
+              ? 'Aún no está en ClubReads: al añadirlo se crea su ficha.'
+              : 'Solo si no es ninguno de los de arriba: se creará una ficha nueva.',
+        ),
+        ...externos,
+      ],
+    ];
+  }
+
+  /// Antes de crear una ficha nueva a partir de un resultado externo, si ya hay libros en
+  /// ClubReads con esa búsqueda, se pregunta para no duplicar.
+  Future<bool> _confirmarFichaNueva(CatalogBook book) async {
+    if (book.source == 'CLUBREADS') return true;
+    final hayPropios = _books.any((b) => b.source == 'CLUBREADS');
+    if (!hayPropios || _searchController.text.trim().isEmpty) return true;
+    final seguir = await showDialog<bool>(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: const Text('¿Seguro que no está ya en ClubReads?'),
+        content: const Text(
+          'Con esta búsqueda hay libros que ya están en ClubReads (los de arriba, '
+          'con la pastilla «En ClubReads»). Si es el mismo, elígelo ahí para no '
+          'duplicar la ficha.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Mirar los de ClubReads'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Es otro libro, añadir'),
+          ),
+        ],
+      ),
+    );
+    if (seguir != true && _scrollController.hasClients) {
+      _scrollController.animateTo(
+        0,
+        duration: const Duration(milliseconds: 300),
+        curve: Curves.easeOut,
+      );
+    }
+    return seguir == true;
+  }
+
   Future<void> _add(CatalogBook book) async {
+    if (!await _confirmarFichaNueva(book) || !mounted) return;
     final preferences = await showAddBookSheet(
       context,
       title: book.title,
@@ -307,6 +381,8 @@ class _ExploreCatalogPageState extends State<ExploreCatalogPage> {
       );
     }
     final hasRefreshError = error != null && books.isNotEmpty;
+    // Buscando, los de ClubReads van primero y destacados; los externos, aparte.
+    final items = browsing ? List<Object>.of(books) : _agrupar(books);
     final hasFooter =
         (browsing &&
             (_pagination.loadingMore ||
@@ -323,10 +399,10 @@ class _ExploreCatalogPageState extends State<ExploreCatalogPage> {
             AppSpacing.md,
             AppSpacing.xxxl,
           ),
-          itemCount: books.length + (hasFooter ? 1 : 0),
+          itemCount: items.length + (hasFooter ? 1 : 0),
           separatorBuilder: (_, _) => const SizedBox(height: AppSpacing.sm),
           itemBuilder: (_, index) {
-            if (index == books.length) {
+            if (index == items.length) {
               if (hasRefreshError || _pagination.hasContentError) {
                 return Center(
                   child: TextButton.icon(
@@ -351,7 +427,8 @@ class _ExploreCatalogPageState extends State<ExploreCatalogPage> {
                       ),
               );
             }
-            return _bookCard(books[index]);
+            final item = items[index];
+            return item is CatalogBook ? _bookCard(item) : item as Widget;
           },
         ),
         if (loading && books.isNotEmpty)
@@ -417,83 +494,41 @@ class _ExploreCatalogPageState extends State<ExploreCatalogPage> {
   }
 
   Widget _bookCard(CatalogBook book) {
-    return Card(
-      clipBehavior: Clip.antiAlias,
-      child: InkWell(
-        onTap: () => _openDetail(book),
-        onLongPress: () => _onLongPress(book),
-        child: Padding(
-        padding: const EdgeInsets.all(AppSpacing.sm),
-        child: Row(
-          children: [
-            ClipRRect(
-              borderRadius: BorderRadius.circular(10),
-              child: SizedBox(
-                width: 64,
-                height: 94,
-                child: OptimizedNetworkImage(
-                  url: book.coverUrl,
-                  width: 64,
-                  height: 94,
-                  fallback: Container(
-                    color: AppColors.primary.withValues(alpha: .1),
-                    child: const Icon(Icons.auto_stories_outlined),
-                  ),
-                ),
-              ),
-            ),
-            const SizedBox(width: AppSpacing.md),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    book.title,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(fontWeight: FontWeight.w800),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    book.authorLabel,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    book.sourceLabel,
-                    style: Theme.of(
-                      context,
-                    ).textTheme.labelSmall?.copyWith(color: AppColors.primary),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(width: AppSpacing.sm),
-            if (book.inMyLibrary)
-              const Tooltip(
-                message: 'Ya está en tu biblioteca',
-                child: Icon(
-                  Icons.bookmark_added_rounded,
-                  color: AppColors.success,
-                ),
-              )
-            else if (_addingId == book.id)
-              const SizedBox(
-                width: 24,
-                height: 24,
-                child: CircularProgressIndicator(strokeWidth: 2),
-              )
-            else
-              IconButton.filledTonal(
-                tooltip: 'Añadir a mi biblioteca',
-                onPressed: () => _add(book),
-                icon: const Icon(Icons.add_rounded),
-              ),
-          ],
+    final Widget accion;
+    if (book.inMyLibrary) {
+      accion = const Tooltip(
+        message: 'Ya está en tu biblioteca',
+        child: Icon(Icons.bookmark_added_rounded, color: AppColors.success),
+      );
+    } else if (_addingId == book.id) {
+      accion = const SizedBox(
+        width: 24,
+        height: 24,
+        child: CircularProgressIndicator(strokeWidth: 2),
+      );
+    } else if (book.source == 'CLUBREADS') {
+      // Lo que ya existe se anima más: botón lleno de la marca.
+      accion = IconButton.filled(
+        tooltip: 'Añadir a mi biblioteca',
+        style: IconButton.styleFrom(
+          backgroundColor: AppColors.primary,
+          foregroundColor: Colors.white,
         ),
-      ),
-      ),
+        onPressed: () => _add(book),
+        icon: const Icon(Icons.add_rounded),
+      );
+    } else {
+      accion = IconButton.filledTonal(
+        tooltip: 'Crear ficha y añadir a mi biblioteca',
+        onPressed: () => _add(book),
+        icon: const Icon(Icons.add_rounded),
+      );
+    }
+    return TarjetaResultadoCatalogo(
+      book: book,
+      accion: accion,
+      onTap: () => _openDetail(book),
+      onLongPress: () => _onLongPress(book),
     );
   }
 }
