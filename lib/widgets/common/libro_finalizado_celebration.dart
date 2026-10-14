@@ -1,17 +1,12 @@
-import 'dart:io';
 import 'dart:math' as math;
-import 'dart:typed_data';
-import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
-import 'package:flutter/rendering.dart';
 import 'package:flutter/scheduler.dart';
-import 'package:path_provider/path_provider.dart';
-import 'package:share_plus/share_plus.dart';
 
 import '../../theme/app_colors.dart';
 import '../../theme/app_spacing.dart';
 import '../../theme/app_text_styles.dart';
+import '../libros/compartir_libro_terminado.dart';
 
 // ── Colores del confeti en la paleta de ClubReads ──────────────────────────
 
@@ -158,10 +153,6 @@ class _LibroFinalizadoCelebrationState
   late final Ticker _ticker; // ignore: use_late_for_private_fields_and_variables
   double _lastT = 0;
 
-  /// Key para capturar el área de la tarjeta como imagen al compartir.
-  final GlobalKey _shareCardKey = GlobalKey();
-  bool _sharing = false;
-
   @override
   void initState() {
     super.initState();
@@ -229,59 +220,11 @@ class _LibroFinalizadoCelebrationState
     super.dispose();
   }
 
-  /// Captura el widget marcado con [_shareCardKey] como imagen PNG
-  /// y lo comparte a través del sistema operativo.
-  Future<void> _compartirLogro() async {
-    if (_sharing) return;
-    setState(() => _sharing = true);
-
-    try {
-      final boundary = _shareCardKey.currentContext?.findRenderObject()
-          as RenderRepaintBoundary?;
-      if (boundary == null) {
-        _compartirTexto();
-        return;
-      }
-
-      // Captura a la densidad de pantalla para nitidez en redes sociales.
-      final pixelRatio = MediaQuery.devicePixelRatioOf(context);
-      final ui.Image image = await boundary.toImage(pixelRatio: pixelRatio);
-      final ByteData? byteData =
-          await image.toByteData(format: ui.ImageByteFormat.png);
-      image.dispose();
-
-      if (byteData == null) {
-        _compartirTexto();
-        return;
-      }
-
-      final tempDir = await getTemporaryDirectory();
-      final file = File(
-        '${tempDir.path}/libro_terminado_${DateTime.now().millisecondsSinceEpoch}.png',
-      );
-      await file.writeAsBytes(byteData.buffer.asUint8List());
-
-      if (!mounted) return;
-
-      await SharePlus.instance.share(
-        ShareParams(
-          text: '¡He terminado de leer "${widget.titulo}"! 📚✨ #ClubReads',
-          files: [XFile(file.path, mimeType: 'image/png')],
-        ),
-      );
-    } catch (_) {
-      // Si la captura falla por cualquier motivo, compartir solo texto.
-      if (mounted) _compartirTexto();
-    } finally {
-      if (mounted) setState(() => _sharing = false);
-    }
-  }
-
-  void _compartirTexto() {
-    SharePlus.instance.share(
-      ShareParams(
-        text: '¡He terminado de leer "${widget.titulo}"! 📚✨ #ClubReads',
-      ),
+  void _compartirLogro() {
+    mostrarCompartirLibroTerminado(
+      context,
+      titulo: widget.titulo,
+      coverUrl: widget.coverUrl,
     );
   }
 
@@ -326,12 +269,9 @@ class _LibroFinalizadoCelebrationState
                   opacity: _fadeAnim,
                   child: ScaleTransition(
                     scale: _scaleAnim,
-                    child: RepaintBoundary(
-                      key: _shareCardKey,
-                      child: _ShareCard(
-                        titulo: widget.titulo,
-                        coverUrl: widget.coverUrl,
-                      ),
+                    child: _ShareCard(
+                      titulo: widget.titulo,
+                      coverUrl: widget.coverUrl,
                     ),
                   ),
                 ),
@@ -368,19 +308,10 @@ class _LibroFinalizadoCelebrationState
                                 borderRadius: BorderRadius.circular(14),
                               ),
                             ),
-                            onPressed: _sharing ? null : _compartirLogro,
-                            icon: _sharing
-                                ? const SizedBox(
-                                    width: 18,
-                                    height: 18,
-                                    child: CircularProgressIndicator(
-                                      strokeWidth: 2,
-                                      color: AppColors.primary,
-                                    ),
-                                  )
-                                : const Icon(Icons.share_rounded, size: 20),
+                            onPressed: _compartirLogro,
+                            icon: const Icon(Icons.share_rounded, size: 20),
                             label: Text(
-                              _sharing ? 'Preparando…' : 'Compartir logro',
+                              'Compartir logro',
                               style: const TextStyle(
                                 fontSize: 16,
                                 fontWeight: FontWeight.w600,
