@@ -9,6 +9,7 @@ import '../../theme/app_colors.dart';
 import '../../theme/app_spacing.dart';
 import '../../theme/app_text_styles.dart';
 import '../common/club_avatar.dart';
+import 'aviso_en_hoja.dart';
 
 /// Abre los comentarios de una lectura (la tuya o la de una amistad).
 Future<void> mostrarComentariosProgreso(
@@ -54,7 +55,8 @@ class ComentariosProgresoSheet extends StatefulWidget {
       _ComentariosProgresoSheetState();
 }
 
-class _ComentariosProgresoSheetState extends State<ComentariosProgresoSheet> {
+class _ComentariosProgresoSheetState extends State<ComentariosProgresoSheet>
+    with AvisoEnHojaState<ComentariosProgresoSheet> {
   final _texto = TextEditingController();
   ComentariosProgresoData? _data;
   String _error = '';
@@ -69,6 +71,7 @@ class _ComentariosProgresoSheetState extends State<ComentariosProgresoSheet> {
 
   @override
   void dispose() {
+    cancelarAviso();
     _texto.dispose();
     super.dispose();
   }
@@ -99,9 +102,8 @@ class _ComentariosProgresoSheetState extends State<ComentariosProgresoSheet> {
     }
   }
 
-  void _aviso(String texto) => ScaffoldMessenger.of(
-    context,
-  ).showSnackBar(SnackBar(content: Text(texto)));
+  // Dentro de la hoja (un SnackBar saldría por detrás y no se vería).
+  void _aviso(String texto) => avisar(texto);
 
   Future<void> _enviar() async {
     final texto = _texto.text.trim();
@@ -315,6 +317,7 @@ class _ComentariosProgresoSheetState extends State<ComentariosProgresoSheet> {
           ),
           Text(widget.titulo, style: AppTextStyles.caption),
           const SizedBox(height: AppSpacing.sm),
+          AvisoEnHoja(texto: avisoTexto),
           _reacciones(),
           Flexible(
             child: _cargando

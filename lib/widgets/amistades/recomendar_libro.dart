@@ -5,6 +5,7 @@ import '../../pages/amistades_page.dart';
 import '../../services/api_service.dart';
 import '../../theme/app_spacing.dart';
 import '../../theme/app_text_styles.dart';
+import 'aviso_en_hoja.dart';
 
 /// Botón de la ficha de un libro para recomendárselo a amistades.
 class BotonRecomendarLibro extends StatelessWidget {
@@ -87,7 +88,8 @@ class RecomendarLibroSheet extends StatefulWidget {
   State<RecomendarLibroSheet> createState() => _RecomendarLibroSheetState();
 }
 
-class _RecomendarLibroSheetState extends State<RecomendarLibroSheet> {
+class _RecomendarLibroSheetState extends State<RecomendarLibroSheet>
+    with AvisoEnHojaState<RecomendarLibroSheet> {
   late final Future<AmistadesData> _amistades =
       (widget.cargar ?? ApiService().getAmistades)();
   final _mensaje = TextEditingController();
@@ -97,6 +99,7 @@ class _RecomendarLibroSheetState extends State<RecomendarLibroSheet> {
 
   @override
   void dispose() {
+    cancelarAviso();
     _mensaje.dispose();
     super.dispose();
   }
@@ -112,14 +115,10 @@ class _RecomendarLibroSheetState extends State<RecomendarLibroSheet> {
     if (!mounted) return;
     if (!resultado.ok) {
       setState(() => _enviando = false);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            resultado.mensaje.isEmpty
-                ? 'No se ha podido enviar. Inténtalo de nuevo.'
-                : resultado.mensaje,
-          ),
-        ),
+      avisar(
+        resultado.mensaje.isEmpty
+            ? 'No se ha podido enviar. Inténtalo de nuevo.'
+            : resultado.mensaje,
       );
       return;
     }
@@ -158,6 +157,7 @@ class _RecomendarLibroSheetState extends State<RecomendarLibroSheet> {
             style: AppTextStyles.caption,
           ),
           const SizedBox(height: AppSpacing.sm),
+          AvisoEnHoja(texto: avisoTexto),
           Flexible(
             child: FutureBuilder<AmistadesData>(
               future: _amistades,

@@ -11,6 +11,7 @@ import '../../theme/app_spacing.dart';
 import '../../theme/app_text_styles.dart';
 import '../common/club_avatar.dart';
 import '../common/club_card.dart';
+import 'aviso_en_hoja.dart';
 
 /// Abre una lectura a la vez con una amistad. Esas lecturas viven en un club
 /// privado de la pareja: se activa mientras lees y luego se vuelve al club
@@ -160,11 +161,18 @@ class LeerConAmistadSheet extends StatefulWidget {
   State<LeerConAmistadSheet> createState() => _LeerConAmistadSheetState();
 }
 
-class _LeerConAmistadSheetState extends State<LeerConAmistadSheet> {
+class _LeerConAmistadSheetState extends State<LeerConAmistadSheet>
+    with AvisoEnHojaState<LeerConAmistadSheet> {
   late final Future<AmistadesData> _amistades =
       (widget.cargar ?? ApiService().getAmistades)();
   String? _elegida;
   bool _enviando = false;
+
+  @override
+  void dispose() {
+    cancelarAviso();
+    super.dispose();
+  }
 
   Future<void> _empezar() async {
     final nombre = _elegida;
@@ -177,14 +185,10 @@ class _LeerConAmistadSheetState extends State<LeerConAmistadSheet> {
     if (!mounted) return;
     if (!r.ok || r.clubId.isEmpty) {
       setState(() => _enviando = false);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            r.mensaje.isEmpty
-                ? 'No se ha podido crear la lectura. Inténtalo de nuevo.'
-                : r.mensaje,
-          ),
-        ),
+      avisar(
+        r.mensaje.isEmpty
+            ? 'No se ha podido crear la lectura. Inténtalo de nuevo.'
+            : r.mensaje,
       );
       return;
     }
@@ -213,6 +217,7 @@ class _LeerConAmistadSheetState extends State<LeerConAmistadSheet> {
             style: AppTextStyles.caption,
           ),
           const SizedBox(height: AppSpacing.sm),
+          AvisoEnHoja(texto: avisoTexto),
           Flexible(
             child: FutureBuilder<AmistadesData>(
               future: _amistades,

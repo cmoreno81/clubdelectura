@@ -113,7 +113,12 @@ void main() {
     await tester.tap(find.widgetWithText(FilledButton, 'Reportar'));
     await tester.pumpAndSettle();
     expect(reportado, 'c1:spam');
+    // El mensaje sale dentro de la hoja (un SnackBar quedaría tapado por ella).
     expect(find.text('Gracias, lo revisaremos en breve.'), findsOneWidget);
+    expect(find.byType(SnackBar), findsNothing);
+    // Y se quita solo.
+    await tester.pump(const Duration(seconds: 6));
+    expect(find.text('Gracias, lo revisaremos en breve.'), findsNothing);
   });
 
   testWidgets('si no hay acceso o falla, lo dice sin romperse', (tester) async {
