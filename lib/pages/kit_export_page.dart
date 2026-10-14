@@ -323,7 +323,7 @@ class _KitPoster extends StatelessWidget {
       children: [
         IgnorePointer(
           child: Opacity(
-            opacity: 0.32,
+            opacity: 0.2,
             child: AtmosferaEscenaEstatica(
               atmosfera: atmosfera,
               color: colores.first,
