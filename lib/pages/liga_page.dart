@@ -861,22 +861,26 @@ class _VistaParticipando extends StatelessWidget {
             ),
           )
         else
-          ..._filasConHuecos(estado.tabla),
+          ..._filasConHuecos(context, estado.tabla),
       ],
     );
   }
 
   /// Inserta un separador "···" cuando hay un salto de puestos (top 10 + tu
-  /// ventana no son contiguos).
-  List<Widget> _filasConHuecos(List<LigaFila> filas) {
+  /// ventana no son contiguos). Se puede pulsar para ver la clasificación completa.
+  List<Widget> _filasConHuecos(BuildContext context, List<LigaFila> filas) {
     final widgets = <Widget>[];
     for (var i = 0; i < filas.length; i++) {
       if (i > 0 && filas[i].puesto - filas[i - 1].puesto > 1) {
         widgets.add(
-          const Padding(
-            padding: EdgeInsets.symmetric(vertical: AppSpacing.xs),
-            child: Center(
-              child: Text('···', style: TextStyle(color: AppColors.textMuted)),
+          HuecoTablaLiga(
+            ocultos: filas[i].puesto - filas[i - 1].puesto - 1,
+            onTap: () => Navigator.push<void>(
+              context,
+              AppPageRoute(
+                builder: (_) =>
+                    LigaDivisionPage(division: estado.temporada.division),
+              ),
             ),
           ),
         );
@@ -890,6 +894,67 @@ class _VistaParticipando extends StatelessWidget {
       );
     }
     return widgets;
+  }
+}
+
+/// Separador entre tramos de la tabla cuando faltan puestos: se pulsa para abrir
+/// la clasificación completa de la división.
+class HuecoTablaLiga extends StatelessWidget {
+  const HuecoTablaLiga({required this.ocultos, required this.onTap});
+
+  final int ocultos;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final texto = ocultos == 1
+        ? 'Ver el puesto que falta'
+        : 'Ver los $ocultos puestos que faltan';
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: AppSpacing.xs),
+      child: Center(
+        child: Semantics(
+          button: true,
+          label: '$texto: abre la clasificación completa',
+          child: InkWell(
+            key: const Key('liga-ver-completa'),
+            borderRadius: BorderRadius.circular(AppRadius.pill),
+            onTap: onTap,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(
+                horizontal: AppSpacing.md,
+                vertical: AppSpacing.sm,
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Text(
+                    '···',
+                    style: TextStyle(
+                      color: AppColors.textMuted,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                  const SizedBox(width: AppSpacing.sm),
+                  Text(
+                    texto,
+                    style: AppTextStyles.caption.copyWith(
+                      color: AppColors.primary,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  const Icon(
+                    Icons.chevron_right_rounded,
+                    size: 18,
+                    color: AppColors.primary,
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
   }
 }
 
