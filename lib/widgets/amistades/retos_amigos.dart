@@ -245,7 +245,7 @@ class _TarjetaReto extends StatelessWidget {
                     Text(
                       p.aceptado
                           ? '${p.yo ? 'Tú' : p.nombre} · ${p.libros}'
-                          : '${p.nombre} · pendiente',
+                          : '${p.yo ? 'Tú' : p.nombre} · pendiente',
                       style: AppTextStyles.caption,
                     ),
                   ],
