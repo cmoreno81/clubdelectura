@@ -900,7 +900,11 @@ class _VistaParticipando extends StatelessWidget {
 /// Separador entre tramos de la tabla cuando faltan puestos: se pulsa para abrir
 /// la clasificación completa de la división.
 class HuecoTablaLiga extends StatelessWidget {
-  const HuecoTablaLiga({required this.ocultos, required this.onTap});
+  const HuecoTablaLiga({
+    super.key,
+    required this.ocultos,
+    required this.onTap,
+  });
 
   final int ocultos;
   final VoidCallback onTap;
