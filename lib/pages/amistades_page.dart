@@ -49,6 +49,26 @@ class _AmistadesPageState extends State<AmistadesPage> {
   bool _buscando = false;
   int _busquedaId = 0;
 
+  /// Destinos de los tres cuadros del resumen.
+  final GlobalKey _claveAmigos = GlobalKey();
+  final GlobalKey _claveRecibidas = GlobalKey();
+  final GlobalKey _claveEnviadas = GlobalKey();
+
+  /// Lleva a la sección; si no hay nada que enseñar, lo dice.
+  void _irA(GlobalKey clave, {required String vacio}) {
+    final destino = clave.currentContext;
+    if (destino == null) {
+      _aviso(vacio);
+      return;
+    }
+    Scrollable.ensureVisible(
+      destino,
+      duration: const Duration(milliseconds: 400),
+      curve: Curves.easeInOut,
+      alignment: 0.05,
+    );
+  }
+
   /// Nombres con una acción en curso, para desactivar sus botones.
   final Set<String> _ocupadas = {};
 
@@ -287,6 +307,9 @@ class _AmistadesPageState extends State<AmistadesPage> {
               onRefresh: () => _cargar(silencioso: true),
               child: ListView(
                 physics: const AlwaysScrollableScrollPhysics(),
+                // Se construye todo el panel para poder saltar a cualquier
+                // sección desde los cuadros del resumen.
+                cacheExtent: 8000,
                 padding: EdgeInsets.fromLTRB(
                   AppSpacing.md,
                   AppSpacing.md,
@@ -315,16 +338,20 @@ class _AmistadesPageState extends State<AmistadesPage> {
       const LecturasConAmistadesSeccion(),
       if (data.recibidas.isNotEmpty) ...[
         const SizedBox(height: AppSpacing.lg),
-        _titulo('Solicitudes recibidas', data.recibidas.length),
+        _titulo(
+          'Solicitudes recibidas',
+          data.recibidas.length,
+          _claveRecibidas,
+        ),
         for (final p in data.recibidas) _filaRecibida(p),
       ],
       if (data.enviadas.isNotEmpty) ...[
         const SizedBox(height: AppSpacing.lg),
-        _titulo('Solicitudes enviadas', data.enviadas.length),
+        _titulo('Solicitudes enviadas', data.enviadas.length, _claveEnviadas),
         for (final p in data.enviadas) _filaEnviada(p),
       ],
       const SizedBox(height: AppSpacing.lg),
-      _titulo('Tus amigos', data.amistades.length),
+      _titulo('Tus amigos', data.amistades.length, _claveAmigos),
       if (data.amistades.isEmpty)
         Padding(
           padding: const EdgeInsets.symmetric(vertical: AppSpacing.md),
@@ -345,31 +372,45 @@ class _AmistadesPageState extends State<AmistadesPage> {
   /// Resumen visual de un vistazo: amigos, solicitudes por responder y
   /// solicitudes enviadas.
   Widget _resumen(AmistadesData data) {
-    Widget dato(IconData icono, String valor, String etiqueta, Color color) {
+    Widget dato(
+      IconData icono,
+      String valor,
+      String etiqueta,
+      Color color,
+      VoidCallback alPulsar,
+    ) {
       return Expanded(
-        child: Container(
-          padding: const EdgeInsets.symmetric(
-            vertical: AppSpacing.md,
-            horizontal: AppSpacing.sm,
-          ),
-          decoration: BoxDecoration(
-            color: color.withValues(alpha: .12),
+        child: Material(
+          color: color.withValues(alpha: .12),
+          borderRadius: BorderRadius.circular(18),
+          child: InkWell(
+            key: Key('resumen-$etiqueta'),
             borderRadius: BorderRadius.circular(18),
-          ),
-          child: Column(
-            children: [
-              Icon(icono, color: color, size: 22),
-              const SizedBox(height: 4),
-              Text(
-                valor,
-                style: AppTextStyles.title.copyWith(fontSize: 22, color: color),
+            onTap: alPulsar,
+            child: Container(
+              padding: const EdgeInsets.symmetric(
+                vertical: AppSpacing.md,
+                horizontal: AppSpacing.sm,
               ),
-              Text(
-                etiqueta,
-                textAlign: TextAlign.center,
-                style: AppTextStyles.caption,
+              child: Column(
+                children: [
+                  Icon(icono, color: color, size: 22),
+                  const SizedBox(height: 4),
+                  Text(
+                    valor,
+                    style: AppTextStyles.title.copyWith(
+                      fontSize: 22,
+                      color: color,
+                    ),
+                  ),
+                  Text(
+                    etiqueta,
+                    textAlign: TextAlign.center,
+                    style: AppTextStyles.caption,
+                  ),
+                ],
               ),
-            ],
+            ),
           ),
         ),
       );
@@ -383,6 +424,7 @@ class _AmistadesPageState extends State<AmistadesPage> {
           '${data.amistades.length}',
           'amigos',
           AppColors.primary,
+          () => _irA(_claveAmigos, vacio: 'Todavía no tienes amigos.'),
         ),
         const SizedBox(width: AppSpacing.sm),
         dato(
@@ -390,6 +432,10 @@ class _AmistadesPageState extends State<AmistadesPage> {
           '${data.recibidas.length}',
           'por responder',
           AppColors.inkCoral,
+          () => _irA(
+            _claveRecibidas,
+            vacio: 'No tienes solicitudes por responder.',
+          ),
         ),
         const SizedBox(width: AppSpacing.sm),
         dato(
@@ -397,6 +443,7 @@ class _AmistadesPageState extends State<AmistadesPage> {
           '${data.enviadas.length}',
           'enviadas',
           AppColors.info,
+          () => _irA(_claveEnviadas, vacio: 'No tienes solicitudes enviadas.'),
         ),
       ],
     );
@@ -459,7 +506,8 @@ class _AmistadesPageState extends State<AmistadesPage> {
     );
   }
 
-  Widget _titulo(String texto, [int? total]) => Padding(
+  Widget _titulo(String texto, [int? total, GlobalKey? clave]) => Padding(
+    key: clave,
     padding: const EdgeInsets.only(bottom: AppSpacing.sm),
     child: Text(
       total == null ? texto : '$texto ($total)',

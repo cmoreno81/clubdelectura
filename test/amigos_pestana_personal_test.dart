@@ -118,4 +118,40 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.byKey(const Key('amigos-ideas-regalo')), findsNothing);
   });
+
+  testWidgets(
+    'los cuadros del resumen llevan a su sección o avisan si está vacía',
+    (tester) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          home: AmistadesPage(
+            embebida: true,
+            cargar: () async => AmistadesData(
+              miCodigo: 'ABCD-2345',
+              amistades: [
+                for (var i = 0; i < 12; i++) PersonaAmistad(nombre: 'Amiga $i'),
+              ],
+              recibidas: const [PersonaAmistad(nombre: 'Sara')],
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      // Vacía: avisa.
+      await tester.tap(find.byKey(const Key('resumen-enviadas')));
+      await tester.pump();
+      expect(find.text('No tienes solicitudes enviadas.'), findsOneWidget);
+      await tester.pumpAndSettle(const Duration(seconds: 5));
+
+      // Con solicitudes: baja hasta «Solicitudes recibidas».
+      await tester.tap(find.byKey(const Key('resumen-por responder')));
+      await tester.pumpAndSettle();
+      expect(find.text('Solicitudes recibidas (1)'), findsOneWidget);
+      expect(
+        tester.getTopLeft(find.text('Solicitudes recibidas (1)')).dy,
+        lessThan(300),
+      );
+    },
+  );
 }
