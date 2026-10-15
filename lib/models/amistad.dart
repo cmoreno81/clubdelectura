@@ -858,3 +858,29 @@ class RachaCompartida {
         ellaHoy: json['ellaHoy'] == true,
       );
 }
+
+/// Un libro tuyo que se puede recomendar a una amiga.
+class OpcionRecomendar {
+  const OpcionRecomendar({
+    required this.bookId,
+    required this.titulo,
+    this.coverUrl = '',
+    this.nota = 0,
+    this.leido = false,
+  });
+
+  final String bookId;
+  final String titulo;
+  final String coverUrl;
+  final double nota;
+  final bool leido;
+
+  factory OpcionRecomendar.fromJson(Map<String, dynamic> json) =>
+      OpcionRecomendar(
+        bookId: json['bookId']?.toString() ?? '',
+        titulo: json['titulo']?.toString() ?? '',
+        coverUrl: json['coverUrl']?.toString() ?? '',
+        nota: (json['nota'] as num?)?.toDouble() ?? 0,
+        leido: json['leido'] == true,
+      );
+}

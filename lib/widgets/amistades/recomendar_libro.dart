@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 
 import '../../models/amistad.dart';
-import '../../models/libros_data.dart';
-import '../../services/usuario_service.dart';
 import '../../pages/amistades_page.dart';
 import '../../services/api_service.dart';
 import '../../theme/app_colors.dart';
@@ -70,89 +68,11 @@ Future<void> mostrarRecomendarLibro(
   );
 }
 
-/// Un libro que se puede recomendar a una amiga.
-class OpcionRecomendar {
-  const OpcionRecomendar({
-    required this.bookId,
-    required this.titulo,
-    this.coverUrl = '',
-    this.nota = 0,
-    this.leido = false,
-  });
-
-  final String bookId;
-  final String titulo;
-  final String coverUrl;
-  final double nota;
-  final bool leido;
-}
-
-/// Primero los que has leído (de mayor a menor nota) y después los pendientes;
-/// sin repetidos ni los que la amiga ya ha leído o está leyendo.
-List<OpcionRecomendar> ordenarOpcionesRecomendar(
-  List<OpcionRecomendar> todas, {
-  Set<String> yaConoce = const {},
-}) {
-  final vistos = <String>{};
-  final utiles = [
-    for (final o in todas)
-      if (o.bookId.isNotEmpty && !yaConoce.contains(o.bookId)) o,
-  ];
-  // Si un libro sale leído y pendiente a la vez, manda el leído.
-  utiles.sort((a, b) {
-    if (a.leido != b.leido) return a.leido ? -1 : 1;
-    final c = b.nota.compareTo(a.nota);
-    return c != 0 ? c : a.titulo.compareTo(b.titulo);
-  });
-  return [
-    for (final o in utiles)
-      if (vistos.add(o.bookId)) o,
-  ];
-}
-
-double _notaDe(String valoracion) =>
-    double.tryParse(valoracion.replaceAll(',', '.')) ?? 0;
-
-/// Tus libros recomendables a [nombre]: tus leídos y pendientes, menos los que
-/// ella ya ha leído o está leyendo (sus pendientes sí se mantienen).
-Future<List<OpcionRecomendar>> cargarOpcionesRecomendar(String nombre) async {
-  final api = ApiService();
-  final usuario = (await UsuarioService().obtenerUsuario())?.trim() ?? '';
-  final resultados = await Future.wait<Object?>([
-    api.getLibrosDataGlobal(),
-    api
-        .getPerfilAmistad(nombre)
-        .then<Object?>((p) => p)
-        .catchError((_) => null),
-  ]);
-  final datos = resultados[0]! as LibrosData;
-  final perfil = resultados[1] as PerfilAmistad?;
-  final yaConoce = <String>{
-    if (perfil != null) ...[
-      for (final l in perfil.terminados) l.bookId,
-      for (final l in perfil.leyendo) l.bookId,
-    ],
-  };
-  final todas = <OpcionRecomendar>[
-    for (final f in datos.finalizados)
-      if (f.usuario == usuario)
-        OpcionRecomendar(
-          bookId: f.bookId,
-          titulo: f.libro,
-          coverUrl: f.coverUrl,
-          nota: _notaDe(f.valoracion),
-          leido: true,
-        ),
-    for (final l in datos.libros)
-      if (l.yaLoTengo && l.estado == 'PENDIENTE')
-        OpcionRecomendar(
-          bookId: l.bookId,
-          titulo: l.libro,
-          coverUrl: l.coverUrl,
-        ),
-  ];
-  return ordenarOpcionesRecomendar(todas, yaConoce: yaConoce);
-}
+/// Tus libros recomendables a [nombre], ya filtrados y ordenados por el
+/// servidor (tus leídos por nota, luego tus pendientes; sin lo que ella ya ha
+/// leído o está leyendo).
+Future<List<OpcionRecomendar>> cargarOpcionesRecomendar(String nombre) =>
+    ApiService().getLibrosParaRecomendar(nombre);
 
 /// Desde el perfil de una amiga (o el aviso «te pide una recomendación»):
 /// eliges uno de tus libros y se lo recomiendas a ella.

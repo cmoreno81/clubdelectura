@@ -100,28 +100,6 @@ void main() {
     expect(find.textContaining('No se han podido cargar'), findsOneWidget);
   });
 
-  test(
-    'opciones: primero lo leído de mayor a menor nota, luego pendientes, sin lo que ella ya ha leído',
-    () {
-      final r = ordenarOpcionesRecomendar(
-        const [
-          OpcionRecomendar(bookId: 'p1', titulo: 'Pendiente'),
-          OpcionRecomendar(bookId: 'a', titulo: 'Babel', nota: 4, leido: true),
-          OpcionRecomendar(bookId: 'b', titulo: 'Dune', nota: 5, leido: true),
-          OpcionRecomendar(
-            bookId: 'c',
-            titulo: 'Ya lo tiene',
-            nota: 5,
-            leido: true,
-          ),
-          OpcionRecomendar(bookId: 'a', titulo: 'Babel', nota: 4, leido: true),
-        ],
-        yaConoce: {'c'},
-      );
-      expect(r.map((o) => o.bookId).toList(), ['b', 'a', 'p1']);
-    },
-  );
-
   testWidgets(
     'desde el perfil de una amiga: cuadrícula con portadas, buscador y se abre la hoja para ella',
     (tester) async {

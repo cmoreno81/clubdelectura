@@ -1084,6 +1084,12 @@ class ApiService {
   Future<ResultadoAmistad> pedirRecomendacion(String nombre) =>
       _accionAmistad('pedirRecomendacion', {'nombre': nombre});
 
+  Future<List<OpcionRecomendar>> getLibrosParaRecomendar(String nombre) =>
+      _listaAmistad({
+        'action': 'librosParaRecomendar',
+        'nombre': nombre,
+      }, OpcionRecomendar.fromJson);
+
   Future<List<RetoAmigos>> getRetosAmigos() =>
       _listaAmistad({'action': 'retosAmigos'}, RetoAmigos.fromJson);
 
