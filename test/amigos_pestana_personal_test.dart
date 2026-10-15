@@ -178,4 +178,120 @@ void main() {
       );
     },
   );
+
+  testWidgets(
+    'afinidad: lista por libros en común con porcentaje y texto claro',
+    (tester) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: AfinidadAmigosSeccion(
+              cargar: () async => const [
+                AfinidadAmistad(
+                  nombre: 'Marta',
+                  enComun: 14,
+                  afinidad: 62,
+                  generos: ['Fantasía', 'Romance'],
+                  notasParecidas: true,
+                ),
+                AfinidadAmistad(nombre: 'Irene', enComun: 1, afinidad: 5),
+                AfinidadAmistad(nombre: 'Nadie', enComun: 0),
+              ],
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(
+        find.text(
+          'Coincidís en 14 libros · Fantasía, Romance · Puntuáis parecido',
+        ),
+        findsOneWidget,
+      );
+      expect(find.text('62%'), findsOneWidget);
+      expect(find.text('Coincidís en 1 libro'), findsOneWidget);
+      expect(find.text('Nadie'), findsNothing);
+    },
+  );
+
+  testWidgets('«Tus amigos y este libro» enseña estado y nota; vacío no sale', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: AmigosDelLibroSeccion(
+            bookId: 'b1',
+            cargar: (_) async => const [
+              AmigoDelLibro(nombre: 'Marta', estado: 'LEYENDO', progreso: 40),
+              AmigoDelLibro(
+                nombre: 'Julia',
+                estado: 'TERMINADO',
+                valoracion: 4.5,
+              ),
+              AmigoDelLibro(nombre: 'Noa', estado: 'PENDIENTE'),
+            ],
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(find.text('Lo está leyendo · 40%'), findsOneWidget);
+    expect(find.text('Lo ha leído'), findsOneWidget);
+    expect(find.text('Lo tiene pendiente'), findsOneWidget);
+    expect(find.text(' 4.5'), findsOneWidget);
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: AmigosDelLibroSeccion(
+            key: UniqueKey(),
+            bookId: 'b2',
+            cargar: (_) async => [],
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('amigos-del-libro')), findsNothing);
+  });
+
+  testWidgets(
+    'resumen semanal: libros, el más leído y quién más; vacío no sale',
+    (tester) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: ResumenSemanalAmigosCard(
+              cargar: () async => const ResumenSemanalAmigos(
+                terminados: 7,
+                personas: 2,
+                libroTitulo: 'Babel',
+                libroVeces: 2,
+                quienMas: 'Bea',
+                quienMasTotal: 5,
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(find.text('7 libros terminados'), findsOneWidget);
+      expect(find.text('El más leído: «Babel» (2)'), findsOneWidget);
+      expect(find.text('Quien más: Bea (5)'), findsOneWidget);
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: ResumenSemanalAmigosCard(
+              key: UniqueKey(),
+              cargar: () async => const ResumenSemanalAmigos(),
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(find.byKey(const Key('amigos-resumen-semanal')), findsNothing);
+    },
+  );
 }

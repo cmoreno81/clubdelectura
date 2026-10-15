@@ -661,3 +661,104 @@ class FeedAmistad {
     comentarios: (json['comentarios'] as num?)?.toInt() ?? 0,
   );
 }
+
+/// Qué tiene en común una amistad contigo (libros terminados y notas).
+class AfinidadAmistad {
+  const AfinidadAmistad({
+    required this.nombre,
+    this.avatarUrl = '',
+    this.enComun = 0,
+    this.afinidad = 0,
+    this.generos = const [],
+    this.notasParecidas = false,
+  });
+
+  final String nombre;
+  final String avatarUrl;
+  final int enComun;
+
+  /// 0-100: proporción de los libros de la biblioteca más pequeña que comparten.
+  final int afinidad;
+  final List<String> generos;
+  final bool notasParecidas;
+
+  factory AfinidadAmistad.fromJson(Map<String, dynamic> json) =>
+      AfinidadAmistad(
+        nombre: json['nombre']?.toString() ?? '',
+        avatarUrl: json['avatarUrl']?.toString() ?? '',
+        enComun: (json['enComun'] as num?)?.toInt() ?? 0,
+        afinidad: (json['afinidad'] as num?)?.toInt() ?? 0,
+        generos: [
+          for (final g in json['generos'] as List? ?? const []) g.toString(),
+        ],
+        notasParecidas: json['notasParecidas'] == true,
+      );
+}
+
+/// Una amistad que tiene un libro (lo lee, lo terminó o lo tiene pendiente).
+class AmigoDelLibro {
+  const AmigoDelLibro({
+    required this.nombre,
+    required this.estado,
+    this.avatarUrl = '',
+    this.progreso,
+    this.valoracion,
+  });
+
+  final String nombre;
+  final String avatarUrl;
+
+  /// `LEYENDO`, `TERMINADO` o `PENDIENTE`.
+  final String estado;
+  final int? progreso;
+  final double? valoracion;
+
+  factory AmigoDelLibro.fromJson(Map<String, dynamic> json) => AmigoDelLibro(
+    nombre: json['nombre']?.toString() ?? '',
+    avatarUrl: json['avatarUrl']?.toString() ?? '',
+    estado: json['estado']?.toString() ?? 'PENDIENTE',
+    progreso: (json['progreso'] as num?)?.toInt(),
+    valoracion: (json['valoracion'] as num?)?.toDouble(),
+  );
+}
+
+/// Lo que han leído tus amistades esta semana.
+class ResumenSemanalAmigos {
+  const ResumenSemanalAmigos({
+    this.terminados = 0,
+    this.personas = 0,
+    this.libroTitulo = '',
+    this.libroCoverUrl = '',
+    this.libroVeces = 0,
+    this.quienMas = '',
+    this.quienMasTotal = 0,
+  });
+
+  final int terminados;
+  final int personas;
+  final String libroTitulo;
+  final String libroCoverUrl;
+  final int libroVeces;
+  final String quienMas;
+  final int quienMasTotal;
+
+  bool get vacio => terminados == 0;
+
+  factory ResumenSemanalAmigos.fromJson(Map<String, dynamic> json) {
+    final libro = json['libroMasLeido'] is Map
+        ? Map<String, dynamic>.from(json['libroMasLeido'] as Map)
+        : const <String, dynamic>{};
+    final quien = json['quienMas'] is Map
+        ? Map<String, dynamic>.from(json['quienMas'] as Map)
+        : const <String, dynamic>{};
+    return ResumenSemanalAmigos(
+      terminados: (json['terminados'] as num?)?.toInt() ?? 0,
+      personas: (json['personas'] as num?)?.toInt() ?? 0,
+      libroTitulo: libro['titulo']?.toString() ?? '',
+      libroCoverUrl: libro['coverUrl']?.toString() ?? '',
+      libroVeces: (libro['veces'] as num?)?.toInt() ?? 0,
+      quienMas: quien['nombre']?.toString() ?? '',
+      quienMasTotal: (quien['total'] as num?)?.toInt() ?? 0,
+    );
+  }
+}

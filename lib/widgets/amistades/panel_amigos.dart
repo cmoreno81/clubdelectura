@@ -348,3 +348,336 @@ class _IdeasParaRegalarState extends State<IdeasParaRegalar> {
     );
   }
 }
+
+/// «Esta semana entre tus amigos»: libros terminados, el más leído y quién más.
+/// Si no ha pasado nada en 7 días, no sale.
+class ResumenSemanalAmigosCard extends StatefulWidget {
+  const ResumenSemanalAmigosCard({super.key, this.cargar});
+
+  /// Para pruebas.
+  final Future<ResumenSemanalAmigos> Function()? cargar;
+
+  @override
+  State<ResumenSemanalAmigosCard> createState() =>
+      _ResumenSemanalAmigosCardState();
+}
+
+class _ResumenSemanalAmigosCardState extends State<ResumenSemanalAmigosCard> {
+  ResumenSemanalAmigos? _resumen;
+
+  @override
+  void initState() {
+    super.initState();
+    AmistadesCambios.cambios.addListener(_cargar);
+    _cargar();
+  }
+
+  @override
+  void dispose() {
+    AmistadesCambios.cambios.removeListener(_cargar);
+    super.dispose();
+  }
+
+  Future<void> _cargar() async {
+    try {
+      final r = await (widget.cargar ?? ApiService().getResumenSemanalAmigos)();
+      if (mounted) setState(() => _resumen = r);
+    } catch (_) {
+      // No sale.
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final r = _resumen;
+    if (r == null || r.vacio) return const SizedBox.shrink();
+    return Container(
+      key: const Key('amigos-resumen-semanal'),
+      margin: const EdgeInsets.only(top: AppSpacing.lg),
+      padding: const EdgeInsets.all(AppSpacing.md),
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          colors: [AppColors.primaryDark, AppColors.primary],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Row(
+        children: [
+          if (r.libroCoverUrl.isNotEmpty || r.libroTitulo.isNotEmpty)
+            ClubBookCover(
+              title: r.libroTitulo,
+              imageUrl: r.libroCoverUrl,
+              width: 56,
+              height: 82,
+            ),
+          const SizedBox(width: AppSpacing.md),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'ESTA SEMANA ENTRE TUS AMIGOS',
+                  style: TextStyle(
+                    color: Colors.white70,
+                    fontSize: 11,
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: 1,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  r.terminados == 1
+                      ? '1 libro terminado'
+                      : '${r.terminados} libros terminados',
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 20,
+                    fontWeight: FontWeight.w900,
+                  ),
+                ),
+                if (r.libroVeces > 1)
+                  Text(
+                    'El más leído: «${r.libroTitulo}» (${r.libroVeces})',
+                    style: const TextStyle(color: Colors.white, fontSize: 13),
+                  ),
+                if (r.quienMas.isNotEmpty)
+                  Text(
+                    'Quien más: ${r.quienMas} (${r.quienMasTotal})',
+                    style: const TextStyle(color: Colors.white, fontSize: 13),
+                  ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// «Con quién coincides más»: tus amistades ordenadas por libros en común.
+/// Si nadie comparte biblioteca o no coincidís en nada, no sale.
+class AfinidadAmigosSeccion extends StatefulWidget {
+  const AfinidadAmigosSeccion({super.key, this.cargar, this.maximo = 4});
+
+  /// Para pruebas.
+  final Future<List<AfinidadAmistad>> Function()? cargar;
+  final int maximo;
+
+  @override
+  State<AfinidadAmigosSeccion> createState() => _AfinidadAmigosSeccionState();
+}
+
+class _AfinidadAmigosSeccionState extends State<AfinidadAmigosSeccion> {
+  List<AfinidadAmistad> _items = const [];
+
+  @override
+  void initState() {
+    super.initState();
+    AmistadesCambios.cambios.addListener(_cargar);
+    _cargar();
+  }
+
+  @override
+  void dispose() {
+    AmistadesCambios.cambios.removeListener(_cargar);
+    super.dispose();
+  }
+
+  Future<void> _cargar() async {
+    try {
+      final todos = await (widget.cargar ?? ApiService().getAfinidadAmigos)();
+      final conAlgo = todos.where((a) => a.enComun > 0).take(widget.maximo);
+      if (mounted) setState(() => _items = conAlgo.toList());
+    } catch (_) {
+      // No sale.
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (_items.isEmpty) return const SizedBox.shrink();
+    return Padding(
+      key: const Key('amigos-afinidad'),
+      padding: const EdgeInsets.only(top: AppSpacing.lg),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text('Con quién coincides más', style: AppTextStyles.section),
+          const SizedBox(height: AppSpacing.sm),
+          for (final a in _items)
+            InkWell(
+              borderRadius: BorderRadius.circular(14),
+              onTap: () => _abrirPerfil(context, a.nombre),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(vertical: 6),
+                child: Row(
+                  children: [
+                    ClubAvatar(
+                      nombre: a.nombre,
+                      imageUrl: a.avatarUrl,
+                      size: 40,
+                    ),
+                    const SizedBox(width: AppSpacing.md),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            a.nombre,
+                            style: AppTextStyles.body.copyWith(
+                              fontWeight: FontWeight.w800,
+                            ),
+                          ),
+                          Text(textoAfinidad(a), style: AppTextStyles.caption),
+                          const SizedBox(height: 4),
+                          ClipRRect(
+                            borderRadius: BorderRadius.circular(6),
+                            child: LinearProgressIndicator(
+                              value: (a.afinidad.clamp(0, 100)) / 100,
+                              minHeight: 6,
+                              backgroundColor: AppColors.primaryLight,
+                              color: AppColors.primary,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(width: AppSpacing.md),
+                    Text(
+                      '${a.afinidad}%',
+                      style: AppTextStyles.title.copyWith(
+                        fontSize: 18,
+                        color: AppColors.primary,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+/// «Coincidís en 14 libros · Fantasía, Romance · Puntuáis parecido».
+String textoAfinidad(AfinidadAmistad a) {
+  final partes = <String>[
+    a.enComun == 1
+        ? 'Coincidís en 1 libro'
+        : 'Coincidís en ${a.enComun} libros',
+    if (a.generos.isNotEmpty) a.generos.join(', '),
+    if (a.notasParecidas) 'Puntuáis parecido',
+  ];
+  return partes.join(' · ');
+}
+
+/// «Tus amigos y este libro» en la ficha: quién lo lee, lo ha terminado (con su
+/// nota) o lo tiene pendiente. Si ninguna amistad lo tiene, no sale.
+class AmigosDelLibroSeccion extends StatefulWidget {
+  const AmigosDelLibroSeccion({super.key, required this.bookId, this.cargar});
+
+  final String bookId;
+
+  /// Para pruebas.
+  final Future<List<AmigoDelLibro>> Function(String bookId)? cargar;
+
+  @override
+  State<AmigosDelLibroSeccion> createState() => _AmigosDelLibroSeccionState();
+}
+
+class _AmigosDelLibroSeccionState extends State<AmigosDelLibroSeccion> {
+  List<AmigoDelLibro> _items = const [];
+
+  @override
+  void initState() {
+    super.initState();
+    _cargar();
+  }
+
+  Future<void> _cargar() async {
+    try {
+      final r = await (widget.cargar ?? ApiService().getAmigosDelLibro)(
+        widget.bookId,
+      );
+      if (mounted) setState(() => _items = r);
+    } catch (_) {
+      // Sin red o servidor antiguo: no sale.
+    }
+  }
+
+  String _detalle(AmigoDelLibro a) => switch (a.estado) {
+    'LEYENDO' =>
+      'Lo está leyendo${a.progreso != null ? ' · ${a.progreso}%' : ''}',
+    'TERMINADO' => 'Lo ha leído',
+    _ => 'Lo tiene pendiente',
+  };
+
+  @override
+  Widget build(BuildContext context) {
+    if (_items.isEmpty) return const SizedBox.shrink();
+    return Padding(
+      key: const Key('amigos-del-libro'),
+      padding: const EdgeInsets.only(top: AppSpacing.md),
+      child: Container(
+        padding: const EdgeInsets.all(AppSpacing.md),
+        decoration: BoxDecoration(
+          color: AppColors.primaryLight.withValues(alpha: .5),
+          borderRadius: BorderRadius.circular(18),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('Tus amigos y este libro 👯', style: AppTextStyles.section),
+            const SizedBox(height: AppSpacing.xs),
+            for (final a in _items)
+              InkWell(
+                borderRadius: BorderRadius.circular(12),
+                onTap: () => _abrirPerfil(context, a.nombre),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 5),
+                  child: Row(
+                    children: [
+                      ClubAvatar(
+                        nombre: a.nombre,
+                        imageUrl: a.avatarUrl,
+                        size: 32,
+                      ),
+                      const SizedBox(width: AppSpacing.sm),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              a.nombre,
+                              style: AppTextStyles.body.copyWith(
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                            Text(_detalle(a), style: AppTextStyles.caption),
+                          ],
+                        ),
+                      ),
+                      if (a.valoracion != null) ...[
+                        const Icon(
+                          Icons.star_rounded,
+                          size: 18,
+                          color: AppColors.gold,
+                        ),
+                        Text(
+                          ' ${a.valoracion!.toStringAsFixed(a.valoracion! % 1 == 0 ? 0 : 1)}',
+                          style: AppTextStyles.caption,
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+}

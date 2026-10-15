@@ -1,5 +1,6 @@
 import '../widgets/amistades/comentarios_progreso.dart';
 import 'amistades_page.dart';
+import 'perfil_amistad_page.dart';
 import 'package:flutter/material.dart';
 
 import '../models/notificacion.dart';
@@ -315,6 +316,16 @@ class _NotificacionesPageState extends State<NotificacionesPage> {
             context,
             libraryId: libraryId,
             titulo: title,
+          );
+          return;
+        }
+        break;
+      case 'AMISTAD_PIDE_RECOMENDACION':
+        final quien = n.extra?['nombre']?.toString() ?? '';
+        if (quien.isNotEmpty) {
+          await Navigator.push<void>(
+            context,
+            AppPageRoute(builder: (_) => PerfilAmistadPage(nombre: quien)),
           );
           return;
         }

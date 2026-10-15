@@ -1046,6 +1046,47 @@ class ApiService {
     return PerfilAmistad.fromJson(data);
   }
 
+  Future<List<T>> _listaAmistad<T>(
+    Map<String, String> params,
+    T Function(Map<String, dynamic>) desde,
+  ) async {
+    final response = await _client.get(
+      Uri.parse(baseUrl).replace(queryParameters: params),
+    );
+    if (response.statusCode != 200) throw ApiException.fromResponse(response);
+    final data = Map<String, dynamic>.from(_decodeJson(response) as Map);
+    return (data['items'] as List? ?? [])
+        .whereType<Map>()
+        .map((e) => desde(Map<String, dynamic>.from(e)))
+        .toList();
+  }
+
+  Future<List<AfinidadAmistad>> getAfinidadAmigos() => _listaAmistad(
+    {'action': 'afinidadAmigos'},
+    AfinidadAmistad.fromJson,
+  );
+
+  Future<List<AmigoDelLibro>> getAmigosDelLibro(String bookId) =>
+      _listaAmistad({
+        'action': 'amigosDelLibro',
+        'bookId': bookId,
+      }, AmigoDelLibro.fromJson);
+
+  Future<ResumenSemanalAmigos> getResumenSemanalAmigos() async {
+    final response = await _client.get(
+      Uri.parse(
+        baseUrl,
+      ).replace(queryParameters: {'action': 'resumenSemanalAmigos'}),
+    );
+    if (response.statusCode != 200) throw ApiException.fromResponse(response);
+    return ResumenSemanalAmigos.fromJson(
+      Map<String, dynamic>.from(_decodeJson(response) as Map),
+    );
+  }
+
+  Future<ResultadoAmistad> pedirRecomendacion(String nombre) =>
+      _accionAmistad('pedirRecomendacion', {'nombre': nombre});
+
   Future<List<FeedAmistad>> getFeedAmistades() async {
     final response = await _client.get(
       Uri.parse(baseUrl).replace(queryParameters: {'action': 'feedAmistades'}),

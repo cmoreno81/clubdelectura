@@ -62,6 +62,7 @@ class Notificacion {
     'LIBRO_RECOMENDADO' => '📚',
     'PROGRESO_COMENTARIO' => '💬',
     'AMISTAD_LIBRO_TERMINADO' => '🎉',
+    'AMISTAD_PIDE_RECOMENDACION' => '💡',
     'LECTURA_AMISTAD_INVITACION' => '💌',
     'LECTURA_AMISTAD_ACEPTADA' => '📖',
     'LECTURA_AMISTAD_ELIMINADA' => '📖',

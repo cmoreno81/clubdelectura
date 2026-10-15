@@ -330,6 +330,8 @@ class _AmistadesPageState extends State<AmistadesPage> {
       _resumen(data),
       const SizedBox(height: AppSpacing.md),
       const ActividadAmistadesCard(mostrarVerTodas: false),
+      const ResumenSemanalAmigosCard(),
+      const AfinidadAmigosSeccion(),
       const FeedAmistades(),
       const IdeasParaRegalar(),
       const SizedBox(height: AppSpacing.lg),

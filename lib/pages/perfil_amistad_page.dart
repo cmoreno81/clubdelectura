@@ -9,6 +9,7 @@ import '../theme/app_spacing.dart';
 import '../theme/app_text_styles.dart';
 import '../widgets/amistades/comentarios_progreso.dart';
 import '../widgets/amistades/lectura_con_amistad.dart';
+import '../widgets/amistades/panel_amigos.dart';
 import '../widgets/amistades/reacciones_progreso.dart';
 import '../widgets/common/club_avatar.dart';
 import '../widgets/common/club_book_cover.dart';
@@ -46,6 +47,7 @@ class _PerfilAmistadPageState extends State<PerfilAmistadPage> {
   void initState() {
     super.initState();
     _cargar();
+    _cargarAfinidad();
   }
 
   Future<void> _cargar() async {
@@ -142,6 +144,7 @@ class _PerfilAmistadPageState extends State<PerfilAmistadPage> {
           ),
         ],
       ),
+      _afinidadYRecomendacion(p),
       const SizedBox(height: AppSpacing.lg),
       LecturasConAmistadesSeccion(
         soloCon: p.nombre,
@@ -157,6 +160,84 @@ class _PerfilAmistadPageState extends State<PerfilAmistadPage> {
       _resenas(p),
       const SizedBox(height: AppSpacing.xl),
     ];
+  }
+
+  AfinidadAmistad? _afinidad;
+  bool _pidiendo = false;
+
+  Future<void> _cargarAfinidad() async {
+    try {
+      final todas = await ApiService().getAfinidadAmigos();
+      final mia = todas.where(
+        (a) => a.nombre.toLowerCase() == widget.nombre.toLowerCase(),
+      );
+      if (mounted && mia.isNotEmpty) setState(() => _afinidad = mia.first);
+    } catch (_) {
+      // Sin red o no comparte su biblioteca: no sale.
+    }
+  }
+
+  Future<void> _pedirRecomendacion() async {
+    if (_pidiendo) return;
+    setState(() => _pidiendo = true);
+    final r = await ApiService().pedirRecomendacion(widget.nombre);
+    if (!mounted) return;
+    setState(() => _pidiendo = false);
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          r.mensaje.isEmpty
+              ? (r.ok ? 'Se lo hemos pedido 💜' : 'No se ha podido enviar.')
+              : r.mensaje,
+        ),
+      ),
+    );
+  }
+
+  /// Lo que tenéis en común y «recomiéndame un libro».
+  Widget _afinidadYRecomendacion(PerfilAmistad p) {
+    final a = _afinidad;
+    return Padding(
+      padding: const EdgeInsets.only(top: AppSpacing.md),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          if (a != null && a.enComun > 0)
+            Container(
+              key: const Key('perfil-afinidad'),
+              padding: const EdgeInsets.all(AppSpacing.md),
+              decoration: BoxDecoration(
+                color: AppColors.primaryLight.withValues(alpha: .6),
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: Row(
+                children: [
+                  Text(
+                    '${a.afinidad}%',
+                    style: AppTextStyles.title.copyWith(
+                      color: AppColors.primary,
+                    ),
+                  ),
+                  const SizedBox(width: AppSpacing.md),
+                  Expanded(
+                    child: Text(
+                      textoAfinidad(a),
+                      style: AppTextStyles.bodySecondary,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          const SizedBox(height: AppSpacing.sm),
+          OutlinedButton.icon(
+            key: const Key('perfil-pedir-recomendacion'),
+            onPressed: _pidiendo ? null : _pedirRecomendacion,
+            icon: const Icon(Icons.lightbulb_outline_rounded, size: 18),
+            label: Text('Pídele una recomendación a ${p.nombre}'),
+          ),
+        ],
+      ),
+    );
   }
 
   Widget _titulo(String texto) => Padding(
