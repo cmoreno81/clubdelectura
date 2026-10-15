@@ -346,7 +346,13 @@ class _DetalleLibroPageState extends State<DetalleLibroPage> {
           final kit = await _kitService.obtener(bookId);
           if (!mounted) return;
           if (kit.tienePaleta) {
-            await _mostrarPromptStory(libro, kit, finalizado: true);
+            // `libro` es el registro de antes de terminar: la nota recién puesta
+            // tiene que llegar a la story («YA LO HE LEÍDO» con sus estrellas).
+            await _mostrarPromptStory(
+              libro.copyWith(valoracion: valoracion ?? libro.valoracion),
+              kit,
+              finalizado: true,
+            );
           }
         }
 

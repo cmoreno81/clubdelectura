@@ -18,8 +18,8 @@ class LoginPage extends StatefulWidget {
 
 class _LoginPageState extends State<LoginPage> {
   final _formKey = GlobalKey<FormState>();
-  final _email = TextEditingController();
-  final _password = TextEditingController();
+  final _email = TextEditingController(text: const String.fromEnvironment('DEMO_EMAIL'));
+  final _password = TextEditingController(text: const String.fromEnvironment('DEMO_PASSWORD'));
   bool _busy = false;
   bool _hidePassword = true;
 
