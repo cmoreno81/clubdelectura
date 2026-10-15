@@ -30,17 +30,18 @@ void main() {
     expect(find.text('ABCD-2345'), findsOneWidget);
   });
 
-  testWidgets('Amigos suelto (desde Inicio) no enseña el resumen de pestaña', (
-    tester,
-  ) async {
-    await tester.pumpWidget(
-      MaterialApp(
-        home: AmistadesPage(cargar: () async => const AmistadesData()),
-      ),
-    );
-    await tester.pumpAndSettle();
-    expect(find.byKey(const Key('amistades-resumen')), findsNothing);
-  });
+  testWidgets(
+    'Amigos desde Inicio (cuentas con club) enseña el mismo resumen',
+    (tester) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          home: AmistadesPage(cargar: () async => const AmistadesData()),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(find.byKey(const Key('amistades-resumen')), findsOneWidget);
+    },
+  );
 
   testWidgets(
     '«Lo último» enseña lo que han terminado, lo más reciente primero',

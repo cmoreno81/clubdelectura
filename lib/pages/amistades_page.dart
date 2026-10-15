@@ -25,8 +25,8 @@ import 'perfil_amistad_page.dart';
 class AmistadesPage extends StatefulWidget {
   const AmistadesPage({super.key, this.cargar, this.embebida = false});
 
-  /// Como pestaña de la barra de las cuentas personales: sin flecha atrás,
-  /// con el resumen y «Qué leen tus amigos» arriba y margen para la barra.
+  /// Como pestaña de la barra de las cuentas personales: sin flecha atrás y
+  /// con margen para la barra flotante. El contenido es el mismo que desde Inicio.
   final bool embebida;
 
   /// Para pruebas: sustituye la carga real.
@@ -78,8 +78,9 @@ class _AmistadesPageState extends State<AmistadesPage> {
     _cargar();
     // Como pestaña, otras partes de la app (entrar en la pestaña, aceptar
     // desde un aviso…) pueden cambiar las amistades: se recarga sin parpadeo.
-    if (widget.embebida)
+    if (widget.embebida) {
       AmistadesCambios.cambios.addListener(_recargarSilencioso);
+    }
   }
 
   void _recargarSilencioso() => _cargar(silencioso: true);
@@ -324,14 +325,14 @@ class _AmistadesPageState extends State<AmistadesPage> {
 
   List<Widget> _secciones(AmistadesData data) {
     return [
-      if (widget.embebida) ...[
-        _resumen(data),
-        const SizedBox(height: AppSpacing.md),
-        const ActividadAmistadesCard(mostrarVerTodas: false),
-        const LoUltimoAmistades(),
-        const IdeasParaRegalar(),
-        const SizedBox(height: AppSpacing.lg),
-      ],
+      // Lo mismo en las cuentas con club (se llega desde Inicio) que en las
+      // personales (pestaña): solo cambia cómo se entra.
+      _resumen(data),
+      const SizedBox(height: AppSpacing.md),
+      const ActividadAmistadesCard(mostrarVerTodas: false),
+      const LoUltimoAmistades(),
+      const IdeasParaRegalar(),
+      const SizedBox(height: AppSpacing.lg),
       _tarjetaCodigo(data.miCodigo),
       const SizedBox(height: AppSpacing.lg),
       _bloqueBuscar(),
