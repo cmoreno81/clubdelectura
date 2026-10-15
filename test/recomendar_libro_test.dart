@@ -1,4 +1,5 @@
 import 'package:club_lectura_app/models/amistad.dart';
+import 'package:club_lectura_app/models/libro.dart';
 import 'package:club_lectura_app/widgets/amistades/recomendar_libro.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -99,4 +100,55 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.textContaining('No se han podido cargar'), findsOneWidget);
   });
+
+  testWidgets(
+    'desde el perfil de una amiga: eliges uno de tus libros (terminados primero) y se abre la hoja para ella',
+    (tester) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Builder(
+            builder: (context) => Scaffold(
+              body: TextButton(
+                onPressed: () => mostrarRecomendarAUnaAmiga(
+                  context,
+                  nombre: 'Marta',
+                  cargarLibros: () async => [
+                    Libro.fromJson({
+                      'bookId': 'b1',
+                      'libro': 'Zorro',
+                      'estado': 'LEYENDO',
+                    }),
+                    Libro.fromJson({
+                      'bookId': 'b2',
+                      'libro': 'Babel',
+                      'estado': 'FINALIZADO',
+                    }),
+                  ],
+                ),
+                child: const Text('abrir'),
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.tap(find.text('abrir'));
+      await tester.pumpAndSettle();
+      expect(find.text('¿Qué libro le recomiendas a Marta?'), findsOneWidget);
+      final babel = tester.getTopLeft(find.text('Babel')).dy;
+      final zorro = tester.getTopLeft(find.text('Zorro')).dy;
+      expect(babel < zorro, isTrue);
+
+      await tester.enterText(
+        find.byKey(const Key('recomendar-buscar-libro')),
+        'zor',
+      );
+      await tester.pumpAndSettle();
+      expect(find.text('Babel'), findsNothing);
+
+      await tester.tap(find.text('Zorro'));
+      await tester.pumpAndSettle();
+      expect(find.text('Recomendar a un amigo'), findsOneWidget);
+      expect(find.textContaining('«Zorro»'), findsOneWidget);
+    },
+  );
 }

@@ -1783,7 +1783,11 @@ const List<_HelpSection> _secciones = [
             'personal a quien quieras y puedes proponer leerlo a la vez. Si '
             'eres tú quien busca qué leer, en el perfil de una amiga pulsa '
             '«Pídele una recomendación»: le llega un aviso (como mucho una '
-            'vez por semana a cada persona).',
+            'vez por semana a cada persona).\n\n'
+            'Si te llega un aviso «¿Qué me recomiendas?», tócalo: se abre el '
+            'perfil de quien lo pide. Pulsa «Recomiéndale un libro», elige uno '
+            'de tu biblioteca (los que ya has terminado salen primero) y '
+            'envíaselo con un mensaje.',
       ),
       _HelpItem(
         pregunta: '¿Qué es leer a la vez?',

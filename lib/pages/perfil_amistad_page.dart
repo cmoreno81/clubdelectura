@@ -4,6 +4,7 @@ import '../models/amistad.dart';
 import '../navigation/book_detail_navigation.dart';
 import '../services/api_exception.dart';
 import '../services/api_service.dart';
+import '../widgets/amistades/recomendar_libro.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_spacing.dart';
 import '../theme/app_text_styles.dart';
@@ -234,6 +235,14 @@ class _PerfilAmistadPageState extends State<PerfilAmistadPage> {
             onPressed: _pidiendo ? null : _pedirRecomendacion,
             icon: const Icon(Icons.lightbulb_outline_rounded, size: 18),
             label: Text('Pídele una recomendación a ${p.nombre}'),
+          ),
+          const SizedBox(height: AppSpacing.sm),
+          OutlinedButton.icon(
+            key: const Key('perfil-recomendar-libro'),
+            onPressed: () =>
+                mostrarRecomendarAUnaAmiga(context, nombre: p.nombre),
+            icon: const Icon(Icons.favorite_border_rounded, size: 18),
+            label: Text('Recomiéndale un libro a ${p.nombre}'),
           ),
         ],
       ),

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../models/amistad.dart';
+import '../../models/libro.dart';
 import '../../pages/amistades_page.dart';
 import '../../services/api_service.dart';
 import '../../theme/app_spacing.dart';
@@ -41,6 +42,7 @@ Future<void> mostrarRecomendarLibro(
   BuildContext context, {
   required String bookId,
   required String titulo,
+  String? preseleccion,
   Future<AmistadesData> Function()? cargar,
   Future<ResultadoAmistad> Function({
     required String bookId,
@@ -58,10 +60,158 @@ Future<void> mostrarRecomendarLibro(
     builder: (_) => RecomendarLibroSheet(
       bookId: bookId,
       titulo: titulo,
+      preseleccion: preseleccion,
       cargar: cargar,
       enviar: enviar,
     ),
   );
+}
+
+/// Desde el perfil de una amiga (o el aviso «te pide una recomendación»):
+/// eliges uno de tus libros y se lo recomiendas a ella.
+Future<void> mostrarRecomendarAUnaAmiga(
+  BuildContext context, {
+  required String nombre,
+  Future<List<Libro>> Function()? cargarLibros,
+}) async {
+  final elegido = await showModalBottomSheet<Libro>(
+    context: context,
+    isScrollControlled: true,
+    showDragHandle: true,
+    useSafeArea: true,
+    builder: (_) => _ElegirLibroSheet(nombre: nombre, cargar: cargarLibros),
+  );
+  if (elegido == null || !context.mounted) return;
+  await mostrarRecomendarLibro(
+    context,
+    bookId: elegido.bookId,
+    titulo: elegido.libro,
+    preseleccion: nombre,
+  );
+}
+
+class _ElegirLibroSheet extends StatefulWidget {
+  const _ElegirLibroSheet({required this.nombre, this.cargar});
+
+  final String nombre;
+  final Future<List<Libro>> Function()? cargar;
+
+  @override
+  State<_ElegirLibroSheet> createState() => _ElegirLibroSheetState();
+}
+
+class _ElegirLibroSheetState extends State<_ElegirLibroSheet> {
+  late final Future<List<Libro>> _libros = _cargarLibros();
+  String _busqueda = '';
+
+  Future<List<Libro>> _cargarLibros() async {
+    final todos = await (widget.cargar ?? ApiService().getLibros)();
+    final vistos = <String>{};
+    final propios = [
+      for (final l in todos)
+        if (l.bookId.isNotEmpty && vistos.add(l.bookId)) l,
+    ];
+    // Primero los que ya has terminado: son los que mejor se recomiendan.
+    int peso(Libro l) => l.estado == 'FINALIZADO' ? 0 : 1;
+    propios.sort((a, b) {
+      final c = peso(a).compareTo(peso(b));
+      return c != 0 ? c : a.libro.compareTo(b.libro);
+    });
+    return propios;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: EdgeInsets.fromLTRB(
+        16,
+        0,
+        16,
+        16 + MediaQuery.viewInsetsOf(context).bottom,
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            '¿Qué libro le recomiendas a ${widget.nombre}?',
+            style: AppTextStyles.body.copyWith(
+              fontSize: 18,
+              fontWeight: FontWeight.w800,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            'Elige uno de tu biblioteca; los que ya has terminado salen primero.',
+            style: AppTextStyles.caption,
+          ),
+          const SizedBox(height: AppSpacing.sm),
+          TextField(
+            key: const Key('recomendar-buscar-libro'),
+            decoration: const InputDecoration(
+              prefixIcon: Icon(Icons.search),
+              hintText: 'Buscar por título',
+            ),
+            onChanged: (v) =>
+                setState(() => _busqueda = v.trim().toLowerCase()),
+          ),
+          Flexible(
+            child: FutureBuilder<List<Libro>>(
+              future: _libros,
+              builder: (context, snapshot) {
+                if (snapshot.connectionState != ConnectionState.done) {
+                  return const Padding(
+                    padding: EdgeInsets.all(24),
+                    child: Center(child: CircularProgressIndicator()),
+                  );
+                }
+                if (snapshot.hasError) {
+                  return Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Text(
+                      'No se ha podido cargar tu biblioteca. Inténtalo más tarde.',
+                      style: AppTextStyles.bodySecondary,
+                    ),
+                  );
+                }
+                final lista = [
+                  for (final l in snapshot.data ?? const <Libro>[])
+                    if (_busqueda.isEmpty ||
+                        l.libro.toLowerCase().contains(_busqueda))
+                      l,
+                ];
+                if (lista.isEmpty) {
+                  return Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Text(
+                      'No hay libros que coincidan.',
+                      style: AppTextStyles.bodySecondary,
+                    ),
+                  );
+                }
+                return ListView(
+                  shrinkWrap: true,
+                  children: [
+                    for (final l in lista)
+                      ListTile(
+                        key: Key('recomendar-libro-${l.bookId}'),
+                        contentPadding: EdgeInsets.zero,
+                        title: Text(l.libro),
+                        subtitle: l.autor.isEmpty ? null : Text(l.autor),
+                        trailing: l.estado == 'FINALIZADO'
+                            ? const Icon(Icons.check_circle_outline, size: 18)
+                            : null,
+                        onTap: () => Navigator.pop(context, l),
+                      ),
+                  ],
+                );
+              },
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 }
 
 class RecomendarLibroSheet extends StatefulWidget {
@@ -69,12 +219,16 @@ class RecomendarLibroSheet extends StatefulWidget {
     super.key,
     required this.bookId,
     required this.titulo,
+    this.preseleccion,
     this.cargar,
     this.enviar,
   });
 
   final String bookId;
   final String titulo;
+
+  /// Amiga ya marcada al abrir (cuando vienes de su perfil).
+  final String? preseleccion;
   final Future<AmistadesData> Function()? cargar;
   final Future<ResultadoAmistad> Function({
     required String bookId,
@@ -93,7 +247,9 @@ class _RecomendarLibroSheetState extends State<RecomendarLibroSheet>
   late final Future<AmistadesData> _amistades =
       (widget.cargar ?? ApiService().getAmistades)();
   final _mensaje = TextEditingController();
-  final Set<String> _elegidas = {};
+  late final Set<String> _elegidas = {
+    if (widget.preseleccion != null) widget.preseleccion!,
+  };
   bool _juntas = false;
   bool _enviando = false;
 
