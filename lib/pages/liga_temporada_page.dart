@@ -37,7 +37,7 @@ class _LigaTemporadaPageState extends State<LigaTemporadaPage> {
   }
 
   void _recargar() {
-    setState(() => _future = _cargar());
+    setState(() { _future = _cargar(); });
   }
 
   @override

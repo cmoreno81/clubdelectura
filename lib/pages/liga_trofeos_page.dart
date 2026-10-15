@@ -47,7 +47,7 @@ class _LigaTrofeosPageState extends State<LigaTrofeosPage> {
     );
   }
 
-  void _recargar() => setState(() => _future = _cargar());
+  void _recargar() => setState(() { _future = _cargar(); });
 
   void _abrirMedallero({
     required String userId,

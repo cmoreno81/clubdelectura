@@ -37,7 +37,7 @@ class _SolicitudesClubPageState extends State<SolicitudesClubPage> {
   }
 
   void _recargar() =>
-      setState(() => _future = ClubService().getSolicitudesClub(widget.clubId));
+      setState(() { _future = ClubService().getSolicitudesClub(widget.clubId); });
 
   Future<void> _responder(SolicitudClub solicitud, bool aceptar) async {
     setState(() => _procesando.add(solicitud.id));

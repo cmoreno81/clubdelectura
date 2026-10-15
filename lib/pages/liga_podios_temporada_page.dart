@@ -38,7 +38,7 @@ class _LigaPodiosTemporadaPageState extends State<LigaPodiosTemporadaPage> {
   }
 
   void _recargar() {
-    setState(() => _future = _cargar());
+    setState(() { _future = _cargar(); });
   }
 
   @override

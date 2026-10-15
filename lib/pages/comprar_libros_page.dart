@@ -261,7 +261,7 @@ class _ComprarLibrosPageState extends State<ComprarLibrosPage>
         : 'Salió el $texto';
   }
 
-  void _recargar() => setState(() => _future = _cargar());
+  void _recargar() => setState(() { _future = _cargar(); });
 
   // Libros marcados "Ya lo tengo" en esta pantalla: salen de la lista al
   // momento, sin recargarla.

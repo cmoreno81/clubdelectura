@@ -63,7 +63,7 @@ class _AutorLibrosPageState extends State<AutorLibrosPage> {
   Future<void> _reloadBooks({bool silent = false}) async {
     try {
       final data = await _cargarLibros();
-      if (mounted) setState(() => _future = Future.value(data));
+      if (mounted) setState(() { _future = Future.value(data); });
     } catch (_) {
       if (silent || !mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(

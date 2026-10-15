@@ -37,7 +37,7 @@ class _LigaDivisionPageState extends State<LigaDivisionPage> {
   }
 
   void _recargar() {
-    setState(() => _future = _cargar());
+    setState(() { _future = _cargar(); });
   }
 
   String _cuentaAtras(DateTime? terminaEn) {

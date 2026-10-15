@@ -69,11 +69,9 @@ class _AfinidadDetallePageState extends State<AfinidadDetallePage>
               appBar: AppBar(title: Text(widget.nombre)),
               body: ErrorView(
                 onRetry: () {
-                  setState(
-                    () => _future = ApiService().getAfinidadDetalle(
+                  setState(() { _future = ApiService().getAfinidadDetalle(
                       widget.miembroId,
-                    ),
-                  );
+                    ); });
                 },
               ),
             );

@@ -88,7 +88,7 @@ class _LigaClubesPageState extends State<LigaClubesPage> {
     return LigaClubesEstado.fromJson(json);
   }
 
-  void _recargar() => setState(() => _future = _cargar());
+  void _recargar() => setState(() { _future = _cargar(); });
 
   @override
   Widget build(BuildContext context) {

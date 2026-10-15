@@ -157,7 +157,7 @@ class _AjustesPrivacidadPageState extends State<AjustesPrivacidadPage> {
   }
 
   void _recargar() {
-    setState(() => _future = _cargar());
+    setState(() { _future = _cargar(); });
   }
 
   @override

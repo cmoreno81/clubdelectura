@@ -166,7 +166,7 @@ class _ClubBooksOfYearCardState extends State<ClubBooksOfYearCard> {
             children: [
               const Text('No se pudieron cargar los libros del año.'),
               TextButton(
-                onPressed: () => setState(() => _future = _load()),
+                onPressed: () => setState(() { _future = _load(); }),
                 child: const Text('Reintentar'),
               ),
             ],
@@ -368,7 +368,7 @@ class _CollectiveAreaState extends State<_CollectiveArea> {
               child: Text('No se pudo cargar la elección colectiva.'),
             ),
             TextButton(
-              onPressed: () => setState(() => _future = _load()),
+              onPressed: () => setState(() { _future = _load(); }),
               child: const Text('Reintentar'),
             ),
           ],

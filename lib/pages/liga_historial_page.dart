@@ -78,7 +78,7 @@ class _TemporadasTabState extends State<_TemporadasTab> {
   }
 
   void _recargar() {
-    setState(() => _future = _cargar());
+    setState(() { _future = _cargar(); });
   }
 
   void _abrirTemporada(int temporada) {
@@ -164,7 +164,7 @@ class _AcumuladoTabState extends State<_AcumuladoTab> {
   }
 
   void _recargar() {
-    setState(() => _future = _cargar());
+    setState(() { _future = _cargar(); });
   }
 
   @override

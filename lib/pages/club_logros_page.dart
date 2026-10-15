@@ -72,7 +72,7 @@ class _ClubLogrosPageState extends State<ClubLogrosPage> {
   }
 
   void _reload() =>
-      setState(() => _future = ApiService().getRecentClubAchievements());
+      setState(() { _future = ApiService().getRecentClubAchievements(); });
 
   @override
   Widget build(BuildContext context) {

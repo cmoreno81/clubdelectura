@@ -43,7 +43,7 @@ class _MisLogrosPageState extends State<MisLogrosPage> {
             return const CardListSkeleton();
           }
           if (snapshot.hasError) {
-            return ErrorView(onRetry: () => setState(() => _future = _load()));
+            return ErrorView(onRetry: () => setState(() { _future = _load(); }));
           }
           final achievements = snapshot.data ?? const [];
           if (achievements.isEmpty) {

@@ -112,7 +112,7 @@ class _BingoLectorSectionState extends State<BingoLectorSection> {
         nota: resultado.nota,
       );
     } catch (_) {
-      if (mounted) setState(() => _future = _cargar());
+      if (mounted) setState(() { _future = _cargar(); });
     }
   }
 

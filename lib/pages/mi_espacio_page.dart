@@ -142,7 +142,7 @@ class _MiEspacioPageState extends State<MiEspacioPage>
       );
       return;
     }
-    setState(() => _future = _load());
+    setState(() { _future = _load(); });
   }
 
   @override
@@ -225,7 +225,7 @@ class _MiEspacioPageState extends State<MiEspacioPage>
             return const Center(child: CircularProgressIndicator());
           }
           if (snapshot.hasError || snapshot.data == null) {
-            return _ErrorView(onRetry: () => setState(() => _future = _load()));
+            return _ErrorView(onRetry: () => setState(() { _future = _load(); }));
           }
           return _Content(
             data: snapshot.data!,

@@ -50,7 +50,7 @@ class _LigaPageState extends State<LigaPage> {
   }
 
   void _recargar() {
-    setState(() => _future = _cargar());
+    setState(() { _future = _cargar(); });
   }
 
   Future<void> _unirme() async {

@@ -54,7 +54,7 @@ class _ClubWishlistPageState extends State<ClubWishlistPage> {
     _future = _service.getClubWishlist();
   }
 
-  void _reload() => setState(() => _future = _service.getClubWishlist());
+  void _reload() => setState(() { _future = _service.getClubWishlist(); });
 
   Future<void> _addToMyList(ClubWishlistGroup group) async {
     await showModalBottomSheet<bool>(

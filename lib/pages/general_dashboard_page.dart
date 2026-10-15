@@ -2764,7 +2764,7 @@ class _WishlistPreviewSectionState extends State<_WishlistPreviewSection>
   /// leer para no enseñar libros que ya no están.
   void _recargar() {
     if (!mounted) return;
-    setState(() => _future = WishlistService().getWishlist());
+    setState(() { _future = WishlistService().getWishlist(); });
   }
 
   void _openWishlist() {
