@@ -1,4 +1,5 @@
 import 'package:club_lectura_app/models/catalog_book.dart';
+import 'package:club_lectura_app/models/perfil_usuario.dart';
 import 'package:club_lectura_app/pages/catalog_book_detail_page.dart';
 import 'package:club_lectura_app/widgets/book_of_year/book_of_year_bracket_preview.dart';
 import 'package:club_lectura_app/widgets/common/club_book_cover.dart';
@@ -7,6 +8,39 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
+  testWidgets('si es de una saga, la ficha enseña los otros tomos', (
+    tester,
+  ) async {
+    await _pump(
+      tester,
+      book: _book(),
+      tomos: const [
+        PerfilSagaVolumen(
+          bookId: 'v1',
+          titulo: 'Corona de Jade',
+          numero: '2',
+          posicion: 2,
+          coverUrl: '',
+          estado: '',
+        ),
+      ],
+    );
+    await tester.scrollUntilVisible(
+      find.text('Otros libros de la saga'),
+      300,
+      scrollable: find.byType(Scrollable).first,
+    );
+    expect(find.text('Otros libros de la saga'), findsOneWidget);
+    expect(find.text('Corona de Jade'), findsWidgets);
+  });
+
+  testWidgets('sin otros tomos conocidos no sale el panel de la saga', (
+    tester,
+  ) async {
+    await _pump(tester, book: _book());
+    expect(find.text('Otros libros de la saga'), findsNothing);
+  });
+
   testWidgets('muestra una ficha pública completa sin datos personales', (
     tester,
   ) async {
@@ -155,6 +189,7 @@ Future<void> _pump(
   required CatalogBook book,
   Future<String> Function(CatalogBook?, AddBookPreferences)? addBook,
   TextScaler textScaler = TextScaler.noScaling,
+  List<PerfilSagaVolumen> tomos = const [],
 }) async {
   await tester.pumpWidget(
     MaterialApp(
@@ -167,6 +202,7 @@ Future<void> _pump(
           genre: book.genre,
           loadBook: (_, _) async => book,
           addBook: addBook,
+          loadVolumenesSaga: (_) async => tomos,
         ),
       ),
     ),

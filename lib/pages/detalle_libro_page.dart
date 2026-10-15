@@ -1461,7 +1461,7 @@ class _DetalleLibroPageState extends State<DetalleLibroPage> {
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
                       if (_volumenesSaga.isNotEmpty) ...[
-                        _OtrosVolumenesSagaSection(
+                        OtrosVolumenesSagaSection(
                           volumenes: _volumenesSaga,
                           anadiendo: _anadiendoVolumenSaga,
                           onAnadir: _anadirVolumenSaga,
@@ -1688,8 +1688,9 @@ ClubChipVariant _chipVariantVolumenSaga(String estado) {
   }
 }
 
-class _OtrosVolumenesSagaSection extends StatelessWidget {
-  const _OtrosVolumenesSagaSection({
+class OtrosVolumenesSagaSection extends StatelessWidget {
+  const OtrosVolumenesSagaSection({
+    super.key,
     required this.volumenes,
     required this.anadiendo,
     required this.onAnadir,

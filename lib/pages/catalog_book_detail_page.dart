@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:club_lectura_app/utils/formato_libro.dart';
 import 'package:club_lectura_app/services/library_refresh_notifier.dart';
 import 'package:flutter/material.dart';
@@ -5,7 +7,9 @@ import 'package:url_launcher/url_launcher.dart';
 
 import '../models/catalog_book.dart';
 import '../models/libro_agrupado.dart';
+import '../models/perfil_usuario.dart';
 import '../navigation/app_page_route.dart';
+import '../navigation/book_detail_navigation.dart';
 import '../services/api_exception.dart';
 import '../services/api_service.dart';
 import '../services/usuario_service.dart';
@@ -32,6 +36,7 @@ class CatalogBookDetailPage extends StatefulWidget {
     required this.genre,
     this.loadBook,
     this.addBook,
+    this.loadVolumenesSaga,
     this.onLibraryChanged,
   });
 
@@ -45,6 +50,10 @@ class CatalogBookDetailPage extends StatefulWidget {
     AddBookPreferences preferences,
   )?
   addBook;
+
+  /// Para pruebas: otros tomos de la saga de este libro.
+  final Future<List<PerfilSagaVolumen>> Function(String bookId)?
+  loadVolumenesSaga;
   final VoidCallback? onLibraryChanged;
 
   @override
@@ -63,10 +72,109 @@ class _CatalogBookDetailPageState extends State<CatalogBookDetailPage> {
   /// si el servidor redirige a un libro canónico).
   String _addedBookId = '';
 
+  /// Otros tomos de la saga (vacío si no es de una saga o es el único conocido).
+  List<PerfilSagaVolumen> _volumenesSaga = const [];
+  final Set<String> _anadiendoVolumenSaga = {};
+
   @override
   void initState() {
     super.initState();
     _loadBook();
+    if (widget.bookId.isNotEmpty) unawaited(_cargarVolumenesSaga());
+  }
+
+  Future<void> _cargarVolumenesSaga() async {
+    try {
+      final v =
+          await (widget.loadVolumenesSaga ?? ApiService().getVolumenesSaga)(
+            widget.bookId,
+          );
+      if (mounted) setState(() => _volumenesSaga = v);
+    } catch (_) {
+      // Sin tomos hermanos, simplemente no sale el panel.
+    }
+  }
+
+  Future<void> _anadirVolumenSaga(PerfilSagaVolumen volumen) async {
+    if (_anadiendoVolumenSaga.contains(volumen.bookId)) return;
+    final usuario = await UsuarioService().obtenerUsuario();
+    if (usuario == null || usuario.trim().isEmpty || !mounted) return;
+    final preferencias = await showAddBookSheet(
+      context,
+      title: volumen.titulo,
+      coverUrl: volumen.coverUrl,
+      showStatusPicker: true,
+    );
+    if (preferencias == null || !mounted) return;
+
+    setState(() => _anadiendoVolumenSaga.add(volumen.bookId));
+    try {
+      final respuesta = await ApiService().anadirLibroExistente(
+        usuario: usuario,
+        libro: volumen.bookId,
+        prioridad: preferencias.priority,
+        formato: preferencias.format,
+        idioma: preferencias.idioma,
+      );
+      if (respuesta['ok'] != true) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              respuesta['mensaje']?.toString() ?? 'No se ha podido añadir',
+            ),
+          ),
+        );
+        return;
+      }
+      if (!mounted) return;
+      final estadoFinal = await aplicarEstadoInicial(
+        context,
+        usuario: usuario,
+        libro: volumen.titulo,
+        estadoElegido: preferencias.status,
+        formato: preferencias.format,
+      );
+      if (!mounted) return;
+      LibraryRefreshNotifier.instance.invalidate();
+      widget.onLibraryChanged?.call();
+      await _cargarVolumenesSaga();
+      if (!mounted) return;
+      if (estadoFinal == 'FINALIZADO') {
+        await mostrarCelebracionFinalizado(
+          context,
+          titulo: volumen.titulo,
+          coverUrl: volumen.coverUrl,
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              noSeAplicoEstadoElegido(
+                    estadoElegido: preferencias.status,
+                    estadoFinal: estadoFinal,
+                  )
+                  ? mensajeEstadoNoAplicado(volumen.titulo)
+                  : '${volumen.titulo} añadido a tu biblioteca',
+            ),
+          ),
+        );
+      }
+    } on ApiException catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(e.message)));
+      }
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('No se ha podido añadir')));
+      }
+    } finally {
+      if (mounted) setState(() => _anadiendoVolumenSaga.remove(volumen.bookId));
+    }
   }
 
   Future<void> _loadBook() async {
@@ -193,9 +301,9 @@ class _CatalogBookDetailPageState extends State<CatalogBookDetailPage> {
     } catch (_) {
       if (mounted) {
         setState(() => _adding = false);
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('No se ha podido añadir')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('No se ha podido añadir')));
       }
     }
   }
@@ -563,6 +671,21 @@ class _CatalogBookDetailPageState extends State<CatalogBookDetailPage> {
               titulo: widget.title,
               espacioDespues: AppSpacing.sm,
             ),
+
+          if (_volumenesSaga.isNotEmpty) ...[
+            OtrosVolumenesSagaSection(
+              volumenes: _volumenesSaga,
+              anadiendo: _anadiendoVolumenSaga,
+              onAnadir: _anadirVolumenSaga,
+              onAbrir: (v) => openBookDetail(
+                context,
+                title: v.titulo,
+                bookId: v.bookId,
+                coverUrl: v.coverUrl,
+              ),
+            ),
+            const SizedBox(height: AppSpacing.lg),
+          ],
 
           if (widget.bookId.isNotEmpty)
             AmigosDelLibroSeccion(bookId: widget.bookId),
