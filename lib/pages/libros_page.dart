@@ -11,7 +11,6 @@ import 'package:club_lectura_app/widgets/common/club_book_cover.dart';
 import 'package:club_lectura_app/widgets/common/club_card.dart';
 import 'package:club_lectura_app/widgets/common/club_chip.dart';
 import 'package:club_lectura_app/widgets/common/club_empty_state.dart';
-import 'package:club_lectura_app/widgets/common/club_shimmer.dart';
 import 'package:club_lectura_app/widgets/common/floating_nav_bar.dart';
 import 'package:club_lectura_app/widgets/error_view.dart';
 import 'package:flutter/material.dart';
@@ -41,6 +40,7 @@ import '../widgets/libros/talento_emergente.dart';
 import '../utils/idioma_utils.dart';
 import '../utils/lector_count_utils.dart';
 import '../utils/reading_status_copy.dart';
+import '../widgets/libros/cargando_biblioteca.dart';
 import 'detalle_libro_page.dart';
 import 'nuevo_libro_page.dart';
 import '../services/atmosfera_scope.dart';
@@ -365,7 +365,7 @@ class _LibrosPageState extends State<LibrosPage> with WidgetsBindingObserver {
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting &&
               !snapshot.hasData) {
-            return const BookListSkeleton();
+            return CargandoBiblioteca(onReintentar: _recargar);
           }
 
           final data = snapshot.data ?? _lastData;
@@ -374,7 +374,7 @@ class _LibrosPageState extends State<LibrosPage> with WidgetsBindingObserver {
           }
 
           if (data == null) {
-            return const BookListSkeleton();
+            return CargandoBiblioteca(onReintentar: _recargar);
           }
           final libros = data.libros;
           final finalizados = data.finalizados;

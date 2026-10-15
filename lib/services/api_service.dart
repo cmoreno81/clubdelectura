@@ -1443,8 +1443,14 @@ class ApiService {
 
   Future<LibrosData> getLibrosData({String? clubId}) {
     return LibrosDataCache.instance.get(() async {
-      final libros = await getLibros();
-      final finalizados = await getAllLibrosFinalizados();
+      // Las dos listas se piden a la vez: antes iban una detrás de otra y se
+      // sumaban los dos viajes al servidor.
+      final resultados = await Future.wait<Object>([
+        getLibros(),
+        getAllLibrosFinalizados(),
+      ]);
+      final libros = resultados[0] as List<Libro>;
+      final finalizados = resultados[1] as List<LibroFinalizado>;
       return LibrosData(
         libros: libros,
         finalizados: _deduplicarFinalizados(finalizados),
@@ -1454,8 +1460,12 @@ class ApiService {
 
   /// Vista ClubReads: igual que [getLibrosData] pero sin filtro de club.
   Future<LibrosData> getLibrosDataGlobal() async {
-    final libros = await getLibrosGlobal();
-    final finalizados = await getAllLibrosFinalizadosGlobal();
+    final resultados = await Future.wait<Object>([
+      getLibrosGlobal(),
+      getAllLibrosFinalizadosGlobal(),
+    ]);
+    final libros = resultados[0] as List<Libro>;
+    final finalizados = resultados[1] as List<LibroFinalizado>;
     return LibrosData(
       libros: libros,
       finalizados: _deduplicarFinalizados(finalizados),
