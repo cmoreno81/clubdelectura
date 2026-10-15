@@ -336,12 +336,10 @@ class _AmistadesPageState extends State<AmistadesPage> {
       const RachasCompartidasSeccion(),
       RetosAmigosSeccion(amistades: data.amistades),
       const FeedAmistades(),
+      const LecturasConAmistadesSeccion(),
       const IdeasParaRegalar(),
       const SizedBox(height: AppSpacing.lg),
-      _tarjetaCodigo(data.miCodigo),
-      const SizedBox(height: AppSpacing.lg),
       _bloqueBuscar(),
-      const LecturasConAmistadesSeccion(),
       if (data.recibidas.isNotEmpty) ...[
         const SizedBox(height: AppSpacing.lg),
         _titulo(
@@ -369,6 +367,8 @@ class _AmistadesPageState extends State<AmistadesPage> {
         )
       else
         for (final p in data.amistades) _filaAmistad(p),
+      const SizedBox(height: AppSpacing.lg),
+      _tarjetaCodigo(data.miCodigo),
       const SizedBox(height: AppSpacing.lg),
       _bloquePrivacidad(data.privacidad),
       const SizedBox(height: AppSpacing.xl),

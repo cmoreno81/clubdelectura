@@ -27,6 +27,12 @@ void main() {
     expect(find.byKey(const Key('amistades-resumen')), findsOneWidget);
     expect(find.text('por responder'), findsOneWidget);
     expect(find.byType(BackButton), findsNothing);
+    // Tu código va abajo, justo antes de «Qué ven tus amigos de ti».
+    await tester.scrollUntilVisible(
+      find.text('ABCD-2345'),
+      300,
+      scrollable: find.byType(Scrollable).first,
+    );
     expect(find.text('ABCD-2345'), findsOneWidget);
   });
 
