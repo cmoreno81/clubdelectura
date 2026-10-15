@@ -4,8 +4,10 @@ import '../../models/amistad.dart';
 import '../../models/libro.dart';
 import '../../pages/amistades_page.dart';
 import '../../services/api_service.dart';
+import '../../theme/app_colors.dart';
 import '../../theme/app_spacing.dart';
 import '../../theme/app_text_styles.dart';
+import '../common/club_book_cover.dart';
 import 'aviso_en_hoja.dart';
 
 /// Botón de la ficha de un libro para recomendárselo a amistades.
@@ -104,6 +106,11 @@ class _ElegirLibroSheetState extends State<_ElegirLibroSheet> {
   late final Future<List<Libro>> _libros = _cargarLibros();
   String _busqueda = '';
 
+  static double _nota(Libro l) =>
+      double.tryParse(l.valoracion.replaceAll(',', '.')) ?? 0;
+
+  /// Primero lo que ya has leído, de mayor a menor nota; después lo que
+  /// también tienes pendiente. Lo demás (leyendo, pausado…) no se ofrece.
   Future<List<Libro>> _cargarLibros() async {
     final todos = await (widget.cargar ?? ApiService().getLibros)();
     final vistos = <String>{};
@@ -111,13 +118,14 @@ class _ElegirLibroSheetState extends State<_ElegirLibroSheet> {
       for (final l in todos)
         if (l.bookId.isNotEmpty && vistos.add(l.bookId)) l,
     ];
-    // Primero los que ya has terminado: son los que mejor se recomiendan.
-    int peso(Libro l) => l.estado == 'FINALIZADO' ? 0 : 1;
-    propios.sort((a, b) {
-      final c = peso(a).compareTo(peso(b));
-      return c != 0 ? c : a.libro.compareTo(b.libro);
-    });
-    return propios;
+    final leidos = propios.where((l) => l.estado == 'FINALIZADO').toList()
+      ..sort((a, b) {
+        final c = _nota(b).compareTo(_nota(a));
+        return c != 0 ? c : a.libro.compareTo(b.libro);
+      });
+    final pendientes = propios.where((l) => l.estado == 'PENDIENTE').toList()
+      ..sort((a, b) => a.libro.compareTo(b.libro));
+    return [...leidos, ...pendientes];
   }
 
   @override
@@ -142,7 +150,7 @@ class _ElegirLibroSheetState extends State<_ElegirLibroSheet> {
           ),
           const SizedBox(height: 4),
           Text(
-            'Elige uno de tu biblioteca; los que ya has terminado salen primero.',
+            'Primero los que has leído, de mayor a menor nota; luego los que también tienes pendientes.',
             style: AppTextStyles.caption,
           ),
           const SizedBox(height: AppSpacing.sm),
@@ -189,19 +197,86 @@ class _ElegirLibroSheetState extends State<_ElegirLibroSheet> {
                     ),
                   );
                 }
-                return ListView(
+                return GridView.count(
                   shrinkWrap: true,
+                  crossAxisCount: 3,
+                  mainAxisSpacing: AppSpacing.md,
+                  crossAxisSpacing: AppSpacing.sm,
+                  childAspectRatio: .52,
+                  padding: const EdgeInsets.only(top: AppSpacing.sm),
                   children: [
                     for (final l in lista)
-                      ListTile(
+                      InkWell(
                         key: Key('recomendar-libro-${l.bookId}'),
-                        contentPadding: EdgeInsets.zero,
-                        title: Text(l.libro),
-                        subtitle: l.autor.isEmpty ? null : Text(l.autor),
-                        trailing: l.estado == 'FINALIZADO'
-                            ? const Icon(Icons.check_circle_outline, size: 18)
-                            : null,
+                        borderRadius: BorderRadius.circular(14),
                         onTap: () => Navigator.pop(context, l),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Expanded(
+                              child: Stack(
+                                children: [
+                                  Positioned.fill(
+                                    child: ClubBookCover(
+                                      title: l.libro,
+                                      imageUrl: l.coverUrl,
+                                      width: double.infinity,
+                                    ),
+                                  ),
+                                  if (_nota(l) > 0)
+                                    Positioned(
+                                      left: 6,
+                                      bottom: 6,
+                                      child: Container(
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 7,
+                                          vertical: 3,
+                                        ),
+                                        decoration: BoxDecoration(
+                                          color: Colors.black.withValues(
+                                            alpha: .6,
+                                          ),
+                                          borderRadius: BorderRadius.circular(
+                                            99,
+                                          ),
+                                        ),
+                                        child: Row(
+                                          mainAxisSize: MainAxisSize.min,
+                                          children: [
+                                            const Icon(
+                                              Icons.star_rounded,
+                                              size: 13,
+                                              color: AppColors.gold,
+                                            ),
+                                            const SizedBox(width: 3),
+                                            Text(
+                                              _nota(l) % 1 == 0
+                                                  ? _nota(l).toStringAsFixed(0)
+                                                  : _nota(l).toStringAsFixed(1),
+                                              style: const TextStyle(
+                                                color: Colors.white,
+                                                fontSize: 11,
+                                                fontWeight: FontWeight.w700,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ),
+                                ],
+                              ),
+                            ),
+                            const SizedBox(height: 6),
+                            Text(
+                              l.libro,
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                              style: AppTextStyles.caption.copyWith(
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
                   ],
                 );

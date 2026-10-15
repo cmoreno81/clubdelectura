@@ -116,12 +116,24 @@ void main() {
                     Libro.fromJson({
                       'bookId': 'b1',
                       'libro': 'Zorro',
-                      'estado': 'LEYENDO',
+                      'estado': 'PENDIENTE',
                     }),
                     Libro.fromJson({
                       'bookId': 'b2',
                       'libro': 'Babel',
                       'estado': 'FINALIZADO',
+                      'valoracion': '4',
+                    }),
+                    Libro.fromJson({
+                      'bookId': 'b3',
+                      'libro': 'Dune',
+                      'estado': 'FINALIZADO',
+                      'valoracion': '5',
+                    }),
+                    Libro.fromJson({
+                      'bookId': 'b4',
+                      'libro': 'Ahora leo',
+                      'estado': 'LEYENDO',
                     }),
                   ],
                 ),
@@ -134,18 +146,27 @@ void main() {
       await tester.tap(find.text('abrir'));
       await tester.pumpAndSettle();
       expect(find.text('¿Qué libro le recomiendas a Marta?'), findsOneWidget);
-      final babel = tester.getTopLeft(find.text('Babel')).dy;
-      final zorro = tester.getTopLeft(find.text('Zorro')).dy;
-      expect(babel < zorro, isTrue);
+      // Leídos de mayor a menor nota, después los pendientes; lo demás no sale.
+      final dune = tester
+          .getTopLeft(find.byKey(const Key('recomendar-libro-b3')))
+          .dx;
+      final babel = tester
+          .getTopLeft(find.byKey(const Key('recomendar-libro-b2')))
+          .dx;
+      final zorro = tester
+          .getTopLeft(find.byKey(const Key('recomendar-libro-b1')))
+          .dx;
+      expect(dune < babel && babel < zorro, isTrue);
+      expect(find.byKey(const Key('recomendar-libro-b4')), findsNothing);
 
       await tester.enterText(
         find.byKey(const Key('recomendar-buscar-libro')),
         'zor',
       );
       await tester.pumpAndSettle();
-      expect(find.text('Babel'), findsNothing);
+      expect(find.byKey(const Key('recomendar-libro-b2')), findsNothing);
 
-      await tester.tap(find.text('Zorro'));
+      await tester.tap(find.byKey(const Key('recomendar-libro-b1')));
       await tester.pumpAndSettle();
       expect(find.text('Recomendar a un amigo'), findsOneWidget);
       expect(find.textContaining('«Zorro»'), findsOneWidget);
