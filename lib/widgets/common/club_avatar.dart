@@ -115,6 +115,8 @@ class ClubAvatar extends StatelessWidget {
         style: AppTextStyles.section.copyWith(
           color: AppColors.primary,
           fontWeight: FontWeight.bold,
+          // En avatares pequeños la letra fija se cortaba.
+          fontSize: size < 40 ? size * 0.42 : null,
         ),
       ),
     );

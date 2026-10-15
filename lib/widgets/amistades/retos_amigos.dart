@@ -156,6 +156,10 @@ class _RetosAmigosSeccionState extends State<RetosAmigosSeccion> {
   }
 }
 
+String _unir(List<String> nombres) => nombres.length < 2
+    ? nombres.join()
+    : '${nombres.sublist(0, nombres.length - 1).join(', ')} y ${nombres.last}';
+
 class _TarjetaReto extends StatelessWidget {
   const _TarjetaReto({
     super.key,
@@ -206,7 +210,7 @@ class _TarjetaReto extends StatelessWidget {
             Padding(
               padding: const EdgeInsets.only(bottom: AppSpacing.sm),
               child: Text(
-                '${otras.join(', ')} te propone${otras.length > 1 ? 'n' : ''} '
+                '${_unir(otras)} te propone${otras.length > 1 ? 'n' : ''} '
                 'leer ${r.objetivo} libros entre todas.',
                 style: AppTextStyles.caption,
               ),

@@ -80,6 +80,7 @@ void main() {
     );
     await tester.pumpAndSettle();
     expect(find.byKey(const Key('reto-salir-r1')), findsNothing);
+    expect(find.text('Marta y Irene te proponen leer 6 libros entre todas.'), findsOneWidget);
     await tester.tap(find.byKey(const Key('reto-aceptar-r1')));
     await tester.pumpAndSettle();
     expect(respuestas, ['r1:true']);
