@@ -1061,16 +1061,13 @@ class ApiService {
         .toList();
   }
 
-  Future<List<AfinidadAmistad>> getAfinidadAmigos() => _listaAmistad(
-    {'action': 'afinidadAmigos'},
-    AfinidadAmistad.fromJson,
-  );
+  Future<List<AfinidadAmistad>> getAfinidadAmigos() =>
+      _listaAmistad({'action': 'afinidadAmigos'}, AfinidadAmistad.fromJson);
 
-  Future<List<AmigoDelLibro>> getAmigosDelLibro(String bookId) =>
-      _listaAmistad({
-        'action': 'amigosDelLibro',
-        'bookId': bookId,
-      }, AmigoDelLibro.fromJson);
+  Future<List<AmigoDelLibro>> getAmigosDelLibro(String bookId) => _listaAmistad(
+    {'action': 'amigosDelLibro', 'bookId': bookId},
+    AmigoDelLibro.fromJson,
+  );
 
   Future<ResumenSemanalAmigos> getResumenSemanalAmigos() async {
     final response = await _client.get(
@@ -1086,6 +1083,30 @@ class ApiService {
 
   Future<ResultadoAmistad> pedirRecomendacion(String nombre) =>
       _accionAmistad('pedirRecomendacion', {'nombre': nombre});
+
+  Future<List<RetoAmigos>> getRetosAmigos() =>
+      _listaAmistad({'action': 'retosAmigos'}, RetoAmigos.fromJson);
+
+  Future<ResultadoAmistad> crearRetoAmigos({
+    required String titulo,
+    required int objetivo,
+    required String periodo,
+    required List<String> nombres,
+  }) => _accionAmistad('crearRetoAmigos', {
+    'titulo': titulo,
+    'objetivo': objetivo,
+    'periodo': periodo,
+    'nombres': nombres,
+  });
+
+  Future<ResultadoAmistad> responderRetoAmigos(String id, bool aceptar) =>
+      _accionAmistad('responderRetoAmigos', {'retoId': id, 'aceptar': aceptar});
+
+  Future<ResultadoAmistad> salirRetoAmigos(String id) =>
+      _accionAmistad('salirRetoAmigos', {'retoId': id});
+
+  Future<List<RachaCompartida>> getRachasCompartidas() =>
+      _listaAmistad({'action': 'rachasCompartidas'}, RachaCompartida.fromJson);
 
   Future<List<FeedAmistad>> getFeedAmistades() async {
     final response = await _client.get(

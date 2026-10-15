@@ -762,3 +762,99 @@ class ResumenSemanalAmigos {
     );
   }
 }
+
+/// Una persona dentro de un reto entre amistades, con lo que aporta.
+class PersonaReto {
+  const PersonaReto({
+    required this.nombre,
+    this.avatarUrl = '',
+    this.yo = false,
+    this.aceptado = false,
+    this.libros = 0,
+  });
+
+  final String nombre;
+  final String avatarUrl;
+  final bool yo;
+  final bool aceptado;
+  final int libros;
+
+  factory PersonaReto.fromJson(Map<String, dynamic> json) => PersonaReto(
+    nombre: json['nombre']?.toString() ?? '',
+    avatarUrl: json['avatarUrl']?.toString() ?? '',
+    yo: json['yo'] == true,
+    aceptado: json['aceptado'] == true,
+    libros: (json['libros'] as num?)?.toInt() ?? 0,
+  );
+}
+
+/// Reto de lectura entre amistades: una meta de libros común, sin clasificación.
+class RetoAmigos {
+  const RetoAmigos({
+    required this.id,
+    required this.titulo,
+    required this.objetivo,
+    this.total = 0,
+    this.conseguido = false,
+    this.terminado = false,
+    this.invitada = false,
+    this.creadoPorMi = false,
+    this.hasta,
+    this.personas = const [],
+  });
+
+  final String id;
+  final String titulo;
+  final int objetivo;
+  final int total;
+  final bool conseguido;
+  final bool terminado;
+  final bool invitada;
+  final bool creadoPorMi;
+  final DateTime? hasta;
+  final List<PersonaReto> personas;
+
+  double get progreso => objetivo <= 0 ? 0 : (total / objetivo).clamp(0.0, 1.0);
+
+  factory RetoAmigos.fromJson(Map<String, dynamic> json) => RetoAmigos(
+    id: json['id']?.toString() ?? '',
+    titulo: json['titulo']?.toString() ?? '',
+    objetivo: (json['objetivo'] as num?)?.toInt() ?? 0,
+    total: (json['total'] as num?)?.toInt() ?? 0,
+    conseguido: json['conseguido'] == true,
+    terminado: json['terminado'] == true,
+    invitada: json['invitada'] == true,
+    creadoPorMi: json['creadoPorMi'] == true,
+    hasta: DateTime.tryParse(json['hasta']?.toString() ?? ''),
+    personas: (json['personas'] as List? ?? [])
+        .whereType<Map>()
+        .map((e) => PersonaReto.fromJson(Map<String, dynamic>.from(e)))
+        .toList(),
+  );
+}
+
+/// Días seguidos en que tú y una amistad habéis hecho check-in de lectura.
+class RachaCompartida {
+  const RachaCompartida({
+    required this.nombre,
+    this.avatarUrl = '',
+    this.dias = 0,
+    this.yoHoy = false,
+    this.ellaHoy = false,
+  });
+
+  final String nombre;
+  final String avatarUrl;
+  final int dias;
+  final bool yoHoy;
+  final bool ellaHoy;
+
+  factory RachaCompartida.fromJson(Map<String, dynamic> json) =>
+      RachaCompartida(
+        nombre: json['nombre']?.toString() ?? '',
+        avatarUrl: json['avatarUrl']?.toString() ?? '',
+        dias: (json['dias'] as num?)?.toInt() ?? 0,
+        yoHoy: json['yoHoy'] == true,
+        ellaHoy: json['ellaHoy'] == true,
+      );
+}

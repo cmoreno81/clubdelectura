@@ -13,6 +13,7 @@ import '../theme/app_spacing.dart';
 import '../theme/app_text_styles.dart';
 import '../widgets/amistades/lectura_con_amistad.dart';
 import '../widgets/amistades/panel_amigos.dart';
+import '../widgets/amistades/retos_amigos.dart';
 import '../widgets/common/club_avatar.dart';
 import '../widgets/common/floating_nav_bar.dart';
 import '../widgets/inicio/actividad_amistades_card.dart';
@@ -332,6 +333,8 @@ class _AmistadesPageState extends State<AmistadesPage> {
       const ActividadAmistadesCard(mostrarVerTodas: false),
       const ResumenSemanalAmigosCard(),
       const AfinidadAmigosSeccion(),
+      const RachasCompartidasSeccion(),
+      RetosAmigosSeccion(amistades: data.amistades),
       const FeedAmistades(),
       const IdeasParaRegalar(),
       const SizedBox(height: AppSpacing.lg),
