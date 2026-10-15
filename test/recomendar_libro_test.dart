@@ -1,5 +1,4 @@
 import 'package:club_lectura_app/models/amistad.dart';
-import 'package:club_lectura_app/models/libro.dart';
 import 'package:club_lectura_app/widgets/amistades/recomendar_libro.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -101,8 +100,30 @@ void main() {
     expect(find.textContaining('No se han podido cargar'), findsOneWidget);
   });
 
+  test(
+    'opciones: primero lo leído de mayor a menor nota, luego pendientes, sin lo que ella ya conoce',
+    () {
+      final r = ordenarOpcionesRecomendar(
+        const [
+          OpcionRecomendar(bookId: 'p1', titulo: 'Pendiente'),
+          OpcionRecomendar(bookId: 'a', titulo: 'Babel', nota: 4, leido: true),
+          OpcionRecomendar(bookId: 'b', titulo: 'Dune', nota: 5, leido: true),
+          OpcionRecomendar(
+            bookId: 'c',
+            titulo: 'Ya lo tiene',
+            nota: 5,
+            leido: true,
+          ),
+          OpcionRecomendar(bookId: 'a', titulo: 'Babel', nota: 4, leido: true),
+        ],
+        yaConoce: {'c'},
+      );
+      expect(r.map((o) => o.bookId).toList(), ['b', 'a', 'p1']);
+    },
+  );
+
   testWidgets(
-    'desde el perfil de una amiga: eliges uno de tus libros (terminados primero) y se abre la hoja para ella',
+    'desde el perfil de una amiga: cuadrícula con portadas, buscador y se abre la hoja para ella',
     (tester) async {
       await tester.pumpWidget(
         MaterialApp(
@@ -112,29 +133,14 @@ void main() {
                 onPressed: () => mostrarRecomendarAUnaAmiga(
                   context,
                   nombre: 'Marta',
-                  cargarLibros: () async => [
-                    Libro.fromJson({
-                      'bookId': 'b1',
-                      'libro': 'Zorro',
-                      'estado': 'PENDIENTE',
-                    }),
-                    Libro.fromJson({
-                      'bookId': 'b2',
-                      'libro': 'Babel',
-                      'estado': 'FINALIZADO',
-                      'valoracion': '4',
-                    }),
-                    Libro.fromJson({
-                      'bookId': 'b3',
-                      'libro': 'Dune',
-                      'estado': 'FINALIZADO',
-                      'valoracion': '5',
-                    }),
-                    Libro.fromJson({
-                      'bookId': 'b4',
-                      'libro': 'Ahora leo',
-                      'estado': 'LEYENDO',
-                    }),
+                  cargarOpciones: (_) async => const [
+                    OpcionRecomendar(
+                      bookId: 'b3',
+                      titulo: 'Dune',
+                      nota: 5,
+                      leido: true,
+                    ),
+                    OpcionRecomendar(bookId: 'b1', titulo: 'Zorro'),
                   ],
                 ),
                 child: const Text('abrir'),
@@ -146,25 +152,14 @@ void main() {
       await tester.tap(find.text('abrir'));
       await tester.pumpAndSettle();
       expect(find.text('¿Qué libro le recomiendas a Marta?'), findsOneWidget);
-      // Leídos de mayor a menor nota, después los pendientes; lo demás no sale.
-      final dune = tester
-          .getTopLeft(find.byKey(const Key('recomendar-libro-b3')))
-          .dx;
-      final babel = tester
-          .getTopLeft(find.byKey(const Key('recomendar-libro-b2')))
-          .dx;
-      final zorro = tester
-          .getTopLeft(find.byKey(const Key('recomendar-libro-b1')))
-          .dx;
-      expect(dune < babel && babel < zorro, isTrue);
-      expect(find.byKey(const Key('recomendar-libro-b4')), findsNothing);
+      expect(find.byKey(const Key('recomendar-libro-b3')), findsOneWidget);
 
       await tester.enterText(
         find.byKey(const Key('recomendar-buscar-libro')),
         'zor',
       );
       await tester.pumpAndSettle();
-      expect(find.byKey(const Key('recomendar-libro-b2')), findsNothing);
+      expect(find.byKey(const Key('recomendar-libro-b3')), findsNothing);
 
       await tester.tap(find.byKey(const Key('recomendar-libro-b1')));
       await tester.pumpAndSettle();

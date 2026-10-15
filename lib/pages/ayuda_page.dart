@@ -1786,9 +1786,10 @@ const List<_HelpSection> _secciones = [
             'vez por semana a cada persona).\n\n'
             'Si te llega un aviso «¿Qué me recomiendas?», tócalo: se abre el '
             'perfil de quien lo pide. Pulsa «Recomiéndale un libro» y elige uno '
-            'con su portada: primero salen los que has leído, de mayor a '
-            'menor nota, y después los que también tienes pendientes. '
-            'Envíaselo con un mensaje.',
+            'con su portada: salen tus lecturas ordenadas de mayor a menor '
+            'nota y, después, tus pendientes. Solo aparecen libros que esa '
+            'persona todavía no tiene (según lo que comparte). Envíaselo con '
+            'un mensaje.',
       ),
       _HelpItem(
         pregunta: '¿Qué es leer a la vez?',

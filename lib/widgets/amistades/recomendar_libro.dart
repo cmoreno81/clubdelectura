@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 
 import '../../models/amistad.dart';
-import '../../models/libro.dart';
+import '../../models/libros_data.dart';
+import '../../services/usuario_service.dart';
 import '../../pages/amistades_page.dart';
 import '../../services/api_service.dart';
 import '../../theme/app_colors.dart';
@@ -69,25 +70,110 @@ Future<void> mostrarRecomendarLibro(
   );
 }
 
+/// Un libro que se puede recomendar a una amiga.
+class OpcionRecomendar {
+  const OpcionRecomendar({
+    required this.bookId,
+    required this.titulo,
+    this.coverUrl = '',
+    this.nota = 0,
+    this.leido = false,
+  });
+
+  final String bookId;
+  final String titulo;
+  final String coverUrl;
+  final double nota;
+  final bool leido;
+}
+
+/// Primero los que has leído (de mayor a menor nota) y después los pendientes;
+/// sin repetidos ni los que la amiga ya conoce (leídos, leyendo o pendientes).
+List<OpcionRecomendar> ordenarOpcionesRecomendar(
+  List<OpcionRecomendar> todas, {
+  Set<String> yaConoce = const {},
+}) {
+  final vistos = <String>{};
+  final utiles = [
+    for (final o in todas)
+      if (o.bookId.isNotEmpty && !yaConoce.contains(o.bookId)) o,
+  ];
+  // Si un libro sale leído y pendiente a la vez, manda el leído.
+  utiles.sort((a, b) {
+    if (a.leido != b.leido) return a.leido ? -1 : 1;
+    final c = b.nota.compareTo(a.nota);
+    return c != 0 ? c : a.titulo.compareTo(b.titulo);
+  });
+  return [
+    for (final o in utiles)
+      if (vistos.add(o.bookId)) o,
+  ];
+}
+
+double _notaDe(String valoracion) =>
+    double.tryParse(valoracion.replaceAll(',', '.')) ?? 0;
+
+/// Tus libros recomendables a [nombre]: tus leídos y pendientes, menos los que
+/// ella ya tiene (según lo que comparte).
+Future<List<OpcionRecomendar>> cargarOpcionesRecomendar(String nombre) async {
+  final api = ApiService();
+  final usuario = (await UsuarioService().obtenerUsuario())?.trim() ?? '';
+  final resultados = await Future.wait<Object?>([
+    api.getLibrosDataGlobal(),
+    api
+        .getPerfilAmistad(nombre)
+        .then<Object?>((p) => p)
+        .catchError((_) => null),
+  ]);
+  final datos = resultados[0]! as LibrosData;
+  final perfil = resultados[1] as PerfilAmistad?;
+  final yaConoce = <String>{
+    if (perfil != null) ...[
+      for (final l in perfil.terminados) l.bookId,
+      for (final l in perfil.pendientes) l.bookId,
+      for (final l in perfil.leyendo) l.bookId,
+    ],
+  };
+  final todas = <OpcionRecomendar>[
+    for (final f in datos.finalizados)
+      if (f.usuario == usuario)
+        OpcionRecomendar(
+          bookId: f.bookId,
+          titulo: f.libro,
+          coverUrl: f.coverUrl,
+          nota: _notaDe(f.valoracion),
+          leido: true,
+        ),
+    for (final l in datos.libros)
+      if (l.yaLoTengo && l.estado == 'PENDIENTE')
+        OpcionRecomendar(
+          bookId: l.bookId,
+          titulo: l.libro,
+          coverUrl: l.coverUrl,
+        ),
+  ];
+  return ordenarOpcionesRecomendar(todas, yaConoce: yaConoce);
+}
+
 /// Desde el perfil de una amiga (o el aviso «te pide una recomendación»):
 /// eliges uno de tus libros y se lo recomiendas a ella.
 Future<void> mostrarRecomendarAUnaAmiga(
   BuildContext context, {
   required String nombre,
-  Future<List<Libro>> Function()? cargarLibros,
+  Future<List<OpcionRecomendar>> Function(String nombre)? cargarOpciones,
 }) async {
-  final elegido = await showModalBottomSheet<Libro>(
+  final elegido = await showModalBottomSheet<OpcionRecomendar>(
     context: context,
     isScrollControlled: true,
     showDragHandle: true,
     useSafeArea: true,
-    builder: (_) => _ElegirLibroSheet(nombre: nombre, cargar: cargarLibros),
+    builder: (_) => _ElegirLibroSheet(nombre: nombre, cargar: cargarOpciones),
   );
   if (elegido == null || !context.mounted) return;
   await mostrarRecomendarLibro(
     context,
     bookId: elegido.bookId,
-    titulo: elegido.libro,
+    titulo: elegido.titulo,
     preseleccion: nombre,
   );
 }
@@ -96,37 +182,16 @@ class _ElegirLibroSheet extends StatefulWidget {
   const _ElegirLibroSheet({required this.nombre, this.cargar});
 
   final String nombre;
-  final Future<List<Libro>> Function()? cargar;
+  final Future<List<OpcionRecomendar>> Function(String nombre)? cargar;
 
   @override
   State<_ElegirLibroSheet> createState() => _ElegirLibroSheetState();
 }
 
 class _ElegirLibroSheetState extends State<_ElegirLibroSheet> {
-  late final Future<List<Libro>> _libros = _cargarLibros();
+  late final Future<List<OpcionRecomendar>> _libros =
+      (widget.cargar ?? cargarOpcionesRecomendar)(widget.nombre);
   String _busqueda = '';
-
-  static double _nota(Libro l) =>
-      double.tryParse(l.valoracion.replaceAll(',', '.')) ?? 0;
-
-  /// Primero lo que ya has leído, de mayor a menor nota; después lo que
-  /// también tienes pendiente. Lo demás (leyendo, pausado…) no se ofrece.
-  Future<List<Libro>> _cargarLibros() async {
-    final todos = await (widget.cargar ?? ApiService().getLibros)();
-    final vistos = <String>{};
-    final propios = [
-      for (final l in todos)
-        if (l.bookId.isNotEmpty && vistos.add(l.bookId)) l,
-    ];
-    final leidos = propios.where((l) => l.estado == 'FINALIZADO').toList()
-      ..sort((a, b) {
-        final c = _nota(b).compareTo(_nota(a));
-        return c != 0 ? c : a.libro.compareTo(b.libro);
-      });
-    final pendientes = propios.where((l) => l.estado == 'PENDIENTE').toList()
-      ..sort((a, b) => a.libro.compareTo(b.libro));
-    return [...leidos, ...pendientes];
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -150,7 +215,7 @@ class _ElegirLibroSheetState extends State<_ElegirLibroSheet> {
           ),
           const SizedBox(height: 4),
           Text(
-            'Primero los que has leído, de mayor a menor nota; luego los que también tienes pendientes.',
+            'Ordenados por tu valoración. Solo aparecen libros que ${widget.nombre} todavía no tiene en su biblioteca.',
             style: AppTextStyles.caption,
           ),
           const SizedBox(height: AppSpacing.sm),
@@ -164,7 +229,7 @@ class _ElegirLibroSheetState extends State<_ElegirLibroSheet> {
                 setState(() => _busqueda = v.trim().toLowerCase()),
           ),
           Flexible(
-            child: FutureBuilder<List<Libro>>(
+            child: FutureBuilder<List<OpcionRecomendar>>(
               future: _libros,
               builder: (context, snapshot) {
                 if (snapshot.connectionState != ConnectionState.done) {
@@ -183,16 +248,18 @@ class _ElegirLibroSheetState extends State<_ElegirLibroSheet> {
                   );
                 }
                 final lista = [
-                  for (final l in snapshot.data ?? const <Libro>[])
+                  for (final l in snapshot.data ?? const <OpcionRecomendar>[])
                     if (_busqueda.isEmpty ||
-                        l.libro.toLowerCase().contains(_busqueda))
+                        l.titulo.toLowerCase().contains(_busqueda))
                       l,
                 ];
                 if (lista.isEmpty) {
                   return Padding(
                     padding: const EdgeInsets.all(16),
                     child: Text(
-                      'No hay libros que coincidan.',
+                      _busqueda.isEmpty
+                          ? '${widget.nombre} ya conoce todo lo que podrías recomendarle 💜'
+                          : 'No hay libros que coincidan.',
                       style: AppTextStyles.bodySecondary,
                     ),
                   );
@@ -218,12 +285,12 @@ class _ElegirLibroSheetState extends State<_ElegirLibroSheet> {
                                 children: [
                                   Positioned.fill(
                                     child: ClubBookCover(
-                                      title: l.libro,
+                                      title: l.titulo,
                                       imageUrl: l.coverUrl,
                                       width: double.infinity,
                                     ),
                                   ),
-                                  if (_nota(l) > 0)
+                                  if (l.nota > 0)
                                     Positioned(
                                       left: 6,
                                       bottom: 6,
@@ -250,9 +317,9 @@ class _ElegirLibroSheetState extends State<_ElegirLibroSheet> {
                                             ),
                                             const SizedBox(width: 3),
                                             Text(
-                                              _nota(l) % 1 == 0
-                                                  ? _nota(l).toStringAsFixed(0)
-                                                  : _nota(l).toStringAsFixed(1),
+                                              l.nota % 1 == 0
+                                                  ? l.nota.toStringAsFixed(0)
+                                                  : l.nota.toStringAsFixed(1),
                                               style: const TextStyle(
                                                 color: Colors.white,
                                                 fontSize: 11,
@@ -268,7 +335,7 @@ class _ElegirLibroSheetState extends State<_ElegirLibroSheet> {
                             ),
                             const SizedBox(height: 6),
                             Text(
-                              l.libro,
+                              l.titulo,
                               maxLines: 2,
                               overflow: TextOverflow.ellipsis,
                               style: AppTextStyles.caption.copyWith(
