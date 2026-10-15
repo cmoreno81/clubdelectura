@@ -1,5 +1,6 @@
 import 'package:club_lectura_app/models/amistad.dart';
 import 'package:club_lectura_app/pages/amistades_page.dart';
+import 'package:club_lectura_app/widgets/amistades/panel_amigos.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -39,5 +40,82 @@ void main() {
     );
     await tester.pumpAndSettle();
     expect(find.byKey(const Key('amistades-resumen')), findsNothing);
+  });
+
+  testWidgets(
+    '«Lo último» enseña lo que han terminado, lo más reciente primero',
+    (tester) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: LoUltimoAmistades(
+              cargar: () async => [
+                ActividadAmistad(
+                  tipo: 'TERMINADO',
+                  nombre: 'Julia',
+                  bookId: 'b1',
+                  titulo: 'Mañana, y mañana',
+                  valoracion: 4.5,
+                  fecha: DateTime.now().subtract(const Duration(days: 3)),
+                ),
+                ActividadAmistad(
+                  tipo: 'TERMINADO',
+                  nombre: 'Irene',
+                  bookId: 'b2',
+                  titulo: 'Yellowface',
+                  fecha: DateTime.now().subtract(const Duration(days: 1)),
+                ),
+                const ActividadAmistad(
+                  tipo: 'LEYENDO',
+                  nombre: 'Marta',
+                  bookId: 'b3',
+                  titulo: 'Fourth Wing',
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(find.text('Irene ha terminado'), findsOneWidget);
+      expect(find.text('Julia ha terminado'), findsOneWidget);
+      expect(find.text('Marta ha terminado'), findsNothing);
+      expect(find.text('ayer'), findsOneWidget);
+      expect(find.text('hace 3 días'), findsOneWidget);
+      expect(find.text(' 4.5'), findsOneWidget);
+    },
+  );
+
+  testWidgets('«Ideas para regalar» salta lo ya reservado', (tester) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: IdeasParaRegalar(
+            cargar: () async => [
+              (
+                'Marta',
+                const [
+                  LibroDeAmistad(bookId: 'a', titulo: 'Babel'),
+                  LibroDeAmistad(bookId: 'b', titulo: 'Dune', reservado: true),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('amigos-ideas-regalo')), findsOneWidget);
+    expect(find.text('Para Marta'), findsOneWidget);
+  });
+
+  testWidgets('sin deseos libres no sale «Ideas para regalar»', (tester) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(body: IdeasParaRegalar(cargar: () async => [])),
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('amigos-ideas-regalo')), findsNothing);
   });
 }

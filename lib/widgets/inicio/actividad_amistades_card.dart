@@ -22,7 +22,11 @@ class ActividadAmistadesCard extends StatefulWidget {
     this.cargar,
     this.abrirPerfil,
     this.maxPersonas = 12,
+    this.mostrarVerTodas = true,
   });
+
+  /// En la pestaña Amigos ya estás en «todas»: se oculta el enlace.
+  final bool mostrarVerTodas;
 
   /// Para pruebas.
   final Future<List<ActividadAmistad>> Function()? cargar;
@@ -100,13 +104,14 @@ class _ActividadAmistadesCardState extends State<ActividadAmistadesCard>
                   style: AppTextStyles.section,
                 ),
               ),
-              TextButton(
-                onPressed: () => Navigator.push<void>(
-                  context,
-                  MaterialPageRoute(builder: (_) => const AmistadesPage()),
+              if (widget.mostrarVerTodas)
+                TextButton(
+                  onPressed: () => Navigator.push<void>(
+                    context,
+                    MaterialPageRoute(builder: (_) => const AmistadesPage()),
+                  ),
+                  child: const Text('Ver todas'),
                 ),
-                child: const Text('Ver todas'),
-              ),
             ],
           ),
           const SizedBox(height: AppSpacing.xs),

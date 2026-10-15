@@ -343,7 +343,11 @@ class ActividadAmistad {
     this.coverUrl = '',
     this.valoracion,
     this.lectura,
+    this.fecha,
   });
+
+  /// Cuándo terminó el libro (solo en `TERMINADO`).
+  final DateTime? fecha;
 
   /// `LEYENDO` o `TERMINADO`.
   final String tipo;
@@ -370,6 +374,7 @@ class ActividadAmistad {
       coverUrl: json['coverUrl']?.toString() ?? '',
       valoracion: (json['valoracion'] as num?)?.toDouble(),
       lectura: tipo == 'LEYENDO' ? LecturaAmistad.fromJson(json) : null,
+      fecha: DateTime.tryParse(json['fecha']?.toString() ?? ''),
     );
   }
 }

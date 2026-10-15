@@ -12,6 +12,7 @@ import '../theme/app_colors.dart';
 import '../theme/app_spacing.dart';
 import '../theme/app_text_styles.dart';
 import '../widgets/amistades/lectura_con_amistad.dart';
+import '../widgets/amistades/panel_amigos.dart';
 import '../widgets/common/club_avatar.dart';
 import '../widgets/common/floating_nav_bar.dart';
 import '../widgets/inicio/actividad_amistades_card.dart';
@@ -55,10 +56,17 @@ class _AmistadesPageState extends State<AmistadesPage> {
   void initState() {
     super.initState();
     _cargar();
+    // Como pestaña, otras partes de la app (entrar en la pestaña, aceptar
+    // desde un aviso…) pueden cambiar las amistades: se recarga sin parpadeo.
+    if (widget.embebida)
+      AmistadesCambios.cambios.addListener(_recargarSilencioso);
   }
+
+  void _recargarSilencioso() => _cargar(silencioso: true);
 
   @override
   void dispose() {
+    AmistadesCambios.cambios.removeListener(_recargarSilencioso);
     _debounce?.cancel();
     _codigoCtrl.dispose();
     _buscarCtrl.dispose();
@@ -296,7 +304,10 @@ class _AmistadesPageState extends State<AmistadesPage> {
       if (widget.embebida) ...[
         _resumen(data),
         const SizedBox(height: AppSpacing.md),
-        const ActividadAmistadesCard(),
+        const ActividadAmistadesCard(mostrarVerTodas: false),
+        const LoUltimoAmistades(),
+        const IdeasParaRegalar(),
+        const SizedBox(height: AppSpacing.lg),
       ],
       _tarjetaCodigo(data.miCodigo),
       const SizedBox(height: AppSpacing.lg),

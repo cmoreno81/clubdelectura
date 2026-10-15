@@ -5,6 +5,8 @@ import 'package:flutter/services.dart';
 import 'clubvision_menu_page.dart';
 import 'dashboard_page.dart';
 import 'amistades_page.dart';
+import '../services/amistades_cambios.dart';
+import '../services/api_service.dart';
 import 'lecturas_page.dart';
 import 'libros_page.dart';
 import 'mi_espacio_page.dart';
@@ -48,6 +50,19 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
   late final List<Widget?> _pages;
 
   bool get _esPersonal => widget.club.esPersonal;
+
+  /// Solicitudes de amistad por responder (puntito de la pestaña Amigos).
+  int _solicitudesAmigos = 0;
+
+  Future<void> _cargarSolicitudesAmigos() async {
+    try {
+      final data = await ApiService().getAmistades();
+      if (mounted) setState(() => _solicitudesAmigos = data.recibidas.length);
+    } catch (_) {
+      // Sin red: sin puntito.
+    }
+  }
+
   NotificacionesService get _notifications =>
       widget.notificationService ?? NotificacionesService.instance;
 
@@ -58,6 +73,10 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
     // Invalidar caché al entrar en cualquier club para no arrastrar datos
     // del club anterior (en navegación push/pop se crea un nuevo HomePage).
     LibrosDataCache.instance.invalidate();
+    if (_esPersonal && widget.pageBuilders == null) {
+      AmistadesCambios.cambios.addListener(_cargarSolicitudesAmigos);
+      unawaited(_cargarSolicitudesAmigos());
+    }
     if (_esPersonal) {
       // Modo lector solitario: Mi espacio (base) + Libros + Sagas + Mis
       // estadísticas + Amigos. Ya no hay un "Inicio" propio: lo que hacía (leyendo
@@ -132,10 +151,16 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
     if (state == AppLifecycleState.resumed && !_esPersonal) {
       unawaited(_notifications.cargar());
     }
+    if (state == AppLifecycleState.resumed &&
+        _esPersonal &&
+        widget.pageBuilders == null) {
+      unawaited(_cargarSolicitudesAmigos());
+    }
   }
 
   @override
   void dispose() {
+    AmistadesCambios.cambios.removeListener(_cargarSolicitudesAmigos);
     WidgetsBinding.instance.removeObserver(this);
     super.dispose();
   }
@@ -152,6 +177,11 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
     }
 
     HapticFeedback.selectionClick();
+
+    // Amigos: al entrar se refresca (solicitudes nuevas, lo que leen, etc.).
+    if (_esPersonal && index == 4 && widget.pageBuilders == null) {
+      AmistadesCambios.avisar();
+    }
 
     setState(() {
       _pages[index] ??= _pageBuilders[index]();
@@ -232,30 +262,38 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
 
   String _badge(int value) => value < 10 ? '$value' : '9+';
 
-  List<NavigationDestination> _personalDestinations() => const [
-    NavigationDestination(
+  List<NavigationDestination> _personalDestinations() => [
+    const NavigationDestination(
       icon: Icon(Icons.emoji_events_outlined),
       selectedIcon: Icon(Icons.emoji_events_rounded),
       label: 'Mi espacio',
     ),
-    NavigationDestination(
+    const NavigationDestination(
       icon: Icon(Icons.menu_book_outlined),
       selectedIcon: Icon(Icons.menu_book_rounded),
       label: 'Libros',
     ),
-    NavigationDestination(
+    const NavigationDestination(
       icon: Icon(Icons.view_week_outlined),
       selectedIcon: Icon(Icons.view_week_rounded),
       label: 'Sagas',
     ),
-    NavigationDestination(
+    const NavigationDestination(
       icon: Icon(Icons.bar_chart_outlined),
       selectedIcon: Icon(Icons.bar_chart_rounded),
       label: 'Estadísticas',
     ),
     NavigationDestination(
-      icon: Icon(Icons.groups_outlined),
-      selectedIcon: Icon(Icons.groups_rounded),
+      icon: Badge(
+        isLabelVisible: _solicitudesAmigos > 0,
+        label: Text(_badge(_solicitudesAmigos)),
+        child: const Icon(Icons.groups_outlined),
+      ),
+      selectedIcon: Badge(
+        isLabelVisible: _solicitudesAmigos > 0,
+        label: Text(_badge(_solicitudesAmigos)),
+        child: const Icon(Icons.groups_rounded),
+      ),
       label: 'Amigos',
     ),
   ];
