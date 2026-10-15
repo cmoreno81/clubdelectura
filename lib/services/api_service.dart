@@ -1046,6 +1046,18 @@ class ApiService {
     return PerfilAmistad.fromJson(data);
   }
 
+  Future<List<FeedAmistad>> getFeedAmistades() async {
+    final response = await _client.get(
+      Uri.parse(baseUrl).replace(queryParameters: {'action': 'feedAmistades'}),
+    );
+    if (response.statusCode != 200) throw ApiException.fromResponse(response);
+    final data = Map<String, dynamic>.from(_decodeJson(response) as Map);
+    return (data['items'] as List? ?? [])
+        .whereType<Map>()
+        .map((e) => FeedAmistad.fromJson(Map<String, dynamic>.from(e)))
+        .toList();
+  }
+
   Future<List<ActividadAmistad>> getActividadAmistades() async {
     final response = await _client.get(
       Uri.parse(

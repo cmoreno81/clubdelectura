@@ -44,48 +44,71 @@ void main() {
   );
 
   testWidgets(
-    '«Lo último» enseña lo que han terminado, lo más reciente primero',
+    'el feed cuenta qué hacen los amigos, con nota y reseña sin spoilers',
     (tester) async {
       await tester.pumpWidget(
         MaterialApp(
           home: Scaffold(
-            body: LoUltimoAmistades(
-              cargar: () async => [
-                ActividadAmistad(
-                  tipo: 'TERMINADO',
-                  nombre: 'Julia',
-                  bookId: 'b1',
-                  titulo: 'Mañana, y mañana',
-                  valoracion: 4.5,
-                  fecha: DateTime.now().subtract(const Duration(days: 3)),
-                ),
-                ActividadAmistad(
-                  tipo: 'TERMINADO',
-                  nombre: 'Irene',
-                  bookId: 'b2',
-                  titulo: 'Yellowface',
-                  fecha: DateTime.now().subtract(const Duration(days: 1)),
-                ),
-                const ActividadAmistad(
-                  tipo: 'LEYENDO',
-                  nombre: 'Marta',
-                  bookId: 'b3',
-                  titulo: 'Fourth Wing',
-                ),
-              ],
+            body: SingleChildScrollView(
+              child: FeedAmistades(
+                cargar: () async => [
+                  FeedAmistad(
+                    tipo: 'TERMINO',
+                    nombre: 'Julia',
+                    libraryId: 'l1',
+                    bookId: 'b1',
+                    titulo: 'Mañana, y mañana',
+                    valoracion: 4.5,
+                    resena: 'Me ha roto el corazón',
+                    comentarios: 2,
+                    fecha: DateTime.now().subtract(const Duration(days: 3)),
+                  ),
+                  FeedAmistad(
+                    tipo: 'EMPEZO',
+                    nombre: 'Irene',
+                    libraryId: 'l2',
+                    bookId: 'b2',
+                    titulo: 'Yellowface',
+                    fecha: DateTime.now().subtract(const Duration(days: 1)),
+                  ),
+                  const FeedAmistad(
+                    tipo: 'TERMINO',
+                    nombre: 'Noa',
+                    libraryId: 'l3',
+                    bookId: 'b3',
+                    titulo: 'Babel',
+                    contieneSpoilers: true,
+                  ),
+                ],
+              ),
             ),
           ),
         ),
       );
       await tester.pumpAndSettle();
-      expect(find.text('Irene ha terminado'), findsOneWidget);
       expect(find.text('Julia ha terminado'), findsOneWidget);
-      expect(find.text('Marta ha terminado'), findsNothing);
-      expect(find.text('ayer'), findsOneWidget);
+      expect(find.text('Irene ha empezado'), findsOneWidget);
+      expect(find.text('«Me ha roto el corazón»'), findsOneWidget);
       expect(find.text('hace 3 días'), findsOneWidget);
-      expect(find.text(' 4.5'), findsOneWidget);
+      expect(find.text('2'), findsOneWidget);
+      expect(find.byIcon(Icons.star_half_rounded), findsOneWidget);
+      expect(
+        find.text('Su reseña tiene spoilers: ábrela desde el libro.'),
+        findsOneWidget,
+      );
+      expect(find.byKey(const Key('feed-comentarios')), findsNWidgets(3));
     },
   );
+
+  testWidgets('sin actividad no sale el feed', (tester) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(body: FeedAmistades(cargar: () async => [])),
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('amigos-feed')), findsNothing);
+  });
 
   testWidgets('«Ideas para regalar» salta lo ya reservado', (tester) async {
     await tester.pumpWidget(

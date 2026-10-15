@@ -9,6 +9,8 @@ import '../../theme/app_spacing.dart';
 import '../../theme/app_text_styles.dart';
 import '../common/club_avatar.dart';
 import '../common/club_book_cover.dart';
+import 'comentarios_progreso.dart';
+import 'reacciones_progreso.dart';
 
 String _hace(DateTime? fecha) {
   if (fecha == null) return '';
@@ -25,21 +27,22 @@ void _abrirPerfil(BuildContext context, String nombre) => Navigator.push<void>(
   MaterialPageRoute(builder: (_) => PerfilAmistadPage(nombre: nombre)),
 );
 
-/// «Lo último»: los libros que tus amigos han terminado hace poco, con su nota
-/// (si la comparten) y cuándo. Si no hay nada, no sale.
-class LoUltimoAmistades extends StatefulWidget {
-  const LoUltimoAmistades({super.key, this.cargar, this.maximo = 5});
+/// «Lo que hacen tus amigos»: el feed de actividad (empezó, relee o terminó un
+/// libro, con su nota y un trozo de su reseña si la comparte). Se puede reaccionar
+/// y comentar sin salir. Si no hay nada, no sale.
+class FeedAmistades extends StatefulWidget {
+  const FeedAmistades({super.key, this.cargar, this.maximo = 15});
 
   /// Para pruebas.
-  final Future<List<ActividadAmistad>> Function()? cargar;
+  final Future<List<FeedAmistad>> Function()? cargar;
   final int maximo;
 
   @override
-  State<LoUltimoAmistades> createState() => _LoUltimoAmistadesState();
+  State<FeedAmistades> createState() => _FeedAmistadesState();
 }
 
-class _LoUltimoAmistadesState extends State<LoUltimoAmistades> {
-  List<ActividadAmistad> _items = const [];
+class _FeedAmistadesState extends State<FeedAmistades> {
+  List<FeedAmistad> _items = const [];
 
   @override
   void initState() {
@@ -56,16 +59,8 @@ class _LoUltimoAmistadesState extends State<LoUltimoAmistades> {
 
   Future<void> _cargar() async {
     try {
-      final todos =
-          await (widget.cargar ?? ApiService().getActividadAmistades)();
-      final terminados = todos.where((a) => !a.esLectura).toList()
-        ..sort(
-          (a, b) =>
-              (b.fecha ?? DateTime(1970)).compareTo(a.fecha ?? DateTime(1970)),
-        );
-      if (mounted) {
-        setState(() => _items = terminados.take(widget.maximo).toList());
-      }
+      final todos = await (widget.cargar ?? ApiService().getFeedAmistades)();
+      if (mounted) setState(() => _items = todos.take(widget.maximo).toList());
     } catch (_) {
       // Sin red o servidor antiguo: no sale.
     }
@@ -75,76 +70,157 @@ class _LoUltimoAmistadesState extends State<LoUltimoAmistades> {
   Widget build(BuildContext context) {
     if (_items.isEmpty) return const SizedBox.shrink();
     return Padding(
-      key: const Key('amigos-lo-ultimo'),
+      key: const Key('amigos-feed'),
       padding: const EdgeInsets.only(top: AppSpacing.lg),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('Lo último', style: AppTextStyles.section),
+          Text('Lo que hacen tus amigos', style: AppTextStyles.section),
           const SizedBox(height: AppSpacing.sm),
-          for (final a in _items)
-            InkWell(
-              borderRadius: BorderRadius.circular(16),
-              onTap: () => _abrirPerfil(context, a.nombre),
-              child: Padding(
-                padding: const EdgeInsets.symmetric(vertical: 6),
-                child: Row(
-                  children: [
-                    ClubBookCover(
-                      title: a.titulo,
-                      imageUrl: a.coverUrl,
-                      width: 44,
-                      height: 64,
-                    ),
-                    const SizedBox(width: AppSpacing.md),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
+          for (final item in _items)
+            _SucesoFeed(
+              key: ValueKey('${item.libraryId}-${item.tipo}'),
+              item: item,
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+class _SucesoFeed extends StatefulWidget {
+  const _SucesoFeed({super.key, required this.item});
+
+  final FeedAmistad item;
+
+  @override
+  State<_SucesoFeed> createState() => _SucesoFeedState();
+}
+
+class _SucesoFeedState extends State<_SucesoFeed> {
+  late int _comentarios = widget.item.comentarios;
+
+  Future<void> _comentar() async {
+    await mostrarComentariosProgreso(
+      context,
+      libraryId: widget.item.libraryId,
+      titulo: widget.item.titulo,
+    );
+    if (!mounted) return;
+    AmistadesCambios.avisar();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final a = widget.item;
+    return Container(
+      margin: const EdgeInsets.only(bottom: AppSpacing.sm),
+      padding: const EdgeInsets.all(AppSpacing.md),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: AppColors.divider),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          InkWell(
+            borderRadius: BorderRadius.circular(12),
+            onTap: () => _abrirPerfil(context, a.nombre),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                ClubBookCover(
+                  title: a.titulo,
+                  imageUrl: a.coverUrl,
+                  width: 52,
+                  height: 76,
+                ),
+                const SizedBox(width: AppSpacing.md),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
                         children: [
-                          Text(
-                            '${a.nombre} ha terminado',
-                            style: AppTextStyles.caption,
+                          ClubAvatar(
+                            nombre: a.nombre,
+                            imageUrl: a.avatarUrl,
+                            size: 24,
                           ),
-                          Text(
-                            a.titulo,
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
-                            style: AppTextStyles.body.copyWith(
-                              fontWeight: FontWeight.w700,
+                          const SizedBox(width: 6),
+                          Expanded(
+                            child: Text(
+                              '${a.nombre} ${a.verbo}',
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: AppTextStyles.caption,
                             ),
                           ),
-                          Row(
-                            children: [
-                              if (a.valoracion != null) ...[
-                                const Icon(
-                                  Icons.star_rounded,
-                                  size: 16,
-                                  color: AppColors.gold,
-                                ),
-                                Text(
-                                  ' ${a.valoracion!.toStringAsFixed(a.valoracion! % 1 == 0 ? 0 : 1)}',
-                                  style: AppTextStyles.caption,
-                                ),
-                                const SizedBox(width: AppSpacing.sm),
-                              ],
-                              Text(
-                                _hace(a.fecha),
-                                style: AppTextStyles.caption,
-                              ),
-                            ],
-                          ),
+                          Text(_hace(a.fecha), style: AppTextStyles.caption),
                         ],
                       ),
-                    ),
-                    ClubAvatar(
-                      nombre: a.nombre,
-                      imageUrl: a.avatarUrl,
-                      size: 32,
-                    ),
-                  ],
+                      const SizedBox(height: 2),
+                      Text(
+                        a.titulo,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: AppTextStyles.body.copyWith(
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
+                      if (a.termino && a.valoracion != null)
+                        Row(
+                          children: [
+                            for (var i = 1; i <= 5; i++)
+                              Icon(
+                                a.valoracion! >= i
+                                    ? Icons.star_rounded
+                                    : a.valoracion! >= i - 0.5
+                                    ? Icons.star_half_rounded
+                                    : Icons.star_outline_rounded,
+                                size: 16,
+                                color: AppColors.gold,
+                              ),
+                          ],
+                        ),
+                      if (a.resena.isNotEmpty)
+                        Padding(
+                          padding: const EdgeInsets.only(top: 4),
+                          child: Text(
+                            '«${a.resena}»',
+                            style: AppTextStyles.bodySecondary.copyWith(
+                              fontStyle: FontStyle.italic,
+                              fontSize: 13,
+                            ),
+                          ),
+                        )
+                      else if (a.contieneSpoilers)
+                        Padding(
+                          padding: const EdgeInsets.only(top: 4),
+                          child: Text(
+                            'Su reseña tiene spoilers: ábrela desde el libro.',
+                            style: AppTextStyles.caption,
+                          ),
+                        ),
+                    ],
+                  ),
                 ),
-              ),
+              ],
             ),
+          ),
+          const SizedBox(height: AppSpacing.xs),
+          Row(
+            children: [
+              Expanded(child: ReaccionesProgreso(lectura: a.lectura)),
+              TextButton.icon(
+                key: const Key('feed-comentarios'),
+                onPressed: _comentar,
+                icon: const Icon(Icons.chat_bubble_outline_rounded, size: 18),
+                label: Text(_comentarios > 0 ? '$_comentarios' : 'Comentar'),
+              ),
+            ],
+          ),
         ],
       ),
     );

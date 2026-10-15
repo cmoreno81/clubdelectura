@@ -66,6 +66,11 @@ const _etiquetasNotificacion = <String, (String, String, String)>{
     'Comentarios en tu lectura',
     'Cuando un amigo comenta tu progreso de lectura',
   ),
+  'AMISTAD_LIBRO_TERMINADO': (
+    '🎉',
+    'Una amiga termina tu lectura',
+    'Cuando una amiga termina el libro que estás leyendo',
+  ),
   'LIBRO_RECOMENDADO': (
     '📚',
     'Libros recomendados',

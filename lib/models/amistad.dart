@@ -583,3 +583,81 @@ class LecturasAmistadesData {
     );
   }
 }
+
+/// Un suceso del feed de amistades: alguien ha empezado, relee o ha terminado
+/// un libro. Lleva lo necesario para reaccionar y comentar (como en su lectura).
+class FeedAmistad {
+  const FeedAmistad({
+    required this.tipo,
+    required this.nombre,
+    required this.libraryId,
+    required this.bookId,
+    required this.titulo,
+    this.avatarUrl = '',
+    this.autor = '',
+    this.coverUrl = '',
+    this.fecha,
+    this.valoracion,
+    this.resena = '',
+    this.contieneSpoilers = false,
+    this.reacciones = const {},
+    this.miReaccion,
+    this.comentarios = 0,
+  });
+
+  /// `TERMINO`, `EMPEZO` o `RELEE`.
+  final String tipo;
+  final String nombre;
+  final String avatarUrl;
+  final String libraryId;
+  final String bookId;
+  final String titulo;
+  final String autor;
+  final String coverUrl;
+  final DateTime? fecha;
+  final double? valoracion;
+
+  /// Un trozo de su reseña (vacío si no la comparte o cuenta el final).
+  final String resena;
+  final bool contieneSpoilers;
+  final Map<ReaccionComentario, int> reacciones;
+  final ReaccionComentario? miReaccion;
+  final int comentarios;
+
+  bool get termino => tipo == 'TERMINO';
+
+  String get verbo => switch (tipo) {
+    'TERMINO' => 'ha terminado',
+    'RELEE' => 'está releyendo',
+    _ => 'ha empezado',
+  };
+
+  /// La misma lectura vista como `LecturaAmistad`, para reutilizar el botón de reaccionar.
+  LecturaAmistad get lectura => LecturaAmistad(
+    libraryId: libraryId,
+    bookId: bookId,
+    titulo: titulo,
+    autor: autor,
+    coverUrl: coverUrl,
+    reacciones: reacciones,
+    miReaccion: miReaccion,
+  );
+
+  factory FeedAmistad.fromJson(Map<String, dynamic> json) => FeedAmistad(
+    tipo: json['tipo']?.toString() ?? 'EMPEZO',
+    nombre: json['nombre']?.toString() ?? '',
+    avatarUrl: json['avatarUrl']?.toString() ?? '',
+    libraryId: json['libraryId']?.toString() ?? '',
+    bookId: json['bookId']?.toString() ?? '',
+    titulo: json['titulo']?.toString() ?? '',
+    autor: json['autor']?.toString() ?? '',
+    coverUrl: json['coverUrl']?.toString() ?? '',
+    fecha: DateTime.tryParse(json['fecha']?.toString() ?? ''),
+    valoracion: (json['valoracion'] as num?)?.toDouble(),
+    resena: json['resena']?.toString() ?? '',
+    contieneSpoilers: json['contieneSpoilers'] == true,
+    reacciones: _leerReacciones(json['reacciones']),
+    miReaccion: ReaccionComentarioDatos.fromApi(json['miReaccion']?.toString()),
+    comentarios: (json['comentarios'] as num?)?.toInt() ?? 0,
+  );
+}
