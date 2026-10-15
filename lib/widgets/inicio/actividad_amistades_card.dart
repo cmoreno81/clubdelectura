@@ -12,7 +12,7 @@ import '../amistades/reacciones_progreso.dart';
 import '../common/club_avatar.dart';
 import '../common/club_book_cover.dart';
 
-/// «Qué leen tus amigos» en Inicio: un carrusel con una tarjeta por
+/// «Qué leen tus amigos» (dentro de la pantalla Amigos): un carrusel con una tarjeta por
 /// persona (portada grande, su avatar y lo último que hace). Como mucho
 /// [maxPersonas] tarjetas, así que ocupa lo mismo con 3 amistades que con 100;
 /// «Ver todas» lleva a la pantalla de Amistades. Si no hay nada, no sale.

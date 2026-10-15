@@ -1,5 +1,4 @@
 import '../services/amistades_cambios.dart';
-import '../widgets/inicio/actividad_amistades_card.dart';
 import '../widgets/inicio/amistades_atajo_card.dart';
 import '../widgets/inicio/talento_de_la_semana_card.dart';
 import '../widgets/common/bandera_idioma.dart';
@@ -887,10 +886,8 @@ class _GeneralDashboardPageState extends State<GeneralDashboardPage> {
                       _hero(data),
                       const SizedBox(height: AppSpacing.sm),
                       _metrics(data),
-                      if (_tieneClubSocial) ...const [
-                        AmistadesAtajoCard(),
-                        ActividadAmistadesCard(),
-                      ],
+                      // El carrusel «Qué leen tus amigos» vive dentro de Amigos.
+                      if (_tieneClubSocial) const AmistadesAtajoCard(),
                       TalentoDeLaSemanaCard(
                         onAbrir: (libro) => abrirLibroDeTalento(
                           context,
