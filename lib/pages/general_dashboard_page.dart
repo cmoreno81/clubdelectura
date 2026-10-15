@@ -3171,7 +3171,7 @@ class _ReleasesPreview extends StatelessWidget {
                                 width: 104,
                                 height: 152,
                               ),
-                              if (book.isInWishlist || book.isInLibrary)
+                              if (book.isInWishlist || book.isInLibrary || book.isPurchased)
                                 Positioned(
                                   top: 6,
                                   right: 6,

@@ -7,6 +7,27 @@ import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 
 void main() {
+  test('interpreta si ya lo compraste, aparte de deseo y biblioteca', () {
+    final comprado = UpcomingRelease.fromJson({
+      'bookId': 'b1',
+      'title': 'Legado II',
+      'publicationDate': '2026-09-09T00:00:00.000Z',
+      'isInWishlist': false,
+      'isInLibrary': true,
+      'isPurchased': true,
+    });
+    expect(comprado.isPurchased, isTrue);
+    expect(comprado.isInWishlist, isFalse);
+    expect(comprado.copyWith(isInLibrary: false).isPurchased, isTrue);
+
+    final sinCompra = UpcomingRelease.fromJson({
+      'bookId': 'b2',
+      'title': 'Otro',
+      'publicationDate': '2026-09-09T00:00:00.000Z',
+    });
+    expect(sinCompra.isPurchased, isFalse);
+  });
+
   test('parses editorial cliches from a release', () {
     final release = UpcomingRelease.fromJson({
       'bookId': 'book-1',

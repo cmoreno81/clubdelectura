@@ -96,6 +96,14 @@ class _UpcomingReleasesPageState extends State<UpcomingReleasesPage> {
 
   Future<void> _toggleWishlist(UpcomingRelease book) async {
     if (_busy.contains(book.id)) return;
+    if (book.isPurchased) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Ya lo has comprado: lo tienes en Mis adquisiciones.'),
+        ),
+      );
+      return;
+    }
     setState(() {
       _busy.add(book.id);
     });
@@ -595,8 +603,10 @@ class _UpcomingReleasesPageState extends State<UpcomingReleasesPage> {
                       top: -6,
                       right: -6,
                       child: _WishlistBadge(
-                        inWishlist:
-                            _deseos[book.id]?.enDeseos ?? book.isInWishlist,
+                        comprado: book.isPurchased,
+                        inWishlist: (_deseos[book.id]?.enDeseos ??
+                                book.isInWishlist) ||
+                            book.isPurchased,
                         busy: busy,
                         onTap: () => _toggleWishlist(book),
                       ),
@@ -701,6 +711,27 @@ class _UpcomingReleasesPageState extends State<UpcomingReleasesPage> {
                   ],
                   const SizedBox(height: AppSpacing.sm),
 
+                  if (book.isPurchased) ...[
+                    const Row(
+                      children: [
+                        Icon(
+                          Icons.shopping_bag_rounded,
+                          size: 15,
+                          color: AppColors.success,
+                        ),
+                        SizedBox(width: 4),
+                        Text(
+                          'Ya lo has comprado',
+                          style: TextStyle(
+                            color: AppColors.success,
+                            fontWeight: FontWeight.w700,
+                            fontSize: 13,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: AppSpacing.xs),
+                  ],
                   // ── Botón biblioteca ──────────────────────────────────
                   (book.isInLibrary || _enBiblioteca.contains(book.id))
                       ? Row(
@@ -816,11 +847,13 @@ class _UpcomingReleasesPageState extends State<UpcomingReleasesPage> {
 // ─────────────────────────────────────────────────────────────────────────────
 class _WishlistBadge extends StatelessWidget {
   const _WishlistBadge({
+    this.comprado = false,
     required this.inWishlist,
     required this.busy,
     required this.onTap,
   });
 
+  final bool comprado;
   final bool inWishlist;
   final bool busy;
   final VoidCallback onTap;
@@ -828,7 +861,9 @@ class _WishlistBadge extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Tooltip(
-      message: inWishlist
+      message: comprado
+          ? 'Ya lo has comprado'
+          : inWishlist
           ? 'Quitar de tu lista de deseos'
           : 'Guardar en tu lista de deseos',
       child: GestureDetector(
@@ -838,10 +873,18 @@ class _WishlistBadge extends StatelessWidget {
           width: 32,
           height: 32,
           decoration: BoxDecoration(
-            color: inWishlist ? AppColors.primary : AppColors.surface,
+            color: comprado
+                ? AppColors.success
+                : inWishlist
+                ? AppColors.primary
+                : AppColors.surface,
             shape: BoxShape.circle,
             border: Border.all(
-              color: inWishlist ? AppColors.primary : AppColors.border,
+              color: comprado
+                  ? AppColors.success
+                  : inWishlist
+                  ? AppColors.primary
+                  : AppColors.border,
               width: 1.5,
             ),
             boxShadow: [

@@ -6,6 +6,7 @@ class UpcomingRelease {
     required this.genre,
     required this.isInWishlist,
     required this.isInLibrary,
+    this.isPurchased = false,
     this.author,
     this.isbn,
     this.coverUrl,
@@ -29,6 +30,9 @@ class UpcomingRelease {
   final bool isInWishlist;
   final String? wishlistItemId;
   final bool isInLibrary;
+
+  /// Ya lo compraste (está como «comprado» en tu lista de deseos).
+  final bool isPurchased;
   final List<String> cliches;
 
   factory UpcomingRelease.fromJson(
@@ -54,6 +58,7 @@ class UpcomingRelease {
     isInWishlist: json['isInWishlist'] == true || json['enWishlist'] == true,
     wishlistItemId: json['wishlistItemId']?.toString(),
     isInLibrary: json['isInLibrary'] == true || json['enBiblioteca'] == true,
+    isPurchased: json['isPurchased'] == true,
     cliches: (json['cliches'] as List<dynamic>? ?? const [])
         .map((value) => value.toString())
         .where((value) => value.isNotEmpty)
@@ -65,6 +70,7 @@ class UpcomingRelease {
     String? wishlistItemId,
     bool clearWishlistItemId = false,
     bool? isInLibrary,
+    bool? isPurchased,
   }) => UpcomingRelease(
     id: id,
     title: title,
@@ -81,6 +87,7 @@ class UpcomingRelease {
         ? null
         : (wishlistItemId ?? this.wishlistItemId),
     isInLibrary: isInLibrary ?? this.isInLibrary,
+    isPurchased: isPurchased ?? this.isPurchased,
     cliches: cliches,
   );
 }
