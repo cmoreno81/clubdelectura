@@ -54,7 +54,20 @@ Future<void> main() async {
     debugPrint('Firebase no se ha podido iniciar: $error\n$stack');
   }
 
-  if (firebaseListo) _configurarCrashlytics();
+  if (firebaseListo) {
+    // Las ejecuciones de desarrollo (flutter run, simulador) no deben mezclarse
+    // con las de las usuarias: las comprobaciones de debug de Flutter (setState
+    // con Future, desbordes, etc.) saltaban como «fallas» de la versión sin
+    // publicar. En release se envía todo como siempre.
+    try {
+      await FirebaseCrashlytics.instance.setCrashlyticsCollectionEnabled(
+        !kDebugMode,
+      );
+    } catch (error) {
+      debugPrint('Crashlytics: no se pudo ajustar la recogida: $error');
+    }
+    _configurarCrashlytics();
+  }
 
   runApp(const MyApp());
 }
