@@ -113,6 +113,10 @@ class _GeneralDashboardPageState extends State<GeneralDashboardPage> {
   int _navIndex = 0;
   // Etiqueta la pestaña "Mi club"/"Mi espacio" según tenga club o no.
   bool _hasClub = false;
+
+  /// Tiene algún club de verdad (no solo «Mi espacio»). Amigos vive en Inicio
+  /// solo para esas cuentas; las personales lo tienen como pestaña propia.
+  bool _tieneClubSocial = false;
   final _scrollController = ScrollController();
   // _latestScrollController y _personalLibraryScrollController eliminados:
   // los carrouseles horizontales usan _HScrollGestureProxy, que no necesita
@@ -285,7 +289,12 @@ class _GeneralDashboardPageState extends State<GeneralDashboardPage> {
   Future<GeneralDashboard> _loadDashboard() async {
     final data = await (widget.loadDashboard?.call() ??
         GeneralDashboardService().load());
-    if (mounted) setState(() => _hasClub = data.clubs.isNotEmpty);
+    if (mounted) {
+      setState(() {
+        _hasClub = data.clubs.isNotEmpty;
+        _tieneClubSocial = data.clubs.any((c) => !c.esPersonal);
+      });
+    }
     return data;
   }
 
@@ -878,8 +887,10 @@ class _GeneralDashboardPageState extends State<GeneralDashboardPage> {
                       _hero(data),
                       const SizedBox(height: AppSpacing.sm),
                       _metrics(data),
-                      const AmistadesAtajoCard(),
-                      const ActividadAmistadesCard(),
+                      if (_tieneClubSocial) ...const [
+                        AmistadesAtajoCard(),
+                        ActividadAmistadesCard(),
+                      ],
                       TalentoDeLaSemanaCard(
                         onAbrir: (libro) => abrirLibroDeTalento(
                           context,

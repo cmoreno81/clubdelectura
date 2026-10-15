@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'clubvision_menu_page.dart';
 import 'dashboard_page.dart';
+import 'amistades_page.dart';
 import 'lecturas_page.dart';
 import 'libros_page.dart';
 import 'mi_espacio_page.dart';
@@ -59,7 +60,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
     LibrosDataCache.instance.invalidate();
     if (_esPersonal) {
       // Modo lector solitario: Mi espacio (base) + Libros + Sagas + Mis
-      // estadísticas. Ya no hay un "Inicio" propio: lo que hacía (leyendo
+      // estadísticas + Amigos. Ya no hay un "Inicio" propio: lo que hacía (leyendo
       // ahora, racha, check-in) vive repartido entre estas dos últimas.
       _pageBuilders =
           widget.pageBuilders ??
@@ -73,8 +74,9 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
             ),
             () => SagasPage(controller: _sagasController),
             () => const MiEstadisticasPage(),
+            () => const AmistadesPage(embebida: true),
           ];
-      assert(_pageBuilders.length == 4);
+      assert(_pageBuilders.length == 5);
     } else {
       // Modo club social: 6 tabs completos
       _pageBuilders =
@@ -91,7 +93,10 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
               clubId: widget.club.id,
             ),
             () => SagasPage(controller: _sagasController),
-            () => LecturasPage(onBackToClub: _volverAlClub, clubId: widget.club.id),
+            () => LecturasPage(
+              onBackToClub: _volverAlClub,
+              clubId: widget.club.id,
+            ),
             () => ClubvisionMenuPage(onBackToClub: _volverAlClub),
             () => const MiEstadisticasPage(),
           ];
@@ -181,25 +186,35 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
     NavigationDestination(
       icon: Badge(
         isLabelVisible: _notifications.noLeidasLecturasPara(widget.club.id) > 0,
-        label: Text(_badge(_notifications.noLeidasLecturasPara(widget.club.id))),
+        label: Text(
+          _badge(_notifications.noLeidasLecturasPara(widget.club.id)),
+        ),
         child: const Icon(Icons.auto_stories_outlined),
       ),
       selectedIcon: Badge(
         isLabelVisible: _notifications.noLeidasLecturasPara(widget.club.id) > 0,
-        label: Text(_badge(_notifications.noLeidasLecturasPara(widget.club.id))),
+        label: Text(
+          _badge(_notifications.noLeidasLecturasPara(widget.club.id)),
+        ),
         child: const Icon(Icons.auto_stories_rounded),
       ),
       label: 'Lecturas',
     ),
     NavigationDestination(
       icon: Badge(
-        isLabelVisible: _notifications.noLeidasClubvisionPara(widget.club.id) > 0,
-        label: Text(_badge(_notifications.noLeidasClubvisionPara(widget.club.id))),
+        isLabelVisible:
+            _notifications.noLeidasClubvisionPara(widget.club.id) > 0,
+        label: Text(
+          _badge(_notifications.noLeidasClubvisionPara(widget.club.id)),
+        ),
         child: const Icon(Icons.mic_none_outlined),
       ),
       selectedIcon: Badge(
-        isLabelVisible: _notifications.noLeidasClubvisionPara(widget.club.id) > 0,
-        label: Text(_badge(_notifications.noLeidasClubvisionPara(widget.club.id))),
+        isLabelVisible:
+            _notifications.noLeidasClubvisionPara(widget.club.id) > 0,
+        label: Text(
+          _badge(_notifications.noLeidasClubvisionPara(widget.club.id)),
+        ),
         child: const Icon(Icons.mic_rounded),
       ),
       label: 'Clubvisión',
@@ -237,6 +252,11 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
       icon: Icon(Icons.bar_chart_outlined),
       selectedIcon: Icon(Icons.bar_chart_rounded),
       label: 'Estadísticas',
+    ),
+    NavigationDestination(
+      icon: Icon(Icons.groups_outlined),
+      selectedIcon: Icon(Icons.groups_rounded),
+      label: 'Amigos',
     ),
   ];
 
@@ -293,10 +313,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                const Icon(
-                  Icons.home_outlined,
-                  color: AppColors.textSecondary,
-                ),
+                const Icon(Icons.home_outlined, color: AppColors.textSecondary),
                 if (!compact) ...[
                   const SizedBox(height: 3),
                   Text(
@@ -351,10 +368,8 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
                       ? _floatingNavRow(_personalDestinations(), compact)
                       : ListenableBuilder(
                           listenable: _notifications,
-                          builder: (context, _) => _floatingNavRow(
-                            _socialDestinations(),
-                            compact,
-                          ),
+                          builder: (context, _) =>
+                              _floatingNavRow(_socialDestinations(), compact),
                         ),
                 ),
               ],
@@ -416,8 +431,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
                     builder: (context, _) {
                       // Reconstruir el rail cuando cambian las notificaciones
                       // para actualizar los badges.
-                      final updatedDestinations =
-                          _railSocialDestinations();
+                      final updatedDestinations = _railSocialDestinations();
                       return NavigationRail(
                         selectedIndex: currentIndex,
                         onDestinationSelected: _selectTab,
@@ -485,7 +499,9 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
     NavigationRailDestination(
       icon: Badge(
         isLabelVisible: _notifications.noLeidasLecturasPara(widget.club.id) > 0,
-        label: Text(_badge(_notifications.noLeidasLecturasPara(widget.club.id))),
+        label: Text(
+          _badge(_notifications.noLeidasLecturasPara(widget.club.id)),
+        ),
         child: const Icon(Icons.auto_stories_outlined),
       ),
       selectedIcon: const Icon(Icons.auto_stories_rounded),
@@ -493,8 +509,11 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
     ),
     NavigationRailDestination(
       icon: Badge(
-        isLabelVisible: _notifications.noLeidasClubvisionPara(widget.club.id) > 0,
-        label: Text(_badge(_notifications.noLeidasClubvisionPara(widget.club.id))),
+        isLabelVisible:
+            _notifications.noLeidasClubvisionPara(widget.club.id) > 0,
+        label: Text(
+          _badge(_notifications.noLeidasClubvisionPara(widget.club.id)),
+        ),
         child: const Icon(Icons.mic_none_outlined),
       ),
       selectedIcon: const Icon(Icons.mic_rounded),
@@ -527,6 +546,11 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
       icon: Icon(Icons.bar_chart_outlined),
       selectedIcon: Icon(Icons.bar_chart_rounded),
       label: Text('Estadísticas'),
+    ),
+    NavigationRailDestination(
+      icon: Icon(Icons.groups_outlined),
+      selectedIcon: Icon(Icons.groups_rounded),
+      label: Text('Amigos'),
     ),
   ];
 }

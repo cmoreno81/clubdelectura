@@ -13,6 +13,8 @@ import '../theme/app_spacing.dart';
 import '../theme/app_text_styles.dart';
 import '../widgets/amistades/lectura_con_amistad.dart';
 import '../widgets/common/club_avatar.dart';
+import '../widgets/common/floating_nav_bar.dart';
+import '../widgets/inicio/actividad_amistades_card.dart';
 import '../widgets/common/club_card.dart';
 import '../widgets/error_view.dart';
 import 'perfil_amistad_page.dart';
@@ -20,7 +22,11 @@ import 'perfil_amistad_page.dart';
 /// Amistades: buscar a gente, enviar y responder solicitudes, tu código para
 /// compartir y la lista de tus amistades.
 class AmistadesPage extends StatefulWidget {
-  const AmistadesPage({super.key, this.cargar});
+  const AmistadesPage({super.key, this.cargar, this.embebida = false});
+
+  /// Como pestaña de la barra de las cuentas personales: sin flecha atrás,
+  /// con el resumen y «Qué leen tus amigos» arriba y margen para la barra.
+  final bool embebida;
 
   /// Para pruebas: sustituye la carga real.
   final Future<AmistadesData> Function()? cargar;
@@ -259,7 +265,12 @@ class _AmistadesPageState extends State<AmistadesPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Amigos')),
+      appBar: widget.embebida
+          ? AppBar(
+              title: const Text('Amigos'),
+              automaticallyImplyLeading: false,
+            )
+          : AppBar(title: const Text('Amigos')),
       body: _cargando && _data == null
           ? const Center(child: CircularProgressIndicator())
           : _error != null && _data == null
@@ -268,7 +279,12 @@ class _AmistadesPageState extends State<AmistadesPage> {
               onRefresh: () => _cargar(silencioso: true),
               child: ListView(
                 physics: const AlwaysScrollableScrollPhysics(),
-                padding: const EdgeInsets.all(AppSpacing.md),
+                padding: EdgeInsets.fromLTRB(
+                  AppSpacing.md,
+                  AppSpacing.md,
+                  AppSpacing.md,
+                  widget.embebida ? kFloatingNavClearance : AppSpacing.md,
+                ),
                 children: _secciones(_data ?? const AmistadesData()),
               ),
             ),
@@ -277,6 +293,11 @@ class _AmistadesPageState extends State<AmistadesPage> {
 
   List<Widget> _secciones(AmistadesData data) {
     return [
+      if (widget.embebida) ...[
+        _resumen(data),
+        const SizedBox(height: AppSpacing.md),
+        const ActividadAmistadesCard(),
+      ],
       _tarjetaCodigo(data.miCodigo),
       const SizedBox(height: AppSpacing.lg),
       _bloqueBuscar(),
@@ -308,6 +329,66 @@ class _AmistadesPageState extends State<AmistadesPage> {
       _bloquePrivacidad(data.privacidad),
       const SizedBox(height: AppSpacing.xl),
     ];
+  }
+
+  /// Resumen visual de un vistazo: amigos, solicitudes por responder y
+  /// solicitudes enviadas.
+  Widget _resumen(AmistadesData data) {
+    Widget dato(IconData icono, String valor, String etiqueta, Color color) {
+      return Expanded(
+        child: Container(
+          padding: const EdgeInsets.symmetric(
+            vertical: AppSpacing.md,
+            horizontal: AppSpacing.sm,
+          ),
+          decoration: BoxDecoration(
+            color: color.withValues(alpha: .12),
+            borderRadius: BorderRadius.circular(18),
+          ),
+          child: Column(
+            children: [
+              Icon(icono, color: color, size: 22),
+              const SizedBox(height: 4),
+              Text(
+                valor,
+                style: AppTextStyles.title.copyWith(fontSize: 22, color: color),
+              ),
+              Text(
+                etiqueta,
+                textAlign: TextAlign.center,
+                style: AppTextStyles.caption,
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    return Row(
+      key: const Key('amistades-resumen'),
+      children: [
+        dato(
+          Icons.groups_rounded,
+          '${data.amistades.length}',
+          'amigos',
+          AppColors.primary,
+        ),
+        const SizedBox(width: AppSpacing.sm),
+        dato(
+          Icons.mark_email_unread_rounded,
+          '${data.recibidas.length}',
+          'por responder',
+          AppColors.inkCoral,
+        ),
+        const SizedBox(width: AppSpacing.sm),
+        dato(
+          Icons.send_rounded,
+          '${data.enviadas.length}',
+          'enviadas',
+          AppColors.info,
+        ),
+      ],
+    );
   }
 
   Future<void> _cambiarPrivacidad(PrivacidadAmistades nueva) async {

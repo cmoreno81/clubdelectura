@@ -141,7 +141,7 @@ void main() {
           ),
           notificationService: service,
           pageBuilders: List.generate(
-            4,
+            5,
             (index) =>
                 () => Text('Personal $index'),
           ),
