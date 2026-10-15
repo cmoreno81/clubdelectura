@@ -101,7 +101,7 @@ void main() {
   });
 
   test(
-    'opciones: primero lo leído de mayor a menor nota, luego pendientes, sin lo que ella ya conoce',
+    'opciones: primero lo leído de mayor a menor nota, luego pendientes, sin lo que ella ya ha leído',
     () {
       final r = ordenarOpcionesRecomendar(
         const [

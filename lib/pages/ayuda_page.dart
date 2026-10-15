@@ -1119,7 +1119,8 @@ const List<_HelpSection> _secciones = [
     titulo: 'Lecturas y citas',
     items: [
       _HelpItem(
-        pregunta: '¿Puedo poner metas y días para comentar en una lectura conjunta?',
+        pregunta:
+            '¿Puedo poner metas y días para comentar en una lectura conjunta?',
         respuesta:
             'Sí, y es opcional. Al crear la conversación (o al editarla con el icono '
             'de ajustes) verás "Metas (opcional)": añade una meta con "Hasta el '
@@ -1787,8 +1788,9 @@ const List<_HelpSection> _secciones = [
             'Si te llega un aviso «¿Qué me recomiendas?», tócalo: se abre el '
             'perfil de quien lo pide. Pulsa «Recomiéndale un libro» y elige uno '
             'con su portada: salen tus lecturas ordenadas de mayor a menor '
-            'nota y, después, tus pendientes. Solo aparecen libros que esa '
-            'persona todavía no tiene (según lo que comparte). Envíaselo con '
+            'nota y, después, tus pendientes. No salen los que esa '
+            'persona ya ha leído o está leyendo (según lo que comparte); sus '
+            'pendientes sí. Envíaselo con '
             'un mensaje.',
       ),
       _HelpItem(

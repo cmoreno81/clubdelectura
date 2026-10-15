@@ -88,7 +88,7 @@ class OpcionRecomendar {
 }
 
 /// Primero los que has leído (de mayor a menor nota) y después los pendientes;
-/// sin repetidos ni los que la amiga ya conoce (leídos, leyendo o pendientes).
+/// sin repetidos ni los que la amiga ya ha leído o está leyendo.
 List<OpcionRecomendar> ordenarOpcionesRecomendar(
   List<OpcionRecomendar> todas, {
   Set<String> yaConoce = const {},
@@ -114,7 +114,7 @@ double _notaDe(String valoracion) =>
     double.tryParse(valoracion.replaceAll(',', '.')) ?? 0;
 
 /// Tus libros recomendables a [nombre]: tus leídos y pendientes, menos los que
-/// ella ya tiene (según lo que comparte).
+/// ella ya ha leído o está leyendo (sus pendientes sí se mantienen).
 Future<List<OpcionRecomendar>> cargarOpcionesRecomendar(String nombre) async {
   final api = ApiService();
   final usuario = (await UsuarioService().obtenerUsuario())?.trim() ?? '';
@@ -130,7 +130,6 @@ Future<List<OpcionRecomendar>> cargarOpcionesRecomendar(String nombre) async {
   final yaConoce = <String>{
     if (perfil != null) ...[
       for (final l in perfil.terminados) l.bookId,
-      for (final l in perfil.pendientes) l.bookId,
       for (final l in perfil.leyendo) l.bookId,
     ],
   };
@@ -215,7 +214,7 @@ class _ElegirLibroSheetState extends State<_ElegirLibroSheet> {
           ),
           const SizedBox(height: 4),
           Text(
-            'Ordenados por tu valoración. Solo aparecen libros que ${widget.nombre} todavía no tiene en su biblioteca.',
+            'Ordenados por tu valoración. Solo aparecen libros que ${widget.nombre} todavía no ha leído.',
             style: AppTextStyles.caption,
           ),
           const SizedBox(height: AppSpacing.sm),
