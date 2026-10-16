@@ -287,43 +287,67 @@ class _UpcomingReleasesPageState extends State<UpcomingReleasesPage> {
             });
             await refreshed;
           },
-          child: ListView.separated(
-            controller: _scroll,
-            padding: const EdgeInsets.fromLTRB(
-              AppSpacing.md,
-              AppSpacing.md,
-              AppSpacing.md,
-              AppSpacing.xxl,
-            ),
-            itemCount: (books.isEmpty ? 1 : books.length) + 4,
-            separatorBuilder: (_, index) =>
-                SizedBox(height: index == 0 ? AppSpacing.md : AppSpacing.sm),
-            itemBuilder: (context, index) {
-              if (index == 0) {
-                return _catalogHeader(allBooks.length);
-              }
-              if (index == (books.isEmpty ? 1 : books.length) + 3) {
-                return _alFinal();
-              }
-              if (index == 1) {
-                return BuscadorCasaDelLibroCard(key: _buscador);
-              }
-              if (index == 2) {
-                return _filters(
-                  genres: genres,
-                  selectedGenre: selectedGenre,
-                  cliches: cliches,
-                  selectedCliche: selected,
-                  resultCount: books.length,
-                );
-              }
-              if (books.isEmpty) {
-                return _message(
-                  Icons.filter_alt_off_outlined,
-                  'No hay títulos con estos filtros en esta selección',
-                );
-              }
-              return _releaseCard(books[index - 3]);
+          child: LayoutBuilder(
+            builder: (context, restricciones) {
+              // En tablet, dos fichas por fila.
+              final dosColumnas = restricciones.maxWidth >= 720;
+              final filas = books.isEmpty
+                  ? 1
+                  : dosColumnas
+                  ? (books.length + 1) ~/ 2
+                  : books.length;
+              return ListView.separated(
+                controller: _scroll,
+                padding: const EdgeInsets.fromLTRB(
+                  AppSpacing.md,
+                  AppSpacing.md,
+                  AppSpacing.md,
+                  AppSpacing.xxl,
+                ),
+                itemCount: filas + 4,
+                separatorBuilder: (_, index) => SizedBox(
+                  height: index == 0 ? AppSpacing.md : AppSpacing.sm,
+                ),
+                itemBuilder: (context, index) {
+                  if (index == 0) {
+                    return _catalogHeader(allBooks.length);
+                  }
+                  if (index == filas + 3) return _alFinal();
+                  if (index == 1) {
+                    return BuscadorCasaDelLibroCard(key: _buscador);
+                  }
+                  if (index == 2) {
+                    return _filters(
+                      genres: genres,
+                      selectedGenre: selectedGenre,
+                      cliches: cliches,
+                      selectedCliche: selected,
+                      resultCount: books.length,
+                    );
+                  }
+                  if (books.isEmpty) {
+                    return _message(
+                      Icons.filter_alt_off_outlined,
+                      'No hay títulos con estos filtros en esta selección',
+                    );
+                  }
+                  if (!dosColumnas) return _releaseCard(books[index - 3]);
+                  final a = (index - 3) * 2;
+                  final b = a + 1;
+                  return Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Expanded(child: _releaseCard(books[a])),
+                      const SizedBox(width: AppSpacing.sm),
+                      Expanded(
+                        child: b < books.length
+                            ? _releaseCard(books[b])
+                            : const SizedBox.shrink(),
+                      ),
+                    ],
+                  );
+                },
+              );
             },
           ),
         );
