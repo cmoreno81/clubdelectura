@@ -111,7 +111,7 @@ Future<bool> openBookDetail(
       );
     } catch (_) {
       if (!context.mounted) return false;
-      await Navigator.push<void>(
+      await empujarFicha<void>(
         context,
         BookDetailPageRoute(
           builder: (_) => CatalogBookDetailPage(
@@ -131,9 +131,7 @@ Future<bool> openBookDetail(
 
     if (bookId.isNotEmpty) {
       // Filtrar por bookId (más preciso que por título)
-      registros = data.libros
-          .where((item) => item.bookId == bookId)
-          .toList();
+      registros = data.libros.where((item) => item.bookId == bookId).toList();
       finalizados = data.finalizados
           .where((item) => item.bookId == bookId)
           .toList();
@@ -158,7 +156,7 @@ Future<bool> openBookDetail(
     }
 
     if (registros.isEmpty && finalizados.isEmpty) {
-      await Navigator.push<void>(
+      await empujarFicha<void>(
         context,
         BookDetailPageRoute(
           builder: (_) => CatalogBookDetailPage(
@@ -172,7 +170,7 @@ Future<bool> openBookDetail(
       return false;
     }
 
-    await Navigator.push<void>(
+    await empujarFicha<void>(
       context,
       BookDetailPageRoute(
         builder: (_) => DetalleLibroPage(
@@ -230,7 +228,9 @@ Future<bool> openCatalogBookDetail(
   @visibleForTesting String? usuarioActualForTesting,
 }) async {
   // Cuando globalStats=true usamos el fetch global (sin filtro de club)
-  final fetch = fetchForTesting ?? (globalStats ? _fetchLibroPorIdGlobal : _fetchLibroPorId);
+  final fetch =
+      fetchForTesting ??
+      (globalStats ? _fetchLibroPorIdGlobal : _fetchLibroPorId);
   final normalizedTitle = title.trim().toLowerCase();
   if (normalizedTitle.isEmpty) return false;
 
@@ -240,8 +240,11 @@ Future<bool> openCatalogBookDetail(
 
     if (bookId.isNotEmpty) {
       // Ruta rápida: endpoint específico por bookId
-      final usuarioActual = usuarioActualForTesting ??
-          ((await UsuarioService().obtenerUsuario()) ?? '').trim().toLowerCase();
+      final usuarioActual =
+          usuarioActualForTesting ??
+          ((await UsuarioService().obtenerUsuario()) ?? '')
+              .trim()
+              .toLowerCase();
 
       final result = await fetch(bookId);
       if (!context.mounted) return false;
@@ -250,7 +253,7 @@ Future<bool> openCatalogBookDetail(
         // Libro no encontrado en servidor
         if (forceFullDetail) {
           // Pulsación larga → ficha completa aunque no haya datos de biblioteca
-          await Navigator.push<void>(
+          await empujarFicha<void>(
             context,
             BookDetailPageRoute(
               builder: (_) => DetalleLibroPage(
@@ -271,7 +274,7 @@ Future<bool> openCatalogBookDetail(
         } else {
           // Tap simple → ficha de catálogo con "Añadir a mi biblioteca"
           var changed = false;
-          await Navigator.push<void>(
+          await empujarFicha<void>(
             context,
             BookDetailPageRoute(
               builder: (_) => CatalogBookDetailPage(
@@ -314,27 +317,27 @@ Future<bool> openCatalogBookDetail(
       // Flags personales siempre del usuario actual
       final misRegistros = globalStats
           ? result.libros
-              .where(
-                (item) =>
-                    usuarioActual.isEmpty ||
-                    item.usuario.trim().toLowerCase() == usuarioActual,
-              )
-              .toList()
+                .where(
+                  (item) =>
+                      usuarioActual.isEmpty ||
+                      item.usuario.trim().toLowerCase() == usuarioActual,
+                )
+                .toList()
           : registros;
       final misFinalizados = globalStats
           ? result.finalizados
-              .where(
-                (item) =>
-                    usuarioActual.isEmpty ||
-                    item.usuario.trim().toLowerCase() == usuarioActual,
-              )
-              .toList()
+                .where(
+                  (item) =>
+                      usuarioActual.isEmpty ||
+                      item.usuario.trim().toLowerCase() == usuarioActual,
+                )
+                .toList()
           : finalizados;
 
       // Si en modo filtrado el usuario no tiene el libro → CatalogBookDetailPage
       if (!globalStats && registros.isEmpty && finalizados.isEmpty) {
         if (forceFullDetail) {
-          await Navigator.push<void>(
+          await empujarFicha<void>(
             context,
             BookDetailPageRoute(
               builder: (_) => DetalleLibroPage(
@@ -353,7 +356,7 @@ Future<bool> openCatalogBookDetail(
           return true;
         } else {
           var changed = false;
-          await Navigator.push<void>(
+          await empujarFicha<void>(
             context,
             BookDetailPageRoute(
               builder: (_) => CatalogBookDetailPage(
@@ -371,7 +374,7 @@ Future<bool> openCatalogBookDetail(
 
       // En modo globalStats con forceFullDetail, siempre DetalleLibroPage
       if (globalStats && forceFullDetail) {
-        await Navigator.push<void>(
+        await empujarFicha<void>(
           context,
           BookDetailPageRoute(
             builder: (_) => DetalleLibroPage(
@@ -401,7 +404,7 @@ Future<bool> openCatalogBookDetail(
       if (globalStats && !forceFullDetail) {
         if (registros.isEmpty && finalizados.isEmpty) {
           var changed = false;
-          await Navigator.push<void>(
+          await empujarFicha<void>(
             context,
             BookDetailPageRoute(
               builder: (_) => CatalogBookDetailPage(
@@ -417,7 +420,7 @@ Future<bool> openCatalogBookDetail(
         }
         // Hay datos de la comunidad (aunque la usuaria no lo tenga aún) →
         // ficha completa con stats globales
-        await Navigator.push<void>(
+        await empujarFicha<void>(
           context,
           BookDetailPageRoute(
             builder: (_) => DetalleLibroPage(
@@ -439,7 +442,7 @@ Future<bool> openCatalogBookDetail(
       }
 
       // Modo club, usuario tiene el libro → ficha completa
-      await Navigator.push<void>(
+      await empujarFicha<void>(
         context,
         BookDetailPageRoute(
           builder: (_) => DetalleLibroPage(
@@ -459,8 +462,11 @@ Future<bool> openCatalogBookDetail(
       return true;
     } else {
       // Fallback sin bookId
-      final usuarioActual = usuarioActualForTesting ??
-          ((await UsuarioService().obtenerUsuario()) ?? '').trim().toLowerCase();
+      final usuarioActual =
+          usuarioActualForTesting ??
+          ((await UsuarioService().obtenerUsuario()) ?? '')
+              .trim()
+              .toLowerCase();
 
       final data = await LibrosDataCache.instance.get(
         () => ApiService().getLibrosData(),
@@ -469,14 +475,10 @@ Future<bool> openCatalogBookDetail(
 
       if (globalStats) {
         registros = data.libros
-            .where(
-              (item) => item.libro.trim().toLowerCase() == normalizedTitle,
-            )
+            .where((item) => item.libro.trim().toLowerCase() == normalizedTitle)
             .toList();
         finalizados = data.finalizados
-            .where(
-              (item) => item.libro.trim().toLowerCase() == normalizedTitle,
-            )
+            .where((item) => item.libro.trim().toLowerCase() == normalizedTitle)
             .toList();
       } else {
         registros = data.libros
@@ -499,21 +501,21 @@ Future<bool> openCatalogBookDetail(
 
       final misRegistros = globalStats
           ? registros
-              .where(
-                (item) =>
-                    usuarioActual.isEmpty ||
-                    item.usuario.trim().toLowerCase() == usuarioActual,
-              )
-              .toList()
+                .where(
+                  (item) =>
+                      usuarioActual.isEmpty ||
+                      item.usuario.trim().toLowerCase() == usuarioActual,
+                )
+                .toList()
           : registros;
       final misFinalizados = globalStats
           ? finalizados
-              .where(
-                (item) =>
-                    usuarioActual.isEmpty ||
-                    item.usuario.trim().toLowerCase() == usuarioActual,
-              )
-              .toList()
+                .where(
+                  (item) =>
+                      usuarioActual.isEmpty ||
+                      item.usuario.trim().toLowerCase() == usuarioActual,
+                )
+                .toList()
           : finalizados;
 
       // Si el usuario no tiene el libro en su biblioteca. En modo
@@ -525,7 +527,7 @@ Future<bool> openCatalogBookDetail(
           : misRegistros.isEmpty && misFinalizados.isEmpty;
       if (sinDatos) {
         if (forceFullDetail) {
-          await Navigator.push<void>(
+          await empujarFicha<void>(
             context,
             BookDetailPageRoute(
               builder: (_) => DetalleLibroPage(
@@ -545,7 +547,7 @@ Future<bool> openCatalogBookDetail(
           return true;
         } else {
           var changed = false;
-          await Navigator.push<void>(
+          await empujarFicha<void>(
             context,
             BookDetailPageRoute(
               builder: (_) => CatalogBookDetailPage(
@@ -563,7 +565,7 @@ Future<bool> openCatalogBookDetail(
 
       // Hay datos que mostrar (el usuario tiene el libro, o en modo
       // globalStats otras lectoras lo tienen) → ficha completa
-      await Navigator.push<void>(
+      await empujarFicha<void>(
         context,
         BookDetailPageRoute(
           builder: (_) => DetalleLibroPage(
@@ -620,7 +622,7 @@ Future<void> abrirLibroDeTalento(
         )
         .toList();
     if (!context.mounted) return;
-    await Navigator.push<void>(
+    await empujarFicha<void>(
       context,
       BookDetailPageRoute(
         builder: (_) => DetalleLibroPage(
@@ -641,6 +643,11 @@ Future<void> abrirLibroDeTalento(
     );
   } catch (_) {
     if (!context.mounted) return;
-    await openBookDetail(context, title: title, bookId: bookId, coverUrl: coverUrl);
+    await openBookDetail(
+      context,
+      title: title,
+      bookId: bookId,
+      coverUrl: coverUrl,
+    );
   }
 }

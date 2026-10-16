@@ -466,7 +466,8 @@ class _CalendarioMeses extends StatelessWidget {
         const labelW = 20.0;
         const gap = 1.5;
         const minCellW = 10.0;
-        const maxCellW = 28.0;
+        // En tablet las celdas se ensanchan para llenar la tarjeta.
+        final maxCellW = constraints.maxWidth >= 600 ? 54.0 : 28.0;
         const cellH = 10.0;
         const columns = 12;
         final maxWidth = constraints.maxWidth.isFinite

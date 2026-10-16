@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../tablet/detalle_lateral.dart';
 
 import '../../models/amistad.dart';
 import '../../pages/perfil_amistad_page.dart';
@@ -22,7 +23,7 @@ String _hace(DateTime? fecha) {
   return 'hace ${dias ~/ 30} meses';
 }
 
-void _abrirPerfil(BuildContext context, String nombre) => Navigator.push<void>(
+void _abrirPerfil(BuildContext context, String nombre) => empujarDetalle<void>(
   context,
   MaterialPageRoute(builder: (_) => PerfilAmistadPage(nombre: nombre)),
 );

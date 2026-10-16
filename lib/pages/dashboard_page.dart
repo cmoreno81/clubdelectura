@@ -91,6 +91,7 @@ class DashboardPageController {
 
 class _DashboardPageState extends State<DashboardPage> {
   late Future<DashboardViewData> dashboardFuture;
+
   /// Datos ampliados del usuario (estantería anual, biblioteca personal, etc.).
   /// Solo se carga en modo personal.
   final Map<String, ValueNotifier<LecturaAhoraItem>> _reactionNotifiers = {};
@@ -257,18 +258,17 @@ class _DashboardPageState extends State<DashboardPage> {
     await Navigator.push<void>(
       context,
       AppPageRoute(
-        builder: (_) =>
-            scrollToSeguimiento
-                ? PerfilUsuarioPage(
+        builder: (_) => scrollToSeguimiento
+            ? PerfilUsuarioPage(
+                usuario: nombre,
+                profileUserId: userId.isEmpty ? null : userId,
+                scrollToSeguimiento: true,
+              )
+            : widget.profilePageBuilder?.call(nombre) ??
+                  PerfilUsuarioPage(
                     usuario: nombre,
                     profileUserId: userId.isEmpty ? null : userId,
-                    scrollToSeguimiento: true,
-                  )
-                : widget.profilePageBuilder?.call(nombre) ??
-                    PerfilUsuarioPage(
-                      usuario: nombre,
-                      profileUserId: userId.isEmpty ? null : userId,
-                    ),
+                  ),
       ),
     );
     if (mounted) await _recargar();
@@ -292,7 +292,10 @@ class _DashboardPageState extends State<DashboardPage> {
         scrolledUnderElevation: 0,
         centerTitle: true,
         iconTheme: const IconThemeData(color: AppColors.primaryDark, size: 22),
-        actionsIconTheme: const IconThemeData(color: AppColors.primaryDark, size: 22),
+        actionsIconTheme: const IconThemeData(
+          color: AppColors.primaryDark,
+          size: 22,
+        ),
         shape: const Border(
           bottom: BorderSide(color: Color(0xFFCDB8A0), width: 1.0),
         ),
@@ -398,26 +401,54 @@ class _DashboardPageState extends State<DashboardPage> {
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   if (!widget.esPersonal) ...[
-                    _podioLectoras(
-                      lectoras: viewData.topLectoras ?? const [],
-                      usuarioMes: data.resumen.usuarioMes,
-                      librosUsuarioMes: data.resumen.librosUsuarioMes,
+                    LayoutBuilder(
+                      builder: (context, c) {
+                        // En tablet, el podio y la lectura oficial van lado a
+                        // lado en vez de estirados a todo el ancho.
+                        final ancho = c.maxWidth >= 760;
+                        final podio = _podioLectoras(
+                          lectoras: viewData.topLectoras ?? const [],
+                          usuarioMes: data.resumen.usuarioMes,
+                          librosUsuarioMes: data.resumen.librosUsuarioMes,
+                        );
+                        final hayLectura =
+                            data.clubvision.estado.toUpperCase() !=
+                                'SIN_DATOS' ||
+                            data.lecturaActual.ok;
+                        final lectura = hayLectura
+                            ? ClubvisionCard(
+                                dashboard: data,
+                                estadoClub: estadoClub,
+                                haVotado: viewData.haVotado,
+                                onActualizar: _recargar,
+                              )
+                            : null;
+                        if (ancho && lectura != null) {
+                          // Misma altura en las dos tarjetas.
+                          return IntrinsicHeight(
+                            child: Row(
+                              crossAxisAlignment: CrossAxisAlignment.stretch,
+                              children: [
+                                Expanded(child: podio),
+                                const SizedBox(width: AppSpacing.md),
+                                Expanded(child: lectura),
+                              ],
+                            ),
+                          );
+                        }
+                        return Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            podio,
+                            if (lectura != null) ...[
+                              const SizedBox(height: AppSpacing.lg),
+                              lectura,
+                            ],
+                          ],
+                        );
+                      },
                     ),
                     const SizedBox(height: AppSpacing.lg),
-                    // SIN_DATOS solo se oculta si además no hay una lectura
-                    // activa de respaldo (una lectura FREE en curso sin
-                    // Clubvisión este mes) — si la hay, sí queremos ver la
-                    // tarjeta, aunque el estado en sí sea SIN_DATOS.
-                    if (data.clubvision.estado.toUpperCase() != 'SIN_DATOS' ||
-                        data.lecturaActual.ok) ...[
-                      ClubvisionCard(
-                        dashboard: data,
-                        estadoClub: estadoClub,
-                        haVotado: viewData.haVotado,
-                        onActualizar: _recargar,
-                      ),
-                      const SizedBox(height: AppSpacing.lg),
-                    ],
                     if (data.lecturaActual.ok &&
                         data.lecturaActual.bookId.isNotEmpty) ...[
                       ComprarLecturaClubCard(
@@ -438,17 +469,46 @@ class _DashboardPageState extends State<DashboardPage> {
                       ClubEmptyState(
                         icon: Icons.menu_book_outlined,
                         title: 'El club está entre lecturas',
-                        message: 'Cuando alguien empiece un libro, aparecerá aquí.',
-                        padding: const EdgeInsets.symmetric(vertical: AppSpacing.xl),
+                        message:
+                            'Cuando alguien empiece un libro, aparecerá aquí.',
+                        padding: const EdgeInsets.symmetric(
+                          vertical: AppSpacing.xl,
+                        ),
                       )
                     else
-                      ...data.leyendoAhora.map(
-                        (usuario) => _lectoraLeyendoCard(
-                          nombre: usuario.usuario,
-                          lecturas: usuario.lecturas,
-                          total: usuario.total,
-                          avatarUrl: usuario.avatarUrl,
-                        ),
+                      LayoutBuilder(
+                        builder: (context, c) {
+                          final tarjetas = [
+                            for (final usuario in data.leyendoAhora)
+                              _lectoraLeyendoCard(
+                                nombre: usuario.usuario,
+                                lecturas: usuario.lecturas,
+                                total: usuario.total,
+                                avatarUrl: usuario.avatarUrl,
+                              ),
+                          ];
+                          // En tablet, dos miembros por fila.
+                          if (c.maxWidth < 720) {
+                            return Column(children: tarjetas);
+                          }
+                          return Column(
+                            children: [
+                              for (var i = 0; i < tarjetas.length; i += 2)
+                                Row(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Expanded(child: tarjetas[i]),
+                                    const SizedBox(width: AppSpacing.md),
+                                    Expanded(
+                                      child: i + 1 < tarjetas.length
+                                          ? tarjetas[i + 1]
+                                          : const SizedBox.shrink(),
+                                    ),
+                                  ],
+                                ),
+                            ],
+                          );
+                        },
                       ),
                     const SizedBox(height: AppSpacing.lg),
                   ],
@@ -565,7 +625,7 @@ class _DashboardPageState extends State<DashboardPage> {
                         ),
                       ),
                     ],
-                  // ── Personalidades — sección más estática, al final ───────
+                    // ── Personalidades — sección más estática, al final ───────
                     const SizedBox(height: AppSpacing.md),
                     const _PersonalidadesClubCard(),
                   ], // fin if (!widget.esPersonal)
@@ -594,6 +654,8 @@ class _DashboardPageState extends State<DashboardPage> {
       borderColor: AppColors.primaryLight,
       onTap: () => _abrirRanking(initialTab: 1),
       child: Column(
+        // Si la tarjeta se estira (tablet), el podio queda centrado.
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           // ── Cabecera morada con gradiente ────────────────────────────────
           Container(
@@ -679,8 +741,7 @@ class _DashboardPageState extends State<DashboardPage> {
                           altura: 60,
                           color: AppColors.gold,
                           destacado: true,
-                          onTap: () =>
-                              _abrirPerfil(participantes.first.nombre),
+                          onTap: () => _abrirPerfil(participantes.first.nombre),
                         )
                       : const _PodioPuestoVacio(
                           posicion: 1,
@@ -796,6 +857,8 @@ class _DashboardPageState extends State<DashboardPage> {
                   Expanded(
                     child: Text(
                       nombre,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                       style: AppTextStyles.subtitle.copyWith(
                         color: AppColors.textPrimary,
                         fontWeight: FontWeight.w700,
@@ -860,7 +923,9 @@ class _DashboardPageState extends State<DashboardPage> {
     required List<LecturaAhoraItem> lecturas,
   }) {
     if (lecturas.length <= 1) {
-      return [for (final lectura in lecturas) _lecturaCompleta(nombre, lectura)];
+      return [
+        for (final lectura in lecturas) _lecturaCompleta(nombre, lectura),
+      ];
     }
 
     final ordenadas = [...lecturas]
@@ -888,9 +953,7 @@ class _DashboardPageState extends State<DashboardPage> {
             }
           }),
           icon: Icon(
-            expandido
-                ? Icons.expand_less_rounded
-                : Icons.expand_more_rounded,
+            expandido ? Icons.expand_less_rounded : Icons.expand_more_rounded,
             size: 18,
           ),
           label: Text(
@@ -1798,15 +1861,12 @@ class LogrosClubCardState extends State<LogrosClubCard> {
           final d = snap.data!;
           if (widget.esPersonal) {
             // Personal: buscar el registro propio (isMe: true) o el primero
-            final challenges =
-                (d['challenges'] as List<dynamic>? ?? []);
-            final myChallenge = challenges
-                    .cast<Map>()
-                    .firstWhere(
+            final challenges = (d['challenges'] as List<dynamic>? ?? []);
+            final myChallenge =
+                challenges.cast<Map>().firstWhere(
                       (c) => c['isMe'] == true,
                       orElse: () => challenges.isNotEmpty
-                          ? Map<String, dynamic>.from(
-                              challenges.first as Map)
+                          ? Map<String, dynamic>.from(challenges.first as Map)
                           : <String, dynamic>{},
                     )
                     as Map<String, dynamic>;
@@ -1828,8 +1888,7 @@ class LogrosClubCardState extends State<LogrosClubCard> {
 
         final hasData = snap.hasData && myTarget != null;
         final target = myTarget ?? 1;
-        final progress =
-            hasData ? (myRead / target).clamp(0.0, 1.0) : 0.0;
+        final progress = hasData ? (myRead / target).clamp(0.0, 1.0) : 0.0;
         final pct = (progress * 100).round();
         final faltan = hasData ? target - myRead : 0;
         final completado = hasData && faltan <= 0;
@@ -1859,8 +1918,7 @@ class LogrosClubCardState extends State<LogrosClubCard> {
                     children: [
                       Row(
                         children: [
-                          const Text('🔥',
-                              style: TextStyle(fontSize: 16)),
+                          const Text('🔥', style: TextStyle(fontSize: 16)),
                           const SizedBox(width: 6),
                           Text(
                             widget.esPersonal
@@ -1904,8 +1962,8 @@ class LogrosClubCardState extends State<LogrosClubCard> {
                       Text(
                         hasData
                             ? (completado
-                                ? '¡Reto completado! 🎉'
-                                : 'Faltan $faltan libro${faltan == 1 ? '' : 's'}')
+                                  ? '¡Reto completado! 🎉'
+                                  : 'Faltan $faltan libro${faltan == 1 ? '' : 's'}')
                             : 'Libros leídos',
                         style: const TextStyle(
                           color: Colors.white60,
@@ -1977,24 +2035,22 @@ class AchievementsClubCardState extends State<AchievementsClubCard> {
         // Últimos logros (máx 4 emojis visibles)
         // Cada item de `achievements` tiene achievementIcon/achievementTitle directamente
         final recientes = snap.hasData
-            ? (snap.data!['achievements'] as List<dynamic>? ?? [])
-                .take(4)
-                .map((e) {
-                  final m = Map<String, dynamic>.from(e as Map);
-                  return <String, dynamic>{
-                    'icon': m['achievementIcon']?.toString() ?? '🏅',
-                    'title': m['achievementTitle']?.toString() ?? '',
-                  };
-                })
-                .toList()
+            ? (snap.data!['achievements'] as List<dynamic>? ?? []).take(4).map((
+                e,
+              ) {
+                final m = Map<String, dynamic>.from(e as Map);
+                return <String, dynamic>{
+                  'icon': m['achievementIcon']?.toString() ?? '🏅',
+                  'title': m['achievementTitle']?.toString() ?? '',
+                };
+              }).toList()
             : <Map<String, dynamic>>[];
 
         // Total logros: para personal = total del primer (único) ranking entry;
         // para club = suma de todos los miembros
         int myTotal = 0;
         if (snap.hasData) {
-          final ranking =
-              snap.data!['ranking'] as List<dynamic>? ?? [];
+          final ranking = snap.data!['ranking'] as List<dynamic>? ?? [];
           if (widget.esPersonal && ranking.isNotEmpty) {
             // En personal solo hay un entry (el propio usuario)
             final me = Map<String, dynamic>.from(ranking.first as Map);
@@ -2014,8 +2070,7 @@ class AchievementsClubCardState extends State<AchievementsClubCard> {
           onTap: () => Navigator.push<void>(
             context,
             AppPageRoute(
-              builder: (_) =>
-                  ClubLogrosPage(esPersonal: widget.esPersonal),
+              builder: (_) => ClubLogrosPage(esPersonal: widget.esPersonal),
             ),
           ),
           child: Container(
@@ -2034,13 +2089,10 @@ class AchievementsClubCardState extends State<AchievementsClubCard> {
                 // — Cabecera
                 Row(
                   children: [
-                    const Text('🏆',
-                        style: TextStyle(fontSize: 18)),
+                    const Text('🏆', style: TextStyle(fontSize: 18)),
                     const SizedBox(width: 8),
                     Text(
-                      widget.esPersonal
-                          ? 'Mis logros'
-                          : 'Logros del club',
+                      widget.esPersonal ? 'Mis logros' : 'Logros del club',
                       style: const TextStyle(
                         color: Colors.white,
                         fontSize: 15,
@@ -2052,11 +2104,12 @@ class AchievementsClubCardState extends State<AchievementsClubCard> {
                     if (myTotal > 0) ...[
                       Container(
                         padding: const EdgeInsets.symmetric(
-                            horizontal: 10, vertical: 3),
+                          horizontal: 10,
+                          vertical: 3,
+                        ),
                         decoration: BoxDecoration(
                           color: Colors.white.withValues(alpha: .25),
-                          borderRadius:
-                              BorderRadius.circular(AppRadius.md),
+                          borderRadius: BorderRadius.circular(AppRadius.md),
                         ),
                         child: Text(
                           '$myTotal desbloqueado${myTotal == 1 ? '' : 's'}',
@@ -2069,8 +2122,10 @@ class AchievementsClubCardState extends State<AchievementsClubCard> {
                       ),
                     ],
                     const SizedBox(width: 4),
-                    const Icon(Icons.chevron_right_rounded,
-                        color: Colors.white70),
+                    const Icon(
+                      Icons.chevron_right_rounded,
+                      color: Colors.white70,
+                    ),
                   ],
                 ),
                 const SizedBox(height: 14),
@@ -2083,8 +2138,7 @@ class AchievementsClubCardState extends State<AchievementsClubCard> {
                           emoji: logro['icon']?.toString() ?? '🏅',
                           titulo: logro['title']?.toString() ?? '',
                         ),
-                        if (logro != recientes.last)
-                          const SizedBox(width: 10),
+                        if (logro != recientes.last) const SizedBox(width: 10),
                       ],
                     ],
                   )
@@ -2097,18 +2151,14 @@ class AchievementsClubCardState extends State<AchievementsClubCard> {
                           titulo: '',
                           dimmed: true,
                         ),
-                        if (placeholder != '🎯')
-                          const SizedBox(width: 10),
+                        if (placeholder != '🎯') const SizedBox(width: 10),
                       ],
                     ],
                   ),
                   const SizedBox(height: 8),
                   const Text(
                     'Completa retos para desbloquear logros',
-                    style: TextStyle(
-                      color: Colors.white70,
-                      fontSize: 12,
-                    ),
+                    style: TextStyle(color: Colors.white70, fontSize: 12),
                   ),
                 ],
               ],
@@ -2145,7 +2195,9 @@ class _LogroBadge extends StatelessWidget {
             shape: BoxShape.circle,
             border: dimmed
                 ? Border.all(
-                    color: Colors.white.withValues(alpha: .2), width: 1.5)
+                    color: Colors.white.withValues(alpha: .2),
+                    width: 1.5,
+                  )
                 : null,
           ),
           alignment: Alignment.center,
@@ -2153,9 +2205,7 @@ class _LogroBadge extends StatelessWidget {
             emoji,
             style: TextStyle(
               fontSize: 26,
-              color: dimmed
-                  ? Colors.white.withValues(alpha: .35)
-                  : null,
+              color: dimmed ? Colors.white.withValues(alpha: .35) : null,
             ),
           ),
         ),
@@ -2240,7 +2290,8 @@ class _RachaLectoraCardState extends State<RachaLectoraCard> {
         return _RachaLectoraTile(
           racha: racha,
           checkedToday: checkedToday,
-          onTap: widget.onTap ??
+          onTap:
+              widget.onTap ??
               (widget.navegable ? () => _irASeguimiento(context) : null),
         );
       },
@@ -2270,8 +2321,11 @@ class _RachaLectoraTile extends StatelessWidget {
       final gradientColors = racha >= 30
           ? [const Color(0xFFAA7A00), const Color(0xFFD4A800)] // dorado
           : racha >= 14
-              ? [const Color(0xFFB82400), const Color(0xFFE85020)] // rojo coral
-              : [const Color(0xFF7A3828), const Color(0xFFA85C42)]; // terracota tierra, a juego con el resto de la app
+          ? [const Color(0xFFB82400), const Color(0xFFE85020)] // rojo coral
+          : [
+              const Color(0xFF7A3828),
+              const Color(0xFFA85C42),
+            ]; // terracota tierra, a juego con el resto de la app
 
       return GestureDetector(
         onTap: onTap,
@@ -2521,9 +2575,10 @@ class _PulsoTendenciaCardState extends State<_PulsoTendenciaCard>
       vsync: this,
       duration: const Duration(milliseconds: 1400),
     )..repeat(reverse: true);
-    _scale = Tween<double>(begin: 0.88, end: 1.12).animate(
-      CurvedAnimation(parent: _controller, curve: Curves.easeInOut),
-    );
+    _scale = Tween<double>(
+      begin: 0.88,
+      end: 1.12,
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeInOut));
   }
 
   @override
@@ -2712,40 +2767,39 @@ class _FavoritosClubCardState extends State<_FavoritosClubCard> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-
-          if (_cargando)
-            const Center(
-              child: Padding(
-                padding: EdgeInsets.symmetric(vertical: AppSpacing.md),
-                child: CircularProgressIndicator(),
-              ),
-            )
-          else
-            SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              child: Row(
-                children: _miembros!
-                    .map(
-                      (m) => Padding(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: AppSpacing.sm,
-                        ),
-                        child: _FavoritosMiembroTile(
-                          miembro: m,
-                          onTap: () => _verFavoritos(m),
-                        ),
-                      ),
-                    )
-                    .toList(),
-              ),
-            ),
-            ],       // cierra inner Column children
-          ),         // cierra inner Column
-        ),           // cierra Padding
-        const SizedBox(height: AppSpacing.sm),
-      ],             // cierra outer Column children
-    ),               // cierra outer Column
-  );                 // cierra ClubCard
+                if (_cargando)
+                  const Center(
+                    child: Padding(
+                      padding: EdgeInsets.symmetric(vertical: AppSpacing.md),
+                      child: CircularProgressIndicator(),
+                    ),
+                  )
+                else
+                  SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    child: Row(
+                      children: _miembros!
+                          .map(
+                            (m) => Padding(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: AppSpacing.sm,
+                              ),
+                              child: _FavoritosMiembroTile(
+                                miembro: m,
+                                onTap: () => _verFavoritos(m),
+                              ),
+                            ),
+                          )
+                          .toList(),
+                    ),
+                  ),
+              ], // cierra inner Column children
+            ), // cierra inner Column
+          ), // cierra Padding
+          const SizedBox(height: AppSpacing.sm),
+        ], // cierra outer Column children
+      ), // cierra outer Column
+    ); // cierra ClubCard
   }
 }
 
@@ -2946,65 +3000,67 @@ class _MiniPortada extends StatelessWidget {
     return GestureDetector(
       onTap: onTap,
       child: Column(
-      children: [
-        Stack(
-          children: [
-            AspectRatio(
-              aspectRatio: 2 / 3,
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(AppRadius.sm),
-                child: libro.coverUrl != null && libro.coverUrl!.isNotEmpty
-                    ? OptimizedNetworkImage(
-                        url: libro.coverUrl,
-                        width: double.infinity,
-                        height: double.infinity,
-                        fit: BoxFit.cover,
-                      )
-                    : Container(
-                        color: cs.surfaceContainerHighest,
-                        child: Center(
-                          child: Text(
-                            libro.title.isNotEmpty
-                                ? libro.title[0].toUpperCase()
-                                : '?',
-                            style: AppTextStyles.section.copyWith(
-                              color: AppColors.textMuted,
+        children: [
+          Stack(
+            children: [
+              AspectRatio(
+                aspectRatio: 2 / 3,
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(AppRadius.sm),
+                  child: libro.coverUrl != null && libro.coverUrl!.isNotEmpty
+                      ? OptimizedNetworkImage(
+                          url: libro.coverUrl,
+                          width: double.infinity,
+                          height: double.infinity,
+                          fit: BoxFit.cover,
+                        )
+                      : Container(
+                          color: cs.surfaceContainerHighest,
+                          child: Center(
+                            child: Text(
+                              libro.title.isNotEmpty
+                                  ? libro.title[0].toUpperCase()
+                                  : '?',
+                              style: AppTextStyles.section.copyWith(
+                                color: AppColors.textMuted,
+                              ),
                             ),
                           ),
                         ),
-                      ),
-              ),
-            ),
-            Positioned(
-              bottom: 3,
-              right: 3,
-              child: Container(
-                width: 14,
-                height: 14,
-                decoration: const BoxDecoration(
-                  color: Color(0xFFD4537E),
-                  shape: BoxShape.circle,
-                ),
-                child: const Icon(
-                  Icons.favorite_rounded,
-                  color: Colors.white,
-                  size: 8,
                 ),
               ),
+              Positioned(
+                bottom: 3,
+                right: 3,
+                child: Container(
+                  width: 14,
+                  height: 14,
+                  decoration: const BoxDecoration(
+                    color: Color(0xFFD4537E),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(
+                    Icons.favorite_rounded,
+                    color: Colors.white,
+                    size: 8,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 4),
+          Text(
+            libro.title,
+            style: AppTextStyles.caption.copyWith(
+              color: AppColors.textSecondary,
             ),
-          ],
-        ),
-        const SizedBox(height: 4),
-        Text(
-          libro.title,
-          style: AppTextStyles.caption.copyWith(color: AppColors.textSecondary),
-          textAlign: TextAlign.center,
-          maxLines: 2,
-          overflow: TextOverflow.ellipsis,
-        ),
-      ],
-    ),  // Column
-    );  // GestureDetector
+            textAlign: TextAlign.center,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+          ),
+        ],
+      ), // Column
+    ); // GestureDetector
   }
 }
 
@@ -3034,7 +3090,8 @@ class _PersonalidadesClubCard extends StatefulWidget {
   const _PersonalidadesClubCard();
 
   @override
-  State<_PersonalidadesClubCard> createState() => _PersonalidadesClubCardState();
+  State<_PersonalidadesClubCard> createState() =>
+      _PersonalidadesClubCardState();
 }
 
 class _PersonalidadesClubCardState extends State<_PersonalidadesClubCard> {
@@ -3067,7 +3124,8 @@ class _PersonalidadesClubCardState extends State<_PersonalidadesClubCard> {
       future: _future,
       builder: (context, snap) {
         // Nada que mostrar mientras carga o si hay error silencioso
-        if (snap.connectionState != ConnectionState.done) return const SizedBox.shrink();
+        if (snap.connectionState != ConnectionState.done)
+          return const SizedBox.shrink();
         final miembros = snap.data ?? [];
         if (miembros.isEmpty) return const _SinPersonalidadesYet();
         return _PersonalidadesContent(miembros: miembros);
@@ -3148,7 +3206,9 @@ class _PersonalidadesContent extends StatelessWidget {
     for (final m in miembros) {
       conteo[m.arquetipo] = (conteo[m.arquetipo] ?? 0) + 1;
     }
-    final masComun = conteo.entries.reduce((a, b) => a.value >= b.value ? a : b);
+    final masComun = conteo.entries.reduce(
+      (a, b) => a.value >= b.value ? a : b,
+    );
     final ejemplar = miembros.first; // para el color del gradiente
 
     return Container(
@@ -3181,7 +3241,10 @@ class _PersonalidadesContent extends StatelessWidget {
                 ),
                 const Spacer(),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 3,
+                  ),
                   decoration: BoxDecoration(
                     color: AppColors.primaryLight,
                     borderRadius: BorderRadius.circular(AppRadius.pill),
@@ -3283,7 +3346,8 @@ class _PersonalidadesContent extends StatelessWidget {
                 childAspectRatio: 0.78,
               ),
               itemCount: miembros.length,
-              itemBuilder: (context, i) => _MiembroPersonalidadChip(miembro: miembros[i]),
+              itemBuilder: (context, i) =>
+                  _MiembroPersonalidadChip(miembro: miembros[i]),
             ),
           ),
 
@@ -3355,10 +3419,7 @@ class _MiembroPersonalidadChip extends StatelessWidget {
           // Nombre de usuario
           Text(
             miembro.usuario,
-            style: const TextStyle(
-              fontSize: 9,
-              fontWeight: FontWeight.w700,
-            ),
+            style: const TextStyle(fontSize: 9, fontWeight: FontWeight.w700),
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
             textAlign: TextAlign.center,
@@ -3558,9 +3619,7 @@ class _MemberNames extends StatelessWidget {
     final shown = members.take(2).map((m) => m.name.split(' ').first).toList();
     final extra = members.length - shown.length;
 
-    final label = extra > 0
-        ? '${shown.join(', ')} +$extra'
-        : shown.join(', ');
+    final label = extra > 0 ? '${shown.join(', ')} +$extra' : shown.join(', ');
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),

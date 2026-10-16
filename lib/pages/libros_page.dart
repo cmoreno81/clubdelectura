@@ -128,11 +128,13 @@ class _LibrosPageState extends State<LibrosPage> with WidgetsBindingObserver {
   /// Solo aplica a 'DEL_CLUB' (ahí es donde vive "Mi biblioteca"): el origen
   /// 'CLUBREADS' es el catálogo global de toda la app y debe seguir sin
   /// restringirse a la usuaria actual.
-  String get _filtroUsuarioEfectivo => widget.esPersonal && filtroOrigen == 'DEL_CLUB'
+  String get _filtroUsuarioEfectivo =>
+      widget.esPersonal && filtroOrigen == 'DEL_CLUB'
       ? (AuthSessionService.instance.user?.nombre.trim().isNotEmpty == true
             ? AuthSessionService.instance.user!.nombre.trim()
             : filtroUsuario)
       : filtroUsuario;
+
   /// ¿Esta fila entra con el filtro de lectora actual? En modo personal
   /// ("Mi biblioteca") se usa la marca [mio] que manda el servidor en cada
   /// fila, que no depende del nombre guardado en la sesión (si ese nombre se
@@ -485,19 +487,46 @@ class _LibrosPageState extends State<LibrosPage> with WidgetsBindingObserver {
                                 ? _limpiarFiltros
                                 : null,
                           )
-                        : ListView.builder(
-                            controller: _scrollController,
-                            keyboardDismissBehavior:
-                                ScrollViewKeyboardDismissBehavior.onDrag,
-                            padding: const EdgeInsets.fromLTRB(
-                              AppSpacing.md,
-                              AppSpacing.xs,
-                              AppSpacing.md,
-                              110,
-                            ),
-                            itemCount: resultado.length,
-                            itemBuilder: (context, index) {
-                              return _libroCard(resultado[index]);
+                        : LayoutBuilder(
+                            builder: (context, restricciones) {
+                              // En tablet, dos fichas por fila (en pares, para
+                              // seguir construyendo solo lo que se ve).
+                              final dosColumnas = restricciones.maxWidth >= 720;
+                              return ListView.builder(
+                                controller: _scrollController,
+                                keyboardDismissBehavior:
+                                    ScrollViewKeyboardDismissBehavior.onDrag,
+                                padding: const EdgeInsets.fromLTRB(
+                                  AppSpacing.md,
+                                  AppSpacing.xs,
+                                  AppSpacing.md,
+                                  110,
+                                ),
+                                itemCount: dosColumnas
+                                    ? (resultado.length + 1) ~/ 2
+                                    : resultado.length,
+                                itemBuilder: (context, index) {
+                                  if (!dosColumnas) {
+                                    return _libroCard(resultado[index]);
+                                  }
+                                  final a = index * 2;
+                                  final b = a + 1;
+                                  return Row(
+                                    key: ValueKey('fila-libros-$index'),
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Expanded(child: _libroCard(resultado[a])),
+                                      const SizedBox(width: AppSpacing.md),
+                                      Expanded(
+                                        child: b < resultado.length
+                                            ? _libroCard(resultado[b])
+                                            : const SizedBox.shrink(),
+                                      ),
+                                    ],
+                                  );
+                                },
+                              );
                             },
                           ),
                   ),
@@ -1532,7 +1561,9 @@ class _LibrosPageState extends State<LibrosPage> with WidgetsBindingObserver {
 
                       Text(
                         _resumenLectores(
-                          libro.registros.where((r) => !r.soloCatalogo).toList(),
+                          libro.registros
+                              .where((r) => !r.soloCatalogo)
+                              .toList(),
                         ),
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
@@ -2319,7 +2350,7 @@ class _LibrosPageState extends State<LibrosPage> with WidgetsBindingObserver {
         ? _scrollController.offset
         : 0.0;
 
-    await Navigator.push<bool>(
+    await empujarFicha<bool>(
       context,
       BookDetailPageRoute(
         builder: (_) => DetalleLibroPage(libro: libro, heroTag: heroTag),

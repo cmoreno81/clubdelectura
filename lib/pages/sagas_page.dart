@@ -596,7 +596,8 @@ class _SagasPageState extends State<SagasPage> {
 
     await _guardarYRecargar(
       () => ApiService().eliminarSaga(sagaId: saga.id),
-      mensajeExito: '${saga.nombre} eliminada. Puedes recuperarla desde tu perfil.',
+      mensajeExito:
+          '${saga.nombre} eliminada. Puedes recuperarla desde tu perfil.',
     );
   }
 
@@ -789,7 +790,9 @@ class _SagasPageState extends State<SagasPage> {
           );
         } else {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('${volumen.titulo} añadido a tu biblioteca')),
+            SnackBar(
+              content: Text('${volumen.titulo} añadido a tu biblioteca'),
+            ),
           );
         }
       } else if (posicion != null) {
@@ -861,7 +864,8 @@ class _SagasPageState extends State<SagasPage> {
     ];
 
     await _guardarYRecargar(
-      () => ApiService().guardarOrdenPersonalSaga(sagaId: saga.id, order: order),
+      () =>
+          ApiService().guardarOrdenPersonalSaga(sagaId: saga.id, order: order),
     );
   }
 
@@ -1115,30 +1119,55 @@ class _SagasPageState extends State<SagasPage> {
             padding: EdgeInsets.zero,
           ),
           const SizedBox(height: AppSpacing.sm),
-          for (final saga in sagas)
-            Padding(
-              padding: const EdgeInsets.only(bottom: AppSpacing.md),
-              child: // En el método _section, dentro del for (final saga in sagas):
-              PerfilSagaCard(
-                saga: saga,
-                onContinue: _openBook,
-                onCompleteCatalog: () => _completeSeries(saga),
-                onGapTap: (volumen) => _onGapTap(saga, volumen),
-                onEditVolume: _editVolume,
-                onAddToLibrary: (volumen) =>
-                    _onAddToLibrary(saga, volumen), // ← nuevo
-                onEditSeries: () => _editSeries(saga),
-                onAbandonSeries: saga.abandonada || saga.completada
-                    ? null
-                    : () => _abandonSeries(saga),
-                onRecoverSeries: saga.abandonada
-                    ? () => _recoverSeries(saga)
-                    : null,
-                onHideSeries: () => _hideSeries(saga),
-                onRemoveSeries: () => _removeSeries(saga),
-                onReorderVolumes: (newOrder) => _reorderVolumes(saga, newOrder),
-              ),
-            ),
+          LayoutBuilder(
+            builder: (context, c) {
+              final tarjetas = [
+                for (final saga in sagas)
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: AppSpacing.md),
+                    child: PerfilSagaCard(
+                      saga: saga,
+                      onContinue: _openBook,
+                      onCompleteCatalog: () => _completeSeries(saga),
+                      onGapTap: (volumen) => _onGapTap(saga, volumen),
+                      onEditVolume: _editVolume,
+                      onAddToLibrary: (volumen) =>
+                          _onAddToLibrary(saga, volumen), // ← nuevo
+                      onEditSeries: () => _editSeries(saga),
+                      onAbandonSeries: saga.abandonada || saga.completada
+                          ? null
+                          : () => _abandonSeries(saga),
+                      onRecoverSeries: saga.abandonada
+                          ? () => _recoverSeries(saga)
+                          : null,
+                      onHideSeries: () => _hideSeries(saga),
+                      onRemoveSeries: () => _removeSeries(saga),
+                      onReorderVolumes: (newOrder) =>
+                          _reorderVolumes(saga, newOrder),
+                    ),
+                  ),
+              ];
+              // En tablet, dos sagas por fila.
+              if (c.maxWidth < 720) return Column(children: tarjetas);
+              return Column(
+                children: [
+                  for (var i = 0; i < tarjetas.length; i += 2)
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Expanded(child: tarjetas[i]),
+                        const SizedBox(width: AppSpacing.md),
+                        Expanded(
+                          child: i + 1 < tarjetas.length
+                              ? tarjetas[i + 1]
+                              : const SizedBox.shrink(),
+                        ),
+                      ],
+                    ),
+                ],
+              );
+            },
+          ),
         ],
       ),
     );

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../widgets/tablet/dos_columnas.dart';
 
 import '../navigation/app_page_route.dart';
 
@@ -317,9 +318,9 @@ class _LecturaPageState extends State<LecturaPage> {
                     colors: [AppColors.surfaceSoft, Color(0xFFF0E5FF)],
                   ),
                   borderColor: AppColors.primaryLight,
-                  child: Column(
-                    children: [
-                      Hero(
+                  child: LayoutBuilder(
+                    builder: (context, c) {
+                      final portada = Hero(
                         tag: 'book-${widget.libro}',
                         child: ClubBookCover(
                           title: widget.libro,
@@ -329,27 +330,51 @@ class _LecturaPageState extends State<LecturaPage> {
                           width: 150,
                           showShadow: true,
                         ),
-                      ),
-
-                      const SizedBox(height: AppSpacing.lg),
-
-                      Text(
+                      );
+                      // En tablet, la portada a un lado y el título al otro:
+                      // la cabecera ocupa la mitad de alto.
+                      final ancho = c.maxWidth >= 600;
+                      final titulo = Text(
                         widget.libro,
-                        textAlign: TextAlign.center,
+                        textAlign: ancho ? TextAlign.start : TextAlign.center,
                         style: AppTextStyles.title.copyWith(
                           fontSize: 27,
                           height: 1.15,
                         ),
-                      ),
-
-                      const SizedBox(height: AppSpacing.sm),
-
-                      Text(
+                      );
+                      final subtitulo = Text(
                         '${capitulos.length} espacios de conversación',
-                        textAlign: TextAlign.center,
+                        textAlign: ancho ? TextAlign.start : TextAlign.center,
                         style: AppTextStyles.bodySecondary,
-                      ),
-                    ],
+                      );
+                      if (ancho) {
+                        return Row(
+                          children: [
+                            portada,
+                            const SizedBox(width: AppSpacing.xl),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  titulo,
+                                  const SizedBox(height: AppSpacing.sm),
+                                  subtitulo,
+                                ],
+                              ),
+                            ),
+                          ],
+                        );
+                      }
+                      return Column(
+                        children: [
+                          portada,
+                          const SizedBox(height: AppSpacing.lg),
+                          titulo,
+                          const SizedBox(height: AppSpacing.sm),
+                          subtitulo,
+                        ],
+                      );
+                    },
                   ),
                 ),
 
@@ -388,23 +413,26 @@ class _LecturaPageState extends State<LecturaPage> {
 
                 const SizedBox(height: AppSpacing.md),
 
-                ...capitulos.map(
-                  (capitulo) => Padding(
-                    padding: const EdgeInsets.only(bottom: AppSpacing.md),
-                    child: CapituloTile(
-                      capitulo: capitulo,
-                      plegado: _capitulosPlegados.contains(capitulo.nombre),
-                      onTogglePlegado: () {
-                        _alternarCapitulo(capitulo.nombre);
-                      },
-                      onTap: () {
-                        _abrirCapitulo(capitulo, config.bookId);
-                      },
-                      onRename: capitulo.nombre == '💭 Reflexión final'
-                          ? null
-                          : () => _renombrarCapitulo(capitulo.nombre),
-                    ),
-                  ),
+                DosColumnas(
+                  children: [
+                    for (final capitulo in capitulos)
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: AppSpacing.md),
+                        child: CapituloTile(
+                          capitulo: capitulo,
+                          plegado: _capitulosPlegados.contains(capitulo.nombre),
+                          onTogglePlegado: () {
+                            _alternarCapitulo(capitulo.nombre);
+                          },
+                          onTap: () {
+                            _abrirCapitulo(capitulo, config.bookId);
+                          },
+                          onRename: capitulo.nombre == '💭 Reflexión final'
+                              ? null
+                              : () => _renombrarCapitulo(capitulo.nombre),
+                        ),
+                      ),
+                  ],
                 ),
               ],
             ),

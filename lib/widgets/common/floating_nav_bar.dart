@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../tablet/marco_tablet.dart';
 
 import '../../theme/app_colors.dart';
 
@@ -151,10 +152,7 @@ class _FloatingNavItem extends StatelessWidget {
             onTap: onTap,
             customBorder: indicatorShape,
             child: Container(
-              padding: const EdgeInsets.symmetric(
-                horizontal: 6,
-                vertical: 6,
-              ),
+              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 6),
               decoration: ShapeDecoration(
                 color: selected ? indicatorColor : Colors.transparent,
                 shape: indicatorShape,
@@ -225,6 +223,10 @@ class GlobalNavConfig {
   final VoidCallback onSelectAjustes;
 
   Widget buildFloatingNavBar() {
+    return ConBarraLateralOculta(child: _barraFlotante());
+  }
+
+  Widget _barraFlotante() {
     return FloatingNavBar(
       height: 72,
       child: FloatingNavRow(
@@ -273,4 +275,15 @@ class GlobalNavConfig {
       ),
     );
   }
+}
+
+/// En tablet, con la barra lateral visible, el menú inferior global sobra.
+class ConBarraLateralOculta extends StatelessWidget {
+  const ConBarraLateralOculta({super.key, required this.child});
+
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) =>
+      BarraLateralVisible.de(context) ? const SizedBox.shrink() : child;
 }

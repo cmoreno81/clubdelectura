@@ -1,6 +1,8 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import '../widgets/tablet/marco_tablet.dart';
+import '../widgets/tablet/shell_navegacion.dart';
 import 'package:flutter/services.dart';
 import 'clubvision_menu_page.dart';
 import 'dashboard_page.dart';
@@ -70,6 +72,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
+    ShellNavegacion.instance.marcarSeccion(this, 3);
     // Invalidar caché al entrar en cualquier club para no arrastrar datos
     // del club anterior (en navegación push/pop se crea un nuevo HomePage).
     LibrosDataCache.instance.invalidate();
@@ -161,6 +164,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
   @override
   void dispose() {
     AmistadesCambios.cambios.removeListener(_cargarSolicitudesAmigos);
+    ShellNavegacion.instance.soltarSeccion(this);
     WidgetsBinding.instance.removeObserver(this);
     super.dispose();
   }
@@ -310,7 +314,10 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
 
   @override
   Widget build(BuildContext context) {
-    final tablet = AppBreakpoints.isTablet(context);
+    // Con la barra lateral global visible (tablet), el club usa su barra
+    // flotante de siempre en la columna central: dos laterales sobran.
+    final tablet =
+        AppBreakpoints.isTablet(context) && !BarraLateralVisible.de(context);
 
     return PopScope(
       canPop: currentIndex == 0,

@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import '../widgets/tablet/dos_columnas.dart';
 
 import '../navigation/app_page_route.dart';
 import '../navigation/book_detail_navigation.dart';
@@ -308,10 +309,22 @@ class _LecturasPageState extends State<LecturasPage> {
                   featureKey: 'hint_lecturas_v1',
                   titulo: 'Las lecturas del club',
                   tips: [
-                    ScreenHintTip('🔔', 'La campana (arriba a la derecha) avisa de nuevos comentarios, debates y cambios de lectura'),
-                    ScreenHintTip('🏆', '"Lectura oficial" es el libro ganador de la votación de ClubVisión'),
-                    ScreenHintTip('📖', 'Pulsa "Abrir lectura" para entrar en la sala de comentarios y debate del club'),
-                    ScreenHintTip('🤝', '"Lecturas compartidas" muestra los libros que coinciden entre varios miembros del club'),
+                    ScreenHintTip(
+                      '🔔',
+                      'La campana (arriba a la derecha) avisa de nuevos comentarios, debates y cambios de lectura',
+                    ),
+                    ScreenHintTip(
+                      '🏆',
+                      '"Lectura oficial" es el libro ganador de la votación de ClubVisión',
+                    ),
+                    ScreenHintTip(
+                      '📖',
+                      'Pulsa "Abrir lectura" para entrar en la sala de comentarios y debate del club',
+                    ),
+                    ScreenHintTip(
+                      '🤝',
+                      '"Lecturas compartidas" muestra los libros que coinciden entre varios miembros del club',
+                    ),
                   ],
                 ),
 
@@ -328,19 +341,24 @@ class _LecturasPageState extends State<LecturasPage> {
                   const SizedBox(height: AppSpacing.md),
 
                   for (final lectura in oficiales) ...[
-                    _LecturaCard(
-                      lectura: lectura,
-                      destacada: true,
-                      masComentada: esMasComentada(lectura),
-                      tieneActividadNueva: _tieneActividadNueva(lectura),
-                      onTap: () => _abrirLectura(lectura),
-                      onBookTap: () => openBookDetail(
-                        context,
-                        title: lectura.libro,
-                        coverUrl: lectura.coverUrl,
+                    // En tablet no se estira a todo el ancho: columna cómoda.
+                    Center(
+                      child: ConstrainedBox(
+                        constraints: const BoxConstraints(maxWidth: 560),
+                        child: _LecturaCard(
+                          lectura: lectura,
+                          destacada: true,
+                          masComentada: esMasComentada(lectura),
+                          tieneActividadNueva: _tieneActividadNueva(lectura),
+                          onTap: () => _abrirLectura(lectura),
+                          onBookTap: () => openBookDetail(
+                            context,
+                            title: lectura.libro,
+                            coverUrl: lectura.coverUrl,
+                          ),
+                        ),
                       ),
                     ),
-
                     const SizedBox(height: AppSpacing.md),
                   ],
 
@@ -357,21 +375,25 @@ class _LecturasPageState extends State<LecturasPage> {
 
                   const SizedBox(height: AppSpacing.md),
 
-                  for (final lectura in compartidas) ...[
-                    _LecturaCard(
-                      lectura: lectura,
-                      masComentada: esMasComentada(lectura),
-                      tieneActividadNueva: _tieneActividadNueva(lectura),
-                      onTap: () => _abrirLectura(lectura),
-                      onBookTap: () => openBookDetail(
-                        context,
-                        title: lectura.libro,
-                        coverUrl: lectura.coverUrl,
-                      ),
-                    ),
-
-                    const SizedBox(height: AppSpacing.md),
-                  ],
+                  DosColumnas(
+                    children: [
+                      for (final lectura in compartidas)
+                        Padding(
+                          padding: const EdgeInsets.only(bottom: AppSpacing.md),
+                          child: _LecturaCard(
+                            lectura: lectura,
+                            masComentada: esMasComentada(lectura),
+                            tieneActividadNueva: _tieneActividadNueva(lectura),
+                            onTap: () => _abrirLectura(lectura),
+                            onBookTap: () => openBookDetail(
+                              context,
+                              title: lectura.libro,
+                              coverUrl: lectura.coverUrl,
+                            ),
+                          ),
+                        ),
+                    ],
+                  ),
 
                   const SizedBox(height: AppSpacing.lg),
                 ],
@@ -386,19 +408,23 @@ class _LecturasPageState extends State<LecturasPage> {
 
                   const SizedBox(height: AppSpacing.md),
 
-                  for (final lectura in pendientes) ...[
-                    _LecturaCard(
-                      lectura: lectura,
-                      onTap: () => _abrirLectura(lectura),
-                      onBookTap: () => openBookDetail(
-                        context,
-                        title: lectura.libro,
-                        coverUrl: lectura.coverUrl,
-                      ),
-                    ),
-
-                    const SizedBox(height: AppSpacing.md),
-                  ],
+                  DosColumnas(
+                    children: [
+                      for (final lectura in pendientes)
+                        Padding(
+                          padding: const EdgeInsets.only(bottom: AppSpacing.md),
+                          child: _LecturaCard(
+                            lectura: lectura,
+                            onTap: () => _abrirLectura(lectura),
+                            onBookTap: () => openBookDetail(
+                              context,
+                              title: lectura.libro,
+                              coverUrl: lectura.coverUrl,
+                            ),
+                          ),
+                        ),
+                    ],
+                  ),
                 ],
               ],
             ),

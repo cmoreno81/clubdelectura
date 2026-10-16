@@ -2,6 +2,7 @@ import '../widgets/amistades/comentarios_progreso.dart';
 import 'amistades_page.dart';
 import 'perfil_amistad_page.dart';
 import 'package:flutter/material.dart';
+import '../widgets/tablet/detalle_lateral.dart';
 
 import '../models/notificacion.dart';
 import '../navigation/app_page_route.dart';
@@ -323,7 +324,7 @@ class _NotificacionesPageState extends State<NotificacionesPage> {
       case 'AMISTAD_PIDE_RECOMENDACION':
         final quien = n.extra?['nombre']?.toString() ?? '';
         if (quien.isNotEmpty) {
-          await Navigator.push<void>(
+          await empujarDetalle<void>(
             context,
             AppPageRoute(builder: (_) => PerfilAmistadPage(nombre: quien)),
           );

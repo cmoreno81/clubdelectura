@@ -11,6 +11,7 @@ import 'package:club_lectura_app/pages/notificaciones_page.dart';
 import 'package:club_lectura_app/theme/app_radius.dart';
 import 'package:club_lectura_app/widgets/common/editar_progreso_dialog.dart';
 import 'package:flutter/material.dart';
+import '../widgets/tablet/shell_navegacion.dart';
 import 'package:flutter/services.dart';
 
 import '../navigation/app_page_route.dart';
@@ -133,6 +134,18 @@ class _GeneralDashboardPageState extends State<GeneralDashboardPage> {
     _loadNotificaciones();
     // Copia en la cuenta los kits de lectura que solo estaban en este móvil.
     unawaited(KitLecturaService().subirPendientes());
+    // En tablet, la barra lateral (fuera del navegador) navega a través de
+    // esta pantalla: vuelve a ella y abre la sección elegida.
+    ShellNavegacion.instance.registrar(this, alSeleccionar: _desdeBarraLateral);
+  }
+
+  void _desdeBarraLateral(int indice) {
+    if (!mounted) return;
+    Navigator.of(context).popUntil((ruta) => ruta.isFirst);
+    // La sección anterior sigue «en curso» hasta que su pantalla termina de
+    // cerrarse: sin soltarla, este toque se ignoraba y se quedaba en Inicio.
+    _navActionInProgress = false;
+    unawaited(_selectNavIndex(indice));
   }
 
   Future<void> _loadNotificaciones() async {
@@ -246,6 +259,7 @@ class _GeneralDashboardPageState extends State<GeneralDashboardPage> {
 
   @override
   void dispose() {
+    ShellNavegacion.instance.liberar(this);
     _scrollController.dispose();
     super.dispose();
   }
@@ -286,8 +300,9 @@ class _GeneralDashboardPageState extends State<GeneralDashboardPage> {
   }
 
   Future<GeneralDashboard> _loadDashboard() async {
-    final data = await (widget.loadDashboard?.call() ??
-        GeneralDashboardService().load());
+    final data =
+        await (widget.loadDashboard?.call() ??
+            GeneralDashboardService().load());
     if (mounted) {
       setState(() {
         _hasClub = data.clubs.isNotEmpty;
@@ -411,6 +426,7 @@ class _GeneralDashboardPageState extends State<GeneralDashboardPage> {
   // Evita apilar dos navegaciones si se toca dos veces seguidas antes de
   // que la primera resuelva (mismo criterio que _openingNewBook/_openBook).
   bool _navActionInProgress = false;
+  int _turnoNav = 0;
 
   Future<void> _selectNavIndex(int index) async {
     if (index == 0) {
@@ -428,6 +444,7 @@ class _GeneralDashboardPageState extends State<GeneralDashboardPage> {
     }
     if (_navActionInProgress) return;
     _navActionInProgress = true;
+    final turno = ++_turnoNav;
     setState(() => _navIndex = index);
     try {
       switch (index) {
@@ -441,15 +458,21 @@ class _GeneralDashboardPageState extends State<GeneralDashboardPage> {
           await _openMyProfileFromNav();
       }
     } finally {
-      _navActionInProgress = false;
-      if (mounted) setState(() => _navIndex = 0);
+      // Si mientras tanto se abrió otra sección (barra lateral de la tablet),
+      // esa es la dueña del estado: esta no lo pisa.
+      if (turno == _turnoNav) {
+        _navActionInProgress = false;
+        if (mounted) setState(() => _navIndex = 0);
+      }
     }
   }
 
   void _avisarErrorNavegacion() {
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('No se ha podido abrir. Inténtalo de nuevo.')),
+      const SnackBar(
+        content: Text('No se ha podido abrir. Inténtalo de nuevo.'),
+      ),
     );
   }
 
@@ -707,6 +730,10 @@ class _GeneralDashboardPageState extends State<GeneralDashboardPage> {
 
   @override
   Widget build(BuildContext context) {
+    ShellNavegacion.instance.actualizar(
+      seleccion: _navIndex,
+      tieneClub: _hasClub,
+    );
     return Scaffold(
       backgroundColor: Colors.transparent,
       extendBody: true,
@@ -980,8 +1007,11 @@ class _GeneralDashboardPageState extends State<GeneralDashboardPage> {
                         const SizedBox(height: AppSpacing.md),
                         TbrRouletteCard(
                           books: data.personalLibrary,
-                          onOpenBook: (book) =>
-                              _openPersonalBook(book, data.userName, data.avatarUrl),
+                          onOpenBook: (book) => _openPersonalBook(
+                            book,
+                            data.userName,
+                            data.avatarUrl,
+                          ),
                         ),
                         // El bingo lector vive en Mi espacio para quien
                         // tiene espacio personal; para cuentas solo-club
@@ -1022,7 +1052,9 @@ class _GeneralDashboardPageState extends State<GeneralDashboardPage> {
                                 width: 44,
                                 height: 44,
                                 decoration: BoxDecoration(
-                                  color: AppColors.primary.withValues(alpha: .12),
+                                  color: AppColors.primary.withValues(
+                                    alpha: .12,
+                                  ),
                                   borderRadius: BorderRadius.circular(12),
                                 ),
                                 child: const Icon(
@@ -1085,9 +1117,7 @@ class _GeneralDashboardPageState extends State<GeneralDashboardPage> {
                         mode: ReleaseCatalogMode.newReleases,
                       ),
                       const SizedBox(height: AppSpacing.xl),
-                      _ReleasesPreview(
-                        future: _upcomingFuture,
-                      ),
+                      _ReleasesPreview(future: _upcomingFuture),
                       const SizedBox(height: AppSpacing.xl),
                       const _ComprarAhoraCard(),
                       const SizedBox(height: AppSpacing.md),
@@ -1229,34 +1259,37 @@ class _GeneralDashboardPageState extends State<GeneralDashboardPage> {
                           ),
                           const SizedBox(width: 6),
                           Flexible(
-                            child: Builder(builder: (context) {
-                              const base = TextStyle(
-                                color: Colors.white,
-                                fontSize: 12,
-                                fontWeight: FontWeight.w700,
-                              );
-                              final parts = data.clubvisionNotice?.messageParts;
-                              if (parts?.clubName != null) {
-                                return RichText(
-                                  text: TextSpan(
-                                    style: base,
-                                    children: [
-                                      TextSpan(text: parts!.prefix),
-                                      TextSpan(
-                                        text: '«${parts.clubName}»',
-                                        style: base.copyWith(
-                                          color: const Color(0xFFFFD979),
-                                          fontStyle: FontStyle.italic,
-                                        ),
-                                      ),
-                                      if (parts.suffix.isNotEmpty)
-                                        TextSpan(text: parts.suffix),
-                                    ],
-                                  ),
+                            child: Builder(
+                              builder: (context) {
+                                const base = TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w700,
                                 );
-                              }
-                              return Text(clubvisionReminder, style: base);
-                            }),
+                                final parts =
+                                    data.clubvisionNotice?.messageParts;
+                                if (parts?.clubName != null) {
+                                  return RichText(
+                                    text: TextSpan(
+                                      style: base,
+                                      children: [
+                                        TextSpan(text: parts!.prefix),
+                                        TextSpan(
+                                          text: '«${parts.clubName}»',
+                                          style: base.copyWith(
+                                            color: const Color(0xFFFFD979),
+                                            fontStyle: FontStyle.italic,
+                                          ),
+                                        ),
+                                        if (parts.suffix.isNotEmpty)
+                                          TextSpan(text: parts.suffix),
+                                      ],
+                                    ),
+                                  );
+                                }
+                                return Text(clubvisionReminder, style: base);
+                              },
+                            ),
                           ),
                           const SizedBox(width: 4),
                           const Icon(
@@ -1372,9 +1405,9 @@ class _GeneralDashboardPageState extends State<GeneralDashboardPage> {
             value,
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
-            style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                  fontWeight: FontWeight.w900,
-                ),
+            style: Theme.of(
+              context,
+            ).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w900),
           ),
           if (subtitle.isNotEmpty)
             Text(
@@ -1427,9 +1460,9 @@ class _GeneralDashboardPageState extends State<GeneralDashboardPage> {
             '${summary.finishedThisMonth}',
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
-            style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                  fontWeight: FontWeight.w900,
-                ),
+            style: Theme.of(
+              context,
+            ).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w900),
           ),
           Text(
             summary.finishedThisMonth == 1
@@ -1465,11 +1498,7 @@ class _GeneralDashboardPageState extends State<GeneralDashboardPage> {
         children: [
           Row(
             children: [
-              const Icon(
-                Icons.bookmark_rounded,
-                color: paginasColor,
-                size: 13,
-              ),
+              const Icon(Icons.bookmark_rounded, color: paginasColor, size: 13),
               const SizedBox(width: 4),
               const Text(
                 'PÁGINAS',
@@ -1487,9 +1516,9 @@ class _GeneralDashboardPageState extends State<GeneralDashboardPage> {
             pagesMes > 0 ? '$pagesMes' : '0',
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
-            style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                  fontWeight: FontWeight.w900,
-                ),
+            style: Theme.of(
+              context,
+            ).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w900),
           ),
           Text(
             '${summary.pagesRead} en total',
@@ -1584,8 +1613,7 @@ class _GeneralDashboardPageState extends State<GeneralDashboardPage> {
           Padding(
             padding: const EdgeInsets.only(bottom: AppSpacing.sm),
             child: OutlinedButton.icon(
-              onPressed: () =>
-                  setState(() => _clubsExpanded = !_clubsExpanded),
+              onPressed: () => setState(() => _clubsExpanded = !_clubsExpanded),
               icon: Icon(
                 _clubsExpanded
                     ? Icons.expand_less_rounded
@@ -2268,7 +2296,9 @@ class _GeneralDashboardPageState extends State<GeneralDashboardPage> {
                 if (restoTotal > 0) ...[
                   const SizedBox(height: AppSpacing.xs),
                   _languageLegendRow(
-                    color: _languageColors[principales.length % _languageColors.length],
+                    color:
+                        _languageColors[principales.length %
+                            _languageColors.length],
                     icon: const BanderaIdioma('', tamano: 13),
                     label: 'Otros idiomas',
                     value: restoTotal,
@@ -2314,7 +2344,11 @@ class _GeneralDashboardPageState extends State<GeneralDashboardPage> {
         ),
         Text(
           percentageLabel,
-          style: TextStyle(color: color, fontWeight: FontWeight.w900, fontSize: 13),
+          style: TextStyle(
+            color: color,
+            fontWeight: FontWeight.w900,
+            fontSize: 13,
+          ),
         ),
       ],
     );
@@ -2504,7 +2538,9 @@ class _GeneralDashboardPageState extends State<GeneralDashboardPage> {
                           ),
                           boxShadow: [
                             BoxShadow(
-                              color: const Color(0xFFA85C42).withValues(alpha: .12),
+                              color: const Color(
+                                0xFFA85C42,
+                              ).withValues(alpha: .12),
                               blurRadius: 6,
                               offset: const Offset(0, 2),
                             ),
@@ -2772,7 +2808,9 @@ class _WishlistPreviewSectionState extends State<_WishlistPreviewSection>
   /// leer para no enseñar libros que ya no están.
   void _recargar() {
     if (!mounted) return;
-    setState(() { _future = WishlistService().getWishlist(); });
+    setState(() {
+      _future = WishlistService().getWishlist();
+    });
   }
 
   void _openWishlist() {
@@ -3179,7 +3217,9 @@ class _ReleasesPreview extends StatelessWidget {
                                 width: 104,
                                 height: 152,
                               ),
-                              if (book.isInWishlist || book.isInLibrary || book.isPurchased)
+                              if (book.isInWishlist ||
+                                  book.isInLibrary ||
+                                  book.isPurchased)
                                 Positioned(
                                   top: 6,
                                   right: 6,
@@ -3234,16 +3274,14 @@ class _ReleasesPreview extends StatelessWidget {
 //     simultáneamente a velocidad doble y luego reventando).
 // ─────────────────────────────────────────────────────────────────────────────
 class _HScrollGestureProxy extends StatefulWidget {
-  const _HScrollGestureProxy({
-    required this.height,
-    required this.child,
-  });
+  const _HScrollGestureProxy({required this.height, required this.child});
 
   final double height;
 
   /// Recibe las físicas fijas (siempre NeverScrollable) y el ScrollController
   /// que el ListView debe usar para que el proxy pueda moverlo.
-  final Widget Function(ScrollPhysics physics, ScrollController controller) child;
+  final Widget Function(ScrollPhysics physics, ScrollController controller)
+  child;
 
   @override
   State<_HScrollGestureProxy> createState() => _HScrollGestureProxyState();
@@ -3531,27 +3569,19 @@ class _KitSesionWidgetState extends State<_KitSesionWidget> {
                     Wrap(
                       spacing: 4,
                       runSpacing: 4,
-                      children: kit.paleta
-                          .take(3)
-                          .map((hex) {
-                            final limpio = hex.replaceAll('#', '').trim();
-                            final color = Color(
-                              int.parse('FF$limpio', radix: 16),
-                            );
-                            return Container(
-                              width: 12,
-                              height: 12,
-                              decoration: BoxDecoration(
-                                color: color,
-                                shape: BoxShape.circle,
-                                border: Border.all(
-                                  color: Colors.white,
-                                  width: 1.2,
-                                ),
-                              ),
-                            );
-                          })
-                          .toList(),
+                      children: kit.paleta.take(3).map((hex) {
+                        final limpio = hex.replaceAll('#', '').trim();
+                        final color = Color(int.parse('FF$limpio', radix: 16));
+                        return Container(
+                          width: 12,
+                          height: 12,
+                          decoration: BoxDecoration(
+                            color: color,
+                            shape: BoxShape.circle,
+                            border: Border.all(color: Colors.white, width: 1.2),
+                          ),
+                        );
+                      }).toList(),
                     ),
                     const SizedBox(height: 4),
                     Icon(
