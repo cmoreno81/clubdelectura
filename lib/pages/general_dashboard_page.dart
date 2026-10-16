@@ -142,6 +142,9 @@ class _GeneralDashboardPageState extends State<GeneralDashboardPage> {
   void _desdeBarraLateral(int indice) {
     if (!mounted) return;
     Navigator.of(context).popUntil((ruta) => ruta.isFirst);
+    // La sección anterior sigue «en curso» hasta que su pantalla termina de
+    // cerrarse: sin soltarla, este toque se ignoraba y se quedaba en Inicio.
+    _navActionInProgress = false;
     unawaited(_selectNavIndex(indice));
   }
 
@@ -423,6 +426,7 @@ class _GeneralDashboardPageState extends State<GeneralDashboardPage> {
   // Evita apilar dos navegaciones si se toca dos veces seguidas antes de
   // que la primera resuelva (mismo criterio que _openingNewBook/_openBook).
   bool _navActionInProgress = false;
+  int _turnoNav = 0;
 
   Future<void> _selectNavIndex(int index) async {
     if (index == 0) {
@@ -440,6 +444,7 @@ class _GeneralDashboardPageState extends State<GeneralDashboardPage> {
     }
     if (_navActionInProgress) return;
     _navActionInProgress = true;
+    final turno = ++_turnoNav;
     setState(() => _navIndex = index);
     try {
       switch (index) {
@@ -453,8 +458,12 @@ class _GeneralDashboardPageState extends State<GeneralDashboardPage> {
           await _openMyProfileFromNav();
       }
     } finally {
-      _navActionInProgress = false;
-      if (mounted) setState(() => _navIndex = 0);
+      // Si mientras tanto se abrió otra sección (barra lateral de la tablet),
+      // esa es la dueña del estado: esta no lo pisa.
+      if (turno == _turnoNav) {
+        _navActionInProgress = false;
+        if (mounted) setState(() => _navIndex = 0);
+      }
     }
   }
 
