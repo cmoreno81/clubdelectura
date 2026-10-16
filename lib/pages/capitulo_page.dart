@@ -144,9 +144,10 @@ class _CapituloPageState extends State<CapituloPage> {
       return null;
     }
     final categoria = categorias[categoriaIndex];
-    return [categoria.emoji, categoria.nombre]
-        .where((parte) => parte.trim().isNotEmpty)
-        .join(' ');
+    return [
+      categoria.emoji,
+      categoria.nombre,
+    ].where((parte) => parte.trim().isNotEmpty).join(' ');
   }
 
   void _onPaginationChanged() {
@@ -218,7 +219,10 @@ class _CapituloPageState extends State<CapituloPage> {
 
       // El divisor se inserta antes del comentario en firstNewIndex,
       // por eso restamos un poco para no pasarnos.
-      final ratio = ((firstNewIndex - 0.5) / (items.length + 1)).clamp(0.0, 0.95);
+      final ratio = ((firstNewIndex - 0.5) / (items.length + 1)).clamp(
+        0.0,
+        0.95,
+      );
       await scrollController.animateTo(
         max * ratio,
         duration: const Duration(milliseconds: 380),
@@ -385,7 +389,8 @@ class _CapituloPageState extends State<CapituloPage> {
           tipo: _tipoComentario(_categoriaSeleccionada),
           imagenBase64: foto?.dataUrl,
           etiqueta: _etiquetaCategoria(_categoriaSeleccionada),
-          color: (_categoriaSeleccionada != null &&
+          color:
+              (_categoriaSeleccionada != null &&
                   _categoriaSeleccionada! < coloresSubrayadores.length)
               ? _colorAHex(coloresSubrayadores[_categoriaSeleccionada!])
               : '',
@@ -432,7 +437,10 @@ class _CapituloPageState extends State<CapituloPage> {
             duration: const Duration(seconds: 4),
           ),
         );
-        _temporizadorAvisoComentario = Timer(const Duration(seconds: 4), aviso.close);
+        _temporizadorAvisoComentario = Timer(
+          const Duration(seconds: 4),
+          aviso.close,
+        );
       }
     } catch (_) {
       if (!mounted) return;
@@ -747,67 +755,76 @@ class _CapituloPageState extends State<CapituloPage> {
         title: Text(esReflexion ? '🗣️ Debate final' : widget.capitulo),
       ),
 
-      body: SafeArea(
-        top: false,
-        child: Column(
-          children: [
-            Expanded(
-              child: FutureBuilder<void>(
-                future: future,
-                builder: (context, snapshot) => _contenidoComentarios(),
-              ),
-            ),
+      // En tablet, los comentarios se leen en una columna cómoda y centrada.
+      body: Align(
+        alignment: Alignment.topCenter,
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 720),
+          child: SafeArea(
+            top: false,
+            child: Column(
+              children: [
+                Expanded(
+                  child: FutureBuilder<void>(
+                    future: future,
+                    builder: (context, snapshot) => _contenidoComentarios(),
+                  ),
+                ),
 
-            const Divider(height: 1),
+                const Divider(height: 1),
 
-            if (esReflexion && !editorReflexionVisible)
-              Material(
-                color: Theme.of(context).scaffoldBackgroundColor,
-                elevation: 8,
-                shadowColor: Colors.black12,
-                child: SafeArea(
-                  top: false,
-                  child: Padding(
-                    padding: const EdgeInsets.fromLTRB(16, 10, 16, 10),
-                    child: SizedBox(
-                      width: double.infinity,
-                      child: FilledButton.icon(
-                        onPressed: _abrirEditorReflexion,
-                        icon: const Icon(Icons.edit_note_rounded),
-                        label: Text(
-                          controller.text.trim().isEmpty
-                              ? 'Escribir reflexión'
-                              : 'Continuar reflexión',
+                if (esReflexion && !editorReflexionVisible)
+                  Material(
+                    color: Theme.of(context).scaffoldBackgroundColor,
+                    elevation: 8,
+                    shadowColor: Colors.black12,
+                    child: SafeArea(
+                      top: false,
+                      child: Padding(
+                        padding: const EdgeInsets.fromLTRB(16, 10, 16, 10),
+                        child: SizedBox(
+                          width: double.infinity,
+                          child: FilledButton.icon(
+                            onPressed: _abrirEditorReflexion,
+                            icon: const Icon(Icons.edit_note_rounded),
+                            label: Text(
+                              controller.text.trim().isEmpty
+                                  ? 'Escribir reflexión'
+                                  : 'Continuar reflexión',
+                            ),
+                          ),
                         ),
                       ),
                     ),
+                  )
+                else
+                  ComentarioInput(
+                    controller: controller,
+                    onEnviar: _publicar,
+                    enviando: enviando,
+                    esReflexion: esReflexion,
+                    onCerrar: esReflexion ? _cerrarEditorReflexion : null,
+                    focusNode: esReflexion ? editorFocusNode : null,
+                    categoriaSeleccionada: esReflexion
+                        ? null
+                        : _categoriaSeleccionada,
+                    coloresCategorias: esReflexion
+                        ? const []
+                        : coloresSubrayadores,
+                    onCategoriaChanged: esReflexion
+                        ? null
+                        : (i) => setState(() => _categoriaSeleccionada = i),
+                    fotoAdjunta: _foto?.bytes,
+                    onAdjuntarFoto: _adjuntarFoto,
+                    onQuitarFoto: () => setState(() => _foto = null),
+                    hintText: esReflexion
+                        ? 'Comparte tu reflexión sobre el libro, '
+                              'el desenlace, los personajes...'
+                        : '¿Qué te ha parecido este capítulo?',
                   ),
-                ),
-              )
-            else
-              ComentarioInput(
-                controller: controller,
-                onEnviar: _publicar,
-                enviando: enviando,
-                esReflexion: esReflexion,
-                onCerrar: esReflexion ? _cerrarEditorReflexion : null,
-                focusNode: esReflexion ? editorFocusNode : null,
-                categoriaSeleccionada: esReflexion
-                    ? null
-                    : _categoriaSeleccionada,
-                coloresCategorias: esReflexion ? const [] : coloresSubrayadores,
-                onCategoriaChanged: esReflexion
-                    ? null
-                    : (i) => setState(() => _categoriaSeleccionada = i),
-                fotoAdjunta: _foto?.bytes,
-                onAdjuntarFoto: _adjuntarFoto,
-                onQuitarFoto: () => setState(() => _foto = null),
-                hintText: esReflexion
-                    ? 'Comparte tu reflexión sobre el libro, '
-                          'el desenlace, los personajes...'
-                    : '¿Qué te ha parecido este capítulo?',
-              ),
-          ],
+              ],
+            ),
+          ),
         ),
       ),
     );
@@ -1003,11 +1020,7 @@ class _DebateProtegido extends StatelessWidget {
         padding: EdgeInsets.symmetric(horizontal: 24, vertical: 28),
         child: Column(
           children: [
-            Icon(
-              Icons.visibility_off_outlined,
-              color: Colors.white,
-              size: 32,
-            ),
+            Icon(Icons.visibility_off_outlined, color: Colors.white, size: 32),
             SizedBox(height: 12),
             Text(
               'Debate oculto',
