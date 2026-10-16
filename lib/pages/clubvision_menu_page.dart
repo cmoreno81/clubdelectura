@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import '../widgets/tablet/dos_columnas.dart';
 
 import '../navigation/app_page_route.dart';
 
@@ -262,59 +263,70 @@ class _ClubvisionMenuPageState extends State<ClubvisionMenuPage> {
 
                 const SizedBox(height: AppSpacing.md),
 
-                _MenuCard(
-                  icon: Icons.history_rounded,
-                  color: AppColors.info,
-                  title: 'Historial',
-                  subtitle: 'Revive todas las ediciones y sus libros ganadores',
-                  actionLabel: 'Ver ediciones',
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      AppPageRoute(
-                        builder: (_) => const ClubvisionHistorialPage(),
+                DosColumnas(
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: AppSpacing.md),
+                      child: _MenuCard(
+                        icon: Icons.history_rounded,
+                        color: AppColors.info,
+                        title: 'Historial',
+                        subtitle:
+                            'Revive todas las ediciones y sus libros ganadores',
+                        actionLabel: 'Ver ediciones',
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            AppPageRoute(
+                              builder: (_) => const ClubvisionHistorialPage(),
+                            ),
+                          );
+                        },
                       ),
-                    );
-                  },
-                ),
-
-                if ((club.estado == 'RESULTADOS' && club.ganador.isNotEmpty) ||
-                    club.estado == 'LECTURA') ...[
-                  const SizedBox(height: AppSpacing.md),
-
-                  _MenuCard(
-                    icon: Icons.ballot_outlined,
-                    color: AppColors.primary,
-                    title: 'Cómo votaron',
-                    subtitle: 'Descubre las puntuaciones de los miembros',
-                    actionLabel: 'Ver resultados',
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        AppPageRoute(
-                          builder: (_) => const ClubvisionComoVotaronPage(),
+                    ),
+                    if ((club.estado == 'RESULTADOS' &&
+                            club.ganador.isNotEmpty) ||
+                        club.estado == 'LECTURA')
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: AppSpacing.md),
+                        child: _MenuCard(
+                          icon: Icons.ballot_outlined,
+                          color: AppColors.primary,
+                          title: 'Cómo votaron',
+                          subtitle: 'Descubre las puntuaciones de los miembros',
+                          actionLabel: 'Ver resultados',
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              AppPageRoute(
+                                builder: (_) =>
+                                    const ClubvisionComoVotaronPage(),
+                              ),
+                            );
+                          },
                         ),
-                      );
-                    },
-                  ),
-                ],
-
-                const SizedBox(height: AppSpacing.md),
-
-                _MenuCard(
-                  icon: Icons.bar_chart_rounded,
-                  color: const Color(0xFF4A6FBF),
-                  title: 'Estadísticas',
-                  subtitle: 'Gráficas y datos de todas las ediciones del club',
-                  actionLabel: 'Ver estadísticas',
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      AppPageRoute(
-                        builder: (_) => const ClubvisionEstadisticasPage(),
                       ),
-                    );
-                  },
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: AppSpacing.md),
+                      child: _MenuCard(
+                        icon: Icons.bar_chart_rounded,
+                        color: const Color(0xFF4A6FBF),
+                        title: 'Estadísticas',
+                        subtitle:
+                            'Gráficas y datos de todas las ediciones del club',
+                        actionLabel: 'Ver estadísticas',
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            AppPageRoute(
+                              builder: (_) =>
+                                  const ClubvisionEstadisticasPage(),
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+                  ],
                 ),
 
                 if (club.esAdmin) ...[
@@ -2004,9 +2016,7 @@ class _ForzarCandidataSheetState extends State<_ForzarCandidataSheet> {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: EdgeInsets.only(
-        bottom: MediaQuery.viewInsetsOf(context).bottom,
-      ),
+      padding: EdgeInsets.only(bottom: MediaQuery.viewInsetsOf(context).bottom),
       child: Container(
         constraints: BoxConstraints(
           maxHeight: MediaQuery.sizeOf(context).height * 0.8,
