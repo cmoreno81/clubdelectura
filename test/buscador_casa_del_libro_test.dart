@@ -72,4 +72,20 @@ void main() {
       findsOneWidget,
     );
   });
+
+  testWidgets('enfocar() deja el cursor en el campo (botón «Ve al buscador»)', (
+    tester,
+  ) async {
+    final clave = GlobalKey<BuscadorCasaDelLibroCardState>();
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(body: BuscadorCasaDelLibroCard(key: clave)),
+      ),
+    );
+    final campo = find.byKey(const Key('buscador-casa-del-libro-texto'));
+    expect(tester.widget<TextField>(campo).focusNode!.hasFocus, isFalse);
+    clave.currentState!.enfocar();
+    await tester.pump();
+    expect(tester.widget<TextField>(campo).focusNode!.hasFocus, isTrue);
+  });
 }

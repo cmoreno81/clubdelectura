@@ -32,6 +32,8 @@ class UpcomingReleasesPage extends StatefulWidget {
 class _UpcomingReleasesPageState extends State<UpcomingReleasesPage> {
   final _service = UpcomingReleasesService();
   final _wishlist = WishlistService();
+  final _scroll = ScrollController();
+  final _buscador = GlobalKey<BuscadorCasaDelLibroCardState>();
   _ReleaseRange _range = _ReleaseRange.soon;
   late Future<List<UpcomingRelease>> _future = _load();
   final Set<String> _busy = {};
@@ -45,6 +47,25 @@ class _UpcomingReleasesPageState extends State<UpcomingReleasesPage> {
   // "parpadeaba" al tocar el corazón).
   final Map<String, ({bool enDeseos, String? itemId})> _deseos = {};
   final Set<String> _enBiblioteca = {};
+
+  @override
+  void dispose() {
+    _scroll.dispose();
+    super.dispose();
+  }
+
+  /// Desde el final de la lista: sube al buscador y deja el cursor en él.
+  Future<void> _irAlBuscador() async {
+    await _scroll.animateTo(
+      0,
+      duration: const Duration(milliseconds: 450),
+      curve: Curves.easeOutCubic,
+    );
+    if (!mounted) return;
+    WidgetsBinding.instance.addPostFrameCallback(
+      (_) => _buscador.currentState?.enfocar(),
+    );
+  }
 
   Future<List<UpcomingRelease>> _load() async {
     final libros = await _loadLibros();
@@ -267,20 +288,26 @@ class _UpcomingReleasesPageState extends State<UpcomingReleasesPage> {
             await refreshed;
           },
           child: ListView.separated(
+            controller: _scroll,
             padding: const EdgeInsets.fromLTRB(
               AppSpacing.md,
               AppSpacing.md,
               AppSpacing.md,
               AppSpacing.xxl,
             ),
-            itemCount: (books.isEmpty ? 1 : books.length) + 3,
+            itemCount: (books.isEmpty ? 1 : books.length) + 4,
             separatorBuilder: (_, index) =>
                 SizedBox(height: index == 0 ? AppSpacing.md : AppSpacing.sm),
             itemBuilder: (context, index) {
               if (index == 0) {
                 return _catalogHeader(allBooks.length);
               }
-              if (index == 1) return const BuscadorCasaDelLibroCard();
+              if (index == (books.isEmpty ? 1 : books.length) + 3) {
+                return _alFinal();
+              }
+              if (index == 1) {
+                return BuscadorCasaDelLibroCard(key: _buscador);
+              }
               if (index == 2) {
                 return _filters(
                   genres: genres,
@@ -449,6 +476,20 @@ class _UpcomingReleasesPageState extends State<UpcomingReleasesPage> {
       ),
     );
   }
+
+  Widget _alFinal() => Padding(
+    padding: const EdgeInsets.only(top: AppSpacing.sm),
+    child: OutlinedButton.icon(
+      key: const Key('ir-al-buscador'),
+      onPressed: _irAlBuscador,
+      icon: const Icon(Icons.arrow_upward_rounded, size: 18),
+      label: const Text('¿No encuentras lo que buscas? Ve al buscador'),
+      style: OutlinedButton.styleFrom(
+        minimumSize: const Size(double.infinity, 48),
+        foregroundColor: AppColors.primaryDark,
+      ),
+    ),
+  );
 
   Widget _filters({
     required List<String> genres,

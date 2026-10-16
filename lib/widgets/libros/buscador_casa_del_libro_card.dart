@@ -20,17 +20,22 @@ class BuscadorCasaDelLibroCard extends StatefulWidget {
 
   @override
   State<BuscadorCasaDelLibroCard> createState() =>
-      _BuscadorCasaDelLibroCardState();
+      BuscadorCasaDelLibroCardState();
 }
 
-class _BuscadorCasaDelLibroCardState extends State<BuscadorCasaDelLibroCard> {
+class BuscadorCasaDelLibroCardState extends State<BuscadorCasaDelLibroCard> {
   final _texto = TextEditingController();
+  final _foco = FocusNode();
+
+  /// Pone el cursor en el campo (al llegar desde «Ir al buscador»).
+  void enfocar() => _foco.requestFocus();
   bool _buscando = false;
   String? _aviso;
 
   @override
   void dispose() {
     _texto.dispose();
+    _foco.dispose();
     super.dispose();
   }
 
@@ -107,6 +112,7 @@ class _BuscadorCasaDelLibroCardState extends State<BuscadorCasaDelLibroCard> {
           TextField(
             key: const Key('buscador-casa-del-libro-texto'),
             controller: _texto,
+            focusNode: _foco,
             textInputAction: TextInputAction.search,
             onSubmitted: (_) => _buscar(),
             maxLength: 120,
