@@ -101,7 +101,7 @@ void main() {
   });
 
   testWidgets(
-    'desde el perfil de una amiga: cuadrícula con portadas, buscador y se abre la hoja para ella',
+    'desde el perfil de un amigo: cuadrícula con portadas, buscador y se abre la hoja para ella',
     (tester) async {
       await tester.pumpWidget(
         MaterialApp(

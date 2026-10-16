@@ -1724,7 +1724,7 @@ const List<_HelpSection> _secciones = [
     titulo: 'Amigos',
     items: [
       _HelpItem(
-        pregunta: '¿Cómo añado a una amiga?',
+        pregunta: '¿Cómo añado a un amigo?',
         respuesta:
             'En Amigos tienes tu código personal: compártelo y quien lo '
             'escriba te enviará una solicitud sin tener que buscarte. También '
@@ -1744,9 +1744,9 @@ const List<_HelpSection> _secciones = [
       _HelpItem(
         pregunta: '¿Qué veo en la pantalla de Amigos?',
         respuesta:
-            'Un resumen (amigas, solicitudes por responder y enviadas; '
+            'Un resumen (amigos, solicitudes por responder y enviadas; '
             'puedes pulsar cada cuadro para ir a su sección), lo que han '
-            'leído tus amigas esta semana, con quién coincides más, '
+            'leído tus amigos esta semana, con quién coincides más, '
             'las rachas y retos que compartís, el feed «Lo que hacen tus '
             'amigos» (empezó, relee o terminó un libro, con su nota) e ideas '
             'para regalar.\n\n'
@@ -1756,24 +1756,24 @@ const List<_HelpSection> _secciones = [
         pregunta: '¿Qué es «Con quién coincides más»?',
         respuesta:
             'Compara los libros que habéis terminado: cuántos tenéis en '
-            'común, en qué géneros coincidís y, si ambas habéis puntuado '
+            'común, en qué géneros coincidís y, si ambos habéis puntuado '
             'varios, si puntuáis parecido. También lo verás en el perfil de '
-            'cada amiga. Solo cuenta con quien comparte su biblioteca.',
+            'cada amigo. Solo cuenta con quien comparte su biblioteca.',
       ),
       _HelpItem(
         pregunta: '¿Qué es «Tus amigos y este libro»?',
         respuesta:
-            'En la ficha de un libro ves cuáles de tus amigas lo están '
+            'En la ficha de un libro ves cuáles de tus amigos lo están '
             'leyendo (con su progreso), lo han terminado (con su nota si '
             'comparte sus reseñas) o lo tienen pendiente.',
       ),
       _HelpItem(
-        pregunta: '¿Cómo animo a una amiga y cómo me animan?',
+        pregunta: '¿Cómo animo a un amigo y cómo me animan?',
         respuesta:
             'Reacciona o comenta su lectura desde su perfil, la ficha de '
             'su libro o el feed. Tú recibes un aviso y lo ves en la ficha de '
             'tu libro, en «Tus amigos te animan». Puedes borrar o reportar '
-            'cualquier comentario. Cuando una amiga termina el libro que '
+            'cualquier comentario. Cuando un amigo termina el libro que '
             'estás leyendo, también te llega un aviso (puedes desactivarlo en '
             'Ajustes › Notificaciones).',
       ),
@@ -1782,7 +1782,7 @@ const List<_HelpSection> _secciones = [
         respuesta:
             'Con «Recomendar a un amigo» envías un libro con un mensaje '
             'personal a quien quieras y puedes proponer leerlo a la vez. Si '
-            'eres tú quien busca qué leer, en el perfil de una amiga pulsa '
+            'eres tú quien busca qué leer, en el perfil de un amigo pulsa '
             '«Pídele una recomendación»: le llega un aviso (como mucho una '
             'vez por semana a cada persona).\n\n'
             'Si te llega un aviso «¿Qué me recomiendas?», tócalo: se abre el '
@@ -1802,11 +1802,11 @@ const List<_HelpSection> _secciones = [
             'candado y la conversación se conserva al terminar.',
       ),
       _HelpItem(
-        pregunta: '¿Cómo funciona un reto entre amigas?',
+        pregunta: '¿Cómo funciona un reto entre amigos?',
         respuesta:
             'Pulsa «Crear reto», pon un nombre y una meta de libros entre '
-            'todas (para este mes o este año) y elige de 1 a 4 amigas. A '
-            'ellas les sale la propuesta en Amigos y pueden apuntarse o '
+            'todos (para este mes o este año) y elige de 1 a 4 amigos. A '
+            'ellos les sale la propuesta en Amigos y pueden apuntarse o '
             'rechazarla.\n\n'
             'Hay una sola barra de progreso común y cada persona aparece con '
             'lo que aporta, sin clasificación ni ranking. Un libro cuenta una '
@@ -1816,21 +1816,21 @@ const List<_HelpSection> _secciones = [
       _HelpItem(
         pregunta: '¿Qué son las rachas juntas?',
         respuesta:
-            'Los días seguidos en que tú y una amiga habéis hecho el '
+            'Los días seguidos en que tú y un amigo habéis hecho el '
             'check-in de lectura. Salen a partir de dos días y te dice a '
-            'quién le toca hoy. Si hoy aún falta una de las dos, la racha '
-            'sigue viva hasta que acabe el día. Solo aparecen amigas que '
+            'quién le toca hoy. Si hoy aún falta uno de los dos, la racha '
+            'sigue viva hasta que acabe el día. Solo aparecen amigos que '
             'comparten «lo que leo».',
       ),
       _HelpItem(
         pregunta: '¿Cómo funcionan las ideas para regalar?',
         respuesta:
-            'Mira la lista de deseos de tus amigas y reserva «Lo regalo yo»: '
+            'Mira la lista de deseos de tus amigos y reserva «Lo regalo yo»: '
             'nadie más lo duplica y quien lo recibe no se entera. Para '
-            'verla, la amiga debe tener activada su lista de deseos.',
+            'verla, el amigo debe tener activada su lista de deseos.',
       ),
       _HelpItem(
-        pregunta: '¿Qué ven mis amigas de mí?',
+        pregunta: '¿Qué ven mis amigos de mí?',
         respuesta:
             'Tú decides con cuatro interruptores en Amigos › Privacidad: '
             'lo que lees, tu biblioteca, tus reseñas y tu lista de deseos. '

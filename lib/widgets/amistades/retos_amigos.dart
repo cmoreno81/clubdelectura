@@ -9,7 +9,7 @@ import '../../theme/app_text_styles.dart';
 import '../common/club_avatar.dart';
 import 'aviso_en_hoja.dart';
 
-/// «Retos entre amigas»: una meta de libros común, con una sola barra de
+/// «Retos entre amigos»: una meta de libros común, con una sola barra de
 /// progreso y lo que aporta cada persona, sin clasificación.
 class RetosAmigosSeccion extends StatefulWidget {
   const RetosAmigosSeccion({
@@ -126,7 +126,7 @@ class _RetosAmigosSeccionState extends State<RetosAmigosSeccion> {
           Row(
             children: [
               Expanded(
-                child: Text('Retos entre amigas', style: AppTextStyles.section),
+                child: Text('Retos entre amigos', style: AppTextStyles.section),
               ),
               if (widget.amistades.isNotEmpty)
                 TextButton.icon(
@@ -140,7 +140,7 @@ class _RetosAmigosSeccionState extends State<RetosAmigosSeccion> {
           if (_aviso != null) AvisoEnHoja(texto: _aviso),
           if (_retos.isEmpty)
             Text(
-              'Poneos una meta de libros entre dos o más: una sola barra para todas, sin clasificación.',
+              'Poneos una meta de libros entre dos o más: una sola barra para todos, sin clasificación.',
               style: AppTextStyles.caption,
             ),
           for (final r in _retos)
@@ -211,14 +211,14 @@ class _TarjetaReto extends StatelessWidget {
               padding: const EdgeInsets.only(bottom: AppSpacing.sm),
               child: Text(
                 '${_unir(otras)} te propone${otras.length > 1 ? 'n' : ''} '
-                'leer ${r.objetivo} libros entre todas.',
+                'leer ${r.objetivo} libros entre todos.',
                 style: AppTextStyles.caption,
               ),
             ),
           Text(
             r.conseguido
                 ? '¡Lo habéis conseguido! ${r.total} libros 🎉'
-                : '${r.total} de ${r.objetivo} libros entre todas',
+                : '${r.total} de ${r.objetivo} libros entre todos',
             style: AppTextStyles.caption,
           ),
           const SizedBox(height: 6),
@@ -313,7 +313,7 @@ class _CrearRetoHojaState extends State<_CrearRetoHoja> {
 
   Future<void> _enviar() async {
     if (_elegidas.isEmpty) {
-      setState(() => _aviso = 'Elige al menos a una amiga.');
+      setState(() => _aviso = 'Elige al menos a un amigo.');
       return;
     }
     setState(() {
@@ -364,7 +364,7 @@ class _CrearRetoHojaState extends State<_CrearRetoHoja> {
               children: [
                 Expanded(
                   child: Text(
-                    'Meta entre todas: $_objetivo libros',
+                    'Meta entre todos: $_objetivo libros',
                     style: AppTextStyles.body,
                   ),
                 ),
@@ -471,7 +471,7 @@ class _RachasCompartidasSeccionState extends State<RachasCompartidasSeccion> {
   }
 
   String _pista(RachaCompartida r) {
-    if (r.yoHoy && r.ellaHoy) return 'Hoy habéis leído las dos';
+    if (r.yoHoy && r.ellaHoy) return 'Hoy habéis leído los dos';
     if (r.ellaHoy) return 'Hoy ya ha leído ${r.nombre}: te toca';
     if (r.yoHoy) return 'Hoy ya has leído tú: le toca a ${r.nombre}';
     return 'Hoy aún no ha leído ninguna';

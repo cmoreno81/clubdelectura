@@ -412,7 +412,7 @@ class _LecturasConAmistadesSeccionState
     final confirmar = await showDialog<bool>(
       context: context,
       builder: (_) => AlertDialog(
-        title: Text(eliminar ? 'Eliminar para las dos' : 'Salir de la lectura'),
+        title: Text(eliminar ? 'Eliminar para los dos' : 'Salir de la lectura'),
         content: Text(
           eliminar
               ? 'Se borrará «${l.libro}» y toda su conversación para ${l.con} '
@@ -497,7 +497,7 @@ class _LecturasConAmistadesSeccionState
                 if (l.esDuena && !l.esperando)
                   const PopupMenuItem(
                     value: 'eliminar',
-                    child: Text('Eliminar para las dos'),
+                    child: Text('Eliminar para los dos'),
                   ),
               ],
             ),

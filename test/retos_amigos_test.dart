@@ -39,7 +39,7 @@ void main() {
     );
     await tester.pumpAndSettle();
     expect(find.text('Retazo'), findsOneWidget);
-    expect(find.text('3 de 6 libros entre todas'), findsOneWidget);
+    expect(find.text('3 de 6 libros entre todos'), findsOneWidget);
     expect(find.text('Tú · 2'), findsOneWidget);
     expect(find.text('Marta · 1'), findsOneWidget);
     expect(find.text('Irene · pendiente'), findsOneWidget);
@@ -80,14 +80,14 @@ void main() {
     );
     await tester.pumpAndSettle();
     expect(find.byKey(const Key('reto-salir-r1')), findsNothing);
-    expect(find.text('Marta y Irene te proponen leer 6 libros entre todas.'), findsOneWidget);
+    expect(find.text('Marta y Irene te proponen leer 6 libros entre todos.'), findsOneWidget);
     await tester.tap(find.byKey(const Key('reto-aceptar-r1')));
     await tester.pumpAndSettle();
     expect(respuestas, ['r1:true']);
   });
 
   testWidgets(
-    'crear un reto: pide al menos una amiga y envía nombre, meta y periodo',
+    'crear un reto: pide al menos un amigo y envía nombre, meta y periodo',
     (tester) async {
       Map<String, Object?>? enviado;
       await tester.pumpWidget(
@@ -118,7 +118,7 @@ void main() {
       await tester.pumpAndSettle();
       await tester.tap(find.byKey(const Key('reto-enviar')));
       await tester.pumpAndSettle();
-      expect(find.text('Elige al menos a una amiga.'), findsOneWidget);
+      expect(find.text('Elige al menos a un amigo.'), findsOneWidget);
       expect(enviado, isNull);
 
       await tester.tap(find.byKey(const Key('reto-mas')));
@@ -165,7 +165,7 @@ void main() {
       await tester.pumpAndSettle();
       expect(find.text('🔥 5 días'), findsOneWidget);
       expect(find.text('Hoy ya ha leído Marta: te toca'), findsOneWidget);
-      expect(find.text('Hoy habéis leído las dos'), findsOneWidget);
+      expect(find.text('Hoy habéis leído los dos'), findsOneWidget);
 
       await tester.pumpWidget(
         _app(

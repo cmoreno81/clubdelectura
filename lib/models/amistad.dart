@@ -859,7 +859,7 @@ class RachaCompartida {
       );
 }
 
-/// Un libro tuyo que se puede recomendar a una amiga.
+/// Un libro tuyo que se puede recomendar a un amigo.
 class OpcionRecomendar {
   const OpcionRecomendar({
     required this.bookId,

@@ -316,14 +316,14 @@ void main() {
       await tester.tap(find.byType(PopupMenuButton<String>).last);
       await tester.pumpAndSettle();
       expect(find.text('Salir de la lectura'), findsOneWidget);
-      expect(find.text('Eliminar para las dos'), findsNothing);
+      expect(find.text('Eliminar para los dos'), findsNothing);
       await tester.tapAt(const Offset(5, 5)); // cierra el menú
       await tester.pumpAndSettle();
 
       // La mía: eliminar con confirmación.
       await tester.tap(find.byType(PopupMenuButton<String>).first);
       await tester.pumpAndSettle();
-      await tester.tap(find.text('Eliminar para las dos'));
+      await tester.tap(find.text('Eliminar para los dos'));
       await tester.pumpAndSettle();
       expect(llamadas, isEmpty); // aún sin confirmar
       await tester.tap(find.text('Eliminar'));
