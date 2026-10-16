@@ -341,3 +341,20 @@ class _PantallaCompletaState extends State<PantallaCompleta> {
   @override
   Widget build(BuildContext context) => widget.child;
 }
+
+/// En la columna de una tablet, centra verticalmente su contenido (acceso,
+/// bienvenida…) en lugar de dejarlo pegado arriba con todo el hueco debajo.
+/// En móvil no cambia nada.
+class CentradoEnTablet extends StatelessWidget {
+  const CentradoEnTablet({super.key, required this.child});
+
+  /// Normalmente un [ListView] o similar; en tablet se limita a su altura.
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    final tamano = MediaQuery.sizeOf(context);
+    final columnaDeTablet = tamano.width >= 500 && tamano.height >= 800;
+    return columnaDeTablet ? Center(child: child) : child;
+  }
+}
