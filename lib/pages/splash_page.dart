@@ -3,12 +3,17 @@ import 'package:google_fonts/google_fonts.dart';
 
 import '../theme/app_colors.dart';
 import '../widgets/common/club_reads_mark.dart';
+import '../widgets/tablet/marco_tablet.dart';
 
 class SplashPage extends StatelessWidget {
   const SplashPage({super.key});
 
   @override
   Widget build(BuildContext context) {
+    return PantallaCompleta(child: _contenido());
+  }
+
+  Widget _contenido() {
     return Scaffold(
       body: Stack(
         fit: StackFit.expand,

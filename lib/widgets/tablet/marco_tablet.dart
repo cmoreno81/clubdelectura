@@ -35,6 +35,8 @@ class MarcoTablet extends StatelessWidget {
       builder: (context, _) {
         final shell = ShellNavegacion.instance;
         final conBarra = shell.activo;
+        // La pantalla de arranque ocupa todo el ancho (degradado a sangre).
+        if (!conBarra && shell.pantallaCompleta) return child;
         final anchoDisponible =
             mq.size.width - (conBarra ? kAnchoBarraLateral : 0);
         // Sin sesión (acceso, bienvenida) la columna es más estrecha.
@@ -279,4 +281,32 @@ class BarraLateralVisible extends InheritedWidget {
   @override
   bool updateShouldNotify(BarraLateralVisible oldWidget) =>
       visible != oldWidget.visible;
+}
+
+/// Envuelve una pantalla que debe verse a todo el ancho en una tablet (p. ej.
+/// la de arranque con su degradado), sin la columna centrada.
+class PantallaCompleta extends StatefulWidget {
+  const PantallaCompleta({super.key, required this.child});
+
+  final Widget child;
+
+  @override
+  State<PantallaCompleta> createState() => _PantallaCompletaState();
+}
+
+class _PantallaCompletaState extends State<PantallaCompleta> {
+  @override
+  void initState() {
+    super.initState();
+    ShellNavegacion.instance.entrarPantallaCompleta();
+  }
+
+  @override
+  void dispose() {
+    ShellNavegacion.instance.salirPantallaCompleta();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) => widget.child;
 }

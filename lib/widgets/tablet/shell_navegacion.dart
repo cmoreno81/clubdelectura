@@ -62,6 +62,21 @@ class ShellNavegacion extends ChangeNotifier {
     _avisar();
   }
 
+  int _pantallasCompletas = 0;
+
+  /// Hay una pantalla (la de arranque) que debe verse a todo el ancho.
+  bool get pantallaCompleta => _pantallasCompletas > 0;
+
+  void entrarPantallaCompleta() {
+    _pantallasCompletas++;
+    _avisar();
+  }
+
+  void salirPantallaCompleta() {
+    if (_pantallasCompletas > 0) _pantallasCompletas--;
+    _avisar();
+  }
+
   void seleccionar(int indice) => _alSeleccionar?.call(indice);
 
   // Registrar/actualizar ocurre durante la construcción de pantallas: los

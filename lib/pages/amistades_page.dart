@@ -307,37 +307,75 @@ class _AmistadesPageState extends State<AmistadesPage> {
           ? ErrorView(onRetry: _cargar)
           : RefreshIndicator(
               onRefresh: () => _cargar(silencioso: true),
-              child: ListView(
-                physics: const AlwaysScrollableScrollPhysics(),
-                // Se construye todo el panel para poder saltar a cualquier
-                // sección desde los cuadros del resumen.
-                cacheExtent: 8000,
-                padding: EdgeInsets.fromLTRB(
-                  AppSpacing.md,
-                  AppSpacing.md,
-                  AppSpacing.md,
-                  widget.embebida ? kFloatingNavClearance : AppSpacing.md,
+              child: LayoutBuilder(
+                builder: (context, restricciones) => ListView(
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  // Se construye todo el panel para poder saltar a cualquier
+                  // sección desde los cuadros del resumen.
+                  cacheExtent: 8000,
+                  padding: EdgeInsets.fromLTRB(
+                    AppSpacing.md,
+                    AppSpacing.md,
+                    AppSpacing.md,
+                    widget.embebida ? kFloatingNavClearance : AppSpacing.md,
+                  ),
+                  children: _secciones(
+                    _data ?? const AmistadesData(),
+                    dosColumnas: restricciones.maxWidth >= 720,
+                  ),
                 ),
-                children: _secciones(_data ?? const AmistadesData()),
               ),
             ),
     );
   }
 
-  List<Widget> _secciones(AmistadesData data) {
+  List<Widget> _secciones(AmistadesData data, {bool dosColumnas = false}) {
+    // En tablet, el panel se reparte en dos columnas (actividad a un lado,
+    // descubrir y retos al otro).
+    final cuerpo = dosColumnas
+        ? <Widget>[
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(
+                  child: Column(
+                    children: [
+                      const FeedAmistades(),
+                      const LecturasConAmistadesSeccion(),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: AppSpacing.lg),
+                Expanded(
+                  child: Column(
+                    children: [
+                      const ResumenSemanalAmigosCard(),
+                      const AfinidadAmigosSeccion(),
+                      const RachasCompartidasSeccion(),
+                      RetosAmigosSeccion(amistades: data.amistades),
+                      const IdeasParaRegalar(),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ]
+        : <Widget>[
+            const ResumenSemanalAmigosCard(),
+            const AfinidadAmigosSeccion(),
+            const RachasCompartidasSeccion(),
+            RetosAmigosSeccion(amistades: data.amistades),
+            const FeedAmistades(),
+            const LecturasConAmistadesSeccion(),
+            const IdeasParaRegalar(),
+          ];
     return [
       // Lo mismo en las cuentas con club (se llega desde Inicio) que en las
       // personales (pestaña): solo cambia cómo se entra.
       _resumen(data),
       const SizedBox(height: AppSpacing.md),
       const ActividadAmistadesCard(mostrarVerTodas: false),
-      const ResumenSemanalAmigosCard(),
-      const AfinidadAmigosSeccion(),
-      const RachasCompartidasSeccion(),
-      RetosAmigosSeccion(amistades: data.amistades),
-      const FeedAmistades(),
-      const LecturasConAmistadesSeccion(),
-      const IdeasParaRegalar(),
+      ...cuerpo,
       const SizedBox(height: AppSpacing.lg),
       _bloqueBuscar(),
       if (data.recibidas.isNotEmpty) ...[
