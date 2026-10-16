@@ -22,21 +22,26 @@ class DosColumnas extends StatelessWidget {
         if (c.maxWidth < anchoMinimo || children.length < 2) {
           return Column(children: children);
         }
-        return Column(
+        // Dos columnas independientes (pares / impares): si una tarjeta se
+        // despliega, no deja huecos en la otra columna.
+        return Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            for (var i = 0; i < children.length; i += 2)
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
+            Expanded(
+              child: Column(
                 children: [
-                  Expanded(child: children[i]),
-                  SizedBox(width: espacio),
-                  Expanded(
-                    child: i + 1 < children.length
-                        ? children[i + 1]
-                        : const SizedBox.shrink(),
-                  ),
+                  for (var i = 0; i < children.length; i += 2) children[i],
                 ],
               ),
+            ),
+            SizedBox(width: espacio),
+            Expanded(
+              child: Column(
+                children: [
+                  for (var i = 1; i < children.length; i += 2) children[i],
+                ],
+              ),
+            ),
           ],
         );
       },
