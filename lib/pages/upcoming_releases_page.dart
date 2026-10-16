@@ -11,6 +11,7 @@ import '../theme/app_spacing.dart';
 import '../widgets/common/club_book_cover.dart';
 import '../widgets/libros/add_book_sheet.dart';
 import '../widgets/libros/botones_compra.dart';
+import '../widgets/libros/buscador_casa_del_libro_card.dart';
 
 enum _ReleaseRange { week, month, soon }
 
@@ -272,14 +273,15 @@ class _UpcomingReleasesPageState extends State<UpcomingReleasesPage> {
               AppSpacing.md,
               AppSpacing.xxl,
             ),
-            itemCount: (books.isEmpty ? 1 : books.length) + 2,
+            itemCount: (books.isEmpty ? 1 : books.length) + 3,
             separatorBuilder: (_, index) =>
                 SizedBox(height: index == 0 ? AppSpacing.md : AppSpacing.sm),
             itemBuilder: (context, index) {
               if (index == 0) {
                 return _catalogHeader(allBooks.length);
               }
-              if (index == 1) {
+              if (index == 1) return const BuscadorCasaDelLibroCard();
+              if (index == 2) {
                 return _filters(
                   genres: genres,
                   selectedGenre: selectedGenre,
@@ -294,7 +296,7 @@ class _UpcomingReleasesPageState extends State<UpcomingReleasesPage> {
                   'No hay títulos con estos filtros en esta selección',
                 );
               }
-              return _releaseCard(books[index - 2]);
+              return _releaseCard(books[index - 3]);
             },
           ),
         );
@@ -604,8 +606,8 @@ class _UpcomingReleasesPageState extends State<UpcomingReleasesPage> {
                       right: -6,
                       child: _WishlistBadge(
                         comprado: book.isPurchased,
-                        inWishlist: (_deseos[book.id]?.enDeseos ??
-                                book.isInWishlist) ||
+                        inWishlist:
+                            (_deseos[book.id]?.enDeseos ?? book.isInWishlist) ||
                             book.isPurchased,
                         busy: busy,
                         onTap: () => _toggleWishlist(book),

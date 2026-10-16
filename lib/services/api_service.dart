@@ -1573,6 +1573,23 @@ class ApiService {
   /// Enlace de afiliado (Casa del Libro) para comprar [bookId]. Se pide al
   /// backend en vez de montarlo aquí para poder ajustar el programa, el
   /// destino o el aviso legal sin tener que sacar una versión nueva.
+  /// Enlace de afiliado a la búsqueda de Casa del Libro con [texto]; null si
+  /// no se puede construir.
+  Future<String?> getEnlaceBusquedaCasaDelLibro(String texto) async {
+    final response = await _client.get(
+      Uri.parse(baseUrl).replace(
+        queryParameters: {
+          'action': 'enlaceBusquedaCasaDelLibro',
+          'q': texto,
+        },
+      ),
+    );
+    if (response.statusCode != 200) return null;
+    final data = _decodeJson(response);
+    if (data is! Map || data['ok'] != true) return null;
+    return data['url']?.toString();
+  }
+
   Future<EnlaceCompra?> getEnlaceCompra(String bookId) async {
     final response = await _client.get(
       Uri.parse(
