@@ -7,6 +7,7 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'widgets/tablet/marco_tablet.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:http/http.dart' as http;
 
@@ -208,7 +209,7 @@ class _MyAppState extends State<MyApp> {
                   enabled:
                       atmosferaController.animacionesActivas &&
                       !reducirMovimiento,
-                  child: child ?? const SizedBox.shrink(),
+                  child: MarcoTablet(child: child ?? const SizedBox.shrink()),
                 ),
               );
             },
