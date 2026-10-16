@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../navigation/app_page_route.dart';
 import '../../models/amistad.dart';
 import '../../pages/amistades_page.dart';
 import '../../services/api_service.dart';
@@ -411,7 +412,7 @@ class _RecomendarLibroSheetState extends State<RecomendarLibroSheet>
                             Navigator.pop(context);
                             Navigator.push<void>(
                               context,
-                              MaterialPageRoute(
+                              AppPageRoute(
                                 builder: (_) => const AmistadesPage(),
                               ),
                             );

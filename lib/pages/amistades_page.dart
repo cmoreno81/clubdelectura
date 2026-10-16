@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import '../navigation/app_page_route.dart';
 import '../widgets/tablet/detalle_lateral.dart';
 import 'package:flutter/services.dart';
 import 'package:share_plus/share_plus.dart';
@@ -788,7 +789,7 @@ class _AmistadesPageState extends State<AmistadesPage> {
     subtitulo: p.clubEnComun.isEmpty ? null : 'De tu club «${p.clubEnComun}»',
     onTap: () => empujarDetalle<void>(
       context,
-      MaterialPageRoute(builder: (_) => PerfilAmistadPage(nombre: p.nombre)),
+      AppPageRoute(builder: (_) => PerfilAmistadPage(nombre: p.nombre)),
     ),
     accion: IconButton(
       tooltip: 'Quitar amigo',

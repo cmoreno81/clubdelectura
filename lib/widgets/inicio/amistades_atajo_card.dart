@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../navigation/app_page_route.dart';
 import '../../models/amistad.dart';
 import '../../pages/amistades_page.dart';
 import '../../services/amistades_cambios.dart';
@@ -57,7 +58,7 @@ class _AmistadesAtajoCardState extends State<AmistadesAtajoCard>
     } else {
       await Navigator.push<void>(
         context,
-        MaterialPageRoute(builder: (_) => const AmistadesPage()),
+        AppPageRoute(builder: (_) => const AmistadesPage()),
       );
     }
     if (mounted) await _cargar();

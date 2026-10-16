@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../navigation/app_page_route.dart';
 import '../tablet/detalle_lateral.dart';
 
 import '../../models/amistad.dart';
@@ -84,7 +85,7 @@ class _ActividadAmistadesCardState extends State<ActividadAmistadesCard>
     }
     empujarDetalle<void>(
       context,
-      MaterialPageRoute(builder: (_) => PerfilAmistadPage(nombre: nombre)),
+      AppPageRoute(builder: (_) => PerfilAmistadPage(nombre: nombre)),
     );
   }
 
@@ -109,7 +110,7 @@ class _ActividadAmistadesCardState extends State<ActividadAmistadesCard>
                 TextButton(
                   onPressed: () => Navigator.push<void>(
                     context,
-                    MaterialPageRoute(builder: (_) => const AmistadesPage()),
+                    AppPageRoute(builder: (_) => const AmistadesPage()),
                   ),
                   child: const Text('Ver todas'),
                 ),

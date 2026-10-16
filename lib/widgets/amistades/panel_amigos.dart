@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../navigation/app_page_route.dart';
 import '../tablet/detalle_lateral.dart';
 
 import '../../models/amistad.dart';
@@ -25,7 +26,7 @@ String _hace(DateTime? fecha) {
 
 void _abrirPerfil(BuildContext context, String nombre) => empujarDetalle<void>(
   context,
-  MaterialPageRoute(builder: (_) => PerfilAmistadPage(nombre: nombre)),
+  AppPageRoute(builder: (_) => PerfilAmistadPage(nombre: nombre)),
 );
 
 /// «Lo que hacen tus amigos»: el feed de actividad (empezó, relee o terminó un
