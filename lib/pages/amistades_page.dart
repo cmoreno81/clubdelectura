@@ -2,7 +2,6 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import '../navigation/app_page_route.dart';
-import '../widgets/tablet/detalle_lateral.dart';
 import 'package:flutter/services.dart';
 import 'package:share_plus/share_plus.dart';
 
@@ -21,7 +20,7 @@ import '../widgets/common/floating_nav_bar.dart';
 import '../widgets/inicio/actividad_amistades_card.dart';
 import '../widgets/common/club_card.dart';
 import '../widgets/error_view.dart';
-import 'perfil_amistad_page.dart';
+import 'lista_amigos_page.dart';
 
 /// Amistades: buscar a gente, enviar y responder solicitudes, tu código para
 /// compartir y la lista de tus amistades.
@@ -52,10 +51,23 @@ class _AmistadesPageState extends State<AmistadesPage> {
   bool _buscando = false;
   int _busquedaId = 0;
 
-  /// Destinos de los tres cuadros del resumen.
-  final GlobalKey _claveAmigos = GlobalKey();
+  /// Destinos de los cuadros de solicitudes del resumen.
   final GlobalKey _claveRecibidas = GlobalKey();
   final GlobalKey _claveEnviadas = GlobalKey();
+
+  /// Abre la lista completa de amigos; al volver se recarga por si quitaste a
+  /// alguien.
+  Future<void> _abrirListaAmigos(AmistadesData data) async {
+    if (data.amistades.isEmpty) {
+      _aviso('Todavía no tienes amigos.');
+      return;
+    }
+    await Navigator.push<void>(
+      context,
+      AppPageRoute(builder: (_) => ListaAmigosPage(amistades: data.amistades)),
+    );
+    if (mounted) _cargar(silencioso: true);
+  }
 
   /// Lleva a la sección; si no hay nada que enseñar, lo dice.
   void _irA(GlobalKey clave, {required String vacio}) {
@@ -233,35 +245,6 @@ class _AmistadesPageState extends State<AmistadesPage> {
     okPorDefecto: 'Solicitud cancelada.',
   );
 
-  Future<void> _quitar(String nombre) async {
-    final confirmar = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text('¿Quitar a $nombre de tus amigos?'),
-        content: const Text(
-          'Dejaréis de veros lo que leéis. Si quieres, podéis volver a '
-          'añadiros más adelante.',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('Cancelar'),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.pop(context, true),
-            child: const Text('Quitar'),
-          ),
-        ],
-      ),
-    );
-    if (confirmar != true || !mounted) return;
-    await _ejecutar(
-      nombre,
-      () => ApiService().quitarAmistad(nombre),
-      okPorDefecto: 'Amigo eliminado.',
-    );
-  }
-
   Future<void> _anadirPorCodigo() async {
     final codigo = _codigoCtrl.text.trim();
     if (codigo.isEmpty) {
@@ -395,18 +378,14 @@ class _AmistadesPageState extends State<AmistadesPage> {
         for (final p in data.enviadas) _filaEnviada(p),
       ],
       const SizedBox(height: AppSpacing.lg),
-      _titulo('Tus amigos', data.amistades.length, _claveAmigos),
-      if (data.amistades.isEmpty)
-        Padding(
-          padding: const EdgeInsets.symmetric(vertical: AppSpacing.md),
-          child: Text(
-            'Todavía no tienes amigos en ClubReads. Busca a alguien por su '
-            'nombre o comparte tu código.',
-            style: AppTextStyles.bodySecondary,
-          ),
-        )
-      else
-        for (final p in data.amistades) _filaAmistad(p),
+      if (data.amistades.isEmpty) ...[
+        const SizedBox(height: AppSpacing.lg),
+        Text(
+          'Todavía no tienes amigos en ClubReads. Busca a alguien por su '
+          'nombre o comparte tu código.',
+          style: AppTextStyles.bodySecondary,
+        ),
+      ],
       const SizedBox(height: AppSpacing.lg),
       _tarjetaCodigo(data.miCodigo),
       const SizedBox(height: AppSpacing.lg),
@@ -470,7 +449,7 @@ class _AmistadesPageState extends State<AmistadesPage> {
           '${data.amistades.length}',
           'amigos',
           AppColors.primary,
-          () => _irA(_claveAmigos, vacio: 'Todavía no tienes amigos.'),
+          () => _abrirListaAmigos(data),
         ),
         const SizedBox(width: AppSpacing.sm),
         dato(
@@ -781,20 +760,6 @@ class _AmistadesPageState extends State<AmistadesPage> {
           ? null
           : () => _cancelar(p.nombre),
       child: const Text('Cancelar'),
-    ),
-  );
-
-  Widget _filaAmistad(PersonaAmistad p) => _fila(
-    persona: p,
-    subtitulo: p.clubEnComun.isEmpty ? null : 'De tu club «${p.clubEnComun}»',
-    onTap: () => empujarDetalle<void>(
-      context,
-      AppPageRoute(builder: (_) => PerfilAmistadPage(nombre: p.nombre)),
-    ),
-    accion: IconButton(
-      tooltip: 'Quitar amigo',
-      icon: const Icon(Icons.person_remove_outlined),
-      onPressed: _ocupadas.contains(p.nombre) ? null : () => _quitar(p.nombre),
     ),
   );
 }

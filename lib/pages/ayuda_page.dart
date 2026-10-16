@@ -1837,7 +1837,9 @@ const List<_HelpSection> _secciones = [
             'El feed, las rachas y la afinidad respetan lo que hayas '
             'apagado. Si marcas una reseña como «contiene spoilers», su '
             'texto no se muestra a nadie.\n\n'
-            'Quitar una amistad o bloquear a alguien es cuestión de un toque.',
+            'Para ver a todos tus amigos pulsa el cuadro «amigos» del resumen: se abre '
+            'tu lista (con buscador cuando son muchos) y desde ahí puedes abrir su '
+            'perfil o quitar a alguien. Bloquear a alguien es cuestión de un toque.',
       ),
     ],
   ),

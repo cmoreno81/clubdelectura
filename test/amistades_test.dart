@@ -52,9 +52,9 @@ void main() {
     expect(find.text('Rechazar'), findsOneWidget);
     expect(find.text('Solicitudes enviadas (1)'), findsOneWidget);
     expect(find.text('Noa'), findsOneWidget);
-    expect(find.text('Tus amigos (1)'), findsOneWidget);
-    expect(find.text('Lucía'), findsOneWidget);
-    expect(find.byIcon(Icons.person_remove_outlined), findsOneWidget);
+    // La lista de amigos ya no va en esta pantalla: se abre desde el cuadro.
+    expect(find.text('Tus amigos (1)'), findsNothing);
+    expect(find.byIcon(Icons.person_remove_outlined), findsNothing);
     expect(find.textContaining('mínimo 3 letras'), findsOneWidget);
   });
 
@@ -72,10 +72,7 @@ void main() {
         ),
       );
       await tester.pumpAndSettle();
-      expect(
-        find.textContaining('Todavía no tienes amigos'),
-        findsOneWidget,
-      );
+      expect(find.textContaining('Todavía no tienes amigos'), findsOneWidget);
       expect(find.text('Solicitudes recibidas (0)'), findsNothing);
     },
   );
@@ -138,6 +135,8 @@ void main() {
         ),
       ),
     );
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('resumen-amigos')));
     await tester.pumpAndSettle();
     expect(find.text('De tu club «Club Lunar»'), findsOneWidget);
     expect(find.textContaining('De tu club'), findsOneWidget);
