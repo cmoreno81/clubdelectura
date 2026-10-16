@@ -424,13 +424,16 @@ class _DashboardPageState extends State<DashboardPage> {
                               )
                             : null;
                         if (ancho && lectura != null) {
-                          return Row(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Expanded(child: podio),
-                              const SizedBox(width: AppSpacing.md),
-                              Expanded(child: lectura),
-                            ],
+                          // Misma altura en las dos tarjetas.
+                          return IntrinsicHeight(
+                            child: Row(
+                              crossAxisAlignment: CrossAxisAlignment.stretch,
+                              children: [
+                                Expanded(child: podio),
+                                const SizedBox(width: AppSpacing.md),
+                                Expanded(child: lectura),
+                              ],
+                            ),
                           );
                         }
                         return Column(
@@ -651,6 +654,8 @@ class _DashboardPageState extends State<DashboardPage> {
       borderColor: AppColors.primaryLight,
       onTap: () => _abrirRanking(initialTab: 1),
       child: Column(
+        // Si la tarjeta se estira (tablet), el podio queda centrado.
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           // ── Cabecera morada con gradiente ────────────────────────────────
           Container(

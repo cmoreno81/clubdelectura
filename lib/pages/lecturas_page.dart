@@ -341,19 +341,24 @@ class _LecturasPageState extends State<LecturasPage> {
                   const SizedBox(height: AppSpacing.md),
 
                   for (final lectura in oficiales) ...[
-                    _LecturaCard(
-                      lectura: lectura,
-                      destacada: true,
-                      masComentada: esMasComentada(lectura),
-                      tieneActividadNueva: _tieneActividadNueva(lectura),
-                      onTap: () => _abrirLectura(lectura),
-                      onBookTap: () => openBookDetail(
-                        context,
-                        title: lectura.libro,
-                        coverUrl: lectura.coverUrl,
+                    // En tablet no se estira a todo el ancho: columna cómoda.
+                    Center(
+                      child: ConstrainedBox(
+                        constraints: const BoxConstraints(maxWidth: 560),
+                        child: _LecturaCard(
+                          lectura: lectura,
+                          destacada: true,
+                          masComentada: esMasComentada(lectura),
+                          tieneActividadNueva: _tieneActividadNueva(lectura),
+                          onTap: () => _abrirLectura(lectura),
+                          onBookTap: () => openBookDetail(
+                            context,
+                            title: lectura.libro,
+                            coverUrl: lectura.coverUrl,
+                          ),
+                        ),
                       ),
                     ),
-
                     const SizedBox(height: AppSpacing.md),
                   ],
 
