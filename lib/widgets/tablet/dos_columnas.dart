@@ -8,7 +8,7 @@ class DosColumnas extends StatelessWidget {
     super.key,
     required this.children,
     this.espacio = 16,
-    this.anchoMinimo = 680,
+    this.anchoMinimo = 720,
   });
 
   final List<Widget> children;

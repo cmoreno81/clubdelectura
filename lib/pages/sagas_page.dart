@@ -1148,7 +1148,7 @@ class _SagasPageState extends State<SagasPage> {
                   ),
               ];
               // En tablet, dos sagas por fila.
-              if (c.maxWidth < 680) return Column(children: tarjetas);
+              if (c.maxWidth < 720) return Column(children: tarjetas);
               return Column(
                 children: [
                   for (var i = 0; i < tarjetas.length; i += 2)

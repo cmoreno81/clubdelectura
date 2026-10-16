@@ -405,7 +405,7 @@ class _DashboardPageState extends State<DashboardPage> {
                       builder: (context, c) {
                         // En tablet, el podio y la lectura oficial van lado a
                         // lado en vez de estirados a todo el ancho.
-                        final ancho = c.maxWidth >= 680;
+                        final ancho = c.maxWidth >= 760;
                         final podio = _podioLectoras(
                           lectoras: viewData.topLectoras ?? const [],
                           usuarioMes: data.resumen.usuarioMes,
@@ -488,7 +488,7 @@ class _DashboardPageState extends State<DashboardPage> {
                               ),
                           ];
                           // En tablet, dos miembros por fila.
-                          if (c.maxWidth < 680) {
+                          if (c.maxWidth < 720) {
                             return Column(children: tarjetas);
                           }
                           return Column(
