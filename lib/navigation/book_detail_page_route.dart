@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../widgets/tablet/detalle_lateral.dart';
+
 /// Ruta para pantallas de detalle de libro.
 ///
 /// A diferencia de [AppPageRoute] (duración cero), esta ruta usa una duración
@@ -34,3 +36,7 @@ class BookDetailPageRoute<T> extends MaterialPageRoute<T> {
     );
   }
 }
+
+/// Abre la ficha de un libro (a pantalla completa o en el panel de la tablet).
+Future<T?> empujarFicha<T>(BuildContext context, BookDetailPageRoute<T> ruta) =>
+    empujarDetalle<T>(context, ruta);

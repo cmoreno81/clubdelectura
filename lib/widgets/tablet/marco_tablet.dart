@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_text_styles.dart';
 import '../common/club_reads_mark.dart';
+import 'detalle_lateral.dart';
 import 'shell_navegacion.dart';
 
 /// Ancho a partir del cual una pantalla se trata como tablet. Se mira el lado
@@ -31,18 +32,31 @@ class MarcoTablet extends StatelessWidget {
     if (!esTablet(mq.size)) return child;
 
     return ListenableBuilder(
-      listenable: ShellNavegacion.instance,
+      listenable: Listenable.merge([
+        ShellNavegacion.instance,
+        DetalleLateral.instance,
+      ]),
       builder: (context, _) {
         final shell = ShellNavegacion.instance;
+        final detalle = DetalleLateral.instance;
         final conBarra = shell.activo;
         // La pantalla de arranque ocupa todo el ancho (degradado a sangre).
         if (!conBarra && shell.pantallaCompleta) return child;
         final anchoDisponible =
             mq.size.width - (conBarra ? kAnchoBarraLateral : 0);
+        // Panel de detalle: solo con barra lateral y mucho ancho (iPad en horizontal).
+        detalle.disponible =
+            conBarra && anchoDisponible >= DetalleLateral.anchoMinimoDisponible;
+        if (!detalle.disponible && detalle.abierto) {
+          WidgetsBinding.instance.addPostFrameCallback((_) => detalle.cerrar());
+        }
+        final conPanel = detalle.abierto;
+        final anchoZona =
+            anchoDisponible - (conPanel ? DetalleLateral.ancho : 0);
         // Sin sesión (acceso, bienvenida) la columna es más estrecha.
         final anchoColumna = (conBarra ? kAnchoColumna : 560.0).clamp(
           0.0,
-          anchoDisponible,
+          anchoZona,
         );
 
         final contenido = BarraLateralVisible(
@@ -62,6 +76,17 @@ class MarcoTablet extends StatelessWidget {
                 child: SizedBox(width: anchoColumna, child: contenido),
               ),
             ),
+            if (conPanel)
+              MediaQuery(
+                data: mq.copyWith(
+                  size: Size(DetalleLateral.ancho, mq.size.height),
+                  padding: mq.padding.copyWith(left: 0),
+                ),
+                child: const PanelDetalle(
+                  colorFondo: AppColors.background,
+                  colorBorde: AppColors.divider,
+                ),
+              ),
           ],
         );
       },
@@ -179,7 +204,10 @@ class BarraLateral extends StatelessWidget {
                       : secciones[i].icono,
                   texto: secciones[i].texto,
                   seleccionado: shell.seleccion == i,
-                  alPulsar: () => shell.seleccionar(i),
+                  alPulsar: () {
+                    DetalleLateral.instance.cerrar();
+                    shell.seleccionar(i);
+                  },
                 ),
               const Spacer(),
               const Divider(height: 1, color: AppColors.divider),
@@ -191,7 +219,10 @@ class BarraLateral extends StatelessWidget {
                     : Icons.settings_outlined,
                 texto: 'Ajustes',
                 seleccionado: shell.seleccion == 4,
-                alPulsar: () => shell.seleccionar(4),
+                alPulsar: () {
+                  DetalleLateral.instance.cerrar();
+                  shell.seleccionar(4);
+                },
               ),
             ],
           ),

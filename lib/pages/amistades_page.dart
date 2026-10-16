@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import '../widgets/tablet/detalle_lateral.dart';
 import 'package:flutter/services.dart';
 import 'package:share_plus/share_plus.dart';
 
@@ -785,7 +786,7 @@ class _AmistadesPageState extends State<AmistadesPage> {
   Widget _filaAmistad(PersonaAmistad p) => _fila(
     persona: p,
     subtitulo: p.clubEnComun.isEmpty ? null : 'De tu club «${p.clubEnComun}»',
-    onTap: () => Navigator.push<void>(
+    onTap: () => empujarDetalle<void>(
       context,
       MaterialPageRoute(builder: (_) => PerfilAmistadPage(nombre: p.nombre)),
     ),

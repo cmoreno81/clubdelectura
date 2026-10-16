@@ -2350,7 +2350,7 @@ class _LibrosPageState extends State<LibrosPage> with WidgetsBindingObserver {
         ? _scrollController.offset
         : 0.0;
 
-    await Navigator.push<bool>(
+    await empujarFicha<bool>(
       context,
       BookDetailPageRoute(
         builder: (_) => DetalleLibroPage(libro: libro, heroTag: heroTag),

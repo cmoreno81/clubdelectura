@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../tablet/detalle_lateral.dart';
 
 import '../../models/amistad.dart';
 import '../../pages/amistades_page.dart';
@@ -81,7 +82,7 @@ class _ActividadAmistadesCardState extends State<ActividadAmistadesCard>
       widget.abrirPerfil!(context, nombre);
       return;
     }
-    Navigator.push<void>(
+    empujarDetalle<void>(
       context,
       MaterialPageRoute(builder: (_) => PerfilAmistadPage(nombre: nombre)),
     );
