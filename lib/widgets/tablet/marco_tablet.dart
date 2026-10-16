@@ -9,7 +9,14 @@ import 'shell_navegacion.dart';
 /// Ancho a partir del cual una pantalla se trata como tablet. Se mira el lado
 /// corto para que un iPhone en horizontal no cuente, y el ancho para que una
 /// ventana estrecha de multitarea (Split View) vuelva al diseño de móvil.
-bool esTablet(Size tamano) => tamano.shortestSide >= 600 && tamano.width >= 700;
+bool esTablet(Size tamano) => tamano.shortestSide >= 600;
+
+/// Tablets estrechas (7" en vertical): la barra lateral va compacta, solo con
+/// iconos y rótulos pequeños, para dejar sitio al contenido.
+bool barraCompacta(Size tamano) => tamano.width < 800;
+
+/// Ancho de la barra lateral compacta.
+const double kAnchoBarraCompacta = 84;
 
 /// Ancho de la barra lateral.
 const double kAnchoBarraLateral = 248;
@@ -42,8 +49,10 @@ class MarcoTablet extends StatelessWidget {
         final conBarra = shell.activo;
         // La pantalla de arranque ocupa todo el ancho (degradado a sangre).
         if (!conBarra && shell.pantallaCompleta) return child;
-        final anchoDisponible =
-            mq.size.width - (conBarra ? kAnchoBarraLateral : 0);
+        final anchoBarra = barraCompacta(mq.size)
+            ? kAnchoBarraCompacta
+            : kAnchoBarraLateral;
+        final anchoDisponible = mq.size.width - (conBarra ? anchoBarra : 0);
         // Panel de detalle: solo con barra lateral y mucho ancho (iPad en horizontal).
         detalle.disponible =
             conBarra && anchoDisponible >= DetalleLateral.anchoMinimoDisponible;
@@ -69,7 +78,7 @@ class MarcoTablet extends StatelessWidget {
 
         return Row(
           children: [
-            if (conBarra) const BarraLateral(),
+            if (conBarra) BarraLateral(compacta: barraCompacta(mq.size)),
             Expanded(
               child: Align(
                 alignment: Alignment.topCenter,
@@ -97,7 +106,10 @@ class MarcoTablet extends StatelessWidget {
 /// Barra lateral de la tablet: las cinco secciones de siempre, en una columna
 /// con selección suave, como la de Música o Notas.
 class BarraLateral extends StatelessWidget {
-  const BarraLateral({super.key});
+  const BarraLateral({super.key, this.compacta = false});
+
+  /// Solo iconos con el rótulo debajo (tablets estrechas).
+  final bool compacta;
 
   @override
   Widget build(BuildContext context) {
@@ -134,7 +146,7 @@ class BarraLateral extends StatelessWidget {
 
     return Container(
       key: const Key('barra-lateral'),
-      width: kAnchoBarraLateral,
+      width: compacta ? kAnchoBarraCompacta : kAnchoBarraLateral,
       decoration: BoxDecoration(
         color: AppColors.surfaceSoft.withValues(alpha: .86),
         border: const Border(right: BorderSide(color: AppColors.divider)),
@@ -142,13 +154,20 @@ class BarraLateral extends StatelessWidget {
       child: SafeArea(
         right: false,
         child: Padding(
-          padding: const EdgeInsets.fromLTRB(14, 22, 14, 18),
+          padding: compacta
+              ? const EdgeInsets.fromLTRB(6, 18, 6, 14)
+              : const EdgeInsets.fromLTRB(14, 22, 14, 18),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               Padding(
-                padding: const EdgeInsets.fromLTRB(8, 0, 8, 26),
+                padding: compacta
+                    ? const EdgeInsets.only(bottom: 20)
+                    : const EdgeInsets.fromLTRB(8, 0, 8, 26),
                 child: Row(
+                  mainAxisAlignment: compacta
+                      ? MainAxisAlignment.center
+                      : MainAxisAlignment.start,
                   children: [
                     Container(
                       width: 38,
@@ -164,35 +183,36 @@ class BarraLateral extends StatelessWidget {
                       alignment: Alignment.center,
                       child: const ClubReadsMark(size: 22, animate: false),
                     ),
-                    const SizedBox(width: 10),
-                    Flexible(
-                      child: FittedBox(
-                        fit: BoxFit.scaleDown,
-                        alignment: Alignment.centerLeft,
-                        child: Text.rich(
-                          TextSpan(
-                            children: [
-                              TextSpan(
-                                text: 'Club',
-                                style: AppTextStyles.title.copyWith(
-                                  color: AppColors.primary,
-                                  fontWeight: FontWeight.w800,
-                                  fontSize: 21,
+                    if (!compacta) const SizedBox(width: 10),
+                    if (!compacta)
+                      Flexible(
+                        child: FittedBox(
+                          fit: BoxFit.scaleDown,
+                          alignment: Alignment.centerLeft,
+                          child: Text.rich(
+                            TextSpan(
+                              children: [
+                                TextSpan(
+                                  text: 'Club',
+                                  style: AppTextStyles.title.copyWith(
+                                    color: AppColors.primary,
+                                    fontWeight: FontWeight.w800,
+                                    fontSize: 21,
+                                  ),
                                 ),
-                              ),
-                              TextSpan(
-                                text: 'Reads',
-                                style: AppTextStyles.title.copyWith(
-                                  color: AppColors.gold,
-                                  fontStyle: FontStyle.italic,
-                                  fontSize: 21,
+                                TextSpan(
+                                  text: 'Reads',
+                                  style: AppTextStyles.title.copyWith(
+                                    color: AppColors.gold,
+                                    fontStyle: FontStyle.italic,
+                                    fontSize: 21,
+                                  ),
                                 ),
-                              ),
-                            ],
+                              ],
+                            ),
                           ),
                         ),
                       ),
-                    ),
                   ],
                 ),
               ),
@@ -204,6 +224,7 @@ class BarraLateral extends StatelessWidget {
                       : secciones[i].icono,
                   texto: secciones[i].texto,
                   seleccionado: shell.seleccion == i,
+                  compacta: compacta,
                   alPulsar: () {
                     DetalleLateral.instance.cerrar();
                     shell.seleccionar(i);
@@ -219,6 +240,7 @@ class BarraLateral extends StatelessWidget {
                     : Icons.settings_outlined,
                 texto: 'Ajustes',
                 seleccionado: shell.seleccion == 4,
+                compacta: compacta,
                 alPulsar: () {
                   DetalleLateral.instance.cerrar();
                   shell.seleccionar(4);
@@ -239,8 +261,10 @@ class _ItemLateral extends StatelessWidget {
     required this.texto,
     required this.seleccionado,
     required this.alPulsar,
+    this.compacta = false,
   });
 
+  final bool compacta;
   final Key clave;
   final IconData icono;
   final String texto;
@@ -266,24 +290,46 @@ class _ItemLateral extends StatelessWidget {
             borderRadius: BorderRadius.circular(12),
             onTap: alPulsar,
             child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 11),
-              child: Row(
-                children: [
-                  Icon(icono, size: 22, color: color),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Text(
-                      texto,
-                      style: AppTextStyles.body.copyWith(
-                        color: color,
-                        fontWeight: seleccionado
-                            ? FontWeight.w800
-                            : FontWeight.w600,
-                      ),
+              padding: compacta
+                  ? const EdgeInsets.symmetric(horizontal: 2, vertical: 9)
+                  : const EdgeInsets.symmetric(horizontal: 12, vertical: 11),
+              child: compacta
+                  ? Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(icono, size: 24, color: color),
+                        const SizedBox(height: 3),
+                        Text(
+                          texto,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: AppTextStyles.caption.copyWith(
+                            color: color,
+                            fontSize: 10.5,
+                            fontWeight: seleccionado
+                                ? FontWeight.w800
+                                : FontWeight.w600,
+                          ),
+                        ),
+                      ],
+                    )
+                  : Row(
+                      children: [
+                        Icon(icono, size: 22, color: color),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Text(
+                            texto,
+                            style: AppTextStyles.body.copyWith(
+                              color: color,
+                              fontWeight: seleccionado
+                                  ? FontWeight.w800
+                                  : FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
-                  ),
-                ],
-              ),
             ),
           ),
         ),

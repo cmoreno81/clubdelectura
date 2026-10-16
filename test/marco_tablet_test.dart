@@ -21,7 +21,7 @@ void main() {
     ShellNavegacion.instance.liberar('prueba');
   });
 
-  test('esTablet: solo con lado corto >= 600 y ancho >= 700', () {
+  test('esTablet: solo con lado corto >= 600', () {
     expect(esTablet(const Size(390, 844)), isFalse);
     expect(
       esTablet(const Size(932, 430)),
@@ -30,11 +30,14 @@ void main() {
     );
     expect(esTablet(const Size(820, 1180)), isTrue);
     expect(esTablet(const Size(1032, 1376)), isTrue);
+    expect(esTablet(const Size(600, 960)), isTrue, reason: '7" en vertical');
     expect(
-      esTablet(const Size(600, 900)),
+      esTablet(const Size(520, 900)),
       isFalse,
       reason: 'Split View estrecho',
     );
+    expect(barraCompacta(const Size(600, 960)), isTrue);
+    expect(barraCompacta(const Size(820, 1180)), isFalse);
   });
 
   testWidgets('en móvil no se añade nada', (tester) async {
