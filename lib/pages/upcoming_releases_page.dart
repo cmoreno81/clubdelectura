@@ -334,17 +334,20 @@ class _UpcomingReleasesPageState extends State<UpcomingReleasesPage> {
                   if (!dosColumnas) return _releaseCard(books[index - 3]);
                   final a = (index - 3) * 2;
                   final b = a + 1;
-                  return Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Expanded(child: _releaseCard(books[a])),
-                      const SizedBox(width: AppSpacing.sm),
-                      Expanded(
-                        child: b < books.length
-                            ? _releaseCard(books[b])
-                            : const SizedBox.shrink(),
-                      ),
-                    ],
+                  // Las dos tarjetas de una fila miden lo mismo.
+                  return IntrinsicHeight(
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        Expanded(child: _releaseCard(books[a])),
+                        const SizedBox(width: AppSpacing.sm),
+                        Expanded(
+                          child: b < books.length
+                              ? _releaseCard(books[b])
+                              : const SizedBox.shrink(),
+                        ),
+                      ],
+                    ),
                   );
                 },
               );

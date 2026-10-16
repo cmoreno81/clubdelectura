@@ -511,19 +511,24 @@ class _LibrosPageState extends State<LibrosPage> with WidgetsBindingObserver {
                                   }
                                   final a = index * 2;
                                   final b = a + 1;
-                                  return Row(
+                                  // Las dos fichas de una fila miden lo mismo.
+                                  return IntrinsicHeight(
                                     key: ValueKey('fila-libros-$index'),
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      Expanded(child: _libroCard(resultado[a])),
-                                      const SizedBox(width: AppSpacing.md),
-                                      Expanded(
-                                        child: b < resultado.length
-                                            ? _libroCard(resultado[b])
-                                            : const SizedBox.shrink(),
-                                      ),
-                                    ],
+                                    child: Row(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.stretch,
+                                      children: [
+                                        Expanded(
+                                          child: _libroCard(resultado[a]),
+                                        ),
+                                        const SizedBox(width: AppSpacing.md),
+                                        Expanded(
+                                          child: b < resultado.length
+                                              ? _libroCard(resultado[b])
+                                              : const SizedBox.shrink(),
+                                        ),
+                                      ],
+                                    ),
                                   );
                                 },
                               );

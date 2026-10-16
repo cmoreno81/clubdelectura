@@ -135,14 +135,19 @@ class PanelDetalle extends StatelessWidget {
           ),
           Expanded(
             child: ClipRect(
-              child: Navigator(
-                key: DetalleLateral.instance.navegador,
-                observers: [ObservadorDetalle()],
-                onGenerateInitialRoutes: (_, _) => [
-                  PageRouteBuilder<void>(
-                    pageBuilder: (_, _, _) => const SizedBox.expand(),
-                  ),
-                ],
+              // Sin el controlador de «Hero» de la app: dos navegadores no
+              // pueden compartirlo y, al abrir el panel, el de la app dejaba
+              // de funcionar (ni la X ni la barra lateral respondían).
+              child: HeroControllerScope.none(
+                child: Navigator(
+                  key: DetalleLateral.instance.navegador,
+                  observers: [ObservadorDetalle()],
+                  onGenerateInitialRoutes: (_, _) => [
+                    PageRouteBuilder<void>(
+                      pageBuilder: (_, _, _) => const SizedBox.expand(),
+                    ),
+                  ],
+                ),
               ),
             ),
           ),

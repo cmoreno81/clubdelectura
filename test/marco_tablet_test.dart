@@ -156,4 +156,40 @@ void main() {
       },
     );
   });
+
+  testWidgets('arrastrar en los márgenes de la columna desplaza la lista', (
+    tester,
+  ) async {
+    tester.view.devicePixelRatio = 1;
+    tester.view.physicalSize = const Size(1376, 1032);
+    addTearDown(tester.view.reset);
+    ShellNavegacion.instance.registrar('prueba', alSeleccionar: (_) {});
+    final controlador = ScrollController();
+    addTearDown(controlador.dispose);
+    await tester.pumpWidget(
+      MaterialApp(
+        builder: (context, child) => MarcoTablet(child: child!),
+        home: Scaffold(
+          body: ListView(
+            controller: controlador,
+            children: [
+              for (var i = 0; i < 60; i++)
+                SizedBox(height: 80, child: Text('fila $i')),
+            ],
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(controlador.offset, 0);
+    // La columna mide 820 y la zona 1128 (1376 − 248): quedan 154 por lado.
+    // Un punto a 40 px de la barra lateral cae en el margen izquierdo.
+    await tester.dragFrom(const Offset(248 + 40, 500), const Offset(0, -300));
+    await tester.pumpAndSettle();
+    expect(controlador.offset, greaterThan(100));
+    final tras = controlador.offset;
+    await tester.dragFrom(const Offset(1370 - 40, 500), const Offset(0, 150));
+    await tester.pumpAndSettle();
+    expect(controlador.offset, lessThan(tras));
+  });
 }

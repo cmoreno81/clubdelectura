@@ -1,4 +1,6 @@
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 
 import '../../theme/app_colors.dart';
 import '../../theme/app_text_styles.dart';
@@ -24,6 +26,8 @@ const double kAnchoBarraLateral = 248;
 /// Ancho máximo de la columna de contenido (lectura cómoda, como las apps de
 /// Apple: contenido centrado, no estirado de borde a borde).
 const double kAnchoColumna = 820;
+
+final GlobalKey _claveColumna = GlobalKey(debugLabel: 'columna-tablet');
 
 /// Envuelve el navegador de la app. En un móvil no hace nada. En una tablet:
 /// barra lateral persistente (si hay sesión) y el contenido en una columna
@@ -68,21 +72,48 @@ class MarcoTablet extends StatelessWidget {
           anchoZona,
         );
 
+        // Sin la línea bajo la cabecera: con la columna centrada se cortaba a
+        // mitad de pantalla.
+        final tema = Theme.of(context);
         final contenido = BarraLateralVisible(
           visible: conBarra,
-          child: MediaQuery(
-            data: mq.copyWith(size: Size(anchoColumna, mq.size.height)),
-            child: ClipRect(child: child),
+          child: Theme(
+            data: tema.copyWith(
+              appBarTheme: tema.appBarTheme.copyWith(shape: const Border()),
+            ),
+            child: MediaQuery(
+              data: mq.copyWith(size: Size(anchoColumna, mq.size.height)),
+              child: ClipRect(child: child),
+            ),
           ),
         );
 
         return Row(
           children: [
             if (conBarra) BarraLateral(compacta: barraCompacta(mq.size)),
+            // Los márgenes a los lados de la columna también hacen desplazar
+            // la pantalla: se puede arrastrar desde cualquier punto.
             Expanded(
-              child: Align(
-                alignment: Alignment.topCenter,
-                child: SizedBox(width: anchoColumna, child: contenido),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: _MargenDesplazable(
+                      columna: _claveColumna,
+                      izquierda: true,
+                    ),
+                  ),
+                  SizedBox(
+                    key: _claveColumna,
+                    width: anchoColumna,
+                    child: contenido,
+                  ),
+                  Expanded(
+                    child: _MargenDesplazable(
+                      columna: _claveColumna,
+                      izquierda: false,
+                    ),
+                  ),
+                ],
               ),
             ),
             if (conPanel)
@@ -402,5 +433,90 @@ class CentradoEnTablet extends StatelessWidget {
     final tamano = MediaQuery.sizeOf(context);
     final columnaDeTablet = tamano.width >= 500 && tamano.height >= 800;
     return columnaDeTablet ? Center(child: child) : child;
+  }
+}
+
+/// Franja vacía a un lado de la columna de una tablet. Arrastrar o usar la
+/// rueda sobre ella desplaza la lista de la pantalla visible, como si se
+/// hubiera tocado dentro de la columna.
+class _MargenDesplazable extends StatelessWidget {
+  const _MargenDesplazable({required this.columna, required this.izquierda});
+
+  final GlobalKey columna;
+  final bool izquierda;
+
+  /// La posición de scroll vertical que hay en el borde de la columna a la
+  /// altura [global].
+  ScrollPositionWithSingleContext? _buscar(
+    BuildContext context,
+    Offset global,
+  ) {
+    final caja = columna.currentContext?.findRenderObject();
+    if (caja is! RenderBox || !caja.attached) return null;
+    final origen = caja.localToGlobal(Offset.zero);
+    final x = izquierda ? origen.dx + 2 : origen.dx + caja.size.width - 2;
+    final resultado = HitTestResult();
+    WidgetsBinding.instance.hitTestInView(
+      resultado,
+      Offset(x, global.dy),
+      View.of(context).viewId,
+    );
+    for (final entrada in resultado.path) {
+      final destino = entrada.target;
+      if (destino is RenderViewportBase &&
+          destino.axis == Axis.vertical &&
+          destino.offset is ScrollPositionWithSingleContext) {
+        final posicion = destino.offset as ScrollPositionWithSingleContext;
+        if (posicion.hasContentDimensions && posicion.maxScrollExtent > 0) {
+          return posicion;
+        }
+      }
+    }
+    return null;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    Drag? arrastre;
+    return Listener(
+      behavior: HitTestBehavior.opaque,
+      onPointerSignal: (evento) {
+        if (evento is! PointerScrollEvent) return;
+        final posicion = _buscar(context, evento.position);
+        if (posicion == null) return;
+        GestureBinding.instance.pointerSignalResolver.register(evento, (e) {
+          posicion.pointerScroll((e as PointerScrollEvent).scrollDelta.dy);
+        });
+      },
+      child: RawGestureDetector(
+        behavior: HitTestBehavior.opaque,
+        gestures: {
+          VerticalDragGestureRecognizer:
+              GestureRecognizerFactoryWithHandlers<
+                VerticalDragGestureRecognizer
+              >(VerticalDragGestureRecognizer.new, (r) {
+                r
+                  ..onStart = (d) {
+                    arrastre = _buscar(
+                      context,
+                      d.globalPosition,
+                    )?.drag(d, () => arrastre = null);
+                  }
+                  ..onUpdate = (d) {
+                    arrastre?.update(d);
+                  }
+                  ..onEnd = (d) {
+                    arrastre?.end(d);
+                    arrastre = null;
+                  }
+                  ..onCancel = () {
+                    arrastre?.cancel();
+                    arrastre = null;
+                  };
+              }),
+        },
+        child: const SizedBox.expand(),
+      ),
+    );
   }
 }
