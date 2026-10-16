@@ -125,7 +125,8 @@ class _ComprarLibroCardState extends State<ComprarLibroCard>
             enlace.enBiblioteca &&
             !enlace.yaEmpezado &&
             !enlace.loTengo;
-        _compraPendiente = puedeMarcar
+        // Con la búsqueda genérica no se sabe qué libro acabará comprando.
+        _compraPendiente = puedeMarcar && enlace.exacto
             ? (
                 tienda: tienda ?? enlace.tienda,
                 formato: formato ?? enlace.formato,
@@ -144,10 +145,11 @@ class _ComprarLibroCardState extends State<ComprarLibroCard>
 
   @override
   Widget build(BuildContext context) {
-    // Solo se ofrece comprar si la tienda tiene el libro localizado: sin ficha
-    // exacta (p. ej. un autopublicado) no se muestra nada, ni mientras carga.
+    // Sin ficha exacta en la tienda se ofrece la búsqueda por título y autoría
+    // (con nuestra campaña): nunca puede llevar a un libro equivocado. Mientras
+    // carga no se muestra nada.
     final enlace = _enlace;
-    if (widget.bookId.isEmpty || enlace == null || !enlace.exacto) {
+    if (widget.bookId.isEmpty || enlace == null) {
       return const SizedBox.shrink();
     }
     // Ya lo tiene: en lugar de ofrecer la compra, una línea discreta para
@@ -252,7 +254,9 @@ class _ComprarLibroCardState extends State<ComprarLibroCard>
                   children: [
                     Flexible(
                       child: Text(
-                        'Comprar en ${enlace.tienda}',
+                        enlace.exacto
+                            ? 'Comprar en ${enlace.tienda}'
+                            : 'Buscar en ${enlace.tienda}',
                         style: AppTextStyles.subtitle.copyWith(
                           color: AppColors.textPrimary,
                           fontWeight: FontWeight.w700,
@@ -265,7 +269,12 @@ class _ComprarLibroCardState extends State<ComprarLibroCard>
                 ),
                 const SizedBox(height: AppSpacing.xs),
                 Text(
-                  enlace.otras.isEmpty && !enlace.avisoLegal.contains('Amazon')
+                  !enlace.exacto
+                      ? 'Buscamos el libro por título y autoría. Enlace de '
+                            'afiliado: ClubReads puede recibir una comisión, '
+                            'sin coste extra para ti.'
+                      : enlace.otras.isEmpty &&
+                            !enlace.avisoLegal.contains('Amazon')
                       ? 'Enlace de afiliado: ClubReads puede recibir una comisión, '
                             'sin coste extra para ti.'
                       : enlace.avisoLegal,
@@ -305,7 +314,7 @@ class _ComprarLibroCardState extends State<ComprarLibroCard>
                     ],
                   ),
                 ],
-                if ((_enlace?.formatos.length ?? 0) > 1) ...[
+                if (enlace.exacto && (_enlace?.formatos.length ?? 0) > 1) ...[
                   const SizedBox(height: AppSpacing.sm),
                   Wrap(
                     spacing: AppSpacing.xs,
