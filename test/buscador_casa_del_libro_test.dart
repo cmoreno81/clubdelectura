@@ -88,4 +88,24 @@ void main() {
     await tester.pump();
     expect(tester.widget<TextField>(campo).focusNode!.hasFocus, isTrue);
   });
+
+  testWidgets('la X borra lo escrito y solo sale cuando hay texto', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      const MaterialApp(home: Scaffold(body: BuscadorCasaDelLibroCard())),
+    );
+    final borrar = find.byKey(const Key('buscador-casa-del-libro-borrar'));
+    expect(borrar, findsNothing);
+    await tester.enterText(
+      find.byKey(const Key('buscador-casa-del-libro-texto')),
+      'el perfume',
+    );
+    await tester.pump();
+    expect(borrar, findsOneWidget);
+    await tester.tap(borrar);
+    await tester.pump();
+    expect(find.text('el perfume'), findsNothing);
+    expect(borrar, findsNothing);
+  });
 }

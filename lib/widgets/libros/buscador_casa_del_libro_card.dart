@@ -119,17 +119,37 @@ class BuscadorCasaDelLibroCardState extends State<BuscadorCasaDelLibroCard> {
             decoration: InputDecoration(
               hintText: 'Título o autoría',
               counterText: '',
-              suffixIcon: IconButton(
-                key: const Key('buscador-casa-del-libro-buscar'),
-                tooltip: 'Buscar en Casa del Libro',
-                onPressed: _buscando ? null : _buscar,
-                icon: _buscando
-                    ? const SizedBox(
-                        width: 18,
-                        height: 18,
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      )
-                    : const Icon(Icons.arrow_forward_rounded),
+              suffixIcon: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  ValueListenableBuilder<TextEditingValue>(
+                    valueListenable: _texto,
+                    builder: (context, valor, _) => valor.text.isEmpty
+                        ? const SizedBox.shrink()
+                        : IconButton(
+                            key: const Key('buscador-casa-del-libro-borrar'),
+                            tooltip: 'Borrar',
+                            onPressed: () {
+                              _texto.clear();
+                              setState(() => _aviso = null);
+                              _foco.requestFocus();
+                            },
+                            icon: const Icon(Icons.close_rounded),
+                          ),
+                  ),
+                  IconButton(
+                    key: const Key('buscador-casa-del-libro-buscar'),
+                    tooltip: 'Buscar en Casa del Libro',
+                    onPressed: _buscando ? null : _buscar,
+                    icon: _buscando
+                        ? const SizedBox(
+                            width: 18,
+                            height: 18,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
+                        : const Icon(Icons.arrow_forward_rounded),
+                  ),
+                ],
               ),
             ),
           ),
