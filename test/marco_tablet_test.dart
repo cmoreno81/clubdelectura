@@ -195,4 +195,82 @@ void main() {
     await tester.pumpAndSettle();
     expect(controlador.offset, lessThan(tras));
   });
+
+  testWidgets(
+    'los márgenes también desplazan pantallas con SingleChildScrollView y rutas apiladas',
+    (tester) async {
+      tester.view.devicePixelRatio = 1;
+      tester.view.physicalSize = const Size(1376, 1032);
+      addTearDown(tester.view.reset);
+      ShellNavegacion.instance.registrar('prueba', alSeleccionar: (_) {});
+      final debajo = ScrollController();
+      final encima = ScrollController();
+      addTearDown(debajo.dispose);
+      addTearDown(encima.dispose);
+      Widget lista(ScrollController c, String t) => Scaffold(
+        body: SingleChildScrollView(
+          controller: c,
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            children: [
+              for (var i = 0; i < 60; i++)
+                SizedBox(height: 80, child: Text('$t $i')),
+            ],
+          ),
+        ),
+      );
+      await tester.pumpWidget(
+        MaterialApp(
+          builder: (context, child) => MarcoTablet(child: child!),
+          home: Builder(
+            builder: (context) => Scaffold(
+              body: Column(
+                children: [
+                  TextButton(
+                    onPressed: () => Navigator.push<void>(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => lista(encima, 'encima'),
+                      ),
+                    ),
+                    child: const Text('ir'),
+                  ),
+                  Expanded(
+                    child: SingleChildScrollView(
+                      controller: debajo,
+                      child: Column(
+                        children: [
+                          for (var i = 0; i < 60; i++)
+                            SizedBox(height: 80, child: Text('debajo $i')),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      await tester.dragFrom(const Offset(248 + 40, 500), const Offset(0, -300));
+      await tester.pumpAndSettle();
+      expect(debajo.offset, greaterThan(100));
+
+      await tester.tap(find.text('ir'));
+      await tester.pumpAndSettle();
+      final antes = debajo.offset;
+      await tester.dragFrom(
+        const Offset(1370 - 40, 500),
+        const Offset(0, -300),
+      );
+      await tester.pumpAndSettle();
+      expect(
+        encima.offset,
+        greaterThan(100),
+        reason: 'se mueve la pantalla visible',
+      );
+      expect(debajo.offset, antes, reason: 'la tapada no se toca');
+    },
+  );
 }

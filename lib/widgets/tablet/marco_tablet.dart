@@ -1,6 +1,5 @@
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/rendering.dart';
 
 import '../../theme/app_colors.dart';
 import '../../theme/app_text_styles.dart';
@@ -446,31 +445,58 @@ class _MargenDesplazable extends StatelessWidget {
   final bool izquierda;
 
   /// La posición de scroll vertical de la pantalla visible: la lista vertical
-  /// más grande de la columna (se recorre solo lo que se ve, no las pantallas
-  /// tapadas por otras).
+  /// más grande que cruza el centro de la columna (sirve para `ListView`,
+  /// `CustomScrollView` y `SingleChildScrollView`). Solo cuenta lo que se ve,
+  /// no las pantallas tapadas por otras.
   ScrollPositionWithSingleContext? _buscar() {
-    final caja = columna.currentContext?.findRenderObject();
-    if (caja == null || !caja.attached) return null;
+    final contexto = columna.currentContext;
+    final caja = contexto?.findRenderObject();
+    if (contexto is! Element || caja is! RenderBox || !caja.attached) {
+      return null;
+    }
+    // Lo que está en pantalla (el árbol de semántica deja fuera lo oculto).
+    final visibles = <RenderObject>{};
+    void recoger(RenderObject o) {
+      visibles.add(o);
+      o.visitChildrenForSemantics(recoger);
+    }
+
+    recoger(caja);
+    final zona = caja.localToGlobal(Offset.zero) & caja.size;
+
     ScrollPositionWithSingleContext? mejor;
     var areaMejor = 0.0;
-    void visitar(RenderObject o) {
-      if (o is RenderViewportBase &&
-          o.axis == Axis.vertical &&
-          o.hasSize &&
-          o.offset is ScrollPositionWithSingleContext) {
-        final posicion = o.offset as ScrollPositionWithSingleContext;
-        if (posicion.hasContentDimensions && posicion.maxScrollExtent > 0) {
-          final area = o.size.width * o.size.height;
+    void visitar(Element e) {
+      if (e is StatefulElement && e.state is ScrollableState) {
+        final scrollable = e.state as ScrollableState;
+        final objeto = scrollable.context.findRenderObject();
+        final posicion = scrollable.position;
+        if (scrollable.widget.axis == Axis.vertical &&
+            objeto is RenderBox &&
+            objeto.hasSize &&
+            visibles.contains(objeto) &&
+            posicion is ScrollPositionWithSingleContext &&
+            posicion.hasContentDimensions &&
+            posicion.maxScrollExtent > 0) {
+          final rect = MatrixUtils.transformRect(
+            objeto.getTransformTo(null),
+            Offset.zero & objeto.size,
+          );
+          // Cuánto de la columna cubre esta lista: gana la que más.
+          final cruce = rect.intersect(zona);
+          final area = cruce.width > 0 && cruce.height > 0
+              ? cruce.width * cruce.height
+              : 0.0;
           if (area > areaMejor) {
             areaMejor = area;
             mejor = posicion;
           }
         }
       }
-      o.visitChildrenForSemantics(visitar);
+      e.visitChildElements(visitar);
     }
 
-    visitar(caja);
+    visitar(contexto);
     return mejor;
   }
 
