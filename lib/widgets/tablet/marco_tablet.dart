@@ -445,34 +445,33 @@ class _MargenDesplazable extends StatelessWidget {
   final GlobalKey columna;
   final bool izquierda;
 
-  /// La posición de scroll vertical que hay en el borde de la columna a la
-  /// altura [global].
-  ScrollPositionWithSingleContext? _buscar(
-    BuildContext context,
-    Offset global,
-  ) {
+  /// La posición de scroll vertical de la pantalla visible: la lista vertical
+  /// más grande de la columna (se recorre solo lo que se ve, no las pantallas
+  /// tapadas por otras).
+  ScrollPositionWithSingleContext? _buscar() {
     final caja = columna.currentContext?.findRenderObject();
-    if (caja is! RenderBox || !caja.attached) return null;
-    final origen = caja.localToGlobal(Offset.zero);
-    final x = izquierda ? origen.dx + 2 : origen.dx + caja.size.width - 2;
-    final resultado = HitTestResult();
-    WidgetsBinding.instance.hitTestInView(
-      resultado,
-      Offset(x, global.dy),
-      View.of(context).viewId,
-    );
-    for (final entrada in resultado.path) {
-      final destino = entrada.target;
-      if (destino is RenderViewportBase &&
-          destino.axis == Axis.vertical &&
-          destino.offset is ScrollPositionWithSingleContext) {
-        final posicion = destino.offset as ScrollPositionWithSingleContext;
+    if (caja == null || !caja.attached) return null;
+    ScrollPositionWithSingleContext? mejor;
+    var areaMejor = 0.0;
+    void visitar(RenderObject o) {
+      if (o is RenderViewportBase &&
+          o.axis == Axis.vertical &&
+          o.hasSize &&
+          o.offset is ScrollPositionWithSingleContext) {
+        final posicion = o.offset as ScrollPositionWithSingleContext;
         if (posicion.hasContentDimensions && posicion.maxScrollExtent > 0) {
-          return posicion;
+          final area = o.size.width * o.size.height;
+          if (area > areaMejor) {
+            areaMejor = area;
+            mejor = posicion;
+          }
         }
       }
+      o.visitChildrenForSemantics(visitar);
     }
-    return null;
+
+    visitar(caja);
+    return mejor;
   }
 
   @override
@@ -482,7 +481,7 @@ class _MargenDesplazable extends StatelessWidget {
       behavior: HitTestBehavior.opaque,
       onPointerSignal: (evento) {
         if (evento is! PointerScrollEvent) return;
-        final posicion = _buscar(context, evento.position);
+        final posicion = _buscar();
         if (posicion == null) return;
         GestureBinding.instance.pointerSignalResolver.register(evento, (e) {
           posicion.pointerScroll((e as PointerScrollEvent).scrollDelta.dy);
@@ -497,10 +496,7 @@ class _MargenDesplazable extends StatelessWidget {
               >(VerticalDragGestureRecognizer.new, (r) {
                 r
                   ..onStart = (d) {
-                    arrastre = _buscar(
-                      context,
-                      d.globalPosition,
-                    )?.drag(d, () => arrastre = null);
+                    arrastre = _buscar()?.drag(d, () => arrastre = null);
                   }
                   ..onUpdate = (d) {
                     arrastre?.update(d);

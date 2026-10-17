@@ -172,6 +172,9 @@ void main() {
         home: Scaffold(
           body: ListView(
             controller: controlador,
+            // Como las pantallas de la app: la lista tiene relleno a los lados,
+            // así que en el borde de la columna no hay ninguna fila debajo.
+            padding: const EdgeInsets.symmetric(horizontal: 16),
             children: [
               for (var i = 0; i < 60; i++)
                 SizedBox(height: 80, child: Text('fila $i')),
