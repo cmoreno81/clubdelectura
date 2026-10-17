@@ -1,5 +1,6 @@
 import 'package:club_lectura_app/pages/autor_libros_page.dart';
 import 'package:club_lectura_app/utils/idioma_utils.dart';
+import 'package:club_lectura_app/widgets/common/club_book_cover.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -14,6 +15,7 @@ Map<String, dynamic> _libro(String titulo, String idioma, {String saga = ''}) =>
     };
 
 void main() {
+  _pruebasTablet();
   test(
     'los libros se agrupan por idioma: español, inglés, resto y sin idioma',
     () {
@@ -90,4 +92,40 @@ void main() {
       expect(find.text('Caída libre'), findsWidgets);
     },
   );
+}
+
+// Tablet: las portadas de los independientes son 2:3 y las sagas más grandes.
+void _pruebasTablet() {
+  testWidgets('en tablet los independientes salen en rejilla de portadas 2:3', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(1100, 2400);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+    await tester.pumpWidget(
+      MaterialApp(
+        home: AutorLibrosPage(
+          autorId: 'a1',
+          nombre: 'Ali Hazelwood',
+          photoUrl: '',
+          cargar: (_) async => {
+            'biografia': '',
+            'libros': [
+              for (var i = 0; i < 6; i++) _libro('Libro $i', 'es'),
+              _libro('Saga 1', 'es', saga: 'La saga'),
+              _libro('Saga 2', 'es', saga: 'La saga'),
+            ],
+          },
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(tester.takeException(), isNull);
+    final portada = tester.getSize(find.byType(ClubBookCover).first);
+    // Una portada de saga mide 104×156 en tablet.
+    expect(portada.width, 104);
+    expect(portada.height, 156);
+    final rejilla = tester.getSize(find.text('Libro 0').first);
+    expect(rejilla.width, greaterThan(0));
+  });
 }

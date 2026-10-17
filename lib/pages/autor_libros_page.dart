@@ -63,11 +63,16 @@ class _AutorLibrosPageState extends State<AutorLibrosPage> {
   Future<void> _reloadBooks({bool silent = false}) async {
     try {
       final data = await _cargarLibros();
-      if (mounted) setState(() { _future = Future.value(data); });
+      if (mounted)
+        setState(() {
+          _future = Future.value(data);
+        });
     } catch (_) {
       if (silent || !mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('No se han podido actualizar los libros.')),
+        const SnackBar(
+          content: Text('No se han podido actualizar los libros.'),
+        ),
       );
     }
   }
@@ -143,13 +148,19 @@ class _AutorLibrosPageState extends State<AutorLibrosPage> {
           final libros = (data['libros'] as List<dynamic>? ?? [])
               .cast<Map<String, dynamic>>();
 
+          // En tablet la cabecera es más alta: la foto no se solapa con el nombre.
+          final tablet = MediaQuery.sizeOf(context).width >= 600;
+          final alturaCabecera = tablet ? 232.0 : 160.0;
+          final topFoto = tablet ? 40.0 : 52.0;
+          final lado = tablet ? 112.0 : 96.0;
+
           return CustomScrollView(
             key: const PageStorageKey('author-books-scroll'),
             controller: _scrollController,
             slivers: [
               // ── AppBar con foto del autor ──
               SliverAppBar(
-                expandedHeight: 160,
+                expandedHeight: alturaCabecera,
                 pinned: true,
                 stretch: true,
                 backgroundColor: const Color(0xFF4A2240),
@@ -175,10 +186,10 @@ class _AutorLibrosPageState extends State<AutorLibrosPage> {
                   centerTitle: true,
                   title: Text(
                     widget.nombre,
-                    style: const TextStyle(
+                    style: TextStyle(
                       color: Colors.white,
                       fontWeight: FontWeight.w800,
-                      fontSize: 16,
+                      fontSize: tablet ? 20 : 16,
                     ),
                     textAlign: TextAlign.center,
                   ),
@@ -198,13 +209,13 @@ class _AutorLibrosPageState extends State<AutorLibrosPage> {
                       // Foto del autor
                       if (widget.photoUrl.isNotEmpty)
                         Positioned(
-                          top: 52,
+                          top: topFoto,
                           left: 0,
                           right: 0,
                           child: Center(
                             child: Container(
-                              width: 96,
-                              height: 96,
+                              width: lado,
+                              height: lado,
                               decoration: BoxDecoration(
                                 shape: BoxShape.circle,
                                 border: Border.all(
@@ -221,8 +232,8 @@ class _AutorLibrosPageState extends State<AutorLibrosPage> {
                               clipBehavior: Clip.antiAlias,
                               child: OptimizedNetworkImage(
                                 url: widget.photoUrl,
-                                width: 96,
-                                height: 96,
+                                width: lado,
+                                height: lado,
                                 fallback: Container(
                                   color: Colors.white.withValues(alpha: .2),
                                   alignment: Alignment.center,
@@ -241,13 +252,13 @@ class _AutorLibrosPageState extends State<AutorLibrosPage> {
                         )
                       else
                         Positioned(
-                          top: 52,
+                          top: topFoto,
                           left: 0,
                           right: 0,
                           child: Center(
                             child: Container(
-                              width: 96,
-                              height: 96,
+                              width: lado,
+                              height: lado,
                               decoration: BoxDecoration(
                                 color: Colors.white.withValues(alpha: .2),
                                 shape: BoxShape.circle,
@@ -443,10 +454,10 @@ class _LibrosAgrupados extends StatelessWidget {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-const _kGold      = Color(0xFFA87C38);   // dorado — badges de número
-const _kTerracota = Color(0xFF4A6741);   // verde musgo — título e icono de saga
-const _kCoverW    = 58.0;   // ancho portada
-const _kCoverH    = 84.0;   // alto portada (≈ 2:3)
+const _kGold = Color(0xFFA87C38); // dorado — badges de número
+const _kTerracota = Color(0xFF4A6741); // verde musgo — título e icono de saga
+const _kCoverW = 58.0; // ancho portada
+const _kCoverH = 84.0; // alto portada (≈ 2:3)
 
 // ── Widget principal de saga ─────────────────────────────────────────────────
 
@@ -466,66 +477,98 @@ class _SagaTimeline extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (libros.isEmpty) return const SizedBox.shrink();
+    final tablet = MediaQuery.sizeOf(context).width >= 600;
+    final ancho = tablet ? 104.0 : _kCoverW;
+    final alto = tablet ? 156.0 : _kCoverH;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Row(children: [
-          const Icon(Icons.auto_stories_rounded, size: 18, color: _kTerracota),
-          const SizedBox(width: 8),
-          Expanded(child: Text(nombre,
-            maxLines: 1, overflow: TextOverflow.ellipsis,
-            style: AppTextStyles.subtitle.copyWith(
-              fontWeight: FontWeight.w800, color: _kTerracota, fontSize: 17))),
-        ]),
+        Row(
+          children: [
+            const Icon(
+              Icons.auto_stories_rounded,
+              size: 18,
+              color: _kTerracota,
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                nombre,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: AppTextStyles.subtitle.copyWith(
+                  fontWeight: FontWeight.w800,
+                  color: _kTerracota,
+                  fontSize: 17,
+                ),
+              ),
+            ),
+          ],
+        ),
         const SizedBox(height: 10),
         Wrap(
-          spacing: 8,
-          runSpacing: 12,
+          spacing: tablet ? 14 : 8,
+          runSpacing: tablet ? 18 : 12,
           children: [
-            for (int i = 0; i < libros.length; i++) _buildCard(i),
+            for (int i = 0; i < libros.length; i++) _buildCard(i, ancho, alto),
           ],
         ),
       ],
     );
   }
 
-  Widget _buildCard(int i) {
-    final libro    = libros[i];
-    final titulo   = libro['titulo']?.toString()  ?? '';
+  Widget _buildCard(int i, double ancho, double alto) {
+    final libro = libros[i];
+    final titulo = libro['titulo']?.toString() ?? '';
     final coverUrl = libro['coverUrl']?.toString() ?? '';
 
     return GestureDetector(
       onTap: () => onTap(libro),
       onLongPress: () => onLongPress(libro),
       child: SizedBox(
-        width: _kCoverW,
-        child: Stack(clipBehavior: Clip.none, children: [
-          ClubBookCover(
-            title: titulo,
-            imageUrl: coverUrl,
-            width: _kCoverW,
-            height: _kCoverH,
-            borderRadius: BorderRadius.circular(AppRadius.sm),
-            showShadow: true,
-          ),
-          Positioned(
-            top: 3, left: 3,
-            child: Container(
-              width: 20, height: 20,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: _kGold,
-                boxShadow: [BoxShadow(
-                  color: Colors.black.withValues(alpha: .3), blurRadius: 3)],
-              ),
-              alignment: Alignment.center,
-              child: Text('${i + 1}', style: const TextStyle(
-                color: Colors.white, fontSize: 9,
-                fontWeight: FontWeight.w900, height: 1)),
+        width: ancho,
+        child: Stack(
+          clipBehavior: Clip.none,
+          children: [
+            ClubBookCover(
+              title: titulo,
+              imageUrl: coverUrl,
+              width: ancho,
+              height: alto,
+              borderRadius: BorderRadius.circular(AppRadius.sm),
+              showShadow: true,
             ),
-          ),
-        ]),
+            Positioned(
+              top: 3,
+              left: 3,
+              child: Container(
+                width: ancho > 80 ? 26 : 20,
+                height: ancho > 80 ? 26 : 20,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: _kGold,
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: .3),
+                      blurRadius: 3,
+                    ),
+                  ],
+                ),
+                alignment: Alignment.center,
+                child: Text(
+                  '${i + 1}',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: ancho > 80 ? 12 : 9,
+                    fontWeight: FontWeight.w900,
+                    height: 1,
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -571,63 +614,84 @@ class _LibroGrid extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GridView.builder(
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 3,
-        crossAxisSpacing: AppSpacing.md,
-        mainAxisSpacing: AppSpacing.md,
-        childAspectRatio: .46,
-      ),
-      itemCount: libros.length,
-      itemBuilder: (context, i) {
-        final libro   = libros[i];
-        final titulo  = libro['titulo']?.toString()  ?? '';
-        final coverUrl = libro['coverUrl']?.toString() ?? '';
-        final genero  = libro['genero']?.toString()  ?? '';
-
-        return GestureDetector(
-          onTap: () => onTap(libro),
-          onLongPress: () => onLongPress(libro),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Semantics(
-                hint: 'Mantén pulsado para abrir acciones rápidas',
-                child: ClubBookCover(
-                  title: titulo,
-                  imageUrl: coverUrl,
-                  width: double.infinity,
-                  height: 140,
-                  borderRadius: BorderRadius.circular(AppRadius.md),
-                  showShadow: true,
+    return LayoutBuilder(
+      builder: (context, c) {
+        // En tablet: portadas 2:3 (sin recortes ni huecos enormes) y tantas
+        // columnas como quepan. En móvil se queda como siempre.
+        final tablet = c.maxWidth >= 600;
+        const espacio = AppSpacing.md;
+        final columnas = tablet
+            ? ((c.maxWidth + espacio) / (130 + espacio)).floor().clamp(3, 8)
+            : 3;
+        final anchoItem = (c.maxWidth - espacio * (columnas - 1)) / columnas;
+        final altoPortada = tablet ? anchoItem * 1.5 : 140.0;
+        return GridView.builder(
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          gridDelegate: tablet
+              ? SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: columnas,
+                  crossAxisSpacing: espacio,
+                  mainAxisSpacing: espacio,
+                  mainAxisExtent: altoPortada + 64,
+                )
+              : const SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: 3,
+                  crossAxisSpacing: AppSpacing.md,
+                  mainAxisSpacing: AppSpacing.md,
+                  childAspectRatio: .46,
                 ),
-              ),
-              const SizedBox(height: 6),
-              Text(
-                titulo,
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-                style: AppTextStyles.caption.copyWith(
-                  fontWeight: FontWeight.w700,
-                  color: AppColors.textPrimary,
-                ),
-              ),
-              if (genero.isNotEmpty)
-                Text(
-                  '${iconoGenero(genero)} $genero',
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: AppTextStyles.caption.copyWith(
-                    color: AppColors.textMuted,
-                    fontSize: 10,
-                  ),
-                ),
-            ],
-          ),
+          itemCount: libros.length,
+          itemBuilder: (context, i) => _celda(libros[i], altoPortada),
         );
       },
+    );
+  }
+
+  Widget _celda(Map<String, dynamic> libro, double altoPortada) {
+    final titulo = libro['titulo']?.toString() ?? '';
+    final coverUrl = libro['coverUrl']?.toString() ?? '';
+    final genero = libro['genero']?.toString() ?? '';
+
+    return GestureDetector(
+      onTap: () => onTap(libro),
+      onLongPress: () => onLongPress(libro),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Semantics(
+            hint: 'Mantén pulsado para abrir acciones rápidas',
+            child: ClubBookCover(
+              title: titulo,
+              imageUrl: coverUrl,
+              width: double.infinity,
+              height: altoPortada,
+              borderRadius: BorderRadius.circular(AppRadius.md),
+              showShadow: true,
+            ),
+          ),
+          const SizedBox(height: 6),
+          Text(
+            titulo,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+            style: AppTextStyles.caption.copyWith(
+              fontWeight: FontWeight.w700,
+              color: AppColors.textPrimary,
+            ),
+          ),
+          if (genero.isNotEmpty)
+            Text(
+              '${iconoGenero(genero)} $genero',
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: AppTextStyles.caption.copyWith(
+                color: AppColors.textMuted,
+                fontSize: 10,
+              ),
+            ),
+        ],
+      ),
     );
   }
 }
