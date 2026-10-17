@@ -6,6 +6,7 @@ import '../../theme/app_colors.dart';
 import '../../theme/app_radius.dart';
 import '../../theme/app_spacing.dart';
 import '../common/club_book_cover.dart';
+import '../common/anclar_abajo.dart';
 import '../common/club_card.dart';
 import '../common/optimized_network_image.dart';
 
@@ -118,6 +119,290 @@ class _PerfilSagaCardState extends State<PerfilSagaCard> {
         ? 'Pendiente'
         : 'En curso';
 
+    final parteSuperior = <Widget>[
+      // ── Cabecera ──
+      Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  saga.nombre,
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.w900,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  saga.totalSaga > saga.totalConocidos
+                      ? '${saga.totalConocidos} publicados'
+                            ' · ${saga.leidos} leídos'
+                            ' · ${saga.totalSaga} previstos'
+                      : '${saga.totalConocidos} publicados'
+                            ' · ${saga.leidos} leídos',
+                  style: const TextStyle(color: AppColors.textSecondary),
+                ),
+              ],
+            ),
+          ),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 6,
+                ),
+                decoration: BoxDecoration(
+                  color: accent.withValues(alpha: .13),
+                  borderRadius: BorderRadius.circular(AppRadius.pill),
+                ),
+                child: Text(
+                  estado,
+                  style: TextStyle(
+                    color: accent,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w900,
+                  ),
+                ),
+              ),
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  if (widget.onReorderVolumes != null &&
+                      _orderedVolumes.length >= 2)
+                    IconButton(
+                      tooltip: _reordering
+                          ? 'Cancelar reordenar'
+                          : 'Reordenar volúmenes',
+                      visualDensity: VisualDensity.compact,
+                      onPressed: _toggleReorder,
+                      icon: Icon(
+                        _reordering
+                            ? Icons.close_rounded
+                            : Icons.swap_vert_rounded,
+                        size: 19,
+                        color: _reordering
+                            ? AppColors.danger
+                            : AppColors.textSecondary,
+                      ),
+                    ),
+                  if (widget.onEditSeries != null)
+                    IconButton(
+                      tooltip: 'Editar datos de la saga',
+                      visualDensity: VisualDensity.compact,
+                      onPressed: widget.onEditSeries,
+                      icon: const Icon(Icons.edit_outlined, size: 19),
+                    ),
+                  if (widget.onRecoverSeries != null)
+                    IconButton(
+                      tooltip: 'Recuperar saga',
+                      visualDensity: VisualDensity.compact,
+                      onPressed: widget.onRecoverSeries,
+                      icon: const Icon(
+                        Icons.restore_rounded,
+                        size: 20,
+                        color: AppColors.success,
+                      ),
+                    ),
+                  if (widget.onAbandonSeries != null)
+                    IconButton(
+                      tooltip: 'Abandonar saga',
+                      visualDensity: VisualDensity.compact,
+                      onPressed: widget.onAbandonSeries,
+                      icon: const Icon(
+                        Icons.heart_broken_outlined,
+                        size: 20,
+                        color: AppColors.danger,
+                      ),
+                    ),
+                  if (widget.onHideSeries != null)
+                    IconButton(
+                      tooltip: 'Ocultar saga',
+                      visualDensity: VisualDensity.compact,
+                      onPressed: widget.onHideSeries,
+                      icon: const Icon(
+                        Icons.visibility_off_outlined,
+                        size: 20,
+                        color: AppColors.primary,
+                      ),
+                    ),
+                  // Justo antes o después del icono de ocultar:
+                  if (widget.onRemoveSeries != null)
+                    IconButton(
+                      tooltip: 'Eliminar saga',
+                      visualDensity: VisualDensity.compact,
+                      onPressed: widget.onRemoveSeries,
+                      icon: const Icon(
+                        Icons.delete_outline_rounded,
+                        size: 20,
+                        color: AppColors.danger,
+                      ),
+                    ),
+                ],
+              ),
+            ],
+          ),
+        ],
+      ),
+
+      const SizedBox(height: AppSpacing.md),
+
+      // ── Volúmenes: modo normal o modo reordenar ──
+      if (_reordering)
+        _ReorderableVolumeList(
+          volumes: _orderedVolumes,
+          saving: _saving,
+          accent: accent,
+          onReorder: (oldIndex, newIndex) {
+            setState(() {
+              final item = _orderedVolumes.removeAt(oldIndex);
+              _orderedVolumes.insert(newIndex, item);
+            });
+          },
+          onSave: _saveOrder,
+        )
+      else
+        Wrap(
+          spacing: 7,
+          runSpacing: 7,
+          children: [
+            for (var index = 0; index < saga.totalSaga; index++)
+              Builder(
+                key: ValueKey(index),
+                builder: (_) {
+                  final vol = _volumeAt(index + 1);
+
+                  // Caso 1: hueco real (no en ClubReads, o marcado especial)
+                  // Un volumen con bookId real y estado NO_ANADIDO NO es hueco:
+                  // está en el catálogo pero aún no está en la biblioteca.
+                  final esHueco =
+                      vol == null ||
+                      vol.bookId.isEmpty ||
+                      vol.esLeidoExterno ||
+                      vol.esOmitido;
+
+                  // Caso 2: en ClubReads pero NO en mi biblioteca
+                  final enClubReadsNoEnBiblioteca =
+                      vol != null && vol.bookId.isNotEmpty && vol.esNoAnadido;
+
+                  VoidCallback? tapCallback;
+                  if (vol != null && !esHueco && !enClubReadsNoEnBiblioteca) {
+                    // Tiene estado → editar volumen
+                    if (widget.onEditVolume != null) {
+                      tapCallback = () => widget.onEditVolume!(vol);
+                    }
+                  } else if (enClubReadsNoEnBiblioteca) {
+                    // Está en ClubReads pero no en mi biblioteca → añadir
+                    if (widget.onAddToLibrary != null) {
+                      tapCallback = () => widget.onAddToLibrary!(vol);
+                    }
+                  } else if (esHueco) {
+                    // No en ClubReads → gap tap (override o completar)
+                    if (widget.onGapTap != null) {
+                      final gap =
+                          vol ??
+                          PerfilSagaVolumen(
+                            bookId: '',
+                            titulo: 'Tomo ${index + 1}',
+                            numero: '${index + 1}',
+                            posicion: index + 1,
+                            coverUrl: '',
+                            estado: 'NO_ANADIDO',
+                          );
+                      tapCallback = () => widget.onGapTap!(gap);
+                    }
+                  }
+
+                  return _VolumeSquare(
+                    index: index,
+                    volume: vol,
+                    enClubReadsNoEnBiblioteca: enClubReadsNoEnBiblioteca,
+                    onTap: tapCallback,
+                  );
+                },
+              ),
+          ],
+        ),
+
+      // ── Completar saga ──
+      if (!_reordering && widget.onCompleteCatalog != null) ...[
+        const SizedBox(height: AppSpacing.md),
+        FeatureTooltip(
+          featureKey: 'ft_complete_saga',
+          message:
+              'Añade de golpe todos los tomos que aún no tienes en tu biblioteca',
+          icon: Icons.auto_awesome_rounded,
+          position: FeatureTooltipPosition.above,
+          child: OutlinedButton.icon(
+            onPressed: widget.onCompleteCatalog,
+            icon: const Icon(Icons.auto_awesome_rounded),
+            label: const Text('Completar saga'),
+          ),
+        ),
+      ],
+    ];
+    final bloqueSiguiente = Material(
+      color: Colors.transparent,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(AppRadius.md),
+        onTap: widget.onContinue == null
+            ? null
+            : () => widget.onContinue!(saga.siguiente!),
+        child: Container(
+          width: double.infinity,
+          padding: const EdgeInsets.all(AppSpacing.sm),
+          decoration: BoxDecoration(
+            color: Colors.white.withValues(alpha: .82),
+            borderRadius: BorderRadius.circular(AppRadius.md),
+            border: Border.all(color: accent.withValues(alpha: .18)),
+          ),
+          child: Row(
+            children: [
+              ClubBookCover(
+                title: saga.siguiente!.titulo,
+                imageUrl: saga.siguiente!.coverUrl,
+                width: 44,
+                height: 64,
+                showShadow: false,
+              ),
+              const SizedBox(width: AppSpacing.sm),
+              Expanded(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      saga.siguiente!.estado == 'LEYENDO'
+                          ? 'Leyendo ahora'
+                          : 'Siguiente para continuar',
+                      style: TextStyle(
+                        color: accent,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                    const SizedBox(height: 3),
+                    Text(
+                      saga.siguiente!.titulo,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(fontWeight: FontWeight.w800),
+                    ),
+                  ],
+                ),
+              ),
+              if (widget.onContinue != null)
+                Icon(Icons.arrow_forward_rounded, color: accent),
+            ],
+          ),
+        ),
+      ),
+    );
+    final conSiguiente = !_reordering && saga.siguiente != null;
+
     return ClubCard(
       elevated: false,
       borderColor: accent.withValues(alpha: .32),
@@ -126,377 +411,28 @@ class _PerfilSagaCardState extends State<PerfilSagaCard> {
         end: Alignment.bottomRight,
         colors: [Colors.white, accent.withValues(alpha: .08)],
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // ── Cabecera ──
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      saga.nombre,
-                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.w900,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      saga.totalSaga > saga.totalConocidos
-                          ? '${saga.totalConocidos} publicados'
-                                ' · ${saga.leidos} leídos'
-                                ' · ${saga.totalSaga} previstos'
-                          : '${saga.totalConocidos} publicados'
-                                ' · ${saga.leidos} leídos',
-                      style: const TextStyle(color: AppColors.textSecondary),
-                    ),
-                  ],
-                ),
+      child: widget.rellenarAlto && conSiguiente
+          // En tablet: la tarjeta se estira a la altura de su vecina y
+          // «Siguiente para continuar» se queda abajo.
+          ? AnclarAbajo(
+              arriba: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: parteSuperior,
               ),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: [
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 10,
-                      vertical: 6,
-                    ),
-                    decoration: BoxDecoration(
-                      color: accent.withValues(alpha: .13),
-                      borderRadius: BorderRadius.circular(AppRadius.pill),
-                    ),
-                    child: Text(
-                      estado,
-                      style: TextStyle(
-                        color: accent,
-                        fontSize: 12,
-                        fontWeight: FontWeight.w900,
-                      ),
-                    ),
-                  ),
-                  Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      if (widget.onReorderVolumes != null &&
-                          _orderedVolumes.length >= 2)
-                        IconButton(
-                          tooltip: _reordering
-                              ? 'Cancelar reordenar'
-                              : 'Reordenar volúmenes',
-                          visualDensity: VisualDensity.compact,
-                          onPressed: _toggleReorder,
-                          icon: Icon(
-                            _reordering
-                                ? Icons.close_rounded
-                                : Icons.swap_vert_rounded,
-                            size: 19,
-                            color: _reordering
-                                ? AppColors.danger
-                                : AppColors.textSecondary,
-                          ),
-                        ),
-                      if (widget.onEditSeries != null)
-                        IconButton(
-                          tooltip: 'Editar datos de la saga',
-                          visualDensity: VisualDensity.compact,
-                          onPressed: widget.onEditSeries,
-                          icon: const Icon(Icons.edit_outlined, size: 19),
-                        ),
-                      if (widget.onRecoverSeries != null)
-                        IconButton(
-                          tooltip: 'Recuperar saga',
-                          visualDensity: VisualDensity.compact,
-                          onPressed: widget.onRecoverSeries,
-                          icon: const Icon(
-                            Icons.restore_rounded,
-                            size: 20,
-                            color: AppColors.success,
-                          ),
-                        ),
-                      if (widget.onAbandonSeries != null)
-                        IconButton(
-                          tooltip: 'Abandonar saga',
-                          visualDensity: VisualDensity.compact,
-                          onPressed: widget.onAbandonSeries,
-                          icon: const Icon(
-                            Icons.heart_broken_outlined,
-                            size: 20,
-                            color: AppColors.danger,
-                          ),
-                        ),
-                      if (widget.onHideSeries != null)
-                        IconButton(
-                          tooltip: 'Ocultar saga',
-                          visualDensity: VisualDensity.compact,
-                          onPressed: widget.onHideSeries,
-                          icon: const Icon(
-                            Icons.visibility_off_outlined,
-                            size: 20,
-                            color: AppColors.primary,
-                          ),
-                        ),
-                      // Justo antes o después del icono de ocultar:
-                      if (widget.onRemoveSeries != null)
-                        IconButton(
-                          tooltip: 'Eliminar saga',
-                          visualDensity: VisualDensity.compact,
-                          onPressed: widget.onRemoveSeries,
-                          icon: const Icon(
-                            Icons.delete_outline_rounded,
-                            size: 20,
-                            color: AppColors.danger,
-                          ),
-                        ),
-                    ],
-                  ),
-                ],
-              ),
-            ],
-          ),
-
-          const SizedBox(height: AppSpacing.md),
-
-          // ── Volúmenes: modo normal o modo reordenar ──
-          if (_reordering)
-            _ReorderableVolumeList(
-              volumes: _orderedVolumes,
-              saving: _saving,
-              accent: accent,
-              onReorder: (oldIndex, newIndex) {
-                setState(() {
-                  final item = _orderedVolumes.removeAt(oldIndex);
-                  _orderedVolumes.insert(newIndex, item);
-                });
-              },
-              onSave: _saveOrder,
+              abajo: bloqueSiguiente,
+              hueco: AppSpacing.lg,
             )
-          else
-            Wrap(
-              spacing: 7,
-              runSpacing: 7,
+          : Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                for (var index = 0; index < saga.totalSaga; index++)
-                  Builder(
-                    key: ValueKey(index),
-                    builder: (_) {
-                      final vol = _volumeAt(index + 1);
-
-                      // Caso 1: hueco real (no en ClubReads, o marcado especial)
-                      // Un volumen con bookId real y estado NO_ANADIDO NO es hueco:
-                      // está en el catálogo pero aún no está en la biblioteca.
-                      final esHueco =
-                          vol == null ||
-                          vol.bookId.isEmpty ||
-                          vol.esLeidoExterno ||
-                          vol.esOmitido;
-
-                      // Caso 2: en ClubReads pero NO en mi biblioteca
-                      final enClubReadsNoEnBiblioteca =
-                          vol != null &&
-                          vol.bookId.isNotEmpty &&
-                          vol.esNoAnadido;
-
-                      VoidCallback? tapCallback;
-                      if (vol != null &&
-                          !esHueco &&
-                          !enClubReadsNoEnBiblioteca) {
-                        // Tiene estado → editar volumen
-                        if (widget.onEditVolume != null) {
-                          tapCallback = () => widget.onEditVolume!(vol);
-                        }
-                      } else if (enClubReadsNoEnBiblioteca) {
-                        // Está en ClubReads pero no en mi biblioteca → añadir
-                        if (widget.onAddToLibrary != null) {
-                          tapCallback = () => widget.onAddToLibrary!(vol);
-                        }
-                      } else if (esHueco) {
-                        // No en ClubReads → gap tap (override o completar)
-                        if (widget.onGapTap != null) {
-                          final gap =
-                              vol ??
-                              PerfilSagaVolumen(
-                                bookId: '',
-                                titulo: 'Tomo ${index + 1}',
-                                numero: '${index + 1}',
-                                posicion: index + 1,
-                                coverUrl: '',
-                                estado: 'NO_ANADIDO',
-                              );
-                          tapCallback = () => widget.onGapTap!(gap);
-                        }
-                      }
-
-                      return _VolumeSquare(
-                        index: index,
-                        volume: vol,
-                        enClubReadsNoEnBiblioteca: enClubReadsNoEnBiblioteca,
-                        onTap: tapCallback,
-                      );
-                    },
-                  ),
+                ...parteSuperior,
+                if (conSiguiente) ...[
+                  const SizedBox(height: AppSpacing.lg),
+                  bloqueSiguiente,
+                ],
               ],
             ),
-
-          // ── Completar saga ──
-          if (!_reordering && widget.onCompleteCatalog != null) ...[
-            const SizedBox(height: AppSpacing.md),
-            FeatureTooltip(
-              featureKey: 'ft_complete_saga',
-              message:
-                  'Añade de golpe todos los tomos que aún no tienes en tu biblioteca',
-              icon: Icons.auto_awesome_rounded,
-              position: FeatureTooltipPosition.above,
-              child: OutlinedButton.icon(
-                onPressed: widget.onCompleteCatalog,
-                icon: const Icon(Icons.auto_awesome_rounded),
-                label: const Text('Completar saga'),
-              ),
-            ),
-          ],
-
-          // ── Siguiente para continuar ──
-          if (!_reordering && saga.siguiente != null) ...[
-            if (widget.rellenarAlto)
-              Expanded(
-                child: Align(
-                  alignment: Alignment.bottomCenter,
-                  child: Padding(
-                    padding: const EdgeInsets.only(top: AppSpacing.lg),
-                    child: Material(
-                      color: Colors.transparent,
-                      child: InkWell(
-                        borderRadius: BorderRadius.circular(AppRadius.md),
-                        onTap: widget.onContinue == null
-                            ? null
-                            : () => widget.onContinue!(saga.siguiente!),
-                        child: Container(
-                          width: double.infinity,
-                          padding: const EdgeInsets.all(AppSpacing.sm),
-                          decoration: BoxDecoration(
-                            color: Colors.white.withValues(alpha: .82),
-                            borderRadius: BorderRadius.circular(AppRadius.md),
-                            border: Border.all(
-                              color: accent.withValues(alpha: .18),
-                            ),
-                          ),
-                          child: Row(
-                            children: [
-                              ClubBookCover(
-                                title: saga.siguiente!.titulo,
-                                imageUrl: saga.siguiente!.coverUrl,
-                                width: 44,
-                                height: 64,
-                                showShadow: false,
-                              ),
-                              const SizedBox(width: AppSpacing.sm),
-                              Expanded(
-                                child: Column(
-                                  mainAxisSize: MainAxisSize.min,
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      saga.siguiente!.estado == 'LEYENDO'
-                                          ? 'Leyendo ahora'
-                                          : 'Siguiente para continuar',
-                                      style: TextStyle(
-                                        color: accent,
-                                        fontSize: 12,
-                                        fontWeight: FontWeight.w800,
-                                      ),
-                                    ),
-                                    const SizedBox(height: 3),
-                                    Text(
-                                      saga.siguiente!.titulo,
-                                      maxLines: 2,
-                                      overflow: TextOverflow.ellipsis,
-                                      style: const TextStyle(
-                                        fontWeight: FontWeight.w800,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                              if (widget.onContinue != null)
-                                Icon(
-                                  Icons.arrow_forward_rounded,
-                                  color: accent,
-                                ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-              )
-            else ...[
-              const SizedBox(height: AppSpacing.lg),
-              Material(
-                color: Colors.transparent,
-                child: InkWell(
-                  borderRadius: BorderRadius.circular(AppRadius.md),
-                  onTap: widget.onContinue == null
-                      ? null
-                      : () => widget.onContinue!(saga.siguiente!),
-                  child: Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.all(AppSpacing.sm),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: .82),
-                      borderRadius: BorderRadius.circular(AppRadius.md),
-                      border: Border.all(color: accent.withValues(alpha: .18)),
-                    ),
-                    child: Row(
-                      children: [
-                        ClubBookCover(
-                          title: saga.siguiente!.titulo,
-                          imageUrl: saga.siguiente!.coverUrl,
-                          width: 44,
-                          height: 64,
-                          showShadow: false,
-                        ),
-                        const SizedBox(width: AppSpacing.sm),
-                        Expanded(
-                          child: Column(
-                            mainAxisSize: MainAxisSize.min,
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                saga.siguiente!.estado == 'LEYENDO'
-                                    ? 'Leyendo ahora'
-                                    : 'Siguiente para continuar',
-                                style: TextStyle(
-                                  color: accent,
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.w800,
-                                ),
-                              ),
-                              const SizedBox(height: 3),
-                              Text(
-                                saga.siguiente!.titulo,
-                                maxLines: 2,
-                                overflow: TextOverflow.ellipsis,
-                                style: const TextStyle(
-                                  fontWeight: FontWeight.w800,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        if (widget.onContinue != null)
-                          Icon(Icons.arrow_forward_rounded, color: accent),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-            ],
-          ],
-        ],
-      ),
     );
   }
 

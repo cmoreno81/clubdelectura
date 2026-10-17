@@ -2,6 +2,7 @@ import 'package:club_lectura_app/utils/formato_libro.dart';
 import 'package:club_lectura_app/services/library_refresh_notifier.dart';
 import 'package:club_lectura_app/services/libros_data_cache.dart';
 import 'package:flutter/material.dart';
+import '../widgets/common/fila_igual_altura.dart';
 
 import '../models/libro_agrupado.dart';
 import '../models/perfil_usuario.dart';
@@ -1155,19 +1156,12 @@ class _SagasPageState extends State<SagasPage> {
                   for (var i = 0; i < tarjetas.length; i += 2)
                     // Las dos sagas de una fila miden lo mismo, sean largas
                     // o cortas.
-                    IntrinsicHeight(
-                      child: Row(
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: [
-                          Expanded(child: tarjetas[i]),
-                          const SizedBox(width: AppSpacing.md),
-                          Expanded(
-                            child: i + 1 < tarjetas.length
-                                ? tarjetas[i + 1]
-                                : const SizedBox.shrink(),
-                          ),
-                        ],
-                      ),
+                    FilaIgualAltura(
+                      separacion: AppSpacing.md,
+                      izquierda: tarjetas[i],
+                      derecha: i + 1 < tarjetas.length
+                          ? tarjetas[i + 1]
+                          : const SizedBox.shrink(),
                     ),
                 ],
               );

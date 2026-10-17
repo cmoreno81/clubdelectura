@@ -1,4 +1,5 @@
 import 'package:club_lectura_app/models/perfil_usuario.dart';
+import 'package:club_lectura_app/widgets/common/fila_igual_altura.dart';
 import 'package:club_lectura_app/widgets/perfil/perfil_saga_card.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -40,25 +41,17 @@ void main() {
         MaterialApp(
           home: Scaffold(
             body: SingleChildScrollView(
-              child: IntrinsicHeight(
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    Expanded(
-                      child: PerfilSagaCard(
-                        key: const Key('corta'),
-                        saga: _saga('Corta', 2),
-                        rellenarAlto: true,
-                      ),
-                    ),
-                    Expanded(
-                      child: PerfilSagaCard(
-                        key: const Key('larga'),
-                        saga: _saga('Larga', 14),
-                        rellenarAlto: true,
-                      ),
-                    ),
-                  ],
+              child: FilaIgualAltura(
+                separacion: 0,
+                izquierda: PerfilSagaCard(
+                  key: const Key('corta'),
+                  saga: _saga('Corta', 2),
+                  rellenarAlto: true,
+                ),
+                derecha: PerfilSagaCard(
+                  key: const Key('larga'),
+                  saga: _saga('Larga', 14),
+                  rellenarAlto: true,
                 ),
               ),
             ),
@@ -95,4 +88,46 @@ void main() {
     expect(tester.takeException(), isNull);
     expect(find.text('Siguiente para continuar'), findsOneWidget);
   });
+
+  testWidgets(
+    'reordenar los tomos de una saga en la fila no la hace desaparecer',
+    (tester) async {
+      tester.view.physicalSize = const Size(1000, 1600);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.reset);
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: SingleChildScrollView(
+              child: FilaIgualAltura(
+                separacion: 16,
+                izquierda: PerfilSagaCard(
+                  saga: _saga('Corta', 3),
+                  rellenarAlto: true,
+                  onReorderVolumes: (_) async {},
+                ),
+                derecha: PerfilSagaCard(
+                  saga: _saga('Larga', 9),
+                  rellenarAlto: true,
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      await tester.tap(find.byTooltip('Reordenar volúmenes'));
+      await tester.pumpAndSettle();
+      expect(tester.takeException(), isNull);
+      expect(find.textContaining('Arrastra los tomos'), findsOneWidget);
+      final izq = tester.getRect(find.text('Corta').first);
+      expect(izq.height, greaterThan(0));
+      // Las dos tarjetas siguen midiendo lo mismo.
+      final cards = find.byType(PerfilSagaCard);
+      expect(
+        tester.getSize(cards.at(0)).height,
+        tester.getSize(cards.at(1)).height,
+      );
+    },
+  );
 }
