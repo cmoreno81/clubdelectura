@@ -328,7 +328,7 @@ class _PerfilSagaCardState extends State<PerfilSagaCard> {
         ),
 
       // ── Completar saga ──
-      if (!_reordering && widget.onCompleteCatalog != null) ...[
+      if (!_reordering && widget.onCompleteCatalog != null && _faltanTomos) ...[
         const SizedBox(height: AppSpacing.md),
         FeatureTooltip(
           featureKey: 'ft_complete_saga',
@@ -344,64 +344,66 @@ class _PerfilSagaCardState extends State<PerfilSagaCard> {
         ),
       ],
     ];
-    final bloqueSiguiente = Material(
-      color: Colors.transparent,
-      child: InkWell(
-        borderRadius: BorderRadius.circular(AppRadius.md),
-        onTap: widget.onContinue == null
-            ? null
-            : () => widget.onContinue!(saga.siguiente!),
-        child: Container(
-          width: double.infinity,
-          padding: const EdgeInsets.all(AppSpacing.sm),
-          decoration: BoxDecoration(
-            color: Colors.white.withValues(alpha: .82),
-            borderRadius: BorderRadius.circular(AppRadius.md),
-            border: Border.all(color: accent.withValues(alpha: .18)),
-          ),
-          child: Row(
-            children: [
-              ClubBookCover(
-                title: saga.siguiente!.titulo,
-                imageUrl: saga.siguiente!.coverUrl,
-                width: 44,
-                height: 64,
-                showShadow: false,
-              ),
-              const SizedBox(width: AppSpacing.sm),
-              Expanded(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.start,
+    final conSiguiente = !_reordering && saga.siguiente != null;
+    final Widget? bloqueSiguiente = conSiguiente
+        ? Material(
+            color: Colors.transparent,
+            child: InkWell(
+              borderRadius: BorderRadius.circular(AppRadius.md),
+              onTap: widget.onContinue == null
+                  ? null
+                  : () => widget.onContinue!(saga.siguiente!),
+              child: Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(AppSpacing.sm),
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: .82),
+                  borderRadius: BorderRadius.circular(AppRadius.md),
+                  border: Border.all(color: accent.withValues(alpha: .18)),
+                ),
+                child: Row(
                   children: [
-                    Text(
-                      saga.siguiente!.estado == 'LEYENDO'
-                          ? 'Leyendo ahora'
-                          : 'Siguiente para continuar',
-                      style: TextStyle(
-                        color: accent,
-                        fontSize: 12,
-                        fontWeight: FontWeight.w800,
+                    ClubBookCover(
+                      title: saga.siguiente!.titulo,
+                      imageUrl: saga.siguiente!.coverUrl,
+                      width: 44,
+                      height: 64,
+                      showShadow: false,
+                    ),
+                    const SizedBox(width: AppSpacing.sm),
+                    Expanded(
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            saga.siguiente!.estado == 'LEYENDO'
+                                ? 'Leyendo ahora'
+                                : 'Siguiente para continuar',
+                            style: TextStyle(
+                              color: accent,
+                              fontSize: 12,
+                              fontWeight: FontWeight.w800,
+                            ),
+                          ),
+                          const SizedBox(height: 3),
+                          Text(
+                            saga.siguiente!.titulo,
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(fontWeight: FontWeight.w800),
+                          ),
+                        ],
                       ),
                     ),
-                    const SizedBox(height: 3),
-                    Text(
-                      saga.siguiente!.titulo,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(fontWeight: FontWeight.w800),
-                    ),
+                    if (widget.onContinue != null)
+                      Icon(Icons.arrow_forward_rounded, color: accent),
                   ],
                 ),
               ),
-              if (widget.onContinue != null)
-                Icon(Icons.arrow_forward_rounded, color: accent),
-            ],
-          ),
-        ),
-      ),
-    );
-    final conSiguiente = !_reordering && saga.siguiente != null;
+            ),
+          )
+        : null;
 
     return ClubCard(
       elevated: false,
@@ -420,7 +422,7 @@ class _PerfilSagaCardState extends State<PerfilSagaCard> {
                 mainAxisSize: MainAxisSize.min,
                 children: parteSuperior,
               ),
-              abajo: bloqueSiguiente,
+              abajo: bloqueSiguiente!,
               hueco: AppSpacing.lg,
             )
           : Column(
@@ -429,11 +431,26 @@ class _PerfilSagaCardState extends State<PerfilSagaCard> {
                 ...parteSuperior,
                 if (conSiguiente) ...[
                   const SizedBox(height: AppSpacing.lg),
-                  bloqueSiguiente,
+                  bloqueSiguiente!,
                 ],
               ],
             ),
     );
+  }
+
+  /// ¿Queda algún tomo que añadir? Si la saga está completa (todos los tomos
+  /// en la biblioteca o marcados como leídos fuera / omitidos), «Completar
+  /// saga» no tendría nada que hacer.
+  bool get _faltanTomos {
+    for (var posicion = 1; posicion <= saga.totalSaga; posicion++) {
+      final vol = _volumeAt(posicion);
+      if (vol == null) return true;
+      if (vol.esNoAnadido) return true;
+      if (vol.bookId.isEmpty && !vol.esLeidoExterno && !vol.esOmitido) {
+        return true;
+      }
+    }
+    return false;
   }
 
   PerfilSagaVolumen? _volumeAt(int position) {

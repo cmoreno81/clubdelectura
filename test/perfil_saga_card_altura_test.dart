@@ -3,6 +3,7 @@ import 'package:club_lectura_app/widgets/common/fila_igual_altura.dart';
 import 'package:club_lectura_app/widgets/perfil/perfil_saga_card.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 PerfilSaga _saga(String nombre, int tomos) {
   final volumenes = [
@@ -130,4 +131,66 @@ void main() {
       );
     },
   );
+
+  testWidgets('«Completar saga» solo sale si falta algún tomo', (tester) async {
+    SharedPreferences.setMockInitialValues({});
+    Widget tarjeta(PerfilSaga saga) => MaterialApp(
+      home: Scaffold(
+        body: SingleChildScrollView(
+          child: PerfilSagaCard(saga: saga, onCompleteCatalog: () {}),
+        ),
+      ),
+    );
+    // Todos los tomos en la biblioteca: no hay nada que completar.
+    final completa = PerfilSaga(
+      id: 'c',
+      nombre: 'Completa',
+      autor: 'A',
+      leidos: 3,
+      totalConocidos: 3,
+      totalSaga: 3,
+      estado: 'COMPLETADA',
+      estadoEditorial: 'COMPLETED',
+      volumenes: [
+        for (var i = 1; i <= 3; i++)
+          PerfilSagaVolumen(
+            bookId: 'c$i',
+            titulo: 'C $i',
+            numero: '$i',
+            posicion: i,
+            coverUrl: '',
+            estado: 'LEIDO',
+          ),
+      ],
+    );
+    await tester.pumpWidget(tarjeta(completa));
+    await tester.pumpAndSettle();
+    expect(find.text('Completar saga'), findsNothing);
+
+    // Falta un tomo (el 3 no está en la biblioteca): el botón sale.
+    final incompleta = PerfilSaga(
+      id: 'i',
+      nombre: 'Incompleta',
+      autor: 'A',
+      leidos: 2,
+      totalConocidos: 2,
+      totalSaga: 3,
+      estado: 'EN_CURSO',
+      estadoEditorial: 'ONGOING',
+      volumenes: [
+        for (var i = 1; i <= 2; i++)
+          PerfilSagaVolumen(
+            bookId: 'i$i',
+            titulo: 'I $i',
+            numero: '$i',
+            posicion: i,
+            coverUrl: '',
+            estado: 'LEIDO',
+          ),
+      ],
+    );
+    await tester.pumpWidget(tarjeta(incompleta));
+    await tester.pumpAndSettle();
+    expect(find.text('Completar saga'), findsOneWidget);
+  });
 }
