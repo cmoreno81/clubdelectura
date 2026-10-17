@@ -24,6 +24,7 @@ class PerfilSagaCard extends StatefulWidget {
     this.onRemoveSeries,
     this.onAbandonSeries,
     this.onRecoverSeries,
+    this.rellenarAlto = false,
   });
 
   final PerfilSaga saga;
@@ -40,6 +41,10 @@ class PerfilSagaCard extends StatefulWidget {
   final VoidCallback? onRemoveSeries;
   final VoidCallback? onAbandonSeries;
   final VoidCallback? onRecoverSeries;
+
+  /// En tablet, dos sagas por fila miden lo mismo: el bloque «Siguiente para
+  /// continuar» se queda abajo y lo que sobra en las sagas cortas es aire.
+  final bool rellenarAlto;
 
   /// Llamado con la nueva lista ordenada de volúmenes (solo los que tienen bookId)
   final Future<void> Function(List<PerfilSagaVolumen> newOrder)?
@@ -340,7 +345,8 @@ class _PerfilSagaCardState extends State<PerfilSagaCard> {
             const SizedBox(height: AppSpacing.md),
             FeatureTooltip(
               featureKey: 'ft_complete_saga',
-              message: 'Añade de golpe todos los tomos que aún no tienes en tu biblioteca',
+              message:
+                  'Añade de golpe todos los tomos que aún no tienes en tu biblioteca',
               icon: Icons.auto_awesome_rounded,
               position: FeatureTooltipPosition.above,
               child: OutlinedButton.icon(
@@ -353,65 +359,141 @@ class _PerfilSagaCardState extends State<PerfilSagaCard> {
 
           // ── Siguiente para continuar ──
           if (!_reordering && saga.siguiente != null) ...[
-            const SizedBox(height: AppSpacing.lg),
-            Material(
-              color: Colors.transparent,
-              child: InkWell(
-                borderRadius: BorderRadius.circular(AppRadius.md),
-                onTap: widget.onContinue == null
-                    ? null
-                    : () => widget.onContinue!(saga.siguiente!),
-                child: Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.all(AppSpacing.sm),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: .82),
-                    borderRadius: BorderRadius.circular(AppRadius.md),
-                    border: Border.all(color: accent.withValues(alpha: .18)),
-                  ),
-                  child: Row(
-                    children: [
-                      ClubBookCover(
-                        title: saga.siguiente!.titulo,
-                        imageUrl: saga.siguiente!.coverUrl,
-                        width: 44,
-                        height: 64,
-                        showShadow: false,
-                      ),
-                      const SizedBox(width: AppSpacing.sm),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              saga.siguiente!.estado == 'LEYENDO'
-                                  ? 'Leyendo ahora'
-                                  : 'Siguiente para continuar',
-                              style: TextStyle(
-                                color: accent,
-                                fontSize: 12,
-                                fontWeight: FontWeight.w800,
-                              ),
+            if (widget.rellenarAlto)
+              Expanded(
+                child: Align(
+                  alignment: Alignment.bottomCenter,
+                  child: Padding(
+                    padding: const EdgeInsets.only(top: AppSpacing.lg),
+                    child: Material(
+                      color: Colors.transparent,
+                      child: InkWell(
+                        borderRadius: BorderRadius.circular(AppRadius.md),
+                        onTap: widget.onContinue == null
+                            ? null
+                            : () => widget.onContinue!(saga.siguiente!),
+                        child: Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.all(AppSpacing.sm),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withValues(alpha: .82),
+                            borderRadius: BorderRadius.circular(AppRadius.md),
+                            border: Border.all(
+                              color: accent.withValues(alpha: .18),
                             ),
-                            const SizedBox(height: 3),
-                            Text(
-                              saga.siguiente!.titulo,
-                              maxLines: 2,
-                              overflow: TextOverflow.ellipsis,
-                              style: const TextStyle(
-                                fontWeight: FontWeight.w800,
+                          ),
+                          child: Row(
+                            children: [
+                              ClubBookCover(
+                                title: saga.siguiente!.titulo,
+                                imageUrl: saga.siguiente!.coverUrl,
+                                width: 44,
+                                height: 64,
+                                showShadow: false,
                               ),
-                            ),
-                          ],
+                              const SizedBox(width: AppSpacing.sm),
+                              Expanded(
+                                child: Column(
+                                  mainAxisSize: MainAxisSize.min,
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      saga.siguiente!.estado == 'LEYENDO'
+                                          ? 'Leyendo ahora'
+                                          : 'Siguiente para continuar',
+                                      style: TextStyle(
+                                        color: accent,
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.w800,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 3),
+                                    Text(
+                                      saga.siguiente!.titulo,
+                                      maxLines: 2,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: const TextStyle(
+                                        fontWeight: FontWeight.w800,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              if (widget.onContinue != null)
+                                Icon(
+                                  Icons.arrow_forward_rounded,
+                                  color: accent,
+                                ),
+                            ],
+                          ),
                         ),
                       ),
-                      if (widget.onContinue != null)
-                        Icon(Icons.arrow_forward_rounded, color: accent),
-                    ],
+                    ),
+                  ),
+                ),
+              )
+            else ...[
+              const SizedBox(height: AppSpacing.lg),
+              Material(
+                color: Colors.transparent,
+                child: InkWell(
+                  borderRadius: BorderRadius.circular(AppRadius.md),
+                  onTap: widget.onContinue == null
+                      ? null
+                      : () => widget.onContinue!(saga.siguiente!),
+                  child: Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(AppSpacing.sm),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: .82),
+                      borderRadius: BorderRadius.circular(AppRadius.md),
+                      border: Border.all(color: accent.withValues(alpha: .18)),
+                    ),
+                    child: Row(
+                      children: [
+                        ClubBookCover(
+                          title: saga.siguiente!.titulo,
+                          imageUrl: saga.siguiente!.coverUrl,
+                          width: 44,
+                          height: 64,
+                          showShadow: false,
+                        ),
+                        const SizedBox(width: AppSpacing.sm),
+                        Expanded(
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                saga.siguiente!.estado == 'LEYENDO'
+                                    ? 'Leyendo ahora'
+                                    : 'Siguiente para continuar',
+                                style: TextStyle(
+                                  color: accent,
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w800,
+                                ),
+                              ),
+                              const SizedBox(height: 3),
+                              Text(
+                                saga.siguiente!.titulo,
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.w800,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        if (widget.onContinue != null)
+                          Icon(Icons.arrow_forward_rounded, color: accent),
+                      ],
+                    ),
                   ),
                 ),
               ),
-            ),
+            ],
           ],
         ],
       ),

@@ -1144,6 +1144,7 @@ class _SagasPageState extends State<SagasPage> {
                       onRemoveSeries: () => _removeSeries(saga),
                       onReorderVolumes: (newOrder) =>
                           _reorderVolumes(saga, newOrder),
+                      rellenarAlto: c.maxWidth >= 720,
                     ),
                   ),
               ];
@@ -1152,17 +1153,21 @@ class _SagasPageState extends State<SagasPage> {
               return Column(
                 children: [
                   for (var i = 0; i < tarjetas.length; i += 2)
-                    Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Expanded(child: tarjetas[i]),
-                        const SizedBox(width: AppSpacing.md),
-                        Expanded(
-                          child: i + 1 < tarjetas.length
-                              ? tarjetas[i + 1]
-                              : const SizedBox.shrink(),
-                        ),
-                      ],
+                    // Las dos sagas de una fila miden lo mismo, sean largas
+                    // o cortas.
+                    IntrinsicHeight(
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          Expanded(child: tarjetas[i]),
+                          const SizedBox(width: AppSpacing.md),
+                          Expanded(
+                            child: i + 1 < tarjetas.length
+                                ? tarjetas[i + 1]
+                                : const SizedBox.shrink(),
+                          ),
+                        ],
+                      ),
                     ),
                 ],
               );
