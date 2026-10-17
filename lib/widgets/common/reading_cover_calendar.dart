@@ -185,7 +185,10 @@ class _ReadingDayCell extends StatelessWidget {
   final Map<String, double> ratingsByBookAndDay;
 
   double? _ratingFor(MonthlyReadingSpan reading) =>
-      ratingsByBookAndDay[ReadingCoverCalendar._finishKey(reading.bookId, date)];
+      ratingsByBookAndDay[ReadingCoverCalendar._finishKey(
+        reading.bookId,
+        date,
+      )];
 
   // Cuántas portadas se abanican en la tarjeta para compartir antes de
   // recurrir al contador "+N" — con más se aprietan demasiado para leerse.
@@ -211,8 +214,11 @@ class _ReadingDayCell extends StatelessWidget {
     final fanShown = showFan
         ? ordenados.take(_maxAbanico).toList()
         : const <MonthlyReadingSpan>[];
-    final restantes = readings.length -
-        (showFan ? fanShown.length : (readings.length > 1 ? 1 : readings.length));
+    final restantes =
+        readings.length -
+        (showFan
+            ? fanShown.length
+            : (readings.length > 1 ? 1 : readings.length));
 
     return Semantics(
       label: readings.isEmpty
@@ -224,7 +230,15 @@ class _ReadingDayCell extends StatelessWidget {
           if (readings.isEmpty)
             const ColoredBox(color: Color(0xFFFFFCF7))
           else if (readings.length == 1)
-            _portada(readings.first)
+            // Un solo libro ese día: tocarlo abre directamente la edición de
+            // sus fechas (en la tarjeta para compartir no hay interacción).
+            GestureDetector(
+              key: Key('calendario-dia-$day'),
+              onTap: onBookTap == null
+                  ? null
+                  : () => onBookTap!(readings.first),
+              child: _portada(readings.first),
+            )
           else if (showFan)
             // Tarjeta para compartir: portadas abanicadas en diagonal, sin
             // interacción (es una imagen estática) — se ven casi enteras en
@@ -290,7 +304,6 @@ class _ReadingDayCell extends StatelessWidget {
                 ),
               ),
             ),
-
         ],
       ),
     );
@@ -445,36 +458,36 @@ class _FinishBadge extends StatelessWidget {
     return FittedBox(
       fit: BoxFit.scaleDown,
       child: Container(
-      padding: const EdgeInsets.symmetric(horizontal: 3, vertical: 2),
-      decoration: BoxDecoration(
-        color: Colors.black.withValues(alpha: .70),
-        borderRadius: BorderRadius.circular(5),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(
-            hasRating ? Icons.star_rounded : Icons.emoji_events_rounded,
-            color: const Color(0xFFFFD700),
-            size: 8,
-          ),
-          if (hasRating) ...[
-            const SizedBox(width: 1),
-            Text(
-              // Muestra "4" o "4.5" sin decimales innecesarios
-              rating == rating.roundToDouble()
-                  ? rating.toInt().toString()
-                  : rating.toStringAsFixed(1),
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: 7,
-                fontWeight: FontWeight.w900,
-                height: 1,
-              ),
+        padding: const EdgeInsets.symmetric(horizontal: 3, vertical: 2),
+        decoration: BoxDecoration(
+          color: Colors.black.withValues(alpha: .70),
+          borderRadius: BorderRadius.circular(5),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              hasRating ? Icons.star_rounded : Icons.emoji_events_rounded,
+              color: const Color(0xFFFFD700),
+              size: 8,
             ),
+            if (hasRating) ...[
+              const SizedBox(width: 1),
+              Text(
+                // Muestra "4" o "4.5" sin decimales innecesarios
+                rating == rating.roundToDouble()
+                    ? rating.toInt().toString()
+                    : rating.toStringAsFixed(1),
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 7,
+                  fontWeight: FontWeight.w900,
+                  height: 1,
+                ),
+              ),
+            ],
           ],
-        ],
-      ),
+        ),
       ),
     );
   }
